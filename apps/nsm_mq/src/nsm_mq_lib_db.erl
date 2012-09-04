@@ -14,11 +14,11 @@
 -include("nsm_mq.hrl").
 
 %% if MQ_TEST macro is defined - use this module as database backend
--ifndef(TEST).
--include_lib("nsm_srv/include/config.hrl").
--else.
+%-ifndef(TEST).
+%-include_lib("nsm_srv/include/config.hrl").
+%-else.
 -define(DBA, ?MODULE).
--endif.
+%-endif.
 
 
 %%
@@ -42,9 +42,9 @@
          write_requests_handler/2
          ]).
 
--ifdef(TEST).
+%-ifdef(TEST).
 -export([put/1, get_data/1]).
--endif.
+%-endif.
 
 %%
 %% API Functions
@@ -144,7 +144,7 @@ write_requests_handler(_Msg, _State) ->
 
 %% For testing only
 
--ifdef(TEST).
+%-ifdef(TEST).
 -define(STORAGE_PROCESS, test_storage_process).
 
 put(Data) when is_tuple(Data) ->
@@ -185,7 +185,7 @@ get_data(Key) ->
     end.
 
 
--endif.
+%-endif.
 
 %%
 %% Local Functions
