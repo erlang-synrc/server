@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<GVPSRequest>
+  <Mode>{{mode}}</Mode>
+  <Version>{{version}}</Version>
+  <ChannelCode></ChannelCode>
+  <Terminal>
+    <ProvUserID>{{prov_user_id}}</ProvUserID>
+    <HashData>{{hash_data}}</HashData>
+    <UserID>{{user_id}}</UserID>
+    <ID>{{terminal_id}}</ID>
+    <MerchantID>{{merchant_id}}</MerchantID>
+  </Terminal>
+  <Customer>
+    <IPAddress>{{ip}}</IPAddress>
+    <EmailAddress>{{email}}</EmailAddress>
+  </Customer>
+  <Card><Number></Number><ExpireDate></ExpireDate><CVV2></CVV2></Card>
+  <Order>
+    <OrderID>{{order_id}}</OrderID>
+    <GroupID></GroupID>
+    <AddressList><Address>
+      <Type>B</Type>
+      <Name></Name>
+      <LastName></LastName>
+      <Company></Company>
+      <Text></Text>
+      <District></District>
+      <City></City>
+      <PostalCode></PostalCode>
+      <Country></Country>
+      <PhoneNumber></PhoneNumber>
+    </Address></AddressList>
+  </Order>
+
+  <Transaction>
+    <Type>{{txn_type}}</Type>
+    <InstallmentCnt>{{installment}}</InstallmentCnt>
+    <Amount>{{amount}}</Amount>
+    <CurrencyCode>{{currency}}</CurrencyCode>
+    <CardholderPresentCode>13</CardholderPresentCode>
+    <MotoInd>N</MotoInd>
+    <Secure3D>
+      <AuthenticationCode>{{auth_code}}</AuthenticationCode>
+      <SecurityLevel>{{security_level}}</SecurityLevel>
+    <TxnID>{{txn_id}}</TxnID><Md>{{md}}</Md></Secure3D>
+  </Transaction>
+</GVPSRequest>

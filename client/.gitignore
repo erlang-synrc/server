@@ -1,0 +1,9 @@
+/kakaranetClient-src/target
+/kakaranetClient-src/bin-release
+/kakaranetClient-src/.settings
+/kakaranetClient-src/.metadata
+.metadata
+/Class Diagram and Relations.png
+/SampleFlexUnit4Tests/bin-debug
+/SampleFlexUnit4Tests/target
+

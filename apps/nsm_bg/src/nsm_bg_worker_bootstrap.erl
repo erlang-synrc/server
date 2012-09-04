@@ -1,0 +1,153 @@
+%%----------------------------------------------------------------------
+%% @author Vladimir Baranov <baranoff.vladimir@gmail.com>
+%% @copyright Paynet Internet ve Bilisim Hizmetleri A.S. All Rights Reserved.
+%% @doc
+%%   Botstrap worker, will start another workers.
+%%   Consuming on named queue, so we will have
+%%   auto load balancing between instances of the nsm_bg.
+%% @end
+%%-------------------------------------------------------------------
+-module(nsm_bg_worker_bootstrap).
+
+-behaviour(nsm_bg_gen_worker).
+
+%% --------------------------------------------------------------------
+%% Include files
+%% --------------------------------------------------------------------
+-include_lib("alog/include/alog.hrl").
+-include_lib("nsm_srv/include/user.hrl").
+-include("nsm_bg.hrl").
+%% --------------------------------------------------------------------
+%% External exports
+%% --------------------------------------------------------------------
+
+%% gen_worker callbacks
+-export([init/1, handle_notice/3, handle_info/2, get_opts/1, start_workers/0]).
+
+-export([start_all_feed_workers/1]).
+
+-record(state, {name}).
+
+%%
+%% API Functions
+%%
+
+start_all_feed_workers(BootstrapWorkerPid) ->
+    case catch erlang:send(BootstrapWorkerPid, start_all) of
+        true ->
+            ok;
+        _ ->
+            {error, bootstrap_worker_not_running}
+    end.
+
+init([{name, Name}]) ->
+    ?INFO("bootstrap start: ~p", [Name]),
+    case catch register(Name, self()) of
+        true ->
+            {ok, #state{name = Name}};
+        Error ->
+            ?ERROR("unable to register bootstrap worker with name ~p."
+                       " Reason: ~p", [Name, Error]),
+            {stop, normal}
+    end.
+
+handle_notice(["user", "init"], User, State) ->
+    ?INFO("internal_config(~p): feed initialization message received: ~p",
+          [self(), User]),
+    start_local_if_not_started(user, User),
+    {noreply, State};
+
+handle_notice(["group", "init"], Group, State) ->
+    ?INFO("internal_config(~p): feed initialization message received: ~p",
+          [self(), Group]),
+    start_local_if_not_started(user, Group),
+    {noreply, State};
+
+handle_notice(Route, Message, State) ->
+    ?INFO("internal_config(~p): notification received: ",
+          [self(), Route, Message]),
+    {noreply, State}.
+
+
+handle_info(start_all, State) ->
+    ?INFO("start workers initialization"),
+    %% sleep to riak get started
+    timer:sleep(1000),
+    %% TODO: maybe put to separate process, but in this case we will need to
+    %% process monitor requests here anyway
+    start_workers(),
+    {noreply, State};
+
+handle_info({gproc, unreg, _Ref, {n, g, ?FEED_WORKER_NAME(Type, Name)}}, State) ->
+    ?INFO(" feed worker exited: ~p ~p, try restart",
+          [Type, Name]),
+    timer:sleep(100),
+    start_local_if_not_started(Type, Name),
+    {noreply, State};
+
+handle_info(Other, State) ->
+    ?WARNING("unexpected info received: ~p", [Other]),
+    {noreply, State}.
+
+
+get_opts(_State) ->
+    [{routes, [
+                %% user and group init event, will start needed workers
+               [user, init],
+               [group, init]
+              ]},
+     {grpoc_name, [bootstrap, worker, node(), utils:uuid_ex()]},
+     {queue, ?BOOTSTRAP_WORKER_QUEUE},
+     {queue_options, [{auto_delete, false}, durable]}].
+
+
+%%
+%% Local Functions
+%%
+
+start_workers() ->
+    %% FIXME: we have to add traversal methods to groups and users
+    Users = zealot_db:all(user),
+    Groups = zealot_db:all(group),
+    [begin
+         timer:sleep(5+random:uniform(20)),
+         ?INFO("start group: ~p",[G#group.username]),
+         start_worker(G)
+     end || G <- Groups],
+    [begin
+         timer:sleep(5+random:uniform(20)),
+         ?INFO("start user: ~p",[U#user.username]),
+         start_worker(U)
+     end || U <- Users].
+
+start_worker(#user{username = U}) ->
+    start_global_if_not_started(user, U);
+start_worker(#group{username = G}) ->
+    start_global_if_not_started(group, G).
+
+
+start_local_if_not_started(Type, Name) ->
+    Action = fun() -> nsm_bg:start_feed_worker(Name) end,
+    start_worker(Type, Name, Action).
+
+start_global_if_not_started(Type, Name) ->
+    Action = fun() -> nsx_util_notification:notify([Type, init], Name) end,
+    start_worker(Type, Name, Action).
+
+
+start_worker(Type, Name, Action) ->
+    WorkerName = ?FEED_WORKER_NAME(Type, Name),
+    Id = {n, g, WorkerName},
+    case catch gproc:where(Id) of
+        Pid when is_pid(Pid) ->
+            ?INFO("start worker: ~p ~p, already started: ~p", [Type, Name, Pid]),
+            %% if already exists, start to monitor worker
+            gproc:monitor(Id);
+        Other ->
+            ?INFO("not registered, try to register: ~p ~p. Where return value: ~p",
+                  [Type, Name, Other]),
+            Action()
+    end.
+
+
+

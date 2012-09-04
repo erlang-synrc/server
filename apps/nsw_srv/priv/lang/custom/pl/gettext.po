@@ -1,0 +1,176 @@
+# Team <info@team.com> PO file for English
+# Copyright (C) YYYY Organization
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Kakaweb\n"
+"POT-Creation-Date: 2006-07-01 16:45+0200\n"
+"PO-Revision-Date: 2011-05-16 16:14+0100\n"
+"Last-Translator: Gleb Peregud <gleber.p@gmail.com>\n"
+"Language-Team: Team <info@team.com>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=iso-8859-1\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "\"Material force can only be overthrown by material force, but theory itself becomes a material force when it has seized the masses.\""
+msgstr "\"Material force can only be overthrown by material force, but theory itself becomes a material force when it has seized the masses.\""
+
+msgid "2011 © Kakaranet Telif Hakları Kakaranet.'e Aittir"
+msgstr "2011 © Kakaranet Telif Hakları Kakaranet.'e Aittir"
+
+msgid "About us"
+msgstr "About us"
+
+msgid "Access to the site under the age of 18 according to the law"
+msgstr "Access to the site under the age of 18 according to the law"
+
+msgid "Address email in incorrect!"
+msgstr "Address email in incorrect!"
+
+msgid "BIRTH DATE INFORMATION ASK WHY?"
+msgstr "BIRTH DATE INFORMATION ASK WHY?"
+
+msgid "Bad captcha!"
+msgstr "Bad captcha!"
+
+msgid "Bad password"
+msgstr "Bad password"
+
+msgid "Bad username"
+msgstr "Bad username"
+
+msgid "Cancel"
+msgstr "Anuluj"
+
+msgid "Confire password: *"
+msgstr "Confire password: *"
+
+msgid "Contact"
+msgstr "Contact"
+
+msgid "Continue"
+msgstr "Continue"
+
+msgid "Continue login >>"
+msgstr "Continue login >>"
+
+msgid "Date of Birth: *"
+msgstr "Date of Birth: *"
+
+msgid "E-mail: *"
+msgstr "E-mail: *"
+
+msgid "Email is invalid"
+msgstr "Email is invalid"
+
+msgid "Enter from Facebook account"
+msgstr "Enter from Facebook account"
+
+msgid "For the moments you see such a window:"
+msgstr "For the moments you see such a window:"
+
+msgid "Forgot password?"
+msgstr "Forgot password?"
+
+msgid "Gifts"
+msgstr "Gifts"
+
+msgid "Help"
+msgstr "Help"
+
+msgid "It is clear that the arm of criticism cannot replace the criticism of arms. Material force can only be overthrown by material force, but theory itself becomes a material force when it has seized the masses. "
+msgstr "It is clear that the arm of criticism cannot replace the criticism of arms. Material force can only be overthrown by material force, but theory itself becomes a material force when it has seized the masses. "
+
+msgid "Karl Marx"
+msgstr "Karl Marx"
+
+msgid "Login"
+msgstr "Login"
+
+msgid "Login *:"
+msgstr "Login *:"
+
+msgid "Login from Facebook!"
+msgstr "Login from Facebook!"
+
+msgid "Login panel"
+msgstr "Login panel"
+
+msgid "Login: *"
+msgstr "Login: *"
+
+msgid "Make your mobile phone users"
+msgstr "Make your mobile phone users"
+
+msgid "New password *:"
+msgstr "New password *:"
+
+msgid "Next instructions were sent to the mail!"
+msgstr "Next instructions were sent to the mail!"
+
+msgid "Password *:"
+msgstr "Password *:"
+
+msgid "Password is to short. Six letters needed."
+msgstr "Password is to short. Six letters needed."
+
+msgid "Password: *"
+msgstr "Password: *"
+
+msgid "Passwords should match!"
+msgstr "Passwords should match!"
+
+msgid "Play!"
+msgstr "Play!"
+
+msgid "Please fill this field"
+msgstr "Please fill this field"
+
+msgid "Please login! If you don't have an account, just go on and"
+msgstr "Please login! If you don't have an account, just go on and"
+
+msgid "Question: "
+msgstr "Question: "
+
+msgid "Register"
+msgstr "Register"
+
+msgid "Register from Facebook"
+msgstr "Register from Facebook"
+
+msgid "Repeat password *:"
+msgstr "Repeat password *:"
+
+msgid "Running games: $count$ "
+msgstr "Running games: $count$ "
+
+msgid "Score system"
+msgstr "Score system"
+
+msgid "Support System"
+msgstr "Support System"
+
+msgid "Theory is capable of seizing the masses when it demonstrates ad hominem, and it demonstrates ad hominem as soon as it becomes radical. Theory is capable of seizing the masses when it demonstrates ad hominem, and it demonstrates ad hominem as soon as it becomes radical. "
+msgstr "Theory is capable of seizing the masses when it demonstrates ad hominem, and it demonstrates ad hominem as soon as it becomes radical. Theory is capable of seizing the masses when it demonstrates ad hominem, and it demonstrates ad hominem as soon as it becomes radical. "
+
+msgid "This name is exist"
+msgstr "This name is exist"
+
+msgid "Turnaments"
+msgstr "Turnaments"
+
+msgid "User not found"
+msgstr "User not found"
+
+msgid "User not found!!"
+msgstr "User not found!!"
+
+msgid "What is KAKARANET?"
+msgstr "What is KAKARANET?"
+
+msgid "You must click 'Allow' to continue!"
+msgstr "You must click 'Allow' to continue!"
+
+msgid "Your email *:"
+msgstr "Your email *:"
+

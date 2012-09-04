@@ -1,0 +1,13 @@
+{application, nsm_auth,
+ [
+  {description, "Auth Server"},
+  {vsn, "1"},
+  {registered, []},
+  {applications, [
+                  kernel,
+                  stdlib,
+                  crypto
+                 ]},
+  {mod, { nsm_auth_app, []}},
+  {env, []}
+ ]}.

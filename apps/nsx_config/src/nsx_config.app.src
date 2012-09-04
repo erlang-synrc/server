@@ -1,0 +1,9 @@
+{application, nsx_config,
+ [
+  {description, "Zero Configuration"},
+  {vsn, "1"},
+  {registered, []},
+  {mod, {nsx_config_app,[]}},
+  {applications, [kernel, stdlib]},
+  {env, []}
+ ]}.

@@ -1,0 +1,8 @@
+{application, nsx_utils,
+ [
+  {description, "Common Utils"},
+  {vsn, "1"},
+  {registered, []},
+  {applications, [kernel, stdlib]},
+  {env, []}
+ ]}.

@@ -1,0 +1,68 @@
+#!/bin/bash
+
+H=`hostname -f`
+GAMEPORT=7999
+WEBSERVER="web"
+APPSERVER="app"
+GAMESERVER="game"
+MNESIAINIT=""
+
+MQ_HOST="localhost"
+MQ_PORT=5672
+MQ_USER="kakauser"
+MQ_PASS="paynet123"
+MQ_VHOST="/"
+
+while [ $# -gt 0 ]
+do
+    case $1 in
+	-game)
+	    GAMESERVER=$2;shift 2;;
+	-app)
+	    APPSERVER=$2;shift 2;;
+	-game-port)
+	    GAMEPORT=$2;shift 2;;
+	-web)
+	    WEBSERVER=$2;shift 2;;
+	-couch)
+	    COUCHSERVER=$2;
+	    ./config -file app.config nsg_srv couch_srv_node -list $COUCHSERVER
+	    ./config -file app.config nsg_srv couch_srv_port -integer 5984;
+	    shift 2;;
+	-mnesia-init)
+	    MNESIAINIT="true";shift;;
+	-mq-host)
+	    MQ_HOST=$2;shift 2;;
+	-mq-port)
+	    MQ_PORT=$2;shift 2;;
+	-mq-user)
+	    MQ_USER=$2;shift 2;;
+	-mq-pass)
+	    MQ_PASS=$2;shift 2;;
+	-mq-vhost)
+	    MQ_VHOST=$2;shift 2;;
+	*) break;;
+    esac
+done
+
+if [ "$MNESIAINIT" == "" ]; then
+    ./config -file app.config nsg_srv mnesia_init -atom local
+else
+    ./config -file app.config nsg_srv mnesia_init -atom default
+fi
+
+
+./config -file app.config nsg_srv game_srv_port -integer $GAMEPORT
+./config -file app.config nsg_srv app_srv_node -atom $APPSERVER@$H
+./config -file app.config nsg_srv game_srv_node -atom $GAMESERVER@$H
+./config -file app.config nsg_srv web_srv_node -atom $WEBSERVER@$H
+
+./config -file app.config nsm_mq amqp_host -list $MQ_HOST
+./config -file app.config nsm_mq amqp_port -integer $MQ_PORT
+./config -file app.config nsm_mq amqp_user -list $MQ_USER
+./config -file app.config nsm_mq amqp_pass -list $MQ_PASS
+./config -file app.config nsm_mq amqp_vhost -list $MQ_VHOST
+
+./config -file app.config nsx_utils app_srv_node -atom $APPSERVER@$H
+
+cat vm.args.template | sed "s#GAMESERVER_NODE#$GAMESERVER@$H#g" > vm.args

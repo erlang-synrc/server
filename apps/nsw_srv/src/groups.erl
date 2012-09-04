@@ -1,0 +1,467 @@
+%% -*- mode: nitrogen -*-
+-module (groups).
+-compile(export_all).
+-include_lib("nitrogen_core/include/wf.hrl").
+-include_lib("nsm_srv/include/user.hrl").
+-include_lib("nsm_srv/include/feed.hrl").
+-include_lib("alog/include/alog.hrl").
+
+-include("elements/records.hrl").
+
+-include("gettext.hrl").
+-include("setup.hrl").
+
+-define(GROUPPERPAGE, 8).
+
+main() ->
+    case wf:user() /= undefined of
+        true  -> main_authorized();
+        false -> wf:redirect_to_login(?_U("/login"))
+    end.
+
+main_authorized() ->
+    Tooltip  = wf:q(tooltip),
+    NewGroup = wf:q(create),
+
+    if
+        Tooltip /= undefined ->
+            tooltip_content(Tooltip);
+        NewGroup == "new" ->
+            create_new_group();
+        true ->
+            webutils:add_raw("
+                <script src=\"/nitrogen/js/jquery.validate.min.js\" type=\"text/javascript\"></script>
+                <script type=\"text/javascript\">
+                var formV = undefined;
+                var ReloadPostback = undefined;
+                $(document).ready(function() {
+                    $( \"#add_group_dialog\" ).dialog({
+                            autoOpen: false,
+                            height: 300,
+                            width: 350,
+                            modal: true,
+                            buttons: {
+                                \"Create a group\": function() {
+                                    if(formV.checkForm()){
+                                        submit_function();
+                                    }else{
+                                        formV.showErrors();
+                                    }
+                                },
+                                \"Cancel\": function() {$( this ).dialog( \"close\" );}
+                            },
+                            close: function() {
+                            }
+                    });
+                    formV = $('#add_new_group_form').validate();
+
+                });
+
+                function submit_function(){
+                    var gname=$('#group_name').val();
+                    var gdesc=$('#group_description').val();
+                    var gtype=$('#group_type').val();
+                    $.post('/groups/create/new', { gname: gname, gdesc: gdesc, gtype: gtype },
+                    function(data) {
+                      var obj=jQuery.parseJSON(data);
+                      if(obj.status == 'ok'){
+                        $( \"#add_group_dialog\" ).dialog( \"close\" );
+                        reload_current_content();
+                      }else{
+                        // print error error
+                        $('#gc_error_label').html('Error:'+obj.error_description)
+                      }
+                    });
+                }
+
+                function clear_form_values(){
+                    formV.resetForm();formV.reset();formV.clean();
+                    $('#group_name').val('');
+                    $('#group_description').val('');
+                }
+
+                function reload_current_content() {
+                    console.log('reload current content');
+                    if(ReloadPostback != undefined){
+                        Nitrogen.$queue_event(null, ReloadPostback, '');
+                    }
+                }
+                </script>
+            "),
+            #template { file=code:priv_dir(nsw_srv)++"/templates/bare.html" }
+    end.
+
+title() -> webutils:title(?MODULE).
+
+get_page_from_path(PI) ->
+    case re:run(PI, "^([^/]+)/(.+)") of
+        {match,[_,{B,L},{B1,L1}]} -> {string:substr(PI, B+1, L), string:substr(PI, B1+1, L1)};
+        _ -> default
+    end.
+
+create_new_group() ->
+    Name = wf:q("gname"),
+    Desc = wf:q("gdesc"),
+    Type = wf:q("gtype"),
+    case rpc:call(?APPSERVER_NODE, groups, safe_create_group, [wf:user(), Name, Desc, list_to_atom(Type)]) of
+        {error, already_exists} -> "{\"status\":\"failed\", \"error_description\":\""++
+            io_lib:format("Group '~s' already exists",[Name])++"\"}"
+        ;Gid                    ->
+            ?PRINT({"create_new_group", Name, Desc, Type, Gid}),
+            "{\"status\":\"ok\"}"
+    end.
+
+body() ->
+    #template{file=code:priv_dir(nsw_srv)++"/templates/inner_page2.html"}.
+
+
+tooltip_content(_GName) ->
+    #template{file=code:priv_dir(nsw_srv)++"/templates/tooltip.html"}.
+
+content()     -> content(1).
+content(PageNumber) ->
+    Anchor = wf_context:anchor(), ValidationGroup = wf_context:event_validation_group(),
+    Postback_js = wf_event:generate_postback_script(search_group, Anchor, ValidationGroup, ?MODULE, undefined),
+    wf:wire(wf:f("objs('search_textbox')"
+             ".bind('keyup keydown change', function()"
+             "{var $this=objs('search_textbox');var l = parseInt($this.attr('value').length);"
+             " if(l > 0){objs('sendsearch').css('background','url(/images/grn-shr-btn.png) no-repeat');objs('sendsearch').css('cursor','pointer');}"
+             " if(l <= 0){objs('sendsearch').css('background','url(/images/gre_shr_btn.png) no-repeat');objs('sendsearch').css('cursor','default');}"
+             " })"
+             ".bind('keypress', function(e)"
+             "{var code = e.keyCode || e.which;"
+             " if (code == 13) { if (!e.shiftKey) {~s; return false;}}" %% send postback
+             " if (code != 116 && code != 46 && code > 40 || code == 32) return $(this).trigger('change').attr('value').length < ~b" %% deny only text keys
+             "})",
+             [Postback_js, 100])),
+    wf:wire(wf:f("ReloadPostback='~s';",[wf_event:serialize_event_context({page, PageNumber}, undefined, undefined, groups)])),
+    [
+        #panel{class="main-col", body=[
+            #panel{class="top-space", body=[
+%PHASE1                #panel{class="search-cell", body=[
+%                    #form{body=[
+%                        #panel{class="text", body=#textbox{id="search_textbox"}},
+%                        #button{class="btn-submit-mkh", id="sendsearch", postback={search_group, 1}, text=?_T("Search")}
+%                    ]}
+%                ]},
+                #h1{text=?_T("Groups")}
+%PHASE1                #panel{id="create_new_group", class="group-create-new-container", body=#link{
+%                    url="javascript:void(0)",
+%                    actions=#event{type=click, actions=[
+%                        #script{script="clear_form_values();$(\"#add_group_dialog\").dialog(\"open\");"}
+%                    ]},
+%                    text=?_T("Create a group")}}
+            ]},
+            #panel{id="groups_content", body=[
+                inner_content(PageNumber)
+            ]}
+        ]}
+    ].
+
+inner_content(PageNumber) ->
+    GroupsView = get_group_rows(PageNumber), %PHASE1 get_group_rows returns some tuple, not the list now
+    {_, _, _, _, _, _, _, _, _, _, GroupsViewList} = GroupsView,
+
+    %PHASE1 this isn't right, but will do for now
+    %PHASE1 if length(GroupsViewList) == ?GROUPPERPAGE/2 we can still have our next page bloked, 
+    %       if our current is the last one and full!
+    NextButton = if
+        length(GroupsViewList) < ?GROUPPERPAGE
+             -> #listitem{body=#link{text=">", url="javascript:void(0)", class="inactive"}};
+        true -> #listitem{body=#link{text=">", postback={page, PageNumber + 1}}}
+    end,
+    PrevButton = case PageNumber of
+        I when is_integer(I),I>1 -> #listitem{body=#link{text="<", postback={page, PageNumber - 1}}};
+        _                        -> #listitem{body=#link{text="<", url="javascript:void(0)", class="inactive"}}
+    end,
+    [
+        GroupsView,
+        #panel{class="paging-2", body=[
+        #panel{class="center", body=[
+            #list{body=[
+                    PrevButton,
+                    #listitem{body=#link{class="inactive", url="javascript:void(0)", text=io_lib:format("~b",[PageNumber])}},
+                    NextButton
+                ]}
+            ]}
+        ]}
+    ].
+
+searched_content(PageNumber, Content) ->
+    GroupsView = [group_row(X) || X <- split_subs(Content, [])],
+    NextButton = if
+        length(GroupsView) < ?GROUPPERPAGE/2
+             -> #listitem{body=#link{text=">", url="javascript:void(0)", class="inactive"}};
+        true -> #listitem{body=#link{text=">", postback={search_group, PageNumber + 1}}}
+    end,
+    PrevButton = case PageNumber of
+        I when is_integer(I),I>1 -> #listitem{body=#link{text="<", postback={search_group, PageNumber - 1}}};
+        _                        -> #listitem{body=#link{text="<", url="javascript:void(0)", class="inactive"}}
+    end,
+    [
+        #panel{body=[GroupsView]},
+        #panel{class="paging-2", body=[
+        #panel{class="center", body=[
+            #list{body=[
+                    PrevButton,
+                    #listitem{body=#link{class="inactive", url="javascript:void(0)", text=io_lib:format("~b",[PageNumber])}},
+                    NextButton
+                ]}
+            ]}
+        ]}
+    ].
+
+get_group_rows() -> get_group_rows(1).
+get_group_rows(Offset) ->
+    UId = wf:user(),
+    case rpc:call(?APPSERVER_NODE, groups, list_group_per_user_with_count, [UId, UId, Offset, ?GROUPPERPAGE]) of
+        [] ->
+            ?_T("You are not subscribed to anyone");
+        Sub ->
+            group_row(Sub)
+    end.
+
+split_subs([], A) -> A;
+split_subs(L, A)  when length(L) =< 2 -> A ++ [L];
+split_subs(L, A)  ->
+    {L2, L3} = lists:split(2, L),
+    split_subs(L3, A ++ [L2]).
+
+group_row(GL) when is_list(GL)->
+    #list{class="group-list-mkh", body=[ show_group_ul(X) || X <- GL]};
+group_row(GL) ->
+    #list{class="group-list-mkh", body=show_group_ul(GL)}.
+
+show_group_ul(#group{username = GName, description= GDesc})          ->
+    GroupMembersCount = rpc:call(?APPSERVER_NODE, groups, get_members_count, [GName]),
+    Group = rpc:call(?APPSERVER_NODE, groups, get_group, [GName]),
+    UserGroups= [GP || #group_member{group=GP} <- rpc:call(?APPSERVER_NODE, groups, list_group_per_user, [wf:user()])],
+    show_group_ul_view(GName, GDesc, GroupMembersCount, UserGroups, Group#group.creator =:= wf:user());
+show_group_ul({#group_member{group = GName}, GroupMembersCount}) ->
+    Group = rpc:call(?APPSERVER_NODE, groups, get_group, [GName]),
+    UserGroups= [GP || #group_member{group=GP} <- rpc:call(?APPSERVER_NODE, groups, list_group_per_user, [wf:user()])],
+    show_group_ul_view(GName, Group#group.description, GroupMembersCount, UserGroups, Group#group.creator =:= wf:user()).
+
+show_group_ul_view(GName, GDesc, GroupMembersCount, UserGroups) -> show_group_ul_view(GName, GDesc, GroupMembersCount, UserGroups, false).
+show_group_ul_view(GName, GDesc, GroupMembersCount, UserGroups, DeleteFlag) ->
+    SUId = wf:temp_id(),
+    SubscribeUnsubscribeLink = case lists:member(GName, UserGroups) of
+        true -> #listitem{id=SUId, body=#link{url="javascript:void(0)", text=?_T("Unsubscribe"), postback={unsubscribe, wf:user(), GName, SUId}}}
+        ;_   -> #listitem{id=SUId, body=#link{url="javascript:void(0)", text=?_T("Subscribe"), postback={subscribe, wf:user(), GName, SUId}}}
+    end,
+    #listitem{class="group-item", body=[
+        #panel{class="img", body=#link{url=site_utils:group_link(GName),
+            body=#image{image=webutils:get_group_avatar(GName, "big"), style="width:96px; height:96px"}}},
+        #panel{class="descr", style="overflow:hidden;", body=[
+            #link{url=site_utils:group_link(GName), body=#h3{text=GName}},
+            io_lib:format("<p>~s</p>", [GDesc]),
+%PHASE1            io_lib:format("<strong class=\"more\"><a href=\"#\">~p ~s</a></strong>", [GroupMembersCount, ?_T("members")])
+            io_lib:format("<p><i>~p ~s</i></p>", [GroupMembersCount, ?_T("members")])
+        ]}
+%PHASE1 no tooltip, as it works in a strange and unobvious way
+%        #panel{class="tooltip-1", body=[
+%            #panel{class="t", body=[
+%                #panel{class="c", body=[
+%                    #panel{class="frame", body=[
+%                        #panel{class="img", body=[
+%                            #image{image=webutils:get_group_avatar(GName, "big"), style="width:96px;height:96px"}
+%                        ]},
+%                        #panel{class="descr", body=[
+%                            io_lib:format("<strong class=\"user-name\">~s</strong>", [GName]),
+%                            #list{class="func-list", body=[
+%                                #listitem{body=SubscribeUnsubscribeLink},
+%                                case DeleteFlag of
+%                                    true -> #listitem{body=#link{url="javascript:void(0)", text=?_T("Delete"), postback={delete, %GName}}}
+%                                    ;_   -> []
+%                                end
+                                %#listitem{body=#link{url=io_lib:format("/dashboard/filter/direct/tu/s",["AAAA"]), text=?_T("Send direct message")}},
+                                %#listitem{body=#link{url="#", text=?_T("Recommend friends")}},
+                                %#listitem{body=[#link{url="#", text=?_T("Personal")}, " (", #link{url="#", text=?_T("edit")}, ")"]},
+                                %#listitem{body=#link{url="#", text=?_T("Abonelikten Ayrıl")}}
+%                            ]}
+%                        ]}
+%                    ]}
+%                ]},
+%                #panel{class="b", body="&nbsp;"}
+%            ]}
+%       ]}
+    ]}.
+
+
+view_user_groups(UId) ->
+    case rpc:call(?APPSERVER_NODE, groups, list_group_per_user, [UId]) of
+        [] ->
+            ?_T("You are currently not in any group");
+        Groups ->
+            Source =
+                [ [#link{text=GName,
+                         url=lists:concat([?_U("/view/group"), "/id/", GName])}, #br{}]
+                  || #group_member{group = GName} <- Groups ],
+            lists:flatten(Source)
+    end.
+
+get_popular_group_container() ->
+    #panel{ class="box", body=[
+        #h3{text=?_T("Popular groups")},
+        #list{class="list-photo list-photo-in", body=[
+            [begin 
+                GroupBody = rpc:call(?APPSERVER_NODE, groups, get_group, [Group]),
+                GroupName = GroupBody#group.name,
+                #listitem{body=
+                    [#link{url=site_utils:group_link(Group), body=io_lib:format("~s", [GroupName])},
+                     #span{style="padding-left:4px;", text = io_lib:format("(~b)", [Number])}
+                    ]}
+             end
+             ||{Group, Number}<-rpc:call(?APPSERVER_NODE, groups, get_popular_groups, [wf:user(), 9])]
+        ]}
+%PHASE1        io_lib:format("<span class=\"links\"><a href=\"/groups\">~s</a> / <a href=\"/groups\">~s</a></span>",
+%            [?_T("Browse"), ?_T("Edit groups list")])
+    ]}.
+
+
+active_members() ->
+    ActiveUsers = rpc:call(?APPSERVER_NODE, groups, get_active_members, [12]),
+    #panel{class="cell-space", body=[
+        #h3{text=?_T("Active members")},
+        #list{class="soc-users", body=[
+            #listitem{body=#link{url=site_utils:user_link(Uid),
+                body=#image{image=webutils:get_user_avatar(Uid, "small"), style="width:52px;height:52px"}, style="width:52px;height:52px"}}
+            || {Uid, _} <- ActiveUsers
+        ]}
+    ]}.
+
+
+% PHASE2 create new group block
+show_new_group_content() ->
+    Title = #h1{class = "head", text = ?_T("Create your own group")},
+    Settings = new_group_settings(),
+    Body = [Title,
+            #panel{class=holder, body=
+             [Settings,
+              #br{},
+              #cool_button{postback=create_new_group, text=?_T("Create")},
+              #cool_button{postback=hide_new_group_edit, text=?_T("Cancel")},
+              #grid_clear{}
+           ]}],
+    webutils:lightbox_panel_template(simple_lightbox, Body).
+
+new_group_settings() ->
+    %PHASE2 need to develop new style sheets for it. For now it only has .textarea and it sucks
+    [#panel { class="group-settings", body = [
+        #grid_4 { body=[
+            #label{text = ?_T("Short name")},
+            #panel{class = "text",
+                body = [#textbox{id = new_group_username, placeholder=?_T("gunsandbutter"), style="overflow:auto;"}]},
+            #label{text = ?_T("Full name")},
+            #panel{class = "text",
+                body = [#textbox{id = new_group_name, placeholder=?_T("Guns and Butter"), style="overflow:auto;"}]}
+        ]},
+        #grid_4 { body=[
+            #label{text = ?_T("What it will be all about")},
+            #panel{class = "textarea", style = "height:70px;",
+                body = [#textarea{id = new_group_desc, placeholder=?_T("Guns, butter, everything in between"), 
+                                  style="resize:vertical; height:70px; "}]},
+            #panel{class = "error", body=[
+                #label{text = "", class="error", id="update_error"}
+            ]},
+            #checkbox { id = new_group_is_public, text=?_T("I want to let everyone post to my group"), checked=true, style="float:left;" }
+        ]},
+        #grid_clear{}
+    ]}].
+
+event(show_new_group_edit) ->
+    ?INFO("Got to new group form creation"),
+    wf:update(simple_panel, show_new_group_content()),
+    wf:wire(simple_lightbox, #show{});
+
+event(hide_new_group_edit) ->
+    wf:wire(simple_lightbox, #hide{});
+
+event(create_new_group) ->
+    GId = wf:q(new_group_username),
+    GName = wf:q(new_group_name),
+    GDesc = wf:q(new_group_desc),
+    GPublic = wf:q(new_group_is_public),
+    GPublicity = case GPublic of
+        "on" -> public;
+        _ -> private
+    end,    
+    ?INFO("New group: ~p ~p ~p ~p",[GId, GName, GDesc, GPublicity]),
+    AllGroups = [G#group.username || G <- rpc:call(?APPSERVER_NODE, groups, get_all_groups, [])],
+    case lists:member(GId, AllGroups) of
+        true ->
+            wf:wire(simple_lightbox, #hide{}),
+            wf:wire(#alert{text=?_T("Group with this shortname already exists! Maybe, you should check it out.")});
+        false ->
+            case rpc:call(?APPSERVER_NODE, users, get_user, [{username, GId}]) of
+                {ok, _} ->
+                    wf:wire(#alert{text=?_TS("User '$username$' exist!", [{username, GId}]) });
+                {error, _} ->
+                    rpc:call(?APPSERVER_NODE, groups, create_group, [wf:user(), GId, GName, GDesc, GPublicity]),
+                    wf:redirect("")
+            end
+    end;
+% create new group block ends
+
+event({change_language,SL}) ->  %PUBLIC BETA this is here just to fix not working language selector bug ASAP. It is hardly a best solution
+    webutils:event({change_language, SL});
+
+
+event(Event) ->
+    case wf:user() of
+	undefined -> wf:redirect_to_login(?_U("/login"));
+        User      -> inner_event(Event, User)
+    end.
+
+inner_event({page, N}, _) ->
+    ActialNumber = if
+        N < 1 -> 1;
+        true  -> N
+    end,
+    wf:update(groups_content, [ inner_content(ActialNumber) ]);
+
+inner_event({search_group, Page}, _) ->
+    SearchStr = wf:q("search_textbox"),
+    Searched = case rpc:call(?APPSERVER_NODE, groups, find_group, [SearchStr, Page, ?GROUPPERPAGE]) of
+        [] -> #panel{body=?_T("We could not find any groups matching the search") ++ " \"" ++ SearchStr ++ "\""};
+        L  -> searched_content(Page, L)
+    end,
+    wf:wire(wf:f("ReloadPostback='~s';",[wf_event:serialize_event_context({search_group, Page}, undefined, undefined, groups)])),
+    wf:update(groups_content, Searched);
+
+inner_event({subscribe, User1, GName, SUId}, _User) ->
+    rpc:call(?APPSERVER_NODE, groups, add_to_group, [User1, GName, user]),
+    wf:update(SUId, #link{url="javascript:void(0)", text=?_T("Unsubscribe"), postback={unsubscribe, User1, GName, SUId}});
+
+inner_event({unsubscribe, User1, GName, SUId}, _User) ->
+    rpc:call(?APPSERVER_NODE, groups, remove_from_group, [User1, GName, user]),
+    wf:update(SUId, #link{url="javascript:void(0)", text=?_T("Subscribe"), postback={subscribe, User1, GName, SUId}});
+
+
+inner_event({delete, GName}, User) ->
+    ?PRINT({"DELETE OWN GROUP", GName, User}),
+    Group = rpc:call(?APPSERVER_NODE, groups, get_group, [GName]),
+    case Group#group.creator =:= User of
+        false -> ok
+        ;_    ->
+            rpc:call(?APPSERVER_NODE, groups, remove_group, [GName]),
+            wf:wire("reload_current_content();")
+    end;
+
+inner_event(Any, _)->
+    webutils:event(Any).
+
+top_adv() ->
+    #panel{class="mark-cell", body=[
+        io_lib:format("<h3><span class=\"mdl\">~s</span><span class=\"large\">~s</span></h3>",
+            [?_T("Sende Bir"), ?_T("Grup Kur!")]),
+        io_lib:format("<p><strong>~s</strong></p>",
+            [?_T("This would of been great, wouldn't it! Go on, try it!")]),
+        #link{
+            url="javascript:void(0)", class="btn", postback=show_new_group_edit,
+%PHASE2
+%            actions=#event{type=click, actions=[
+%                #script{script="clear_form_values();$(\"#add_group_dialog\").dialog(\"open\");"}
+%            ]},
+            text=?_T("Create a group")}
+    ]}.

@@ -1,0 +1,1 @@
+-define(APPSERVER_NODE, nsx_opt:get_env(app_srv_node, 'app@rigdzin.cc')).

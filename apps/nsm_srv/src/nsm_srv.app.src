@@ -1,0 +1,18 @@
+{application, nsm_srv,
+ [
+  {description, "Application Server"},
+  {vsn, "1"},
+  {registered, []},
+  {mod, {nsm_srv_app,[]}},
+  {applications, [kernel, stdlib, ssl]},
+  {env, [
+    {smtp_user, "noreply@kakaranet.com"},
+    {smtp_pass, "unknown"},
+    {smtp_host, "smtp.kakaranet.com"},
+    {smtp_port, 587},
+    {game_srv_node, 'game@rigdzin.cc'},
+    {web_srv_node, 'web@rigdzin.cc'},
+    {riak_srv_node, kakastore@rigdzin.cc},
+    {dba, zealot_riak},
+    {version, "1"}]}
+ ]}.

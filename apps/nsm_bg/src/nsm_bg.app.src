@@ -1,0 +1,13 @@
+{application, nsm_bg,
+ [
+  {description, "Notifications sending processor"},
+  {vsn, "1"},
+  {registered, []},
+  {applications, [
+                  kernel,
+                  stdlib,
+                  nsm_mq
+                 ]},
+  {mod, { nsm_bg_app, []}},
+  {env, []}
+ ]}.

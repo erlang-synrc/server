@@ -1,0 +1,15 @@
+{application, nsg_session,
+ [
+  {description, "Game Sessions"},
+  {vsn, "1"},
+  {registered, []},
+  {applications, [
+                  kernel,
+                  stdlib,
+		  nsx_idgen,
+		  nsm_auth,
+		  nsx_utils
+                 ]},
+  {mod, { nsg_session_app, []}},
+  {env, []}
+ ]}.

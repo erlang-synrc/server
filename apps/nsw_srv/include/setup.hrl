@@ -1,0 +1,12 @@
+-define(APPSERVER_NODE, nsw_opt:get_app_srv()).
+-define(GAMESRVR_NODE, nsw_opt:get_game_srv()).
+-define(FORGET_TOKEN_EXPIRED, 86400).
+-define(INVITE_CODE_EXPIRED, 172800). %% 48h
+-define(FB_REDIRECT_URI, lists:flatten(io_lib:format("~s/?facebook=true", [?HTTP_ADDRESS]))).
+-define(FB_LOGIN_LINK, lists:concat(["https://www.facebook.com/dialog/oauth?client_id=", ?FB_APP_ID, "&redirect_uri="])).
+-define(SERVER_PORT, nsw_opt:get_game_port()).
+-define(SERVER_HOST, nsw_opt:get_game_host()).
+-define(FB_APP_ID, nsw_opt:get_fb_id()).
+-define(FB_APP_SECRET, nsw_opt:get_fb_secret()).
+-define(HTTP_ADDRESS, nsw_opt:get_http_addr()).
+-define(FEED_PAGEAMOUNT, 20).

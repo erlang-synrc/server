@@ -1,0 +1,10 @@
+/* view_table */
+
+body.view_table input.chat-text {
+	margin-top: 1px;
+	height: 14px;
+}
+
+.create-block .article1 .options .create.disable{filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#5e5e5e', endColorstr='#434343',GradientType=0 );}
+
+.create-block .article1 .options .create{filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#FEDA71', endColorstr='#FEBC4B',GradientType=0 );}

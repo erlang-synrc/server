@@ -1,0 +1,15 @@
+{application, nsm_conn,
+ [
+  {description, "Connection Manager"},
+  {vsn, "1"},
+  {registered, []},
+  {applications, [
+                  kernel,
+                  stdlib,
+                  crypto,
+		  nsx_utils,
+		  nsg_session
+                 ]},
+  {mod, { nsm_conn_app, []}},
+  {env, []}
+ ]}.

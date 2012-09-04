@@ -1,0 +1,63 @@
+#!/bin/bash
+
+H=`hostname -f`
+DBA=zealot_mnesia
+APPSERVER="app"
+GAMESERVER="game"
+WEBSERVER="web"
+MQ_HOST="localhost"
+MQ_PORT=5672
+MQ_USER="kakauser"
+MQ_PASS="paynet123"
+MQ_VHOST="/"
+HOPORT="8100"
+RIAKHTTP="8101"
+
+while [ $# -gt 0 ]
+do
+    case $1 in
+	-dba)
+	    DBA=$2;shift 2;;
+	-app)
+	    APPSERVER=$2;shift 2;;
+	-riak-hop)
+	    HOPORT=$2;shift 2;;
+	-riak-http)
+	    RIAKHTTP=$2;shift 2;;
+	-game)
+	    GAMESERVER=$2;shift 2;;
+	-web)
+	    WEBSERVER=$2;shift 2;;
+	-mq-host)
+	    MQ_HOST=$2;shift 2;;
+	-mq-port)
+	    MQ_PORT=$2;shift 2;;
+	-mq-user)
+	    MQ_USER=$2;shift 2;;
+	-mq-pass)
+	    MQ_PASS=$2;shift 2;;
+	-mq-vhost)
+	    MQ_VHOST=$2;shift 2;;
+	*) break;;
+    esac
+done
+
+
+./config -file app.config nsm_srv game_srv_node -atom $GAMESERVER@$H
+./config -file app.config nsm_srv web_srv_node -atom $WEBSERVER@$H
+./config -file app.config nsm_srv app_srv_node -atom $APPSERVER@$H
+
+./config -file app.config nsm_srv riak_srv_node -atom $APPSERVER@$H
+./config -file app.config nsm_srv dba -atom $DBA
+./config -file app.config riak_core handoff_port -integer $HOPORT
+./config -file app.config riak_core http -listener $RIAKHTTP
+
+./config -file app.config nsm_mq amqp_host -list $MQ_HOST
+./config -file app.config nsm_mq amqp_port -integer $MQ_PORT
+./config -file app.config nsm_mq amqp_user -list $MQ_USER
+./config -file app.config nsm_mq amqp_pass -list $MQ_PASS
+./config -file app.config nsm_mq amqp_vhost -list $MQ_VHOST
+
+./config -file app.config nsx_utils app_srv_node -atom $APPSERVER@$H
+
+cat vm.args.template | sed "s#APPSERVER_NODE#$APPSERVER@$H#g" > vm.args

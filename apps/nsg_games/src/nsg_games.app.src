@@ -1,0 +1,13 @@
+{application, nsg_games,
+ [
+  {description, "Game Manager"},
+  {vsn, "1"},
+  {registered, []},
+  {applications, [
+                  kernel,
+                  stdlib,
+                  inets
+                 ]},
+  {mod, { nsg_games_app, []}},
+  {env, []}
+ ]}.

@@ -1,0 +1,12 @@
+{application, nsm_db,
+ [
+  {description, "Distributed Persistance"},
+  {vsn, "1"},
+  {registered, []},
+  {applications, [
+                  kernel,
+                  stdlib,riak_kv,nsx_config,nsx_utils
+                 ]},
+  {mod, { nsm_db_app, []}},
+  {env, []}
+ ]}.

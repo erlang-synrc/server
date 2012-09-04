@@ -1,0 +1,39 @@
+<div class="list-top-photo-h">
+        [[[webutils:get_hemen_nav()]]]
+</div>
+
+<section id="main">
+        [[[page:content()]]]
+        [[[page:pagenator_buttons()]]]
+        <aside class="side-col">
+                [[[groups:top_adv()]]]
+                [[[groups:get_popular_group_container()]]]
+                [[[groups:active_members()]]]
+        </aside>
+</section>
+<div id="add_group_dialog" title="Create a new group">
+        <form id="add_new_group_form"> 
+	<fieldset> 
+		<div>
+                        <div>Group name</div>
+                        <div><input name="group_name" id="group_name" class="required"></div>
+                </div>
+                <div>
+                        <div>Description</div>
+                        <div>
+                                <textarea id="group_description" class="required"></textarea>
+                        </div>
+                </div>
+                <div>
+                        <div>Private</div>
+                        <div>
+                                <select id="group_type">
+                                        <option value="false">Public</option>
+                                        <option value="true">Private</option>
+                                </select>
+                        </div>
+                </div>
+                <div id="gc_error_label"></div>
+	</fieldset> 
+	</form> 
+</div>

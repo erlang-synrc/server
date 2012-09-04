@@ -1,0 +1,230 @@
+%%----------------------------------------------------------------------
+%% @author Vladimir Baranov <vladimir.b.n.b@gmail.com>
+%% @copyright Paynet Internet ve Bilisim Hizmetleri A.S. All Rights Reserved.
+%% @doc
+%% Purchases page
+%% @end
+%%---------------------------------------------------------------------
+-module(buy).
+
+%%
+%% Include files
+%%
+-include_lib("nitrogen_core/include/wf.hrl").
+-include_lib("nsm_srv/include/membership_packages.hrl").
+-include_lib("nsm_srv/include/accounts.hrl").
+-include_lib("nsm_srv/include/user.hrl").
+
+-include("elements/records.hrl").
+-include("setup.hrl").
+-include("common.hrl").
+
+-define(CURRENT_PACKAGE_STATE_KEY, current_package).
+-define(DEFAULT_REQ_TIMEOUT, 10000).
+
+
+%%
+%% Exported Functions
+%%
+-compile(export_all).
+
+%%
+%% API Functions
+%%
+main() ->
+    User = wf:user(),
+    if
+        User /= undefined ->
+            main_authorized();
+
+        true->
+            wf:redirect_to_login(?_U("/login"))
+    end.
+
+main_authorized() ->
+    #template { file=code:priv_dir(nsw_srv)++"/templates/bare.html" }.
+
+%% FIXME: add title
+title() -> webutils:title(?MODULE).
+
+%% this body funciton is common for all payment types
+shared_body() ->
+    try
+        case wf:q(package_id) of
+            %% for case when process errors in same page
+            undefined ->
+                Package = package(),
+                Package == undefined andalso throw(package_undefined);
+            PId ->
+                {ok, Package} = rpc:call(?APPSERVER_NODE, nsm_srv_membership_packages,
+                    get_package, [PId]),
+                %% save package in state
+                package(Package)
+        end,
+        #template{file=code:priv_dir(nsw_srv)++"/templates/inner_page_buy.html"}
+    catch
+        _:E->
+            %% FIXME: if some error occurred when get package info - redirect to price
+            ?PRINT(E),
+            wf:redirect(?_U("/price_table"))
+    end.
+
+unregistered_popup() ->
+    Msg = ?_T("Dear visitor, in case you want to be a member of us,"
+        " we need to register you to our system."),
+    Element = webutils:lightbox_panel_template(simple_lightbox, [
+        #h1{class="head", text=?_T("Please, register")},
+        #panel{class=holder, body=[
+            #panel{body=Msg}, #br{},
+            #cool_button{text=?_T("OK"), delegate=?MODULE, postback=ok_simple_lightbox},
+            #cool_button{text=?_T("Close"), delegate=?MODULE, postback=hide_simpe_lightbox},
+            #grid_clear{}
+        ]}
+    ]),
+    wf:update(simple_panel, Element),
+    wf:wire(simple_lightbox, #show{}).
+
+package_name()->
+    Package = package(),
+    [#span{text=?_T("Package")},
+     io_lib:format("<strong>~p</strong>", [Package#membership_package.no])].
+
+package_info()->
+    Package = package(),
+    %% FIXME: add dl to nitrogen elements
+    io_lib:format("<dl>
+        <dt>~s</dt>
+        <dd>: ~p TL</dd>
+        <dt>~s</dt>
+        <dd>: ~p TL</dd>
+        <dt>~s</dt>
+        <dd>: ~p</dd>
+        <dt>~s</dt>
+        <dd>: ~p TL</dd>
+        </dl>",
+        [
+         ?_T("Gift points (kakush) charge"), Package#membership_package.deducted_for_gifts,
+         ?_T("Net membership fee"),Package#membership_package.net_membership,
+         ?_T("Game quota"),Package#membership_package.quota,
+         ?_T("Package fee"),Package#membership_package.amount]).
+
+
+package_price()->
+    Package = package(),
+    ["<div class=\"price\">",strong(Package#membership_package.amount),
+        #span{text=?_T("TL")},
+        "</div>",
+        #span{class="sub", text=?_T("VAT Included")}].
+
+
+%% redirect other to webutils:event/1
+event(hide_simpe_lightbox) ->
+    wf:wire(simple_lightbox, #hide{});
+event(ok_simple_lightbox) ->
+    wf:redirect_to_login(?_U("/login")),
+    event(hide_simpe_lightbox);
+event(Any) ->
+    webutils:event(Any).
+
+
+%% put/get package to/from state
+package(Package)->
+    wf:session(?CURRENT_PACKAGE_STATE_KEY, Package).
+
+package()->
+    wf:session(?CURRENT_PACKAGE_STATE_KEY).
+
+package_description(No)->
+    io_lib:format(?_T("Membership package ~p"), [No]).
+
+%% @doc Decode, encode info to add to purchase form
+encode_info(Term) ->
+    base64:encode_to_string(term_to_binary(Term)).
+
+decode_info(String) ->
+    Decoded = base64:decode(String),
+    binary_to_term(Decoded).
+
+%% Get all parameters (GET and POST) from request
+req_params() ->
+    %% Get query params and post params from the request bridge
+    RequestBridge = wf_context:request_bridge(),
+    QueryParams = RequestBridge:query_params(),
+    PostParams = RequestBridge:post_params(),
+
+    %% filter empty path
+    FilterEmpty = fun(Parameters) ->
+        [{Path, Value} || {Path, Value} <- Parameters,
+        Path /= undefined, Path /= []]
+    end,
+
+    {FilterEmpty(QueryParams), FilterEmpty(PostParams)}.
+
+
+post(Url, DataToSend) ->
+    post(Url, DataToSend, ?DEFAULT_REQ_TIMEOUT).
+
+
+
+post(Url, DataToSend, Timeout) ->
+    http_request(post, "text/xml; charset=utf8", [], Url, DataToSend, Timeout).
+
+
+
+http_request(Method, ContentType, Headers, Url, DataToSend, Timeout) ->
+	%% http vesion
+	V = "HTTP/1.1",
+
+	UrlHeader = case Method of
+                        get ->
+                            {Url, ContentType};
+                        post ->
+                            {Url, Headers, ContentType, DataToSend}
+                    end,
+
+
+	case httpc:request(Method, UrlHeader, [{timeout, Timeout}], []) of
+
+		{ok, {{V, 200, _HMes}, _H, Result}} ->
+			?DBG("http_request:<~p>:~9999p success", [Method, Url]),
+			{ok, Result};
+
+		{ok, {{V, Code, _HMes}, _, Mes}} ->
+			?WARNING("http_request:<~p>:~9999p ubnormal response code: Code:~p,"
+					  " Response: ~p", [Method, Url, Code, Mes]),
+			{error, {ecode, Code}};
+
+		{error, Reason} ->
+			?WARNING("http_request:<~p>:~9999p: unexpected error: ~9999p",
+				  [Method, Url, Reason]),
+			{error, Reason}
+	end.
+
+submit_form(Id) ->
+    Script = lists:concat(["document.forms[\"",Id,"\"].submit();"]),
+    wf:wire(#script{script=Script}).
+
+
+convert_to_post(Params) ->
+    PreParams = [begin
+                     lists:concat([Key, "=", Value])
+                 end || {Key, Value} <- Params],
+    lists:flatten(string:join(PreParams, "&")).
+
+iolist_to_string(IoList) ->
+    Bin = erlang:iolist_to_binary(IoList),
+    binary_to_list(Bin).
+
+list_to_number(List) ->
+    case lists:member($., List) of
+        true ->
+            list_to_float(List);
+        false ->
+            list_to_integer(List)
+    end.
+
+
+%% 'strong' tag implementation
+strong(Val)->
+    io_lib:format("<strong>~p</strong>", [Val]).
+
