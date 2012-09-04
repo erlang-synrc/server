@@ -1,4 +1,4 @@
--include_lib("nsx_utils/include/types.hrl").
+-include_lib("nsg_srv/include/types.hrl").
 
 -record(user,
         {username :: username_type() | '_', %% Dialyzer and record MatchSpec warnings http://j.mp/vZ8670
