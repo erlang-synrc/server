@@ -18,7 +18,7 @@
 -include_lib("nsg_srv/include/setup.hrl").
 -include_lib("nsg_srv/include/game_okey.hrl").
 -include_lib("nsx_config/include/config.hrl").
--include_lib("nsx_utils/include/types.hrl").
+-include_lib("nsg_srv/include/types.hrl").
 -include_lib("nsm_srv/include/accounts.hrl").
 -include_lib("alog/include/alog.hrl").
 -include_lib("eunit/include/eunit.hrl").

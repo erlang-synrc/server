@@ -1,5 +1,5 @@
 -include("basic_types.hrl").
--include_lib("nsx_utils/include/types.hrl").
+-include("types.hrl").
 %%% Contains list of API requests, that can be made, using KamfRequest call
 %%% Name of record corresponds to method, memebers to params
 %%% All this requests are processed by session
