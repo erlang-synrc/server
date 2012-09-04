@@ -11,7 +11,7 @@
 
 -include("user.hrl").
 -include("feed.hrl").
--include_lib("nsm_bg/include/nsm_bg.hrl").
+-include("nsm_bg.hrl").
 
 -export([transform_user/0,
          transform_group/0,
