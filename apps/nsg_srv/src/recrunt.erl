@@ -1,6 +1,6 @@
 -module(recrunt).
 
--include_lib("nsx_utils/include/types.hrl").
+-include("types.hrl").
 -include("classes.hrl").
 -include("requests.hrl").
 -include("game_okey.hrl").
