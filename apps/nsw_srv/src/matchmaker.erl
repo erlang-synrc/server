@@ -387,7 +387,7 @@ matchmaker_show_tables() ->
 		       ]}
 		  ],
     [
-     #h2{text=?_T("Selected Option")},
+     #h2{text=q_game_type() ++ " " ++ ?_T("Selected Option")},
      #panel{class="items", body=TableFilter}
     ].
 
