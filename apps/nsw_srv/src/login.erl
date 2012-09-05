@@ -427,7 +427,7 @@ event(change_password) ->
     RepeatPassword = wf:q(change_repeat_password),
     case Password of
         RepeatPassword ->
-            ChangeData = User#user{password=Password},
+            ChangeData = User#user{password=utils:sha(Password)},
             ok = rpc:call(?APPSERVER_NODE,zealot_db,put,[ChangeData]),
             wf:update(change_password_info, ?_T("Change password - success!")),
             redirect("/", 2000);
