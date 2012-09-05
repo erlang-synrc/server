@@ -40,6 +40,8 @@
          notify_user_block/2,
          notify_user_unblock/2,
 
+         qa_subscribe_user/2,
+
          subscribe_for_tournament/3,
 
          subscribe_tournament_lobby/3,
@@ -133,11 +135,22 @@ notify_user_block(Who, Whom) ->
 notify_user_unblock(Who, Whom) ->
     notify([user_action, unblock, Who, Whom], {}).
 
+%% @spec qa_subscribe_user(Who, Whom) -> any()
+%% @doc Pass an action to the queue to be sure about
+%%  collisions will not appear.
+%% @end
+qa_subscribe_user(Who, Whom) ->
+    notify_user_exchange(Who, ["queue_action", "subscribe_user"], {Whom}).
+
 %% Low level notification API
 
 notify(EventPath, Data) ->
     RoutingKey = routing_key(EventPath),
     nsm_mq:publish(?NOTIFICATIONS_EX, RoutingKey, Data).
+
+notify_user_exchange(UserId, EventPath, Data) ->
+    RoutingKey = routing_key(EventPath),
+    nsm_mq:publish(?USER_EXCHANGE(UserId), RoutingKey, Data).
 
 %%
 %% Local Functions

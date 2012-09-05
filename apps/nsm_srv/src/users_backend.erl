@@ -1,4 +1,4 @@
--module(users).
+-module(users_backend).
 
 -include("user.hrl").
 -include("config.hrl").
@@ -204,29 +204,25 @@ get_user(UId) ->
 get_all_users() ->
     zealot_db:all(user).
 
-subscribe_user(Who, Whom) ->
-    nsx_util_notification:qa_subscribe_user(Who, Whom).
+subscribe_user(MeId, FrId) ->
+    case is_user_blocked(MeId, FrId) of
+        false ->
+            zealot_db:subscribe_user(MeId, FrId),
+            nsx_util_notification:notify_user_subscribe(MeId, FrId),
+            subscribe_user_mq(user, MeId, FrId);
+        true ->
+            do_nothing
+    end.
 
-%%     case is_user_blocked(MeId, FrId) of
-%%         false ->
-%%             zealot_db:subscribe_user(MeId, FrId),
-%%             nsx_util_notification:notify_user_subscribe(MeId, FrId),
-%%             subscribe_user_mq(user, MeId, FrId);
-%%         true ->
-%%             do_nothing
-%%     end.
-
-remove_subscribe(Who, Whom) ->
-    nsx_util_notification:qa_unsubscribe_user(Who, Whom).
-
-%%     case is_user_subscribed(MeId, FrId) of
-%%         true ->
-%%             zealot_db:remove_subscription(MeId, FrId),
-%%             nsx_util_notification:notify_user_unsubscribe(MeId, FrId),
-%%             remove_subscription_mq(user, MeId, FrId);
-%%         false ->
-%%             do_nothing
-%%     end.
+remove_subscribe(MeId, FrId) ->
+    case is_user_subscribed(MeId, FrId) of
+        true ->
+            zealot_db:remove_subscription(MeId, FrId),
+            nsx_util_notification:notify_user_unsubscribe(MeId, FrId),
+            remove_subscription_mq(user, MeId, FrId);
+        false ->
+            do_nothing
+    end.
 
 list_subscription(#user{username = UId}) ->
     list_subscription(UId);

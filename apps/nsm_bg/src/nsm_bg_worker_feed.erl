@@ -15,6 +15,8 @@
 -include_lib("nsm_srv/include/feed.hrl").
 -include_lib("nsm_srv/include/user.hrl").
 -include("nsm_bg.hrl").
+-include_lib("nsm_mq/include/nsm_mq.hrl").
+
 %% --------------------------------------------------------------------
 %% External exports
 %% --------------------------------------------------------------------
@@ -187,6 +189,30 @@ handle_notice(["feed", _Type, _EntryOwner, "comment", CommentId, "add"] = Route,
                 CommentId, Content, Medias),
     {noreply, State};
 
+handle_notice(["queue_action", "subscribe_user"] = Route,
+              Message,
+              #state{owner = Owner,
+                     type =Type
+                    } = State) ->
+    {Whom} = Message,
+
+    ?INFO("queue_action(~p): subscribe user: Owner=~p, Route=~p, Message=~p",
+          [self(), {Type, Owner}, Route, Message]),
+    subscribe_user(Owner, Whom),
+    {noreply, State};
+
+handle_notice(["queue_action", "unsubscribe_user"] = Route,
+              Message,
+              #state{owner = Owner,
+                     type =Type
+                    } = State) ->
+    {Whom} = Message,
+
+    ?INFO("queue_action(~p): unsubscribe user: Owner=~p, Route=~p, Message=~p",
+          [self(), {Type, Owner}, Route, Message]),
+    unsubscribe_user(Owner, Whom),
+    {noreply, State};
+
 handle_notice(Route, Message, #state{owner = User} = State) ->
     ?DBG("feed(~p): unexpected notification received: User=~p, "
               "Route=~p, Message=~p", [self(), User, Route, Message]),
@@ -244,3 +270,75 @@ add_comment(#state{feed = Feed, direct = Direct}, From, EntryId, ParentComment,
     [feed:entry_add_comment(FId, From, EntryId, ParentComment,
                             CommentId, Content, Medias)
        || FId <- [Feed, Direct]].
+
+
+%%===================================================================
+
+subscribe_user(Who, Whom) ->
+    case users_backend:is_user_blocked(Who, Whom) of
+        false ->
+            zealot_db:subscribe_user(Who, Whom),
+            nsx_util_notification:notify_user_subscribe(Who, Whom),
+            subscribe_user_mq(user, Who, Whom);
+        true ->
+            do_nothing
+    end.
+
+unsubscribe_user(Who, Whom) ->
+    case users_backend:is_user_subscribed(Who, Whom) of
+        true ->
+            zealot_db:remove_subscription(Who, Whom),
+            nsx_util_notification:notify_user_unsubscribe(Who, Whom),
+            remove_subscription_mq(user, Who, Whom);
+        false ->
+            do_nothing
+    end.
+
+subscribe_user_mq(Type, MeId, ToId) ->
+    process_subscription_mq(Type, add, MeId, ToId).
+
+remove_subscription_mq(Type, MeId, ToId) ->
+    process_subscription_mq(Type, delete, MeId, ToId).
+
+process_subscription_mq(Type, Action, MeId, ToId) ->
+    %% FIXME: perform this actions with anonymous common channel
+    {ok, Channel} = nsm_mq:open([]),
+    %% bind MeId exchange to messages from FrId
+    Routes = case Type of
+                 user ->
+                     rk_user_feed(ToId);
+                 group ->
+                     rk_group_feed(ToId)
+             end,
+    case Action of
+        add ->
+            bind_user_exchange(Channel, MeId, Routes);
+        delete ->
+            unbind_user_exchange(Channel, MeId, Routes)
+    end,
+    nsm_mq_channel:close(Channel),
+    ok.
+
+bind_user_exchange(Channel, User, RoutingKey) ->
+    %% add routing key tagging to quick find errors
+    {bind, RoutingKey, ok} =
+        {bind, RoutingKey,
+         nsm_mq_channel:bind_exchange(Channel, ?USER_EXCHANGE(User),
+                                      ?NOTIFICATIONS_EX, RoutingKey)}.
+
+unbind_user_exchange(Channel, User, RoutingKey) ->
+    %% add routing key tagging to quick find errors
+    {unbind, RoutingKey, ok} =
+        {unbind, RoutingKey,
+         nsm_mq_channel:unbind_exchange(Channel, ?USER_EXCHANGE(User),
+                                        ?NOTIFICATIONS_EX, RoutingKey)}.
+
+rk(List) ->
+    nsm_mq_lib:list_to_key(List).
+
+rk_user_feed(User) ->
+    rk([feed, user, User, '*', '*', '*']).
+
+rk_group_feed(Group) ->
+    rk([feed, group, Group, '*', '*', '*']).
+
