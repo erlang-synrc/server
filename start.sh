@@ -1,3 +1,5 @@
+#!/bin/bash
+
 FILES=rels/web/node/lib/nsw_srv-1/priv/static/files
 rm -rf $FILES
 ln -s /mnt/glusterfs/kakafiles $FILES
