@@ -197,16 +197,12 @@ matchmaker_show_create(Tag) ->
      _ -> #h2{text=?_T("Filter Criteria")}
     end,
      "</span>",
-  case Tag of
-   create ->      
      #panel{class=area, body=[
       #list{id=criteria_field, class=row, body=""},
       "<span id='guiderstab1createbutton' style='float:right;'>",
       el_create_game_button(),
       "</span>"
-     ]};
-   _ -> ""
-  end
+     ]}
     ]}.
 
 ui_paginate() ->
@@ -657,7 +653,12 @@ show_table(Tables) ->
     end.
 
 check_required(Setting) ->
-    Required = [table_name, game, game_mode, speed, rounds],
+    Required = case proplists:get_value(game_mode, Setting) of
+        countdown ->
+            [table_name, game, game_mode, speed];
+        _ ->
+            [table_name, game, game_mode, speed, rounds]
+    end,
     Check = [case proplists:get_value(Req, Setting) of
 		 undefined -> false;
 		 {multiple, _} -> false;
