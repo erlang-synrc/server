@@ -1,3 +1,5 @@
+#!/bin/bash
+
 LOCAL_IP=${1:-"192.168.1.16"}
 
 ./rebar compile
