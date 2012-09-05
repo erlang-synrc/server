@@ -193,8 +193,8 @@ matchmaker_show_create(Tag) ->
     #panel{class=criteria, body=[
      "<span id='guiderscriteria'>",
     case Tag of
-     create -> #h2{text=?_T("Creation")};
-     _ -> #h2{text=?_T("Filter Criteria")}
+     create -> #h2{text=q_game_type() ++ " " ++ ?_T("Selected Option")};
+     _ -> #h2{text=q_game_type() ++ " " ++?_T("Selected Option")}
     end,
      "</span>",
      #panel{class=area, body=[
@@ -387,7 +387,7 @@ matchmaker_show_tables() ->
 		       ]}
 		  ],
     [
-     #h2{text=?_T("Tables")},
+     #h2{text=?_T("Selected Option")},
      #panel{class="items", body=TableFilter}
     ].
 
