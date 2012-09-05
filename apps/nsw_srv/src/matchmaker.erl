@@ -370,21 +370,25 @@ matchmaker_show_tables() ->
 		      class="item item3",
 		      body=ui_rounds()
 		   },
-		   #panel{
-		      class="item item4", style="width:64px;",
-		      body=ui_checkboxes(join)
-		   },
+%		   #panel{
+%		      class="item item4", style="width:64px;",
+%		      body=ui_checkboxes(join)
+%		   },
 		   #panel{
 		      class="options", style="height:61px;",
 		      body=[
 %                "<span id='guidersgamebutton'>",
 %			     el_create_game_button(),
 %                 "</span>",
+                 #panel{
+                    style="margin-top:-32px; margin-bottom:-6px;",
+       		        body=ui_checkboxes(join)
+                 },
                  "<span id='guidersdetailedsettings'>",
-			     #link{body=?_T("Detailed Settings"), postback={show, join_game_detailed},
-				   actions=ac_hide_main_container(), class="cancel"},
+		         #link{body=?_T("Detailed Settings"), postback={show, join_game_detailed},
+			       actions=ac_hide_main_container(), class="cancel"},
                  "</span>"
-		   ]}
+		       ]}
 		  ],
     [
      #h2{text=?_T("Tables")},
