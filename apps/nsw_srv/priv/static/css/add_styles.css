@@ -110,6 +110,9 @@ body.matchmaker .ui-slider {
 .criteria .area .row {
 	min-height: 30px;
 }
+.criteria .area .row_green {
+	min-height: 30px;
+}
 .tabcontent input {
 	padding:4px;
 	-webkit-box-shadow:0 0 4px #c6c6c6 inset;

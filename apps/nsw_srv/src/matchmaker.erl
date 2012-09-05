@@ -190,6 +190,10 @@ el_inside_play() ->
     ].
 
 matchmaker_show_create(Tag) ->
+    ThisClass = case wf:state(buttons) of
+        green -> "row_green";
+        _ -> "row"
+    end,
     #panel{class=criteria, body=[
      "<span id='guiderscriteria'>",
     case Tag of
@@ -198,7 +202,7 @@ matchmaker_show_create(Tag) ->
     end,
      "</span>",
      #panel{class=area, body=[
-      #list{id=criteria_field, class=row, body=""},
+      #list{id=criteria_field, class=ThisClass, body=""},
       "<span id='guiderstab1createbutton' style='float:right;'>",
       el_create_game_button(),
       "</span>"
