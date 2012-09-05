@@ -396,7 +396,7 @@ add_configs() ->
     zealot_db:put(#config{key="smtp/user",     value="noreply@kakaranet.com"}),
     zealot_db:put(#config{key="smtp/password", value="kakam41l"}),
     zealot_db:put(#config{key="smtp/host",     value="posta.kakaranet.com"}),
-    zealot_db:put(#config{key="smtp/port",     value=587}),
+    zealot_db:put(#config{key="smtp/port",     value=465}),
     zealot_db:put(#config{key="smtp/with_ssl", value=true}),
 
     %% accounts
