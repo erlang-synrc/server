@@ -243,12 +243,12 @@ login_form() ->
         #panel{class = "text text-focus", body = [
             #textbox{id = login, next = password}
         ]},
+        #panel{class = text,
+            body = #password{id = password, next = postlogin}},
         "<label>",
         #link{class = "ar", text = ?_T("I forgot my password!"),
             postback = show_forget},
         "</label>",
-        #panel{class = text,
-            body = #password{id = password, next = postlogin}},
         #panel{class = "row chk-row", body = [#button{id = postlogin, class = "btn-submit",
                 text = ?_T("Login"), postback = login},
                 #checkbox{class = "chk",
