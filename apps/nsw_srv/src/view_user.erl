@@ -104,6 +104,7 @@ user_info() ->
 
     EntriesCount = rpc:call(?APPSERVER_NODE, feed, get_entries_count, [Info#user.username]),
     CommentsCount = rpc:call(?APPSERVER_NODE, feed, get_comments_count, [Info#user.username]),
+    LikesCount = rpc:call(?APPSERVER_NODE, feed, get_user_likes_count, [Info#user.username]),
 
     #panel{class="box user-info", body=[
         #h3{style="letter-spacing:0px;", text=Info#user.username},
@@ -119,7 +120,8 @@ user_info() ->
                 #listitem{body=[?_T("Subscriptions")++": ",#span{text=integer_to_list(length(rpc:call(?APPSERVER_NODE, zealot_db, list_subscriptions, [Info#user.username]))) }]},
                 #listitem{body=[?_T("Subscribers")++": ",#span{text=integer_to_list(length(rpc:call(?APPSERVER_NODE, zealot_db, list_subscription_me, [Info#user.username]))) }]},
                 #listitem{body=[?_T("Entries")++": ",#span{text=integer_to_list(EntriesCount) }]},
-                #listitem{body=[?_T("Comments")++": ",#span{text=integer_to_list(CommentsCount) }]}
+                #listitem{body=[?_T("Comments")++": ",#span{text=integer_to_list(CommentsCount) }]},
+                #listitem{body=[?_T("Likes")++": ",#span{text=integer_to_list(LikesCount) }]}
             ]}
         ]},
         #panel{style="margin-left:17px;", body=[
