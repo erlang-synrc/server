@@ -1,9 +1,9 @@
 .create-block .steps-list .item1{filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#b33c08', endColorstr='#f16102',GradientType=0 );}
 .create-block .steps-list .item1 .link{filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#ffd00e', endColorstr='#ffaa09',GradientType=0 );}
-.create-block .steps-list .item2{filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#4c7015', endColorstr='#8ec356',GradientType=0 );}
-.create-block .steps-list .item2 .link{filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#5cb6d8', endColorstr='#3078bb',GradientType=0 );}
-.create-block .steps-list .item3{filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#1b4f8f', endColorstr='#5babdc',GradientType=0 );}
-.create-block .steps-list .item3 .link{filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#cae285', endColorstr='#9fcb57',GradientType=0 );}
+.create-block .steps-list .item2{filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#1b4f8f', endColorstr='#5babdc',GradientType=0 );}
+.create-block .steps-list .item2 .link{filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#cae285', endColorstr='#9fcb57',GradientType=0 );}
+.create-block .steps-list .item3{filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#4c7015', endColorstr='#8ec356',GradientType=0 );}
+.create-block .steps-list .item3 .link{filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#5cb6d8', endColorstr='#3078bb',GradientType=0 );}
 .create-block .article1 .items{filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#e1e0c7', endColorstr='#f4f3de',GradientType=0 );}
 .create-block .article1 .list1 a{filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#feda71', endColorstr='#febc4b',GradientType=0 );}
 .create-block .paging .center a:hover,
@@ -17,7 +17,7 @@
 .create-block .steps-list .unactive .link{filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#cbcbcb', endColorstr='#bbbbbb',GradientType=0 );}
 .criteria{filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#e1e0c7', endColorstr='#f4f3de',GradientType=0 );}
 .criteria .area .row li em {filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#feda71', endColorstr='#febc4b',GradientType=0 );}
-.criteria .area .btn-create{filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#5e5e5e', endColorstr='#434343',GradientType=0 );}
+.criteria .area .btn-create{filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#ffd00e', endColorstr='#ffaa09',GradientType=0 );}
 .detail-block {filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#ffffff', endColorstr='#ededed',GradientType=0 );}
 .detail-block .box-r {filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#3f3f3f', endColorstr='#2f2f2f',GradientType=0 );}
 .tab-area .tabset a {filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#ffffff', endColorstr='#f7f7f7',GradientType=0 );}
