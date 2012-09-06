@@ -354,16 +354,30 @@ body.fb-inner {
 	border-radius:0;
 }
 
+.fb-inner .create-block .article1 .list1 li{
+    font-size:11px;
+    padding: 0px 1px 1px;
+}
+
+.fb-inner .create-block .article1 .list1_green li{
+    font-size:11px;
+    padding: 0px 1px 1px;
+}
+
 .fb-inner .create-block .article1 .items .item3 {
-	width: 160px;
+	/*width: 160px;*/
 }
 
 .fb-inner .create-block .article1 .items .item4 {
 	display: none;
 }
 
+.fb-inner .create-block .article-table{
+    font-size:11px;
+}
+
 .fb-inner .create-block .article-table .cell1 {
-	width: 420px;
+	width: 375px;
 }
 
 .fb-inner .create-block .steps-list {
@@ -385,7 +399,7 @@ body.fb-inner {
 }
 
 .fb-inner .create-block .steps-list .link {
-	margin-top: 23px;
+	margin-top: -50px;
 }
 
 .fb-inner .criteria {
