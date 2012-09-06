@@ -19,6 +19,7 @@
 route() -> ["game_name"].
 
 main() ->
+    wf:state(buttons, green),
     case wf:user() /= undefined of
         true  -> main_authorized0();
         false -> wf:redirect_to_login(?_U("/login"))
@@ -258,8 +259,8 @@ ui_game_type() ->
 	   case q_game_type() of
 	       "okey" ->
 		   [{?_T("Standard"),	  standard},
-		    {?_T("Color"),	  color},
 		    {?_T("Even/Odd"),	  evenodd},
+		    {?_T("Color"),	  color},
 		    {?_T("Countdown from 10"), countdown}];
 	       "tavla" ->
 		   [{?_T("Standard"),  standard},
@@ -735,7 +736,7 @@ settings_box(Tag) ->
         _ -> "slide-up"
     end,
     GameSettings = #panel{body=[
-        ui_table_name(),
+        case wf:state(buttons) =:= green of false -> ui_table_name(); _ -> "" end,
         ui_game_speed(),
         #panel{class="two-cols",
             body=[#panel{class=left,body=ui_game_type()},
