@@ -17,7 +17,8 @@
 .create-block .steps-list .unactive .link{filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#cbcbcb', endColorstr='#bbbbbb',GradientType=0 );}
 .criteria{filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#e1e0c7', endColorstr='#f4f3de',GradientType=0 );}
 .criteria .area .row li em {filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#feda71', endColorstr='#febc4b',GradientType=0 );}
-.criteria .area .btn-create{filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#ffd00e', endColorstr='#ffaa09',GradientType=0 );}
+.criteria .area .btn-create{filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#feda71', endColorstr='#febc4b',GradientType=0 );}
+.criteria .area .btn-create .disable{filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#cbcbcb', endColorstr='#bbbbbb',GradientType=0 );}
 .detail-block {filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#ffffff', endColorstr='#ededed',GradientType=0 );}
 .detail-block .box-r {filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#3f3f3f', endColorstr='#2f2f2f',GradientType=0 );}
 .tab-area .tabset a {filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#ffffff', endColorstr='#f7f7f7',GradientType=0 );}
