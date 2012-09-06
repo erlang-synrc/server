@@ -200,7 +200,9 @@ footer_box() ->
                         #listitem{body=#link{url=?_U("/contact"), text=?_T("Contact")}},
                         #listitem{body=[?_T("2011 &copy; Kakaranet. All rights reserved."),"<br />",
                                     ?_T("Kakaranet is registered trademark of Paynet Inc."),"<br/>",
-                                    ?_T("Public Beta - 10 Aug 2012")]}
+                                    ?_T("Public Beta - 10 Aug 2012")]},
+                        #listitem{body=[#checkbox { id=replay_guiders, text="Replay Guiders", postback=replay_guiders_changed,
+                                    checked=(wf:cookie("replayguiders")=="yes") }]}
                        ],
 
             ["<footer>",
@@ -293,6 +295,13 @@ event({more_entries, Module, PageAmount, LastId}) ->
     Rendered = [ #view_entry{entry = E} || E <- Entries],
     wf:insert_bottom(feed, Rendered),
     wf:update(more_button_holder, more_button(Module, Entries, PageAmount));
+event(replay_guiders_changed) ->
+    case wf:q(replay_guiders) of
+        "on" -> 
+            wf:cookie("replayguiders", "yes");
+        _ ->
+            wf:cookie("replayguiders", "no")
+    end;
 
 event(Other) ->
     login:event(Other).
@@ -1181,24 +1190,29 @@ unpost_user_system_message(ID) ->   % this hasn't been tested yet
 
 guiders_ok(Cookie) ->
 %    true.
-    {_, NowSecs, _} = erlang:now(),
-    UserSecsOrUndefined = (webutils:user_info())#user.register_date,
-   case UserSecsOrUndefined of
-        {_, Number ,_} ->
-            UserSecs = Number;
+    case wf:cookie("replayguiders") of
+        "yes" ->
+            true;
         _ ->
-            UserSecs = NowSecs
-    end,
-    case NowSecs-UserSecs<86400 of % first 24 hours only (for these, who disable or loose cookies)
-        false ->
-            false;
-        true ->
-            case wf:cookie(Cookie ++ wf:user()) of
-                "yes" ->
-                    false;
+            {_, NowSecs, _} = erlang:now(),
+            UserSecsOrUndefined = (webutils:user_info())#user.register_date,
+            case UserSecsOrUndefined of
+                {_, Number ,_} ->
+                    UserSecs = Number;
                 _ ->
-                    wf:cookie(Cookie ++ wf:user(), "yes", "/", 24*60),
-                    true
+                    UserSecs = NowSecs
+            end,
+            case NowSecs-UserSecs<86400 of % first 24 hours only (for these, who disable or loose cookies)
+                false ->
+                    false;
+                true ->
+                    case wf:cookie(Cookie ++ wf:user()) of
+                        "yes" ->
+                            false;
+                        _ ->
+                            wf:cookie(Cookie ++ wf:user(), "yes", "/", 24*60),
+                            true
+                    end
             end
     end.
 

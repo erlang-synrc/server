@@ -1226,22 +1226,10 @@ guiders_script() ->
             buttons: [{name: '"++s_T("Continue")++"', onclick: guiders.next}],
             description: '"++s_T("Attributes description.")++"',
             id: 'guider_80',
-            next: 'guider_90',
-            overlay: false,
-            xButton: true,
-            title: '"++s_T("Attributes")++"'
-        });
-
-        guiders.createGuider({
-            attachTo: '#guidersgamebutton',
-            position: 9,
-            buttons: [{name: '"++s_T("Continue")++"', onclick: guiders.next}],
-            description: '"++s_T("Create button description.")++"',
-            id: 'guider_90',
             next: 'guider_100',
             overlay: false,
             xButton: true,
-            title: '"++s_T("Create button")++"'
+            title: '"++s_T("Attributes")++"'
         });
 
         guiders.createGuider({
