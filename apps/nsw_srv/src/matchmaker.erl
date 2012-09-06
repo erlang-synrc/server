@@ -595,6 +595,7 @@ list_users_links(Users) ->
 show_table(Tables) ->
     %% update i'm feeling lucky
     wf:update(play_button_panel, el_inside_play()),
+    MaxUsers = case q_game_type() of "tavla" -> 2; "okey" -> 4 end,
     case Tables of
         [] ->
             #panel{style="text-align: center",
@@ -617,11 +618,15 @@ show_table(Tables) ->
 			       JoinOrCrate =
 				   case Action of
 				       {join, Act} ->
-					   #link{id=joinTable,
-						     actions=Act,
-						     show_if=ViewPerPoint,
-						     text=?_T("Join"),
-                             class="join-button"};
+                           case length(Users) of
+                                MaxUsers -> "";
+                                _ ->
+					               #link{id=joinTable,
+						                 actions=Act,
+						                 show_if=ViewPerPoint,
+						                 text=?_T("Join"),
+                                         class="join-button"}
+                           end;
 				       {create, Act} ->
 					   #link{id=joinTable,
 						     actions=Act,
@@ -633,7 +638,9 @@ show_table(Tables) ->
                                                      show_if=UserOwner,
                                                      actions=RemoveActions,
                                                      text=?_T("Remove")},
-			       Buttons = #list{body=[#listitem{body=X} || X <- [Info, JoinOrCrate, DeleteTable]]},
+			       Buttons = #list{body=[#listitem{body=X} || X <- 
+                                [#image{image="/images/free.png"} || _N <- lists:seq(1,MaxUsers-length(Users))] ++ 
+                                [Info, JoinOrCrate, DeleteTable]]},
 			       #tablerow{id=RowId,
 					 cells=[#tablecell{class=cell1,
 							   text=TableNameLabel,
@@ -643,7 +650,10 @@ show_table(Tables) ->
 							   text=OwnerLabel,
 							   id=ownerLabel},
 						#tablecell{class=cell3,
-							   body=Buttons}]}
+%							   body=[[#image{image="/images/free.png", style="float:left;"}
+%                                || _N <- lists:seq(1,MaxUsers-length(Users))],
+%                                Buttons]}]}
+                               body = Buttons}]}
 			   end
                            || [TableNameLabel,
                                OwnerLabel,
