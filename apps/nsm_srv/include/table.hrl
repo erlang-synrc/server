@@ -1,4 +1,4 @@
--include_lib("nsg_srv/include/types.hrl").
+-include("types.hrl").
 
 -record(game_table, {id :: id_type() | '_', %% Dialyzer and record MatchSpec warnings http://j.mp/vZ8670
                      name,

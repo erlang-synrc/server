@@ -1,4 +1,4 @@
--include_lib("nsg_srv/include/types.hrl").
+-include("types.hrl").
 
 -record(invite_code,
         {code,

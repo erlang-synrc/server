@@ -41,10 +41,7 @@ body() ->
     case (catch check_requirements()) of
 	ok ->
 	    try
-		%% checking that session have proper settings value
 		Settings = wf:session({q_game_type(),wf:user()}),
-%                ?INFO("Key: ~p",[{q_game_type(),wf:user()}]),
-%                ?INFO("SettingsFromCookies: ~p",[Settings]),
 		ui_update_buttons(case Settings of undefined -> 
 			case q_game_type() of
 			    "tavla" ->
