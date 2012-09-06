@@ -2277,7 +2277,7 @@ div.post:first-child {background:none !important}
 	line-height:18px;
 }
 .create-block .article1 .list1{
-	margin:0 0 0 -2px;
+	margin:5px 0 0 -1px;
 	padding:0;
 	list-style:none;
 	overflow:hidden;
@@ -2326,7 +2326,7 @@ div.post:first-child {background:none !important}
 
 /* green buttons hack */
 .create-block .article1 .list1_green{
-	margin:0 0 0 -2px;
+	margin:5px 0 0 -1px;
 	padding:0;
 	list-style:none;
 	overflow:hidden;
@@ -2729,7 +2729,7 @@ div.post:first-child {background:none !important}
 	float:left;
 	text-indent:-9999px;
 	overflow:hidden;
-	background:url(/images/ico-close.png?jcb=1346831987) no-repeat;
+	background:url(/images/ico-close_green.png?jcb=1346944858) no-repeat;
 	width:16px;
 	height:16px;
 	margin-top:4px;
@@ -2870,13 +2870,13 @@ div.post:first-child {background:none !important}
 	color:#df4426;
 	font-size:14px;
 	line-height:18px;
-	border-bottom:1px solid #d8d8d8;
+/*	border-bottom:1px solid #d8d8d8;*/
 	padding-bottom:1px;
 }
 #tabs-block .tabcontent .two-cols{
 	width:100%;
 	overflow:hidden;
-	padding:18px 0 14px;
+	padding:18px 0px 6px;
 }
 #tabs-block .tabcontent .two-cols .left{
 	float:left;
@@ -2917,7 +2917,7 @@ div.post:first-child {background:none !important}
 #tabs-block .form1 .row{
 	width:100%;
 	overflow:hidden;
-	padding:7px 0 3px;
+	padding:0px 0 10px;
 }
 #tabs-block .form1 .row .chk{
 	margin:0 3px;
@@ -5441,16 +5441,30 @@ body.fb-inner {
 	border-radius:0;
 }
 
+.fb-inner .create-block .article1 .list1 li{
+    font-size:11px;
+    padding: 0px 1px 1px;
+}
+
+.fb-inner .create-block .article1 .list1_green li{
+    font-size:11px;
+    padding: 0px 1px 1px;
+}
+
 .fb-inner .create-block .article1 .items .item3 {
-	width: 160px;
+	/*width: 160px;*/
 }
 
 .fb-inner .create-block .article1 .items .item4 {
 	display: none;
 }
 
+.fb-inner .create-block .article-table{
+    font-size:11px;
+}
+
 .fb-inner .create-block .article-table .cell1 {
-	width: 420px;
+	width: 375px;
 }
 
 .fb-inner .create-block .steps-list {
@@ -5472,7 +5486,7 @@ body.fb-inner {
 }
 
 .fb-inner .create-block .steps-list .link {
-	margin-top: 23px;
+	margin-top: -50px;
 }
 
 .fb-inner .criteria {

@@ -201,7 +201,10 @@ matchmaker_show_create(Tag) ->
      #panel{class=area, body=[
       #list{id=criteria_field, class=ThisClass, body=""},
       "<span id='guiderstab1createbutton' style='float:right;'>",
-      el_create_game_button(),
+      case Tag of
+        create -> el_create_game_button();
+        _ -> ""
+      end,
       "</span>"
      ]}
     ]}.
