@@ -135,7 +135,7 @@ entry_element(E, Comments, Avatar, {MediaThumb, MediaLists0}, _TargetMedia, Anch
                     case Title_URL_Desc of
                         [URL, UId, TableName, GameType, Rounds, Speed, Mode] ->
                             Title = ?_T("New Table"),
-                            Desc1 = ?_TS("Our player $username$, has created ", [{username, UId}]),
+                            Desc1 = ?_TS("Our player, $username$, has created ", [{username, UId}]),
                             Link = TableName,
                             Desc2 = " " ++ ?_T("for") ++ " " ++ GameType ++ " " ++ ?_T("game") ++ ". " ++ ?_T("Game") ++ 
                                 " " ++ ?_T("specs") ++ ": " ++

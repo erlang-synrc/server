@@ -468,6 +468,18 @@ get_tables2(Setting,UId,GameFSM,Convert) ->
     Speed = GetPropList(speed, Setting),
     Game = GetPropList(game, Setting),
 
+    FilterAllUsers = case GetPropList(users, Setting) of
+        undefined -> [];
+        {multiple, ManyUsers} -> ManyUsers;
+        SingleUser -> [SingleUser]
+    end,
+
+    FilterAnyUser = case GetPropList(group, Setting) of
+        undefined -> [];
+        GroupId -> 
+            [GMR#group_member_rev.who || GMR <- rpc:call(?APPSERVER_NODE,groups,list_group_membership,[GroupId])]
+    end,
+
     MaxUsers = case GameFSM of "tavla" -> 2; "okey" -> 4 end,
 
     Check = fun(Param,Value) -> 
@@ -566,7 +578,18 @@ get_tables2(Setting,UId,GameFSM,Convert) ->
                    Check(Rounds,R)])), 50),
 
     QLC = OneLeftList ++ TwoLeftList ++ ThreeLeftList ++ Own ++ Rest,
-    case Convert of convert -> convert_to_map(QLC,Setting,UId,GameFSM); _ -> QLC end.
+
+    FilteredQLC = lists:filter(
+        fun(OneTable) ->
+            TableUsers = OneTable#game_table.users,
+            AllFilterOk = (FilterAllUsers==[]) or 
+                (lists:usort( [lists:member(OFU, TableUsers) || OFU <- FilterAllUsers] ) == [true]),
+            AnyFilterOk = (FilterAnyUser==[]) or 
+                (lists:usort( [lists:member(OTU, FilterAnyUser) || OTU <- TableUsers] ) =/= [false]),
+            AllFilterOk and AnyFilterOk
+        end, QLC),
+
+    case Convert of convert -> convert_to_map(FilteredQLC,Setting,UId,GameFSM); _ -> FilteredQLC end.
 
 convert_to_map(Data,_Setting,UId,GameFSM) ->
     [ begin Url = lists:concat([?_U("/view-table/"),GameFSM,"/id/", TId]),
@@ -1034,21 +1057,6 @@ u_event(create_game) ->
         integer_to_list(proplists:get_value(rounds,Settings)) ++ "|" ++ atom_to_list(proplists:get_value(speed,Settings)) ++ "|" ++
         atom_to_list(proplists:get_value(game_mode,Settings))),
     webutils:post_user_system_message(Desc);
-%    Desc = ?_TS("Our player $username$, has created '$tablename$' for "
-%        "$gametype$ game. Game specs: ", [
-%            {username, UId},
-%            {tablename, "|" ++ proplists:get_value(table_name,Settings) ++ "|"},
-%            {gametype, q_game_type()}]),
-%    SRounds = integer_to_list(proplists:get_value(rounds,Settings)),
-%    SSpeed = ?_TS("$speed$", [{speed, proplists:get_value(speed,Settings)}]),
-%    SMode = ?_TS("$mode$", [{mode, proplists:get_value(game_mode,Settings)}]),
-%    wf:state(last_system_message, webutils:post_user_system_message(
-%        ?_T("New Table") ++ "|" ++ URL ++ "|" ++ 
-%        Desc ++
-%        SRounds ++ " " ++ ?_T("rounds") ++ ", " ++ 
-%        SSpeed ++ " " ++ ?_T("speed") ++ ", " ++ 
-%        SMode ++ " " ++ ?_T("mode") ++ "." 
-%    )),
 
 
 u_event(lucky_play_button) ->
