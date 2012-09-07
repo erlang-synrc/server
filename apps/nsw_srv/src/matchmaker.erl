@@ -578,6 +578,7 @@ get_tables2(Setting,UId,GameFSM,Convert) ->
                    Check(Rounds,R)])), 50),
 
     QLC = OneLeftList ++ TwoLeftList ++ ThreeLeftList ++ Own ++ Rest,
+
     FilteredQLC = lists:filter(
         fun(OneTable) ->
             TableUsers = OneTable#game_table.users,
@@ -587,6 +588,7 @@ get_tables2(Setting,UId,GameFSM,Convert) ->
                 (lists:usort( [lists:member(OTU, FilterAnyUser) || OTU <- TableUsers] ) =/= [false]),
             AllFilterOk and AnyFilterOk
         end, QLC),
+
     case Convert of convert -> convert_to_map(FilteredQLC,Setting,UId,GameFSM); _ -> FilteredQLC end.
 
 convert_to_map(Data,_Setting,UId,GameFSM) ->
