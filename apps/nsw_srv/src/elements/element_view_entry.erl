@@ -10,6 +10,7 @@
 -include("setup.hrl").
 
 -define(SYSTEM_MESSAGE_EXPIRES, 600).
+-define(SYSTEM_MESSAGE_STAYS_FOR_READING, 20).
 -define(LIKERS_TO_SHOW, 5).
 
 reflect() -> record_info(fields, view_entry).
@@ -119,29 +120,35 @@ get_media_thumb(E, ViewMediaPanelId) ->
 entry_element(E, Comments, Avatar, {MediaThumb, MediaLists0}, _TargetMedia, Anchor) ->
     case E#entry.type of 
         {_, system} ->
-            {_, MessageSecs, _} = E#entry.created_time,
-            {_, NowSecs, _} = erlang:now(),
+            MessageSecs = calendar:datetime_to_gregorian_seconds( calendar:now_to_datetime(E#entry.created_time) ),
+            NowSecs = calendar:datetime_to_gregorian_seconds( calendar:now_to_datetime(erlang:now()) ),
             case NowSecs - MessageSecs > ?SYSTEM_MESSAGE_EXPIRES of
                 true ->
                     [];
                 false ->
+                    TimeLeft = ?SYSTEM_MESSAGE_EXPIRES - (NowSecs - MessageSecs),
+                    TimeLeftAndSomeMore = case TimeLeft < ?SYSTEM_MESSAGE_STAYS_FOR_READING of
+                        true -> ?SYSTEM_MESSAGE_STAYS_FOR_READING;
+                        _ -> TimeLeft
+                    end,
                     Title_URL_Desc = string:tokens(E#entry.description, "|"),
                     case Title_URL_Desc of
-                        [Title, URL, Desc1, Link, Desc2] ->
+                        [URL, UId, TableName, GameType, Rounds, Speed, Mode] ->
+                            Title = ?_T("New Table"),
+                            Desc1 = ?_TS("Our player $username$, has created ", [{username, UId}]),
+                            Link = TableName,
+                            Desc2 = " " ++ ?_T("for") ++ " " ++ GameType ++ " " ++ ?_T("game") ++ ". " ++ ?_T("Game") ++ 
+                                " " ++ ?_T("specs") ++ ": " ++
+                                Rounds ++ " " ++ ?_T("rounds") ++ ", " ++ Speed ++ " " ++ ?_T("speed") ++ ", " ++
+                                Mode ++ " " ++ ?_T("mode") ++ ".",
                             #notice{type=system_message, position=left,
                                 title=#link{url=URL, text=Title},
                                 body=[
                                     Desc1, 
                                     #link{style="font-weight:bold;", url=URL, text=Link},
-                                    % this is chaos! I should make a module for this replace stuff
                                     get_file:replace(Desc2, ?_T("Game"), "<br/>" ++ ?_T("Game") )  
                                 ],
-                                delay = ?SYSTEM_MESSAGE_EXPIRES * 1000
-                            };
-                        [Title, URL, Desc] ->
-                            #notice{type=message, position=left,
-                                title=#link{url=URL, text=Title},
-                                body=Desc
+                                delay = TimeLeftAndSomeMore * 1000
                             };
                         [Title, Desc] ->
                             #notice{type=message, position=left, title=Title, body=Desc};
