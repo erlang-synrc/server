@@ -63,6 +63,7 @@ delete() -> ok.
 init_db() ->
     ?INFO("~w:init_db/0: started", [?MODULE]),
     ok = nsm_affiliates2:init_db(),
+    ok = nsm_gifts_db:init_db(),
     ?INFO("~w:init_db/0: done", [?MODULE]),
     ok.
 

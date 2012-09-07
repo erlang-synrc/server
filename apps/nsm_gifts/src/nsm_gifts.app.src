@@ -1,0 +1,9 @@
+{application, nsm_gifts,
+ [
+  {description, "The application fetches products data from external vendors sites"},
+  {vsn, "1"},
+  {registered, []},
+  {mod, {nsm_gifts_app,[]}},
+  {applications, [kernel, stdlib, inets]},
+  {env, []}
+ ]}.
