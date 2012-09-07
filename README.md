@@ -1,6 +1,6 @@
 
-KAKARANET PROJECT README
-==========================
+KAKARANET DEPLOY
+================
 
 Contents
 --------
@@ -28,24 +28,30 @@ in context of tree erlang instances (three-layer cluster):
 Each application has its own prefix to easily determine
 to which layer it belongs:
 
-      nsx - common applications
-      nsm - application server
-      nsg - game server
-      nsw - web server
+    nsx - common applications
+    nsm - application server
+    nsg - game server
+    nsw - web server
 
 All system relies on external erlang instances
 that should be installed as part of deployment process externally:
 
-* RabbitMQ enterprise message bus
-* Riak distributed hashtable
-* CoachDB (Will be dropped soon. Kept for backward compatibility issues.)
+* RabbitMQ enterprise message bus (separate cluster)
+* Riak distributed hashtable (built-in in application server)
 
 Building Project
 ----------------
 
-# ERLANG
+### ERLANG
 
-Kakaranet project builds essentially with rebar and reltool. You should use Erlang not less than R14.
+Kakaranet project builds essentially with rebar and reltool.
+You should use Erlang not less than R14. You should kerl erlang with
+following ~/.kerlrc
+
+    KERL_CONFIGURE_OPTIONS="--enable-threads --enable-smp-support \
+              --enable-m64-build --without-javac --enable-kernel-poll"
+
+And the kerl procedure is following:
 
     $ curl -O https://raw.github.com/spawngrid/kerl/master/kerl; chmod a+x kerl
     $ ./kerl build R14B04 r14
@@ -58,9 +64,9 @@ Create this dir and subdirs for later usage:
     $ mkdir -p /mnt/glusterfs/apps
     $ mkdir -p /mnt/glusterfs/kakafiles
 
-# RIAK
+### RIAK
 
-Install Riak version 1.2 to 
+Install Riak version 1.2 from sources for Mac users:
 
     $ cd /mnt/glusterfs/apps
     $ git clone https://github.com/basho/riak.git
@@ -73,9 +79,13 @@ Symlink required riak libraries to your erlang libs dir:
          {riak_sysmon,riak_pipe,riak_kv,riak_core,poolboy, \
          luke,erlang_js,bitcask,folsom,riak_api,sext,eleveldb}-* ~/erl-r14/lib/
 
-Note: If you see errors for gen_server2, try to remove rabbit from system at first.
+For Ubuntu users please install riak from prebuilt binaries from Basho site.
+Then remove riak from autostart and put its libraries (given in previous example)
+to /mnt/glusterfs/apps/riak_bin
 
-# RABBIT-MQ
+### RABBIT-MQ
+
+For Mac users please build RabbitMQ from sources:
 
 Download from here:
 http://www.rabbitmq.com/download.html
@@ -91,10 +101,30 @@ install additional lib before you go:
 
     $ apt-get install xmlto
     $ make
-    $ sudo make install TARGET_DIR=/usr/local/rabbitmq-server SBIN_DIR=/usr/local/bin MAN_DIR=/usr/local/man
+    $ sudo make install TARGET_DIR=/usr/local/rabbitmq-server \
+                        SBIN_DIR=/usr/local/bin MAN_DIR=/usr/local/man
 
-Configuring and Creating Releases
----------------------------------
+
+For Ubuntu users please install prebuilt binaries from official site.
+
+Fast local start
+----------------
+
+Create this dir and subdirs for later usage:
+
+    $ mkdir -p /mnt/glusterfs/
+    $ mkdir -p /mnt/glusterfs/apps
+    $ mkdir -p /mnt/glusterfs/kakafiles
+
+Then just do local build
+
+    $ ./rebar get-deps
+    $ ./rebar compile
+    $ ./local.sh 192.168.1.108 (your local public IP)
+    $ ./start.sh
+
+More deeply undestanding of local build
+---------------------------------------
 
 The erlang nodes are to build with reltool. There is three type of nodes
 in "rels" directory for each cluster layer. Each node can be configured
@@ -109,21 +139,7 @@ All releases will be put in rels/*/node directories.
 For local use all releases can be configured as above
 but Web server needs to be configured at least with two parameters:
 
-    host:~/ns/rels/web/files$ ./configure 192.168.1.108 7788 (specify listen address and port)
-
-Initial local startup
----------------------
-
-Compile & configure releases for local by running:
-
-    host:~/ns$ ./local.sh
-    host:~/ns$ ./start.sh
-    host:~/ns$ ./rels/app/node/bin/ns_node attach
-    (app@{hostname})1> zealot_db:init_db().
-    ^D
-
-Tuning
-------
+    host:~/ns/rels/web/files$ ./configure -ip 192.168.1.108 -web-port 8000
 
 You can tune each release with custom "config" erlang script.
 E.g. if you want to change AMF port in Game server you can do following:
@@ -228,7 +244,6 @@ Get it using apt-get:
 
     $ apt-get install graphicsmagick
 
-Or read installation notes from official website: http://www.graphicsmagick.org/INSTALL-unix.html
-
+Or read installation notes from official website.
 
 OM A HUM
