@@ -2443,12 +2443,11 @@ div.post:first-child {background:none !important}
 .create-block .article-table td{
 	padding:7px 14px 8px;
 	border:solid #e8e8e6;
-	border-width:0 1px 0 0;
+	border-width:0 0 0 0;
 	background:#efefef;
 }
 .create-block .article-table .color1 td{background:#fff;}
-.create-block .article-table .cell1{width:500px;}
-.create-block .article-table .cell2{width:77px;}
+.create-block .article-table .cell1{width:577px;}
 .create-block .article-table .cell3{
 	border:0;
 	padding-right:0;
@@ -2605,6 +2604,11 @@ div.post:first-child {background:none !important}
 	-moz-box-shadow:0 0 4px #c4c3ad inset;
 	box-shadow:0 0 4px #c4c3ad inset;
 }
+.matchmaker_clear_selection{
+    font-size:12px;
+    font-weight:bold;
+    color:rgb(115,115,115);
+}
 .article1 .criteria h2{
 	float:left;
 	margin:0;
@@ -2729,7 +2733,7 @@ div.post:first-child {background:none !important}
 	float:left;
 	text-indent:-9999px;
 	overflow:hidden;
-	background:url(/images/ico-close_green.png?jcb=1346944858) no-repeat;
+	background:url(/images/ico-close_green.png?jcb=1346945957) no-repeat;
 	width:16px;
 	height:16px;
 	margin-top:4px;
@@ -5464,7 +5468,7 @@ body.fb-inner {
 }
 
 .fb-inner .create-block .article-table .cell1 {
-	width: 375px;
+	width: 452px;
 }
 
 .fb-inner .create-block .steps-list {
