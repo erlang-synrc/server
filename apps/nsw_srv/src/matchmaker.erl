@@ -468,6 +468,18 @@ get_tables2(Setting,UId,GameFSM,Convert) ->
     Speed = GetPropList(speed, Setting),
     Game = GetPropList(game, Setting),
 
+    FilterAllUsers = case GetPropList(users, Setting) of
+        undefined -> [];
+        {multiple, ManyUsers} -> ManyUsers;
+        SingleUser -> [SingleUser]
+    end,
+
+    FilterAnyUser = case GetPropList(group, Setting) of
+        undefined -> [];
+        GroupId -> 
+            [GMR#group_member_rev.who || GMR <- rpc:call(?APPSERVER_NODE,groups,list_group_membership,[GroupId])]
+    end,
+
     MaxUsers = case GameFSM of "tavla" -> 2; "okey" -> 4 end,
 
     Check = fun(Param,Value) -> 
@@ -566,7 +578,16 @@ get_tables2(Setting,UId,GameFSM,Convert) ->
                    Check(Rounds,R)])), 50),
 
     QLC = OneLeftList ++ TwoLeftList ++ ThreeLeftList ++ Own ++ Rest,
-    case Convert of convert -> convert_to_map(QLC,Setting,UId,GameFSM); _ -> QLC end.
+    FilteredQLC = lists:filter(
+        fun(OneTable) ->
+            TableUsers = OneTable#game_table.users,
+            AllFilterOk = (FilterAllUsers==[]) or 
+                (lists:usort( [lists:member(OFU, TableUsers) || OFU <- FilterAllUsers] ) == [true]),
+            AnyFilterOk = (FilterAnyUser==[]) or 
+                (lists:usort( [lists:member(OTU, FilterAnyUser) || OTU <- TableUsers] ) =/= [false]),
+            AllFilterOk and AnyFilterOk
+        end, QLC),
+    case Convert of convert -> convert_to_map(FilteredQLC,Setting,UId,GameFSM); _ -> FilteredQLC end.
 
 convert_to_map(Data,_Setting,UId,GameFSM) ->
     [ begin Url = lists:concat([?_U("/view-table/"),GameFSM,"/id/", TId]),
