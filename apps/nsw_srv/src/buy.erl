@@ -32,6 +32,7 @@
 %% API Functions
 %%
 main() ->
+    ?INFO("Buy page: ~p",[wf:user()]),
     User = wf:user(),
     if
         User /= undefined ->

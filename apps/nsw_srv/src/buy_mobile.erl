@@ -47,11 +47,45 @@ package_info()->
     buy:package_info().
 
 form()->
-    _PurchaseId = rpc:call(?APPSERVER_NODE, nsm_srv_membership_packages, purchase_id, []),
-    _Package = buy:package(),
+    PurchaseId = rpc:call(?APPSERVER_NODE, nsm_srv_membership_packages, purchase_id, []),
+    Package = buy:package(),
 
-    ?_T("Mobile payments. Coming soon.").
+    ?INFO("Package/Purchase: ~p ~p",[PurchaseId,Package]),
 
+    #panel{class="tab-content", body=
+        #panel{class="payment-form", body=
+            #panel{
+                id = form_holder,
+                body =
+                #panel{class="col-l",body=[
+%                    bank_info(),
+                    #panel{class="btn-holder", body = [
+                        #submit{class="btn-submit", text=?_T("Buy"), postback={buy_clicked, PurchaseId}}
+                ]}]
+                }
+            }
+        }
+	  }.
+%
+    
+%    ?_T("Mobile payments. Coming soon.").
+
+event({buy_clicked, PurchaseId}) ->
+    ?INFO("Buy Clicked: ~p", [PurchaseId]),
+    Package = buy:package(),
+    Product = case Package#membership_package.id of
+          64 -> 5086;
+          65 -> 5087;
+          66 -> 5088;
+          67 -> 5089;
+          68 -> 5090;
+          69 -> 5091;
+          70 -> 5092;
+          71 -> 5093;
+          72 -> 5128;
+          _ -> 5128
+    end,
+    wf:redirect("http://www.mikro-odeme.com/sale-api/tr/step1.aspx?partner=17121&product=" ++ wf:to_list(Product)++ "&mpay=" ++ PurchaseId);
 
 event(Event)->
     buy:event(Event).
