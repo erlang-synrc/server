@@ -326,10 +326,14 @@ ui_checkboxes(Section) ->
         "</span>",
         construct_id(#checkbox{class="chk", postback={tag,{paired_game,true}},
             text=?_T("Paired"), value=?_T("Paired")}),
+        case q_game_type() of
+            okey ->
         #panel{id=gosterge_placeholder, body=
             construct_id(#checkbox{class="chk", postback={tag,{gosterge_finish,true}},
                 text=?_T("Gosterge finish"), value=?_T("Gosterge finish")})
-        },
+        };
+            _ -> ""
+        end,
         "</span>"
     ],
     case Section of
