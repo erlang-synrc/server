@@ -201,12 +201,13 @@ matchmaker_show_create(Tag) ->
      "</span>",
      #panel{class=area, body=[
       #list{id=criteria_field, class=ThisClass, body=""},
-      "<span id='guiderstab1createbutton' style='float:right;'>",
+      "<span id='guiderstab1createbutton' style='float:right; text-align:center;'>",
       case Tag of
         create -> el_create_game_button();
         _ -> ""
       end,
-      "</span>"
+      "</span>",
+      #link{text=?_T("Clear selection"), postback=clear_selection, class="matchmaker_clear_selection"}
      ]}
     ]}.
 
@@ -614,8 +615,12 @@ convert_to_map(Data,_Setting,UId,GameFSM) ->
                           creator = Owner} = _Tab <- Data ].
 
 list_users(Users) -> [ " " ++ case User of robot -> "robot"; User -> User end ++ " " || User <- Users].
-list_users_links(Users) ->
-    [ " " ++ case User of robot -> "robot"; User -> 
+list_users_links(Users, Owner) ->
+    [ " " ++ case User of robot -> "robot"; 
+              Owner ->  
+                  io_lib:format("<strong class=\"author\" style='font-size:14px;'><a href=\"~s\">~s</a></strong>",
+                        [site_utils:user_link(User), User]);
+              User -> 
                   io_lib:format("<strong class=\"author\"><a href=\"~s\">~s</a></strong>",
                         [site_utils:user_link(User), User])
               end ++ " " || User <- Users].
@@ -629,7 +634,7 @@ show_table(Tables) ->
             #panel{style="text-align: center",
                    body=#h4{text=?_T("You can create a game or join a game")} };
         _ ->
-            #table{class="view_table_table article-table",style="width:100%",
+            #table{class="view_table_table article-table", style="width:100%",
                    rows=[
                        begin
                            RowId = wf:temp_id(),
@@ -666,21 +671,19 @@ show_table(Tables) ->
                                                      show_if=UserOwner,
                                                      actions=RemoveActions,
                                                      text=?_T("Remove")},
-			       Buttons = #list{body=[#listitem{body=X} || X <- 
+			       Buttons = #list{style="float:right;",
+                            body=[#listitem{body=X} || X <- 
                                 [#image{image="/images/free.png"} || _N <- lists:seq(1,MaxUsers-length(Users))] ++ 
                                 [Info, JoinOrCrate, DeleteTable]]},
 			       #tablerow{id=RowId,
 					 cells=[#tablecell{class=cell1,
 							   text=TableNameLabel,
-                                                           body=[ " [ " ++ list_users_links(Users) ++ " ]"],
+                               body=[ " [ " ++ list_users_links(Users, OwnerLabel) ++ " ]"],
 							   id=tableNameLabel},
-						#tablecell{class=cell2,
-							   text=OwnerLabel,
-							   id=ownerLabel},
+%						#tablecell{class=cell2,
+%							   text=OwnerLabel,
+%							   id=ownerLabel},
 						#tablecell{class=cell3,
-%							   body=[[#image{image="/images/free.png", style="float:left;"}
-%                                || _N <- lists:seq(1,MaxUsers-length(Users))],
-%                                Buttons]}]}
                                body = Buttons}]}
 			   end
                            || [TableNameLabel,
@@ -735,7 +738,6 @@ check_depended({game_mode, countdown}) ->
     wf:wire("objs('.ui_rounds_btn').parent('li').removeClass('active');"),
 
     %% enable gosterge_finish
-    wf:wire("$('.item4').css('width','160px');"),    %PUBLIC BETA. We have to something with layout. It is wrong to use divs for tables and vice versa
     wf:wire(gosterge_placeholder, #show{});
 
 check_depended({game_mode, _}) ->
@@ -743,14 +745,12 @@ check_depended({game_mode, _}) ->
     wf:wire(ui_rounds, #show{}),
 
     %% disable gosterge
-
     case is_option_present(gosterge_finish, true) of
         true ->
             process_setting({gosterge_finish, true}); %% toggle setting
         false ->
             ok
     end,
-    wf:wire("$('.item4').css('width','64px');"),    %PUBLIC BETA
     wf:wire(gosterge_placeholder, #hide{});
 
 check_depended(_) -> ok.
@@ -1089,6 +1089,13 @@ u_event({delete_saved_table, TId}) ->
 u_event({tab_selected, ID}) ->
     ?INFO("u_event"),
     show_tab_guiders(ID);
+
+u_event(clear_selection) ->
+    OldSettings = wf:session({q_game_type(),wf:user()}),
+    [
+        u_event({tag, lists:nth(N, OldSettings)})
+        || N <- lists:seq(3, length(OldSettings))
+    ];
 
 u_event(Other) ->
     ?INFO("u_event other: ~p",[Other]),
