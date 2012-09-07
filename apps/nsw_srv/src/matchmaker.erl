@@ -1057,21 +1057,6 @@ u_event(create_game) ->
         integer_to_list(proplists:get_value(rounds,Settings)) ++ "|" ++ atom_to_list(proplists:get_value(speed,Settings)) ++ "|" ++
         atom_to_list(proplists:get_value(game_mode,Settings))),
     webutils:post_user_system_message(Desc);
-%    Desc = ?_TS("Our player $username$, has created '$tablename$' for "
-%        "$gametype$ game. Game specs: ", [
-%            {username, UId},
-%            {tablename, "|" ++ proplists:get_value(table_name,Settings) ++ "|"},
-%            {gametype, q_game_type()}]),
-%    SRounds = integer_to_list(proplists:get_value(rounds,Settings)),
-%    SSpeed = ?_TS("$speed$", [{speed, proplists:get_value(speed,Settings)}]),
-%    SMode = ?_TS("$mode$", [{mode, proplists:get_value(game_mode,Settings)}]),
-%    wf:state(last_system_message, webutils:post_user_system_message(
-%        ?_T("New Table") ++ "|" ++ URL ++ "|" ++ 
-%        Desc ++
-%        SRounds ++ " " ++ ?_T("rounds") ++ ", " ++ 
-%        SSpeed ++ " " ++ ?_T("speed") ++ ", " ++ 
-%        SMode ++ " " ++ ?_T("mode") ++ "." 
-%    )),
 
 
 u_event(lucky_play_button) ->

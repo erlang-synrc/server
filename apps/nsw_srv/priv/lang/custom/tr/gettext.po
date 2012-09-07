@@ -1423,6 +1423,20 @@ msgstr ""
 "$username$, adlı kullanıcımız '$tablename$' adlı masada $gametype$ oyunu "
 "yarattı. Oyun özellikleri şöyle: "
 #
+msgid ""
+"Our player $username$, has created "
+msgstr ""
+"$username$, adlı kullanıcımız "
+#
+msgid "for"
+msgstr "adlı"
+#
+msgid "game"
+msgstr "oyunu"
+#
+msgid "specs"
+msgstr "özellikleri şöyle"
+#
 msgid "Owner"
 msgstr "Sahibi"
 #
@@ -3602,7 +3616,7 @@ msgid "oynamak istediğin rakiplerin özelliklerini kendin belirleyebilirsin."
 msgstr "oynamak istediğin rakiplerin özelliklerini kendin belirleyebilirsin."
 #
 msgid "rounds"
-msgstr "el "
+msgstr "el sayısı"
 #
 msgid "size <b>hediye</b> olarak geri dönüyor. "
 msgstr "size <b>hediye</b> olarak geri dönüyor. "
@@ -4086,3 +4100,21 @@ msgstr ""
 #
 msgid "Tables"
 msgstr "Tables"
+#
+msgid "Our player $username$, has created "
+msgstr "Our player $username$, has created "
+#
+msgid "Sorry, all tables are full, you can create one youself!"
+msgstr "Sorry, all tables are full, you can create one youself!"
+#
+msgid "for"
+msgstr "for"
+#
+msgid "game"
+msgstr "game"
+#
+msgid "specs"
+msgstr "specs"
+#
+msgid "Our player, $username$, has created "
+msgstr "Our player, $username$, has created "
