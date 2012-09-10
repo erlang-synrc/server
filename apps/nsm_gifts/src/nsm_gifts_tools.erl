@@ -1,6 +1,10 @@
-%% Author: serge
+%%----------------------------------------------------------------------
+%% @author Serge Polkovnikov <serge.polkovnikov@gmail.com>
+%% @copyright Paynet Internet ve Bilisim Hizmetleri A.S. All Rights Reserved.
+%% @doc
+%% @end
 %% Created: Sep 7, 2012
-%% Description: TODO: Add description to nsm_gifts_tools
+%%----------------------------------------------------------------------
 -module(nsm_gifts_tools).
 
 %%
@@ -82,7 +86,7 @@ dumb_store(List) ->
     List2 =
         [#gift{
                vendor_id = VendorId,
-               category_id = 1,
+               categories = [1],
                ext_gift_id = ExtId,
                gift_name = ExtName,
                ext_gift_name = ExtName,
@@ -94,7 +98,7 @@ dumb_store(List) ->
                publish_end_date = {{2999, 12, 31}, {23, 59, 59}},
                real_price = UserPrice,
                retailer_price = RetailerPrice,
-               in_stock = Active,
+               in_stock = InStock,
                enabled_on_site = true,
                kakush_point = 1,
                kakush_currency = undefined,     % FIXME: WTF? admin
@@ -104,7 +108,7 @@ dumb_store(List) ->
               #ext_product_info{
                                 vendor_id = VendorId,
                                 id = ExtId,
-                                active = Active,
+%                                active = Active,
                                 name = ExtName,
 %                                category = ExtCategory,
 %                                category_name = ExtCategoryName,
@@ -113,7 +117,8 @@ dumb_store(List) ->
                                 small_image_url = ExtSmallImgURL,
                                 big_image_url = ExtBigImgURL,
                                 retailer_price = RetailerPrice,
-                                user_price = UserPrice
+                                user_price = UserPrice,
+                                in_stock = InStock
                                } <- List],
     [ok = nsm_gifts_db:create_gift(GiftRec) || GiftRec <- List2],
     ok.

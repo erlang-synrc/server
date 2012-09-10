@@ -19,10 +19,10 @@
         {
          id                     :: integer(), % auto
          vendor_id              :: integer(), % auto
-         category_id            :: integer(), % admin
+         categories             :: list(integer()), % admin
          ext_gift_id            :: term(),    % ext
          gift_name              :: binary(),  % admin
-         ext_gift_name         :: binary(),  % ext
+         ext_gift_name          :: binary(),  % ext
          description_short      :: binary(),  % admin (based on ext)
          description_long       :: binary(),  % admin (based on ext)
          image_small_url        :: binary(),  % admin (based on ext)
@@ -31,7 +31,7 @@
          publish_end_date       :: calendar:date_time(), % admin
          real_price             :: integer(), % ext
          retailer_price         :: integer(), % ext
-         in_stock               :: boolean(), % ext
+         in_stock,            % FIXME: WTF? ext
          enabled_on_site        :: boolean(), % admin
          kakush_point           :: integer(), % admin
          kakush_currency,     % FIXME: WTF? admin
@@ -39,18 +39,11 @@
          modify_date            :: calendar:date_time()  % auto
         }).
 
--record(gifts_vendor,
-        {
-         id             :: integer(),
-         name           :: binary(),
-         description    :: binary(),
-         module         :: atom()
-        }).
-
 -record(gifts_category,
         {
          id             :: integer(),
          name           :: binary(),
-         description    :: binary()
+         description    :: binary(),
+         parent         :: undefined | integer()
         }).
 

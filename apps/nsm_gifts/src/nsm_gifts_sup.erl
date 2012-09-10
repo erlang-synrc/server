@@ -1,3 +1,11 @@
+%%----------------------------------------------------------------------
+%% @author Serge Polkovnikov <serge.polkovnikov@gmail.com>
+%% @copyright Paynet Internet ve Bilisim Hizmetleri A.S. All Rights Reserved.
+%% @doc
+%% Main application supervisor.
+%% @end
+%% Created: Sep 7, 2012
+%%----------------------------------------------------------------------
 -module(nsm_gifts_sup).
 
 -behaviour(supervisor).
@@ -23,4 +31,5 @@ start_link() ->
 %% ===================================================================
 
 init([]) ->
+    %% No one children for now.
     {ok, { {one_for_one, 5, 10}, []} }.
