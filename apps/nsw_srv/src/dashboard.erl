@@ -758,124 +758,151 @@ decode_term(String) ->
     Bianry = base64:decode(String),
     binary_to_term(Bianry).
 
+s_T(String) ->
+    matchmaker:s_T(String). % this just makes sure nothing in text will break JS
+
 % guiders script for dashboard
 guiders_script() ->
     wf:wire("
         guiders.createGuider({
             buttons: [
-                {name: '"++?_T("No, thanks")++"', onclick: guiders.hideAll},
-                {name: '"++?_T("Continue")++"', onclick: guiders.next}
+                {name: '"++s_T("No, thanks")++"', onclick: guiders.hideAll},
+                {name: '"++s_T("Continue")++"', onclick: guiders.next}
             ],
-            description: '"++?_T("Here you can share your thoughts, interesting links, music and pictures with the public. You can make friends, join different groups or even create your own group. Here, let us show you everything in detail.")++"',
+            description: '"++s_T("Here you can share your thoughts, interesting links, music and pictures with the public. You can make friends, join different groups or even create your own group. Here, let us show you everything in detail.")++"',
             id: 'guider_10',
             next: 'guider_20',
             overlay: true,
-            title: '"++?_T("Welcome to Kakaranet dashboard")++"'
+            title: '"++s_T("Welcome to Kakaranet dashboard")++"'
         }).show();
 
         guiders.createGuider({
             attachTo: '#guiderssharebutton',
             position: 9,
-            buttons: [{name: '"++?_T("Continue")++"', onclick: guiders.next}],
-            description: '"++?_T("This is the main share button. You press it and all you have written in a text area will be sent to your friends dashboards. Along with the attachments of course.")++"',
+            buttons: [
+                {name: '"++s_T("<< Back")++"', onclick: guiders.prev},
+                {name: '"++s_T("Continue")++"', onclick: guiders.next}
+            ],
+            description: '"++s_T("This is the main share button. You press it and all you have written in a text area will be sent to your friends dashboards. Along with the attachments of course.")++"',
             id: 'guider_20',
             next: 'guider_30',
             overlay: false,
             xButton: true,
-            title: '"++?_T("Share button")++"'
+            title: '"++s_T("Share button")++"'
         });
 
         guiders.createGuider({
             attachTo: '#guidersaddentrybox',
             position: 6,
-            buttons: [{name: '"++?_T("Continue")++"', onclick: guiders.next}],
-            description: '"++?_T("And this is the text area for writing. You can also put youtube, vimeo or other links in here.")++"',
+            buttons: [
+                {name: '"++s_T("<< Back")++"', onclick: guiders.prev},
+                {name: '"++s_T("Continue")++"', onclick: guiders.next}
+            ],
+            description: '"++s_T("And this is the text area for writing. You can also put youtube, vimeo or other links in here.")++"',
             id: 'guider_30',
             next: 'guider_40',
             overlay: false,
             xButton: true,
-            title: '"++?_T("Text area")++"'
+            title: '"++s_T("Text area")++"'
         });
 
         guiders.createGuider({
             attachTo: '#guidersattachmentbox',
             position: 6,
-            buttons: [{name: '"++?_T("Continue")++"', onclick: guiders.next}],
-            description: '"++?_T("You can also add files to your entry. Right now the limit is 3 files and 30 Mbytes per post. And yes, uploading big files might take a little lime, so please be patient with this.")++"',
+            buttons: [
+                {name: '"++s_T("<< Back")++"', onclick: guiders.prev},
+                {name: '"++s_T("Continue")++"', onclick: guiders.next}
+            ],
+            description: '"++s_T("You can also add files to your entry. Right now the limit is 3 files and 30 Mbytes per post. And yes, uploading big files might take a little lime, so please be patient with this.")++"',
             id: 'guider_40',
             next: 'guider_50',
             overlay: false,
             xButton: true,
-            title: '"++?_T("Attachment box")++"'
+            title: '"++s_T("Attachment box")++"'
         });
 
         guiders.createGuider({
             attachTo: '#guidersmyfeed',
             position: 11,
-            buttons: [{name: '"++?_T("Continue")++"', onclick: guiders.next}],
-            description: '"++?_T("Your feed combines all the messages from your friends, groups along with your own entries. Also, when you press small \"share\" button on some other entry, it also goes to your feed")++"',
+            buttons: [
+                {name: '"++s_T("<< Back")++"', onclick: guiders.prev},
+                {name: '"++s_T("Continue")++"', onclick: guiders.next}
+            ],
+            description: '"++s_T("Your feed combines all the messages from your friends, groups along with your own entries. Also, when you press small \"share\" button on some other entry, it also goes to your feed")++"',
             id: 'guider_50',
             next: 'guider_60',
             overlay: false,
             xButton: true,
-            title: '"++?_T("Your feed")++"'
+            title: '"++s_T("Your feed")++"'
         });
 
         guiders.createGuider({
             attachTo: '#guidersdirectmessages',
             position: 7,
-            buttons: [{name: '"++?_T("Continue")++"', onclick: guiders.next}],
-            description: '"++?_T("Sometimes you might want to have a private conversations with someone. Direct messages are the right tool for this. They do not go in anyones feed, instead they are only available from here.")++"',
+            buttons: [
+                {name: '"++s_T("<< Back")++"', onclick: guiders.prev},
+                {name: '"++s_T("Continue")++"', onclick: guiders.next}
+            ],
+            description: '"++s_T("Sometimes you might want to have a private conversations with someone. Direct messages are the right tool for this. They do not go in anyones feed, instead they are only available from here.")++"',
             id: 'guider_60',
             next: 'guider_70',
             overlay: false,
             xButton: true,
-            title: '"++?_T("Direct messages")++"'
+            title: '"++s_T("Direct messages")++"'
         });
 
         guiders.createGuider({
             attachTo: '#guidersstatistics',
             position: 3,
-            buttons: [{name: '"++?_T("Continue")++"', onclick: guiders.next}],
-            description: '"++?_T("This shows your activity on Kakaranet. It does not mean much, but it still good to know, how much people are reading you.")++"',
+            buttons: [
+                {name: '"++s_T("<< Back")++"', onclick: guiders.prev},
+                {name: '"++s_T("Continue")++"', onclick: guiders.next}
+            ],
+            description: '"++s_T("This shows your activity on Kakaranet. It does not mean much, but it still good to know, how much people are reading you.")++"',
             id: 'guider_70',
             next: 'guider_80',
             overlay: false,
             xButton: true,
-            title: '"++?_T("Statistics")++"'
+            title: '"++s_T("Statistics")++"'
         });
 
         guiders.createGuider({
             attachTo: '#guidersfriends',
             position: 3,
-            buttons: [{name: '"++?_T("Continue")++"', onclick: guiders.next}],
-            description: '"++?_T("As you play games or browse groups, you might find people you want to be friends with. In technical terms this means automatically showing what they are willing to share in your feed.")++"',
+            buttons: [
+                {name: '"++s_T("<< Back")++"', onclick: guiders.prev},
+                {name: '"++s_T("Continue")++"', onclick: guiders.next}
+            ],
+            description: '"++s_T("As you play games or browse groups, you might find people you want to be friends with. In technical terms this means automatically showing what they are willing to share in your feed.")++"',
             id: 'guider_80',
             next: 'guider_90',
             overlay: false,
             xButton: true,
-            title: '"++?_T("Friends")++"'
+            title: '"++s_T("Friends")++"'
         });
 
         guiders.createGuider({
             attachTo: '#guidersgroups',
             position: 3,
-            buttons: [{name: '"++?_T("Continue")++"', onclick: guiders.next}],
-            description: '"++?_T("Groups are communities of people with common interests. Groups can be public and private. You can join any public group and see its entry right in your feed. You need an invitation to join someones private group though. And also you can create your own group if you like to.")++"',
+            buttons: [
+                {name: '"++s_T("<< Back")++"', onclick: guiders.prev},
+                {name: '"++s_T("Continue")++"', onclick: guiders.next}
+            ],
+            description: '"++s_T("Groups are communities of people with common interests. Groups can be public and private. You can join any public group and see its entry right in your feed. You need an invitation to join someones private group though. And also you can create your own group if you like to.")++"',
             id: 'guider_90',
             next: 'guider_100',
             overlay: false,
             xButton: true,
-            title: '"++?_T("Groups")++"'
+            title: '"++s_T("Groups")++"'
         });
 
         guiders.createGuider({
             buttons: [
-                {name: '"++?_T("You are welcome")++"', onclick: guiders.hideAll}
+                {name: '"++s_T("You are welcome")++"', onclick: guiders.hideAll}
             ],
-            description: '"++?_T("Thank you for going through this guide. Hope this was helpful. If you have any problem, feel free to use our support service.")++"',
+            description: '"++s_T("Thank you for going through this guide. Hope this was helpful. If you have any problem, feel free to use our support service.")++"',
             id: 'guider_100',
             overlay: true,
-            title: '"++?_T("Thank you!")++"'
+            title: '"++s_T("Thank you!")++"'
         });
     ").
