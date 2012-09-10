@@ -58,7 +58,6 @@ start_all_feed_workers() ->
 init_workers() ->
     try
         ok = init_mq(),
-        timer:sleep(3000),
         %% FIXME: move workers start to another place?
         {ok, _} = nsm_bg_workers_sup:start_worker(nsm_bg_worker_email, []),
         %% bootstrap worker, satarts another workers
