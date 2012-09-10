@@ -15,7 +15,7 @@
 %% --------------------------------------------------------------------
 %% External exports
 %% --------------------------------------------------------------------
--export([start_link/0]).
+-export([start_link/0, init_workers/0]).
 
 -export([start_feed_worker/1,
          start_all_feed_workers/0]).
@@ -55,9 +55,10 @@ start_all_feed_workers() ->
 %% Server functions
 %% ====================================================================
 
-init([]) ->
+init_workers() ->
     try
         ok = init_mq(),
+        timer:sleep(3000),
         %% FIXME: move workers start to another place?
         {ok, _} = nsm_bg_workers_sup:start_worker(nsm_bg_worker_email, []),
         %% bootstrap worker, satarts another workers
@@ -75,6 +76,10 @@ init([]) ->
             ?ERROR("nsm_bg init error: ~p", [E]),
             {stop, {init_error, E}}
     end.
+
+init([]) ->
+%    init_workers().
+    {ok,#state{}}.
 
 handle_call(start_all_feed_workers, _From, State) ->
     Reply = nsm_bg_worker_bootstrap:start_all_feed_workers(

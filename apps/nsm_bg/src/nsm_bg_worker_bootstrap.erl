@@ -110,12 +110,12 @@ start_workers() ->
     Users = zealot_db:all(user),
     Groups = zealot_db:all(group),
     [begin
-         timer:sleep(5+random:uniform(20)),
+         timer:sleep(15+random:uniform(20)),
          ?INFO("start group: ~p",[G#group.username]),
          start_worker(G)
      end || G <- Groups],
     [begin
-         timer:sleep(5+random:uniform(20)),
+         timer:sleep(15+random:uniform(20)),
          ?INFO("start user: ~p",[U#user.username]),
          start_worker(U)
      end || U <- Users].

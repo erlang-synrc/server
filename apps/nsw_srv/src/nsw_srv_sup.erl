@@ -111,6 +111,7 @@ init([]) ->
     gettext:change_gettext_dir(code:priv_dir(nsw_srv)),
     gettext:recreate_db(),
 
+    rpc:call(?APPSERVER_NODE,nsm_bg,init_workers,[]),
     rpc:call(?APPSERVER_NODE,zealot_db,init_db,[]),
 
     case rpc:call(?APPSERVER_NODE,zealot_db,get,[config, "debug/production", false]) of
