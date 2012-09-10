@@ -2609,6 +2609,24 @@ div.post:first-child {background:none !important}
     font-weight:bold;
     color:rgb(115,115,115);
 }
+.matchmaker_game_rules {
+	border:1px solid #8c8c8c;
+    float:left;
+	height:16px;
+	padding:3px 8px;
+	font:bold 12px/15px Arial, Helvetica, sans-serif;
+	-moz-box-shadow:0 2px 3px #abafb2;
+	-webkit-box-shadow:0 2px 3px #abafb2;
+	box-shadow:0 2px 3px #abafb2;
+	-moz-border-radius:3px;
+	-webkit-border-radius:3px;
+	border-radius:3px;
+	overflow:hidden;
+	color:#fff;
+	background:url(../images/btn-light-gray.png) repeat-x;
+	text-shadow:0 1px 1px #353535;
+    margin-left:20px;
+}
 .article1 .criteria h2{
 	float:left;
 	margin:0;

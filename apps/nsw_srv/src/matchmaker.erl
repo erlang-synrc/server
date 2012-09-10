@@ -397,8 +397,15 @@ matchmaker_show_tables() ->
 		       ]}
 		  ],
     [
-     #h2{text=q_game_type() ++ " " ++ ?_T("Selected Option")},
-     #panel{class="items", body=TableFilter}
+        #singlerow { cells=[
+            #tablecell { 
+                body=#h2{text=q_game_type() ++ " " ++ ?_T("Selected Option")}
+            },
+            #tablecell { 
+                body=#link{text=?_T("Game Rules"), class="matchmaker_game_rules", postback=show_game_rules}
+            }
+        ]},
+        #panel{class="items", body=TableFilter}
     ].
 
 
@@ -1096,6 +1103,34 @@ u_event(clear_selection) ->
         u_event({tag, lists:nth(N, OldSettings)})
         || N <- lists:seq(3, length(OldSettings))
     ];
+
+u_event(show_game_rules) ->
+    case q_game_type() of
+        "okey" ->
+            wf:wire("
+                guiders.createGuider({
+                    buttons: [
+                        {name: '"++s_T("Ok")++"', onclick: guiders.hideAll},
+                    ],
+                    description: '"++s_T("After a random dealer is chosen, each player is given 21 tiles (your hand) and the dealer gets 22 tiles. The rest of the tiles go face down into the bank and 1 tile which indicates what the joker will be is turned face up. The game is played anticlockwise. The dealer starts the game by throwing away 1 of his tiles. The turn then goes to the player on his right. A player starts their turn by either taking a tile from the bank or taking the tile thrown away by the previous player. The player then either 'opens' (puts his sets on the table) and/or adds to the sets already on the table. If the player can't open they finish the turn by throwing away 1 of the tiles from their hand. A player must always throw away a tile to finish the turn, even when finishing their entire hand.")++"',
+                    id: 'rules_okey',
+                    overlay: true,
+                    title: '"++s_T("Okey Rules")++"'
+                }).show();
+            ");
+        "tavla" ->
+            wf:wire("
+                guiders.createGuider({
+                    buttons: [
+                        {name: '"++s_T("Ok")++"', onclick: guiders.hideAll},
+                    ],
+                    description: '"++s_T("Tables is a general name given to a class of board games similar to backgammon, played on a board with two rows of 12 vertical markings called \"points\". Players roll dice to determine the movement of pieces. Tables games are among the oldest known board games, and many variants are played throughout the world.")++"',
+                    id: 'tavla_okey',
+                    overlay: true,
+                    title: '"++s_T("Tavla Rules")++"'
+                }).show();
+            ")
+    end;
 
 u_event(Other) ->
     ?INFO("u_event other: ~p",[Other]),
