@@ -1700,6 +1700,9 @@ msgstr "Kaldır"
 msgid "Repeat password *:"
 msgstr "Şifre tekrarı *:"
 #
+msgid "Replay Guiders"
+msgstr "Açıklamaları Göster"
+#
 msgid "Reports"
 msgstr "Raporlar"
 #
@@ -3947,8 +3950,8 @@ msgstr "Katlama seçeneği"
 msgid "Double quota description"
 msgstr ""
 "İstediğiniz oyunda, katlama seçeneğini kullanabilirsiniz. Kaç ile "
-"katlarsanız, herkesten o derecede kota ve kakuş kesintisi yapılır. 2 ila 10 "
-"katı diyebilirsiniz. Böylece rakiplerinize hodri meydan demiş olursunuz."
+"katlarsanız, herkesten o derecede kota kesintisi yapılır. 2 ila 10 katı "
+"diyebilirsiniz. Böylece rakiplerinize hodri meydan demiş olursunuz."
 #
 msgid "Duration"
 msgstr "Süre"
