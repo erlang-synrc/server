@@ -312,7 +312,7 @@ get_popular_group_container() ->
                      #span{style="padding-left:4px;", text = io_lib:format("(~b)", [Number])}
                     ]}
              end
-             ||{Group, Number}<-rpc:call(?APPSERVER_NODE, groups, get_popular_groups, [wf:user(), 9])]
+             ||{Group, Number}<-rpc:call(?APPSERVER_NODE, groups, get_popular_groups, [wf:user(), 2])]
         ]}
 %PHASE1        io_lib:format("<span class=\"links\"><a href=\"/groups\">~s</a> / <a href=\"/groups\">~s</a></span>",
 %            [?_T("Browse"), ?_T("Edit groups list")])
