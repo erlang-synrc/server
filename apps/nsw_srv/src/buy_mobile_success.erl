@@ -11,6 +11,9 @@
 -include("setup.hrl").
 -include("common.hrl").
 
+% https://kakaranet.com/buy/mobile/basarili?mpy=20120910_151040_74&pid=3390185&
+%          order=10859ea7-e5b3-44fc-80d1-b6a9eb89556c&op=1
+
 main() ->
     User = wf:user(),
     case User of
