@@ -3979,12 +3979,12 @@ msgstr ""
 "burada seçtiğiniz gruplara abone olanlar kurduğunuz masayı görebilirler."
 #
 msgid "Hide button description"
-msgstr "Gizle"
-#
-msgid "Hide button options"
 msgstr ""
 "Detaylı ayarları buradan gizleyebilirsiniz. Unutmayın, istediğiniz zaman "
 "tekrar açabilirsiniz."
+#
+msgid "Hide button options"
+msgstr "Gizle"
 #
 msgid "Hide details"
 msgstr "Detayları gizle"
