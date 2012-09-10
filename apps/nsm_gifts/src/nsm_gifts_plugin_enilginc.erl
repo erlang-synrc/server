@@ -178,10 +178,10 @@ fetch_url(URL) ->
             {error, Reason};
 
         {ok, {{_, StatusCode, _}=StatusLine, _Headers, Body}} ->
-            ?INFO("Trying to fetch the URL: ~p~n"
-                  "StatusLine=~99999p~n"
-                  "Headers=~p~n"
-                  "BodyLength=~w~n",
+            ?INFO("Trying to fetch the URL: ~p "
+                  "StatusLine=~99999p "
+                  "Headers=~p "
+                  "BodyLength=~w",
                   [URL, StatusLine, _Headers, length(Body)]),
 
             if StatusCode >= 200,
