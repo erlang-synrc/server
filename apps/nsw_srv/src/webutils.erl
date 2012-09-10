@@ -117,7 +117,12 @@ account_menu() ->
                 #listitem{body=#link{text=?_T("Logout"), postback=logout}}
             ]};
 	    _ ->
-		[#link{class=al, url=?_U("/login/facebook"), body=#image{image="/images/img-01.png"}},
+		[
+        case site_utils:detect_language() of
+            "en" -> #link{class=al, url=?_U("/login/facebook"), body=#image{image="/images/img-01.png"}};
+            "tr" -> #link{class=al, url=?_U("/login/facebook"), body=#image{image="/images/fb_connect_tr.png"}, 
+                style="margin-top:-2px;"}
+        end,
 		 #list{class="user-menu", body=[
                     #listitem{body=#link{class=login, text=?_T("Login"), postback=login1, url=?_U("/login")}},
                     #listitem{body=#link{class=signup, text=?_T("Signup"), url=?_U("/login/register")}}
@@ -201,7 +206,7 @@ footer_box() ->
                         #listitem{body=[?_T("2011 &copy; Kakaranet. All rights reserved."),"<br />",
                                     ?_T("Kakaranet is registered trademark of Paynet Inc."),"<br/>",
                                     ?_T("Public Beta - 10 Aug 2012")]},
-                        #listitem{body=[#checkbox { id=replay_guiders, text="Replay Guiders", postback=replay_guiders_changed,
+                        #listitem{body=[#checkbox { id=replay_guiders, text=?_T("Replay Guiders"), postback=replay_guiders_changed,
                                     checked=(wf:cookie("replayguiders")=="yes") }]}
                        ],
 

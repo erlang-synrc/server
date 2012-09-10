@@ -137,10 +137,10 @@ entry_element(E, Comments, Avatar, {MediaThumb, MediaLists0}, _TargetMedia, Anch
                             Title = ?_T("New Table"),
                             Desc1 = ?_TS("Our player, $username$, has created ", [{username, UId}]),
                             Link = TableName,
-                            Desc2 = " " ++ ?_T("for") ++ " " ++ GameType ++ " " ++ ?_T("game") ++ ". " ++ ?_T("Game") ++ 
-                                " " ++ ?_T("specs") ++ ": " ++
-                                Rounds ++ " " ++ ?_T("rounds") ++ ", " ++ Speed ++ " " ++ ?_T("speed") ++ ", " ++
-                                Mode ++ " " ++ ?_T("mode") ++ ".",
+                            Desc2 = " " ++ ?_T("for") ++ " " ++ GameType ++ " " ++ ?_T("game") ++ ". " ++ ?_T("Game") 
+                                ++ " " ++ ?_T("specs") ++ ": " ++ Rounds ++ " " ++ ?_T("rounds") 
+                                ++ ", \"" ++ matchmaker:game_speed_to_text(Speed) ++ "\" " ++ ?_T("speed") 
+                                ++ ", \"" ++ matchmaker:game_mode_to_text(Mode) ++ "\" " ++ ?_T("mode") ++ ".",
                             #notice{type=system_message, position=left,
                                 title=#link{url=URL, text=Title},
                                 body=[
