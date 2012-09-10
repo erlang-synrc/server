@@ -2,7 +2,7 @@
 %% @author Serge Polkovnikov <serge.polkovnikov@gmail.com>
 %% @copyright Paynet Internet ve Bilisim Hizmetleri A.S. All Rights Reserved.
 %% @doc
-%% Interfaces for working with the gifts database
+%% Interfaces for working with the gifts database.
 %% @end
 %% Created: Sep 7, 2012
 %%----------------------------------------------------------------------
@@ -23,12 +23,33 @@
         ]).
 
 -export([
-         create_category/2,
+         start_client/0,
+         stop_client/1,
          create_category/3,
+         create_category/4,
          create_gift/1,
          create_gift/2,
+         get_all_categories/0,
+         get_all_categories/1,
+         get_all_gifts/0,
+         get_all_gifts/1,
+         get_categories/1,
+         get_categories/2,
          get_gifts/1,
-         get_gifts/2
+         get_gifts/2,
+         get_category/1,
+         get_category/2,
+         get_gift/1,
+         get_gift/2,
+         update_category/2,
+         update_category/3,
+         update_gift/2,
+         update_gift/3
+        ]).
+
+-export([
+         clear_gifts/0,
+         clear_gifts/1
         ]).
 
 -type db_handler() :: any().
@@ -45,6 +66,7 @@
 %% Indices
 -define(BUCKET_INDEX, "bucket_bin").
 -define(CATEGORY_INDEX, "categoty_bin").
+-define(CATPARENT_INDEX, "catparent_bin").
 
 %% Meta Id
 -define(MD_INDEX, <<"index">>).
@@ -61,35 +83,74 @@ init_db() ->
     ?INFO("~w:init_db/0: started", [?MODULE]),
     C = start_riak_client(),
     ok = C:set_bucket(?GIFTS_BUCKET, [{backend, leveldb_backend}]),
+    ok = C:set_bucket(?CATEGORIES_BUCKET, [{backend, leveldb_backend}]),
     ok = init_counter(C, ?GIFTS_COUNTER, 1, []),
     ok = init_counter(C, ?CATEGORIES_COUNTER, 1, []),
     stop_riak_client(C),
     ?INFO("~w:init_db/0: done", [?MODULE]),
     ok.
 
-%% @spec create_category(Name, Description) -> ok | {error, Reason}
+-spec start_client() -> db_handler().
+%% @spec start_client() -> Handler
+%% @doc
+%% Types:
+%%     Handler = db_handler()
+%% Creates a handler to the database.
+%% @end
+
+start_client() ->
+    start_riak_client().
+
+
+
+-spec stop_client(db_handler()) -> ok.
+%% @spec start_client(Handler) -> ok
+%% @doc
+%% Types:
+%%     Handler = db_handler()
+%% Releases a handler to the database.
+%% @end
+
+stop_client(Handler) ->
+    stop_riak_client(Handler).
+
+
+%% @spec create_category(Name, Description, ParentId) -> ok | {error, Reason}
 %% @doc
 %% Types:
 %%     Name = Description = binary()
+%%     Parentid = undefined | integer()
 %%     Reason = term()
 %% @end
 
-create_category(Name, Description) ->
+create_category(Name, Description, ParentId) ->
     Handler = start_riak_client(),
-    Res = create_category(Handler, Name, Description),
+    Res = create_category(Handler, Name, Description, ParentId),
     stop_riak_client(Handler),
     Res.
 
-%% @spec create_category(Handler, Name, Description) -> ok | {error, Reason}
+%% @spec create_category(Handler, Name, Description, ParentId) ->
+%%                                              ok | {error, Reason}
 %% @doc
 %% Types:
 %%     Handler = db_handler()
 %%     Name = Description = binary()
+%%     Parentid = undefined | integer()
 %%     Reason = term()
 %% @end
 
-create_category(Handler, Name, Description) ->
-    create_new_category_record(Handler, Name, Description).
+create_category(Cl, Name, Description, ParentId) ->
+    Id = category_id(Cl),
+    Record=#gifts_category{id = Id,
+                           name = Name,
+                           description = Description,
+                           parent = ParentId},
+    Obj1 = riak_object:new(?CATEGORIES_BUCKET, term_to_binary(Id), Record),
+    Indices = [{?BUCKET_INDEX, ?CATEGORIES_BUCKET},
+               {?CATPARENT_INDEX, term_to_binary(ParentId)}],
+    Meta = dict:store(?MD_INDEX, Indices, dict:new()),
+    Obj2 = riak_object:update_metadata(Obj1, Meta),
+    ok = Cl:put(Obj2, []).
 
 
 %% @spec create_gift(GiftRec) -> ok | {error, Reason}
@@ -113,14 +174,145 @@ create_gift(GiftRec) ->
 %%     Reason = term()
 %% @end
 
-create_gift(Handler, GiftRec) ->
-    create_new_gift_record(Handler, GiftRec).
+create_gift(Cl, #gift{categories = Cats} = Record) ->
+    Id = gift_id(Cl),
+    Record2 = Record#gift{id = Id},
+    Obj1 = riak_object:new(?GIFTS_BUCKET, term_to_binary(Id), Record2),
+    Indices = [{?BUCKET_INDEX, ?GIFTS_BUCKET} |
+                 [{?CATEGORY_INDEX, term_to_binary(CatId)} ||
+                  CatId <- lists:usort(Cats)]],
+    Meta = dict:store(?MD_INDEX, Indices, dict:new()),
+    Obj2 = riak_object:update_metadata(Obj1, Meta),
+    ok = Cl:put(Obj2, []).
+
+%% @spec get_all_categories() -> List
+%% @doc
+%% Types:
+%%     List = list({CatRec, Obj})
+%%       CatRec = #gifts_category{}
+%%       Obj = term()
+%% Returns a list of categories.
+%% The Obj term is opaque value and should not be analysed. The Obj
+%% is used for performing update_category/2,3 calls.
+%% @end
+
+get_all_categories() ->
+    Handler = start_riak_client(),
+    Res = get_all_categories(Handler),
+    stop_riak_client(Handler),
+    Res.
+
+%% @spec get_all_categories(Handler) -> List
+%% @doc
+%% Type:
+%%     Handler = db_handler()
+%%     List = list({CatRec, Obj})
+%%       CatRec = #gifts_category{}
+%%       Obj = term()
+%% Returns a list of categories.
+%% The Obj term is opaque value and should not be analysed. The Obj
+%% is used for performing update_category/2,3 calls.
+%% @end
+
+get_all_categories(Handler) ->
+    Keys = get_all_categories_keys(Handler),
+    Objects = read_objects(Handler, ?CATEGORIES_BUCKET, Keys, []),
+    categories_objects_to_data(Objects).
+
+
+%% @spec get_all_gifts() -> List
+%% @doc
+%% Types:
+%%     List = list({GiftRec, Obj})
+%%       GiftRec = #gift{}
+%%       Obj = term()
+%% Returns a list of gifts.
+%% The Obj term is opaque value and should not be analysed. The Obj
+%% is used for performing update_gift/2,3 calls.
+%% @end
+
+get_all_gifts() ->
+    Handler = start_riak_client(),
+    Res = get_all_gifts(Handler),
+    stop_riak_client(Handler),
+    Res.
+
+%% @spec get_all_gifts(Handler) -> List
+%% @doc
+%% Type:
+%%     Handler = db_handler()
+%%     List = list({GiftRec, Obj})
+%%       GiftRec = #gift{}
+%%       Obj = term()
+%% Returns a list of gifts.
+%% The Obj term is opaque value and should not be analysed. The Obj
+%% is used for performing update_gift/2,3 calls.
+%% @end
+
+get_all_gifts(Handler) ->
+    Keys = get_all_gifts_keys(Handler),
+    Objects = read_objects(Handler, ?GIFTS_BUCKET, Keys, []),
+    gifts_objects_to_data(Objects).
+
+%% @spec get_categories(ParentId) -> List
+%% @doc
+%% Types:
+%%     ParentId = undefined | integer()
+%%     List = list({CatRec, Obj})
+%%       CatRec = #gifts_category{}
+%%       Obj = term()
+%% Returns a list of categories which belong to the specified parent category.
+%% To get top level categories pass atom 'undefined' as a ParentId.
+%% The Obj term is opaque value and should not be analysed. The Obj
+%% is used for performing update_category/2,3 calls.
+%% @end
+
+get_categories(ParentId) ->
+    Handler = start_riak_client(),
+    Res = get_categories(Handler, ParentId),
+    stop_riak_client(Handler),
+    Res.
+
+%% @spec get_categories(Handler, ParentId) -> List
+%% @doc
+%% Types:
+%%     Handler = db_handler()
+%%     ParentId = undefined | integer()
+%%     List = list({CatRec, Obj})
+%%       CatRec = #gifts_category{}
+%%       Obj = term()
+%% Returns a list of categories which belong to the specified parent category.
+%% To get top level categories pass atom 'undefined' as a ParentId.
+%% The Obj term is opaque value and should not be analysed. The Obj
+%% is used for performing update_category/2,3 calls.
+%% @end
+
+get_categories(Handler, ParentId) ->
+    Keys = get_cats_keys_by_parent(Handler, ParentId),
+    Objects = read_objects(Handler, ?CATEGORIES_BUCKET, Keys, []),
+    categories_objects_to_data(Objects).
+
+
+-spec categories_objects_to_data(list()) -> list({#gifts_category{}, term()}).
+%% @private
+
+categories_objects_to_data(Objects) ->
+    [begin
+         {riak_object:get_value(Obj), Obj}
+     end
+     || Obj <- Objects].
+
 
 %% @spec get_gifts(Category) -> List
 %% @doc
 %% Types:
 %%     Category = integer()
-%%     List = list(#gift{})
+%%     List = list({GiftRec, Obj})
+%%       GiftRec = #gift{}
+%%       Obj = term()
+%% Returns a list of gifts which belong to the specified category.
+%% The Obj term is opaque value and should not be analysed. The Obj
+%% is used for performing update_gift/2,3 calls.
 %% @end
 
 get_gifts(Category) ->
@@ -134,23 +326,194 @@ get_gifts(Category) ->
 %% Type:
 %%     Handler = db_handler()
 %%     Category = integer()
-%%     List = list(#gift{})
+%%     List = list({GiftRec, Obj})
+%%       GiftRec = #gift{}
+%%       Obj = term()
+%% Returns a list of gifts which belong to the specified category.
+%% The Obj term is opaque value and should not be analysed. The Obj
+%% is used for performing update_gift/2,3 calls.
 %% @end
 
 get_gifts(Handler, Category) ->
     Keys = get_gifts_keys_by_cat(Handler, Category),
-    Objects = read_gifts_objects(Handler, Keys),
+    Objects = read_objects(Handler, ?GIFTS_BUCKET, Keys, []),
     gifts_objects_to_data(Objects).
 
 
--spec gifts_objects_to_data(list()) -> list(#gift{}).
+-spec gifts_objects_to_data(list()) -> list({#gift{}, term()}).
 %% @private
 
 gifts_objects_to_data(Objects) ->
     [begin
-         riak_object:get_value(Obj)
+         {riak_object:get_value(Obj), Obj}
      end
      || Obj <- Objects].
+
+%% @spec get_category(CatId) -> {ok, {CatRec, Obj}} |
+%%                           {error, notfound}
+%% @doc
+%% Types:
+%%     CatId = integer()
+%%     CatRec = #gifts_category{}
+%%     Obj = term()
+%% @end
+
+get_category(CatId) ->
+    Handler = start_riak_client(),
+    Res = get_category(Handler,CatId),
+    stop_riak_client(Handler),
+    Res.
+
+%% @spec get_category(Handler, CatId) -> {ok, {CatRec, Obj}} |
+%%                                       {error, notfound}
+%% @doc
+%% Type:
+%%     Handler = db_handler()
+%%     CatId = integer()
+%%     CatRec = #gifts_category{}
+%%     Obj = term()
+%% @end
+
+get_category(Handler, CatId) ->
+    case read_object(Handler, ?CATEGORIES_BUCKET, term_to_binary(CatId), []) of
+        {ok, Object} ->
+            Rec = riak_object:get_value(Object),
+            {ok, {Rec, Object}};
+        {error, notfound} ->
+            {error, notfound}
+    end.
+
+%% @spec get_gift(GiftId) -> {ok, {GiftRec, Obj}} |
+%%                           {error, notfound}
+%% @doc
+%% Types:
+%%     GiftId = integer()
+%%     GiftRec = #gift{}
+%%     Obj = term()
+%% @end
+
+get_gift(GiftId) ->
+    Handler = start_riak_client(),
+    Res = get_gift(Handler, GiftId),
+    stop_riak_client(Handler),
+    Res.
+
+%% @spec get_gift(Handler, GiftId) -> {ok, {GiftRec, Obj}} |
+%%                                    {error, notfound}
+%% @doc
+%% Type:
+%%     Handler = db_handler()
+%%     GiftId = integer()
+%%     GiftRec = #gift{}
+%%     Obj = term()
+%% @end
+
+get_gift(Handler, GiftId) ->
+    case read_object(Handler, ?GIFTS_BUCKET, term_to_binary(GiftId), []) of
+        {ok, Object} ->
+            Rec = riak_object:get_value(Object),
+            {ok, {Rec, Object}};
+        {error, notfound} ->
+            {error, notfound}
+    end.
+
+
+
+%% @spec update_gift(GiftRec, Object) -> ok | {error, Reason}
+%% @doc
+%% Types:
+%%     GiftRec = #gift{}
+%%     Object = term()
+%% @end
+
+update_gift(GiftRec, Object) ->
+    Handler = start_riak_client(),
+    Res = update_gift(Handler, GiftRec, Object),
+    stop_riak_client(Handler),
+    Res.
+
+%% @spec update_gift(Handler, GiftRec, Object) -> ok | {error, Reason}
+%% @doc
+%% Types:
+%%     Handler = db_handler()
+%%     GiftRec = #gift{}
+%%     Object = term()
+%% @end
+
+update_gift(Handler, #gift{categories = Cats} = GiftRec, Object) ->
+    Obj1 = riak_object:update_value(Object, GiftRec),
+    Indices = [{?BUCKET_INDEX, ?GIFTS_BUCKET} |
+                   [{?CATEGORY_INDEX, term_to_binary(CatId)} ||
+                    CatId <- lists:usort(Cats)]],
+    Meta = dict:store(?MD_INDEX, Indices, dict:new()),
+    Obj2 = riak_object:update_metadata(Obj1, Meta),
+
+    case write_object(Handler, Obj2, [if_not_modified]) of
+        ok ->
+            ok;
+        {error, Reason} ->
+            {error, Reason}
+    end.
+
+%% @spec update_category(CatRec, Object) -> ok | {error, Reason}
+%% @doc
+%% Types:
+%%     CatRec = #gifts_category{}
+%%     Object = term()
+%% @end
+
+update_category(CatRec, Object) ->
+    Handler = start_riak_client(),
+    Res = update_category(Handler, CatRec, Object),
+    stop_riak_client(Handler),
+    Res.
+
+%% @spec update_category(Handler, CatRec, Object) -> ok | {error, Reason}
+%% @doc
+%% Types:
+%%     Handler = db_handler()
+%%     CatRec = #gifts_category{}
+%%     Object = term()
+%% @end
+
+update_category(Handler,
+                #gifts_category{parent = ParentId
+                               } = CatRec,
+                Object) ->
+    Obj1 = riak_object:update_value(Object, CatRec),
+    Indices = [{?BUCKET_INDEX, ?CATEGORIES_BUCKET},
+               {?CATPARENT_INDEX, term_to_binary(ParentId)}],
+    Meta = dict:store(?MD_INDEX, Indices, dict:new()),
+    Obj2 = riak_object:update_metadata(Obj1, Meta),
+
+    case write_object(Handler, Obj2, [if_not_modified]) of
+        ok ->
+            ok;
+        {error, Reason} ->
+            {error, Reason}
+    end.
+
+
+%% @spec clear_gifts() -> ok
+%% @doc
+%% @end
+
+clear_gifts() ->
+    Handler = start_riak_client(),
+    Res = clear_gifts(Handler),
+    stop_riak_client(Handler),
+    Res.
+
+%% @spec clear_gifts(Handler) -> ok
+%% @doc
+%% Type:
+%%     Handler = db_handler()
+%% @end
+
+clear_gifts(Handler) ->
+    Keys = get_all_gifts_keys(Handler),
+    ok = delete_objects(Handler, ?GIFTS_BUCKET, Keys, []).
+
 
 
 %%
@@ -207,20 +570,6 @@ create_counter_object(CounterId, Val) ->
     Obj2.
 
 
-create_new_category_record(Cl, Name, Description) ->
-    Id = category_id(Cl),
-    Record=#gifts_category{id = Id,
-                           name = Name,
-                           description = Description},
-    write_category_record(Cl, Record),
-    ok.
-
-create_new_gift_record(Cl, Record) ->
-    Id = gift_id(Cl),
-    Record2 = Record#gift{id = Id},
-    write_gift_record(Cl, Record2),
-    ok.
-
 category_id(Handler) ->
     next_id(Handler, ?CATEGORIES_COUNTER).
 
@@ -233,7 +582,7 @@ gift_id(Handler) ->
 next_id(Cl, CounterId) ->
     {ok, Object} = Cl:get(?COUNTERS_BUCKET, CounterId, []),
     CurValue = riak_object:get_value(Object),
-    Object2 = riak_object:update_value(Object, CurValue+1),
+    Object2 = riak_object:update_value(Object, CurValue + 1),
     case Cl:put(Object2, [if_not_modified]) of
         ok ->
             CurValue;
@@ -241,29 +590,6 @@ next_id(Cl, CounterId) ->
             next_id(Cl, CounterId)
     end.
 
-
-
--spec write_category_record(any(), #gifts_category{}) -> ok.
-%% @private
-
-write_category_record(Cl, #gifts_category{id = CategoryId} = Record) ->
-    Obj = riak_object:new(?CATEGORIES_BUCKET,
-                          term_to_binary(CategoryId), Record),
-    ok = Cl:put(Obj, []).
-
--spec write_gift_record(any(), #gift{}) -> ok.
-%% @private
-
-write_gift_record(Cl, #gift{id = Id,
-                            category_id = CatId
-                           } = Record) ->
-    Obj1 = riak_object:new(?GIFTS_BUCKET,
-                           term_to_binary(Id), Record),
-    Indecies = [{?BUCKET_INDEX, ?GIFTS_BUCKET},
-                {?CATEGORY_INDEX, term_to_binary(CatId)}],
-    Meta = dict:store(?MD_INDEX, Indecies, dict:new()),
-    Obj2 = riak_object:update_metadata(Obj1, Meta),
-    ok = Cl:put(Obj2, []).
 
 %% @private
 -spec get_gifts_keys_by_cat(any(), integer()) -> list(binary()).
@@ -274,15 +600,31 @@ get_gifts_keys_by_cat(Cl, CatId) ->
                      {eq, <<?CATEGORY_INDEX>>, term_to_binary(CatId)}),
     Keys.
 
-
--spec read_gifts_objects(any(), binary()) -> list().
 %% @private
-%% @doc Reads objects from a database.
-%% @spec read_gifts_objects(Cl, Key) -> Objects
-%% @end
+-spec get_cats_keys_by_parent(any(), integer()) -> list(binary()).
 
-read_gifts_objects(Cl, Key) ->
-    read_objects(Cl, ?GIFTS_BUCKET, Key, []).
+get_cats_keys_by_parent(Cl, ParentId) ->
+    {ok, Keys} =
+        Cl:get_index(?CATEGORIES_BUCKET,
+                     {eq, <<?CATPARENT_INDEX>>, term_to_binary(ParentId)}),
+    Keys.
+
+%% @private
+-spec get_all_gifts_keys(any()) -> list(binary()).
+
+get_all_gifts_keys(Cl) ->
+    {ok, Keys} =
+        Cl:get_index(?GIFTS_BUCKET, {eq, <<?BUCKET_INDEX>>, ?GIFTS_BUCKET}),
+    Keys.
+
+%% @private
+-spec get_all_categories_keys(any()) -> list(binary()).
+
+get_all_categories_keys(Cl) ->
+    {ok, Keys} =
+        Cl:get_index(?CATEGORIES_BUCKET,
+                     {eq, <<?BUCKET_INDEX>>, ?CATEGORIES_BUCKET}),
+    Keys.
 
 
 -spec read_objects(any(), binary(), list(), timeout() | any()) -> list().
@@ -303,6 +645,18 @@ read_objects(Cl, Bucket, Keys, Options) ->
         end,
     lists:foldl(F, [], Keys).
 
+
+-spec delete_objects(any(), binary(), list(), timeout() | any()) -> ok.
+%% @private
+%% @spec delete_objects(Cl, Bucket, Keys, Options) -> Objects
+%% @doc Delete objects from a database.
+%% @end
+
+delete_objects(Cl, Bucket, Keys, Options) ->
+    [delete_object(Cl, Bucket, Key, Options) ||
+       Key <- Keys],
+    ok.
+
 %% @private
 %% @doc Reads an object from the database.
 %% @spec read_object(Cl, Bucket, Key, Options) -> {ok, Object} | {error, Error}
@@ -310,4 +664,22 @@ read_objects(Cl, Bucket, Keys, Options) ->
 
 read_object(Cl, Bucket, Key, Options) ->
     Cl:get(Bucket, Key, Options).
+
+
+%% @private
+%% @doc Writes an object to the database.
+%% @spec write_object(Cl, Object, Options) -> ok | {error, Error}
+%% @end
+
+write_object(Cl, Object, Options) ->
+    Cl:put(Object, Options).
+
+
+%% @private
+%% @doc Deletes an object from the database.
+%% @spec delete_object(Cl, Bucket, Key, Options) -> ok | {error, Error}
+%% @end
+
+delete_object(Cl, Bucket, Key, Options) ->
+    Cl:delete(Bucket, Key, Options).
 
