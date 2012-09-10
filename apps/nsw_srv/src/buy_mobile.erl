@@ -16,6 +16,8 @@ main() ->
         undefined ->
             wf:redirect_to_login(?_U("/login"));
          _->
+            ?INFO("main"),
+            
             main_authorized()
     end.
 
@@ -25,6 +27,7 @@ main_authorized() ->
 title() -> ?_T("Buy with mobile").
 
 body() ->
+    ?INFO("body"),
     case wf:q("__submodule__") of
          "basarili" -> process_result(success);
          "basarisiz" -> process_result(failure);
