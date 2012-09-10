@@ -376,6 +376,9 @@ msgstr "Kapat"
 msgid "Close filter"
 msgstr "Filtreyi kapat"
 #
+msgid "color"
+msgstr "renk"
+#
 msgid "Color"
 msgstr "Renk"
 #
@@ -724,6 +727,9 @@ msgstr "Hata: Değişken anahtarı yanlış biçemli."
 msgid "Error: user not found."
 msgstr "Hata: Kullanıcı bulunamadı."
 #
+msgid "even/odd"
+msgstr "tek/çift"
+#
 msgid "Even/Odd"
 msgstr "Tek/Çift"
 #
@@ -738,6 +744,9 @@ msgstr "ARKADAŞLARIM"
 #
 msgid "False date / Network error"
 msgstr "Yanlış tarih / Network hatası"
+#
+msgid "fast"
+msgstr "hızlı"
 #
 msgid "Fast"
 msgstr "Hızlı"
@@ -1423,10 +1432,8 @@ msgstr ""
 "$username$, adlı kullanıcımız '$tablename$' adlı masada $gametype$ oyunu "
 "yarattı. Oyun özellikleri şöyle: "
 #
-msgid ""
-"Our player $username$, has created "
-msgstr ""
-"$username$, adlı kullanıcımız "
+msgid "Our player, $username$, has created "
+msgstr "$username$, adlı kullanıcımız "
 #
 msgid "for"
 msgstr "adlı"
@@ -1466,6 +1473,9 @@ msgstr "Paket"
 #
 msgid "Paid:"
 msgstr "Ödendi:"
+#
+msgid "pair"
+msgstr "eşli"
 #
 msgid "Pair"
 msgstr "Eşli"
@@ -1807,6 +1817,9 @@ msgstr "Argo"
 msgid "Slang is accepted"
 msgstr "Argo/Küfür olabilir."
 #
+msgid "slow"
+msgstr "yavaş"
+#
 msgid "Slow"
 msgstr "Yavaş"
 #
@@ -1881,6 +1894,9 @@ msgstr "Sosyal Tesislerimizde"
 #
 msgid "Speed"
 msgstr "Hız"
+#
+msgid "standard"
+msgstr "standart"
 #
 msgid "Standard"
 msgstr "Standart"
@@ -4101,20 +4117,11 @@ msgstr ""
 msgid "Tables"
 msgstr "Tables"
 #
-msgid "Our player $username$, has created "
-msgstr "Our player $username$, has created "
-#
 msgid "Sorry, all tables are full, you can create one youself!"
 msgstr "Sorry, all tables are full, you can create one youself!"
 #
-msgid "for"
-msgstr "for"
+msgid "Clear selection"
+msgstr "Clear selection"
 #
-msgid "game"
-msgstr "game"
-#
-msgid "specs"
-msgstr "specs"
-#
-msgid "Our player, $username$, has created "
-msgstr "Our player, $username$, has created "
+msgid "Our player $username$, has created "
+msgstr "Our player $username$, has created "
