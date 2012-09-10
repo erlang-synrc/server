@@ -1183,7 +1183,10 @@ guiders_script() ->
         guiders.createGuider({
             attachTo: '#guiderscreateblock',
             position: 3,
-            buttons: [{name: '"++s_T("Continue")++"', onclick: guiders.next}],
+            buttons: [
+                {name: '"++s_T("<< Back")++"', onclick: guiders.prev},
+                {name: '"++s_T("Continue")++"', onclick: guiders.next}
+            ],
             description: '"++s_T("Create description.")++"',
             id: 'guider_20',
             next: 'guider_30',
@@ -1195,7 +1198,10 @@ guiders_script() ->
         guiders.createGuider({
             attachTo: '#guidersjoinblock',
             position: 3,
-            buttons: [{name: '"++s_T("Continue")++"', onclick: guiders.next}],
+            buttons: [
+                {name: '"++s_T("<< Back")++"', onclick: guiders.prev},
+                {name: '"++s_T("Continue")++"', onclick: guiders.next}
+            ],
             description: '"++s_T("Join description.")++"',
             id: 'guider_30',
             next: 'guider_40',
@@ -1207,7 +1213,10 @@ guiders_script() ->
         guiders.createGuider({
             attachTo: '#guidersplayblock',
             position: 9,
-            buttons: [{name: '"++s_T("Continue")++"', onclick: guiders.next}],
+            buttons: [
+                {name: '"++s_T("<< Back")++"', onclick: guiders.prev},
+                {name: '"++s_T("Continue")++"', onclick: guiders.next}
+            ],
             description: '"++s_T("Play description.")++"',
             id: 'guider_40',
             next: 'guider_50',
@@ -1219,7 +1228,10 @@ guiders_script() ->
         guiders.createGuider({
             attachTo: '#guidersitem1',
             position: 12,
-            buttons: [{name: '"++s_T("Continue")++"', onclick: guiders.next}],
+            buttons: [
+                {name: '"++s_T("<< Back")++"', onclick: guiders.prev},
+                {name: '"++s_T("Continue")++"', onclick: guiders.next}
+            ],
             description: '"++s_T("Game speed description.")++"',
             id: 'guider_50',
             next: 'guider_60',
@@ -1231,7 +1243,10 @@ guiders_script() ->
         guiders.createGuider({
             attachTo: '#guidersitem2',
             position: 12,
-            buttons: [{name: '"++s_T("Continue")++"', onclick: guiders.next}],
+            buttons: [
+                {name: '"++s_T("<< Back")++"', onclick: guiders.prev},
+                {name: '"++s_T("Continue")++"', onclick: guiders.next}
+            ],
             description: '"++s_T("Game type description.")++"',
             id: 'guider_60',
             next: 'guider_70',
@@ -1243,7 +1258,10 @@ guiders_script() ->
         guiders.createGuider({
             attachTo: '#guidersitem3',
             position: 12,
-            buttons: [{name: '"++s_T("Continue")++"', onclick: guiders.next}],
+            buttons: [
+                {name: '"++s_T("<< Back")++"', onclick: guiders.prev},
+                {name: '"++s_T("Continue")++"', onclick: guiders.next}
+            ],
             description: '"++s_T("Rounds description.")++"',
             id: 'guider_70',
             next: 'guider_80',
@@ -1255,7 +1273,10 @@ guiders_script() ->
         guiders.createGuider({
             attachTo: '#guidersitem4',
             position: 12,
-            buttons: [{name: '"++s_T("Continue")++"', onclick: guiders.next}],
+            buttons: [
+                {name: '"++s_T("<< Back")++"', onclick: guiders.prev},
+                {name: '"++s_T("Continue")++"', onclick: guiders.next}
+            ],
             description: '"++s_T("Attributes description.")++"',
             id: 'guider_80',
             next: 'guider_100',
@@ -1266,7 +1287,9 @@ guiders_script() ->
 
         guiders.createGuider({
             attachTo: '#guidersdetailedsettings',
-            buttons: [],
+            buttons: [
+                {name: '"++s_T("<< Back")++"', onclick: guiders.prev}
+            ],
             position: 9,
             description: '"++s_T("Detailed settings description.")++"',
             id: 'guider_100',
@@ -1291,15 +1314,18 @@ add_game_settings_guiders() ->
             position: 12,
             description: '"++s_T("Criteria description")++"',
             id: 'guider_110',
-            next: 'guider_120',
+            next: 'guider_130',
             overlay: false,
             xButton: true,
             title: '"++s_T("Criteria")++"'
         }).show();
 
-        guiders.createGuider({
+        guiders.createGuider({  // do we want it here?
             attachTo: '#guiderstab1createbutton',
-            buttons: [{name: '"++s_T("Continue")++"', onclick: guiders.next}],
+            buttons: [
+                {name: '"++s_T("<< Back")++"', onclick: guiders.prev},
+                {name: '"++s_T("Continue")++"', onclick: guiders.next}
+            ],
             position: 12,
             description: '"++s_T("Detailed settings create description")++"',
             id: 'guider_120',
@@ -1311,7 +1337,10 @@ add_game_settings_guiders() ->
 
         guiders.createGuider({
             attachTo: '#guiderstab1tablename',
-            buttons: [{name: '"++s_T("Continue")++"', onclick: guiders.next}],
+            buttons: [
+                {name: '"++s_T("<< Back")++"', onclick: guiders.prev},
+                {name: '"++s_T("Continue")++"', onclick: guiders.next}
+            ],
             position: 11,
             description: '"++s_T("Table name description")++"',
             id: 'guider_130',
@@ -1323,7 +1352,10 @@ add_game_settings_guiders() ->
 
         guiders.createGuider({
             attachTo: '#guiderstab1set',
-            buttons: [{name: '"++s_T("Continue")++"', onclick: guiders.next}],
+            buttons: [
+                {name: '"++s_T("<< Back")++"', onclick: guiders.prev},
+                {name: '"++s_T("Continue")++"', onclick: guiders.next}
+            ],
             position: 1,
             description: '"++s_T("Table name set description")++"',
             id: 'guider_140',
@@ -1335,7 +1367,10 @@ add_game_settings_guiders() ->
 
         guiders.createGuider({
             attachTo: '#guiderstab1gamespeed',
-            buttons: [{name: '"++s_T("Continue")++"', onclick: guiders.next}],
+            buttons: [
+                {name: '"++s_T("<< Back")++"', onclick: guiders.prev},
+                {name: '"++s_T("Continue")++"', onclick: guiders.next}
+            ],
             position: 11,
             description: '"++s_T("Detailed game speed description")++"',
             id: 'guider_150',
@@ -1347,7 +1382,10 @@ add_game_settings_guiders() ->
 
         guiders.createGuider({
             attachTo: '#guiderstab1gametype',
-            buttons: [{name: '"++s_T("Continue")++"', onclick: guiders.next}],
+            buttons: [
+                {name: '"++s_T("<< Back")++"', onclick: guiders.prev},
+                {name: '"++s_T("Continue")++"', onclick: guiders.next}
+            ],
             position: 11,
             description: '"++s_T("Detailed game type description")++"',
             id: 'guider_160',
@@ -1359,7 +1397,10 @@ add_game_settings_guiders() ->
 
         guiders.createGuider({
             attachTo: '#guiderstab1paired',
-            buttons: [{name: '"++s_T("Continue")++"', onclick: guiders.next}],
+            buttons: [
+                {name: '"++s_T("<< Back")++"', onclick: guiders.prev},
+                {name: '"++s_T("Continue")++"', onclick: guiders.next}
+            ],
             position: 12,
             description: '"++s_T("Detailed paired description")++"',
             id: 'guider_170',
@@ -1371,7 +1412,10 @@ add_game_settings_guiders() ->
 
         guiders.createGuider({
             attachTo: '#guiderstab1rounds',
-            buttons: [{name: '"++s_T("Continue")++"', onclick: guiders.next}],
+            buttons: [
+                {name: '"++s_T("<< Back")++"', onclick: guiders.prev},
+                {name: '"++s_T("Continue")++"', onclick: guiders.next}
+            ],
             position: 11,
             description: '"++s_T("Detailed rounds description")++"',
             id: 'guider_180',
@@ -1383,7 +1427,10 @@ add_game_settings_guiders() ->
 
         guiders.createGuider({
             attachTo: '#guiderstab1double',
-            buttons: [{name: '"++s_T("Continue")++"', onclick: guiders.next}],
+            buttons: [
+                {name: '"++s_T("<< Back")++"', onclick: guiders.prev},
+                {name: '"++s_T("Continue")++"', onclick: guiders.next}
+            ],
             position: 11,
             description: '"++s_T("Double quota description")++"',
             id: 'guider_185',
@@ -1395,7 +1442,10 @@ add_game_settings_guiders() ->
 
         guiders.createGuider({
             attachTo: '#guiderstab1additional',
-            buttons: [{name: '"++s_T("Continue")++"', onclick: guiders.next}],
+            buttons: [
+                {name: '"++s_T("<< Back")++"', onclick: guiders.prev},
+                {name: '"++s_T("Continue")++"', onclick: guiders.next}
+            ],
             position: 11,
             description: '"++s_T("Additional options description")++"',
             id: 'guider_190',
@@ -1407,7 +1457,10 @@ add_game_settings_guiders() ->
 
         guiders.createGuider({
             attachTo: '#guiderstab1hide',
-            buttons: [{name: '"++s_T("Ok")++"', onclick: guiders.hideAll}],
+            buttons: [
+                {name: '"++s_T("<< Back")++"', onclick: guiders.prev},
+                {name: '"++s_T("Ok")++"', onclick: guiders.hideAll}
+            ],
             position: 1,
             description: '"++s_T("Hide button description")++"',
             id: 'guider_195',
