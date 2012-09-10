@@ -1147,6 +1147,24 @@ process_setting({Key, Value} = Setting) ->
     ui_paginate(),
     ok.
 
+% text from atoms. I want in to be here, though it is not used, for not to get these things scattered all over the code
+game_mode_to_text(Type) ->
+   case Type of
+        "standard" -> ?_T("Standard");
+        "evenodd" -> ?_T("Even/Odd");
+        "color" -> ?_T("Color");
+        "countdown" -> ?_T("Countdown from 10");
+        "pair" -> ?_T("Pair");
+        "kakaratavla" -> ?_T("Kakara Tavla")
+    end.
+
+game_speed_to_text(Speed) ->
+    case Speed of 
+        "fast" -> ?_T("Fast");
+        "normal" -> ?_T("Normal");
+        "slow" -> ?_T("Slow")
+    end.
+
 % guiders scripts for matchmaker. I had to separate them into linear part and tab part.
 split(String, Separator) ->
     Pos = string:str(String, Separator),
