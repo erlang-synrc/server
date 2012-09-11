@@ -48,10 +48,7 @@ process_result(success) ->
     PId = wf:q(pid),
     OrderGUID = wf:q(order),
 
-    Request = wf_context:request_bridge(),
-    Ip = Request:peer_ip(),
-
-    ?INFO("Mobile Operator IP: ~p",[wf:headers()]),
+    ?INFO("Mobile Operator Income URL: ~p",[wf:header(referer)]),
 
     User = case rpc:call(?APPSERVER_NODE, nsm_srv_membership_packages, get_purchase, [PurchaseId]) of
            {ok, Purchase} ->
