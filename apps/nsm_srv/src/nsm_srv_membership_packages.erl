@@ -101,36 +101,40 @@ add_purchase(#membership_purchase{} = MP) ->
 
 
 add_purchase(#membership_purchase{} = MP, State0, Info) ->
-    %% fill needed fields
+    case zealot_db:get(membership_purchase, MP#membership_purchase.id) of
+        {ok, _} -> {error, already_bought_that_one};
+        {error, notfound} ->
+            %% fill needed fields
 
-    Start = now(),
-    State = default_if_undefined(State0, undefined, ?MP_STATE_ADDED),
-    %% FIXME: uniform info field if needed
-    StateLog = case Info of
-                   undefined ->
-                       [#state_change{time = Start, state = State,
-                                      info = system_change}];
-                   _ ->
-                       [#state_change{time = Start, state = State,
-                                      info = Info}]
-               end,
+            Start = now(),
+            State = default_if_undefined(State0, undefined, ?MP_STATE_ADDED),
+            %% FIXME: uniform info field if needed
+            StateLog = case Info of
+                           undefined ->
+                               [#state_change{time = Start, state = State,
+                                              info = system_change}];
+                           _ ->
+                               [#state_change{time = Start, state = State,
+                                              info = Info}]
+                       end,
 
-    %% TODO: add check for duplicate purches if id given by external module
-    Id = default_if_undefined(MP#membership_purchase.id, undefined, purchase_id()),
+            %% TODO: add check for duplicate purches if id given by external module
+            Id = default_if_undefined(MP#membership_purchase.id, undefined, purchase_id()),
 
-    Purchase = MP#membership_purchase{id = Id,
-                                      state = State,
-                                      start_time = Start,
-                                      state_log = StateLog},
+            Purchase = MP#membership_purchase{id = Id,
+                                              state = State,
+                                              start_time = Start,
+                                              state_log = StateLog},
 
-    %% notify about purchase added
-    nsx_util_notification:notify_purchase(Purchase),
+            %% notify about purchase added
+            nsx_util_notification:notify_purchase(Purchase),
 
-    case zealot_db:put(Purchase) of
-        ok ->
-            {ok, Id};
-        Error ->
-            Error
+            case zealot_db:put(Purchase) of
+                ok ->
+                    {ok, Id};
+                Error ->
+                    Error
+            end
     end.
 
 

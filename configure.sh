@@ -1,6 +1,6 @@
 #!/bin/bash
 
-LOCAL_IP=${1:-"192.168.1.16"}
+LOCAL_IP=${1:-"192.168.0.17"}
 
 cd rels/app/node/etc
 ./configure -dba zealot_riak -app app -game game -web web -mq-user guest -mq-pass guest

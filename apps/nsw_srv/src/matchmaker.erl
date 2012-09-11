@@ -1006,6 +1006,7 @@ ac_hide_main_container() ->
     #event{type=click, actions="objs('matchmaker_main_container').slideUp('fast');"}.
 
 u_event({show,create_game}) ->
+    u_event(clear_selection),
     wf:state(buttons, yellow),
     ?INFO("u_event create_game"),
     wf:update(matchmaker_main_container, matchmaker_show_create(create)),
@@ -1015,6 +1016,7 @@ u_event({show,create_game}) ->
     ui_update_buttons();
 
 u_event({show,join_game}) ->
+    u_event(clear_selection),
     wf:state(buttons, green),
     ?INFO("u_event join_game"),
     wf:update(matchmaker_main_container, matchmaker_show_tables()),
