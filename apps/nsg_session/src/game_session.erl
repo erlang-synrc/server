@@ -522,6 +522,11 @@ handle_info({delivery, ["user_action", Action, Who, Whom], _} = Notification,
                                              recipient = PlayerId,
                                              type = Type
                                             },
+
+                    % TODO: put real db change notification from users:343 module here
+                    %       nsx_util_notification:notify_db_subscription_change
+                    %       should be additionalyy subscribed in bg feed worker binded to USER_EXCHANGE
+
                     ok = send_message_to_player(RPC, Msg);
                 false ->
                     do_nothing

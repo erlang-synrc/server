@@ -339,6 +339,9 @@ get_user_game_status(User) ->
 
 set_user_game_status(User, Status) -> zealot_db:put(#user_game_status{user=User, status=Status}).
 
+% TODO: game_session:525 move real DB operation from here behind rabbit
+%       two level: first message received by session pid
+%                   then it goes to change db bg worker
 
 block_user(Who, Whom) ->
     ?INFO("~w:block_user/2 Who=~9999p Whom=~9999p", [?MODULE, Who, Whom]),
