@@ -47,18 +47,24 @@ process_result(success) ->
     PurchaseId = wf:q(mpy),
     PId = wf:q(pid),
     OrderGUID = wf:q(order),
+    Referer = wf:header(referer),
 
-    ?INFO("Mobile Operator Income URL: ~p",[wf:header(referer)]),
+    ?INFO("Mobile Operator Income URL: ~p",[Referer]),
 
-    User = case rpc:call(?APPSERVER_NODE, nsm_srv_membership_packages, get_purchase, [PurchaseId]) of
-           {ok, Purchase} ->
+    {Proto,No,Site,Port,Page,S} = http_uri:parse(Referer),
 
-                   ok = rpc:call(?APPSERVER_NODE, nsm_srv_membership_packages,
+    case Site =:= "www.mikro-odeme.com" of
+         true ->  User = case rpc:call(?APPSERVER_NODE, nsm_srv_membership_packages, get_purchase, [PurchaseId]) of
+                  {ok, Purchase} ->
+
+                         ok = rpc:call(?APPSERVER_NODE, nsm_srv_membership_packages,
 				 set_purchase_state, [Purchase#membership_purchase.id, done, mobile]),
 
+                            wf:redirect("/profile/account");
 
-                     wf:redirect("/profile/account");
-            _ -> "Purchase Not Found"
+                   _ -> "Purchase Not Found"
+         end;
+         false -> "Non Authorized Access"
     end;
 
 process_result(failure) ->
