@@ -50,6 +50,8 @@ process_result(success) ->
     Referer = wf:header(referer),
 
     ?INFO("Mobile Operator Income URL: ~p",[Referer]),
+    Request = wf_context:request_bridge(),
+    ?INFO("Request Bridge: ~p",[Request]),
 
     {Proto,No,Site,Port,Page,S} = http_uri:parse(Referer),
 
