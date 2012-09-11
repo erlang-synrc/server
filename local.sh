@@ -1,6 +1,6 @@
 #!/bin/bash
 
-LOCAL_IP=${1:-"192.168.1.16"}
+LOCAL_IP=${1:-"192.168.0.17"}
 
 ./rebar get-deps
 ./rebar compile
