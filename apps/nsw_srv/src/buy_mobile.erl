@@ -17,7 +17,10 @@ main() ->
             wf:redirect_to_login(?_U("/login"));
          _->
             ?INFO("main"),
-            
+    PurchaseId = wf:q(mpy),
+    PId = wf:q(pid),
+    OrderGUID = wf:q(order),
+            ?INFO("PID/Order: ~p",[{PId,OrderGUID}]),
             main_authorized()
     end.
 
@@ -44,6 +47,11 @@ process_result(success) ->
     PurchaseId = wf:q(mpy),
     PId = wf:q(pid),
     OrderGUID = wf:q(order),
+
+    Request = wf_context:request_bridge(),
+    Ip = Request:peer_ip(),
+
+    ?INFO("Mobile Operator IP: ~p",[Ip]),
 
     User = case rpc:call(?APPSERVER_NODE, nsm_srv_membership_packages, get_purchase, [PurchaseId]) of
            {ok, Purchase} ->
