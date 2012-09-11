@@ -550,7 +550,8 @@ notify_if_user_leaving(Pid, State) ->
         {true, _, #player{id = PlayerId} = Player, false} ->
             %% human replaced allowed => do it
             ?INFO("human replaced allowed => do it", []),
-            case {match_maker:get_replacement(GameId, GameAtom), AllowRobots} of
+%            case {match_maker:get_replacement(GameId, GameAtom), AllowRobots} of
+            case {false,true} of
                 {false, true} ->
                     ?INFO("replacement human; no humans in queue; will replace with robot", []),
                     replace_with_robot(Player, Pid, State);
