@@ -90,25 +90,6 @@ readlog()
 </html>
             ",
             {ErrorMessage, ReqData1, State};
-%           SecondError = lists:suffix("internal_error", wrq:path(ReqData)),
-%            case SecondError of
-%                %% got error second time, show internal server error this time
-%                true ->
-%                    {Data, ReqData1, State};
-%                _ ->
-%
-%                    Path = case wf:user() of
-%                        undefined ->
-%                            ?_U("/index");
-%                        _ ->
-%                            ?_U("/dashboard")
-%                    end,
-%                    Location = lists:concat([Path, ?_U("/internal_error")]),
-%
-%                    %% return moved temporary status code, and redirect to dashboard
-%                    {{halt, 302}, wrq:set_resp_header("Location", Location, ReqData), State}
-%            end;
-%
         _ ->
             {Data, ReqData1, State}
     end.
