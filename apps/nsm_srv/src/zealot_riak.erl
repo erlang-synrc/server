@@ -1272,23 +1272,49 @@ feed_direct_messages(_FId, Page, PageAmount, CurrentUser, CurrentFId) ->
     [].
 
 %% @private
-add_purchase_by_user(UserId, PurchaseId) ->
-    Top = case zealot_db:get(membership_purchase_by_user, UserId) of
-              {ok, {_, UserId, undefined}} ->
-                  last;
-              {ok, {_, UserId, CurrentTop}} ->
-                  CurrentTop;
-              _ ->
-                  last
-          end,
+check_purchase_by_user_double(User, PurchaseId) ->
+    case zealot_db:get(membership_purchase_by_user, User) of
+        {ok, {_, _, undefined}} ->
+            false;
+        {ok, {_, _, StartFrom}} ->
+            check_purchase_by_user_double(User, PurchaseId, StartFrom);
+        _ -> 
+            false
+    end.
+
+check_purchase_by_user_double(User, PurchaseId, This) ->
     if
-        Top /= PurchaseId ->
-            %% current purcase became top
-            zealot_db:put({membership_purchase_by_user, UserId, PurchaseId}),
-            %% previos purchase became next of the top
-            zealot_db:put({{membership_purchase_by_user, UserId}, PurchaseId, Top});
+        This == last ->
+            false;
+        PurchaseId == This ->
+            true;
         true ->
-            ok
+            {ok, {_, _, Next}} = zealot_db:get({membership_purchase_by_user, User}, This),
+            check_purchase_by_user_double(User, PurchaseId, Next)
+    end.
+
+add_purchase_by_user(UserId, PurchaseId) ->
+    case check_purchase_by_user_double(UserId, PurchaseId) of
+        true ->
+            ok; % error actually
+        false ->
+            Top = case zealot_db:get(membership_purchase_by_user, UserId) of
+                      {ok, {_, UserId, undefined}} ->
+                          last;
+                      {ok, {_, UserId, CurrentTop}} ->
+                          CurrentTop;
+                      _ ->
+                          last
+                  end,
+            if
+                Top /= PurchaseId ->
+                    %% current purcase became top
+                    zealot_db:put({membership_purchase_by_user, UserId, PurchaseId}),
+                    %% previos purchase became next of the top
+                    zealot_db:put({{membership_purchase_by_user, UserId}, PurchaseId, Top});
+                true ->
+                    ok
+           end
     end.
 
 get_purchases_by_user(_UserId, Count, States) ->
