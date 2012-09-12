@@ -12,7 +12,7 @@ GAMESERVER="game"
 WEBSERVER="web"
 SERVERPORT=7999
 SERVERHOST=""
-APPSERVER=app
+APPSERVER="app@$H"
 JSPACK=min
 CSSPACK=min
 
@@ -69,7 +69,7 @@ echo "Web Server $SERVERHOST ($HIPS:$WEBPORT) will use $FBAPPID FB id"
 
 cat vm.args.template | sed "s#WEBSERVER_NODE#$WEBSERVER@$H#g" > vm.args
 
-./config -file app.config nsw_srv app_srv_node -atom $APPSERVER@$H
+./config -file app.config nsw_srv app_srv_node -atom $APPSERVER
 ./config -file app.config nsw_srv game_srv_node -atom $GAMESERVER@$H
 ./config -file app.config nsw_srv web_srv_node -atom $WEBSERVER@$H
 ./config -file app.config nsw_srv game_srv_port -integer $SERVERPORT
@@ -85,7 +85,7 @@ cat vm.args.template | sed "s#WEBSERVER_NODE#$WEBSERVER@$H#g" > vm.args
 ./config -file app.config nsm_mq amqp_pass -list $MQ_PASS
 ./config -file app.config nsm_mq amqp_vhost -list $MQ_VHOST
 
-./config -file app.config nsx_utils app_srv_node -atom $APPSERVER@$H
+./config -file app.config nsx_utils app_srv_node -atom $APPSERVER
 
 
 if [ -z "${WEBADRESS+xxx}" ]; then

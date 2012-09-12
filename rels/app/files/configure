@@ -2,7 +2,7 @@
 
 H=`hostname -f`
 DBA=zealot_mnesia
-APPSERVER="app"
+APPSERVER="app@$H"
 GAMESERVER="game"
 WEBSERVER="web"
 MQ_HOST="localhost"
@@ -45,9 +45,9 @@ done
 
 ./config -file app.config nsm_srv game_srv_node -atom $GAMESERVER@$H
 ./config -file app.config nsm_srv web_srv_node -atom $WEBSERVER@$H
-./config -file app.config nsm_srv app_srv_node -atom $APPSERVER@$H
+./config -file app.config nsm_srv app_srv_node -atom $APPSERVER
 
-./config -file app.config nsm_srv riak_srv_node -atom $APPSERVER@$H
+./config -file app.config nsm_srv riak_srv_node -atom $APPSERVER
 ./config -file app.config nsm_srv dba -atom $DBA
 ./config -file app.config riak_core handoff_port -integer $HOPORT
 ./config -file app.config riak_core http -listener $RIAKHTTP
@@ -58,6 +58,6 @@ done
 ./config -file app.config nsm_mq amqp_pass -list $MQ_PASS
 ./config -file app.config nsm_mq amqp_vhost -list $MQ_VHOST
 
-./config -file app.config nsx_utils app_srv_node -atom $APPSERVER@$H
+./config -file app.config nsx_utils app_srv_node -atom $APPSERVER
 
-cat vm.args.template | sed "s#APPSERVER_NODE#$APPSERVER@$H#g" > vm.args
+cat vm.args.template | sed "s#APPSERVER_NODE#$APPSERVER#g" > vm.args

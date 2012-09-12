@@ -3,7 +3,7 @@
 H=`hostname -f`
 GAMEPORT=7999
 WEBSERVER="web"
-APPSERVER="app"
+APPSERVER="app@$H"
 GAMESERVER="game"
 MNESIAINIT=""
 
@@ -53,7 +53,7 @@ fi
 
 
 ./config -file app.config nsg_srv game_srv_port -integer $GAMEPORT
-./config -file app.config nsg_srv app_srv_node -atom $APPSERVER@$H
+./config -file app.config nsg_srv app_srv_node -atom $APPSERVER
 ./config -file app.config nsg_srv game_srv_node -atom $GAMESERVER@$H
 ./config -file app.config nsg_srv web_srv_node -atom $WEBSERVER@$H
 
@@ -63,6 +63,6 @@ fi
 ./config -file app.config nsm_mq amqp_pass -list $MQ_PASS
 ./config -file app.config nsm_mq amqp_vhost -list $MQ_VHOST
 
-./config -file app.config nsx_utils app_srv_node -atom $APPSERVER@$H
+./config -file app.config nsx_utils app_srv_node -atom $APPSERVER
 
 cat vm.args.template | sed "s#GAMESERVER_NODE#$GAMESERVER@$H#g" > vm.args
