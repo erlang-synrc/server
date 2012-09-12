@@ -136,9 +136,12 @@ init([Topic, {lobby, GameFSM}, Params0, PlayerIds, Manager]) ->
     {game_mode,GameMode} = case GM =lists:keyfind(game_mode,1,Settings) of false -> {game_mode,standard}; _ -> GM end,
     {owner,Owner} = case O =lists:keyfind(owner,1,Settings) of false -> {owner,"maxim"}; _ -> O end,
 
-    {ok, PR, PREx} = rpc:call(?APPSERVER_NODE,pointing_rules,get_rules,[GameFSM, GameMode, Rounds]),
+    Params = case rpc:call(?APPSERVER_NODE,pointing_rules,get_rules,[GameFSM, GameMode, Rounds]) of
+		     {ok, PR, PREx} -> Params0 ++ [{pointing_rules, PR},{pointing_rules_ex, PREx}];
+		     _ -> Params0
+    end,
 
-    Params = Params0 ++ [{pointing_rules, PR},{pointing_rules_ex, PREx}],
+%    Params = Params0 ++ [{pointing_rules, PR},{pointing_rules_ex, PREx}],
 
     GProcVal = #game_table{game_type = GameFSM, 
                            game_process = self(),
