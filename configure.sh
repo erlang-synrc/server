@@ -1,7 +1,7 @@
 #!/bin/bash
 
 LOCAL_IP=${1:-"192.168.0.17"}
-APP=${1:-"kakaapp@srv3.kakaranet.com"}
+APP=${2:-"kakaapp@srv3.kakaranet.com"}
 
 cd rels/app/node/etc
 ./configure -dba zealot_riak -app $APP -game game -web web -mq-user guest -mq-pass guest 
