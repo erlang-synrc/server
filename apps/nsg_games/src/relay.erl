@@ -6,6 +6,7 @@
 -include_lib("nsg_srv/include/requests.hrl").
 -include_lib("nsg_srv/include/setup.hrl").
 -include_lib("nsm_srv/include/table.hrl").
+-include_lib("nsm_srv/include/accounts.hrl").
 -include_lib("alog/include/alog.hrl").
 -include_lib("nsg_srv/include/settings.hrl").
 -include_lib("stdlib/include/qlc.hrl").
@@ -14,6 +15,7 @@
          signal/2,
          publish/2,
          submit/2,
+         game/1,
          to_session/3,
          subscribe/2,
          subscribe/3,
@@ -118,6 +120,10 @@ stop(Srv) ->
 qlc() ->
     qlc:e(qlc:q([Val || {{_,_,Val},_,_} <- gproc:table(props)])).
 
+game(game_okey) -> okey;
+game(game_tavla) -> tavla;
+game(_) -> okey.
+
 
 init([Topic, chat, _, _]) ->
     {ok, #state{topic = Topic, rules_pid = none, rules_module = chat,
@@ -136,9 +142,12 @@ init([Topic, {lobby, GameFSM}, Params0, PlayerIds, Manager]) ->
     {game_mode,GameMode} = case GM =lists:keyfind(game_mode,1,Settings) of false -> {game_mode,standard}; _ -> GM end,
     {owner,Owner} = case O =lists:keyfind(owner,1,Settings) of false -> {owner,"maxim"}; _ -> O end,
 
-    Params = case rpc:call(?APPSERVER_NODE,pointing_rules,get_rules,[GameFSM, GameMode, Rounds]) of
-		     {ok, PR, PREx} -> Params0 ++ [{pointing_rules, PR},{pointing_rules_ex, PREx}];
-		     _ -> Params0
+    {Params,P,PE} = case rpc:call(?APPSERVER_NODE,pointing_rules,get_rules,[GameFSM, GameMode, Rounds]) of
+		     {ok, PR, PREx} -> {Params0 ++ [{pointing_rules, PR},{pointing_rules_ex, PREx}],PR,PREx};
+		     _ -> {Params0,#pointing_rule{rounds=1, game = game(GameFSM),
+							  kakush_winner = 1, kakush_other = 1, quota = 1},
+                                   [#pointing_rule{rounds=1, game = game(GameFSM),
+							  kakush_winner = 1, kakush_other = 1, quota = 1}]}
     end,
 
 %    Params = Params0 ++ [{pointing_rules, PR},{pointing_rules_ex, PREx}],
@@ -152,8 +161,8 @@ init([Topic, {lobby, GameFSM}, Params0, PlayerIds, Manager]) ->
                            owner = Owner,
                            creator = Owner,
                            rounds = Rounds,
-                           pointing_rules   = PR,
-                           pointing_rules_ex = PREx,
+                           pointing_rules   = P,
+                           pointing_rules_ex = PE,
        
                            users = [ case User of robot -> robot; _ -> erlang:binary_to_list(User) end || User <- PlayerIds],
                            name = TableName ++ " gaming " ++ erlang:integer_to_list(Topic) ++ " "
