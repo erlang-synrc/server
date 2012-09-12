@@ -5,6 +5,7 @@
 -include_lib("nsm_srv/include/user.hrl").
 -include_lib("nsm_srv/include/tournaments.hrl").
 -include_lib("nsm_srv/include/accounts.hrl").
+-include_lib("nsm_srv/include/scoring.hrl").
 -include_lib("nsm_srv/include/membership_packages.hrl").
 -include_lib("elements/records.hrl").
 
@@ -509,12 +510,58 @@ section_body(affiliates) ->
     ]};
 
 section_body(_) ->
+    Scores = rpc:call(?APPSERVER_NODE, scoring, score_entries, [wf:user()]),
+    STotalScore = integer_to_list(lists:sum([S#scoring_record.score_points || S <- Scores])),
+    STotalKakaush = integer_to_list(lists:sum([S#scoring_record.score_kakaush || S <- Scores])),
     [
         #h1{text=?_T("Player statistics")},
-        #panel{class="inform-block", style="width:490px; ", body=
-        "<h1>"++?_T("This feature is not available in beta version")++"</h1>
-         <h2>"++?_T("But we are working on it. Wait for a while - it will all be here. Every kind of statistics with all that tables and diagrams. All that stuff smart people with glasses call 'information design'.")++"</h2>
-        "}
+        case Scores of 
+            [] ->
+                #span{text=?_T("You haven't played any games yet.")};
+            ScoreList ->
+                #panel{ class="affiliates-box", body=[
+                    #table {rows=[
+                        [#tablerow { cells=[
+                            #tableheader { text=?_T("When"), style="padding:4px 10px;" },
+                            #tableheader { text=?_T("Other players"), style="padding:4px 10px;" },
+                            #tableheader { text=?_T("Game"), style="padding:4px 10px;" },
+                            #tableheader { text=?_T("Scores"), style="padding:4px 10px;" },
+                            #tableheader { text=?_T("Kakaush"), style="padding:4px 10px;" }
+                        ]}] ++
+                        [
+                            begin
+                                SDate = site_utils:feed_time_tuple(calendar:now_to_local_time(S#scoring_record.timestamp)),
+                                SCompany = string:join( lists:subtract(S#scoring_record.all_players, [wf:user()]), ", "),
+                                SGame = [atom_to_list(S#scoring_record.game_kind) ++ " ",
+                                    #span{text="(" ++ atom_to_list(S#scoring_record.game_type) ++ ")", style="font-size:11px;"}],
+                                SScores = integer_to_list(S#scoring_record.score_points),
+                                SKakaush = integer_to_list(S#scoring_record.score_kakaush),
+                                #tablerow { cells=[
+                                    #tablecell {body = SDate, style="padding:4px 10px;"},
+                                    #tablecell {body = SCompany, style="padding:4px 10px;"},
+                                    #tablecell {body = SGame, style="padding:4px 10px;"},
+                                    #tablecell {body = SScores, style="padding:4px 10px; text-align:center;"},
+                                    #tablecell {body = SKakaush, style="padding:4px 10px; text-align:center;"}
+                                ]}
+                            end
+                        || S <- ScoreList] ++
+                        [
+                            #tablerow { cells=[
+                                #tablecell {body = ""},
+                                #tablecell {body = ""},
+                                #tablecell {body = ?_T("Total:"), style="padding:12px 10px; text-align:right; font-weight:bold;"},
+                                #tablecell {body = STotalScore, style="padding:12px 10px; text-align:center;"},
+                                #tablecell {body = STotalKakaush, style="padding:12px 10px; text-align:center;"}
+                            ]}
+                        ]
+                    ]}
+                ]}
+        end        
+%        #panel{class="inform-block", style="width:490px; ", body=
+%        "<h1>"++?_T("This feature is not available in beta version")++"</h1>
+%         <h2>"++?_T("But we are working on it. Wait for a while - it will all be here. Every kind of statistics with all that tables and diagrams. All that stuff smart people with glasses call 'information design'.")++"</h2>
+%        "}
+        
     ].
 
 %%%% update avatar %%%%

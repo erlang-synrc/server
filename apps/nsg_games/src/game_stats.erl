@@ -13,6 +13,7 @@
 -include_lib("nsg_srv/include/games.hrl").
 -include_lib("nsg_srv/include/setup.hrl").
 -include_lib("nsm_srv/include/accounts.hrl").
+-include_lib("nsm_srv/include/scoring.hrl").
 
 
 start_link() ->
@@ -115,6 +116,8 @@ assign_points(#'GameResults'{results = Results}, GameInfo) ->
 
     PR1 = rpc:call(?APPSERVER_NODE, pointing_rules, double_points, [PR0, Double]),
 
+    PlayersIds = [case U#'PlayerInfo'.robot of false -> binary_to_list(U#'PlayerInfo'.id); _ -> "(robot)" end || U <- Players],
+
     %% nobody get any points if playing with robots
     PR2 = case WithRobots of
              true ->
@@ -142,6 +145,26 @@ assign_points(#'GameResults'{results = Results}, GameInfo) ->
                 _ ->
                     {PR#pointing_rule.kakush_winner, 0}
             end,
+
+        case lists:member(UId, PlayersIds) of
+            true -> % flesh and bones
+                SR = #scoring_record{
+                    game_id = proplists:get_value(id, GameInfo),
+                    who = UId,
+                    all_players = PlayersIds,
+                    game_type = PR0#pointing_rule.game_type,
+                    game_kind = PR0#pointing_rule.game,
+%                   condition, % where'd I get that?
+                    score_points = GamePoints,
+                    score_kakaush = Kakaush,
+%                   custom,    % no idea what to put here
+                    timestamp = erlang:now()
+                },
+                Route = [feed, user, UId, scores, 0, add],  % maybe it would require separate worker for this
+                nsx_util_notification:notify(Route, [SR]);
+            false ->
+                ok  % no statistics for robots
+        end,
 
         ok = rpc:call(?APPSERVER_NODE, nsm_srv_accounts, transaction,
                            [UId, ?CURRENCY_KAKUSH, Kakaush,
