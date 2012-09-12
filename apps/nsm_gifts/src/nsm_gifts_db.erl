@@ -25,6 +25,10 @@
 -export([
          start_client/0,
          stop_client/1,
+         set_factors/4,
+         set_factors/5,
+         get_factors/0,
+         get_factors/1,
          create_category/3,
          create_category/4,
          create_gift/1,
@@ -58,6 +62,7 @@
 -define(GIFTS_BUCKET, <<"gifts">>).
 -define(COUNTERS_BUCKET, <<"gifts_counters">>).
 -define(CATEGORIES_BUCKET, <<"gifts_categories">>).
+-define(CONFIG_BUCKET, <<"gifts_config">>).
 
 %% Counters
 -define(GIFTS_COUNTER, <<"gift_id">>).
@@ -86,6 +91,7 @@ init_db() ->
     ok = C:set_bucket(?CATEGORIES_BUCKET, [{backend, leveldb_backend}]),
     ok = init_counter(C, ?GIFTS_COUNTER, 1, []),
     ok = init_counter(C, ?CATEGORIES_COUNTER, 1, []),
+    ok = init_conf(C, factor, {1.15, 4, 100, 0.2}, []),
     stop_riak_client(C),
     ?INFO("~w:init_db/0: done", [?MODULE]),
     ok.
@@ -113,6 +119,43 @@ start_client() ->
 
 stop_client(Handler) ->
     stop_riak_client(Handler).
+
+
+%% @spec set_factors(A, B, C, D) -> ok
+%% @doc
+%% Types:
+%%     A = B = C = D = number()
+%% Sets values of factors that used in gifts prices calculations.
+%% @end
+
+set_factors(A, B, C, D) ->
+    Handler = start_riak_client(),
+    Res = set_factors(Handler, A, B, C, D),
+    stop_riak_client(Handler),
+    Res.
+
+set_factors(Handler, A, B, C, D) ->
+    set_conf_val(Handler, factors, {A, B, C, D}).
+
+
+%% @spec get_factors() -> {A, B, C, D}
+%% @doc
+%% Types:
+%%     A = B = C = D = number()
+%% Gets values of factors that used in gifts prices calculations.
+%% @end
+
+get_factors() ->
+    Handler = start_riak_client(),
+    Res = get_factors(Handler),
+    stop_riak_client(Handler),
+    Res.
+
+get_factors(Handler) ->
+    {ok, {A, B, C, D}} = get_conf_val(Handler, factors),
+    {A, B, C, D}.
+
+
 
 
 %% @spec create_category(Name, Description, ParentId) -> ok | {error, Reason}
@@ -560,6 +603,26 @@ init_counter(Cl, CounterId, InitVal, Options) ->
            end
     end.
 
+
+-spec init_conf(any(), binary(), term(), list()) -> ok | {error, any()}.
+%% @private
+%% @spec init_conf(Cl, Key, InitVal, Options) -> ok | {error, Error}
+%% @end
+
+init_conf(Cl, Key, InitVal, Options) ->
+    Force = proplists:get_value(force, Options, false),
+    if Force ->
+           set_conf_val(Cl, Key, InitVal);
+       true ->
+           case get_conf_val(Key, []) of
+               {ok, _} ->
+                   ok;
+               {error, notfound} ->
+                   set_conf_val(Cl, Key, InitVal)
+           end
+    end.
+
+
 %% @private
 
 create_counter_object(CounterId, Val) ->
@@ -590,6 +653,23 @@ next_id(Cl, CounterId) ->
             next_id(Cl, CounterId)
     end.
 
+
+
+%% @private
+get_conf_val(Cl, Key) ->
+    case Cl:get(?CONFIG_BUCKET, term_to_binary(Key), []) of
+        {ok, Object} ->
+            Value = riak_object:get_value(Object),
+            {ok, Value};
+        {error, notfound} ->
+            {error, notfound}
+    end.
+
+
+%% @private
+set_conf_val(Cl, Key, Value) ->
+    Object = riak_object:new(?CONFIG_BUCKET, term_to_binary(Key), Value),
+    ok = Cl:put(Object, []).
 
 %% @private
 -spec get_gifts_keys_by_cat(any(), integer()) -> list(binary()).
