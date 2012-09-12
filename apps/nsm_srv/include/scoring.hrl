@@ -14,10 +14,13 @@
     prev,
     game_id,     % game id for rematching and lost connections
     who,         % player
+    all_players, % with other players
     game_type,   % okey, tavla, batak 
     game_kind,   % chanak, standard, even-odd
     condition,   % reveal with even tashes, color okey reveal, show gosterge, batak 3 aces, tavla mars.
-    score,       % result score points in round for player
-    custom       % erlang record for a specific game
+    score_points,       % result score points for player
+    score_kakaush,      % result score kakuş for player
+    custom,      % erlang record for a specific game
+    timestamp    % now() of the record
     }).
 

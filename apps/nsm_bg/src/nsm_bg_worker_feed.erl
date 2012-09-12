@@ -187,6 +187,19 @@ handle_notice(["feed", _Type, _EntryOwner, "comment", CommentId, "add"] = Route,
                 CommentId, Content, Medias),
     {noreply, State};
 
+
+% score statistics
+handle_notice(["feed", "user", UId, "scores", _Null, "add"] = _Route,
+              Message,
+              #state{owner = Owner} = State) ->
+    case UId == Owner of 
+        true ->
+            scoring:add_score(UId, hd(Message), perm);
+        false ->
+            ok
+    end,
+    {noreply, State};
+
 handle_notice(Route, Message, #state{owner = User} = State) ->
     ?DBG("feed(~p): unexpected notification received: User=~p, "
               "Route=~p, Message=~p", [self(), User, Route, Message]),
