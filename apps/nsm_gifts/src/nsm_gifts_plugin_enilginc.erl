@@ -293,57 +293,51 @@ process_data_block(Data) ->
 %% Description: Convert xml-structures to the products list.
 %%====================================================================
 
-
 process(P_XML, C_XML, S_XML) ->
-    Products=process_products(P_XML),
-    Categories=process_categories(C_XML),
-    StockInfo=process_stock(S_XML),
-
-    F=fun(#product{id=Id,
-                   active=PActive,
-                   name=Name,
-                   category=Category,
-                   short_descr=ShortDescr,
-                   long_descr=LongDescr,
-                   image_url=ImgURL
-                  }) ->
-
-             {CActive, CategoryName}=
-                case lists:keyfind(Category, #category.id, Categories) of
+    Products = process_products(P_XML),
+    Categories = process_categories(C_XML),
+    StockInfo = process_stock(S_XML),
+    F = fun(#stock{id = ProductId,
+                   in_stock = InStock,
+                   retailer_price = RetailerPrice,
+                   user_price = UserPrice},
+            Acc) ->
+                case lists:keyfind(ProductId, #product.id, Products) of
+                    #product{active = false} ->
+                        Acc;
+                    #product{name=Name,
+                             category=Category,
+                             short_descr=ShortDescr,
+                             long_descr=LongDescr,
+                             image_url=ImgURL
+                            } ->
+                        CategoryName = 
+                            case lists:keyfind(Category, #category.id, Categories) of
+                                false ->
+                                    "Undefined";
+                                #category{name=CN} ->
+                                    CN
+                            end,
+                        [#ext_product_info{
+                                           vendor_id = ?VENDOR_ENILGINC,
+                                           id = ProductId,
+                                           active = true,
+                                           name = Name,
+                                           category = Category,
+                                           category_name = CategoryName,
+                                           short_descr = ShortDescr,
+                                           long_descr = LongDescr,
+                                           small_image_url = ImgURL,
+                                           big_image_url = ImgURL,
+                                           in_stock = InStock,
+                                           retailer_price = RetailerPrice,
+                                           user_price = UserPrice
+                                          } | Acc];
                     false ->
-                        {0, "Undefined"};
-
-                    #category{name=CN, active=CA} ->
-                        {CA, CN}
-                end,
-             {InStock, RetailerPrice, UserPrice}=
-                case lists:keyfind(Id, #stock.id, StockInfo) of
-                    false ->
-                        {0, "Undefined", "Undefined"};
-
-                    #stock{in_stock=InStock1,
-                           retailer_price=RetailerPrice1,
-                           user_price=UserPrice1} ->
-                        {InStock1, RetailerPrice1, UserPrice1}
-                end,
-
-             #ext_product_info{
-                               vendor_id = ?VENDOR_ENILGINC,
-                               id=Id,
-                               active=if PActive+CActive ==2 -> 1; true -> 0 end, %% Logic "or"
-                               name=Name,
-                               category=Category,
-                               category_name=CategoryName,
-                               short_descr=ShortDescr,
-                               long_descr=LongDescr,
-                               small_image_url=ImgURL,
-                               big_image_url=ImgURL,
-                               in_stock=InStock,
-                               retailer_price=RetailerPrice,
-                               user_price=UserPrice
-                              }
-      end,
-    lists:map(F, Products).
+                        Acc
+                end
+        end,
+    lists:foldl(F, [], StockInfo).
 
 %%====================================================================
 %% Function: process_products(XML) -> List
