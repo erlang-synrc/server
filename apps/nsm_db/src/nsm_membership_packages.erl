@@ -12,7 +12,7 @@
 %%
 -include("membership_packages.hrl").
 -include_lib("alog/include/alog.hrl").
--include_lib("nsm_srv/include/accounts.hrl").
+-include("accounts.hrl").
 %-ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").
 %-endif.
