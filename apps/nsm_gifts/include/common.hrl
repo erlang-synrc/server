@@ -1,5 +1,3 @@
--define(ELSE, true).
-
 -record(ext_product_info,
         {
          vendor_id,
@@ -49,3 +47,4 @@
          description    :: binary(),
          parent         :: undefined | integer()
         }).
+
