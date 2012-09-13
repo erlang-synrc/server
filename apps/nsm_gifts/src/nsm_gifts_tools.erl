@@ -88,7 +88,7 @@ show(List) ->
 dumb_store(List) ->
     nsm_gifts_db:clear_gifts(),
     CurDateTime = calendar:now_to_datetime(now()),
-    {A, B, C, D} = nsm_gifts_db:get_conf_val(factors),
+    {A, B, C, D} = nsm_gifts_db:get_factors(),
     List2 =
         [begin
              OurPrice = round(UserPrice * A),

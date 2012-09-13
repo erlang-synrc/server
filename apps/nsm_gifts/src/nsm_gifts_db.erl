@@ -76,6 +76,9 @@
 %% Meta Id
 -define(MD_INDEX, <<"index">>).
 
+%% Conf parameters
+-define(CONF_FACTORS, factor).
+
 %%
 %% API Functions
 %%
@@ -91,7 +94,7 @@ init_db() ->
     ok = C:set_bucket(?CATEGORIES_BUCKET, [{backend, leveldb_backend}]),
     ok = init_counter(C, ?GIFTS_COUNTER, 1, []),
     ok = init_counter(C, ?CATEGORIES_COUNTER, 1, []),
-    ok = init_conf(C, factor, {1.15, 4, 100, 0.2}, []),
+    ok = init_conf(C, ?CONF_FACTORS, {1.15, 4, 100, 0.2}, []),
     stop_riak_client(C),
     ?INFO("~w:init_db/0: done", [?MODULE]),
     ok.
@@ -135,7 +138,7 @@ set_factors(A, B, C, D) ->
     Res.
 
 set_factors(Handler, A, B, C, D) ->
-    set_conf_val(Handler, factors, {A, B, C, D}).
+    ok = set_conf_val(Handler, ?CONF_FACTORS, {A, B, C, D}).
 
 
 %% @spec get_factors() -> {A, B, C, D}
@@ -152,7 +155,7 @@ get_factors() ->
     Res.
 
 get_factors(Handler) ->
-    {ok, {A, B, C, D}} = get_conf_val(Handler, factors),
+    {ok, {A, B, C, D}} = get_conf_val(Handler, ?CONF_FACTORS),
     {A, B, C, D}.
 
 
@@ -583,42 +586,42 @@ stop_riak_client(_Cl) ->
 
 
 
--spec init_counter(any(), binary(), integer(), list()) -> ok | {error, any()}.
+-spec init_counter(any(), binary(), integer(), list()) -> ok.
 %% @private
-%% @spec init_counter(Cl, CounterId, InitVal, Options) -> ok | {error, Error}
+%% @spec init_counter(Cl, CounterId, InitVal, Options) -> ok
 %% @end
 
 init_counter(Cl, CounterId, InitVal, Options) ->
     Force = proplists:get_value(force, Options, false),
     if Force ->
            Object = create_counter_object(CounterId, InitVal),
-           Cl:put(Object, []);
+           ok = Cl:put(Object, []);
        true ->
            case Cl:get(?COUNTERS_BUCKET, CounterId, []) of
                {ok, _Object} ->
                    ok;
                {error, notfound} ->
                    Object = create_counter_object(CounterId, InitVal),
-                   Cl:put(Object, [])
+                   ok = Cl:put(Object, [])
            end
     end.
 
 
--spec init_conf(any(), binary(), term(), list()) -> ok | {error, any()}.
+-spec init_conf(any(), binary(), term(), list()) -> ok.
 %% @private
-%% @spec init_conf(Cl, Key, InitVal, Options) -> ok | {error, Error}
+%% @spec init_conf(Cl, Key, InitVal, Options) -> ok
 %% @end
 
 init_conf(Cl, Key, InitVal, Options) ->
     Force = proplists:get_value(force, Options, false),
     if Force ->
-           set_conf_val(Cl, Key, InitVal);
+           ok = set_conf_val(Cl, Key, InitVal);
        true ->
-           case get_conf_val(Key, []) of
+           case get_conf_val(Cl, Key) of
                {ok, _} ->
                    ok;
                {error, notfound} ->
-                   set_conf_val(Cl, Key, InitVal)
+                   ok = set_conf_val(Cl, Key, InitVal)
            end
     end.
 
@@ -669,7 +672,7 @@ get_conf_val(Cl, Key) ->
 %% @private
 set_conf_val(Cl, Key, Value) ->
     Object = riak_object:new(?CONFIG_BUCKET, term_to_binary(Key), Value),
-    ok = Cl:put(Object, []).
+    Cl:put(Object, []).
 
 %% @private
 -spec get_gifts_keys_by_cat(any(), integer()) -> list(binary()).
