@@ -142,8 +142,8 @@ add_purchases() ->
     {ok, Pkg3} = nsm_membership_packages:get_package(3),
     {ok, Pkg4} = nsm_membership_packages:get_package(4),
     PList=
-        [{"kunthar", Pkg1},
-         {"kate", Pkg3},
+        [{"kunthar", Pkg1},{"maxim", Pkg2},{"maxim",Pkg4},
+         {"kate", Pkg3}
         ],
     [ok = add_purchase(U, P) || {U, P} <- PList],
     ?INFO("~w:add_purchases/0 Finished", [?MODULE]),
