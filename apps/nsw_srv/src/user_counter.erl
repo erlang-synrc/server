@@ -14,7 +14,7 @@
 
 -include("setup.hrl").
 -include("common.hrl").
--include_lib("nsm_srv/include/user_counter.hrl").
+-include_lib("nsm_db/include/user_counter.hrl").
 
 %% API
 -export([start_link/0,

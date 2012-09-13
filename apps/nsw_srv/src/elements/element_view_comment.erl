@@ -1,8 +1,8 @@
 -module (element_view_comment).
 -compile(export_all).
 -include_lib("nitrogen_core/include/wf.hrl").
--include_lib("nsm_srv/include/user.hrl").
--include_lib("nsm_srv/include/feed.hrl").
+-include_lib("nsm_db/include/user.hrl").
+-include_lib("nsm_db/include/feed.hrl").
 -include("records.hrl").
 -include("setup.hrl").
 
@@ -20,7 +20,7 @@ render_element(_R = #view_comment{comment=C}) ->
 
     %ViewMediaPanelId = wf:temp_id(),
 
-    {ok, User} = rpc:call(?APPSERVER_NODE,users,get_user,[Author]),
+    {ok, User} = rpc:call(?APPSERVER_NODE,nsm_users,get_user,[Author]),
     Avatar = #image{image = avatar:get_avatar(User, tiny), style="width:30px;height:30px"},
 
     {CId, {EId, FId}} = C#comment.id,

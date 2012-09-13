@@ -2,8 +2,8 @@
 -module (view_members).
 -compile(export_all).
 -include_lib("nitrogen_core/include/wf.hrl").
--include_lib("nsm_srv/include/user.hrl").
--include_lib("nsm_srv/include/feed.hrl").
+-include_lib("nsm_db/include/user.hrl").
+-include_lib("nsm_db/include/feed.hrl").
 -include("gettext.hrl").
 -include("setup.hrl").
 -include("elements/records.hrl").
@@ -32,11 +32,11 @@ content() ->
 
 content(Page) ->
     Id = wf:q(id),
-    friends:content(Page,?_TS("Members of $group$", [{group,group_info(name)}]),Id,{groups,list_user_with_name_in_group}).
+    friends:content(Page,?_TS("Members of $group$", [{group,group_info(name)}]),Id,{nsm_groups,list_user_with_name_in_group}).
 
 getPageContent(Page) ->
     Id = wf:q(id),
-    friends:getPageContent(Page, Id, {groups,list_user_with_name_in_group}).
+    friends:getPageContent(Page, Id, {nsm_groups,list_user_with_name_in_group}).
 
 get_members() ->
     [

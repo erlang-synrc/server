@@ -1,13 +1,5 @@
-%%----------------------------------------------------------------------
-%% @author Yura Zhloba <yzh44yzh@gmail.com>
-%% @copyright Paynet Internet ve Bilisim Hizmetleri A.S. All Rights Reserved.
-%% @doc
-%% This module keeps different types of files in propriate directory structure
-%% @end
-%%----------------------------------------------------------------------
-
-
 -module(attachment_storage).
+-author('Yura Zhloba <yzh44yzh@gmail.com>').
 
 -export([place_avatar/4, next_version_for_avatar/1]).
 -export([place_feed_raw_file/3, place_feed_thumb/4, place_feed_converted/4]).

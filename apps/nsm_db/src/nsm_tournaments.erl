@@ -1,4 +1,4 @@
--module(tournaments).
+-module(nsm_tournaments).
 
 -include("user.hrl").
 -include("tournaments.hrl").
@@ -45,7 +45,7 @@ create(UID, Name, Desc, Date, Players, Quota, Awards, Type, Game) ->
                                    owner = UID}),
 
     %% start lobby holder and start date and time timer check
-    nsm_srv_tournament_lobby_sup:start_lobby(TID),
+%    nsm_srv_tournament_lobby_sup:start_lobby(TID),
 
     TID.
 

@@ -2,8 +2,8 @@
 -module (groups).
 -compile(export_all).
 -include_lib("nitrogen_core/include/wf.hrl").
--include_lib("nsm_srv/include/user.hrl").
--include_lib("nsm_srv/include/feed.hrl").
+-include_lib("nsm_db/include/user.hrl").
+-include_lib("nsm_db/include/feed.hrl").
 -include_lib("alog/include/alog.hrl").
 
 -include("elements/records.hrl").
@@ -393,7 +393,7 @@ event(create_new_group) ->
             wf:wire(simple_lightbox, #hide{}),
             wf:wire(#alert{text=?_T("Group with this shortname already exists! Maybe, you should check it out.")});
         false ->
-            case rpc:call(?APPSERVER_NODE, users, get_user, [{username, GId}]) of
+            case rpc:call(?APPSERVER_NODE, nsm_users, get_user, [{username, GId}]) of
                 {ok, _} ->
                     wf:wire(#alert{text=?_TS("User '$username$' exist!", [{username, GId}]) });
                 {error, _} ->

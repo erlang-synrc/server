@@ -3,9 +3,9 @@
 -compile(export_all).
 
 -include_lib("nitrogen_core/include/wf.hrl").
--include_lib("nsm_srv/include/user.hrl").
--include_lib("nsm_srv/include/feed.hrl").
--include_lib("nsm_srv/include/table.hrl").
+-include_lib("nsm_db/include/user.hrl").
+-include_lib("nsm_db/include/feed.hrl").
+-include_lib("nsm_db/include/table.hrl").
 -include_lib("elements/records.hrl").
 -include_lib("stdlib/include/qlc.hrl").
 
@@ -195,7 +195,7 @@ table(Id, _Joined=false) ->
     ?INFO("table not joined yet"),
     UId = wf:user(),
     Table = wf:state(table),
-    {ok, User} = rpc:call(?APPSERVER_NODE,users,get_user,[UId]),
+    {ok, User} = rpc:call(?APPSERVER_NODE,nsm_users,get_user,[UId]),
 
     Options = case wf:q(lucky) of
                   "true" ->
@@ -357,13 +357,13 @@ start_pre_comet_process(Id, Skip) ->
                                     Tables = get_tables(Id),
 
                                     [ begin 
-                                            {ok,User1} = rpc:call(?APPSERVER_NODE,users,get_user,[wf:user()]),
+                                            {ok,User1} = rpc:call(?APPSERVER_NODE,nsm_users,get_user,[wf:user()]),
                                             ?INFO("join ~p to table ~p owner ~p",[wf:user(), Id, Table2#game_table.owner]), 
                                             Table2#game_table.game_process ! {join, User1, Table2}
                                       end || Table2 <- Tables],
     
                                     [ begin 
-                                      {ok,User1} = rpc:call(?APPSERVER_NODE,users,get_user,[Table3#game_table.owner]),
+                                      {ok,User1} = rpc:call(?APPSERVER_NODE,nsm_users,get_user,[Table3#game_table.owner]),
                                       ?INFO("join user ~p to table ~p owner ~p",[User1#user.username, Id,
                                                             GProcTable#game_table.owner]), 
                                       self() ! {join, User1, GProcTable}
@@ -613,7 +613,7 @@ kick_user(UserName) ->
                             wf:flush(),
       	                    stop;
                         Player ->
-			    case rpc:call(?APPSERVER_NODE,users,get_user,[UserName]) of
+			    case rpc:call(?APPSERVER_NODE,nsm_users,get_user,[UserName]) of
 				{ok, UserToLeave} ->
                                     Message = ?_TS("User ($user$) was kicked by ($owner$).",[{user, Player},{owner, CUser}]),
 	        		    Users = Table#game_table.users,

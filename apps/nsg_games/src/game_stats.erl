@@ -90,7 +90,7 @@ charge_quota(GameInfo) ->
                           PR#pointing_rule.quota
                   end,
 
-        ok = rpc:call(?APPSERVER_NODE, nsm_srv_accounts, transaction,
+        ok = rpc:call(?APPSERVER_NODE, nsm_accounts, transaction,
                            [UId, ?CURRENCY_QUOTA, -Amount, TI#ti_game_event{type = game_start}])
 
      end || U  <- Players].
@@ -166,12 +166,12 @@ assign_points(#'GameResults'{results = Results}, GameInfo) ->
                 ok  % no statistics for robots
         end,
 
-        ok = rpc:call(?APPSERVER_NODE, nsm_srv_accounts, transaction,
+        ok = rpc:call(?APPSERVER_NODE, nsm_accounts, transaction,
                            [UId, ?CURRENCY_KAKUSH, Kakaush,
                             TI#ti_game_event{type = game_end}]),
         if
             GamePoints /= 0 ->
-                ok = rpc:call(?APPSERVER_NODE, nsm_srv_accounts, transaction,
+                ok = rpc:call(?APPSERVER_NODE, nsm_accounts, transaction,
                            [UId, ?CURRENCY_GAME_POINTS, GamePoints,
                             TI#ti_game_event{type = game_end}]);
             true ->

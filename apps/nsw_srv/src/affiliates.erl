@@ -2,8 +2,8 @@
 -module (affiliates).
 -compile(export_all).
 -include_lib("nitrogen_core/include/wf.hrl").
--include_lib("nsm_srv/include/user.hrl").
--include_lib("nsm_srv/include/feed.hrl").
+-include_lib("nsm_db/include/user.hrl").
+-include_lib("nsm_db/include/feed.hrl").
 -include_lib("alog/include/alog.hrl"). 
 -include("elements/records.hrl").
 -include("gettext.hrl").
@@ -26,7 +26,7 @@ main_authorized() ->
         MrX ->
             UserName = MrX
     end,
-    case catch rpc:call(?APPSERVER_NODE,users,get_user,[UserName]) of
+    case catch rpc:call(?APPSERVER_NODE,nsm_users,get_user,[UserName]) of
         {ok, UserInfo} ->
             wf:state(user, UserInfo),
             wf:state(feed_owner, {user, UserName}),
@@ -40,8 +40,8 @@ main_authorized() ->
 
 body() ->
     UserName = wf:user(),
-    {ok, User} = rpc:call(?APPSERVER_NODE,users,get_user,[UserName]),
-    case rpc:call(?APPSERVER_NODE,acl,check_access,[User, {feature, admin}]) of
+    {ok, User} = rpc:call(?APPSERVER_NODE,nsm_users,get_user,[UserName]),
+    case rpc:call(?APPSERVER_NODE,nsm_acl,check_access,[User, {feature, admin}]) of
 	    allow -> body_authorized();
 	    _ -> ?_T("You don't have access to do that.")
     end.
@@ -51,10 +51,10 @@ body_authorized() ->
 
 % data 
 get_contracts_data_from_bd(UserID) ->
-    rpc:call(?APPSERVER_NODE,nsm_affiliates2, get_contracts, [UserID]).
+    rpc:call(?APPSERVER_NODE,nsm_affiliates, get_contracts, [UserID]).
 
 get_contract_details_from_bd(ContractId) ->
-    rpc:call(?APPSERVER_NODE,nsm_affiliates2, get_purchases_details, [ContractId]).
+    rpc:call(?APPSERVER_NODE,nsm_affiliates, get_purchases_details, [ContractId]).
 
 total_ammount(ContractId) ->
     Data = get_contract_details_from_bd(ContractId),    

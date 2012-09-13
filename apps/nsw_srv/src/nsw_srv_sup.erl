@@ -3,6 +3,7 @@
 -export([
     start_link/0,
     init/1,
+    create_tables/0,
     dispatch/0
 ]).
 
@@ -103,7 +104,7 @@ init([]) ->
     gettext:change_gettext_dir(code:priv_dir(nsw_srv)),
     gettext:recreate_db(),
 
-%    rpc:call(?APPSERVER_NODE,nsm_bg,init_workers,[]),
+    rpc:call(?APPSERVER_NODE,nsm_bg,init_workers,[]),
 %    rpc:call(?APPSERVER_NODE,nsm_db,init_db,[]),
 
     case rpc:call(?APPSERVER_NODE,nsm_db,get,[config, "debug/production", false]) of

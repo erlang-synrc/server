@@ -10,8 +10,10 @@ GEM=$PWD/apps/nsg_games
 SES=$PWD/apps/nsg_session
 GS=$PWD/apps/nsg_srv
 WEB=$PWD/apps/nsw_srv
+DB=$PWD/apps/nsm_db
 
 SRV_REL=rels/app/node/lib/nsm_srv-1
+DB_REL=rels/app/node/lib/nsm_db-1
 WEB_REL=rels/web/node/lib/nsw_srv-1
 GEM_REL=rels/game/node/lib/nsg_games-1
 SES_REL=rels/game/node/lib/nsg_session-1
@@ -27,6 +29,10 @@ SRV_REL_EBIN=$SRV_REL/ebin
 SRV_EBIN=$SRV/ebin
 SRV_INCLUDE=$SRV/include
 
+DB_REL_EBIN=$DB_REL/ebin
+DB_EBIN=$DB/ebin
+DB_INCLUDE=$DB/include
+
 GEM_REL_EBIN=$GEM_REL/ebin
 GEM_EBIN=$GEM/ebin
 GEM_INCLUDE=$GEM/include
@@ -39,13 +45,14 @@ GS_REL_EBIN=$GS_REL/ebin
 GS_EBIN=$GS/ebin
 GS_INCLUDE=$GS/include
 
-rm -rf $WEB_REL_EBIN $WEB_REL_PRIV $SRV_REL_EBIN $SRV_REL_IN_WEB $GEM_REL_EBIN $SES_REL_EBIN $GS_REL_EBIN
+rm -rf $WEB_REL_EBIN $WEB_REL_PRIV $SRV_REL_EBIN $SRV_REL_IN_WEB $GEM_REL_EBIN $SES_REL_EBIN $GS_REL_EBIN $DB_REL_EBIN
 
 ## WEB node
 ln -s $WEB_EBIN $WEB_REL_EBIN
 ln -s $WEB_PRIV $WEB_REL_PRIV
 ## APP node
 ln -s $SRV_EBIN $SRV_REL_EBIN
+ln -s $DB_EBIN $DB_REL_EBIN
 ## GAME node
 ln -s $GEM_EBIN $GEM_REL_EBIN
 ln -s $SES_EBIN $SES_REL_EBIN

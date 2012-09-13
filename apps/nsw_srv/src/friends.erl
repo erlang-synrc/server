@@ -2,8 +2,8 @@
 -module (friends).
 -compile(export_all).
 -include_lib("nitrogen_core/include/wf.hrl").
--include_lib("nsm_srv/include/user.hrl").
--include_lib("nsm_srv/include/feed.hrl").
+-include_lib("nsm_db/include/user.hrl").
+-include_lib("nsm_db/include/feed.hrl").
 -include_lib("alog/include/alog.hrl"). 
 -include("elements/records.hrl").
 -include("gettext.hrl").
@@ -25,7 +25,7 @@ main_authorized() ->
         MrX ->
             UserName = MrX
     end,
-    case catch rpc:call(?APPSERVER_NODE,users,get_user,[UserName]) of
+    case catch rpc:call(?APPSERVER_NODE,nsm_users,get_user,[UserName]) of
         {ok, UserInfo} ->
             wf:state(user, UserInfo),
             wf:state(feed_owner, {user, UserName}),
@@ -43,7 +43,7 @@ body() ->
     #template{file=code:priv_dir(nsw_srv)++"/templates/view-user.html"}.
 
 content()     -> content(1).
-content(Page) -> content(Page, ?_T("FRIENDS"), wf:user(), {users, list_subscription}).
+content(Page) -> content(Page, ?_T("FRIENDS"), wf:user(), {nsm_users, list_subscription}).
 content(Page, Title, UId, ModFun) ->
     wf:wire(wf:f("objs('search_textbox')"
              ".bind('keyup keydown change', function()"
@@ -89,7 +89,7 @@ user_info() ->
     end.
 
 getPageContent(Page) ->
-    getPageContent(Page, wf:user(), {users, list_subscription}).
+    getPageContent(Page, wf:user(), {nsm_users, list_subscription}).
 
 getPageContent(Page, UId, ModFun) when is_number(Page) ->
     [
@@ -148,7 +148,7 @@ get_users_view(UsersView, true, PageNumber) ->
 
 get_subscribed_users()     -> get_subscribed_users(1).
 get_subscribed_users(Page) -> 
-    get_subscribed_users(Page, wf:user(), {users, list_subscription}).
+    get_subscribed_users(Page, wf:user(), {nsm_users, list_subscription}).
 
 get_subscribed_users(Page,UId, {Mod,Fun}) when is_number(Page) ->
     AltUser = wf:q('of'),
@@ -184,7 +184,7 @@ user_short_description(WhoName) ->
     case WhoName of
         undefined -> [];
         UserName ->
-            {ok, UInfo} = rpc:call(?APPSERVER_NODE,users, get_user, [{username, UserName}]),
+            {ok, UInfo} = rpc:call(?APPSERVER_NODE,nsm_users, get_user, [{username, UserName}]),
             #user{name=UName, surname=ULastName, age=UAge, sex=USex, location=ULoc, education=UEdu} = UInfo,
             if
                 ULastName == undefined, UName == undefined ->
@@ -243,7 +243,7 @@ friends_view(Who_, WhoName_) ->
     SubUnsubItem = case wf:user() of
         undefined -> [];
         User ->
-            case rpc:call(?APPSERVER_NODE,users, is_user_subscribed, [User, WhoName]) of
+            case rpc:call(?APPSERVER_NODE,nsm_users, is_user_subscribed, [User, WhoName]) of
                 true   -> #listitem{id=SUId, body=#link{url="javascript:void(0)",
                                 text=?_T("Unsubscribe"), title=?_T("You can stop seeing this users posts in your feed"),
                                     actions=#event { type=click, postback={unsubscribe, User, WhoName, SUId} } }};
@@ -309,7 +309,7 @@ big() ->
 subscribe() ->
     UId = wf:user(),
     SubList =
-        case rpc:call(?APPSERVER_NODE,users, list_subscription, [UId]) of
+        case rpc:call(?APPSERVER_NODE,nsm_users, list_subscription, [UId]) of
             [] ->
                 ?_T("You are not subscribed to anyone");
             Sub ->
@@ -350,14 +350,14 @@ inner_event(view_sub, _) ->
 
 inner_event({subscription, FrId}, _) ->
     UId = wf:user(),
-    ok = rpc:call(?APPSERVER_NODE, users, subscribe_user, [UId, FrId]),
+    ok = rpc:call(?APPSERVER_NODE, nsm_users, subscribe_user, [UId, FrId]),
     wf:update(main_area, subscribe()),
     Msg = io_lib:fwrite(?_T("You have subscribed to '~s'."), [FrId]),
     wf:flash(Msg);
 
 inner_event(search_friend, _) ->
     SearchStr = wf:q("search_textbox"),
-    SearchedUsers = case rpc:call(?APPSERVER_NODE,users, search_user, [SearchStr]) of
+    SearchedUsers = case rpc:call(?APPSERVER_NODE,nsm_users, search_user, [SearchStr]) of
         [] ->
             #panel{body=?_T("We could not find any users matching the search") ++ " \"" ++ SearchStr ++ "\""};
         Sub ->
@@ -374,7 +374,7 @@ inner_event({page, N}, _) ->
 
 
 inner_event({unsubscribe, _, Who, SUId}, User1) ->
-    rpc:call(?APPSERVER_NODE, users, remove_subscribe, [User1, Who]),
+    rpc:call(?APPSERVER_NODE, nsm_users, remove_subscribe, [User1, Who]),
     wf:update(SUId,
        #link{url="javascript:void(0)", text=?_T("Subscribe"), title=?_T("You can start seeing this users posts in your feed"),
             actions=#event{type=click, postback={subscribe, User1, Who, SUId}}}),
@@ -383,7 +383,7 @@ inner_event({unsubscribe, _, Who, SUId}, User1) ->
 
 
 inner_event({subscribe, _, Who, SUId}, User1)   ->
-    rpc:call(?APPSERVER_NODE, users, subscribe_user, [User1, Who]),
+    rpc:call(?APPSERVER_NODE, nsm_users, subscribe_user, [User1, Who]),
     wf:update(SUId,
         #link{url="javascript:void(0)", text=?_T("Unsubscribe"), title=?_T("You can stop seeing this users posts in your feed"),
             actions= #event{type=click, postback={unsubscribe, User1, Who, SUId}}}),

@@ -1,15 +1,7 @@
-%%----------------------------------------------------------------------
-%% @author Yura Zhloba <yzh44yzh@gmail.com>
-%% @copyright Paynet Internet ve Bilisim Hizmetleri A.S. All Rights Reserved.
-%% @doc
-%% This module keeps functions for working with avatars
-%% @end
-%%----------------------------------------------------------------------
-
-
 -module(avatar).
+-author('Yura Zhloba <yzh44yzh@gmail.com>').
 
--include_lib("nsm_srv/include/user.hrl").
+-include_lib("nsm_db/include/user.hrl").
 
 -include("loger.hrl").
 -include("setup.hrl").
@@ -20,7 +12,7 @@
 
 -spec get_avatar_by_username(string(), atom()) -> string().
 get_avatar_by_username(UserName, Size) ->
-    case rpc:call(?APPSERVER_NODE,users,get_user,[{username, UserName}]) of
+    case rpc:call(?APPSERVER_NODE,nsm_users,get_user,[{username, UserName}]) of
 	{ok, User} ->
 	    get_avatar(User, Size);
 	_ -> get_avatar(no_avatar, Size)

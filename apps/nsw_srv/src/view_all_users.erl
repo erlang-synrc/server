@@ -2,8 +2,8 @@
 -module (view_all_users).
 -compile(export_all).
 -include_lib("nitrogen_core/include/wf.hrl").
--include_lib("nsm_srv/include/user.hrl").
--include_lib("nsm_srv/include/feed.hrl").
+-include_lib("nsm_db/include/user.hrl").
+-include_lib("nsm_db/include/feed.hrl").
 -include("gettext.hrl").
 -include("setup.hrl").
 -include("elements/records.hrl").
@@ -29,10 +29,10 @@ content() ->
     content(1).
 
 content(Page) ->
-    friends:content(Page,?_T("All users of Kakaranet"), ?FRIENDSOURCE, {groups,list_user_with_name_in_group}).
+    friends:content(Page,?_T("All users of Kakaranet"), ?FRIENDSOURCE, {nsm_groups,list_user_with_name_in_group}).
 
 getPageContent(Page) ->
-    friends:getPageContent(Page, ?FRIENDSOURCE, {groups,list_user_with_name_in_group}).
+    friends:getPageContent(Page, ?FRIENDSOURCE, {nsm_groups,list_user_with_name_in_group}).
 
 group_info() ->
     Info = rpc:call(?APPSERVER_NODE,nsm_groups,get_group,[?FRIENDSOURCE]),

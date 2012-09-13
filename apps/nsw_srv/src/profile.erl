@@ -2,11 +2,11 @@
 -compile(export_all).
 
 -include_lib("nitrogen_core/include/wf.hrl").
--include_lib("nsm_srv/include/user.hrl").
--include_lib("nsm_srv/include/tournaments.hrl").
--include_lib("nsm_srv/include/accounts.hrl").
--include_lib("nsm_srv/include/scoring.hrl").
--include_lib("nsm_srv/include/membership_packages.hrl").
+-include_lib("nsm_db/include/user.hrl").
+-include_lib("nsm_db/include/tournaments.hrl").
+-include_lib("nsm_db/include/accounts.hrl").
+-include_lib("nsm_db/include/scoring.hrl").
+-include_lib("nsm_db/include/membership_packages.hrl").
 -include_lib("elements/records.hrl").
 
 -include("common.hrl").
@@ -42,9 +42,9 @@ main_authorized() ->
 %	     {tournament2,?_U("/create-tournament"), ?_T("// Tournament")},
 	     {user_tournaments,?_U("/profile/user-tournaments"), ?_T("Tournaments")}
 	    ],
-    Links = case rpc:call(?APPSERVER_NODE,nsm_affiliates2, is_existing_affiliate, [wf:user()]) of 
+    Links = case rpc:call(?APPSERVER_NODE,nsm_affiliates, is_existing_affiliate, [wf:user()]) of 
         true ->
-            case rpc:call(?APPSERVER_NODE,nsm_affiliates2, is_able_to_look_details, [wf:user()]) of
+            case rpc:call(?APPSERVER_NODE,nsm_affiliates, is_able_to_look_details, [wf:user()]) of
                 true -> PreLinks ++ [{affiliates,?_U("/profile/affiliates"), ?_T("Affiliates")}];
                 false -> PreLinks
             end;
@@ -277,7 +277,7 @@ section_body(user_tournaments) ->
 
 section_body(account) ->
     Username = wf:user(),
-    {ok, Quota}  = rpc:call(?APPSERVER_NODE, nsm_srv_accounts, balance, [Username, ?CURRENCY_QUOTA]),
+    {ok, Quota}  = rpc:call(?APPSERVER_NODE, nsm_accounts, balance, [Username, ?CURRENCY_QUOTA]),
 
 %    Id = wf:temp_id(),
 %    ApiSave = #api{anchor = Id, tag = Id, name = savePackage, delegate = ?MODULE},
@@ -694,7 +694,7 @@ u_event(profile_save) ->
       #user{} = NewUser ->
 	  ?PRINT({NewUser}),
 	  wf:session(user_info, NewUser),
-	  ok = rpc:call(?APPSERVER_NODE,users,update_user,[NewUser]),
+	  ok = rpc:call(?APPSERVER_NODE,nsm_users,update_user,[NewUser]),
 	  flash(info, profile_info, ?_T("Saved!"))
     catch
       {error, Error} ->

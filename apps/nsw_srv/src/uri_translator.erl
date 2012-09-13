@@ -1,6 +1,6 @@
 -module(uri_translator).
 
--include_lib("nsm_srv/include/uri_translator.hrl").
+-include_lib("nsm_db/include/uri_translator.hrl").
 -include_lib("nitrogen_core/include/wf.hrl").
 -include_lib("eunit/include/eunit.hrl").
 -include("setup.hrl").

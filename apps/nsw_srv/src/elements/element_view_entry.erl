@@ -1,10 +1,9 @@
-%% -*- mode: nitrogen -*-
 -module (element_view_entry).
 %%FIX: should be called "element_feed_entry"
 -compile(export_all).
 -include_lib("nitrogen_core/include/wf.hrl").
--include_lib("nsm_srv/include/user.hrl").
--include_lib("nsm_srv/include/feed.hrl").
+-include_lib("nsm_db/include/user.hrl").
+-include_lib("nsm_db/include/feed.hrl").
 -include("common.hrl").
 -include("records.hrl").
 -include("setup.hrl").
@@ -44,7 +43,7 @@ render_normal_element(#view_entry{entry=E, anchor=Anchor}) ->
     Comments = rpc:call(?APPSERVER_NODE,comment,select_by_entry_id,[E#entry.id]),
 
     %% Get avatar
-    {ok, User} = rpc:call(?APPSERVER_NODE, users, get_user,[E#entry.from]),
+    {ok, User} = rpc:call(?APPSERVER_NODE, nsm_users, get_user,[E#entry.from]),
     Avatar = #image{image = avatar:get_avatar(User, small), style="width:48px;height:48px"},
 
     %% Get attachments

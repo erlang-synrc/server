@@ -329,9 +329,9 @@ add_sample_users() ->
     GId2  = nsm_groups:create_group("ahmettez", "yeniler", "Yeniler", "So, you must be new here.", public),
 
     %create(UID, Name, Desc, Date, Players, Quota, Awards, Type, Game) ->
-%    T1 = tournaments:create("maxim","TAVLA", "Tavla Turnuvalar",  {2012,4,28},10,  10, undefined,pointing,game_tavla),
-%    T2 = tournaments:create("maxim","BATAK", "Batak Challenge",   {2012,4,28},100, 50, undefined,pointing,game_batak),
-%    T3 = tournaments:create("maxim","OKEY",  "OKEY Championship", {2012,4,28},1000,100,undefined,pointing,game_okey),
+    T1 = nsm_tournaments:create("maxim","TAVLA", "Tavla Turnuvalar",  {2012,4,28},10,  10, undefined,pointing,game_tavla),
+    T2 = nsm_tournaments:create("maxim","BATAK", "Batak Challenge",   {2012,4,28},100, 50, undefined,pointing,game_batak),
+    T3 = nsm_tournaments:create("maxim","OKEY",  "OKEY Championship", {2012,4,28},1000,100,undefined,pointing,game_okey),
 
     ?INFO("adding users accounts"),
     [ begin
@@ -350,10 +350,10 @@ add_sample_users() ->
               _ ->
                   nsm_groups:add_to_group(Me#user.username, GId1, member),
                   nsm_groups:add_to_group(Me#user.username, GId2, member)
-          end
-%          tournaments:join(Me#user.username, T1),
-%          tournaments:join(Me#user.username, T3),
-%          tournaments:join(Me#user.username, T2)
+          end,
+          nsm_tournaments:join(Me#user.username, T1),
+          nsm_tournaments:join(Me#user.username, T3),
+          nsm_tournaments:join(Me#user.username, T2)
       end || Me <- UserList ],
     %% define access for Maxim to feature admin
     nsm_acl:define_access({user, "maxim"},    {feature, admin}, allow),

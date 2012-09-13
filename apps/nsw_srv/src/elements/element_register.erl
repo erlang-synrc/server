@@ -7,8 +7,8 @@
 -include_lib("nitrogen_core/include/wf.hrl").
 -include("records.hrl").
 -include("setup.hrl").
--include_lib("nsm_srv/include/user.hrl").
--include_lib("nsm_srv/include/invite.hrl").
+-include_lib("nsm_db/include/user.hrl").
+-include_lib("nsm_db/include/invite.hrl").
 
 reflect() -> record_info(fields, register).
 
@@ -156,7 +156,7 @@ why_birthday() ->
 
 %% TODO: custom validation isn't working
 custom_validator(_Tag, User) ->
-    rpc:call(?APPSERVER_NODE,users,if_exist,[User]).
+    rpc:call(?APPSERVER_NODE,nsm_users,if_exist,[User]).
 
 
 
@@ -249,7 +249,7 @@ finish_register_(Invite) ->
     Password = wf:q(reg_passwd),
     CPassword = wf:q(reg_con_passwd),
 
-    case rpc:call(?APPSERVER_NODE,users,check_register_data,[RegData]) of
+    case rpc:call(?APPSERVER_NODE,nsm_users,check_register_data,[RegData]) of
 	ok -> ok;
 	{error, username_too_short} ->
 	    throw({msg, ?_T("Username is too short.")});

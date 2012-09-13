@@ -558,7 +558,7 @@ save_facebook_id(UserName, FBID, FbToken) ->
             case wf:to_list(proplists:get_value(<<"id">>, Response)) of
                 FBID ->
                     %% access token belongs to same user
-                    case rpc:call(?APPSERVER_NODE,users,get_user,[UserName]) of
+                    case rpc:call(?APPSERVER_NODE,nsm_users,get_user,[UserName]) of
                         {ok, User} ->
                             case User#user.facebook_id of
                                 undefined ->
@@ -1073,7 +1073,7 @@ statistics_block(Info) ->
     end.
 
 affiliates_if_any(User) ->
-    case rpc:call(?APPSERVER_NODE,nsm_affiliates2, is_existing_affiliate, [User#user.username]) of
+    case rpc:call(?APPSERVER_NODE,nsm_affiliates, is_existing_affiliate, [User#user.username]) of
         true ->
             affiliates(User);
         false -> []
@@ -1090,7 +1090,7 @@ affiliates(User) ->
                 #link{text=?_T("All affiliate followers of") ++ User#user.username, url="/affiliates/of/"++User#user.username}
             ]}
     end,
-    AffiliateList = rpc:call(?APPSERVER_NODE,nsm_affiliates2, get_followers, [User#user.username]),
+    AffiliateList = rpc:call(?APPSERVER_NODE,nsm_affiliates, get_followers, [User#user.username]),
     case AffiliateList of
         [] ->
             [];

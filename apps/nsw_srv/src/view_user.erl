@@ -2,8 +2,8 @@
 -module (view_user).
 -compile(export_all).
 -include_lib("nitrogen_core/include/wf.hrl").
--include_lib("nsm_srv/include/user.hrl").
--include_lib("nsm_srv/include/feed.hrl").
+-include_lib("nsm_db/include/user.hrl").
+-include_lib("nsm_db/include/feed.hrl").
 
 -include("setup.hrl").
 -include("common.hrl").
@@ -23,7 +23,7 @@ main_unsafe() ->
 
 main_authorized() ->
     UserName = wf:q(id),
-    case catch rpc:call(?APPSERVER_NODE,users,get_user,[UserName]) of
+    case catch rpc:call(?APPSERVER_NODE,nsm_users,get_user,[UserName]) of
         {ok, UserInfo} ->
             wf:state(user, UserInfo),
             wf:state(feed_owner, {user, UserName}),
@@ -70,7 +70,7 @@ user_info() ->
     SubUnsubItem = case wf:user() of
         undefined -> [];
         User ->
-            case rpc:call(?APPSERVER_NODE,users, is_user_subscribed, [User, Who]) of
+            case rpc:call(?APPSERVER_NODE,nsm_users, is_user_subscribed, [User, Who]) of
                 true   -> #listitem{id=SUId, body=#link{url="javascript:void(0)",
                                 text=?_T("Unsubscribe"), title=?_T("You can stop seeing this users posts in your feed"), 
                                     actions=#event { type=click, postback={unsubscribe, User, Who, SUId} } }};
@@ -134,7 +134,7 @@ user_info() ->
                         #br{},
                         #span{text=?_T("Admin")++":"},
                         #br{},
-                        case rpc:call(?APPSERVER_NODE,nsm_affiliates2,is_existing_affiliate,[Info#user.username]) of
+                        case rpc:call(?APPSERVER_NODE,nsm_affiliates,is_existing_affiliate,[Info#user.username]) of
                             true -> ?_T("This user is an affiliate");
                             false -> #link{text=?_T("Make this user affiliate"), postback={make_affiliate, Info#user.username}}
                         end
@@ -185,7 +185,7 @@ event({unsubscribe,_,_,_}=Event) ->
     friends:event(Event);
 
 event({make_affiliate, User}) ->
-    rpc:call(?APPSERVER_NODE,nsm_affiliates2,create_affiliate,[User]),
+    rpc:call(?APPSERVER_NODE,nsm_affiliates,create_affiliate,[User]),
     wf:redirect("");
 
 event(Other) ->

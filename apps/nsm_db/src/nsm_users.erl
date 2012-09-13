@@ -153,9 +153,9 @@ register(#user{username=U, email=Email, facebook_id=FBId} = RegisterData0) ->
                                               starred  = nsm_db:feed_create(),
                                               password = HashedPassword},
 		    ok = nsm_db:put(RegisterData),
-			nsm_srv_accounts:create_account(U),
+			nsm_accounts:create_account(U),
 			%% assign quota
-			nsm_srv_accounts:transaction(U, ?CURRENCY_QUOTA,
+			nsm_accounts:transaction(U, ?CURRENCY_QUOTA,
                                          app_opt:get_default_quota(),
                                          #ti_default_assignment{}),
             %% init message queues infrastructure

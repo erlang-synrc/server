@@ -1,12 +1,10 @@
-%% -*- mode: nitrogen -*-
 -module (price_table).
 -compile(export_all).
 -include_lib("nitrogen_core/include/wf.hrl").
--include_lib("nsm_srv/include/user.hrl").
+-include_lib("nsm_db/include/user.hrl").
+-include_lib("nsm_db/include/membership_packages.hrl").
 
 -include("elements/records.hrl").
-
--include_lib("nsm_srv/include/membership_packages.hrl").
 -include("setup.hrl").
 -include("common.hrl").
 

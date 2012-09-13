@@ -175,7 +175,7 @@ handle_call({create_table, User, S}, _From, State) ->
     ?INFO("Pointing and Double Rules: ~p",[{PR,PREx,DoubledRules}]),
     ?INFO("Quota: ~p",[Quota]),
 
-    QuotaCheck = nsm_srv_accounts:check_quota(User#user.username, Quota),
+    QuotaCheck = nsm_accounts:check_quota(User#user.username, Quota),
     ?INFO("QuotaCheck: ~p",[QuotaCheck]),
 
     case QuotaCheck of
@@ -267,7 +267,7 @@ handle_call({join_table, User, TableId, Options}, _From, State) ->
                     end,
 
             Quota = Rules#pointing_rule.quota,
-            QuotaCheck = nsm_srv_accounts:check_quota(User#user.username, Quota),
+            QuotaCheck = nsm_accounts:check_quota(User#user.username, Quota),
             IsHardLimitReached = {error, hard_limit} == QuotaCheck,
 
             if
