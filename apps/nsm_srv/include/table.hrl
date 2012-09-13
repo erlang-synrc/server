@@ -16,6 +16,7 @@
                      friends_only,
                      invited_users = [] :: [username_type()] | '_',
                      private :: boolean() | '_',
+                     feel_lucky = fasle :: boolean(),
                      creator,
                      age_limit,
                      groups_only = [] :: [id_type()] | '_',

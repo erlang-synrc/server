@@ -475,6 +475,7 @@ get_tables2(Setting,UId,GameFSM,Convert) ->
     GameType = GetPropList(game_mode, Setting),
     Speed = GetPropList(speed, Setting),
     Game = GetPropList(game, Setting),
+    Lucky = false,
 
     FilterAllUsers = case GetPropList(users, Setting) of
         undefined -> [];
@@ -521,13 +522,14 @@ get_tables2(Setting,UId,GameFSM,Convert) ->
     OneLeftList = qlc:next_answers(qlc:cursor(qlc:q([V || {{_,_,_K},_,V=#game_table{creator=C, 
                                                    rounds=R, game_type=G, owner=O,
                                                    users=U, game_speed=S, 
-                                                   game_mode=GT}}
+                                                   game_mode=GT, feel_lucky = L}}
                     <- gproc:table(props),
                    length(U) == (MaxUsers-1), C =/= UId,
                    Check(C,O),
                    Check(Game,G),
                    Check(Speed,S),
                    Check(GameType,GT),
+                   Check(Lucky,L),
                    Check(Rounds,R)
                   ])), 10),
 
@@ -536,13 +538,14 @@ get_tables2(Setting,UId,GameFSM,Convert) ->
          "okey" -> qlc:next_answers(qlc:cursor(qlc:q([V || {{_,_,_K},_,V=#game_table{creator=C, 
                                                    rounds=R, game_type=G, owner=O,
                                                    users=U, game_speed=S,
-                                                   game_mode=GT}}
+                                                   game_mode=GT, feel_lucky = L}}
                     <- gproc:table(props), 
                    length(U) == (MaxUsers-2), C =/= UId,
                    Check(C,O),
                    Check(Game,G),
                    Check(Speed,S),
                    Check(GameType,GT),
+                   Check(Lucky,L),
                    Check(Rounds,R)])),10)
     end,
 	
@@ -551,41 +554,46 @@ get_tables2(Setting,UId,GameFSM,Convert) ->
          "okey" -> qlc:next_answers(qlc:cursor(qlc:q([V || {{_,_,_K},_,V=#game_table{creator=C, 
                                                    rounds=R, game_type=G, owner=O,
                                                    users=U, game_speed=S,
-                                                   game_mode=GT}}
+                                                   game_mode=GT, feel_lucky = L}}
                    <- gproc:table(props), 
                    length(U) == (MaxUsers-3), C =/= UId,
                    Check(C,O),
                    Check(Game,G),
                    Check(Speed,S),
                    Check(GameType,GT),
+                   Check(Lucky,L),
                    Check(Rounds,R)])), 10)
     end,
 
     Own = qlc:next_answers(qlc:cursor(qlc:q([V || {{_,_,_K},_,V=#game_table{creator=C, 
                                                    rounds=R, game_type=G, owner=O,
                                                    users=_U, game_speed=S,
-                                                   game_mode=GT}} 
+                                                   game_mode=GT, feel_lucky = L}} 
                    <- gproc:table(props), 
                    C == UId,
                    Check(C,O),
                    Check(Game,G),
                    Check(Speed,S),
                    Check(GameType,GT),
+                   Check(Lucky,L),
                    Check(Rounds,R)])), 10),
 
     Rest = qlc:next_answers(qlc:cursor(qlc:q([ValRest || {{_,_,_KeyRest},_,ValRest=#game_table{creator=C, 
                                                    rounds=R, game_type=G, owner=O,
                                                    users=U, game_speed=S,
-                                                   game_mode=GT}} 
+                                                   game_mode=GT, feel_lucky = L}} 
                    <- gproc:table(props), 
                    length(U) == MaxUsers, C =/= UId,
                    Check(C,O),
                    Check(Game,G),
                    Check(Speed,S),
                    Check(GameType,GT),
+                   Check(Lucky,L),
                    Check(Rounds,R)])), 50),
 
     QLC = OneLeftList ++ TwoLeftList ++ ThreeLeftList ++ Own ++ Rest,
+    
+    ?INFO("~w:get_tables2 QLC = ~w", [?MODULE, QLC]), 
 
     FilteredQLC = lists:filter(
         fun(OneTable) ->
@@ -1598,4 +1606,3 @@ show_tab_guiders(ID) ->
         _ ->
             ok
     end.
-
