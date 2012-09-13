@@ -5,11 +5,11 @@
 
 
 -include_lib("nitrogen_core/include/wf.hrl").
--include_lib("nsm_srv/include/user.hrl").
--include_lib("nsm_srv/include/tournaments.hrl").
--include_lib("nsm_srv/include/feed.hrl").
--include_lib("nsm_srv/include/table.hrl").
--include_lib("nsm_srv/include/accounts.hrl").
+-include_lib("nsm_db/include/user.hrl").
+-include_lib("nsm_db/include/tournaments.hrl").
+-include_lib("nsm_db/include/feed.hrl").
+-include_lib("nsm_db/include/table.hrl").
+-include_lib("nsm_db/include/accounts.hrl").
 -include("elements/records.hrl").
 -include("setup.hrl").
 -include("common.hrl").
@@ -83,9 +83,9 @@ header_body() ->
 
 account_menu() ->
     Element =
-        case wf:user() /= undefined of
+        case wf:user() /= undefined of 
 	    true ->
-		case R = rpc:call(?APPSERVER_NODE,users,get_user,[wf:user()]) of
+		case R = rpc:call(?APPSERVER_NODE,nsm_users,get_user,[wf:user()]) of 
 		    {error,notfound} -> % wrong user_id
 			event(logout);
 		    _ -> ok
@@ -99,12 +99,12 @@ account_menu() ->
 									      {?_U("/profile/invite"), ?_T("Invite Buddy")}
 									     ]
 			++ case rpc:call(?APPSERVER_NODE,acl,check_access,[User, {feature, admin}]) of
-				allow -> [{?_U("/admin"), ?_T("Admin")}];
+				allow -> [{?_U("/kakaadmin"), ?_T("Admin")}];
 				_ -> []
 			   end ]},
             {ok,#user_info{username=Username,avatar_url = AvatarUrl}} = rpc:call(?APPSERVER_NODE,zealot_auth,get_user_info,[webutils:user_info(username)]),
-            {ok, Quota}  = rpc:call(?APPSERVER_NODE, nsm_srv_accounts, balance, [Username, ?CURRENCY_QUOTA]),
-            {ok, Kakush} = rpc:call(?APPSERVER_NODE, nsm_srv_accounts, balance, [Username, ?CURRENCY_KAKUSH]),
+            {ok, Quota}  = rpc:call(?APPSERVER_NODE, nsm_accounts, balance, [Username, ?CURRENCY_QUOTA]),
+            {ok, Kakush} = rpc:call(?APPSERVER_NODE, nsm_accounts, balance, [Username, ?CURRENCY_KAKUSH]),
 
             #list{class="user-menu", body=[
                 #listitem{body=[
@@ -563,7 +563,7 @@ save_facebook_id(UserName, FBID, FbToken) ->
                             case User#user.facebook_id of
                                 undefined ->
                                     NewUser = User#user{facebook_id = list_to_binary(FBID)},
-                                    rpc:call(?APPSERVER_NODE,zealot_db,put,[NewUser]);
+                                    rpc:call(?APPSERVER_NODE,nsm_db,put,[NewUser]);
                                 FBID ->
                                     nothing_to_save;
                                 Id ->
@@ -608,7 +608,7 @@ get_members(GId) ->
           #link{text=?_T("All members"), url=?_U("/view/members")++"/id/"++GId}
         ]}
     ],
-    get_metalist(GId, ?_T("MEMBERS"), groups, list_user_with_name_in_group, ?_T("Group have no members"), Nav).
+    get_metalist(GId, ?_T("MEMBERS"), nsm_groups, list_user_with_name_in_group, ?_T("Group have no members"), Nav).
 
 get_friends() ->
     User = webutils:user_info(),
@@ -651,7 +651,7 @@ get_friends(User) ->
     ],
     [
         "<span id='guidersfriends'>",
-        get_metalist(User, ?_T("FRIENDS"), users, list_subscription_users, Msg, Nav),
+        get_metalist(User, ?_T("FRIENDS"), nsm_users, list_subscription_users, Msg, Nav),
         "</span>"
     ].
 
@@ -693,23 +693,23 @@ get_metalist(Id, Title, Module, List, EmptyMsg, Nav) ->
     ].
 
 get_user_avatar(UserUid) ->
-    case rpc:call(?APPSERVER_NODE,zealot_db,get,[user, UserUid]) of
+    case rpc:call(?APPSERVER_NODE,nsm_db,get,[user, UserUid]) of
         {ok, #user{avatar={_,_,_,Avatar}}} -> Avatar
         ;_-> "/images/no_avatar_tiny.jpg"
     end.
 
 get_user_avatar(UserUid, "tiny") ->
-    case rpc:call(?APPSERVER_NODE,zealot_db,get,[user, UserUid]) of
+    case rpc:call(?APPSERVER_NODE,nsm_db,get,[user, UserUid]) of
         {ok, #user{avatar={_,_,_,Avatar}}} -> Avatar
         ;_-> "/images/no_avatar_tiny.jpg"
     end;
 get_user_avatar(UserUid, "small") ->
-    case rpc:call(?APPSERVER_NODE,zealot_db,get,[user, UserUid]) of
+    case rpc:call(?APPSERVER_NODE,nsm_db,get,[user, UserUid]) of
         {ok, #user{avatar={_,_,Avatar,_}}} -> Avatar
         ;_-> "/images/no_avatar_small.jpg"
     end;
 get_user_avatar(UserUid, _) ->
-    case rpc:call(?APPSERVER_NODE,zealot_db,get,[user, UserUid]) of
+    case rpc:call(?APPSERVER_NODE,nsm_db,get,[user, UserUid]) of
         {ok, #user{avatar={_,Avatar,_,_}}} -> Avatar
         ;_-> "/images/no_avatar_big.jpg"
     end.
@@ -732,7 +732,7 @@ get_groups() ->
 
 %% user - #user{username}
 get_groups(User) ->
-    Groups = case rpc:call(?APPSERVER_NODE,groups,list_group_per_user_with_count,[User, wf:user()]) of
+    Groups = case rpc:call(?APPSERVER_NODE,nsm_groups,list_group_per_user_with_count,[User, wf:user()]) of
         [] ->
             case User#user.username == wf:user() of
                 true ->
@@ -801,7 +801,7 @@ get_misc_links() ->
         #link{text=?_T("My accont"), url="/account"},
         case rpc:call(?APPSERVER_NODE,acl,check_access,[wf:user_info(), {feature, admin}]) of
             allow ->
-                [#br{}, #link{text="Admin panel", url="/admin"}];
+                [#br{}, #link{text="Admin panel", url="/kakaadmin"}];
             _ ->
                 []
         end
@@ -818,7 +818,7 @@ get_ribbon_menu() ->
     end,
     User = case CheckedUser of
         undefined -> webutils:user_info();
-        _         -> {ok, Usr} = rpc:call(?APPSERVER_NODE, users, get_user, [CheckedUser]), Usr
+        _         -> {ok, Usr} = rpc:call(?APPSERVER_NODE, nsm_users, get_user, [CheckedUser]), Usr
     end,
     _UA = get_user_avatar(element(2, User) ,"small"),
     {SubscribersCount, FriendsCount, CommentsCount, LikesCount} =
@@ -946,7 +946,7 @@ get_ribbon_menu() ->
                 #form{body=[
                     #dropdown{class="cs-2", id="user_status",
                         postback={set_user_status},
-                        value=rpc:call(?APPSERVER_NODE, users, get_user_game_status, [User#user.username]),
+                        value=rpc:call(?APPSERVER_NODE, nsm_users, get_user_game_status, [User#user.username]),
                         options=[
                             #option{text=?_T("Online"),         value="online"}
 %PHASE1                        #option{text=?_T("Offline"),        value="offline"},
@@ -958,7 +958,7 @@ get_ribbon_menu() ->
                 ]}
             ], id="statuschanger"}
         ;_->
-            {Status,ClassStatus} = case rpc:call(?APPSERVER_NODE, users, get_user_game_status, [CheckedUser]) of
+            {Status,ClassStatus} = case rpc:call(?APPSERVER_NODE, nsm_users, get_user_game_status, [CheckedUser]) of
                 "offline"       -> {"Offline","stat-offline"};
                 "busy"          -> {"Busy", "stat-busy"};
                 "free_for_game" -> {"Free for game", "stat-ffg"};
@@ -1049,8 +1049,8 @@ statistics_block(Info) ->
     try % this fails if user reloads page fast enough after deleting an entry
         EntriesCount = rpc:call(?APPSERVER_NODE, feed, get_entries_count, [Info#user.username]),
         CommentsCount = rpc:call(?APPSERVER_NODE, feed, get_comments_count, [Info#user.username]),
-        Subscriptions = rpc:call(?APPSERVER_NODE, zealot_db, list_subscriptions, [Info#user.username]),
-        Subscribers = rpc:call(?APPSERVER_NODE, zealot_db, list_subscription_me, [Info#user.username]),
+        Subscriptions = rpc:call(?APPSERVER_NODE, nsm_db, list_subscriptions, [Info#user.username]),
+        Subscribers = rpc:call(?APPSERVER_NODE, nsm_db, list_subscription_me, [Info#user.username]),
         LikesCount = rpc:call(?APPSERVER_NODE, feed, get_user_likes_count, [Info#user.username]),
 
         #panel{class="box statistics-box-text", body=[

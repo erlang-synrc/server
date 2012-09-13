@@ -18,13 +18,13 @@ main() ->
 
 -spec verify_account(string()) -> {error, atom()} | {ok, atom()}.
 verify_account(Code) ->
-    User = rpc:call(?APPSERVER_NODE,zealot_db,user_by_verification_code,[Code]),
+    User = rpc:call(?APPSERVER_NODE,nsm_db,user_by_verification_code,[Code]),
     case User of
         {error, _NotFound} ->
             {error, bad_verification_code};
         {ok, User0} ->
             UpdateUser = User0#user{status = ok},
-            rpc:call(?APPSERVER_NODE,zealot_db,put,[UpdateUser]),
+            rpc:call(?APPSERVER_NODE,nsm_db,put,[UpdateUser]),
             wf:session(user_info, UpdateUser),
             {ok, account_activated}
     end.

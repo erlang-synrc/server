@@ -280,7 +280,7 @@ finish_upload_event({entry_att, BoxId}, OrigFile, LocalFile, _Node) ->
 %PHASE2 quick check to avoid further processing. Attachments doesn't work well with files with no extension.
 %PHASE2 Also way too long files make a lot of trouble
 
-    {ok, UploadLimit} = rpc:call(?APPSERVER_NODE, zealot_db, get, [config, "storage/upload_limit", 31457280]),
+    {ok, UploadLimit} = rpc:call(?APPSERVER_NODE, nsm_db, get, [config, "storage/upload_limit", 31457280]),
 
     case length(string:tokens(OrigFile, ".")) == 1 of
     true ->
@@ -450,7 +450,7 @@ inner_event({like_entry, E, PanelId}, User) ->
     Eid = E#entry.entry_id,
     Fid = UserInfo#user.feed,
     rpc(feed, add_like, [Fid, Eid, User]),
-    {ok, OrigEntry} = rpc:call(?APPSERVER_NODE, zealot_db, get, [entry, {Eid, Fid}]),
+    {ok, OrigEntry} = rpc:call(?APPSERVER_NODE, nsm_db, get, [entry, {Eid, Fid}]),
     VEntry = #view_entry{entry=OrigEntry},
     wf:replace(PanelId, VEntry),
     wf:wire("upd_scrollers()");

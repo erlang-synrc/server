@@ -107,8 +107,8 @@ get_opts(_State) ->
 
 start_workers() ->
     %% FIXME: we have to add traversal methods to groups and users
-    Users = zealot_db:all(user),
-    Groups = zealot_db:all(group),
+    Users = nsm_db:all(user),
+    Groups = nsm_db:all(group),
     [begin
          timer:sleep(15+random:uniform(20)),
          ?INFO("start group: ~p",[G#group.username]),

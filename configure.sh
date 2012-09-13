@@ -1,10 +1,10 @@
 #!/bin/bash
 
-LOCAL_IP=${1:-"192.168.0.17"}
+LOCAL_IP=${1:-"192.168.1.16"}
 APP=${2:-"kakaapp@srv3.kakaranet.com"}
 
 cd rels/app/node/etc
-./configure -dba zealot_riak -app $APP -game game -web web -mq-user guest -mq-pass guest 
+./configure -dba nsm_riak -app $APP -game game -web web -mq-user guest -mq-pass guest 
 cd ../../../game/node/etc
 ./configure -app $APP -game game -game-port 9000 -web web -mnesia-init -mq-user guest -mq-pass guest
 cd ../../../web/node/etc

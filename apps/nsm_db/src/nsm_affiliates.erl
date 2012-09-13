@@ -6,7 +6,7 @@
 %% @end
 %% Created: Aug 9, 2012
 %%----------------------------------------------------------------------
--module(nsm_affiliates2).
+-module(nsm_affiliates).
 %% TODO: Move the lowlevel abstaction API to another module.
 %% TODO: Create a separate application for affiliates fuctionality.
 %% TODO: Fix functions specs according to edoc requirements.
@@ -870,11 +870,11 @@ purchase_hook(_) ->
 %% @private
 
 do_purchase(UserId, PackageId) ->
-    {ok, Package} = nsm_srv_membership_packages:get_package(PackageId),
-    {ok, MPId} = nsm_srv_membership_packages:add_purchase(#membership_purchase{user_id=UserId,
+    {ok, Package} = nsm_membership_packages:get_package(PackageId),
+    {ok, MPId} = nsm_membership_packages:add_purchase(#membership_purchase{user_id=UserId,
                                                                                membership_package=Package
                                                                               }),
-    ok = nsm_srv_membership_packages:set_purchase_state(MPId, ?MP_STATE_DONE, undefined).
+    ok = nsm_membership_packages:set_purchase_state(MPId, ?MP_STATE_DONE, undefined).
 
 -spec init_counter(any(), binary(), integer(), list()) -> ok | {error, any()}.
 %% @private

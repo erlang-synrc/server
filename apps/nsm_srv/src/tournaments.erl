@@ -21,15 +21,15 @@
          chat_history/1]).       % { tournament chat history }
 
 create_team(Name) ->
-    TID = zealot_db:next_id("team",1),
-    ok = zealot_db:put(Team = #team{id=TID,name=Name}),
+    TID = nsm_db:next_id("team",1),
+    ok = nsm_db:put(Team = #team{id=TID,name=Name}),
     TID.
 
 create(UID, Name) -> create(UID, Name, "", date(), 100, 100, undefined, pointing, game_okey).
 create(UID, Name, Desc, Date, Players, Quota, Awards, Type, Game) ->
-    TID = zealot_db:next_id("tournament",1),
+    TID = nsm_db:next_id("tournament",1),
     CTime = erlang:now(),
-    ok = zealot_db:put(#tournament{name = Name,
+    ok = nsm_db:put(#tournament{name = Name,
                                    id = TID,
                                    description = Desc,
                                    quota = Quota,
@@ -51,22 +51,22 @@ create(UID, Name, Desc, Date, Players, Quota, Awards, Type, Game) ->
 
 start(_TID) -> ok.
 destroy(_TID) -> erlang:error(notimpl).
-join(UID, TID) -> zealot_db:join_tournament(UID, TID).
+join(UID, TID) -> nsm_db:join_tournament(UID, TID).
 remove(_UID, _TID) -> ok.
-waiting_player(TID) -> zealot_db:tournament_pop_waiting_player(TID).
-joined_users(TID) -> zealot_db:tournament_waiting_queue(TID).
-user_tournaments(UID) -> zealot_db:user_tournaments(UID).
+waiting_player(TID) -> nsm_db:tournament_pop_waiting_player(TID).
+joined_users(TID) -> nsm_db:tournament_waiting_queue(TID).
+user_tournaments(UID) -> nsm_db:user_tournaments(UID).
 
 
 get(TID) ->
-    case zealot_db:get(tournament, TID) of
+    case nsm_db:get(tournament, TID) of
         {ok, Tournament} -> Tournament;
         {error, not_found} -> #tournament{};
         {error, notfound} -> #tournament{}
     end.
 
 user_joined(TID, UID) ->
-    {error, notfound} =/= zealot_db:membership(UID, TID).
+    {error, notfound} =/= nsm_db:membership(UID, TID).
 
 active_users(TID) ->
 	nsm_srv_tournament_lobby:active_users(TID).
@@ -76,7 +76,7 @@ chat_history(TID) ->
 
 
 all() ->
-    zealot_db:all(tournament).
+    nsm_db:all(tournament).
 
 user_is_team_creator(_UID, _TID) -> true.
 list_users_per_team(_TeamID) -> [].

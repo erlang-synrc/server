@@ -77,7 +77,7 @@ package_info()->
 
 %% from template
 form()->
-    PurchaseId = rpc:call(?APPSERVER_NODE, nsm_srv_membership_packages, purchase_id, []),
+    PurchaseId = rpc:call(?APPSERVER_NODE, nsm_membership_packages, purchase_id, []),
     Package = buy:package(),
     TerminalId = ?CC_TERMINAL_ID,
     OrderId  = PurchaseId,
@@ -316,7 +316,7 @@ make_provision_request(OrderId, Amount) ->
 
 %% process case when all ok and purchase completed
 process_success(OrderId, Response) ->
-    case rpc:call(?APPSERVER_NODE, nsm_srv_membership_packages,
+    case rpc:call(?APPSERVER_NODE, nsm_membership_packages,
         get_purchase, [OrderId]) of
         {ok, P} ->
             OldInfo = P#membership_purchase.info,
@@ -328,11 +328,11 @@ process_success(OrderId, Response) ->
                 auth_code = ?gv(auth_code, Response)
             },
             %% store full info in purchase
-            ok = rpc:call(?APPSERVER_NODE, nsm_srv_membership_packages,
+            ok = rpc:call(?APPSERVER_NODE, nsm_membership_packages,
                 set_purchase_info, [OrderId, Info]),
 
             %% FIXME: move info from info field to state info?
-            ok = rpc:call(?APPSERVER_NODE, nsm_srv_membership_packages,
+            ok = rpc:call(?APPSERVER_NODE, nsm_membership_packages,
                 set_purchase_state, [OrderId, ?MP_STATE_DONE, []]);
 
         {error, Reason} ->
@@ -354,7 +354,7 @@ process_failure(OrderId, IntCode, Reason) when
     IntCode == 63;   %% you are not authorized to do this
     IntCode == 75    %% password entry limit exceed
     ->
-    User = case rpc:call(?APPSERVER_NODE, nsm_srv_membership_packages, get_purchase, [OrderId]) of
+    User = case rpc:call(?APPSERVER_NODE, nsm_membership_packages, get_purchase, [OrderId]) of
         {ok, Purchase} ->
             %% FIXME: add user blocking
             wf:logout(),
@@ -366,12 +366,12 @@ process_failure(OrderId, IntCode, Reason) when
                 Logged in user ~p will be blocked ", [OrderId, IntCode, wf:user()]),
             wf:user()
     end,
-    ok = rpc:call(?APPSERVER_NODE, nsm_srv_membership_packages,
+    ok = rpc:call(?APPSERVER_NODE, nsm_membership_packages,
         set_purchase_state, [OrderId, ?MP_STATE_FAILED,
             [[{code, IntCode}, {reason, Reason}]]
     ]),
     BlockedUser = User#user{status = banned},
-    rpc:call(?APPSERVER_NODE, zealot_db, put, [BlockedUser]),
+    rpc:call(?APPSERVER_NODE, nsm_db, put, [BlockedUser]),
     wf:logout(),
 
     Message = ?_TS("Your account is blocked.<br/> Reason: $reason$ <br/> Please, contact with administration to unblock account.",
@@ -379,7 +379,7 @@ process_failure(OrderId, IntCode, Reason) when
     EncodedMessage = encode_reason(Message),
     wf:redirect(?_U("/index/message/")++EncodedMessage);
 process_failure(OrderId, IntCode, Reason) ->
-    ok = rpc:call(?APPSERVER_NODE, nsm_srv_membership_packages,
+    ok = rpc:call(?APPSERVER_NODE, nsm_membership_packages,
         set_purchase_state, [OrderId, ?MP_STATE_FAILED,
             [[{code, IntCode}, {reason, Reason}]]
     ]).
@@ -469,7 +469,7 @@ event({credit_card_clicked, PurchaseId}) ->
     wf:session(card_info, CI),
 
     %% purchase will have state 'started'
-    {ok, PurchaseId} = rpc:call(?APPSERVER_NODE, nsm_srv_membership_packages,
+    {ok, PurchaseId} = rpc:call(?APPSERVER_NODE, nsm_membership_packages,
                                 add_purchase, [MP]),
 
     buy:submit_form(credit_card_form);

@@ -5,7 +5,7 @@
 %% Membership packages. FIXME: database data structures have to be changed!
 %% @end
 %%--------------------------------------------------------------------
--module(nsm_srv_membership_packages).
+-module(nsm_membership_packages).
 
 %%
 %% Include files
@@ -54,7 +54,7 @@ add_package(#membership_package{}=Package)->
 
 -spec get_package(any())-> {ok, #membership_package{}} | {error, Reason::any()}.
 get_package(PackageId)->
-    case zealot_db:get(membership_package, PackageId) of
+    case nsm_db:get(membership_package, PackageId) of
         {ok, #membership_package{} = Package}->
             {ok, Package};
         {error, Reason}->
@@ -74,7 +74,7 @@ list_packages(Options) ->
 
 -spec list_packages()->[#membership_package{}].
 list_packages()->
-     zealot_db:all(membership_package).
+     nsm_db:all(membership_package).
 
 %% @doc setter for available_for_sale option of package
 -spec available_for_sale(package_id(), boolean()) -> ok | {error, any()}.
@@ -101,7 +101,7 @@ add_purchase(#membership_purchase{} = MP) ->
 
 
 add_purchase(#membership_purchase{} = MP, State0, Info) ->
-    case zealot_db:get(membership_purchase, MP#membership_purchase.id) of
+    case nsm_db:get(membership_purchase, MP#membership_purchase.id) of
         {ok, _} -> {error, already_bought_that_one};
         {error, notfound} ->
             %% fill needed fields
@@ -129,7 +129,7 @@ add_purchase(#membership_purchase{} = MP, State0, Info) ->
             %% notify about purchase added
             nsx_util_notification:notify_purchase(Purchase),
 
-            case zealot_db:put(Purchase) of
+            case nsm_db:put(Purchase) of
                 ok ->
                     {ok, Id};
                 Error ->
@@ -141,7 +141,7 @@ add_purchase(#membership_purchase{} = MP, State0, Info) ->
 -spec get_purchase(string())-> {ok, #membership_purchase{}} | {error, Reason::any()}.
 
 get_purchase(PurchaseId)->
-    case zealot_db:get(membership_purchase, PurchaseId) of
+    case nsm_db:get(membership_purchase, PurchaseId) of
         {ok, #membership_purchase{} = Package}->
             {ok, Package};
         {error, Reason}->
@@ -152,7 +152,7 @@ get_purchase(PurchaseId)->
 
 -spec set_purchase_state(term(), purchase_state(), term()) -> ok.
 set_purchase_state(MPId, NewState, Info) ->
-    {ok, MP} = zealot_db:get(membership_purchase, MPId),
+    {ok, MP} = nsm_db:get(membership_purchase, MPId),
 
     Time = now(),
     StateLog = MP#membership_purchase.state_log,
@@ -174,12 +174,12 @@ set_purchase_state(MPId, NewState, Info) ->
     NewMP=MP#membership_purchase{state = NewState,
                                          end_time = EndTime,
                                          state_log = NewStateLog},
-    zealot_db:put(NewMP),
+    nsm_db:put(NewMP),
 
     if
         NewState == ?MP_STATE_DONE ->
             charge_user_account(MP),
-            nsm_affiliates2:purchase_hook(NewMP);
+            nsm_affiliates:purchase_hook(NewMP);
         true ->
             ok
     end,
@@ -189,33 +189,33 @@ set_purchase_state(MPId, NewState, Info) ->
 -spec set_purchase_info(term(), term()) -> ok | {error, not_found}.
 
 set_purchase_info(MPId, Info) ->
-    {ok, MP} = zealot_db:get(membership_purchase, MPId),
-    zealot_db:put(MP#membership_purchase{info = Info}).
+    {ok, MP} = nsm_db:get(membership_purchase, MPId),
+    nsm_db:put(MP#membership_purchase{info = Info}).
 
 
 set_purchase_external_id(MPId, ExternalId) ->
-    {ok, MP} = zealot_db:get(membership_purchase, MPId),
+    {ok, MP} = nsm_db:get(membership_purchase, MPId),
     case MP#membership_purchase.external_id of
         ExternalId ->
             ok;
         _ ->
-            zealot_db:put(MP#membership_purchase{external_id = ExternalId})
+            nsm_db:put(MP#membership_purchase{external_id = ExternalId})
     end.
 
 -spec create_storage()-> ok.
 create_storage()->
     %% FIXME: usage of direct mnesia calls
-    ok = zealot_mnesia:create_table(membership_package,
+    ok = nsm_mnesia:create_table(membership_package,
                                     record_info(fields, membership_package),
                                     [{storage, permanent}]),
-    ok = zealot_mnesia:create_table(membership_purchase,
+    ok = nsm_mnesia:create_table(membership_purchase,
                                     record_info(fields, membership_purchase),
                                     [{storage, permanent}]).
 
 %% @doc Get all purchases
 -spec list_purchases() -> list(#membership_purchase{}).
 list_purchases() ->
-    zealot_db:all(membership_purchase).
+    nsm_db:all(membership_purchase).
 
 %% @doc Get purchases with criteria
 -spec list_purchases(SelectOptions::list()) -> list(#membership_purchase{}).
@@ -233,7 +233,7 @@ list_purchases(SelectOptions) ->
 
 purchase_id() ->
     %% get next generated id for membership purchase
-    NextId = zealot_db:next_id("membership_purchase"),
+    NextId = nsm_db:next_id("membership_purchase"),
     lists:concat([timestamp(), "_", NextId]).
 
 
@@ -299,13 +299,13 @@ add_sample_data()->
     Enabled = [P#membership_package{available_for_sale = true} ||
                   P <- WithPaymentTypes],
 
-    zealot_db:put(Enabled).
+    nsm_db:put(Enabled).
 
 %%
 %% Local Functions
 %%
 generate_id()->
-    Id = zealot_db:next_id("membership_package"),
+    Id = nsm_db:next_id("membership_package"),
     integer_to_list(Id).
 
 %% return default value if value match Undefined spec
@@ -332,8 +332,8 @@ charge_user_account(MP) ->
         ?INFO("charge user account. OrderId: ~p, User: ~p, Kakush:~p, Quota:~p",
               [OrderId, UserId, Kakush, Quota]),
 
-        nsm_srv_accounts:transaction(UserId, ?CURRENCY_KAKUSH, Kakush, PaymentTransactionInfo),
-        nsm_srv_accounts:transaction(UserId, ?CURRENCY_QUOTA, Quota, PaymentTransactionInfo)
+        nsm_accounts:transaction(UserId, ?CURRENCY_KAKUSH, Kakush, PaymentTransactionInfo),
+        nsm_accounts:transaction(UserId, ?CURRENCY_QUOTA, Quota, PaymentTransactionInfo)
     catch
         _:E ->
             ?ERROR("unable to charge user account. User=~p, OrderId=~p. Error: ~9999p",
@@ -344,12 +344,12 @@ charge_user_account(MP) ->
 %% get all records from database, filter them with predicate.
 %% FIXME: temporary hack to provide mnesias select functionality with riak
 select(RecordType, Predicate) ->
-    All = zealot_db:all(RecordType),
+    All = nsm_db:all(RecordType),
 	lists:filter(Predicate, All).
 
 
 save_package(Package) ->
-    case zealot_db:put([Package]) of
+    case nsm_db:put([Package]) of
         ok ->
             {ok, Package#membership_package.id};
         {error, Reason}->
@@ -376,7 +376,7 @@ check_conditions([], _, true) -> true.
 
 %% @private
 delete_package(PackageId) ->
-    zealot_db:delete(membership_package, PackageId).
+    nsm_db:delete(membership_package, PackageId).
 
 %%
 %% Tests

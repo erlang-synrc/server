@@ -24,7 +24,7 @@ code_reload() ->
 
 
 update_db() ->
-    zealot_db_update:update_db().
+    nsm_db_update:update_db().
 
 load_module_everywhere(Nodes, Mod) ->
     case code:get_object_code(Mod) of

@@ -32,11 +32,11 @@ generate_code(User, Mail) when is_list(User);
                        create_date = erlang:now(),
                        recipient = Mail,
                        issuer = User},
-    zealot_db:put(Rec),
+    nsm_db:put(Rec),
     {ok, Code}.
 
 check_code(Code) ->
-    case zealot_db:get(invite_code, Code) of
+    case nsm_db:get(invite_code, Code) of
         {ok, Invite} ->
             case Invite of
                 Invite when Invite#invite_code.created_user =/= undefined ->
@@ -51,13 +51,13 @@ check_code(Code) ->
 use_code(Code, #user{username = UN}) ->
     use_code(Code, UN);
 use_code(Code, User) when is_list(User) ->
-    case zealot_db:get(invite_code, Code) of
+    case nsm_db:get(invite_code, Code) of
         {ok, Invite} ->
-            Result = zealot_db:put(Invite#invite_code{created_user = User}),
+            Result = nsm_db:put(Invite#invite_code{created_user = User}),
             %% add to tree
             Parent = Invite#invite_code.issuer,
             Parent /= undefined andalso
-                zealot_db:put_into_invitation_tree(Parent, User, Code),
+                nsm_db:put_into_invitation_tree(Parent, User, Code),
             ?INFO("Put code: parent ~p, user: ~p, Code: ~p", [Parent, User, Code]),
             Result;
         {error, _} ->
@@ -67,15 +67,15 @@ use_code(Code, User) when is_list(User) ->
 get_user_code(#user{username = UN}) ->
     get_user_code(UN);
 get_user_code(User) when is_list(User) ->
-    zealot_db:invite_code_by_issuer(User).
+    nsm_db:invite_code_by_issuer(User).
 
 get_code_per_created_user(#user{username = UN}) ->
     get_code_per_created_user(UN);
 get_code_per_created_user(User) ->
-    zealot_db:invite_code_by_user(User).
+    nsm_db:invite_code_by_user(User).
 
 get_all_code() ->
-    zealot_db:all(invite_code).
+    nsm_db:all(invite_code).
 
 code() ->
     <<A:(16*8), _/binary>> = crypto:rand_bytes(16),

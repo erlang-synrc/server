@@ -53,36 +53,36 @@
 -define(ROOT, "site/static").
 
 create() ->
-    FId = zealot_db:next_id("feed", 1),
-    ok = zealot_db:put(#feed{id = FId} ),
+    FId = nsm_db:next_id("feed", 1),
+    ok = nsm_db:put(#feed{id = FId} ),
     FId.
 
 share_entry(FId, Eid, User) ->
-    {ok, OriginalEntry} = zealot_db:get(entry, {Eid, FId}),
+    {ok, OriginalEntry} = nsm_db:get(entry, {Eid, FId}),
     add_entry(FId, User, OriginalEntry#entry.description, OriginalEntry#entry.media).
 
 add_direct_message(FId, User, EntryId, Desc) ->
     add_direct_message(FId, User, undefined, EntryId, Desc, []).
 add_direct_message(FId, User, To, EntryId, Desc, Medias) ->
-    zealot_db:feed_add_direct_message(FId, User, To, EntryId, Desc, Medias).
+    nsm_db:feed_add_direct_message(FId, User, To, EntryId, Desc, Medias).
 
 add_group_entry(FId, User, EntryId, Desc, Medias) ->
-    zealot_db:feed_add_entry(FId, User, EntryId, Desc, Medias).
+    nsm_db:feed_add_entry(FId, User, EntryId, Desc, Medias).
 add_group_entry(FId, User, To, EntryId, Desc, Medias, Type) ->
-    zealot_db:feed_add_entry(FId, User, To, EntryId, Desc, Medias, Type).
+    nsm_db:feed_add_entry(FId, User, To, EntryId, Desc, Medias, Type).
 
 add_entry(FId, User, EntryId, Desc) ->
     add_entry(FId, User, EntryId, Desc, []).
 add_entry(FId, User, EntryId, Desc, Medias) ->
-    zealot_db:feed_add_entry(FId, User, EntryId, Desc, Medias).
+    nsm_db:feed_add_entry(FId, User, EntryId, Desc, Medias).
 add_entry(FId, User, To, EntryId, Desc, Medias, Type) ->
-    zealot_db:feed_add_entry(FId, User, To, EntryId, Desc, Medias, Type).
+    nsm_db:feed_add_entry(FId, User, To, EntryId, Desc, Medias, Type).
 
 
 add_like(Fid, Eid, Uid) ->
     Write_one_like = fun(Next) ->
-        Self_id = zealot_db:next_id("one_like", 1),   
-        zealot_db:put(#one_like{    % add one like
+        Self_id = nsm_db:next_id("one_like", 1),   
+        nsm_db:put(#one_like{    % add one like
             id = Self_id,
             user_id = Uid,
             entry_id = Eid,
@@ -93,28 +93,28 @@ add_like(Fid, Eid, Uid) ->
         Self_id
     end,
     % add entry - like
-    case zealot_db:get(entry_likes, Eid) of
+    case nsm_db:get(entry_likes, Eid) of
         {ok, ELikes} -> 
-            zealot_db:put(ELikes#entry_likes{
+            nsm_db:put(ELikes#entry_likes{
                 one_like_head = Write_one_like(ELikes#entry_likes.one_like_head), 
                 total_count = ELikes#entry_likes.total_count + 1
             });
         {error, notfound} ->
-            zealot_db:put(#entry_likes{
+            nsm_db:put(#entry_likes{
                 entry_id = Eid,                
                 one_like_head = Write_one_like(undefined),
                 total_count = 1
             })
     end,
     % add user - like
-    case zealot_db:get(user_likes, Uid) of
+    case nsm_db:get(user_likes, Uid) of
         {ok, ULikes} -> 
-            zealot_db:put(ULikes#user_likes{
+            nsm_db:put(ULikes#user_likes{
                 one_like_head = Write_one_like(ULikes#user_likes.one_like_head),
                 total_count = ULikes#user_likes.total_count + 1
             });
         {error, notfound} ->
-            zealot_db:put(#user_likes{
+            nsm_db:put(#user_likes{
                 user_id = Uid,                
                 one_like_head = Write_one_like(undefined),
                 total_count = 1
@@ -123,33 +123,33 @@ add_like(Fid, Eid, Uid) ->
 
 % statistics
 count_entry_in_statistics(Uid) ->
-    case zealot_db:get(user_etries_count, Uid) of
+    case nsm_db:get(user_etries_count, Uid) of
         {ok, UEC} -> 
-            zealot_db:put(UEC#user_etries_count{
+            nsm_db:put(UEC#user_etries_count{
                 entries = UEC#user_etries_count.entries+1
             });
         {error, notfound} ->
-            zealot_db:put(#user_etries_count{
+            nsm_db:put(#user_etries_count{
                 user_id = Uid,
                 entries = 1
             })
     end.
             
 count_comment_in_statistics(Uid) ->
-    case zealot_db:get(user_etries_count, Uid) of
+    case nsm_db:get(user_etries_count, Uid) of
         {ok, UEC} -> 
-            zealot_db:put(UEC#user_etries_count{
+            nsm_db:put(UEC#user_etries_count{
                 comments = UEC#user_etries_count.comments+1
             });
         {error, notfound} ->
-            zealot_db:put(#user_etries_count{
+            nsm_db:put(#user_etries_count{
                 user_id = Uid,
                 comments = 1
             })
     end.
 
 get_entries_count(Uid) ->
-    case zealot_db:get(user_etries_count, Uid) of
+    case nsm_db:get(user_etries_count, Uid) of
         {ok, UEC} -> 
             UEC#user_etries_count.entries;
         {error, notfound} ->
@@ -157,7 +157,7 @@ get_entries_count(Uid) ->
     end.
 
 get_comments_count(Uid) ->
-    case zealot_db:get(user_etries_count, Uid) of
+    case nsm_db:get(user_etries_count, Uid) of
         {ok, UEC} -> 
             UEC#user_etries_count.comments;
         {error, notfound} ->
@@ -180,43 +180,43 @@ broadcast(new_table, #game_table{owner=UId} = Table) ->
     multi_broadcast(UsersList, Message);
 
 broadcast(User, Entry) ->
-    Users = [Friend || #subscription_rev{who = Friend} <- users:list_subscription_me(User)],
+    Users = [Friend || #subscription_rev{who = Friend} <- nsm_users:list_subscription_me(User)],
     multi_broadcast(Users, Entry).
 
 multi_broadcast(Users, #entry{entry_id=EId} = Entry) ->
     [ begin
-          {ok, U} = users:get_user(UserId),
+          {ok, U} = nsm_users:get_user(UserId),
           FId = U#user.feed,
           NewEntry = Entry#entry{id={EId, FId},
                                  feed_id = FId},
-        zealot_db:put(NewEntry)
+        nsm_db:put(NewEntry)
       end
       || UserId <- Users ],
     ok.
 
 
 get_feed(FId) ->
-    zealot_db:get(feed, FId).
+    nsm_db:get(feed, FId).
 
 get_entries_in_feed(FId) ->
-    zealot_db:entries_in_feed(FId).
+    nsm_db:entries_in_feed(FId).
 get_entries_in_feed(FId, Count) ->
-    zealot_db:entries_in_feed(FId, Count).
+    nsm_db:entries_in_feed(FId, Count).
 get_entries_in_feed(FId, StartFrom, Count) ->
-    zealot_db:entries_in_feed(FId, StartFrom, Count).
+    nsm_db:entries_in_feed(FId, StartFrom, Count).
 
 get_direct_messages(FId, Count) ->
-    zealot_db:entries_in_feed(FId, undefined, Count).
+    nsm_db:entries_in_feed(FId, undefined, Count).
 
 get_direct_messages(FId, StartFrom, Count) ->
-    zealot_db:entries_in_feed(FId, StartFrom, Count).
+    nsm_db:entries_in_feed(FId, StartFrom, Count).
 
 get_entries_in_feed(FId, StartFrom, Count, FromUserId)->
-	Entries = zealot_db:entries_in_feed(FId, StartFrom, Count),
+	Entries = nsm_db:entries_in_feed(FId, StartFrom, Count),
 	[E || #entry{from = From} = E <- Entries, From == FromUserId].
 
 create_message(Table) ->
-    EId = zealot_db:next_id("entry", 1),
+    EId = nsm_db:next_id("entry", 1),
     #entry{id = {EId, system_info},
         entry_id = EId,
         from = system,
@@ -228,25 +228,25 @@ create_message(Table) ->
 remove_entry(FeedId, EId) ->
     {ok, #feed{top = TopId} = Feed} = get_feed(FeedId),
 
-    case zealot_db:get(entry, {EId, FeedId}) of
+    case nsm_db:get(entry, {EId, FeedId}) of
         {ok, #entry{prev = Prev, next = Next}}->
             ?INFO("P: ~p, N: ~p", [Prev, Next]),
-            case zealot_db:get(entry, Next) of
+            case nsm_db:get(entry, Next) of
                 {ok, NE} ->
-                    zealot_db:put(NE#entry{prev = Prev});
+                    nsm_db:put(NE#entry{prev = Prev});
                 _ ->
                     ok
             end,
-            case zealot_db:get(entry, Prev) of
+            case nsm_db:get(entry, Prev) of
                 {ok, PE} ->
-                    zealot_db:put(PE#entry{next = Next});
+                    nsm_db:put(PE#entry{next = Next});
                 _ ->
                     ok
             end,
 
             case TopId of
                 {EId, FeedId} ->
-                    zealot_db:put(Feed#feed{top = Prev});
+                    nsm_db:put(Feed#feed{top = Prev});
                 _ ->
                     ok
             end;
@@ -256,33 +256,33 @@ remove_entry(FeedId, EId) ->
             ok
     end,
 
-    zealot_db:delete(entry, {EId, FeedId}).
+    nsm_db:delete(entry, {EId, FeedId}).
 
 
 % edit
 edit_entry(FeedId, EId, NewDescription) ->
-    case zealot_db:entry_by_id({EId, FeedId}) of
+    case nsm_db:entry_by_id({EId, FeedId}) of
         {ok, OldEntry} ->
             NewEntryRaw =  OldEntry#entry{description = NewDescription,
                                           raw_description = NewDescription},
             NewEntry = feedformat:format(NewEntryRaw),
-            zealot_db:put(NewEntry);
+            nsm_db:put(NewEntry);
         {error, notfound}->
             {error, notfound}
     end.
 
 
 remove_entry_comments(FId, EId) ->
-    AllComments = zealot_db:comments_by_entry(FId, EId),
+    AllComments = nsm_db:comments_by_entry(FId, EId),
     [begin
-          zealot_db:delete(comment, ID),
+          nsm_db:delete(comment, ID),
           remove_media(M)
      end || #comment{id = ID, media = M} <- AllComments].
 
 entry_add_comment(FId, User, EntryId, ParentComment, CommentId, Content, Medias) ->
-     case zealot_db:entry_by_id({EntryId, FId}) of
+     case nsm_db:entry_by_id({EntryId, FId}) of
          {ok, _E} ->
-             zealot_db:add_comment(FId, User, EntryId, ParentComment, CommentId, Content, Medias);
+             nsm_db:add_comment(FId, User, EntryId, ParentComment, CommentId, Content, Medias);
          _ ->
              ok
      end.
@@ -305,30 +305,30 @@ remove_media([#media{url=Url, thumbnail_url=TUrl}|T])            ->
 get_one_like_list(undefined) ->
     [];
 get_one_like_list(Id) ->
-    {ok, OneLike} = zealot_db:get(one_like, Id),
+    {ok, OneLike} = nsm_db:get(one_like, Id),
     [OneLike] ++ get_one_like_list(OneLike#one_like.next).
 
 get_entries_likes(Entry_id) ->
-    case zealot_db:get(entry_likes, Entry_id) of
+    case nsm_db:get(entry_likes, Entry_id) of
         {ok, Likes} -> get_one_like_list(Likes#entry_likes.one_like_head);
         {error, notfound} -> []
     end.
 
 get_entries_likes_count(Entry_id) ->
-    case zealot_db:get(entry_likes, Entry_id) of
+    case nsm_db:get(entry_likes, Entry_id) of
         {ok, Likes} ->
             Likes#entry_likes.total_count;
         {error, notfound} -> 0
     end.
 
 get_user_likes_count(UserId) ->
-    case zealot_db:get(user_likes, UserId) of
+    case nsm_db:get(user_likes, UserId) of
         {ok, Likes} -> Likes#user_likes.total_count;
         {error, notfound} -> 0
     end.
 
 get_user_likes(UserId) ->
-    case zealot_db:get(user_likes, UserId) of
+    case nsm_db:get(user_likes, UserId) of
         {ok, Likes} -> get_one_like_list(Likes#user_likes.one_like_head);
         {error, notfound} -> []
     end.
@@ -338,32 +338,32 @@ get_one_like_list(undefined, _) ->
 get_one_like_list(_, 0) ->
     [];
 get_one_like_list(Id, N) ->
-    {ok, OneLike} = zealot_db:get(one_like, Id),
+    {ok, OneLike} = nsm_db:get(one_like, Id),
     [OneLike] ++ get_one_like_list(OneLike#one_like.next, N-1).
 
 get_user_likes(UserId, {Page, PageAmount}) ->
-    case zealot_db:get(user_likes, UserId) of
+    case nsm_db:get(user_likes, UserId) of
         {ok, Likes} -> lists:nthtail((Page-1)*PageAmount, get_one_like_list(Likes#user_likes.one_like_head, PageAmount*Page));
         {error, notfound} -> []
     end.
 
 is_subscribed_user(UserUidWho, UserUidWhom) ->
-    length(zealot_db:select(subscription,
+    length(nsm_db:select(subscription,
         fun({subscription, Who, Whom}) when Who=:=UserUidWho,Whom=:=UserUidWhom->true;(_)->false end)) =:= 1.
 
 user_subscription_count(UserUid) ->
-    length(zealot_db:select(subscription,
+    length(nsm_db:select(subscription,
         fun({subscription, Who, _}) when Who=:=UserUid->true;(_)->false end)).
 
 user_friends_count(UserUid) ->
-    length(zealot_db:select(subscription,
+    length(nsm_db:select(subscription,
         fun({subscription, _, Whom}) when Whom=:=UserUid->true;(_)->false end)).
 
 get_comments_entries(UserUid, _, _Page, _PageAmount) ->
-    Pids = [Eid || #comment{entry_id=Eid} <- zealot_db:select(comment,
+    Pids = [Eid || #comment{entry_id=Eid} <- nsm_db:select(comment,
         fun(#comment{author_id=Who}) when Who=:=UserUid ->true;(_)->false end)],
     %?PRINT({"GCE pids length: ", length(Pids)}),
-    lists:flatten([zealot_db:select(entry,[{where, fun(#entry{entry_id=ID})-> ID=:=Pid end},
+    lists:flatten([nsm_db:select(entry,[{where, fun(#entry{entry_id=ID})-> ID=:=Pid end},
         {order, {1, descending}},{limit, {1,1}}]) || Pid <- Pids]).
 
 get_my_discussions(_FId, Page, PageAmount, UserUid) ->
@@ -371,15 +371,15 @@ get_my_discussions(_FId, Page, PageAmount, UserUid) ->
         0 -> 1
         ;M-> M
     end,
-    Pids = [Eid || #comment{entry_id=Eid} <- zealot_db:select(comment,
+    Pids = [Eid || #comment{entry_id=Eid} <- nsm_db:select(comment,
         fun(#comment{author_id=Who}) when Who=:=UserUid ->true;(_)->false end)],
-    lists:flatten([zealot_db:select(entry,[{where, fun(#entry{entry_id=ID})-> ID=:=Pid end},
+    lists:flatten([nsm_db:select(entry,[{where, fun(#entry{entry_id=ID})-> ID=:=Pid end},
         {order, {1, descending}},{limit, {1,1}}]) || Pid <- Pids]).
 
 get_feed_by_user_or_group(UserOrGroup) ->
-    case users:get_user(UserOrGroup) of
+    case nsm_users:get_user(UserOrGroup) of
         {ok, User} -> {ok, user, User#user.feed, User#user.direct};
-        _          -> case zealot_db:get(group, UserOrGroup) of
+        _          -> case nsm_db:get(group, UserOrGroup) of
                         {ok, Group} -> {ok, group, Group#group.feed, undefined};
                         _           -> {error, not_found}
                       end

@@ -401,7 +401,7 @@ postback_to_js_string(Module, Postback) ->
 get_usort_user(Groups, Users) ->
     GroupsUsers =
         lists:foldl(fun(Group, Acc) ->
-                            UsersInGroup = rpc:call(?APPSERVER_NODE,groups,list_user_in_group,[Group]),
+                            UsersInGroup = rpc:call(?APPSERVER_NODE,nsm_groups,list_user_in_group,[Group]),
                             lists:umerge(lists:usort(UsersInGroup), Acc)
                     end, [], Groups),
     lists:umerge(lists:usort(Users), GroupsUsers).

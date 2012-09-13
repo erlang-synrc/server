@@ -880,25 +880,25 @@ get_settings0(Settings00) ->
 
 -spec get_timeout(atom(), iolist()) -> integer().
 get_timeout(turn, fast) ->
-    {ok, Val} = rpc:call(?APPSERVER_NODE,zealot_db,get,[config,"games/okey/turn_timeout_fast", 15000]), Val;
+    {ok, Val} = rpc:call(?APPSERVER_NODE,nsm_db,get,[config,"games/okey/turn_timeout_fast", 15000]), Val;
 get_timeout(turn, normal) ->
-    {ok, Val} = rpc:call(?APPSERVER_NODE,zealot_db,get,[config,"games/okey/turn_timeout_normal", 30000]), Val;
+    {ok, Val} = rpc:call(?APPSERVER_NODE,nsm_db,get,[config,"games/okey/turn_timeout_normal", 30000]), Val;
 get_timeout(turn, slow) ->
-    {ok, Val} = rpc:call(?APPSERVER_NODE,zealot_db,get,[config,"games/okey/turn_timeout_slow", 60000]), Val;
+    {ok, Val} = rpc:call(?APPSERVER_NODE,nsm_db,get,[config,"games/okey/turn_timeout_slow", 60000]), Val;
 
 get_timeout(challenge, fast) ->
-    {ok, Val} = rpc:call(?APPSERVER_NODE,zealot_db,get,[config,"games/okey/challenge_timeout_fast", 5000]), Val;
+    {ok, Val} = rpc:call(?APPSERVER_NODE,nsm_db,get,[config,"games/okey/challenge_timeout_fast", 5000]), Val;
 get_timeout(challenge, normal) ->
-    {ok, Val} = rpc:call(?APPSERVER_NODE,zealot_db,get,[config,"games/okey/challenge_timeout_normal", 10000]), Val;
+    {ok, Val} = rpc:call(?APPSERVER_NODE,nsm_db,get,[config,"games/okey/challenge_timeout_normal", 10000]), Val;
 get_timeout(challenge, slow) ->
-    {ok, Val} = rpc:call(?APPSERVER_NODE,zealot_db,get,[config,"games/okey/challenge_timeout_slow", 20000]), Val;
+    {ok, Val} = rpc:call(?APPSERVER_NODE,nsm_db,get,[config,"games/okey/challenge_timeout_slow", 20000]), Val;
 
 get_timeout(ready, fast) ->
-    {ok, Val} = rpc:call(?APPSERVER_NODE,zealot_db,get,[config,"games/okey/ready_timeout_fast", 15000]), Val;
+    {ok, Val} = rpc:call(?APPSERVER_NODE,nsm_db,get,[config,"games/okey/ready_timeout_fast", 15000]), Val;
 get_timeout(ready, normal) ->
-    {ok, Val} = rpc:call(?APPSERVER_NODE,zealot_db,get,[config,"games/okey/ready_timeout_normal", 25000]), Val;
+    {ok, Val} = rpc:call(?APPSERVER_NODE,nsm_db,get,[config,"games/okey/ready_timeout_normal", 25000]), Val;
 get_timeout(ready, slow) ->
-    {ok, Val} = rpc:call(?APPSERVER_NODE,zealot_db,get,[config,"games/okey/ready_timeout_slow", 45000]), Val;
+    {ok, Val} = rpc:call(?APPSERVER_NODE,nsm_db,get,[config,"games/okey/ready_timeout_slow", 45000]), Val;
 
 get_timeout(robot, Speed) ->
     case ?IS_TEST of
@@ -909,11 +909,11 @@ get_timeout(robot, Speed) ->
     end;
 
 get_timeout(robot_production, fast) ->
-    {ok, Val} = rpc:call(?APPSERVER_NODE,zealot_db,get,[config,"games/okey/robot_delay_fast", 6000]), Val;
+    {ok, Val} = rpc:call(?APPSERVER_NODE,nsm_db,get,[config,"games/okey/robot_delay_fast", 6000]), Val;
 get_timeout(robot_production, normal) ->
-    {ok, Val} = rpc:call(?APPSERVER_NODE,zealot_db,get,[config,"games/okey/robot_delay_normal", 9000]), Val;
+    {ok, Val} = rpc:call(?APPSERVER_NODE,nsm_db,get,[config,"games/okey/robot_delay_normal", 9000]), Val;
 get_timeout(robot_production, slow) ->
-    {ok, Val} = rpc:call(?APPSERVER_NODE,zealot_db,get,[config,"games/okey/robot_delay_slow", 15000]), Val.
+    {ok, Val} = rpc:call(?APPSERVER_NODE,nsm_db,get,[config,"games/okey/robot_delay_slow", 15000]), Val.
 
 -spec i_saw_okey(atom(),pid(),#state{}) -> {atom(),atom(),atom()|tuple(atom(),atom()),#state{},integer()}.
 i_saw_okey(StateName, Pid, State) ->
@@ -1155,7 +1155,7 @@ generate_pieces() ->
     R ++ R.
 
 hand_out_pieces() ->
-    case rpc:call(?APPSERVER_NODE,zealot_db,get,[config,"games/okey/debug_next_round_pieces", undefined]) of
+    case rpc:call(?APPSERVER_NODE,nsm_db,get,[config,"games/okey/debug_next_round_pieces", undefined]) of
         {ok, undefined} -> generate_hand();
         {ok, [Go | L]} -> generate_hand(Go, L)
     end.

@@ -287,7 +287,7 @@ section_body(account) ->
 
     ?INFO("wf:session: ~p",[wf:session(is_facebook)]),
 
-    Orders = rpc:call(?APPSERVER_NODE, zealot_db, get_purchases_by_user,
+    Orders = rpc:call(?APPSERVER_NODE, nsm_db, get_purchases_by_user,
         [Username, ?ORDERS_PER_PAGE, [?MP_STATE_DONE]]),
 
     [
@@ -600,7 +600,7 @@ finish_upload_event(_Tag, OrigFile, LocalFile, _Node) ->
                        #panel { id=avatarholder, class=photo,
                                 body=#image{image=avatar:get_avatar(Avatar, big)} }),
             UserWithAvatar = User#user{avatar = Avatar},
-            rpc:call(?APPSERVER_NODE, zealot_db, put,[UserWithAvatar])
+            rpc:call(?APPSERVER_NODE, nsm_db, put,[UserWithAvatar])
     end.
 
 %%%% end update avatar %%%%
@@ -777,7 +777,7 @@ u_event(not_done_yet) ->
 
 u_event({more_orders, PurchaseId}) ->
     Username = wf:user(),
-    Orders0 = rpc:call(?APPSERVER_NODE, zealot_db, get_purchases_by_user,
+    Orders0 = rpc:call(?APPSERVER_NODE, nsm_db, get_purchases_by_user,
         [Username, PurchaseId, ?ORDERS_PER_PAGE+1, [?MP_STATE_DONE]]),
     %% first element already rendered as last element of the current list
     case Orders0 of
@@ -875,7 +875,7 @@ order_list_item(#membership_purchase{membership_package = Package} = MP) ->
     PackageId = Package#membership_package.id,
     %% get package by id from database to get actual avalilable_for_sale option state
     AvailableForSale =
-    case rpc:call(?APPSERVER_NODE, zealot_db, get, [membership_package, PackageId]) of
+    case rpc:call(?APPSERVER_NODE, nsm_db, get, [membership_package, PackageId]) of
         {ok, P} ->
             P#membership_package.available_for_sale;
         _ ->

@@ -43,10 +43,10 @@ main() ->
 
     Media = case CommentId of
 		0 -> 
-             {ok, Entry} = rpc:call(?APPSERVER_NODE, zealot_db, get, [entry, {RealEntryId, FeedId}]),
+             {ok, Entry} = rpc:call(?APPSERVER_NODE, nsm_db, get, [entry, {RealEntryId, FeedId}]),
 		     [Media0|_] = [M || M <- Entry#entry.media, M#media.id =:= MediaId],
 		     Media0;
-		_ -> {ok, Comment} = rpc:call(?APPSERVER_NODE,zealot_db,comment_by_id,[{CommentId, FeedId}]),   %PUBLIC BETA we don't have these for now
+		_ -> {ok, Comment} = rpc:call(?APPSERVER_NODE,nsm_db,comment_by_id,[{CommentId, FeedId}]),   %PUBLIC BETA we don't have these for now
 		     [Media1] = [M || M <- Comment#comment.media, M#media.id =:= MediaId],
 		     Media1
 	    end,

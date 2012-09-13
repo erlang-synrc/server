@@ -103,7 +103,7 @@ form() ->
             EM
     end,
 
-    PurchaseId = rpc:call(?APPSERVER_NODE, nsm_srv_membership_packages,
+    PurchaseId = rpc:call(?APPSERVER_NODE, nsm_membership_packages,
                           purchase_id, []),
 
     CancelUrl = lists:concat([?HTTP_ADDRESS, ?_U("/buy/paypal/cancelled")]),
@@ -206,7 +206,7 @@ process_payment(Params) ->
     TxnId = ?gv("txn_id", Params),
     {PurchaseState, _StateInfo} = get_internal_status(Params),
 
-    case rpc:call(?APPSERVER_NODE, nsm_srv_membership_packages,
+    case rpc:call(?APPSERVER_NODE, nsm_membership_packages,
                   get_purchase, [PurchaseId]) of
         %% if record in our base, continue processing
         {ok, Purchase} ->
@@ -238,10 +238,10 @@ process_registered_payment(Purchase, Params) ->
             ?INFO("PAYPAL: payment info checked: Params: ~p", [Params]),
             {NewState, Info} = get_internal_status(Params),
             %% store external id
-            ok = rpc:call(?APPSERVER_NODE, nsm_srv_membership_packages,
+            ok = rpc:call(?APPSERVER_NODE, nsm_membership_packages,
                 set_purchase_external_id, [PurchaseId, TxnId]),
             %% change purchase state
-            ok = rpc:call(?APPSERVER_NODE, nsm_srv_membership_packages,
+            ok = rpc:call(?APPSERVER_NODE, nsm_membership_packages,
                           set_purchase_state, [PurchaseId, NewState, Info]);
 
         true ->
@@ -391,7 +391,7 @@ event({paypal_clicked, PurchaseId}) ->
           [PurchaseId, Package#membership_package.id]),
 
     %% purchase will have state 'added'
-    {ok, PurchaseId} = rpc:call(?APPSERVER_NODE, nsm_srv_membership_packages,
+    {ok, PurchaseId} = rpc:call(?APPSERVER_NODE, nsm_membership_packages,
                                 add_purchase, [MP]),
     buy:submit_form(paypal_form);
 

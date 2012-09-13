@@ -35,10 +35,10 @@ getPageContent(Page) ->
     friends:getPageContent(Page, ?FRIENDSOURCE, {groups,list_user_with_name_in_group}).
 
 group_info() ->
-    Info = rpc:call(?APPSERVER_NODE,groups,get_group,[?FRIENDSOURCE]),
+    Info = rpc:call(?APPSERVER_NODE,nsm_groups,get_group,[?FRIENDSOURCE]),
     Ava = webutils:get_group_avatar(Info#group.username, "big"),
     Description = #span{id=group_info_description, style="font-size:11pt;", text=Info#group.description},
-    MembersCount = integer_to_list(rpc:call(?APPSERVER_NODE, groups, get_members_count, [Info#group.username])),
+    MembersCount = integer_to_list(rpc:call(?APPSERVER_NODE,nsm_groups, get_members_count, [Info#group.username])),
 
     #panel{class="box user-info", body=[
         #h3{id=group_info_name, style="letter-spacing:0px;", text=Info#group.name},

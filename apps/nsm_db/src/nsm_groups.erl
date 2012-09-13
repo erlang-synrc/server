@@ -1,4 +1,4 @@
--module(groups).
+-module(nsm_groups).
 
 -include("user.hrl").
 -include("feed.hrl").
@@ -42,11 +42,11 @@ create_group(UId, GId, Name, Desc) ->
     create_group(UId, GId, Name, Desc, public).
 
 create_group(UId, GId, Name, Desc, Publicity) ->
-    FId = feed:create(),
+    FId = nsm_db:feed_create(),
     CTime = erlang:now(),
 
     %%FIX: match results of such calls for success case
-    ok = zealot_db:put(#group{username = GId,
+    ok = nsm_db:put(#group{username = GId,
                               name = Name,
                               description = Desc,
                               publicity = Publicity,
@@ -59,18 +59,18 @@ create_group(UId, GId, Name, Desc, Publicity) ->
     GId.
 
 safe_create_group(UId, GId, Name, Desc, Publicity) ->
-    case zealot_db:get(group, Name) of
+    case nsm_db:get(group, Name) of
         {ok, _}            -> {error, already_exists};
         {error, not_found} -> create_group(UId, GId, Name, Desc, Publicity)
     end.
 
 add_to_group(UId, GId, Type) ->
-    users:subscribe_user_mq(group, UId, GId),
-    zealot_db:add_to_group(UId, GId, Type).
+    nsm_users:subscribe_user_mq(group, UId, GId),
+    nsm_db:add_to_group(UId, GId, Type).
 
 remove_from_group(UId, GId) ->
-    users:remove_subscription_mq(group, UId, GId),
-    zealot_db:remove_from_group(UId, GId).
+    nsm_users:remove_subscription_mq(group, UId, GId),
+    nsm_db:remove_from_group(UId, GId).
 
 
 % remove group, feed, records and comments, group_member, group_member_rev
@@ -82,31 +82,31 @@ remove_group(GId) ->
 
     lists:foreach(
         fun(#entry{feed_id=F,entry_id=E})-> feed:remove_entry(F, E) end,
-        zealot_db:select(feed, fun(#entry{feed_id=Fid}) when Fid=:=Group#group.feed->true;(_)->false end)),
+        nsm_db:select(feed, fun(#entry{feed_id=Fid}) when Fid=:=Group#group.feed->true;(_)->false end)),
 
-    {ok, UsersEntry} = zealot_db:get(group_member_rev, GId),
+    {ok, UsersEntry} = nsm_db:get(group_member_rev, GId),
     UsersEntryList = UsersEntry#group_member_rev.who,
     UserList = [GMR#group_member_rev.who || GMR <- UsersEntryList],
 
     ProcessUser = fun(User) ->
-        {ok, GM} = zealot_db:get(group_member, User),
+        {ok, GM} = nsm_db:get(group_member, User),
         UserGroupList = GM#group_member.group,
         NewList = lists:filter(fun(#group_member{group=GMGId}) when GMGId=:=GId->false;(_)->true end, UserGroupList),
         case NewList == [] of
             true -> % user is not in a single group
-                zealot_db:delete(group_member, GM#group_member.who);
+                nsm_db:delete(group_member, GM#group_member.who);
             false -> % user is still in some other groups
-                zealot_db:put(#group_member{who = GM#group_member.who, group = NewList})
+                nsm_db:put(#group_member{who = GM#group_member.who, group = NewList})
         end
     end,
 
     lists:map(ProcessUser, UserList),
 
-    zealot_db:delete(group_member_rev, GId),
+    nsm_db:delete(group_member_rev, GId),
 
-    zealot_db:delete(feed, Group#group.feed),   % NB! group.feed is a number
+    nsm_db:delete(feed, Group#group.feed),   % NB! group.feed is a number
 
-    zealot_db:delete(group, GId).
+    nsm_db:delete(group, GId).
 
 
 list_group_per_user(User) ->
@@ -116,7 +116,7 @@ list_group_per_user(#user{username = UId}, ReqUser) -> % the second argument is 
     list_group_per_user(UId, ReqUser);
 list_group_per_user(UId, ReqUser) when is_list(UId) ->
     [ G ||
-        G <- zealot_db:list_membership(UId),
+        G <- nsm_db:list_membership(UId),
         GId <- [ G#group_member.group ],
         _Gr <- case get_group(GId) of
             #group{publicity = public}=GG -> [ GG ];
@@ -163,12 +163,12 @@ list_group_per_user_with_count(UId, ReqUser, Page, PageAmount) when is_list(UId)
     ].
 
 list_group_membership(GName) ->
-    zealot_db:get_group_members(GName).
+    nsm_db:get_group_members(GName).
 
 list_user_in_group(GName) ->
-    [ Who || #group_member_rev{ who = Who } <- zealot_db:get_group_members(GName) ].
+    [ Who || #group_member_rev{ who = Who } <- nsm_db:get_group_members(GName) ].
 list_user_with_name_in_group(GName) ->
-    [ {Who,WhoName} || #group_member_rev{ who = Who, who_name=WhoName } <- zealot_db:get_group_members(GName) ].
+    [ {Who,WhoName} || #group_member_rev{ who = Who, who_name=WhoName } <- nsm_db:get_group_members(GName) ].
 
 list_user_in_group(GName,PageNumber,PageAmount) ->
 	All = list_user_in_group(GName),
@@ -209,7 +209,7 @@ list_user_in_group(GName,SearchQuery) ->
 
 %%FIX: should return {ok, Group} or error or {error, Details}
 get_group(GId) ->
-    case zealot_db:get(group, GId) of
+    case nsm_db:get(group, GId) of
         {ok, Group} ->
             Group;
         {error, not_found} ->
@@ -220,13 +220,13 @@ user_inside(GId, UId) ->
     check_rights(GId, UId, member).
 
 user_access(GId, UId) ->
-    case zealot_db:membership(UId, GId) of
+    case nsm_db:membership(UId, GId) of
         {error, not_found} -> nothing; % Absent user have no rights
         {ok, #group_member{type=Type}} -> Type
     end.
 
 get_all_groups() ->
-    zealot_db:all(group).
+    nsm_db:all(group).
 
 find_group(Pattern, Page, PageAmount) ->
     Offset= case (Page-1)*PageAmount of
@@ -247,11 +247,11 @@ find_group(Pattern, Page, PageAmount) ->
             _ -> true
         end
     end,
-    zealot_db:select(group, [{where, F},
+    nsm_db:select(group, [{where, F},
             {order, {1, descending}},{limit, {Offset,PageAmount}}]).
 
 get_members_count(GName) ->
-    zealot_db:get_group_members_count(GName).
+    nsm_db:get_group_members_count(GName).
 
 %
 % ToDo
@@ -260,12 +260,12 @@ get_members_count(GName) ->
 % for now - slow prototype
 %
 get_popular_groups(_User, NumberOfGroups) ->
-    GroupMembers = zealot_db:all(group_member_rev),
+    GroupMembers = nsm_db:all(group_member_rev),
     GroupNumberPairs = [{GId, length(Users)} || #group_member_rev{group=GId, who=Users} <- GroupMembers],
     lists:sublist(lists:sort(fun({_, A}, {_, B}) -> A > B end, GroupNumberPairs), NumberOfGroups).
 
 get_group_by_feed_id(FeedID) ->
-    zealot_db:select(group, fun(#group{feed=F}) when FeedID=:=F->true;(_)->false end).
+    nsm_db:select(group, fun(#group{feed=F}) when FeedID=:=F->true;(_)->false end).
 
 get_popular_groups()      ->  get_popular_groups(10).
 get_popular_groups(Count) ->  get_popular_groups("Lalala", Count).
@@ -279,7 +279,7 @@ get_popular_groups(Count) ->  get_popular_groups("Lalala", Count).
 get_active_members()      -> get_active_members(10).
 get_active_members(Count) ->
     CurrentTime = now(),
-    Users = [U || #entry{from=U} <- zealot_db:select(entry,
+    Users = [U || #entry{from=U} <- nsm_db:select(entry,
         fun(#entry{created_time=CT, type = ET}) when ET=:={user, normal};ET=:={user, group}->
             case timer:now_diff(CurrentTime, CT) of
                 M when M < 2592000000000 -> true  % 30 days in microseconds
@@ -322,7 +322,7 @@ update_group(GroupId, User, Username, Name, Description, Owner, Publicity) ->
                     case LCUName of
                         GroupId -> undefined;
                         _ ->
-                            case zealot_db:get(group, LCUName) of
+                            case nsm_db:get(group, LCUName) of
                                 {ok, #group{}} -> throw({error, already_exists});
                                 {error, _} ->
                                     case re:run(LCUName, "^[a-z0-9][-a-z0-9_]*$", [dollar_endonly]) of
@@ -342,29 +342,29 @@ update_group(GroupId, User, Username, Name, Description, Owner, Publicity) ->
                 "private" -> private;
                 _ -> undefined
             end,
-            {ok, #group{}=Group} = zealot_db:get(group, GroupId),
+            {ok, #group{}=Group} = nsm_db:get(group, GroupId),
             NewGroup = Group#group{
                            username = coalesce(SaneUsername,Group#group.username),
                            name = coalesce(SaneName,Group#group.name),
                            description = coalesce(SaneDescription,Group#group.description),
                            owner = coalesce(SaneOwner,Group#group.owner),
                            publicity = coalesce(SanePublicity,Group#group.publicity)},
-            ok = zealot_db:put(NewGroup),
+            ok = nsm_db:put(NewGroup),
             % If username changed, need to update users membership from old group to new one, and remove old group
             case Username of
                 undefined -> ok;
                 _ ->
-                    ok = zealot_db:delete(group, Group#group.username),
-                    ok = zealot_db:move_group_members(GroupId, Username, coalesce(Name,Group#group.name))
+                    ok = nsm_db:delete(group, Group#group.username),
+                    ok = nsm_db:move_group_members(GroupId, Username, coalesce(Name,Group#group.name))
                     % TODO: change in members' message copies
             end,
             % Update group name in cache
-            Name =/= undefined andalso zealot_db:change_group_name(coalesce(Username,GroupId), Name),
+            Name =/= undefined andalso nsm_db:change_group_name(coalesce(Username,GroupId), Name),
             case Owner of
                 undefined -> ok;
                 _ ->
-                    ok = zealot_db:add_to_group(User, GroupId, member),
-                    ok = zealot_db:add_to_group(Owner, GroupId, admin)
+                    ok = nsm_db:add_to_group(User, GroupId, member),
+                    ok = nsm_db:add_to_group(Owner, GroupId, admin)
             end,
             ok;
         _ ->
@@ -403,7 +403,7 @@ invite_user(GId, User, Invited) ->
         true -> % Invite already sent in past
             {error, already_sent};
         false ->
-            case users:get_user(Invited) of
+            case nsm_users:get_user(Invited) of
                 {ok, #user{feed=Feed}} ->
                     feed:add_direct_message(Feed, User, "Let's join us in group!"),
                     add_to_group(Invited, GId, invsent);
@@ -416,7 +416,7 @@ invite_user(GId, User, Invited) ->
 reject_invite(GId, User, Invited, Reason) ->
     case check_rights(GId, Invited, invsent) of
         req -> % User requested, reject
-            case users:get_user(Invited) of
+            case nsm_users:get_user(Invited) of
                 {ok, #user{feed=Feed}} ->
                     feed:add_direct_message(Feed, User, "Invite rejected: " ++ Reason),
                     add_to_group(Invited, GId, rejected);
@@ -465,16 +465,16 @@ slice_members(Members,SkipUser,ReqType) ->
 leave_group(GId, User) ->
     case check_rights(GId, User, admin) of
         true -> % user is admin, check is it owner
-            {ok, #group{}=Group} = zealot_db:get(group, GId),
+            {ok, #group{}=Group} = nsm_db:get(group, GId),
             case Group#group.owner of
                 User -> % User is owner, transfer ownership to someone else
-                    Members = zealot_db:get_group_members(GId),
+                    Members = nsm_db:get_group_members(GId),
                     Sorted = slice_members(Members, User, admin) ++ slice_members(Members, User, moder) ++ slice_members(Members, User, member),
                     case Sorted of
                         [ #group_member_rev{who=Who} | _ ] ->
                             NewOwner = Who,
-                            ok = zealot_db:add_to_group(NewOwner, GId, admin),
-                            ok = zealot_db:put(Group#group{owner = NewOwner}),
+                            ok = nsm_db:add_to_group(NewOwner, GId, admin),
+                            ok = nsm_db:put(Group#group{owner = NewOwner}),
                             remove_from_group(User, GId);
                         [] ->
                             % Nobody left in group, remove group at all
@@ -492,25 +492,25 @@ leave_group(GId, User) ->
 test() ->
     MrTesto = "demo1",
     MrGroupcreator = "demo2",
-    ?INFO("~n~n  No testgroup: ~p", [zealot_db:all(group)]),
-    ?INFO("~n~n  MrTesto membership ~p", [zealot_db:list_membership(MrTesto)]),
+    ?INFO("~n~n  No testgroup: ~p", [nsm_db:all(group)]),
+    ?INFO("~n~n  MrTesto membership ~p", [nsm_db:list_membership(MrTesto)]),
 
     Testgroup = create_group(MrGroupcreator, "Testgroup", "Testgroup full name", "Well, for testing"),
 
-    ?INFO("~n~n  Testgroup: ~p", [zealot_db:all(group)]),
+    ?INFO("~n~n  Testgroup: ~p", [nsm_db:all(group)]),
 
     add_to_group(MrTesto, Testgroup, member),
-    ?INFO("~n~n  MrTesto added to Testgroup: ~p", [zealot_db:list_membership(MrTesto)]),
+    ?INFO("~n~n  MrTesto added to Testgroup: ~p", [nsm_db:list_membership(MrTesto)]),
 
     ?INFO("~n~n  MrTesto is now in (~p) groups", [list_group_per_user(MrTesto)]),
 
     remove_from_group(MrTesto, Testgroup),
-    ?INFO("~n~n  MrTesto removed from Testgroup: ~p", [zealot_db:list_membership(MrTesto)]),
+    ?INFO("~n~n  MrTesto removed from Testgroup: ~p", [nsm_db:list_membership(MrTesto)]),
 
     add_to_group(MrTesto, Testgroup, member),
-    ?INFO("~n~n  Now lets invite him back: ~p", [zealot_db:list_membership(MrTesto)]),
+    ?INFO("~n~n  Now lets invite him back: ~p", [nsm_db:list_membership(MrTesto)]),
 
     remove_group(Testgroup),
-    ?INFO("~n~n  And remove group completely: ~p", [zealot_db:list_membership(MrTesto)]).
+    ?INFO("~n~n  And remove group completely: ~p", [nsm_db:list_membership(MrTesto)]).
 
 

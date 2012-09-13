@@ -1,4 +1,4 @@
--module(acl).
+-module(nsm_acl).
 -author('Maxim Sokhatsky <maxim@synrc.com>').
 -author('Vladimir Baranov <baranoff.vladimir@gmail.com>').
 -export([define_access/3, check_access/2]).
@@ -71,7 +71,7 @@ check_access(#user{username = AId, type = AType}, {feature, _Feature} = R) ->
 
 %% for testing purposes
 check_access(UId, {feature, _Feature} = Resource) ->
-    case users:get_user(UId) of
+    case nsm_users:get_user(UId) of
         {ok, User} ->
             check_access(User, Resource);
         E ->
@@ -80,7 +80,7 @@ check_access(UId, {feature, _Feature} = Resource) ->
 
 check(Keys) ->
     Acls = [Acl || {ok, Acl = #acl_entry{}} <-
-                       [zealot_db:get(acl_entry, Key) || Key <- Keys]],
+                       [nsm_db:get(acl_entry, Key) || Key <- Keys]],
 
     case Acls of
         [] -> none;
@@ -92,7 +92,7 @@ check(Keys) ->
 %%% Internal functions
 %%--------------------------------------------------------------------
 do_define_access(Accessor, Resource, Action) ->
-    zealot_db:acl_add_entry(select_type(Resource), Accessor, Action).
+    nsm_db:acl_add_entry(select_type(Resource), Accessor, Action).
 
 select_type(#user{username = UId}) ->
     {user, UId};

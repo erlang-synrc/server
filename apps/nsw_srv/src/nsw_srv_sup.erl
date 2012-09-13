@@ -9,19 +9,11 @@
 -include("setup.hrl").
 -include("loger.hrl").
 
-%% Helper macro for declaring children of supervisor
+-define(LOOP, {nitrogen_mochiweb, loop}).
 -define(CHILD(M, F, A, Type), {M, {M, F, A}, permanent, 5000, Type, [M]}).
-
-%% ===================================================================
-%% API functions
-%% ===================================================================
 
 start_link() ->
     supervisor:start_link({local, ?MODULE}, ?MODULE, []).
-
-%% ===================================================================
-%% Supervisor callbacks
-%% ===================================================================
 
 create_tables() ->
     TavlaTwoPlayers = [rpc:call(?GAMESRVR_NODE,game_manager,create_table,
@@ -85,11 +77,11 @@ stress_test(NumberOfRooms) ->
     [{ok,OP2,_}|_] = lists:reverse(OkeyPlayers),
     ?INFO("Okey bot rooms runned (STRESS): ~p~n",[{OP1,OP2}]).
 
-init([]) ->
-    %% Start the Process Registry...
-    application:start(nprocreg),
 
-    %% Start up Webmachine...
+init([]) ->
+    application:start(nprocreg),
+    application:start(cowboy),
+
     application:load(webmachine),
     {ok, BindAddress} = application:get_env(webmachine, bind_address),
     {ok, Port} = application:get_env(webmachine, port),
@@ -111,16 +103,26 @@ init([]) ->
     gettext:change_gettext_dir(code:priv_dir(nsw_srv)),
     gettext:recreate_db(),
 
-    rpc:call(?APPSERVER_NODE,nsm_bg,init_workers,[]),
-    rpc:call(?APPSERVER_NODE,zealot_db,init_db,[]),
+%    rpc:call(?APPSERVER_NODE,nsm_bg,init_workers,[]),
+%    rpc:call(?APPSERVER_NODE,nsm_db,init_db,[]),
 
-    case rpc:call(?APPSERVER_NODE,zealot_db,get,[config, "debug/production", false]) of
+    case rpc:call(?APPSERVER_NODE,nsm_db,get,[config, "debug/production", false]) of
          {ok, true} -> ok;
          _ -> create_tables()
     end,
 
+    %% Start Cowboy...
+%    Dispatch = [{'_', [{'_', nitrogen_cowboy, []}]}],
+%    HttpOpts = [{max_keepalive, 50}, {dispatch, Dispatch}],
+%    cowboy:start_listener(http, 100, cowboy_tcp_transport, [{port, Port}],
+%                                     cowboy_http_protocol, HttpOpts),
+
+%    cowboy:start_listener(http,2,cowboy_tcp_transport,[{port, 8000}],
+%                                 mochicow_protocol,[{loop, {nitrogen_mochiweb,loop}}]),
+
     {ok, { {one_for_one, 5, 10}, [?CHILD(webmachine_mochiweb, start, [Options], worker), DChild]} }.
 
+%    {ok, { {one_for_one, 5, 10}, [DChild]} }.
 
 dispatch() ->
     [

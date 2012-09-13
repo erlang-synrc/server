@@ -111,34 +111,34 @@ get_settings0(Settings00) ->
 
 -spec get_timeout(atom(), iolist()) -> integer().
 get_timeout(turn, fast) ->
-    {ok, Val} = rpc:call(?APPSERVER_NODE,zealot_db,get,[config,"games/tavla/turn_timeout_fast", 15000]), Val;
+    {ok, Val} = rpc:call(?APPSERVER_NODE,nsm_db,get,[config,"games/tavla/turn_timeout_fast", 15000]), Val;
 get_timeout(turn, normal) ->
-    {ok, Val} = rpc:call(?APPSERVER_NODE,zealot_db,get,[config,"games/tavla/turn_timeout_normal", 30000]), Val;
+    {ok, Val} = rpc:call(?APPSERVER_NODE,nsm_db,get,[config,"games/tavla/turn_timeout_normal", 30000]), Val;
 get_timeout(turn, slow) ->
-    {ok, Val} = rpc:call(?APPSERVER_NODE,zealot_db,get,[config,"games/tavla/turn_timeout_slow", 60000]), Val;
+    {ok, Val} = rpc:call(?APPSERVER_NODE,nsm_db,get,[config,"games/tavla/turn_timeout_slow", 60000]), Val;
 
 get_timeout(challenge, fast) ->
-    {ok, Val} = rpc:call(?APPSERVER_NODE,zealot_db,get,[config,"games/tavla/challenge_timeout_fast", 15000]), Val;
+    {ok, Val} = rpc:call(?APPSERVER_NODE,nsm_db,get,[config,"games/tavla/challenge_timeout_fast", 15000]), Val;
 get_timeout(challenge, normal) ->
-    {ok, Val} = rpc:call(?APPSERVER_NODE,zealot_db,get,[config,"games/tavla/challenge_timeout_normal", 30000]), Val;
+    {ok, Val} = rpc:call(?APPSERVER_NODE,nsm_db,get,[config,"games/tavla/challenge_timeout_normal", 30000]), Val;
 get_timeout(challenge, slow) ->
-    {ok, Val} = rpc:call(?APPSERVER_NODE,zealot_db,get,[config,"games/tavla/challenge_timeout_slow", 60000]), Val;
+    {ok, Val} = rpc:call(?APPSERVER_NODE,nsm_db,get,[config,"games/tavla/challenge_timeout_slow", 60000]), Val;
 
 get_timeout(ready, fast) ->
-    {ok, Val} = rpc:call(?APPSERVER_NODE,zealot_db,get,[config,"games/tavla/ready_timeout_fast", 15000]), Val;
+    {ok, Val} = rpc:call(?APPSERVER_NODE,nsm_db,get,[config,"games/tavla/ready_timeout_fast", 15000]), Val;
 get_timeout(ready, normal) ->
-    {ok, Val} = rpc:call(?APPSERVER_NODE,zealot_db,get,[config,"games/tavla/ready_timeout_normal", 25000]), Val;
+    {ok, Val} = rpc:call(?APPSERVER_NODE,nsm_db,get,[config,"games/tavla/ready_timeout_normal", 25000]), Val;
 get_timeout(ready, slow) ->
-    {ok, Val} = rpc:call(?APPSERVER_NODE,zealot_db,get,[config,"games/tavla/ready_timeout_slow", 45000]), Val;
+    {ok, Val} = rpc:call(?APPSERVER_NODE,nsm_db,get,[config,"games/tavla/ready_timeout_slow", 45000]), Val;
 
 get_timeout(robot, Speed) ->
     get_timeout(robot_production, Speed);
 get_timeout(robot_production, fast) ->
-    {ok, Val} = rpc:call(?APPSERVER_NODE,zealot_db,get,[config,"games/tavla/robot_delay_fast", 6000]), Val;
+    {ok, Val} = rpc:call(?APPSERVER_NODE,nsm_db,get,[config,"games/tavla/robot_delay_fast", 6000]), Val;
 get_timeout(robot_production, normal) ->
-    {ok, Val} = rpc:call(?APPSERVER_NODE,zealot_db,get,[config,"games/tavla/robot_delay_normal", 9000]), Val;
+    {ok, Val} = rpc:call(?APPSERVER_NODE,nsm_db,get,[config,"games/tavla/robot_delay_normal", 9000]), Val;
 get_timeout(robot_production, slow) ->
-    {ok, Val} = rpc:call(?APPSERVER_NODE,zealot_db,get,[config,"games/tavla/robot_delay_slow", 15000]), Val.
+    {ok, Val} = rpc:call(?APPSERVER_NODE,nsm_db,get,[config,"games/tavla/robot_delay_slow", 15000]), Val.
 
 get_player_stats(_PlayerId) ->
     #'PlayerTavlaStats'{}.

@@ -327,7 +327,7 @@ forget_password(Token) ->
     ?PRINT(Token),
     case forget:check_token(Token) of
         {ok, UId} ->
-            {ok, User} = rpc:call(?APPSERVER_NODE,users,get_user,[UId]),
+            {ok, User} = rpc:call(?APPSERVER_NODE,nsm_users,get_user,[UId]),
             wf:session(user_for_change_password, User),
             login_change_password_content();
 
@@ -399,7 +399,7 @@ event(forget_start) ->
 event(forget) ->
     Email = wf:q(forget_email),
     ForgetStatus =
-        case rpc:call(?APPSERVER_NODE,users,get_user,[{email, Email}]) of
+        case rpc:call(?APPSERVER_NODE,nsm_users,get_user,[{email, Email}]) of
             {ok, #user{} = User} ->
                 forget:init_forget(User);
             {error, bad_email} ->
@@ -428,7 +428,7 @@ event(change_password) ->
     case Password of
         RepeatPassword ->
             ChangeData = User#user{password=utils:sha(Password)},
-            ok = rpc:call(?APPSERVER_NODE,zealot_db,put,[ChangeData]),
+            ok = rpc:call(?APPSERVER_NODE,nsm_db,put,[ChangeData]),
             wf:update(change_password_info, ?_T("Change password - success!")),
             redirect("/", 2000);
 
@@ -546,9 +546,9 @@ redirect(Url, Delay) ->
 
 
 login_user(UserName) ->
-    {ok, User} = rpc:call(?APPSERVER_NODE,users,get_user,[UserName]),
-    rpc:call(?APPSERVER_NODE,users,update_after_login,[UserName]),
-    wf:session(user_info, User),
+    {ok, User} = rpc:call(?APPSERVER_NODE,nsm_users,get_user,[UserName]),
+    rpc:call(?APPSERVER_NODE,nsm_users,update_after_login,[UserName]),
+    wf:session(user_info, User), 
     wf:user(UserName),
     wf:cookie("lang", site_utils:detect_language(), "/", 100*24*60), %% 100 days
     wf:config_default(session_timeout, 120),    % setting nitrogen session to 2 hours

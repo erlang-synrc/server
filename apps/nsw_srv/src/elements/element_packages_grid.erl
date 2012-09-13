@@ -25,7 +25,7 @@ reflect() -> record_info(fields, packages_grid).
 render_element(_Record = #packages_grid{}) ->
     Id =  wf:temp_id(),
 
-    Data = rpc:call(?APPSERVER_NODE, nsm_srv_membership_packages,
+    Data = rpc:call(?APPSERVER_NODE, nsm_membership_packages,
                     list_packages, []),
 
 
@@ -101,7 +101,7 @@ api_event(savePackage, Anchor, [Data]) ->
         %% new record
         RawId when is_integer(RawId) andalso RawId < 0  ->
             MP = create_record(Data),
-            case rpc:call(?APPSERVER_NODE, nsm_srv_membership_packages,
+            case rpc:call(?APPSERVER_NODE, nsm_membership_packages,
                           add_package, [MP]) of
                 {ok, Id} ->
                     %% update id of last inserted record
@@ -114,7 +114,7 @@ api_event(savePackage, Anchor, [Data]) ->
         %% can be changed
         Id ->
             AFS = proplists:get_value(available, Data, false),
-            case rpc:call(?APPSERVER_NODE, nsm_srv_membership_packages,
+            case rpc:call(?APPSERVER_NODE, nsm_membership_packages,
                           available_for_sale, [Id, AFS]) of
                 ok ->
                     ok;

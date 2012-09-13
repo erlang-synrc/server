@@ -1,4 +1,4 @@
--module(zealot_riak).
+-module(nsm_riak).
 -author('Maxim Sokhatsky <maxim@synrc.com>').
 
 -include("config.hrl").
@@ -62,7 +62,7 @@ delete() -> ok.
 -spec init_db() -> ok.
 init_db() ->
     ?INFO("~w:init_db/0: started", [?MODULE]),
-    ok = nsm_affiliates2:init_db(),
+    ok = nsm_affiliates:init_db(),
     ok = nsm_gifts_db:init_db(),
     ?INFO("~w:init_db/0: done", [?MODULE]),
     ok.
@@ -115,7 +115,7 @@ riak_clean(Table) ->
     C = riak_client(),
     [TableStr] = io_lib:format("~p",[Table]),
     {ok,Keys}=C:list_keys(erlang:list_to_binary(TableStr)),
-    [ zealot_db:delete(Table,erlang:binary_to_list(Key)) || Key <- Keys].
+    [ nsm_db:delete(Table,erlang:binary_to_list(Key)) || Key <- Keys].
 
 % Convert Erlang records to Riak objects
 
@@ -329,7 +329,7 @@ post_write_hooks(Class,R,C) ->
 
             if Issuer =/= undefined,
                User =/= undefined ->
-                   nsm_affiliates2:invitation_hook(Issuer, User);
+                   nsm_affiliates:invitation_hook(Issuer, User);
                true -> do_nothing
             end,
 
@@ -355,7 +355,7 @@ post_write_hooks(Class,R,C) ->
             %% FIXME: move this actions to db workers
             Acceptor = R#transaction.acceptor,
             Remitter = R#transaction.remitter,
-            [zealot_db:put({{transaction, U}, R}) || U <- [Acceptor, Remitter]];
+            [nsm_db:put({{transaction, U}, R}) || U <- [Acceptor, Remitter]];
 
         _ -> continue
     end.
@@ -381,8 +381,8 @@ riak_get(Bucket,Key) -> %% TODO: add state monad here for conflict resolution wh
     C = riak_client(),
     RiakAnswer = C:get(Bucket,Key,[{last_write_wins,true},{allow_mult,false}]),
     case RiakAnswer of
-	{error,notfound} -> {error, notfound};
-	{ok, O} -> {ok,riak_object:get_value(O)}
+        {ok, O} -> {ok,riak_object:get_value(O)};
+        X -> X
     end.
 
 % translations
@@ -470,12 +470,12 @@ next_id(RecordName) ->
 
 -spec next_id(list(), integer()) -> pos_integer().
 next_id(RecordName, Incr) ->
-    case zealot_db:get(id_seq, RecordName) of
+    case nsm_db:get(id_seq, RecordName) of
 	{error,notfound} -> R = 0;
 	{ok,{id_seq, _, Id}} -> R = Id + Incr
     end,
     Rec = #id_seq{thing = RecordName, id = R},
-    zealot_db:put(Rec),
+    nsm_db:put(Rec),
     R.
 
 % browser counters
@@ -500,40 +500,40 @@ browser_counter_by_game(Game) ->
 %	 Result.
 
 unused_invites() -> % TODO
-    List = zealot_db:all(invite_code),
+    List = nsm_db:all(invite_code),
     length([ #invite_code{created_user=undefined} || _Code <- List]).
 
 user_by_verification_code(Code) ->
-    R = case zealot_db:get(user_by_verification_code,Code) of
-	{ok,{_,User,_}} -> zealot_db:get(user,User);
+    R = case nsm_db:get(user_by_verification_code,Code) of
+	{ok,{_,User,_}} -> nsm_db:get(user,User);
 	Else -> Else
 	end,
     R.
 
 user_by_facebook_id(FBId) ->
-    R = case zealot_db:get(user_by_facebook_id,FBId) of
-	{ok,{_,User,_}} -> zealot_db:get(user,User);
+    R = case nsm_db:get(user_by_facebook_id,FBId) of
+	{ok,{_,User,_}} -> nsm_db:get(user,User);
 	Else -> Else
 	end,
     R.
 
 user_by_email(FB) ->
-    R = case zealot_db:get(user_by_email,FB) of
-	{ok,{_,User,_}} -> zealot_db:get(user,User);
+    R = case nsm_db:get(user_by_email,FB) of
+	{ok,{_,User,_}} -> nsm_db:get(user,User);
 	Else -> Else
 	end,
     R.
 
 user_by_username(Name) ->
-    case X = zealot_db:get(user,Name) of
+    case X = nsm_db:get(user,Name) of
 	{ok,_Res} -> X;
 	Else -> Else
     end.
 
 invite_code_by_issuer(User) ->
-    case zealot_db:get(invite_code_by_issuer, User) of
+    case nsm_db:get(invite_code_by_issuer, User) of
         {ok, {invite_code_by_user, _, Code}} ->
-            case zealot_db:get(invite_code, Code) of
+            case nsm_db:get(invite_code, Code) of
                 {ok, #invite_code{} = C} ->
                     [C];
                 _ ->
@@ -544,9 +544,9 @@ invite_code_by_issuer(User) ->
     end.
 
 invite_code_by_user(User) ->
-    case zealot_db:get(invite_code_by_user, User) of
+    case nsm_db:get(invite_code_by_user, User) of
         {ok, {invite_code_by_user, _, Code}} ->
-            case zealot_db:get(invite_code, Code) of
+            case nsm_db:get(invite_code, Code) of
                 {ok, #invite_code{} = C} ->
                     [C];
                 _ ->
@@ -559,47 +559,47 @@ invite_code_by_user(User) ->
 % groups
 
 add_to_group(MeId, FrId,Type) ->
-    MeShow = case zealot_db:get(user, MeId) of
+    MeShow = case nsm_db:get(user, MeId) of
         {ok, #user{name=MeName,surname=MeSur}} ->
             io_lib:format("~s ~s", [MeName,MeSur]);
         _ ->
             MeId
     end,
-    FrShow = case zealot_db:get(group, FrId) of
+    FrShow = case nsm_db:get(group, FrId) of
         {ok, #group{name=FrName}} -> FrName;
         _ -> FrId
     end,
     List = [#group_member{who=MeId, group=FrId, group_name=FrShow, type=Type} |
-        case zealot_db:get(group_member, MeId) of
+        case nsm_db:get(group_member, MeId) of
         {error,notfound} ->
-            zealot_db:delete(group_member, MeId),
+            nsm_db:delete(group_member, MeId),
             [];
         {ok,#group_member{group=Subscriptions}} ->
             [ Sub || Sub <- Subscriptions, Sub#group_member.group=/=FrId ]
         end],
-    zealot_db:put(#group_member{who=MeId, group=List, type=list}),
+    nsm_db:put(#group_member{who=MeId, group=List, type=list}),
     RevList = [#group_member_rev{ group= FrId, who=MeId, who_name=MeShow, type= Type} |
-        case zealot_db:get(group_member_rev, FrId) of
+        case nsm_db:get(group_member_rev, FrId) of
         {error,notfound} ->
-            zealot_db:delete(group_member_rev, FrId),
+            nsm_db:delete(group_member_rev, FrId),
             [];
         {ok,#group_member_rev{who=RevSubscriptions}} ->
             [ Sub || Sub <- RevSubscriptions, Sub#group_member_rev.who=/=MeId ]
         end],
-    zealot_db:put(#group_member_rev{who=RevList, group=FrId, type=list}).
+    nsm_db:put(#group_member_rev{who=RevList, group=FrId, type=list}).
 
 remove_from_group(MeId, FrId) ->
     List = list_membership(MeId),
     NewList = [ Rec || Rec<-List, not(Rec#group_member.who == MeId andalso Rec#group_member.group == FrId) ],
-    zealot_db:put(#group_member{who = MeId, group=NewList, type=list}),
+    nsm_db:put(#group_member{who = MeId, group=NewList, type=list}),
     RevList = list_group_users(FrId),
     NewRevList = [ Rec || Rec<-RevList, not(Rec#group_member_rev.who==MeId andalso Rec#group_member_rev.group==FrId) ],
-    zealot_db:put(#group_member_rev{who = NewRevList, group = FrId, type=list}).
+    nsm_db:put(#group_member_rev{who = NewRevList, group = FrId, type=list}).
 
 list_membership(#user{username = UId}) ->
     list_membership(UId);
 list_membership(UId) when is_list(UId) ->
-    case zealot_db:get(group_member, UId) of
+    case nsm_db:get(group_member, UId) of
 	{ok,#group_member{group = C}} -> C;
 	_ -> []
     end.
@@ -610,7 +610,7 @@ list_membership_count(UId) when is_list(UId) ->
     [{G, length(list_group_users(element(3, G)))} || G <-list_membership(UId)].
 
 list_group_users(UId) ->
-    case zealot_db:get(group_member_rev, UId) of
+    case nsm_db:get(group_member_rev, UId) of
 	{ok,#group_member_rev{who = C}} -> C;
 	_ -> []
     end.
@@ -623,7 +623,7 @@ membership(UserId, GroupId) ->
     end.
 
 get_group_members(GId) ->
-    case zealot_db:get(group_member_rev, GId) of
+    case nsm_db:get(group_member_rev, GId) of
         {error,notfound} ->
             {error,notfound};
         {ok,#group_member_rev{who=RevSubs}} ->
@@ -631,7 +631,7 @@ get_group_members(GId) ->
     end.
 
 get_group_members_count(GId) ->
-    case zealot_db:get_group_members(GId) of
+    case nsm_db:get_group_members(GId) of
         {error, notfound} ->
             {error, notfound};
         Members when is_list(Members) ->
@@ -640,24 +640,24 @@ get_group_members_count(GId) ->
 
 % Todo: run in background
 move_group_members(OldGId, NewGId, GName) ->
-    case zealot_db:get(group_member_rev, OldGId) of
+    case nsm_db:get(group_member_rev, OldGId) of
 	{error,notfound} ->
         ok;
 	{ok,#group_member_rev{who=RevSubscriptions}} ->
         RevList = [#group_member_rev{group=NewGId, who=Who, who_name=WhoName, type=Type} ||
                    #group_member_rev{group=_OldGId, who=Who, who_name=WhoName, type=Type} <- RevSubscriptions
                   ],
-	    zealot_db:put(#group_member_rev{who=RevList, group=NewGId, type=list}),
+	    nsm_db:put(#group_member_rev{who=RevList, group=NewGId, type=list}),
         UpdateMember = fun(#group_member_rev{who=User,type=Type}, _) ->
-            case zealot_db:get(group_member, User) of
+            case nsm_db:get(group_member, User) of
             {error, notfound} ->
-                zealot_db:put(#group_member{who = User,
+                nsm_db:put(#group_member{who = User,
                                             group = [#group_member{who=User, group=NewGId, group_name=GName, type=Type}],
                                             type=list});
             {ok,#group_member{group=Subs}} ->
                 NewSubs = lists:map(fun(#group_member{group=Group}=M) when Group== OldGId ->
                                                M#group_member{group=NewGId};(M) -> M end, Subs),
-                zealot_db:put(#group_member{who = User, group=NewSubs, type=list})
+                nsm_db:put(#group_member{who = User, group=NewSubs, type=list})
             end
         end,
         lists:foldl(UpdateMember, undefined, RevList)
@@ -665,19 +665,19 @@ move_group_members(OldGId, NewGId, GName) ->
 
 % Todo: run in background
 change_group_name(GId, GName) ->
-    case zealot_db:get(group_member_rev, GId) of
+    case nsm_db:get(group_member_rev, GId) of
     {error, notfound} -> ok;
     {ok, #group_member_rev{who=RevList}} ->
         UpdateGroupName = fun(#group_member_rev{who=User,type=Type}, _) ->
-            case zealot_db:get(group_member, User) of
+            case nsm_db:get(group_member, User) of
             {error, notfound} ->
-                zealot_db:put(#group_member{who=User,
+                nsm_db:put(#group_member{who=User,
                                             group=[#group_member{who=User,type=Type,group=GId,group_name=GName}],
                                             type=list});
             {ok,#group_member{group=Subs}} ->
                 NewSubs = lists:map(fun(#group_member{group=Group}=M) when Group==GId ->
                                            M#group_member{group_name=GName};(M) -> M end, Subs),
-                zealot_db:put(#group_member{who = User, group=NewSubs, type=list})
+                nsm_db:put(#group_member{who = User, group=NewSubs, type=list})
             end
         end,
         lists:foldl(UpdateGroupName, undefined, RevList)
@@ -689,19 +689,19 @@ update_user_name(UId,UName,Surname) ->
         {undefined,undefined} -> UId;
         _ -> io_lib:format("~s ~s", [UName, Surname])
     end,
-    case zealot_db:get(group_member, UId) of
+    case nsm_db:get(group_member, UId) of
     {error, notfound} -> ok;
     {ok, #group_member{group=List}} ->
         UpdateUserName = fun(#group_member{group=GId,type=Type}, _) ->
-            case zealot_db:get(group_member_rev, GId) of
+            case nsm_db:get(group_member_rev, GId) of
             {error, notfound} ->
-                zealot_db:put(#group_member_rev{group=GId,
+                nsm_db:put(#group_member_rev{group=GId,
                                                 who=[#group_member_rev{who=UId,who_name=Name,group=GId,type=Type}],
                                                 type=list});
             {ok,#group_member_rev{who=Whos}} ->
                 NewWhos = lists:map(fun(#group_member_rev{who=U}=M) when U==UId->
                                            M#group_member_rev{who_name=Name};(M)->M end, Whos),
-                zealot_db:put(#group_member_rev{group=GId, who=NewWhos, type=list})
+                nsm_db:put(#group_member_rev{group=GId, who=NewWhos, type=list})
             end
         end,
         lists:foldl(UpdateUserName, undefined, List)
@@ -710,54 +710,54 @@ update_user_name(UId,UName,Surname) ->
 % game info
 
 get_save_tables(Id) ->
-    case zealot_db:get(save_game_table, Id) of
+    case nsm_db:get(save_game_table, Id) of
 	{error,notfound} -> [];
 	{ok,R} -> R
     end.
 
 save_game_table_by_id(Id) ->
-    zealot_db:get(save_game_table, Id).
+    nsm_db:get(save_game_table, Id).
 
 % subscriptions
 
 subscribe_user(MeId, FrId) ->
-    MeShow = case zealot_db:get(user, MeId) of
+    MeShow = case nsm_db:get(user, MeId) of
         {ok, #user{name=MeName,surname=MeSur}} ->
             io_lib:format("~s ~s", [MeName,MeSur]);
         _Z ->
             io:format("Get ~s: ~p~n", [MeId, _Z]),
             undefined
     end,
-    FrShow = case zealot_db:get(user, FrId) of
+    FrShow = case nsm_db:get(user, FrId) of
         {ok, #user{name=FrName,surname=FrSur}} ->
             io_lib:format("~s ~s", [FrName,FrSur]);
         _ ->
             undefined
     end,
     Rec = #subscription{who = MeId, whom = FrId, whom_name = FrShow},
-    case zealot_db:get(subscription, MeId) of
+    case nsm_db:get(subscription, MeId) of
         {error, notfound} ->
-            zealot_db:put(#subscription{who = MeId, whom = [Rec]});
+            nsm_db:put(#subscription{who = MeId, whom = [Rec]});
         {ok, #subscription{whom = List}} ->
             case lists:member(Rec, List) of
                 false ->
                     NewList =
                         lists:keystore(FrId, #subscription.whom, List, Rec),
-                    zealot_db:put(#subscription{who = MeId, whom = NewList});
+                    nsm_db:put(#subscription{who = MeId, whom = NewList});
                 true ->
                     do_nothing
             end
     end,
     RevRec = #subscription_rev{whom=FrId, who=MeId, who_name=MeShow},
-    case zealot_db:get(subscription_rev, FrId) of
+    case nsm_db:get(subscription_rev, FrId) of
         {error,notfound} ->
-            zealot_db:put(#subscription_rev{whom=FrId, who=[RevRec]});
+            nsm_db:put(#subscription_rev{whom=FrId, who=[RevRec]});
         {ok,#subscription_rev{who=RevList}} ->
             case lists:member(RevRec, RevList) of
                 false ->
                     NewRevList =
                         lists:keystore(MeId, #subscription_rev.who, RevList, RevRec),
-                    zealot_db:put(#subscription_rev{whom=FrId, who=NewRevList});
+                    nsm_db:put(#subscription_rev{whom=FrId, who=NewRevList});
                 true ->
                     do_nothing
             end
@@ -765,29 +765,29 @@ subscribe_user(MeId, FrId) ->
     ok.
 
 remove_subscription(MeId, FrId) ->
-    List = users:list_subscription(MeId),
+    List = nsm_users:list_subscription(MeId),
     Subs = [ Sub || Sub <- List, not(Sub#subscription.who==MeId andalso Sub#subscription.whom==FrId) ],
-    zealot_db:put(#subscription{who = MeId, whom = Subs}),
-    List2 = users:list_subscription_me(FrId),
+    nsm_db:put(#subscription{who = MeId, whom = Subs}),
+    List2 = nsm_users:list_subscription_me(FrId),
     Revs = [ Rev || Rev <- List2, not(Rev#subscription_rev.who==MeId andalso Rev#subscription_rev.whom==FrId) ],
-    zealot_db:put(#subscription_rev{who = Revs, whom = FrId}).
+    nsm_db:put(#subscription_rev{who = Revs, whom = FrId}).
 
 list_subscriptions(#user{username = UId}) ->
     list_subscriptions(UId);
 list_subscriptions(UId) when is_list(UId) ->
-    case zealot_db:get(subscription, UId) of
+    case nsm_db:get(subscription, UId) of
 	{ok,#subscription{whom = C}} -> C;
 	_ -> []
     end.
 
 list_subscription_me(UId) ->
-    case zealot_db:get(subscription_rev, UId) of
+    case nsm_db:get(subscription_rev, UId) of
 	{ok,#subscription_rev{who = C}} -> C;
 	_ -> []
     end.
 
 is_user_subscribed(Who,Whom) ->
-    case zealot_db:get(subscription, Who) of
+    case nsm_db:get(subscription, Who) of
     {ok,#subscription{whom = W}} ->
         lists:any(fun(#subscription{who=Who1, whom=Whom1}) -> Who1==Who andalso Whom1==Whom; (_)->false end, W);
     _ -> false
@@ -797,26 +797,26 @@ is_user_subscribed(Who,Whom) ->
 % blocking user
 
 block_user(Who, Whom) ->
-    case zealot_db:get(user_ignores, Who) of
+    case nsm_db:get(user_ignores, Who) of
         {error, notfound} ->
-            zealot_db:put(#user_ignores{who = Who, whom = [Whom]});
+            nsm_db:put(#user_ignores{who = Who, whom = [Whom]});
         {ok, #user_ignores{whom = List}} ->
             case lists:member(Whom, List) of
                 false ->
                     NewList = [Whom | List],
-                    zealot_db:put(#user_ignores{who = Who, whom = NewList});
+                    nsm_db:put(#user_ignores{who = Who, whom = NewList});
                 true ->
                     do_nothing
             end
     end,
-    case zealot_db:get(user_ignores_rev, Whom) of
+    case nsm_db:get(user_ignores_rev, Whom) of
         {error,notfound} ->
-            zealot_db:put(#user_ignores_rev{whom=Whom, who=[Who]});
+            nsm_db:put(#user_ignores_rev{whom=Whom, who=[Who]});
         {ok,#user_ignores_rev{who=RevList}} ->
             case lists:member(Who, RevList) of
                 false ->
                     NewRevList = [Who | RevList],
-                    zealot_db:put(#user_ignores_rev{whom=Whom, who=NewRevList});
+                    nsm_db:put(#user_ignores_rev{whom=Whom, who=NewRevList});
                 true ->
                     do_nothing
             end
@@ -828,7 +828,7 @@ unblock_user(Who, Whom) ->
     case lists:member(Whom, List) of
         true ->
             NewList = [ UID || UID <- List, UID =/= Whom ],
-            zealot_db:put(#user_ignores{who = Who, whom = NewList});
+            nsm_db:put(#user_ignores{who = Who, whom = NewList});
         false ->
             do_nothing
     end,
@@ -836,7 +836,7 @@ unblock_user(Who, Whom) ->
     case lists:member(Who, List2) of
         true ->
             NewRevList = [ UID || UID <- List2, UID =/= Who ],
-            zealot_db:put(#user_ignores_rev{whom = Whom, who = NewRevList});
+            nsm_db:put(#user_ignores_rev{whom = Whom, who = NewRevList});
         false ->
             do_nothing
     end.
@@ -844,19 +844,19 @@ unblock_user(Who, Whom) ->
 list_blocks(#user{username = UId}) ->
     list_blocks(UId);
 list_blocks(UId) when is_list(UId) ->
-    case zealot_db:get(user_ignores, UId) of
+    case nsm_db:get(user_ignores, UId) of
         {ok,#user_ignores{whom = C}} -> C;
         _ -> []
     end.
 
 list_blocked_me(UId) ->
-    case zealot_db:get(user_ignores_rev, UId) of
+    case nsm_db:get(user_ignores_rev, UId) of
         {ok,#user_ignores_rev{who = C}} -> C;
         _ -> []
     end.
 
 is_user_blocked(Who, Whom) ->
-    case zealot_db:get(user_ignores, Who) of
+    case nsm_db:get(user_ignores, Who) of
         {ok,#user_ignores{whom = List}} ->
             lists:member(Whom, List);
         _ -> false
@@ -871,7 +871,7 @@ feed_add_entry(FId, From, EntryId, Desc, Medias) ->
     feed_add_entry(FId, From, undefined, EntryId, Desc, Medias, {user, normal}).
 feed_add_entry(FId, User, To, EntryId, Desc, Medias, Type) ->
     %% prevent adding of duplicate records to feed
-    case zealot_db:entry_by_id({EntryId, FId}) of
+    case nsm_db:entry_by_id({EntryId, FId}) of
         {ok, _} ->
             ok;
         _ ->
@@ -879,26 +879,26 @@ feed_add_entry(FId, User, To, EntryId, Desc, Medias, Type) ->
     end.
 
 do_feed_add_entry(FId, User, To, EntryId, Desc, Medias, Type) ->
-    {ok,Feed} = zealot_db:get(feed,erlang:integer_to_list(FId)),
+    {ok,Feed} = nsm_db:get(feed,erlang:integer_to_list(FId)),
     Id = {EntryId, FId},
     Next = undefined,
     Prev = case Feed#feed.top of
                undefined ->
                    undefined;
                X ->
-                   case zealot_db:get(entry, X) of
+                   case nsm_db:get(entry, X) of
                        {ok, TopEntry} ->
                            EditedEntry = TopEntry#entry{created_time = now(),
                                                         next = Id},
                            % update prev entry
-                           zealot_db:put(EditedEntry),
+                           nsm_db:put(EditedEntry),
                            TopEntry#entry.id;
                        {error,notfound} ->
                            undefined
                    end
            end,
 
-    zealot_db:put(#feed{id = FId, top = {EntryId, FId}}), % update feed top with current
+    nsm_db:put(#feed{id = FId, top = {EntryId, FId}}), % update feed top with current
 
     Entry  = #entry{id = {EntryId, FId},
                     entry_id = EntryId,
@@ -921,7 +921,7 @@ do_feed_add_entry(FId, User, To, EntryId, Desc, Medias, Type) ->
                        ME
                end,
 
-    zealot_db:put(ModEntry),
+    nsm_db:put(ModEntry),
     {ok, ModEntry}.
 
 feed_add_comment(FId, User, EntryId, ParentComment, CommentId, Content, Medias) ->
@@ -929,30 +929,30 @@ feed_add_comment(FId, User, EntryId, ParentComment, CommentId, Content, Medias) 
 
     Prev = case ParentComment of
         undefined ->
-            {ok, Entry} = zealot_db:entry_by_id({EntryId, FId}),
+            {ok, Entry} = nsm_db:entry_by_id({EntryId, FId}),
             {PrevC, E} = case Entry#entry.comments of
                         undefined ->
                             {undefined, Entry#entry{comments_rear = FullId}};
                         Id ->
-                            {ok, PrevTop} = zealot_db:get(comment, Id),
-                            zealot_db:put(PrevTop#comment{next = FullId}),
+                            {ok, PrevTop} = nsm_db:get(comment, Id),
+                            nsm_db:put(PrevTop#comment{next = FullId}),
                             {Id, Entry}
                    end,
 
-            zealot_db:put(E#entry{comments=FullId}),
+            nsm_db:put(E#entry{comments=FullId}),
             PrevC;
 
         _ ->
-            {ok, Parent} = zealot_db:get(comment, {{EntryId, FId}, ParentComment}),
+            {ok, Parent} = nsm_db:get(comment, {{EntryId, FId}, ParentComment}),
             {PrevC, CC} = case Parent#comment.comments of
                         undefined ->
                             {undefined, Parent#comment{comments_rear = FullId}};
                         Id ->
-                            {ok, PrevTop} = zealot_db:get(comment, Id),
-                            zealot_db:put(PrevTop#comment{next = FullId}),
+                            {ok, PrevTop} = nsm_db:get(comment, Id),
+                            nsm_db:put(PrevTop#comment{next = FullId}),
                             {Id, Parent}
                     end,
-            zealot_db:put(CC#comment{comments = FullId}),
+            nsm_db:put(CC#comment{comments = FullId}),
             PrevC
     end,
     Comment = #comment{id = FullId,
@@ -966,25 +966,25 @@ feed_add_comment(FId, User, EntryId, ParentComment, CommentId, Content, Medias) 
                        prev = Prev,
                        next = undefined
                       },
-    zealot_db:put(Comment),
+    nsm_db:put(Comment),
     {ok, Comment}.
 
 
 
 acl_add_entry(Resource, Accessor, Action) ->
-    Acl = case zealot_db:get(acl, Resource) of
+    Acl = case nsm_db:get(acl, Resource) of
               {ok, A} ->
                   A;
               %% if acl record wasn't created already
               {error, notfound} ->
                   A = #acl{id = Resource, resource=Resource},
-                  zealot_db:put(A),
+                  nsm_db:put(A),
                   A
           end,
 
     EntryId = {Accessor, Resource},
 
-    case zealot_db:get(acl_entry, EntryId) of
+    case nsm_db:get(acl_entry, EntryId) of
         %% there is no entries for specified Acl and Accessor, we have to add it
         {error, notfound} ->
             Next = undefined,
@@ -993,10 +993,10 @@ acl_add_entry(Resource, Accessor, Action) ->
                            undefined;
 
                        Top ->
-                           case zealot_db:get(acl_entry, Top) of
+                           case nsm_db:get(acl_entry, Top) of
                                {ok, TopEntry} ->
                                    EditedEntry = TopEntry#acl_entry{next = EntryId},
-                                   zealot_db:put(EditedEntry), % update prev entry
+                                   nsm_db:put(EditedEntry), % update prev entry
                                    TopEntry#acl_entry.id;
 
                                {error, notfound} ->
@@ -1005,7 +1005,7 @@ acl_add_entry(Resource, Accessor, Action) ->
                    end,
 
             %% update acl with top of acl entries list
-            zealot_db:put(Acl#acl{top = EntryId}),
+            nsm_db:put(Acl#acl{top = EntryId}),
 
             Entry  = #acl_entry{id = EntryId,
                                 entry_id = EntryId,
@@ -1014,25 +1014,25 @@ acl_add_entry(Resource, Accessor, Action) ->
                                 next = Next,
                                 prev = Prev},
 
-            ok = zealot_db:put(Entry),
+            ok = nsm_db:put(Entry),
             Entry;
 
         %% if acl entry for Accessor and Acl is defined - just change action
         {ok, AclEntry} ->
-            zealot_db:put(AclEntry#acl_entry{action = Action}),
+            nsm_db:put(AclEntry#acl_entry{action = Action}),
             AclEntry
     end.
 
 
 play_record_add_entry(TeamId, UserId, TournamentId, GameId) ->
-    {ok,Team} = zealot_db:get(team, TeamId),
-    EntryId = zealot_db:next_id("play_record",1),
+    {ok,Team} = nsm_db:get(team, TeamId),
+    EntryId = nsm_db:next_id("play_record",1),
     Prev = undefined,
     case Team#team.play_record of
         undefined ->
             Next = undefined;
 	X ->
-	    case zealot_db:get(play_record, erlang:integer_to_list(X)) of
+	    case nsm_db:get(play_record, erlang:integer_to_list(X)) of
 	       {ok, TopEntry} ->
 		    Next = TopEntry#play_record.id,
 		    EditedEntry = #play_record{
@@ -1044,12 +1044,12 @@ play_record_add_entry(TeamId, UserId, TournamentId, GameId) ->
                       who = TopEntry#play_record.who,
                       next = TopEntry#play_record.next,
                       prev = EntryId},
-                    zealot_db:put(EditedEntry); % update prev entry
+                    nsm_db:put(EditedEntry); % update prev entry
             {error,notfound} -> Next = undefined
 	    end
     end,
 
-    zealot_db:put(#team{ id = TeamId, name = Team#team.name, play_record = EntryId}), % update teaam top with current
+    nsm_db:put(#team{ id = TeamId, name = Team#team.name, play_record = EntryId}), % update teaam top with current
 
     Entry  = #play_record{id = EntryId,
                     team = TeamId,
@@ -1059,39 +1059,39 @@ play_record_add_entry(TeamId, UserId, TournamentId, GameId) ->
                     next = Next,
                     prev = Prev},
 
-    case zealot_db:put(Entry) of
+    case nsm_db:put(Entry) of
         ok ->
             {ok, Entry}
     end.
 
 tournament_pop_waiting_player(TournamentID) ->
-    {ok,Tournament} = zealot_db:get(tournament, erlang:integer_to_list(TournamentID)),
+    {ok,Tournament} = nsm_db:get(tournament, erlang:integer_to_list(TournamentID)),
     Top = case Tournament#tournament.waiting_queue of
         undefined ->
             Prev = undefined;
         X ->
-	    case zealot_db:get(play_record, erlang:integer_to_list(X)) of
+	    case nsm_db:get(play_record, erlang:integer_to_list(X)) of
 		{ok,TopEntry} -> Prev = TopEntry#play_record.next, TopEntry;
 		{error, notfound} -> Prev = undefined
 	    end
     end,
 
-    zealot_db:put(Tournament#tournament{id = TournamentID,
+    nsm_db:put(Tournament#tournament{id = TournamentID,
                                         waiting_queue = Prev
                                        }),
     Top.
 
 join_tournament(UserId, TournamentId) ->
-    {ok,Tournament} = zealot_db:get(tournament,erlang:integer_to_list(TournamentId)),
-    {ok,User} = zealot_db:get(user, UserId),
+    {ok,Tournament} = nsm_db:get(tournament,erlang:integer_to_list(TournamentId)),
+    {ok,User} = nsm_db:get(user, UserId),
     play_record_add_entry(User#user.team,User#user.username,TournamentId,undefined),
-    EntryId = zealot_db:next_id("play_record",1),
+    EntryId = nsm_db:next_id("play_record",1),
     Next = undefined,
     case Tournament#tournament.last of
         undefined ->
             Prev = undefined;
         X ->
-            case zealot_db:get(play_record, erlang:integer_to_list(X)) of
+            case nsm_db:get(play_record, erlang:integer_to_list(X)) of
                 {ok, TopEntry} ->
                     Prev = TopEntry#play_record.id,
                     EditedEntry = #play_record{
@@ -1103,13 +1103,13 @@ join_tournament(UserId, TournamentId) ->
                         who = TopEntry#play_record.who,
                         next = EntryId,
                         prev = TopEntry#play_record.prev},
-                    zealot_db:put(EditedEntry); % update prev entry
+                    nsm_db:put(EditedEntry); % update prev entry
                 {error,notfound} -> Prev = undefined
             end
     end,
 
 
-    zealot_db:put(Tournament#tournament{
+    nsm_db:put(Tournament#tournament{
                     waiting_queue = case Tournament#tournament.waiting_queue of
                                         undefined -> EntryId;
                                         _NotEmpty -> _NotEmpty
@@ -1125,7 +1125,7 @@ join_tournament(UserId, TournamentId) ->
                     next = Next,
                     prev = Prev},
 
-    case zealot_db:put(Entry) of
+    case nsm_db:put(Entry) of
         ok ->
             {ok, Entry}
     end.
@@ -1134,7 +1134,7 @@ user_tournaments(UID) -> user_tournaments_list(UID).
 
 tournament_waiting_queue(TID) ->
     C = riak_client(),
-    RA = zealot_db:get(tournament, TID),
+    RA = nsm_db:get(tournament, TID),
     case RA of
         {ok,RO} -> riak_read_tournament_waiting_queue(C, RO#tournament.waiting_queue, []);
         {error, _} -> []
@@ -1142,16 +1142,16 @@ tournament_waiting_queue(TID) ->
 
 user_tournaments_list(TID) when is_list(TID) ->
     C = riak_client(),
-    RA = zealot_db:get(user,TID),
+    RA = nsm_db:get(user,TID),
     case RA of
         {ok,RO} ->
-             case zealot_db:get(team,RO#user.team) of
+             case nsm_db:get(team,RO#user.team) of
                 {ok,RO2} -> List = riak_read_tournament_waiting_queue(C, RO2#team.play_record, []),
                             case List of
                                [] -> [];
                                _X ->
                                  [ begin
-                                     {ok,Tour} = zealot_db:get(tournament, El#play_record.tournament),
+                                     {ok,Tour} = nsm_db:get(tournament, El#play_record.tournament),
                                      {Tour, 0}
                                    end || El <- List]
                             end;
@@ -1165,7 +1165,7 @@ user_tournaments_list(TID) ->
 riak_read_tournament_waiting_queue(_, undefined, Result) ->
     Result;
 riak_read_tournament_waiting_queue(C, Next, Result) ->
-    RA = zealot_db:get(play_record,Next),
+    RA = nsm_db:get(play_record,Next),
     case RA of
         {ok,RO} ->
             riak_read_tournament_waiting_queue(C, RO#play_record.next, Result ++ [RO]);
@@ -1174,17 +1174,17 @@ riak_read_tournament_waiting_queue(C, Next, Result) ->
 
 -spec entry_by_id(term()) -> {ok, #entry{}} | {error, not_found}.
 entry_by_id(EntryId) ->
-    zealot_db:get(entry, EntryId).
+    nsm_db:get(entry, EntryId).
 
 -spec comment_by_id({{EntryId::term(), FeedId::term()}, CommentId::term()}) ->
           {ok, #comment{}}.
 comment_by_id(CommentId) ->
-    zealot_db:get(CommentId).
+    nsm_db:get(CommentId).
 
 
 -spec comments_by_entry(EId::{string(), term()}) -> [#comment{}].
 comments_by_entry({EId, FId}) ->
-    case zealot_db:entry_by_id({EId, FId}) of
+    case nsm_db:entry_by_id({EId, FId}) of
         {ok, #entry{comments_rear = undefined}} ->
             [];
         {ok, #entry{comments_rear = First}} ->
@@ -1214,7 +1214,7 @@ riak_traversal( _, _, undefined, _) ->
 riak_traversal(_, _, _, 0) ->
     [];
 riak_traversal(RecordType, PrevPos, Next, Count)->
-    case zealot_riak:get(RecordType, Next) of
+    case nsm_riak:get(RecordType, Next) of
         {ok, R} ->
             Prev = element(PrevPos, R),
             Count1 = case Count of
@@ -1240,7 +1240,7 @@ riak_read_acl_entries(C, Next, Result) ->
 
 % but this completely ignores paging (I'd have to speap it under the carpet for %PHASE1 in dashboard.erl as soon as it is ok here, I'll remove the crouches)
 entries_in_feed(FeedId, undefined, PageAmount) ->
-    case zealot_db:get(feed, FeedId) of
+    case nsm_db:get(feed, FeedId) of
         {ok, O} ->
             riak_traversal(entry, #entry.prev, O#feed.top, PageAmount);
         {error, notfound} ->
@@ -1248,7 +1248,7 @@ entries_in_feed(FeedId, undefined, PageAmount) ->
     end;
 entries_in_feed(FeedId, StartFrom, PageAmount) ->
     %% construct entry unic id
-    case zealot_db:get(entry,{StartFrom, FeedId}) of
+    case nsm_db:get(entry,{StartFrom, FeedId}) of
         {ok, #entry{prev = Prev}} ->
             riak_traversal(entry, #entry.prev, Prev, PageAmount);
         _ ->
@@ -1273,7 +1273,7 @@ feed_direct_messages(_FId, Page, PageAmount, CurrentUser, CurrentFId) ->
 
 %% @private
 check_purchase_by_user_double(User, PurchaseId) ->
-    case zealot_db:get(membership_purchase_by_user, User) of
+    case nsm_db:get(membership_purchase_by_user, User) of
         {ok, {_, _, undefined}} ->
             false;
         {ok, {_, _, StartFrom}} ->
@@ -1289,7 +1289,7 @@ check_purchase_by_user_double(User, PurchaseId, This) ->
         PurchaseId == This ->
             true;
         true ->
-            {ok, {_, _, Next}} = zealot_db:get({membership_purchase_by_user, User}, This),
+            {ok, {_, _, Next}} = nsm_db:get({membership_purchase_by_user, User}, This),
             check_purchase_by_user_double(User, PurchaseId, Next)
     end.
 
@@ -1298,7 +1298,7 @@ add_purchase_by_user(UserId, PurchaseId) ->
         true ->
             ok; % error actually
         false ->
-            Top = case zealot_db:get(membership_purchase_by_user, UserId) of
+            Top = case nsm_db:get(membership_purchase_by_user, UserId) of
                       {ok, {_, UserId, undefined}} ->
                           last;
                       {ok, {_, UserId, CurrentTop}} ->
@@ -1309,9 +1309,9 @@ add_purchase_by_user(UserId, PurchaseId) ->
             if
                 Top /= PurchaseId ->
                     %% current purcase became top
-                    zealot_db:put({membership_purchase_by_user, UserId, PurchaseId}),
+                    nsm_db:put({membership_purchase_by_user, UserId, PurchaseId}),
                     %% previos purchase became next of the top
-                    zealot_db:put({{membership_purchase_by_user, UserId}, PurchaseId, Top});
+                    nsm_db:put({{membership_purchase_by_user, UserId}, PurchaseId, Top});
                 true ->
                     ok
            end
@@ -1323,7 +1323,7 @@ get_purchases_by_user(_UserId, Count, States) ->
 get_purchases_by_user(_UserId, _StartFrom, 0, _States) ->
     [];
 get_purchases_by_user(UserId, undefined, Count, States) ->
-    case zealot_db:get(membership_purchase_by_user, UserId) of
+    case nsm_db:get(membership_purchase_by_user, UserId) of
         {ok, {_, UserId, undefined}} ->
             [];
         {ok, {_, UserId, Top}} ->
@@ -1335,10 +1335,10 @@ get_purchases_by_user(UserId, undefined, Count, States) ->
 get_purchases_by_user(_UserId, last, _Count, _States) ->
     [];
 get_purchases_by_user(UserId, PurchaseId, Count, States) ->
-    {ok, {_, _, NextId}} = zealot_db:get({membership_purchase_by_user, UserId},
+    {ok, {_, _, NextId}} = nsm_db:get({membership_purchase_by_user, UserId},
                                          PurchaseId),
 
-    case zealot_db:get(membership_purchase, PurchaseId) of
+    case nsm_db:get(membership_purchase, PurchaseId) of
         {ok, Purchase} when States == all ->
             [Purchase | get_purchases_by_user(UserId, NextId, Count-1, States)];
 
@@ -1366,11 +1366,11 @@ put_into_invitation_tree(Parent, User, InviteCode) ->
                                 invite_code = InviteCode,
                                 parent = Parent},
 
-    case zealot_db:get(invitation_tree, Parent) of
+    case nsm_db:get(invitation_tree, Parent) of
         {ok, #invitation_tree{first_child = TopChild} = P} ->
-            zealot_db:put(P#invitation_tree{first_child = User}),
+            nsm_db:put(P#invitation_tree{first_child = User}),
             URecord1 = URecord#invitation_tree{next_sibling = TopChild},
-            zealot_db:put(URecord1),
+            nsm_db:put(URecord1),
             URecord1;
         _ ->
             R = case Parent of
@@ -1380,8 +1380,8 @@ put_into_invitation_tree(Parent, User, InviteCode) ->
                         put_into_invitation_tree(?INVITATION_TREE_ROOT,
                                                  Parent, undefined)
                 end,
-            zealot_db:put(R#invitation_tree{first_child = User}),
-            zealot_db:put(URecord),
+            nsm_db:put(R#invitation_tree{first_child = User}),
+            nsm_db:put(URecord),
             URecord
     end.
 
@@ -1394,7 +1394,7 @@ invitation_tree(_, -1) ->
 invitation_tree(none, _) ->
     [];
 invitation_tree(UserId, Depth) ->
-    case zealot_db:get(invitation_tree, UserId) of
+    case nsm_db:get(invitation_tree, UserId) of
         {ok, #invitation_tree{} = ITreeU} ->
             FirstChild = ITreeU#invitation_tree.first_child,
             SiblingId = ITreeU#invitation_tree.next_sibling,
@@ -1415,11 +1415,11 @@ invitation_tree_delete_child_link(RootUser, User) ->
     case invitation_tree(RootUser, 1) of
         [#invitation_tree{first_child = User} = Root] ->
             Root1 = Root#invitation_tree{children = []},
-            case zealot_db:get(invitation_tree, User) of
+            case nsm_db:get(invitation_tree, User) of
                 {ok, #invitation_tree{next_sibling = none}} ->
-                    zealot_db:put(Root1#invitation_tree{first_child = none});
+                    nsm_db:put(Root1#invitation_tree{first_child = none});
                 {ok, #invitation_tree{next_sibling = Next}} ->
-                    zealot_db:put(Root1#invitation_tree{first_child = Next});
+                    nsm_db:put(Root1#invitation_tree{first_child = Next});
                 _ ->
                     ok
             end;
@@ -1431,7 +1431,7 @@ invitation_tree_delete_child_link(RootUser, User) ->
 
                 [Before, Exactly] ->
                     NextSibling =  Exactly#invitation_tree.next_sibling,
-                    zealot_db:put(Before#invitation_tree{next_sibling = NextSibling,
+                    nsm_db:put(Before#invitation_tree{next_sibling = NextSibling,
                                                          children = []});
                 _ ->
                     ok

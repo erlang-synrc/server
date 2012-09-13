@@ -73,9 +73,9 @@ body() ->
 		    wf:session({q_game_type(),wf:user()}, DefaultSettings),
 		    ui_update_buttons()
 	    end,
-	    UId = webutils:user_info(username),
-	    wf:state(user_in_groups, rpc:call(?APPSERVER_NODE,groups,list_group_per_user,[UId])),
-	    wf:state(users_subscribe, rpc:call(?APPSERVER_NODE,users,list_subscription,[UId])),
+	    UId = webutils:user_info(username), 
+	    wf:state(user_in_groups, rpc:call(?APPSERVER_NODE,nsm_groups,list_group_per_user,[UId])),
+	    wf:state(users_subscribe, rpc:call(?APPSERVER_NODE,nsm_users,list_subscription,[UId])), 
 	    main_authorized();
 	{redirect, login} ->
 	    wf:redirect_to_login("/");
@@ -485,7 +485,7 @@ get_tables2(Setting,UId,GameFSM,Convert) ->
     FilterAnyUser = case GetPropList(group, Setting) of
         undefined -> [];
         GroupId -> 
-            [GMR#group_member_rev.who || GMR <- rpc:call(?APPSERVER_NODE,groups,list_group_membership,[GroupId])]
+            [GMR#group_member_rev.who || GMR <- rpc:call(?APPSERVER_NODE,nsm_groups,list_group_membership,[GroupId])]
     end,
 
     MaxUsers = case GameFSM of "tavla" -> 2; "okey" -> 4 end,
@@ -838,12 +838,17 @@ tab_friend_setting() ->
 			body=#list{class=ThisClass, body=View}}]
 	  }.
 
+slider_text_format(sets) ->
+    ?_TS("Set: $setsize$", [{setsize,"~s"}]); %%"
+slider_text_format(age) ->
+    ?_TS("Age: $fromage$ - $toage$", [{fromage,"~s"},{toage,"~s"}]). %%"
+
 tab_personal_setting() ->
     ThisClass = case wf:state(buttons) of
         green -> "list1_green";
         _ -> "list1"
     end,
-    AgeFormat=create_game:slider_text_format(age),
+    AgeFormat=slider_text_format(age),
     [#panel{class="create_game_frame", style="text-align: center",
 	    body=[
             #h3{text=?_T("Age")},
@@ -911,7 +916,7 @@ ui_button_select({Key, Value}) ->
     SpanElement =
 	case Key of
 	    age ->
-		Format = create_game:slider_text_format(age),
+		Format = slider_text_format(age),
 		Text = wf:f(Format, [ wf:to_list(X) || X <- Value ]),
 		#span{text=Text};
 	    _ ->
@@ -1022,7 +1027,7 @@ u_event({show,join_game}) ->
     wf:update(matchmaker_main_container, matchmaker_show_tables()),
     wf:update(matchmaker_slide_area, ""),
     ac_show_main_container(),
-    ui_update_buttons();
+    ui_update_buttons(); 
 
 u_event({show,join_game_detailed}) ->
     wf:update(matchmaker_main_container, matchmaker_show_create(none)),

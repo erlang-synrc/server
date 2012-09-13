@@ -10,7 +10,7 @@
 
 -behaviour(gen_server).
 
-%% API
+%% THIS FILE ARE TO BE DELETED
 
 -export([start_link/0,
          stop/0,
@@ -187,7 +187,7 @@ handle_call({create_table, User, S}, _From, State) ->
         OK when OK == ok; OK == {error, soft_limit} ->
             %% if user will reach only soft limit - give him a chance to play
             #state{tables = Tables, callbacks = Callbacks} = State,
-            TableId = zealot_db:next_id("table"),
+            TableId = nsm_db:next_id("table"),
 
             Table = #game_table{id = TableId,
                                 name             = get_setting(table_name, S),
@@ -527,8 +527,8 @@ get_user_age(#user{age = UAge}) ->
 
 -spec filter_table(iolist(), record(game_table)) -> true | false.
 filter_table(User0, #game_table{owner = Owner} = GameTable) ->
-    {ok, User} = users:get_user(User0),
-    AllSub = users:list_subscription(User0),
+    {ok, User} = nsm_users:get_user(User0),
+    AllSub = nsm_users:list_subscription(User0),
     case Owner of
         User0 ->
             true;
@@ -706,25 +706,25 @@ save_game_table_to_settings(#save_game_table{name     = Name,
 save_table(UId, Settings) ->
     Name = proplists:get_value(table_name, Settings),
     R = #save_game_table{uid = UId,
-                         id = zealot_db:next_id("save_table"),
+                         id = nsm_db:next_id("save_table"),
                          name = Name,
                          create_time = erlang:now(),
                          settings = Settings},
-    zealot_db:put(R).
+    nsm_db:put(R).
 
 get_save_tables(UId) ->
-    zealot_db:get_save_tables(UId).
+    nsm_db:get_save_tables(UId).
 
 get_save_table_setting(Id) ->
     {ok, Table} = get_save_table(Id),
     {ok, Table#save_game_table.settings}.
 
 get_save_table(Id) ->
-    zealot_db:save_game_table_by_id(Id).
+    nsm_db:save_game_table_by_id(Id).
 
 delete_save_table(Id) ->
     {ok, Table} = get_save_table(Id),
-    zealot_db:delete(Table).
+    nsm_db:delete(Table).
 
 create_example_table() ->
     Alice = #user{username = "alice", password="1",
@@ -794,18 +794,18 @@ simple_test_() ->
     }.
 
 setup() ->
-    zealot_db:stop(),
-    zealot_db:delete(),
-    zealot_db:initialize(),
-    zealot_db:start(),
-    zealot_db:init_db(),
+    nsm_db:stop(),
+    nsm_db:delete(),
+    nsm_db:initialize(),
+    nsm_db:start(),
+    nsm_db:init_db(),
     ok = application:start(nsx_utils),
     ok = application:start(nsm_srv).
 
 
-cleanup(_) ->
-    zealot_db:stop(),
-    zealot_db:delete(),
+cleanup(_) -> % ? These functions are no longer exists
+    nsm_db:stop(),
+    nsm_db:delete(),
     application:stop(zealot).
 
 basic_t() ->

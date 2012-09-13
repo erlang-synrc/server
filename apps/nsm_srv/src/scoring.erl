@@ -7,13 +7,13 @@
 -export([add_score/3,score_entries/1, score_test/0]).
 
 add_score(PlayerId, ScoringRecord, Temp) ->
-    PlayerScoring = case zealot_db:get(player_scoring, PlayerId) of 
+    PlayerScoring = case nsm_db:get(player_scoring, PlayerId) of 
        {ok,R} -> R;
        {error,notfound} -> 
-           zealot_db:put(A = #player_scoring{id=PlayerId,agregated_score=0}),
+           nsm_db:put(A = #player_scoring{id=PlayerId,agregated_score=0}),
            A
     end,
-    EntryId = zealot_db:next_id("scoring_record",1),
+    EntryId = nsm_db:next_id("scoring_record",1),
     Prev = undefined,
     Top = case Temp of
     	temp -> PlayerScoring#player_scoring.temp;
@@ -23,7 +23,7 @@ add_score(PlayerId, ScoringRecord, Temp) ->
         undefined ->
             Next = undefined;
 	X ->
-	    case zealot_db:get(scoring_record, erlang:integer_to_list(X)) of
+	    case nsm_db:get(scoring_record, erlang:integer_to_list(X)) of
 	       {ok, TopEntry} ->
 		    Next = TopEntry#scoring_record.id,
 		    EditedEntry = #scoring_record{
@@ -40,7 +40,7 @@ add_score(PlayerId, ScoringRecord, Temp) ->
                       all_players = TopEntry#scoring_record.all_players,
                       next = TopEntry#scoring_record.next,
                       prev = EntryId},
-                    zealot_db:put(EditedEntry); % update prev entry
+                    nsm_db:put(EditedEntry); % update prev entry
             {error,notfound} -> Next = undefined
 	    end
     end,
@@ -55,7 +55,7 @@ add_score(PlayerId, ScoringRecord, Temp) ->
                     next = Next,
                     prev = Prev},
 
-    zealot_db:put(PlayerScoring#player_scoring{
+    nsm_db:put(PlayerScoring#player_scoring{
           temp=T, permanent=P,
           agregated_score = PlayerScoring#player_scoring.agregated_score + 
              case Temp of
@@ -63,13 +63,13 @@ add_score(PlayerId, ScoringRecord, Temp) ->
                 temp -> 0
              end}),
 
-    case zealot_db:put(Entry) of
+    case nsm_db:put(Entry) of
         ok ->
             {ok, Entry}
     end.
 
 score_entries(PlayerId) ->
-    RA = zealot_db:get(player_scoring, PlayerId),
+    RA = nsm_db:get(player_scoring, PlayerId),
     case RA of
         {ok,RO} -> traverse_score_entries(RO#player_scoring.permanent, []);
         {error, _} -> []
@@ -78,7 +78,7 @@ score_entries(PlayerId) ->
 traverse_score_entries(undefined, Result) ->
     Result;
 traverse_score_entries(Next, Result) ->
-    RA = zealot_db:get(scoring_record, Next),
+    RA = nsm_db:get(scoring_record, Next),
     case RA of
 	{ok,RO} -> traverse_score_entries(RO#scoring_record.next, Result ++ [RO]);
 	{error,notfound} -> Result
@@ -121,6 +121,6 @@ score_test() ->
     add_score("demo1", SR3, perm),
     [
         score_entries("demo1"),
-        zealot_db:all(player_scoring),
-        zealot_db:all(scoring_record)
+        nsm_db:all(player_scoring),
+        nsm_db:all(scoring_record)
     ].

@@ -6,7 +6,7 @@
 %%   should be performing using this module.
 %% @end
 %%--------------------------------------------------------------------
--module(nsm_srv_accounts).
+-module(nsm_accounts).
 
 %%
 %% Include files
@@ -132,7 +132,7 @@ create_account(AccountId, Currency) ->
 					   debet = 0,
 					   last_change = 0},
 
-	case zealot_db:put(Account) of
+	case nsm_db:put(Account) of
 		ok ->
 			ok;
 		Error ->
@@ -176,13 +176,13 @@ commit_transaction(#transaction{remitter = R, acceptor = A,  currency = Currency
 								amount = Amount} = TX) ->
 	case change_accounts(R, A, Currency, Amount) of
 		ok ->
-			zealot_db:put(TX);
+			nsm_db:put(TX);
 		Error ->
             %% in case of game events it is possible to assign points to undefined
             %% accounts when robots play game. System account will not be changed
             case TX#transaction.info of
                 #ti_game_event{} ->
-                    zealot_db:put(TX);
+                    nsm_db:put(TX);
                 _ ->
                     ?ERROR("commit transaction error: change accounts ~p", Error),
                     Error
@@ -206,7 +206,7 @@ change_accounts(Remitter, Acceptor, Currency, Amount) ->
 					AA1 = AA#account{debet = AA#account.debet + Amount,
 								   last_change = Amount},
 
-					zealot_db:put([AA1, RA1]);
+					nsm_db:put([AA1, RA1]);
 				{error, Reason} ->
 					{error, {remitter_balance, Reason}}
 			end;
@@ -232,7 +232,7 @@ check_remitter_balance(_Account, _Amount) ->
 
 
 get_account(Account, Currency) ->
-	case zealot_db:get(account, ?ACC_ID(Account, Currency)) of
+	case nsm_db:get(account, ?ACC_ID(Account, Currency)) of
 		{ok, #account{} = AR} ->
 			AR;
 		_ ->

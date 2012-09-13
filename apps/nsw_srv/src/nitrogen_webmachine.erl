@@ -101,6 +101,7 @@ process_post(ReqData, State) ->
     ReqData2 = wrq:set_resp_body(Data, ReqData1),
     {true, ReqData2, State}.
 
+
 do_nitrogen(PageModule, Req) ->
     % Make request and response bridges...
     RequestBridge = simple_bridge:make_request(webmachine_request_bridge, Req),

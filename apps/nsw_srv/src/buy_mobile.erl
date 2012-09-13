@@ -56,10 +56,10 @@ process_result(success) ->
     {Proto,No,Site,Port,Page,S} = http_uri:parse(Referer),
 
     case Site =:= "www.mikro-odeme.com" of
-         true ->  User = case rpc:call(?APPSERVER_NODE, nsm_srv_membership_packages, get_purchase, [PurchaseId]) of
+         true ->  User = case rpc:call(?APPSERVER_NODE, nsm_membership_packages, get_purchase, [PurchaseId]) of
                   {ok, Purchase} ->
 
-                         ok = rpc:call(?APPSERVER_NODE, nsm_srv_membership_packages,
+                         ok = rpc:call(?APPSERVER_NODE, nsm_membership_packages,
 				 set_purchase_state, [Purchase#membership_purchase.id, done, mobile]),
 
                             wf:redirect("/profile/account");
@@ -73,7 +73,7 @@ process_result(failure) ->
     "Error".
 
 form()->
-    PurchaseId = rpc:call(?APPSERVER_NODE, nsm_srv_membership_packages, purchase_id, []),
+    PurchaseId = rpc:call(?APPSERVER_NODE, nsm_membership_packages, purchase_id, []),
     Package = buy:package(),
 
     ?INFO("Package/Purchase: ~p ~p",[PurchaseId,Package]),
@@ -115,7 +115,7 @@ event({buy_clicked, PurchaseId}) ->
         info = mobile
     },
 
-    {ok, PurchaseId} = rpc:call(?APPSERVER_NODE, nsm_srv_membership_packages,
+    {ok, PurchaseId} = rpc:call(?APPSERVER_NODE, nsm_membership_packages,
                                 add_purchase, [MP]),
 
     wf:redirect("http://www.mikro-odeme.com/sale-api/tr/step1.aspx?partner=17121&product=" ++ 

@@ -16,7 +16,7 @@
 %    - Riak
 
 
--module(zealot_db).
+-module(nsm_db).
 -author('Maxim Sokhatsky <maxim@synrc.com>').
 
 -include("config.hrl").
@@ -35,7 +35,7 @@
 -include_lib("alog/include/alog.hrl").
 
 -export([start/0, stop/0, initialize/0, delete/0,
-         init_db/0, put/1, count/1, get/2, get/3,
+         init_db/0, put/1, count/1, get/2, get/3, feed_create/0, create_team/1,
          all/1, next_id/1, next_id/2, delete/1, delete/2,
          delete_browser_counter_older_than/1,browser_counter_by_game/1,
          unused_invites/0, get_word/1, acl_add_entry/3, acl_entries/1,
@@ -87,12 +87,12 @@ delete() ->
 -spec init_db() -> ok.
 init_db() ->
     ?INFO("~w:init_db/0 Started", [?MODULE]),
-    case zealot_db:get(user,"alice") of
+    case nsm_db:get(user,"alice") of
        {error,_} ->
             DBA = ?DBA,
             DBA:init_db(),
             add_seq_ids(),
-            nsm_srv_accounts:create_account(?SYSTEM_ACCOUNT_ID),
+            nsm_accounts:create_account(?SYSTEM_ACCOUNT_ID),
             add_sample_users(),
             add_sample_packages(),
             add_translations(),
@@ -106,20 +106,20 @@ init_db() ->
 
 add_affiliates() ->
     ?INFO("~w:add_affiliates/0 Started", [?MODULE]),
-    Cl=nsm_affiliates2:start_client(),
-    nsm_affiliates2:create_affiliate(Cl, "kunthar"),
-    nsm_affiliates2:create_affiliate(Cl, "tour1"),
-    nsm_affiliates2:create_affiliate(Cl, "maxim"),
-    nsm_affiliates2:reg_follower(Cl, "demo1", "kunthar", 1),
-    nsm_affiliates2:reg_follower(Cl, "demo2", "kunthar", 1),
-    nsm_affiliates2:reg_follower(Cl, "kate", "kunthar", 2),
-    nsm_affiliates2:reg_follower(Cl, "tour2", "tour1", 1),
-    nsm_affiliates2:reg_follower(Cl, "tour3", "tour1", 1),
-    nsm_affiliates2:reg_follower(Cl, "tour4", "tour1", 2),
-    nsm_affiliates2:reg_follower(Cl, "tour5", "tour1", 2),
-    nsm_affiliates2:reg_follower(Cl, "tour6", "tour1", 1),
-    nsm_affiliates2:reg_follower(Cl, "tour7", "tour1", 3),
-    nsm_affiliates2:stop_client(Cl),
+    Cl=nsm_affiliates:start_client(),
+    nsm_affiliates:create_affiliate(Cl, "kunthar"),
+    nsm_affiliates:create_affiliate(Cl, "tour1"),
+    nsm_affiliates:create_affiliate(Cl, "maxim"),
+    nsm_affiliates:reg_follower(Cl, "demo1", "kunthar", 1),
+    nsm_affiliates:reg_follower(Cl, "demo2", "kunthar", 1),
+    nsm_affiliates:reg_follower(Cl, "kate", "kunthar", 2),
+%    nsm_affiliates:reg_follower(Cl, "tour2", "tour1", 1),
+%    nsm_affiliates:reg_follower(Cl, "tour3", "tour1", 1),
+%    nsm_affiliates:reg_follower(Cl, "tour4", "tour1", 2),
+%    nsm_affiliates:reg_follower(Cl, "tour5", "tour1", 2),
+%    nsm_affiliates:reg_follower(Cl, "tour6", "tour1", 1),
+%    nsm_affiliates:reg_follower(Cl, "tour7", "tour1", 3),
+    nsm_affiliates:stop_client(Cl),
     ?INFO("~w:add_affiliates/0 Finished", [?MODULE]),
     ok.
 
@@ -129,7 +129,7 @@ add_contracts() ->
     CurDateDays = calendar:date_to_gregorian_days(CurDate),
     StartDate = calendar:gregorian_days_to_date(CurDateDays - 15),
     FinishDate = calendar:gregorian_days_to_date(CurDateDays + 15),
-    ok = nsm_affiliates2:create_contract("tour1", "Test contract",
+    ok = nsm_affiliates:create_contract("tour1", "Test contract",
                                          StartDate, FinishDate,
                                          2, 10.2),
     ?INFO("~w:add_contracts/0 Finished", [?MODULE]),
@@ -137,10 +137,10 @@ add_contracts() ->
 
 add_purchases() ->
     ?INFO("~w:add_purchases/0 Started", [?MODULE]),
-    {ok, Pkg1} = nsm_srv_membership_packages:get_package(1),
-    {ok, Pkg2} = nsm_srv_membership_packages:get_package(2),
-    {ok, Pkg3} = nsm_srv_membership_packages:get_package(3),
-    {ok, Pkg4} = nsm_srv_membership_packages:get_package(4),
+    {ok, Pkg1} = nsm_membership_packages:get_package(1),
+    {ok, Pkg2} = nsm_membership_packages:get_package(2),
+    {ok, Pkg3} = nsm_membership_packages:get_package(3),
+    {ok, Pkg4} = nsm_membership_packages:get_package(4),
     PList=
         [{"kunthar", Pkg1},
          {"tour2", Pkg1},
@@ -164,18 +164,18 @@ add_purchases() ->
     ok.
 
 add_purchase(UserId, Package) ->
-    {ok, MPId} = nsm_srv_membership_packages:add_purchase(#membership_purchase{user_id=UserId,
+    {ok, MPId} = nsm_membership_packages:add_purchase(#membership_purchase{user_id=UserId,
                                                                                membership_package=Package
                                                                               }),
-    ok = nsm_srv_membership_packages:set_purchase_state(MPId, ?MP_STATE_DONE, undefined).
+    ok = nsm_membership_packages:set_purchase_state(MPId, ?MP_STATE_DONE, undefined).
 
 
 
 add_seq_ids() ->
     Init = fun(Key) ->
-	       case zealot_db:get(id_seq, Key) of
+	       case nsm_db:get(id_seq, Key) of
 		   {error, _} ->
-		       ok = zealot_db:put(#id_seq{thing = Key, id = 0});
+		       ok = nsm_db:put(#id_seq{thing = Key, id = 0});
 		   {ok, _} -> ignore
 	       end
 	   end,
@@ -197,20 +197,20 @@ add_seq_ids() ->
 
 add_translations() ->
     lists:foreach(fun({English, Lang, Word}) ->
-%                          ok = zealot_db:put(#ut_word{word    = English, % TODO: why we need translation from en -> en?
+%                          ok = nsm_db:put(#ut_word{word    = English, % TODO: why we need translation from en -> en?
 %                                            lang    = "en",    % It is needed to detect english language in URI
 %                                            english = English}),
-                          ok = zealot_db:put(#ut_word{english    = English,
+                          ok = nsm_db:put(#ut_word{english    = English,
                                             lang    = "en",
                                             word = English}),
-                          ok = zealot_db:put(#ut_word{word    = Word,
+                          ok = nsm_db:put(#ut_word{word    = Word,
                                             lang    = Lang,
                                             english = Word}),
-                          ok = zealot_db:put(#ut_translation{source   = {Lang, Word},
+                          ok = nsm_db:put(#ut_translation{source   = {Lang, Word},
                                                    word     = English}),
-                          ok = zealot_db:put(#ut_translation{source   = {"en", English},
+                          ok = nsm_db:put(#ut_translation{source   = {"en", English},
                                                    word     = English}),
-                          ok = zealot_db:put(#ut_translation{source   = {Lang, English},
+                          ok = nsm_db:put(#ut_translation{source   = {Lang, English},
                                                    word     = Word}),
               ok
                   end, ?URI_DICTIONARY).
@@ -218,59 +218,59 @@ add_translations() ->
 add_sample_users() ->
     UserList =
                     [#user{username = "demo1", password="kakara20",
-                           name = "Demo", surname = "Nstration", feed = feed:create(),
-                           type = admin, direct = feed:create(),
+                           name = "Demo", surname = "Nstration", feed = feed_create(),
+                           type = admin, direct = feed_create(),
                            sex=m,
                            status=ok,
-                           team = tournaments:create_team("tours"),
+                           team = create_team("tours"),
                            email="demo1@kakaranet.com"},
                      #user{username = "demo2", password="kakara20",
-                           name = "Demo2 User", surname = "Two", feed = feed:create(),
-                           type = admin, direct = feed:create(),
+                           name = "Demo2 User", surname = "Two", feed = feed_create(),
+                           type = admin, direct = feed_create(),
                            status=ok,
-                           team = tournaments:create_team("tours"),
+                           team = create_team("tours"),
                            sex=m},
                      #user{username = "maxim", password="kaka15ra",
-                           name = "Maxim", surname = "Sokhatsky", feed = feed:create(),
-                           type = admin, direct = feed:create(),
+                           name = "Maxim", surname = "Sokhatsky", feed = feed_create(),
+                           type = admin, direct = feed_create(),
                            sex=m,
                            status=ok,
-                           team = tournaments:create_team("tours"),
+                           team = create_team("tours"),
                            email="maxim.sokhatsky@gmail.com"},
                      #user{username = "ahmettez", password="kaka15ra",
-                           name = "Ahmet", surname = "Tez", feed = feed:create(),
-                           type = admin, direct = feed:create(),
+                           name = "Ahmet", surname = "Tez", feed = feed_create(),
+                           type = admin, direct = feed_create(),
                            sex=m,
                            status=ok,
-                           team = tournaments:create_team("tours"),
+                           team = create_team("tours"),
                            email="tez.ahmettez@gmail.com"},
-                     #user{username = "kunthar", password="kaka1224", name = "Kunthar", feed = feed:create(),
-                           type = admin, direct = feed:create(),
+                     #user{username = "kunthar", password="kaka1224", name = "Kunthar", feed = feed_create(),
+                           type = admin, direct = feed_create(),
                            sex=m,
                            status=ok,
-                           team = tournaments:create_team("tours"),
+                           team = create_team("tours"),
                            email="kunthar@gmail.com"},
                      #user{username = "sustel", password="kaka15ra", name = "Sustel",
-                           feed = feed:create(), direct = feed:create(),
+                           feed = feed_create(), direct = feed_create(),
                            type = admin,
-                           team = tournaments:create_team("tours"),
+                           team = create_team("tours"),
                            status=ok,
                            email = "sinanustel@gmail.com",
                            sex=m},
                      #user{username = "kate", password="kaka15ra",
-                           name = "Kate", surname = "Foxconn", feed = feed:create(),
-                           status=ok, direct = feed:create(),
-                           team = tournaments:create_team("tours"),
+                           name = "Kate", surname = "Foxconn", feed = feed_create(),
+                           status=ok, direct = feed_create(),
+                           team = create_team("tours"),
                            sex=f},
                      #user{username = "alice", password="kaka15ra",
-                           name = "Alicja", surname = "Example", feed = feed:create(),
-                           team = tournaments:create_team("tours"), direct = feed:create(),
+                           name = "Alicja", surname = "Example", feed = feed_create(),
+                           team = create_team("tours"), direct = feed_create(),
                            facebook_id = "1234567890",
                            status=ok,
                            sex=f},
                      #user{username = "commonuser", password="123456",
-                           name = "Usert", surname = "Userson", feed = feed:create(),
-                           team = tournaments:create_team("tours"), direct = feed:create(),
+                           name = "Usert", surname = "Userson", feed = feed_create(),
+                           team = create_team("tours"), direct = feed_create(),
                            status=ok,
                            sex="male",
                            location="İstanbul",
@@ -279,8 +279,8 @@ add_sample_users() ->
                            register_date={1345,14070,852889}
                      },
                      #user{username = "imagia", password="123456",
-                           name = "Ima", surname = "Gionari", feed = feed:create(),
-                           team = tournaments:create_team("tours"), direct = feed:create(),
+                           name = "Ima", surname = "Gionari", feed = feed_create(),
+                           team = create_team("tours"), direct = feed_create(),
                            status=ok,
                            sex="female",
                            location="Ankara",
@@ -289,8 +289,8 @@ add_sample_users() ->
                            register_date={1345,14070,852889}
                      },
                      #user{username = "willbe", password="123456",
-                           name = "Will", surname = "Beimagionary", feed = feed:create(),
-                           team = tournaments:create_team("tours"), direct = feed:create(),
+                           name = "Will", surname = "Beimagionary", feed = feed_create(),
+                           team = create_team("tours"), direct = feed_create(),
                            status=ok,
                            sex="male",
                            location="Ankara",
@@ -299,8 +299,8 @@ add_sample_users() ->
                            register_date={1345,14070,852889}
                      },
                      #user{username = "nata88", password="123456",
-                           name = "Natalie", surname = "Notreal", feed = feed:create(),
-                           team = tournaments:create_team("tours"), direct = feed:create(),
+                           name = "Natalie", surname = "Notreal", feed = feed_create(),
+                           team = create_team("tours"), direct = feed_create(),
                            status=ok,
                            sex="female",
                            location="İstanbul",
@@ -309,68 +309,68 @@ add_sample_users() ->
                            register_date={1345,14070,852889}
                      },
                      #user{username = "shyronnie", password="123456",
-                           feed = feed:create(),
+                           feed = feed_create(),
                            name = "Ronnie",
-                           team = tournaments:create_team("tours"), direct = feed:create(),
+                           team = create_team("tours"), direct = feed_create(),
                            status=ok,
                            age={1988,1,2},
                            register_date={1345,14070,852889}
                      }],
 
     [ begin
-    zealot_db:delete(subscription, Me#user.username),
-    zealot_db:delete(subscription_rev, Me#user.username)
+    nsm_db:delete(subscription, Me#user.username),
+    nsm_db:delete(subscription_rev, Me#user.username)
       end || Me <- UserList],
 
 
-    users:init_mq("ahmettez", ["kakaranet", "yeniler"]),
+    nsm_users:init_mq("ahmettez", ["kakaranet", "yeniler"]),
 
-    GId1  = groups:create_group("ahmettez", "kakaranet", "Kakaranet", "Kakaranet'e Hoşgeldiniz", public),
-    GId2  = groups:create_group("ahmettez", "yeniler", "Yeniler", "So, you must be new here.", public),
+    GId1  = nsm_groups:create_group("ahmettez", "kakaranet", "Kakaranet", "Kakaranet'e Hoşgeldiniz", public),
+    GId2  = nsm_groups:create_group("ahmettez", "yeniler", "Yeniler", "So, you must be new here.", public),
 
     %create(UID, Name, Desc, Date, Players, Quota, Awards, Type, Game) ->
-    T1 = tournaments:create("maxim","TAVLA", "Tavla Turnuvalar",  {2012,4,28},10,  10, undefined,pointing,game_tavla),
-    T2 = tournaments:create("maxim","BATAK", "Batak Challenge",   {2012,4,28},100, 50, undefined,pointing,game_batak),
-    T3 = tournaments:create("maxim","OKEY",  "OKEY Championship", {2012,4,28},1000,100,undefined,pointing,game_okey),
+%    T1 = tournaments:create("maxim","TAVLA", "Tavla Turnuvalar",  {2012,4,28},10,  10, undefined,pointing,game_tavla),
+%    T2 = tournaments:create("maxim","BATAK", "Batak Challenge",   {2012,4,28},100, 50, undefined,pointing,game_batak),
+%    T3 = tournaments:create("maxim","OKEY",  "OKEY Championship", {2012,4,28},1000,100,undefined,pointing,game_okey),
 
     ?INFO("adding users accounts"),
     [ begin
-          nsm_srv_accounts:create_account(Me#user.username),
-          nsm_srv_accounts:transaction(Me#user.username, ?CURRENCY_QUOTA, app_opt:get_default_quota(), #ti_default_assignment{}),
-          zealot_db:put(Me#user{password = utils:sha(Me#user.password),
-                                starred = feed:create(),
-                                pinned = feed:create()})
+          nsm_accounts:create_account(Me#user.username),
+          nsm_accounts:transaction(Me#user.username, ?CURRENCY_QUOTA, db_opt:get_default_quota(), #ti_default_assignment{}),
+          nsm_db:put(Me#user{password = utils:sha(Me#user.password),
+                                starred = feed_create(),
+                                pinned = feed_create()})
       end || Me <- UserList],
     ?INFO("adding users to groups"),
     [ begin
-          users:init_mq(Me#user.username, [GId1, GId2]),
+          nsm_users:init_mq(Me#user.username, [GId1, GId2]),
           subscribe_user_to_list(Me#user.username, UserList),
           case Me#user.username of
               "alice" -> ok; % alice already in groups, as admin
               _ ->
-                  groups:add_to_group(Me#user.username, GId1, member),
-                  groups:add_to_group(Me#user.username, GId2, member)
-          end,
-          tournaments:join(Me#user.username, T1),
-          tournaments:join(Me#user.username, T3),
-          tournaments:join(Me#user.username, T2)
+                  nsm_groups:add_to_group(Me#user.username, GId1, member),
+                  nsm_groups:add_to_group(Me#user.username, GId2, member)
+          end
+%          tournaments:join(Me#user.username, T1),
+%          tournaments:join(Me#user.username, T3),
+%          tournaments:join(Me#user.username, T2)
       end || Me <- UserList ],
     %% define access for Maxim to feature admin
-    acl:define_access({user, "maxim"},    {feature, admin}, allow),
-    acl:define_access({user_type, admin}, {feature, admin}, allow),
+    nsm_acl:define_access({user, "maxim"},    {feature, admin}, allow),
+    nsm_acl:define_access({user_type, admin}, {feature, admin}, allow),
 
     %% init feed workers infrastructure
-    catch nsm_bg:start_all_feed_workers(),
+%    catch nsm_bg:start_all_feed_workers(),
     ok.
 
 add_sample_packages() ->
-	nsm_srv_membership_packages:add_sample_data().
+	nsm_membership_packages:add_sample_data().
 
 version() ->
     ?INFO("version: ~p", [?VERSION]).
 
 subscribe_user_to_list(Me, List) ->
-    [ begin users:subscribe_user(Me, User) end || #user{username=User} <- List, User =/= Me],
+    [ begin nsm_users:subscribe_user(Me, User) end || #user{username=User} <- List, User =/= Me],
     ok.
 
 % subscriptions
@@ -393,19 +393,19 @@ is_user_blocked(Who, Whom) -> DBA=?DBA, DBA:is_user_blocked(Who, Whom).
 
 add_configs() ->
     %% smtp
-    zealot_db:put(#config{key="smtp/user",     value="noreply@kakaranet.com"}),
-    zealot_db:put(#config{key="smtp/password", value="kakam41l"}),
-    zealot_db:put(#config{key="smtp/host",     value="posta.kakaranet.com"}),
-    zealot_db:put(#config{key="smtp/port",     value=465}),
-    zealot_db:put(#config{key="smtp/with_ssl", value=true}),
+    nsm_db:put(#config{key="smtp/user",     value="noreply@kakaranet.com"}),
+    nsm_db:put(#config{key="smtp/password", value="kakam41l"}),
+    nsm_db:put(#config{key="smtp/host",     value="posta.kakaranet.com"}),
+    nsm_db:put(#config{key="smtp/port",     value=465}),
+    nsm_db:put(#config{key="smtp/with_ssl", value=true}),
 
     %% accounts
-    zealot_db:put(#config{key="accounts/default_quota", value=2000}),
-    zealot_db:put(#config{key="accounts/quota_limit/soft",  value=-30}),
-    zealot_db:put(#config{key="accounts/quota_limit/hard",  value=-100}),
+    nsm_db:put(#config{key="accounts/default_quota", value=2000}),
+    nsm_db:put(#config{key="accounts/quota_limit/soft",  value=-30}),
+    nsm_db:put(#config{key="accounts/quota_limit/hard",  value=-100}),
 
     %%  purchases
-    zealot_db:put(#config{key= "purchase/notifications/email",  value=["gokhan@kakaranet.com"]}).
+    nsm_db:put(#config{key= "purchase/notifications/email",  value=["gokhan@kakaranet.com"]}).
 
 % put
 
@@ -576,13 +576,13 @@ play_record_add_entry(TeamId, UserId, Tournament, GameId) -> DBA=?DBA, DBA:play_
 user_tournaments(UID) -> DBA=?DBA, DBA:user_tournaments(UID).
 
 groups_184_update() -> % predefined group creation
-    groups:create_group("ahmettez", "kakaranet", "Kakaranet", "Kakaranet'e Hoşgeldiniz", public),
-    groups:create_group("ahmettez", "yeniler", "Yeniler", "So, you must be new here.", public).
+    nsm_groups:create_group("ahmettez", "kakaranet", "Kakaranet", "Kakaranet'e Hoşgeldiniz", public),
+    nsm_groups:create_group("ahmettez", "yeniler", "Yeniler", "So, you must be new here.", public).
 
 subscriptions_update() -> % public beta
-    catch(zealot_db:delete(subscription,"kikiri")),
+    catch(nsm_db:delete(subscription,"kikiri")),
 
-    Subscriptions = zealot_db:all(subscription),
+    Subscriptions = nsm_db:all(subscription),
     lists:foreach(fun (Subscription) ->
 
        case Subscription of
@@ -596,14 +596,14 @@ subscriptions_update() -> % public beta
                   ?INFO("User, To: ~p ~p",[User,To]),
                   NewSubs = lists:foldl(fun({subscription,A,T},Acc) ->
                             ?INFO("User: ~p",[A]),
-                            R = zealot_db:get(user,T),
+                            R = nsm_db:get(user,T),
                             case R of
                                   {ok,{user,_,_,_,_,_,Name,Surname,_,_,_,_,_,_,_,_,_,_,_,_}} ->
 				            Acc ++ [{subscription,A,T,[Name,32,Surname]}];
                                    {error,_} -> Acc
                              end
                   end,[],ToList),
-                  zealot_db:put({subscription,User,NewSubs,undefined}),
+                  nsm_db:put({subscription,User,NewSubs,undefined}),
                   ok;
              _ -> io:format("Unknown: ~p",[Sub])
           end
@@ -646,13 +646,23 @@ invitation_tree(StartFrom, Depth) ->
     DBA=?DBA, DBA:invitation_tree(StartFrom, Depth).
 
 fast_timeouts() ->
-    zealot_db:put({config,"games/okey/robot_delay_normal",100}),
-    zealot_db:put({config,"games/okey/challenge_timeout_normal",5000}),
-    zealot_db:put({config,"games/okey/turn_timeout_normal",200}).
+    nsm_db:put({config,"games/okey/robot_delay_normal",100}),
+    nsm_db:put({config,"games/okey/challenge_timeout_normal",5000}),
+    nsm_db:put({config,"games/okey/turn_timeout_normal",200}).
 
 make_admin(User) ->
-    {ok,U} = zealot_db:get(User),
-    zealot_db:put(U#user{type = admin}).
+    {ok,U} = nsm_db:get(User),
+    nsm_db:put(U#user{type = admin}).
 
 make_rich(User) ->
-    nsm_srv_accounts:transaction(User, ?CURRENCY_QUOTA, app_opt:get_default_quota(), #ti_default_assignment{}).
+    nsm_accounts:transaction(User, ?CURRENCY_QUOTA, db_opt:get_default_quota() * 100, #ti_default_assignment{}).
+
+feed_create() ->
+    FId = nsm_db:next_id("feed", 1),
+    ok = nsm_db:put(#feed{id = FId} ),
+    FId.
+
+create_team(Name) ->
+    TID = nsm_db:next_id("team",1),
+    ok = nsm_db:put(Team = #team{id=TID,name=Name}),
+    TID.

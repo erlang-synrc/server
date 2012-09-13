@@ -155,11 +155,11 @@ start_tournament(TID, ListUsers) ->
 %    Tour = State#state.tournament,
 %    Teams = [ begin
 %        Team = tournaments:create_team(User#user.username),
-%        zealot_db:put(Team),
+%        nsm_db:put(Team),
 %        Team
 %    end || {_,User} <- List],
 
-%    zealot_db:put(Tour#tournament{teams = Teams}),
+%    nsm_db:put(Tour#tournament{teams = Teams}),
 
     nsx_util_notification:notify_tournament_start_game(TID,ListUsers,{"DATA"}),
     ok.

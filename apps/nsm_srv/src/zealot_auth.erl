@@ -85,7 +85,7 @@ init([]) ->
 %%--------------------------------------------------------------------
 
 handle_call({register, #user{} = RegisterData}, _From, State) ->
-    Reply = case users:register(RegisterData) of
+    Reply = case nsm_users:register(RegisterData) of
 		{ok, register} -> {ok, register};
 		{error, Error} -> {error, Error}
 	    end,
@@ -94,11 +94,11 @@ handle_call({register, #user{} = RegisterData}, _From, State) ->
 handle_call({login_fb, Data}, _From, State) ->
 	FbId =  proplists:get_value(username, Data),
     UserName =
-        case users:get_user({facebook, FbId}) of
+        case nsm_users:get_user({facebook, FbId}) of
             {ok, User} ->
                 case User#user.status of
                     ok ->
-                        users:login_posthook(User#user.username),
+                        nsm_users:login_posthook(User#user.username),
                         {ok, User#user.username};
                     banned ->
                         {error, banned};
@@ -116,11 +116,11 @@ handle_call({login, Data}, _From, State) ->
     HashedPassword = utils:sha(Password),
 
     Reply =
-        case users:get_user(UserName) of
+        case nsm_users:get_user(UserName) of
             {ok, #user{password = HashedPassword, username = U} = User } ->
                 case User#user.status of
                     ok ->
-                        users:login_posthook(UserName),
+                        nsm_users:login_posthook(UserName),
                         {ok, U};
                     not_verified ->
                         {error, not_verified};
@@ -140,7 +140,7 @@ handle_call({login, Data}, _From, State) ->
 
 handle_call({get_user_info, UserId}, _From, State) ->
     Reply =
-        case users:get_user(UserId) of
+        case nsm_users:get_user(UserId) of
             {ok, User} ->
                 UserInfo = build_user_info(User),
                 {ok, UserInfo};
@@ -152,7 +152,7 @@ handle_call({get_user_info, UserId}, _From, State) ->
     {reply, Reply, State};
 
 handle_call(get_all_user, _From, State) ->
-    {reply, {ok, zealot_db:all(user)}, State};
+    {reply, {ok, nsm_db:all(user)}, State};
 
 handle_call({generate_token, User}, _From, State) ->
     Token = generate_token0(),

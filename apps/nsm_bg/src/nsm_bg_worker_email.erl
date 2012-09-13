@@ -59,7 +59,7 @@ handle_notice(["email", "send"], {Subject, TextContent, HTMLContent, To},
 handle_notice(["purchase", User, PurchaseId, PaymentType, PurchaseState],
               #membership_purchase{} = _Purchase,
               #state{smtp_options = Options} = State) ->
-    case zealot_db:get(config, "purchase/notifications/email") of
+    case nsm_db:get(config, "purchase/notifications/email") of
         [] ->
             ?INFO("email(~p): purchase notifications recipients list is empty",
                  [self()]);
@@ -102,11 +102,11 @@ get_opts(_State) ->
 %% FIXME: read options from db
 read_smtp_options() -> [].
 %% read_smtp_options() ->
-%%     {ok, User}    = zealot_db:get(config, "smtp/user",     "noreply@kakaranet.com"),
-%%     {ok, Pass}    = zealot_db:get(config, "smtp/password", "unknown"),
-%%     {ok, Server}  = zealot_db:get(config, "smtp/host",     "smtp.kakaranet.com"),
-%%     {ok, Port}    = zealot_db:get(config, "smtp/port",     587),
-%%     {ok, WithSSL} = zealot_db:get(config, "smtp/with_ssl", false),
+%%     {ok, User}    = nsm_db:get(config, "smtp/user",     "noreply@kakaranet.com"),
+%%     {ok, Pass}    = nsm_db:get(config, "smtp/password", "unknown"),
+%%     {ok, Server}  = nsm_db:get(config, "smtp/host",     "smtp.kakaranet.com"),
+%%     {ok, Port}    = nsm_db:get(config, "smtp/port",     587),
+%%     {ok, WithSSL} = nsm_db:get(config, "smtp/with_ssl", false),
 %%
 %%     [{user, User},
 %%      {password, Pass},

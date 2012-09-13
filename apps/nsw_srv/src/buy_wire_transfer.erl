@@ -47,7 +47,7 @@ package_info()->
     buy:package_info().
 
 form()->
-    PurchaseId = rpc:call(?APPSERVER_NODE, nsm_srv_membership_packages, purchase_id, []),
+    PurchaseId = rpc:call(?APPSERVER_NODE, nsm_membership_packages, purchase_id, []),
     #panel{class="tab-content", body=
         #panel{class="payment-form", body=
             #panel{
@@ -77,7 +77,7 @@ event({buy_clicked, PurchaseId}) ->
           [PurchaseId, Package#membership_package.id]),
 
     %% purchase will have state 'started'
-    {ok, PurchaseId} = rpc:call(?APPSERVER_NODE, nsm_srv_membership_packages,
+    {ok, PurchaseId} = rpc:call(?APPSERVER_NODE, nsm_membership_packages,
         add_purchase, [MP]),
     OrderForm = order_form(PurchaseId),
 

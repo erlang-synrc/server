@@ -29,7 +29,7 @@ token() ->
                     "sorbi" -> "flashvars.gameType = \"sorbi\";~n";
                           _ -> ""
             end,
-    Debug = case rpc:call(?APPSERVER_NODE,zealot_db,get,[config,"is_production",false]) of
+    Debug = case rpc:call(?APPSERVER_NODE,nsm_db,get,[config,"is_production",false]) of
                  {ok,true} -> "";
                  {ok,false} -> wf:f("flashvars.debugMode = \"true\";\n")
             end,

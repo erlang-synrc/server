@@ -5,4 +5,4 @@
 %% Put other initialization code here.
 init() ->
     application:start(nprocreg),
-    application:start(nitrogen_webmachine).
+    application:start(nitrogen_mochiweb).

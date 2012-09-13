@@ -1,10 +1,5 @@
-%%%-------------------------------------------------------------------
-%%% @author Fernando Benavides <fernando.benavides@inakanetworks.com>
-%%% @copyright (C) 2011, Gleb Peregud
-%%% @doc Module that provides unified and abstract access to db for all other kakaweb modules
-%%% @end
-%%%-------------------------------------------------------------------
--module(zealot_mnesia).
+-module(nsm_mnesia).
+-author('Fernando Benavides <fernando.benavides@inakanetworks.com>').
 
 -include("config.hrl").
 -include("user.hrl").
@@ -123,7 +118,7 @@ init_db() ->
     ok = add_table_index(like_entry, feed_id),
 
 %    add_sample_users(),
-    nsm_srv_membership_packages:create_storage(),
+    nsm_membership_packages:create_storage(),
 
     ok.
 
@@ -275,7 +270,7 @@ invite_code_by_user(User) ->
 % groups
 
 add_to_group(UId, GId, Type) ->
-    zealot_db:put([#group_member{who = UId,
+    nsm_db:put([#group_member{who = UId,
                                  group = GId,
                                  id = {UId, GId},
                                  type = Type},
@@ -286,7 +281,7 @@ add_to_group(UId, GId, Type) ->
 remove_from_group(UId, GId) ->
     throw({error, needs_fix}),
     Type = zzzz,
-    zealot_db:delete([#group_member{who = UId,
+    nsm_db:delete([#group_member{who = UId,
                                     group = GId,
                                     id = {UId, GId},
                                     type = Type},
@@ -297,15 +292,15 @@ remove_from_group(UId, GId) ->
 list_membership(#user{username = UId}) ->
     list_membership(UId);
 list_membership(UId) when is_list(UId) ->
-    zealot_db:select(group_member, UId).
+    nsm_db:select(group_member, UId).
 
 list_membership_count(#user{username = UId}) ->
     list_membership_count(UId);
 list_membership_count(UId) when is_list(UId) ->
-    [{G, length(list_group_users(element(3, G)))} || G <-zealot_db:select(group_member, UId)].
+    [{G, length(list_group_users(element(3, G)))} || G <-nsm_db:select(group_member, UId)].
 
 list_group_users(GId) ->
-    zealot_db:select(group_member_rev, GId).
+    nsm_db:select(group_member_rev, GId).
 
 membership(UserId, GroupId) ->
     just_one(fun() -> mnesia:match_object(#group_member{id = {UserId, GroupId}, _='_'}) end).
@@ -313,7 +308,7 @@ membership(UserId, GroupId) ->
 % game info
 
 get_save_tables(UId) ->
-    zealot_db:select(save_game_table,UId).
+    nsm_db:select(save_game_table,UId).
 
 save_game_table_by_id(Id) ->
     just_one(fun() -> mnesia:match_object(#save_game_table{id = Id, _='_'}) end).
@@ -396,11 +391,11 @@ exec(Q) ->
 % subscriptions
 
 subscribe_user(MeId, FrId) ->
-   zealot_db:put([#subscription{who = MeId, whom = FrId},
+   nsm_db:put([#subscription{who = MeId, whom = FrId},
                   #subscription_rev{whom = FrId, who = MeId}]).
 
 remove_subscription(MeId, FrId) ->
-    zealot_db:delete([#subscription{who = MeId, whom = FrId},
+    nsm_db:delete([#subscription{who = MeId, whom = FrId},
                       #subscription_rev{whom = FrId, who = MeId}]).
 
 list_subscriptions(#user{username = UId}) -> list_subscriptions(UId);
@@ -416,7 +411,7 @@ is_user_subscribed(Who, Whom) ->
 % feeds
 
 feed_add_direct_message(FId, User, Desc, Medias) ->
-    EId = zealot_db:next_id(entry, 1),
+    EId = nsm_db:next_id(entry, 1),
     Entry  = #entry{id = {EId, FId},
                     entry_id = EId,
                     feed_id = FId,
@@ -427,14 +422,14 @@ feed_add_direct_message(FId, User, Desc, Medias) ->
                     type = {user, direct}},
 
     ModEntry = feedformat:format(Entry),
-    case zealot_db:put(ModEntry) of
+    case nsm_db:put(ModEntry) of
         ok ->
             {ok, ModEntry}
         % ;Error -> {error, Error} %% put always return true
     end.
 
 feed_add_entry(FId, User, Desc, Medias) ->
-    EId = zealot_db:next_id(entry, 1),
+    EId = nsm_db:next_id(entry, 1),
     Entry  = #entry{id = {EId, FId},
                     entry_id = EId,
                     feed_id = FId,
@@ -444,7 +439,7 @@ feed_add_entry(FId, User, Desc, Medias) ->
                     description = Desc},
 
     ModEntry = feedformat:format(Entry),
-    case zealot_db:put(ModEntry) of
+    case nsm_db:put(ModEntry) of
         ok ->
             {ok, ModEntry}
         % ;Error -> {error, Error} %% put always return true
@@ -478,24 +473,24 @@ feed_entries(FId, Page, PageAmount, CurrentUser, CurrentFId) -> entries_in_feed(
 
 entries_in_feed(FId, 1, PageAmount) ->
     F=fun(X) when element(4,X)=:=FId-> true;(_)->false end,
-    zealot_db:select(entry,[{where, F},{order, {1, descending}},{limit, {1,PageAmount}}]);
+    nsm_db:select(entry,[{where, F},{order, {1, descending}},{limit, {1,PageAmount}}]);
 entries_in_feed(FId, Page, PageAmount) when is_integer(Page), Page>1->
     Offset=(Page-1)*PageAmount,
     F=fun(X) when element(4,X)=:=FId-> true;(_)->false end,
-    zealot_db:select(entry,[{where, F},{order, {1, descending}},{limit, {Offset,PageAmount}}]).
+    nsm_db:select(entry,[{where, F},{order, {1, descending}},{limit, {Offset,PageAmount}}]).
 entries_in_feed(FId, 1, PageAmount, CurrentUser, CurrentFId) ->
     F=fun(X) when element(4,X)=:=FId andalso (element(9,X)=:={user,normal} orelse element(1,element(9,X))=:=system)-> true;
          (X) when element(5,X)=:=CurrentUser,element(9,X)=:={user,direct}-> true;
          (X) when element(4,X)=:=CurrentFId,element(9,X)=:={user,direct} -> true;
          (_)->false end,
-    zealot_db:select(entry,[{where, F},{order, {1, descending}},{limit, {1,PageAmount}}]);
+    nsm_db:select(entry,[{where, F},{order, {1, descending}},{limit, {1,PageAmount}}]);
 entries_in_feed(FId, Page, PageAmount, CurrentUser, CurrentFId) when is_integer(Page), Page>1->
     Offset=(Page-1)*PageAmount,
     F=fun(X) when element(4,X)=:=FId andalso (element(9,X)=:={user,normal} orelse element(1,element(9,X))=:=system)-> true;
          (X) when element(5,X)=:=CurrentUser,element(9,X)=:={user,direct}-> true;
          (X) when element(4,X)=:=CurrentFId,element(9,X)=:={user,direct} -> true;
          (_)->false end,
-    zealot_db:select(entry,[{where, F},{order, {1, descending}},{limit, {Offset,PageAmount}}]).
+    nsm_db:select(entry,[{where, F},{order, {1, descending}},{limit, {Offset,PageAmount}}]).
 
 feed_direct_messages(_FId, Page, PageAmount, CurrentUser, CurrentFId) when is_integer(Page), Page>0->
     Offset= case (Page-1)*PageAmount of
@@ -505,6 +500,6 @@ feed_direct_messages(_FId, Page, PageAmount, CurrentUser, CurrentFId) when is_in
     F=fun(X) when element(5,X)=:=CurrentUser,element(9,X)=:={user,direct}-> true;
          (X) when element(4,X)=:=CurrentFId,element(9,X)=:={user,direct} -> true;
          (_)->false end,
-    zealot_db:select(entry,[{where, F},{order, {1, descending}},{limit, {Offset,PageAmount}}]).
+    nsm_db:select(entry,[{where, F},{order, {1, descending}},{limit, {Offset,PageAmount}}]).
 
 acl_add_entry(_A,_B,_C) -> ok.

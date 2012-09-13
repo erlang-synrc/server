@@ -29,7 +29,7 @@ log(Key, Log, UId) ->
                          activity = Log,
                          time = erlang:now(),
                          uid = UId},
-    zealot_db:put(Record),
+    nsm_db:put(Record),
     check_operation(Key).
 
 
@@ -40,7 +40,7 @@ log(Key, Log, UId) ->
 %%than something they should not be counted
 -spec check_operation({string(), atom()}) -> ok.
 check_operation({Ip, _Action} = Key) ->
-    case zealot_db:select(prohibited, Key) of
+    case nsm_db:select(prohibited, Key) of
         [] ->
             ok;
         Data ->

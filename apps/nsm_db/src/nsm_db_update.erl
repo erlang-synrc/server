@@ -1,13 +1,4 @@
-%%% @author JLarky <jlarky@punklan.net>
-%%% @copyright (C) 2011, JLarky
-%%% @copyright Paynet Internet ve Bilisim Hizmetleri A.S. All Rights Reserved.
-%%% @doc
-%%% Module containing utilites transforming database. Used to migrate
-%%% data from one version to other
-%%% @end
-%%% Created : 11 Jul 2011 by JLarky <jlarky@punklan.net>
-
--module(zealot_db_update).
+-module(nsm_db_update).
 
 -include("user.hrl").
 -include("feed.hrl").
@@ -22,32 +13,32 @@
 
 
 transform_user() ->
-    All = zealot_db:all(user),
+    All = nsm_db:all(user),
     [begin
          io:format("transform ~p ... ", [element(2, U)]),
          UT = transform_user(U),
          io:format("ok. Write to db ... ", []),
-         R = zealot_db:put(UT),
+         R = nsm_db:put(UT),
          io:format("~p~n", [R])
      end || U <- All, size(U) == 20].
 
 transform_group()->
     [begin
          io:format("transform ~p ... ", [G#group.username]),
-         R = zealot_db:put(G#group{feed = feed:create()}),
+         R = nsm_db:put(G#group{feed = nsm_db:feed_create()}),
          io:format("~p~n", [R])
-     end || G <- zealot_db:all(group)].
+     end || G <- nsm_db:all(group)].
 
 add_subscription_exchanges() ->
     [begin
-         Groups = groups:list_group_per_user(User),
+         Groups = nsm_groups:list_group_per_user(User),
          GroupNames = [GN || #group_member{group_name = GN} <- Groups],
-         users:init_mq(User#user.username, GroupNames)
-     end || User <- zealot_db:all(user)].
+         nsm_users:init_mq(User#user.username, GroupNames)
+     end || User <- nsm_db:all(user)].
 
 delete_worker_queues() ->
-    Users = zealot_db:all(user),
-    Groups = zealot_db:all(group),
+    Users = nsm_db:all(user),
+    Groups = nsm_db:all(group),
 
     {ok, Ch} = nsm_mq:open([]),
     [begin
@@ -65,7 +56,7 @@ delete_worker_queues() ->
 fix_subscription_exchanges() ->
 
     [begin
-         Groups = groups:list_group_per_user(User),
+         Groups = nsm_groups:list_group_per_user(User),
          GroupNamesRK = [group_rk(GN) || #group_member{group_name = GN} <- Groups],
          GroupIdsRK = [group_rk(GN) || #group_member{group = GN} <- Groups],
          try
@@ -78,23 +69,23 @@ fix_subscription_exchanges() ->
              _:E->
                  io:format("~p: error: ~p", [User, E])
          end
-     end || #user{username = User} <- zealot_db:all(user)].
+     end || #user{username = User} <- nsm_db:all(user)].
 
 
 delete_feeds() ->
-    [zealot_db:delete(feed, F#feed.id) || F <- zealot_db:all(feed)],
-    [zealot_db:delete(commnent, element(2, C)) || C <- zealot_db:all(comment)],
+    [nsm_db:delete(feed, F#feed.id) || F <- nsm_db:all(feed)],
+    [nsm_db:delete(commnent, element(2, C)) || C <- nsm_db:all(comment)],
     % by entry id
-    [zealot_db:delete(entry, element(3, E)) || E <- zealot_db:all(entry)].
+    [nsm_db:delete(entry, element(3, E)) || E <- nsm_db:all(entry)].
 
 transform_user(U) ->
-    Starred = feed:create(),
-    Pinned = feed:create(),
-    Comments = feed:create(),
-    Discussions = feed:create(),
+    Starred = nsm_db:feed_create(),
+    Pinned = nsm_db:feed_create(),
+    Comments = nsm_db:feed_create(),
+    Discussions = nsm_db:feed_create(),
     U1 = insert_after(U, #user.direct, [Starred, Pinned, Comments, Discussions]),
     %% reset old feeds
-    U1#user{feed = feed:create(), direct = feed:create()}.
+    U1#user{feed = nsm_db:feed_create(), direct = nsm_db:feed_create()}.
 
 insert_after(Tuple, Pos, Values) ->
     L = tuple_to_list(Tuple),
