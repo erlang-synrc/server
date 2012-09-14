@@ -593,7 +593,7 @@ get_tables2(Setting,UId,GameFSM,Convert) ->
 
     QLC = OneLeftList ++ TwoLeftList ++ ThreeLeftList ++ Own ++ Rest,
     
-    ?INFO("~w:get_tables2 QLC = ~w", [?MODULE, QLC]), 
+%    ?INFO("~w:get_tables2 QLC = ~w", [?MODULE, QLC]), 
 
     FilteredQLC = lists:filter(
         fun(OneTable) ->

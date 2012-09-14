@@ -55,18 +55,19 @@ wf_update_me(Game) ->
 
 -spec update_me(atom()) -> ok.
 update_me(Game) ->
-	case wf:cookie("newcookie") of %% see nitrogen/src/handlers/session/simple_session_handler.erl
-	undefined -> %% cookies disabled. user can't login with disabled cookies, no need to count that
-	    ignore_cookies_disabled;
-	Cookie ->
-	    case wf:depickle(Cookie) of
-		{state, BinID, _} ->
-        ok = gen_server:call(?SERVER, {update_me, BinID, Game});
-		_wrong_cookie ->
-		    ignore_wrong_cookie %% this user can't play either
-	    end
-    end,
     ok.
+%	case wf:cookie("newcookie") of %% see nitrogen/src/handlers/session/simple_session_handler.erl
+%	undefined -> %% cookies disabled. user can't login with disabled cookies, no need to count that
+%	    ignore_cookies_disabled;
+%	Cookie ->
+%	    case wf:depickle(Cookie) of
+%		{state, BinID, _} ->
+%        ok = gen_server:call(?SERVER, {update_me, BinID, Game});
+%		_wrong_cookie ->
+%		    ignore_wrong_cookie %% this user can't play either
+%	    end
+%    end,
+%    ok.
 
 -spec user_count() -> integer().
 %% @doc counts how many browsers were active in last minutes.
