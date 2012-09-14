@@ -57,10 +57,7 @@ main_authorized() ->
                       CachedId -> CachedId
                  end,
 
-            Settings = case wf:session({wf:q(game_name),wf:user()}) of
-                                   undefined -> [];
-                                   X -> X
-                               end,
+            Settings = table_settings(),
 
             ?INFO("ViewTable Settings: ~p",[Settings]),
             Tables = get_tables(Id),
@@ -117,6 +114,13 @@ body() ->
     [ #section{ body=[ #h3{class="table-name", text=PageTitle},
 		       table_box(),
                        #lightbox{id=lightbox, style="display: none;", body=delete_table_info() } ]} ].
+
+table_settings() ->
+    case wf:session({wf:q(game_name), wf:user()}) of
+        undefined -> [];
+        X -> X
+    end.
+
 
 delete_table_info() ->
     CloseAction = #event{type=click, actions=#script{script="window:close()"}},
@@ -303,18 +307,10 @@ start_pre_comet_process(Id, Skip) ->
     WebPid = self(),
     ?INFO("start pre comet "),
     Ret = get_table(Id),
-    GameType =
-	case Ret of
-	    {ok, Tab} ->
-		case Tab#game_table.game_type of
-		    game_okey -> okey;
-		    Any -> Any
-		end;
-	    _ -> undefined
-	end,
-
     Table = case Ret of {ok,T} -> T; (_) -> #game_table{} end,
-
+    Settings = table_settings(),
+    TableId = wf:state(table_id),
+    GameType = Table#game_table.game_type,
     case Skip of 
          skip ->  wf:comet_global(fun() ->
 			    WebPid ! {comet_started, self()},
@@ -341,12 +337,23 @@ start_pre_comet_process(Id, Skip) ->
                             Tab1 = case get_table(Id) of 
                                  undefined -> #game_table{creator = wf:user()}; 
                                  [] -> #game_table{creator = wf:user()}; {ok,A}-> A end,
-
+                            TableName = proplists:get_value(table_name, Settings, "no table"),
+                            Rounds = proplists:get_value(rounds, Settings, 1),
+                            GameMode = proplists:get_value(game_mode, Settings, standard),
+                            GameSpeed = proplists:get_value(speed, Settings, normal),
+                            FeelLucky = proplists:get_value(feel_lucky, Settings, false),
                             GProcTable = Table#game_table{game_process = self(),
-                                                          owner = wf:user(), 
+                                                          id = TableId,
+                                                          age_limit = crypto:rand_uniform(20,30),
+                                                          game_mode = GameMode,
+                                                          game_speed = GameSpeed,
+                                                          feel_lucky = FeelLucky,
+                                                          owner = wf:user(),
                                                           creator = Tab1#game_table.creator,
-                                                          game_type = case GameType of okey -> game_okey; _A -> _A end },
-                         
+                                                          rounds = Rounds,
+                                                          name = TableName
+                                                         },
+
                             wf:state(table, GProcTable),
                             ?INFO("GProc Registration from Comet: ~p",[GProcTable]),
 
