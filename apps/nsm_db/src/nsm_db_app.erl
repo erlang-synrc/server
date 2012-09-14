@@ -19,6 +19,7 @@ wait_vnodes() ->
 start(_StartType, _StartArgs) ->
     application:start(nsx_utils),
     application:start(nsx_config),
+    application:start(nsm_mq),
     nsm_db:start(),
     nsm_db:initialize(),
     ?INFO("Waiting for Riak to Initialize...."),
