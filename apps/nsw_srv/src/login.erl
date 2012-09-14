@@ -257,7 +257,7 @@ login_form() ->
             body =
             [#link{postback = login_facebook,
                 body =
-                [#image{image = "/images/login/login-facebook-2.png",
+                [#image{image = "/images/login/login_fb.png",
                     style = "width:154px;height:22px",
                     alt = "Login with facebook"}]}]}].
 
