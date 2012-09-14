@@ -26,10 +26,10 @@ init(_Config, State) ->
         try uri_translator:translate(BasePath)
         catch
             _:{unknown_language, _} ->
-		?PRINT("uknown_Language"),
+%		?PRINT("uknown_Language"),
                 "404"; %% It should lead to a 404
             _:{unknown_translation, _, _} ->
-		?PRINT("unknown traslation"),
+%		?PRINT("unknown traslation"),
                 "404" %% It should lead to a 404
         end,
 

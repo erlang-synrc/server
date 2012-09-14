@@ -82,6 +82,7 @@ stress_test(NumberOfRooms) ->
 init([]) ->
     application:start(nprocreg),
     application:start(cowboy),
+    application:start(mimetypes),
 
     application:load(webmachine),
     {ok, BindAddress} = application:get_env(webmachine, bind_address),
@@ -105,25 +106,36 @@ init([]) ->
     gettext:recreate_db(),
 
     rpc:call(?APPSERVER_NODE,nsm_bg,init_workers,[]),
-%    rpc:call(?APPSERVER_NODE,nsm_db,init_db,[]),
 
     case rpc:call(?APPSERVER_NODE,nsm_db,get,[config, "debug/production", false]) of
          {ok, true} -> ok;
          _ -> create_tables()
     end,
 
-    %% Start Cowboy...
-%    Dispatch = [{'_', [{'_', nitrogen_cowboy, []}]}],
-%    HttpOpts = [{max_keepalive, 50}, {dispatch, Dispatch}],
-%    cowboy:start_listener(http, 100, cowboy_tcp_transport, [{port, Port}],
-%                                     cowboy_http_protocol, HttpOpts),
+    ?INFO("Dispatch2"),
 
-%    cowboy:start_listener(http,2,cowboy_tcp_transport,[{port, 8000}],
-%                                 mochicow_protocol,[{loop, {nitrogen_mochiweb,loop}}]),
+    Dispatch = [{'_', [
+                       {'_',nitrogen_cowboy,[]},
+                       {['...'],cowboy_http_static,[{directory,{priv_dir,nsw_srv,[]},{mimetypes,mime()}}]}
+                      ]
+               }], 
+    HttpOpts = [{max_keepalive, 50}, {dispatch, Dispatch}],
+    cowboy:start_listener(http, 100, cowboy_tcp_transport, [{port, Port}],
+                                     cowboy_http_protocol, HttpOpts),
 
-    {ok, { {one_for_one, 5, 10}, [?CHILD(webmachine_mochiweb, start, [Options], worker), DChild]} }.
+%    {ok, { {one_for_one, 5, 10}, [?CHILD(webmachine_mochiweb, start, [Options], worker), DChild]} }.
 
-%    {ok, { {one_for_one, 5, 10}, [DChild]} }.
+    {ok, { {one_for_one, 5, 10}, [DChild]} }.
+
+mime() ->
+    [
+     {<<".html">>, [<<"text/html">>]},
+     {<<".css">>, [<<"text/css">>]},
+     {<<".png">>, [<<"image/png">>]},
+     {<<".gif">>, [<<"image/gif">>]},
+     {<<".jpg">>, [<<"image/jpeg">>]},
+     {<<".js">>, [<<"application/javascript">>]}
+    ].
 
 dispatch() ->
     [

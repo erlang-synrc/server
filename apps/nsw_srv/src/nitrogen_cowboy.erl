@@ -6,32 +6,19 @@
 -record(state, {headers, body}).
 
 init({_Transport, http}, Req, Opts) ->
-    ?INFO("DocRoot: ~p",[Req]),
     Headers = proplists:get_value(headers, Opts, []),
     Body = proplists:get_value(body, Opts, "http_handler"),
-    ?INFO("Body: ~p",[Body]),
     {ok, Req, #state{headers=Headers, body=Body}}.
 
-
-handle(Req,_Opts) ->
-    {ok, DocRoot} = application:get_env(cowboy, document_root),
-    ?INFO("DocRoot: ~p",[DocRoot]),
-    RequestBridge = simple_bridge:make_request(cowboy_request_bridge,
-                                               {Req, DocRoot}),
-
-    %% Becaue Cowboy usese the same "Req" record, we can pass the 
-    %% previously made RequestBridge to make_response, and it'll
-    %% parse out the relevant bits to keep both parts (request and
-    %% response) using the same "Req"
-    ResponseBridge = simple_bridge:make_response(cowboy_response_bridge,
-                                                 RequestBridge),
-
-    %% Establishes the context with the Request and Response Bridges
+handle(Req, _Opts) ->
+    RequestBridge = simple_bridge:make_request(cowboy_request_bridge, {Req,code:priv_dir(nsw_srv)++"/static/"}), 
+    ResponseBridge = simple_bridge:make_response(cowboy_response_bridge, RequestBridge),
     nitrogen:init_request(RequestBridge, ResponseBridge),
-    
+    nitrogen:handler(path_query_handler, []),
+%    nitrogen:handler(dynamic_route_handler, []),
+    nitrogen:handler(i18n_route_handler, []),
+%    nitrogen:handler(nsw_srv_to_nitrogen_config_handler, []),
     {ok, NewReq} = nitrogen:run(),
-
-    %% This will be returned back to cowboy
     {ok, NewReq, _Opts}.
 
 terminate(_Req, _State) ->

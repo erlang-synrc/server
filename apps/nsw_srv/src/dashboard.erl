@@ -1,14 +1,13 @@
-%% -*- mode: nitrogen -*-
 -module (dashboard).
 -compile(export_all).
 -include_lib("nitrogen_core/include/wf.hrl").
--include_lib("nsm_srv/include/user.hrl").
--include_lib("nsm_srv/include/feed.hrl").
--include_lib("nsm_srv/include/attachment.hrl").
+-include_lib("nsm_db/include/user.hrl").
+-include_lib("nsm_db/include/feed.hrl").
+-include_lib("nsm_db/include/attachment.hrl").
 -include_lib("alog/include/alog.hrl").
 
 -include("elements/records.hrl").
--include_lib("nsm_srv/include/membership_packages.hrl").
+-include_lib("nsm_db/include/membership_packages.hrl").
 
 -include("gettext.hrl").
 -include("setup.hrl").
@@ -222,7 +221,7 @@ get_entries(StartFrom) ->
 
         {undefined, U} ->
             FeedId = UserInfo#user.feed,
-            case lists:member(U, rpc(users, get_blocked_users, [wf:user()])) of
+            case lists:member(U, rpc(nsm_users, get_blocked_users, [wf:user()])) of
                 true ->
                     wf:update(notification_area, #notice{type=message, title=?_T("You have blocked"),
                         body = user_blocked_message(U)}),
@@ -468,37 +467,37 @@ inner_event({comment_entry, _EId, _PanelId}, _) ->
     ?PRINT({comment,event,button});
 
 inner_event({unsubscribe, UserUid}, User) ->
-    rpc(users, remove_subscribe, [User, UserUid]),
+    rpc(nsm_users, remove_subscribe, [User, UserUid]),
     wf:wire("location.reload(true);");
 
 inner_event({subscribe, UserUid}, User) ->
-    rpc(users, subscribe_user, [User, UserUid]),
+    rpc(nsm_users, subscribe_user, [User, UserUid]),
     wf:wire("location.reload(true);");
 
 inner_event({set_user_status, Status}, User) ->
-    rpc(users, set_user_game_status, [User, Status]);
+    rpc(nsm_users, set_user_game_status, [User, Status]);
 
 inner_event({set_user_status}, User) ->
-    rpc(users, set_user_game_status, [User, wf:q(user_status)]);
+    rpc(nsm_users, set_user_game_status, [User, wf:q(user_status)]);
 
 inner_event({direct_message_to, CheckedUser}, _) ->
     autocomplete_select_event({struct, [{<<"id">>, CheckedUser},{<<"value">>, CheckedUser}]} , CheckedUser),
     wf:wire("set_focus_to_search()");
 
 inner_event({block, CheckedUser}, User) ->
-    rpc(users, block_user, [User, CheckedUser]),
+    rpc(nsm_users, block_user, [User, CheckedUser]),
     wf:update(blockunblock, #link{text=?_T("Unblock this user"), url="javascript:void(0)", postback={unblock, CheckedUser}}),
     wf:update(feed, user_blocked_message(CheckedUser));
 
 inner_event({unblock, CheckedUser}, User) ->
-    rpc(users, unblock_user, [User, CheckedUser]),
+    rpc(nsm_users, unblock_user, [User, CheckedUser]),
     FId = webutils:user_info(feed),
     Feeds = view_feed(undefined),
     wf:update(blockunblock, #link{text=?_T("Block this user"), url="javascript:void(0)", postback={block, CheckedUser}}),
     wf:update(feed, Feeds);
 
 inner_event({unblock_load, CheckedUser, Offset}, User) ->
-    rpc(users, unblock_user, [User, CheckedUser]),
+    rpc(nsm_users, unblock_user, [User, CheckedUser]),
     Feeds = view_feed(Offset),
     wf:update(blockunblock, #link{text=?_T("Block this user"), url="javascript:void(0)", postback={block, CheckedUser}}),
     wf:update(feed, Feeds);
@@ -563,7 +562,7 @@ on_more_entries({EntryId, _FeedId}, _Count) ->
 
 autocomplete_enter_event(SearchTerm, _Tag) ->
     AlreadySelected = wf:session_default(autocomplete_list_values, []),
-    DataU = case rpc(users, list_subscription, [wf:user ()]) of
+    DataU = case rpc(nsm_users, list_subscription, [wf:user ()]) of
             [] -> [];
             Sub ->
             [begin

@@ -211,7 +211,7 @@ section_body(gifts) ->
     </script>";
 section_body(user_tournaments) ->
     User = wf:user(),
-    Tournaments = rpc:call(?APPSERVER_NODE, tournaments, user_tournaments, [User]),
+    Tournaments = rpc:call(?APPSERVER_NODE, nsm_tournaments, user_tournaments, [User]),
 
     ?INFO("TS: ~p", [Tournaments]),
 
