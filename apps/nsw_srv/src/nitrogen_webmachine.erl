@@ -12,7 +12,7 @@
         ]).
 
 -include_lib("nitrogen_core/include/wf.hrl").
--include_lib("webmachine/include/webmachine.hrl").
+%-include_lib("webmachine/include/webmachine.hrl").
 -include("common.hrl").
 
 
