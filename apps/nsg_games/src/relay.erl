@@ -137,19 +137,18 @@ init([Topic, {lobby, GameFSM}, Params0, PlayerIds, Manager]) ->
     true = NoOfPlayers =/= undefined,
     true = NoOfPlayers =:= length(PlayerIds),
 
-    {table_name,TableName} = case TN =lists:keyfind(table_name,1,Settings) of false -> {table_name,"no table"}; _ -> TN end,
-    {rounds,Rounds} = case Rnds =lists:keyfind(rounds,1,Settings) of false -> {rounds,1}; _ -> Rnds end,
-    {game_mode,GameMode} = case GM =lists:keyfind(game_mode,1,Settings) of false -> {game_mode,standard}; _ -> GM end,
-    {owner,Owner} = case O =lists:keyfind(owner,1,Settings) of false -> {owner,"maxim"}; _ -> O end,
-
+    TableName = proplists:get_value(table_name, Settings, "no table"),
+    Rounds = proplists:get_value(rounds, Settings, 1),
+    GameMode = proplists:get_value(game_mode, Settings, standard),
+    Owner = proplists:get_value(owner, Settings, "maxim"), %% FIXME
     {Params,P,PE} = case rpc:call(?APPSERVER_NODE,pointing_rules,get_rules,[GameFSM, GameMode, Rounds]) of
-		     {ok, PR, PREx} -> {Params0 ++ [{pointing_rules, PR},{pointing_rules_ex, PREx}],PR,PREx};
-		     _ -> {Params0,#pointing_rule{rounds=1, game = game(GameFSM),
-							  kakush_winner = 1, kakush_other = 1, quota = 1},
-                                   [#pointing_rule{rounds=1, game = game(GameFSM),
-							  kakush_winner = 1, kakush_other = 1, quota = 1}]}
-    end,
-
+                        {ok, PR, PREx} -> {Params0 ++ [{pointing_rules, PR},{pointing_rules_ex, PREx}],PR,PREx};
+                        _ -> {Params0,#pointing_rule{rounds=1, game = game(GameFSM),
+                                                     kakush_winner = 1, kakush_other = 1, quota = 1},
+                              [#pointing_rule{rounds=1, game = game(GameFSM),
+                                              kakush_winner = 1, kakush_other = 1, quota = 1}]}
+                    end,
+    FeelLucky = proplists:get_value(feel_lucky, Settings, false),
 %    Params = Params0 ++ [{pointing_rules, PR},{pointing_rules_ex, PREx}],
 
     GProcVal = #game_table{game_type = GameFSM, 
@@ -158,6 +157,7 @@ init([Topic, {lobby, GameFSM}, Params0, PlayerIds, Manager]) ->
                            age_limit = crypto:rand_uniform(20,30),
                            game_mode = GameMode,
                            game_speed = normal,
+                           feel_lucky = FeelLucky,
                            owner = Owner,
                            creator = Owner,
                            rounds = Rounds,
