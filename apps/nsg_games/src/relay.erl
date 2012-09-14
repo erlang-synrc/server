@@ -140,6 +140,7 @@ init([Topic, {lobby, GameFSM}, Params0, PlayerIds, Manager]) ->
     TableName = proplists:get_value(table_name, Settings, "no table"),
     Rounds = proplists:get_value(rounds, Settings, 1),
     GameMode = proplists:get_value(game_mode, Settings, standard),
+    GameSpeed = proplists:get_value(speed, Settings, normal),
     Owner = proplists:get_value(owner, Settings, "maxim"), %% FIXME
     {Params,P,PE} = case rpc:call(?APPSERVER_NODE,pointing_rules,get_rules,[GameFSM, GameMode, Rounds]) of
                         {ok, PR, PREx} -> {Params0 ++ [{pointing_rules, PR},{pointing_rules_ex, PREx}],PR,PREx};
@@ -156,7 +157,7 @@ init([Topic, {lobby, GameFSM}, Params0, PlayerIds, Manager]) ->
                            id = Topic,
                            age_limit = crypto:rand_uniform(20,30),
                            game_mode = GameMode,
-                           game_speed = normal,
+                           game_speed = GameSpeed,
                            feel_lucky = FeelLucky,
                            owner = Owner,
                            creator = Owner,
