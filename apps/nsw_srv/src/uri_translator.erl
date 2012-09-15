@@ -48,7 +48,7 @@ language2([Word|Tail]) ->
 		   {ok, #ut_word{lang = Lang}} -> Lang;
 		   {error, duplicated} -> "en";
 		   {error, _} ->
-		       ?PRINT({unknown_language, Word}),
+%		       ?PRINT({unknown_language, Word}),
 		       undefined
 	       end
     end.
@@ -99,14 +99,14 @@ translate_word(to_en, ForeignWord, SrcLang) ->
     case rpc:call(?APPSERVER_NODE,nsm_db,get_translation,[{SrcLang,ForeignWord}]) of
 	{ok, #ut_translation{word = EnglishWord}} -> EnglishWord;
 	{error, _} ->
-	    ?ERROR("unknown translation: ~p", [{ForeignWord, SrcLang}]),
+%	    ?ERROR("unknown translation: ~p", [{ForeignWord, SrcLang}]),
 	    ForeignWord
     end;
 translate_word(from_en, EnglishWord, DstLang) ->
     case rpc:call(?APPSERVER_NODE,nsm_db,get_translation,[{DstLang, EnglishWord}]) of
 	{ok, #ut_translation{word = ForeignWord}} -> ForeignWord;
 	{error, _} ->
-	    ?ERROR("unknown translation: ~p", [{EnglishWord, DstLang}]),
+%	    ?ERROR("unknown translation: ~p", [{EnglishWord, DstLang}]),
 	    EnglishWord
     end.
 

@@ -1,28 +1,23 @@
 -module(nsw_srv_sup).
 -behaviour(supervisor).
--export([
-    start_link/0,
-    init/1,
-    create_tables/0,
-    dispatch/0
-]).
+-export([start_link/0, init/1, create_tables/1]).
 
 -include("setup.hrl").
 -include("loger.hrl").
 
--define(LOOP, {nitrogen_mochiweb, loop}).
 -define(CHILD(M, F, A, Type), {M, {M, F, A}, permanent, 5000, Type, [M]}).
 
 start_link() ->
     supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 
-create_tables() ->
+create_tables(Num) ->
+    Users = ["maxim","kate","alice","sustel","ahmettez","shyronnie","kunthar"], % TODO: chose randomly
     TavlaTwoPlayers = [rpc:call(?GAMESRVR_NODE,game_manager,create_table,
              [game_tavla,[{table_name,"maxim and alice"},
                           {speed,normal},
                           {rounds,1},
                           {game_mode,standard},
-                          {owner,"kunthar"}],[<<"maxim">>,<<"alice">>]])||X<-lists:seq(1,100)],
+                          {owner,"kunthar"}],[<<"maxim">>,<<"alice">>]])||X<-lists:seq(1,Num)],
     [{ok,T2P1,_}|_] = TavlaTwoPlayers,
     [{ok,T2P2,_}|_] = lists:reverse(TavlaTwoPlayers),
     ?INFO("Tavla two playrs rooms: ~p",[{T2P1,T2P2}]),
@@ -31,7 +26,7 @@ create_tables() ->
                           {speed,normal},
                           {rounds,1},
                           {game_mode,standard},
-                          {owner,"sustel"}],[<<"maxim">>,robot]])||X<-lists:seq(1,100)],
+                          {owner,"sustel"}],[<<"maxim">>,robot]])||X<-lists:seq(1,Num)],
     [{ok,TR1,_}|_] = TavlaRobot,
     [{ok,TR2,_}|_] = lists:reverse(TavlaRobot),
     ?INFO("Tavla bot rooms: ~p",[{TR1,TR2}]),
@@ -41,7 +36,7 @@ create_tables() ->
                           {rounds,1},
                           {sets,1},
                           {game_mode,color},
-                          {owner,"ahmettez"}],[<<"maxim">>,robot,robot,robot]])||X<-lists:seq(1,100)],
+                          {owner,"ahmettez"}],[<<"maxim">>,robot,robot,robot]])||X<-lists:seq(1,Num)],
     [{ok,OB1,_}|_] = OkeyBots,
     [{ok,OB2,_}|_] = lists:reverse(OkeyBots),
     ?INFO("Okey bot rooms: ~p~n",[{OB1,OB2}]),
@@ -51,7 +46,7 @@ create_tables() ->
                           {rounds,1},
                           {sets,1},
                           {game_mode,standard},
-                          {owner,"kate"}],[<<"maxim">>,<<"alice">>,robot,robot]])||X<-lists:seq(1,100)],
+                          {owner,"kate"}],[<<"maxim">>,<<"alice">>,robot,robot]])||X<-lists:seq(1,Num)],
     [{ok,OP1,_}|_] = OkeyPlayers,
     [{ok,OP2,_}|_] = lists:reverse(OkeyPlayers),
     ?INFO("Okey bot rooms: ~p~n",[{OP1,OP2}]).
@@ -88,14 +83,6 @@ init([]) ->
     {ok, BindAddress} = application:get_env(webmachine, bind_address),
     {ok, Port} = application:get_env(webmachine, port),
 
-    ?INFO("Starting Webmachine Server on ~s:~p~n", [BindAddress, Port]),
-
-    Options = [
-        {ip, BindAddress},
-        {port, Port},
-        {dispatch, dispatch()}
-    ],
-
     Restart = permanent,
     Shutdown = 2000,
     Type = worker,
@@ -105,25 +92,21 @@ init([]) ->
     gettext:change_gettext_dir(code:priv_dir(nsw_srv)),
     gettext:recreate_db(),
 
-    rpc:call(?APPSERVER_NODE,nsm_bg,init_workers,[]),
-
-    case rpc:call(?APPSERVER_NODE,nsm_db,get,[config, "debug/production", false]) of
+    case nsm_db:get(config, "debug/production", false) of
          {ok, true} -> ok;
-         _ -> create_tables()
+         _ -> create_tables(1)
     end,
 
-    ?INFO("Dispatch2"),
+    rpc:call(?APPSERVER_NODE,nsm_bg,init_workers,[]),
 
-    Dispatch = [{'_', [
-                       {'_',nitrogen_cowboy,[]},
-                       {['...'],cowboy_http_static,[{directory,{priv_dir,nsw_srv,[]},{mimetypes,mime()}}]}
-                      ]
-               }], 
+    Dispatch = [{'_', [ {'_',nitrogen_cowboy,[]},
+                        {['...'],cowboy_http_static,[{directory,{priv_dir,nsw_srv,[]},{mimetypes,mime()}}]} ] }], 
     HttpOpts = [{max_keepalive, 50}, {dispatch, Dispatch}],
+
+    ?INFO("Starting Cowboy Server on ~s:~p~n", [BindAddress, Port]),
+
     cowboy:start_listener(http, 100, cowboy_tcp_transport, [{port, Port}],
                                      cowboy_http_protocol, HttpOpts),
-
-%    {ok, { {one_for_one, 5, 10}, [?CHILD(webmachine_mochiweb, start, [Options], worker), DChild]} }.
 
     {ok, { {one_for_one, 5, 10}, [DChild]} }.
 
@@ -136,39 +119,4 @@ mime() ->
      {<<".jpg">>, [<<"image/jpeg">>]},
      {<<".js">>, [<<"application/javascript">>]}
     ].
-
-dispatch() ->
-    [
-        %% Static content handlers...
-        {["js", '*'], static_resource, [{root, code:priv_dir(nsw_srv)++"/static/js"}]},
-        {["css", '*'], static_resource, [{root, code:priv_dir(nsw_srv)++"/static/css"}]},
-        {["images", '*'], static_resource, [{root, code:priv_dir(nsw_srv)++"/static/images"}]},
-        {["fonts", '*'], static_resource, [{root, code:priv_dir(nsw_srv)++"/static/fonts"}]},
-        {["files", '*'], static_resource, [{root, code:priv_dir(nsw_srv)++"/static/files"}]},
-        {["nitrogen", '*'], static_resource, [{root, code:priv_dir(nsw_srv)++"/static/nitrogen"}]},
-        {["test", '*'], static_resource, [{root, code:priv_dir(nsw_srv)++"/static/test"}]},
-        {["testauth", '*'], static_resource, [{root, code:priv_dir(nsw_srv)++"/static/testauth"}]},
-        {["facebook_login", '*'], static_resource, [{root, code:priv_dir(nsw_srv)++"/static/facebook_login"}]},
-        {["robots.txt"], static_resource, [{root, code:priv_dir(nsw_srv)++"/static/robots.txt"}]},
-        {["favicon.ico"], static_resource, [{root, code:priv_dir(nsw_srv)++"/static/favicon.ico"}]},
-
-
-        %% Add routes to your modules here. The last entry makes the
-        %% system use the dynamic_route_handler, which determines the
-        %% module name based on the path. It's a good way to get
-        %% started, but you'll likely want to remove it after you have
-        %% added a few routes.
-        %%
-        %% p.s. - Remember that you will need to restart webmachine_mochiweb
-        %%        (or restart the vm) for dispatch changes to take effect!!!
-        %%
-        %% you can restart it by erlang:exit(whereis(webmachine_mochiweb), kill).
-        %%
-        %% {["path","to","module1",'*'], nitrogen_webmachine, module_name_1}
-        %% {["path","to","module2",'*'], nitrogen_webmachine, module_name_2}
-        %% {["path","to","module3",'*'], nitrogen_webmachine, module_name_3}
-        {['*'], nitrogen_webmachine, i18n_route_handler}
-    ].
-
-
 
