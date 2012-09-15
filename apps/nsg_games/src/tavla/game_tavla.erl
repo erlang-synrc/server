@@ -339,6 +339,9 @@ state_vido({#tavla_vido_request{}, _Pid}, _, State) ->
 
 % SURRENDER
 
+state_surrender({#tavla_move{moves = Moves, player = Player}, Pid}, _, #state{wait_list = _List} = State) ->
+    tavla_move(Moves,Player,Pid,State);
+
 state_surrender({#tavla_surrender_answer{from=From,to=To,answer=A}, _Pid}, _, State) ->
     Relay = State#state.relay,
     Vido = State#state.vido,
