@@ -319,6 +319,12 @@ state_move({#tavla_vido_answer{from=From,to=To,answer=A}, Pid}, _, State) ->
     vido_answer(From,To,A,Pid,State),
     {reply, ok, state_move, State};
 
+state_move({#tavla_surrender{}, Pid}, _, State) ->
+    Relay = State#state.relay,
+    PI = lists:keyfind(Pid, #'TavlaPlayer'.pid, State#state.players),
+    publish_event(Relay, #tavla_surrender_request{from = PI#'TavlaPlayer'.player_id}),
+    {reply, ok, state_surrender, State};
+
 state_move({#tavla_move{moves = Moves, player = Player}, Pid}, _, #state{wait_list = _List} = State) ->
     tavla_move(Moves,Player,Pid,State).
 
