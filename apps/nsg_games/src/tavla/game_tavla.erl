@@ -247,6 +247,14 @@ vido_answer(From,To,A,_Pid,State) ->
               % {reply, ok, state_finished, State}
     end.
 
+tavla_roll(Pid,State) ->
+    Diceroll = roll(2),
+    Relay = State#state.relay,
+    PI = lists:keyfind(Pid, #'TavlaPlayer'.pid, State#state.players),
+    publish_event(Relay, #tavla_rolls{player = PI#'TavlaPlayer'.player_id,dices=Diceroll}),
+    {reply, ok, state_move, State}.
+
+
 tavla_move(Moves, Player, _Pid, State) ->
     Relay = State#state.relay,
     ?INFO("tavla_move{} received from client ~p",[{Moves,Player}]),
@@ -325,6 +333,9 @@ state_move({#tavla_surrender{}, Pid}, _, State) ->
     publish_event(Relay, #tavla_surrender_request{from = PI#'TavlaPlayer'.player_id}),
     {reply, ok, state_surrender, State};
 
+state_move({#tavla_roll{}, Pid}, _,  #state{wait_list = _List} = State ) ->
+    tavla_roll(Pid,State);
+
 state_move({#tavla_move{moves = Moves, player = Player}, Pid}, _, #state{wait_list = _List} = State) ->
     tavla_move(Moves,Player,Pid,State).
 
@@ -397,11 +408,7 @@ state_rolls({#tavla_vido_answer{from=From,to=To,answer=A}, Pid}, _, State) ->
     vido_answer(From,To,A,Pid,State);
 
 state_rolls({#tavla_roll{}, Pid}, _,  #state{wait_list = _List} = State ) ->
-    Diceroll = roll(2),
-    Relay = State#state.relay,
-    PI = lists:keyfind(Pid, #'TavlaPlayer'.pid, State#state.players),
-    publish_event(Relay, #tavla_rolls{player = PI#'TavlaPlayer'.player_id,dices=Diceroll}),
-    {reply, ok, state_move, State}.
+    tavla_roll(Pid,State).
 
 state_ready_next_round({#tavla_ready{}, _Pid}, _, State) ->
     case State#state.ready of
