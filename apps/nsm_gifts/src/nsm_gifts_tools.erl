@@ -23,6 +23,7 @@
 
 
 -define(FIXED_CURRENCY_AMOUNT, 5).
+-define(HACKED_PRICE, 5.2).
 
 %%
 %% API Functions
@@ -92,10 +93,12 @@ dumb_store(List) ->
         [begin
              OurPrice = round(UserPrice * A),
              KakushCurrencyPre = round(OurPrice * D / 100),
-             KakushCurrency = if KakushCurrencyPre < ?FIXED_CURRENCY_AMOUNT -> ?FIXED_CURRENCY_AMOUNT;
-                                 true -> KakushCurrencyPre
-                              end,
-             KakushPoints = round(B * C * (OurPrice / 100 - KakushCurrency)),
+             {KakushCurrency, KakushPoints} =
+                 if KakushCurrencyPre < ?FIXED_CURRENCY_AMOUNT ->
+                        {?FIXED_CURRENCY_AMOUNT, round(B * C * (?HACKED_PRICE - ?FIXED_CURRENCY_AMOUNT))};
+                    true ->
+                        {KakushCurrencyPre, round(B * C * (OurPrice / 100 - KakushCurrencyPre))}
+                 end,
              #gift{
                    vendor_id = VendorId,
                    categories = [1],
