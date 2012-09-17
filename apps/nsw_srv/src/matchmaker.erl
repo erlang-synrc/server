@@ -175,8 +175,23 @@ matchmaker_submenu() ->
 
 
 el_inside_play() ->
-   
-    URL = lists:concat([?_U("/client"),"/",q_game_type(),"/id/1000001"]), 
+   %%    GameId = ensure_lucky_game(Game),
+%%     UId = wf:user(),
+%%     Settings = wf:session({q_game_type(),wf:user()}),
+%%     Game = proplists:get_value(game, Settings),
+%%     LTs = get_lucky_tables2(UId, Game),
+%%     Table =
+%%         case connect_to_lucky(LTs) of
+%%             {ok, T} ->
+%%                 T;
+%%             error ->
+%%                 Params
+%%                 T = create_lucky_table(),
+%%                 
+%%         end,
+
+    RealTableId = "1000001",
+    URL = lists:concat([?_U("/client"),"/",q_game_type(),"/id/", RealTableId]), 
     LuckyAction = #event{type=click, actions=webutils:new_window_js(URL)},
     B = #span{style="font-weight:bold"},
     [
@@ -646,6 +661,34 @@ convert_to_map(Data,_Setting,UId,GameFSM) ->
                           owner = _Owner,
                           creator = Owner} = _Tab <- Data ].
 
+
+
+get_lucky_tables2(UId, Game) ->
+    Lucky = true,
+
+    Check = fun(Param,Value) ->
+                   case Param of
+                        undefined -> true;
+                        _Else -> Param == Value
+                   end end,
+
+    Cursor = fun() ->
+                qlc:cursor(qlc:q([V || {{_,_,K},_,V=#game_table{game_type=G,
+                                                   users=U,
+                                                   feel_lucky = L}} <- gproc:table(props),
+                           lists:member(robot, U),
+                           Check(Game, G),
+                           Check(Lucky, L)])
+                )
+    end,
+
+    Tables = qlc:next_answers(Cursor(), 10),
+
+    ?INFO("~w:get_lucky_tables2 Tables = ~w", [?MODULE, Tables]),
+    Tables.
+
+
+
 list_users(Users) -> [ " " ++ case User of robot -> "robot"; User -> User end ++ " " || User <- Users].
 list_users_links(Users, Owner) ->
     [ " " ++ case User of robot -> "robot"; 
@@ -1098,6 +1141,7 @@ u_event(create_game) ->
     webutils:post_user_system_message(Desc);
 
 
+%% XXX: 
 u_event(lucky_play_button) ->
     wf:session("108","1000001"),
     wf:session("1000001","1000001"),
