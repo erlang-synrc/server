@@ -280,7 +280,7 @@ ui_game_type() ->
 		    {?_T("Countdown from 10"), countdown}];
 	       "tavla" ->
 		   [{?_T("Standard"),  standard},
-		    {?_T("Pair"),      color},
+		    {?_T("Pair"),      paired},
 		    {?_T("Kakara Tavla"),    kakaratavla}]
 	   end,
     [

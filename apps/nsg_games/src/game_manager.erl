@@ -1,4 +1,4 @@
--module(game_manager). % simple game manager, starts root game processes accorting to settings
+-module(game_manager). % simple game manager, starts root game processes according to settings
 -author('Maxim Sokhatsky <maxim@synrc.com>').
 
 -include_lib("nsg_srv/include/requests.hrl").
@@ -100,8 +100,8 @@ create_game_monitor(Topic, GameFSM, Params, Players, State) ->
             GameMode = proplists:get_value(game_mode, Params, standard),
             ?INFO("Create Root Game Process (Game Monitor): ~p Mode: ~p",[GameFSM, GameMode]),
             RelayInit = case {GameFSM,GameMode} of
-                             {game_tavla,paired} -> paired_tavla:start(Topic, GameFSM, Params, Players, self());
-                             X -> relay:start(Topic, GameFSM, Params, Players, self())
+                {{lobby,game_tavla},paired} -> paired_tavla:start(Topic, GameFSM, Params, Players, self());
+                X -> relay:start(Topic, GameFSM, Params, Players, self())
             end,
             case RelayInit of
                 {ok, Srv} ->

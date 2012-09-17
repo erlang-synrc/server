@@ -57,8 +57,8 @@
 -export([x/1]).
 
 -include_lib("nitrogen_core/include/wf.hrl").
--include_lib("nsm_srv/include/user.hrl").
--include_lib("nsm_srv/include/feed.hrl").
+-include_lib("nsm_db/include/user.hrl").
+-include_lib("nsm_db/include/feed.hrl").
 -include("elements/records.hrl").
 -include("common.hrl").
 -include("setup.hrl").
@@ -163,6 +163,7 @@ game_speed_to_string(slow) -> ?_T("Slow").
 game_mode_to_string(color) -> ?_T("Color");
 game_mode_to_string(evenodd) -> ?_T("Even/Odd");
 game_mode_to_string(standard) -> ?_T("Standard");
+game_mode_to_string(paired) -> ?_T("Pair");
 game_mode_to_string(countdown) -> ?_T("Countdown from 10");
 game_mode_to_string(kakaratavla) -> ?_T("Kakara Tavla").
 
