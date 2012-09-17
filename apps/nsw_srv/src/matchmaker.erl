@@ -175,13 +175,13 @@ matchmaker_submenu() ->
 
 
 el_inside_play() ->
-    URL = lists:concat([?_U("/view-table"),"/", ?_U(q_game_type()), "/id/lucky"]),
+   
+    URL = lists:concat([?_U("/client"),"/",q_game_type(),"/id/1000001"]), 
     LuckyAction = #event{type=click, actions=webutils:new_window_js(URL)},
     B = #span{style="font-weight:bold"},
     [
         "<span id='guidersplayblock'>",
-        #link{postback=lucky_play_button, text=?_T("PLAY"),
-            actions=LuckyAction},
+        #link{postback=lucky_play_button, text=?_T("PLAY"), actions=LuckyAction},
         B#span{class="ttl", text=?_T("I Am Feeling Lucky")},
         B#span{text=?_T("You have no chance to get any gift points. Fast game only.")},
         "</span>"
@@ -1099,7 +1099,9 @@ u_event(create_game) ->
 
 
 u_event(lucky_play_button) ->
-    wf:redirect(?_U(lists:concat(["/matchmaker/", q_game_type()])));
+    wf:session("108","1000001"),
+    wf:session("1000001","1000001"),
+    wf:redirect(?_U(lists:concat(["/matchmaker/"++q_game_type()])));
 
 u_event({info, {Target, TId}}) ->
     {ok, TableSettings} = case Target of
