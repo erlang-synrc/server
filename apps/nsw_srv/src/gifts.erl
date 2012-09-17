@@ -112,10 +112,22 @@ product_list_paged(Page) ->
         "<ul class='prod-list'>",
         [
 			["<li>
-				<div class='box'>
-					<h2 class='head'>"++ ?_T("Price") ++ ": " ++ integer_to_list(OneGift#gift.kakush_currency) ++ "<br>" 
-                    ++ ?_T("Kakaush") ++ ": " ++ integer_to_list(OneGift#gift.kakush_point) ++ "</h2>
-					<div class='img'>",
+				<div class='box'>",
+                    #singlerow { style="width:100%;", cells=[
+                        #tablecell{body=
+        					"<h2 class='head'>"++ ?_T("Price") ++ ":&nbsp;" ++ integer_to_list(OneGift#gift.kakush_currency) ++ "<br>" 
+                            ++ ?_T("Kakuş") ++ ":&nbsp;" ++ integer_to_list(OneGift#gift.kakush_point) ++ "</h2>"
+                        },
+                        #tablecell{
+                            style="text-align:right; background:#9d9d9d; color:#fff; 
+                                   font-size:18px; padding-right:5px",
+                            body=[
+                                affiliates:kurus_to_string(OneGift#gift.our_price),
+                                #image{image="images/tl_white.svg", style="width:12px; height:16px; padding-left:3px;"}
+                            ]
+                        }
+                    ]},
+					"<div class='img'>",
                     #link{body=#image{image=OneGift#gift.image_small_url, style="width:144px; height:118px;"}, 
                         postback={show_details, OneGift#gift.description_long, OneGift#gift.image_big_url}},
                     "</div>
