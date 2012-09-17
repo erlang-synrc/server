@@ -351,11 +351,12 @@ handle_call(#join_game{game = GameId}, _From, State) ->
     User = State#state.user,
     Id = User#'PlayerInfo'.id,
 %    ?INFO("join game user ~p from ~p", [Id,_From]),
-    case {Participation, game_manager:is_topic(GameId)} of
+    case {Participation, game_manager:get_relay(GameId) =/= undefined} of
         {#participation{}, _} ->
             {reply, {error, already_joined}, State};
         {false, true} ->
-            {ok, Relay} = game_manager:get_relay(GameId),
+            Relay = game_manager:get_relay(GameId),
+            ?INFO("join to game relay: ~p",[Relay]),
             true = is_pid(Relay),
             case relay:can_observe(Relay, Id) of
                 true ->
@@ -428,7 +429,7 @@ handle_cast({bot_session_attach, UserInfo}, State = #state{user = undefined}) ->
 
 handle_cast({bot_join_game, GameId}, State) ->
 %    ?INFO("bot join game", []),
-    {ok, Relay} = game_manager:get_relay(GameId),
+    Relay = game_manager:get_relay(GameId),
     Part = #participation{game_id = GameId, pid = Relay, role = player},
     {noreply, State#state{games = [Part | State#state.games]}};
 

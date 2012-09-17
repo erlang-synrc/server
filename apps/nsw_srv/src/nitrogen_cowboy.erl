@@ -1,6 +1,7 @@
 -module(nitrogen_cowboy).
 -include_lib("nitrogen_core/include/wf.hrl").
--include("common.hrl").
+-include_lib("cowboy/include/http.hrl").
+-include("loger.hrl"). 
 -export([init/3, handle/2, terminate/2]).
 
 -record(state, {headers, body}).
@@ -15,11 +16,11 @@ handle(Req, _Opts) ->
     ResponseBridge = simple_bridge:make_response(cowboy_response_bridge, RequestBridge),
     nitrogen:init_request(RequestBridge, ResponseBridge),
     nitrogen:handler(path_query_handler, []),
-%    nitrogen:handler(dynamic_route_handler, []),
+%   nitrogen:handler(dynamic_route_handler, []),
     nitrogen:handler(i18n_route_handler, []),
-%    nitrogen:handler(nsw_srv_to_nitrogen_config_handler, []),
-    {ok, NewReq} = nitrogen:run(),
-    {ok, NewReq, _Opts}.
+%   nitrogen:handler(nsw_srv_to_nitrogen_config_handler, []),
+    {ok, Data} = nitrogen:run(), 
+    {ok, Data, _Opts}.
 
 terminate(_Req, _State) ->
     ok.

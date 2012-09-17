@@ -64,7 +64,8 @@ init([Owner, PlayerInfo, GameId]) ->
 
 handle_call({send_message, Msg0}, _From, State) ->
     BPid = State#state.bot,
-    Msg = game_manager:flashify(Msg0),
+    timer:sleep(10),
+    Msg = flashify(Msg0),
     ?INFO("TAVLABOT message: ~p",[Msg0]),
     BPid ! Msg,
     {reply, ok, State};
@@ -472,7 +473,7 @@ do_skip(State) ->
 
 do_move(State, Dices) ->
     Delay = get_delay(State),
-    game_manager:simulate_delay(take, Delay),
+    simulate_delay(take, Delay),
     S = State#state.conn,
     GameId = State#state.gid,
     Id = State#state.uid,
@@ -490,3 +491,39 @@ do_move(State, Dices) ->
 get_delay(#state{is_robot = true, delay = Delay}) -> Delay;
 get_delay(_) -> 0.
 
+flashify(R) when is_tuple(R) ->
+    [RecName | Rest] = tuple_to_list(R),
+    Rest1 = lists:map(fun
+                          (X) -> flashify(X)
+                      end, Rest),
+    list_to_tuple([RecName | Rest1]);
+flashify([{Key, _Value} | _] = P) when is_atom(Key) ->
+    lists:map(fun
+                  ({K, V}) when is_atom(K) -> {K, flashify(V)}
+              end, P);
+flashify(A) when A == true -> A;
+flashify(A) when A == false -> A;
+flashify(A) when A == null -> A;
+flashify(A) when A == undefined -> A;
+flashify(A) when is_atom(A) ->
+    list_to_binary(atom_to_list(A));
+flashify(Other) ->
+    Other.
+
+time_to_sleep(_, Delay) ->
+    erlang:trunc((Delay / 3) * 2).
+
+simulate_delay(Action, Delay) ->
+    TheDelay = time_to_sleep(Action, Delay),
+    receive
+        #game_paused{action = <<"pause">>} ->
+            wait_for_resume()
+    after TheDelay ->
+            ok
+    end.
+
+wait_for_resume() ->
+    receive
+        #game_paused{action = <<"resume">>} ->
+            ok
+    end.
