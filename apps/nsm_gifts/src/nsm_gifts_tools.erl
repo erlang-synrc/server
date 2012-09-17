@@ -22,7 +22,6 @@
         ]).
 
 
--define(PRICE_THRESHOLD, 2000). %% 20 TL
 -define(FIXED_CURRENCY_AMOUNT, 5).
 
 %%
@@ -93,7 +92,7 @@ dumb_store(List) ->
         [begin
              OurPrice = round(UserPrice * A),
              KakushCurrencyPre = round(OurPrice * D / 100),
-             KakushCurrency = if KakushCurrencyPre < ?PRICE_THRESHOLD -> ?FIXED_CURRENCY_AMOUNT;
+             KakushCurrency = if KakushCurrencyPre < ?FIXED_CURRENCY_AMOUNT -> ?FIXED_CURRENCY_AMOUNT;
                                  true -> KakushCurrencyPre
                               end,
              KakushPoints = round(B * C * (OurPrice / 100 - KakushCurrency)),
