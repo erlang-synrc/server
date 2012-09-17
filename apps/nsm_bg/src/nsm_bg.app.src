@@ -6,7 +6,6 @@
   {applications, [
                   kernel,
                   stdlib,
-                  nsm_db,
                   nsm_mq
                  ]},
   {mod, { nsm_bg_app, []}},
