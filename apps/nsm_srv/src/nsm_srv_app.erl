@@ -7,7 +7,7 @@
 start(_StartType, _StartArgs) ->
     application:start(nsx_utils),
     application:start(nsm_bg),
-    nsm_bg:init_workers(),
+%    nsm_bg:init_workers(),
 %    nsm_db:start(),
 %    nsm_db:initialize(),
     A = nsm_srv_sup:start_link(),

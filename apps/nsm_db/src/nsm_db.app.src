@@ -5,7 +5,7 @@
   {registered, []},
   {applications, [
                   kernel,
-                  stdlib,riak_kv,nsx_config,nsx_utils
+                  stdlib,riak_kv,nsx_config,nsx_utils,gproc
                  ]},
   {mod, { nsm_db_app, []}},
   {env, []}

@@ -1,5 +1,6 @@
 ## Name of the node
 -name GAMESERVER_NODE
+-boot start_sasl
 -sasl errlog_type all
 -mnesia dir data
 -gproc gproc_dist all
