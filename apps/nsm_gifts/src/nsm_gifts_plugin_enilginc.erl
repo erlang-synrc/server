@@ -32,9 +32,9 @@
 -define(CATEGORIES_URL, "http://www.enilginc.com/xml/kategoriler.asp?ip=188.40.111.156").
 -define(STOCK_URL, "http://www.enilginc.com/xml/stok.asp?ip=188.40.111.156").
 
--define(PRODUCTS_FILE, "/home/serge/tmp/kaka/urunler").
--define(CATEGORIES_FILE, "/home/serge/tmp/kaka/kategoriler").
--define(STOCK_FILE, "/home/serge/tmp/kaka/stok").
+-define(PRODUCTS_FILE, "/home/kakauser/tmp/kaka/urunler").
+-define(CATEGORIES_FILE, "/home/kakauser/tmp/kaka/kategoriler").
+-define(STOCK_FILE, "/home/kakauser/tmp/kaka/stok").
 
 -record(product,
         {
