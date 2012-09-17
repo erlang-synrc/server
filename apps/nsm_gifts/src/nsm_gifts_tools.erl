@@ -92,10 +92,10 @@ dumb_store(List) ->
     List2 =
         [begin
              OurPrice = round(UserPrice * A),
-             KakushPoints = round(B * C * OurPrice),
+             KakushPoints = round(B * C * OurPrice / 100),
              KakushCurrency =
                  if OurPrice < ?PRICE_THRESHOLD -> ?FIXED_CURRENCY_AMOUNT;
-                    true -> round(OurPrice * D)
+                    true -> round(OurPrice * D /100)
                  end,
              #gift{
                    vendor_id = VendorId,
