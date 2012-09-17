@@ -200,7 +200,7 @@ get_entries(StartFrom) ->
     {UserFiler, _IsGroup, _AddFilter} = case {wf:q("user"), wf:q("group")} of
         {undefined, undefined} -> {undefined, false, undefined};
         {undefined, GroupName} ->
-            Group = rpc(groups, get_group,[GroupName]),
+            Group = rpc(nsm_groups, get_group,[GroupName]),
             {Group#group.feed, true, feed};
         {UUid, _}              -> {UUid, false, user}
     end,
@@ -571,7 +571,7 @@ autocomplete_enter_event(SearchTerm, _Tag) ->
             end || #subscription{whom = Who} <- Sub,
                 lists:member(list_to_binary(string:to_lower(Who)), AlreadySelected)=:=false ]
         end,
-    DataG = case rpc(groups, list_group_per_user_with_count, [wf:user(),wf:user()]) of
+    DataG = case rpc(nsm_groups, list_group_per_user_with_count, [wf:user(),wf:user()]) of
         [] -> [];
         Gs ->
             [begin
