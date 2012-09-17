@@ -77,7 +77,7 @@ init_workers() ->
     end.
 
 init([]) ->
-%    init_workers().
+    init_workers(),
     {ok,#state{}}.
 
 handle_call(start_all_feed_workers, _From, State) ->

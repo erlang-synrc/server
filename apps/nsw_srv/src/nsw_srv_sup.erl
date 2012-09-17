@@ -94,10 +94,8 @@ init([]) ->
 
     case nsm_db:get(config, "debug/production", false) of
          {ok, true} -> ok;
-         _ -> create_tables(1)
+         _ -> create_tables(100)
     end,
-
-%    rpc:call(?APPSERVER_NODE,nsm_bg,init_workers,[]),
 
     Dispatch = [{'_', [ {'_',nitrogen_cowboy,[]},
                         {['...'],cowboy_http_static,[{directory,{priv_dir,nsw_srv,[]},{mimetypes,mime()}}]} ] }], 
