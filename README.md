@@ -78,7 +78,7 @@ Symlink required riak libraries to your erlang libs dir:
     $ ln -s /mnt/glusterfs/apps/riak/rel/riak/lib/ \
          {riak_sysmon,riak_pipe,riak_kv,riak_core,poolboy, \
           luke,erlang_js,riak_pb,riak_control,webmachine,bitcask, \
-          folsom,riak_api,sext,eleveldb}-* ~/erl-r14/lib/
+          folsom,riak_api,sext,eleveldb,protobuffs}-* ~/erl-r14/lib/
 
 For Ubuntu users please install riak from prebuilt binaries from Basho site.
 Then remove riak from autostart and put its libraries (given in previous example)
