@@ -434,6 +434,10 @@ handle_info({disconnect, Pid}, State) ->
 handle_info(die, State) ->
     {stop, normal, State};
 
+handle_info({get_second_level_relay, {Pid, Ref}, _UserId}, State) ->
+    Self = self(),
+    Pid ! {Self, {Ref, {ok, Self}}},
+    {noreply, State};
 
 handle_info(Info, State) ->
     {stop, {unknown_info, Info}, State}.
