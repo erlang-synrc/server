@@ -118,11 +118,13 @@
          }).
 
 -record(pause_game, {
+          table_id :: integer(),
           game    :: 'GameId'(),
           action  :: string()
          }).
 
 -record(game_paused, {
+          table_id :: integer(),
           game    :: 'GameId'(),
           action  :: string(),
           who     :: 'PlayerId'(),

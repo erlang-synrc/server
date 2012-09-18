@@ -2,7 +2,7 @@
 -author('Maxim Sokhatsky <maxim@synrc.com>').
 -behaviour(gen_server).
 
--export([start/3, robot_init/1, init_state/2, join_game/1, get_session/1,
+-export([start/3, start_link/3, robot_init/1, init_state/2, join_game/1, get_session/1,
          send_message/2, call_rpc/2, do_skip/1, do_rematch/1, first_move_table/0,
          make_first_move/1, follow_board/2 ]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
@@ -55,6 +55,9 @@ join_game(Pid) ->
 start(Owner, PlayerInfo, GameId) ->
     gen_server:start(?MODULE, [Owner, PlayerInfo, GameId], []).
 
+start_link(Owner, PlayerInfo, GameId) ->
+    gen_server:start_link(?MODULE, [Owner, PlayerInfo, GameId], []).
+
 init([Owner, PlayerInfo, GameId]) ->
     {ok, SPid} = game_session:start_link(self()),
     game_session:bot_session_attach(SPid, PlayerInfo),
@@ -64,7 +67,6 @@ init([Owner, PlayerInfo, GameId]) ->
 
 handle_call({send_message, Msg0}, _From, State) ->
     BPid = State#state.bot,
-    timer:sleep(10),
     Msg = flashify(Msg0),
     ?INFO("TAVLABOT message: ~p",[Msg0]),
     BPid ! Msg,

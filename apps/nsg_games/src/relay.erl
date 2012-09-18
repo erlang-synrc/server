@@ -720,7 +720,7 @@ create_robot(State) ->
     User = auth_server:robot_credentials(),
     NUId = User#'PlayerInfo'.id,
     BM = bot_module(State#state.rules_module),
-    {ok, NPid} = BM:start(self(), User, State#state.topic),
+    {ok, NPid} = BM:start_link(self(), User, State#state.topic),
     SPid = BM:get_session(NPid),
     {NPid, SPid, NUId, User}.
 

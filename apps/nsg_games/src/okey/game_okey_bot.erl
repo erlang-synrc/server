@@ -1,7 +1,7 @@
 -module(game_okey_bot).
 -behaviour(gen_server).
 
--export([start/3,robot_init/1]).
+-export([start/3, start_link/3, robot_init/1]).
 -export([init_state/2, join_game/1, get_session/1]).
 -export([send_message/2]).
 -export([call_rpc/2]).
@@ -51,6 +51,9 @@ join_game(Pid) ->
 
 start(Owner, PlayerInfo, GameId) ->
     gen_server:start(?MODULE, [Owner, PlayerInfo, GameId], []).
+
+start_link(Owner, PlayerInfo, GameId) ->
+    gen_server:start_link(?MODULE, [Owner, PlayerInfo, GameId], []).
 
 init([Owner, PlayerInfo, GameId]) ->
     {ok, SPid} = game_session:start_link(self()),

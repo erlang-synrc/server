@@ -269,7 +269,7 @@ handle_call(#subscribe_player_rels{players = Players}, _From,
                    rels_notif_channel = RelsChannel,
                    rels_players = RelsPlayers,
                    rpc = RPC} = State) ->
-    ?INFO("subscribe player relations notifications", []),
+    ?INFO("subscribe player relations notifications: ~p", [Players]),
     UserId = User#'PlayerInfo'.id,
     UserIdStr = binary_to_list(UserId),
     %% Create subscription if we need

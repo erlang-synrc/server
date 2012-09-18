@@ -245,6 +245,8 @@ fields(tavla_surrender_request) ->
     record_info(fields, tavla_surrender_request);
 fields(tavla_ack) ->
     record_info(fields, tavla_ack);
+fields(tavla_board) ->
+    record_info(fields, tavla_board);
 fields(tavla_accept_timeout) ->
     record_info(fields, tavla_accept_timeout).
 

@@ -37,6 +37,8 @@
           stats			:: pid(),
           relay                 :: pid(),
           vido                  :: integer(),
+          game_mode = undefined :: atom(),
+          table_id = 1          :: integer(),
           relay_monitor		:: pid(),
           rounds                :: integer(),
           current_round         :: integer(),
@@ -161,6 +163,7 @@ init([Relay, Pids, GameId, Settings]) ->
                                end,Players, [1,2]),
     State = #state{players = ColoredPlayers, wait_list = Pids, relay = Relay},
     Speed = proplists:get_value(speed, Settings),
+    TableId = proplists:get_value(table_id, Settings),
     MulFactor = proplists:get_value(double_points, Settings, 1),
     SlangFlag = proplists:get_value(slang, Settings, false),
     ObserverFlag = proplists:get_value(deny_observers, Settings, false),
@@ -168,6 +171,7 @@ init([Relay, Pids, GameId, Settings]) ->
     Scores = [ #'TavlaPlayerScore'{ player_id = P#'TavlaPlayer'.player_id, score = 0} || P <- Players],
     Results = #'TavlaGameResults'{ players = Scores},
     DP = proplists:get_value(double_points, get_settings(Settings), 1),
+    GameMode = proplists:get_value(game_mode, get_settings(Settings), 1),
     Mode = proplists:get_value(game_mode, get_settings(Settings)),
     PR = proplists:get_value(pointing_rules, get_settings(Settings)),
     PlayersWithInfo = [game_session:get_player_info(Pid) || Pid <- Pids],
@@ -190,11 +194,13 @@ init([Relay, Pids, GameId, Settings]) ->
     ?INFO("GameInfo: ~p",[GameInfo]),
 
     {ok, state_created, State#state{game_id=GameId,
+                                    table_id = TableId,
                                     table_name = iolist_to_binary(TName), 
                                     results = Results, 
                                     turn_timeout = get_timeout(turn, Speed),
                                     challenge_timeout = get_timeout(challenge, Speed),
                                     ready_timeout = get_timeout(ready, Speed),
+                                    game_mode = GameMode,
                                     robot_delay = RobotDelay,
                                     rounds = Rounds, 
                                     game_info = GameInfo,
@@ -207,11 +213,12 @@ init([Relay, Pids, GameId, Settings]) ->
 
 state_wait({#tavla_ready{}, Pid}, _, #state{wait_list = List} = State) ->
     Relay = State#state.relay,
+    TableId = State#state.table_id,
     NList =
         case lists:member(Pid, List) of
             true ->
                 PI = lists:keyfind(Pid, #'TavlaPlayer'.pid, State#state.players),
-                publish_event(Relay, #tavla_player_ready{player = PI#'TavlaPlayer'.player_id}),
+                publish_event(Relay, #tavla_player_ready{table_id = TableId, player = PI#'TavlaPlayer'.player_id}),
                 lists:delete(Pid, List);
             false ->
                 ?INFO("not a member: ~p", [self()]),
@@ -220,7 +227,7 @@ state_wait({#tavla_ready{}, Pid}, _, #state{wait_list = List} = State) ->
     case NList of
         [] ->
             Relay = State#state.relay,
-            publish_event(Relay, #tavla_game_started{}),
+            publish_event(Relay, #tavla_game_started{table_id = TableId}),
             Pids = [P#'TavlaPlayer'.pid || P <- State#state.players],
             {reply, ok, state_start_rolls, State#state{wait_list = Pids}};
         _ ->
@@ -230,16 +237,17 @@ state_wait({#tavla_ready{}, Pid}, _, #state{wait_list = List} = State) ->
 vido_answer(From,To,A,_Pid,State) ->
     Relay = State#state.relay,
     Vido = State#state.vido,
+    TableId = State#state.table_id,
     case A of
-       true  -> publish_event(Relay, #tavla_ack{type=vido,from=From,to=To,answer=A}),
+       true  -> publish_event(Relay, #tavla_ack{table_id = TableId, type=vido,from=From,to=To,answer=A}),
                 {reply, ok, state_rolls, State#state{vido = 2 * Vido}};
-       false -> Results = #'TavlaGameResults'{
+       false -> Results = #'TavlaGameResults'{table_id = TableId,
                    players = [#'TavlaPlayerScore'{player_id = To, score = 2 * Vido, winner = <<"true">>}, 
                    #'TavlaPlayerScore'{player_id = From, score = 0, winner = <<"none">>}]},
 
                 %game_stats:assign_points(Results, State#state.game_info),
 
-                Message = #tavla_game_ended{
+                Message = #tavla_game_ended{table_id = TableId,
                               winner = To,
                               results = Results},
                 publish_event(Relay, Message),
@@ -248,14 +256,16 @@ vido_answer(From,To,A,_Pid,State) ->
     end.
 
 tavla_roll(Pid,State) ->
+    TableId = State#state.table_id,
     Diceroll = roll(2),
     Relay = State#state.relay,
     PI = lists:keyfind(Pid, #'TavlaPlayer'.pid, State#state.players),
-    publish_event(Relay, #tavla_rolls{player = PI#'TavlaPlayer'.player_id,dices=Diceroll}),
+    publish_event(Relay, #tavla_rolls{table_id = TableId, player = PI#'TavlaPlayer'.player_id,dices=Diceroll}),
     {reply, ok, state_move, State}.
 
 
 tavla_move(Moves, Player, _Pid, State) ->
+    TableId = State#state.table_id,
     Relay = State#state.relay,
     ?INFO("tavla_move{} received from client ~p",[{Moves,Player}]),
     TP1 = lists:nth(1,State#state.players),
@@ -263,7 +273,7 @@ tavla_move(Moves, Player, _Pid, State) ->
     P1 = TP1#'TavlaPlayer'.player_id,
     P2 = TP2#'TavlaPlayer'.player_id,
     Incs = lists:map(fun(A) ->
-        publish_event(Relay, #tavla_moves{player = Player,
+        publish_event(Relay, #tavla_moves{table_id = TableId, player = Player,
                                          from = A#'TavlaAtomicMove'.from, 
                                          to = A#'TavlaAtomicMove'.to}),
         {Player, case A#'TavlaAtomicMove'.to of
@@ -288,18 +298,19 @@ tavla_move(Moves, Player, _Pid, State) ->
 % MOVE
 
 check_game_ended(P1Collected, P2Collected, P1, P2, Relay, Player,State) ->
+    TableId = State#state.table_id,
     Vido = State#state.vido,
     {Message,Results} = case P1Collected of
         15 -> case P2Collected of
                  0 -> R = #'TavlaGameResults'{
                             players = [#'TavlaPlayerScore'{player_id = P1, score = 2 * Vido, winner = <<"true">>}, 
                                        #'TavlaPlayerScore'{player_id = P2, score = 0}]},
-                      {#tavla_game_ended{winner = P1, results = R},R};
+                      {#tavla_game_ended{table_id = TableId, winner = P1, results = R},R};
                  _ -> R = #'TavlaGameResults'{
                             players = [#'TavlaPlayerScore'{player_id = P1, score = 1 * Vido, winner = <<"true">>}, 
                                        #'TavlaPlayerScore'{player_id = P2, score = 0}]},
 
-                      {#tavla_game_ended{winner = P1, results = R}, R}
+                      {#tavla_game_ended{table_id = TableId, winner = P1, results = R}, R}
 
               end;
         _ -> case P2Collected of
@@ -307,14 +318,14 @@ check_game_ended(P1Collected, P2Collected, P1, P2, Relay, Player,State) ->
                   0 -> R = #'TavlaGameResults'{
                             players = [#'TavlaPlayerScore'{player_id = P2, score = 0}, 
                                        #'TavlaPlayerScore'{player_id = P1, score = 2 * Vido, winner = <<"true">>}]},
-                       {#tavla_game_ended{winner = P2, results = R},R};
+                       {#tavla_game_ended{table_id = TableId, winner = P2, results = R},R};
                   _ -> R = #'TavlaGameResults'{
                             players = [#'TavlaPlayerScore'{player_id = P2,score = 0}, 
                                        #'TavlaPlayerScore'{player_id = P1,score = 1 * Vido, winner = <<"true">>}]},
 
-                       {#tavla_game_ended{winner = P2, results = R},R}
+                       {#tavla_game_ended{table_id = TableId, winner = P2, results = R},R}
                   end;
-            _ ->  {#tavla_next_turn{player = case Player of P1 -> P2; P2 -> P1 end },0}
+            _ ->  {#tavla_next_turn{table_id = TableId, player = case Player of P1 -> P2; P2 -> P1 end },0}
         end
     end,
     publish_event(Relay, Message),
@@ -328,9 +339,10 @@ state_move({#tavla_vido_answer{from=From,to=To,answer=A}, Pid}, _, State) ->
     {reply, ok, state_move, State};
 
 state_move({#tavla_surrender{}, Pid}, _, State) ->
+    TableId = State#state.table_id,
     Relay = State#state.relay,
     PI = lists:keyfind(Pid, #'TavlaPlayer'.pid, State#state.players),
-    publish_event(Relay, #tavla_surrender_request{from = PI#'TavlaPlayer'.player_id}),
+    publish_event(Relay, #tavla_surrender_request{table_id = TableId, from = PI#'TavlaPlayer'.player_id}),
     {reply, ok, state_surrender, State};
 
 state_move({#tavla_roll{}, Pid}, _,  #state{wait_list = _List} = State ) ->
@@ -355,9 +367,10 @@ state_surrender({#tavla_move{moves = Moves, player = Player}, Pid}, _, #state{wa
 
 state_surrender({#tavla_surrender_answer{from=From,to=To,answer=A}, _Pid}, _, State) ->
     Relay = State#state.relay,
+    TableId = State#state.table_id,
     Vido = State#state.vido,
     case A of
-       false -> publish_event(Relay, #tavla_ack{type=surrender,from=From,to=To,answer=A}),
+       false -> publish_event(Relay, #tavla_ack{table_id = TableId, type=surrender,from=From,to=To,answer=A}),
                {reply, ok, state_rolls, State};
        true ->  Results = #'TavlaGameResults'{
                    players = [#'TavlaPlayerScore'{player_id = From, score = 2 * Vido, winner = <<"true">>}, 
@@ -365,7 +378,7 @@ state_surrender({#tavla_surrender_answer{from=From,to=To,answer=A}, _Pid}, _, St
 
                 ?INFO("Assign Points: ~p",[{Results,State#state.game_info}]),
 
-                Message = #tavla_game_ended{
+                Message = #tavla_game_ended{table_id = TableId,
                               winner = From,
                               results = Results},
                  publish_event(Relay, Message),
@@ -379,6 +392,7 @@ state_surrender({#tavla_surrender_request{}, _Pid}, _, State) ->
 % ROLLS/VIDO/SURRENDER
 
 state_rolls({#tavla_skip{}, Pid}, _, State) ->
+    TableId = State#state.table_id,
     Relay = State#state.relay,
     TP1 = lists:nth(1,State#state.players),
     TP2 = lists:nth(2,State#state.players),
@@ -386,22 +400,24 @@ state_rolls({#tavla_skip{}, Pid}, _, State) ->
     P2 = TP2#'TavlaPlayer'.player_id,
     PI = lists:keyfind(Pid, #'TavlaPlayer'.pid, State#state.players),
     Player = PI#'TavlaPlayer'.player_id,
-    publish_event(Relay, #tavla_next_turn{player = case Player of P1 -> P2; P2 -> P1 end}),
+    publish_event(Relay, #tavla_next_turn{table_id = TableId, player = case Player of P1 -> P2; P2 -> P1 end}),
     {reply, ok, state_rolls, State};
 
 state_rolls({#tavla_move{moves = Moves, player = Player}, Pid}, _, #state{wait_list = _List} = State) ->
     tavla_move(Moves,Player,Pid,State);
 
 state_rolls({#tavla_vido{}, Pid}, _, State) ->
+    TableId = State#state.table_id,
     Relay = State#state.relay,
     PI = lists:keyfind(Pid, #'TavlaPlayer'.pid, State#state.players),
-    publish_event(Relay, #tavla_vido_request{from = PI#'TavlaPlayer'.player_id}),
+    publish_event(Relay, #tavla_vido_request{table_id = TableId, from = PI#'TavlaPlayer'.player_id}),
     {reply, ok, state_vido, State};
 
 state_rolls({#tavla_surrender{}, Pid}, _, State) ->
+    TableId = State#state.table_id,
     Relay = State#state.relay,
     PI = lists:keyfind(Pid, #'TavlaPlayer'.pid, State#state.players),
-    publish_event(Relay, #tavla_surrender_request{from = PI#'TavlaPlayer'.player_id}),
+    publish_event(Relay, #tavla_surrender_request{table_id = TableId, from = PI#'TavlaPlayer'.player_id}),
     {reply, ok, state_surrender, State};
 
 state_rolls({#tavla_vido_answer{from=From,to=To,answer=A}, Pid}, _, State) ->
@@ -427,6 +443,7 @@ state_finished({#tavla_ready{}, _Pid}, _, State) ->
 
 state_start_rolls({#tavla_roll{}, Pid}, _,  #state{wait_list = List} = State ) ->
     BRolls = State#state.b_rolls,
+    TableId = State#state.table_id,
     Relay = State#state.relay,
     ?INFO("TAVLA ROLL: ~p",[{BRolls,lists:member(Pid, List), lists:keymember(Pid, 1, BRolls), List}]),
     case {lists:member(Pid, List), lists:keymember(Pid, 1, BRolls), List} of
@@ -435,22 +452,22 @@ state_start_rolls({#tavla_roll{}, Pid}, _,  #state{wait_list = List} = State ) -
         {true, false, [Pid]} ->
             [Diceroll] = roll(1),
             PI = lists:keyfind(Pid, #'TavlaPlayer'.pid, State#state.players),
-            publish_event(Relay, #tavla_rolls{player = PI#'TavlaPlayer'.player_id,dices=[Diceroll]}),
+            publish_event(Relay, #tavla_rolls{table_id = TableId, player = PI#'TavlaPlayer'.player_id,dices=[Diceroll]}),
             BRolls2 = lists:keysort(2, [{Pid, Diceroll} | BRolls]),
             case BRolls2 of
                 [{_Loser, X}, {Winner, X}] ->
                     ?INFO("rolls equals: ~p",[BRolls2]),
                     _Pids = [P#'TavlaPlayer'.pid || P <- State#state.players],
                     PI2 = lists:keyfind(Winner, #'TavlaPlayer'.pid, State#state.players),
-                    publish_event(Relay, #tavla_next_turn{player = PI2#'TavlaPlayer'.player_id}),
-                    publish_event(Relay, #tavla_rolls{player = PI2#'TavlaPlayer'.player_id, dices = [X, X]}),
+                    publish_event(Relay, #tavla_next_turn{table_id = TableId, player = PI2#'TavlaPlayer'.player_id}),
+                    publish_event(Relay, #tavla_rolls{table_id = TableId, player = PI2#'TavlaPlayer'.player_id, dices = [X, X]}),
                     State2 = State#state{wait_list = [], c_rolls = BRolls2},
                     {reply, ok, state_move, State2#state{vido = 1}};
                 [{Loser, X}, {Winner, Y}] ->
                     ?INFO("rolls normal: ~p",[{{Winner,X},{Loser,Y}}]),
                     PI2 = lists:keyfind(Winner, #'TavlaPlayer'.pid, State#state.players),
-                    publish_event(Relay, #tavla_next_turn{player = PI2#'TavlaPlayer'.player_id}),
-                    publish_event(Relay, #tavla_rolls{player = PI2#'TavlaPlayer'.player_id, dices = [X, Y]}),
+                    publish_event(Relay, #tavla_next_turn{table_id = TableId, player = PI2#'TavlaPlayer'.player_id}),
+                    publish_event(Relay, #tavla_rolls{table_id = TableId, player = PI2#'TavlaPlayer'.player_id, dices = [X, Y]}),
                     State2 = State#state{wait_list = [], c_rolls = BRolls2},
                     {reply, ok, state_move, State2#state{vido = 1}}
             end;
@@ -458,7 +475,7 @@ state_start_rolls({#tavla_roll{}, Pid}, _,  #state{wait_list = List} = State ) -
             ?INFO("tavla: rolls init: ~p",[BRolls]),
             [Diceroll] = roll(1),
             PI3 = lists:keyfind(Pid, #'TavlaPlayer'.pid, State#state.players),
-            publish_event(Relay, #tavla_rolls{player = PI3#'TavlaPlayer'.player_id, dices=[Diceroll]}),
+            publish_event(Relay, #tavla_rolls{table_id = TableId, player = PI3#'TavlaPlayer'.player_id, dices=[Diceroll]}),
             List2 = lists:delete(Pid, List),
             State2 = State#state{wait_list = List2, b_rolls = [{Pid, Diceroll} | BRolls]},
             {reply, ok, state_start_rolls, State2};
@@ -501,12 +518,13 @@ handle_sync_event({signal, do_rematch}, _From, _StateName, State) ->
 
 handle_sync_event({signal, {pause_game, Pid}}, _From, StateName, State) ->
     Relay = State#state.relay,
+    TableId = State#state.table_id,
     case {is_player(Pid, State), StateName} of
         {_, X} when X == state_paused; X == state_dead; X == state_finished ->
             {reply, {error, pause_not_possible}, StateName, State};
         {true, _} ->
             UID = (get_player(Pid, State))#'TavlaPlayer'.player_id,
-            Event = #game_paused{game = State#state.game_id, who = UID,
+            Event = #game_paused{table_id = TableId, game = State#state.game_id, who = UID,
                                  action = <<"pause">>, retries = 0},
 			?INFO("~w:handle_sync_event/4 Publishing the pause "
 					  "event from user: ~p",[?MODULE, UID]),
@@ -519,12 +537,13 @@ handle_sync_event({signal, {pause_game, Pid}}, _From, StateName, State) ->
     end;
 
 handle_sync_event({signal, {resume_game, Pid}}, _From, StateName, State) ->
-	Relay = State#state.relay,
+    Relay = State#state.relay,
+    TableId = State#state.table_id,
     case {StateName, is_player(Pid, State)} of
         {state_paused, true} ->
             ResumedState = State#state.paused_statename,
             UID = (get_player(Pid, State))#'TavlaPlayer'.player_id,
-            Event = #game_paused{game = State#state.game_id, who = UID,
+            Event = #game_paused{table_id = TableId, game = State#state.game_id, who = UID,
                                  action = <<"resume">>, retries = 0},
 			
 			?INFO("~w:handle_sync_event/4 Publishing the resume event"
@@ -634,16 +653,21 @@ start_game(State) ->
     _Mode = State#state.scoring_mode,
     Players = State#state.players,
 
+    TableId = State#state.table_id,
     TableName = State#state.table_name,
     PInfos = lists:map(fun(#'TavlaPlayer'{player_info = PI}) ->
                                PI
                        end, Players),
 
+    timer:sleep(500), % sync error in client
+
     publish_event(Relay, #tavla_game_info{game_type = game_tavla, 
-                                          table_name = TableName, 
+                                          table_name = TableName,
+                                          table_id = TableId,
                                           current_round = State#state.current_round,
                                           rounds = State#state.rounds,
                                           players = PInfos, 
+                                          game_mode = State#state.game_mode,
                                           turn_timeout = State#state.turn_timeout,
                                           challenge_timeout = State#state.challenge_timeout,
                                           ready_timeout = State#state.ready_timeout,
@@ -653,7 +677,7 @@ start_game(State) ->
                                           observer_flag = State#state.observer_flag
                                          }),
 
-    M = #tavla_game_started{ players= [#tavla_color_info{ name = P1, color = 1},
+    M = #tavla_game_started{ table_id = TableId, players= [#tavla_color_info{ name = P1, color = 1},
                                        #tavla_color_info{ name = P2, color = 2}]},
 
     ?INFO("tavla game started: ~p",[M]),
@@ -661,7 +685,7 @@ start_game(State) ->
     publish_event(Relay, M),
 
     #'TavlaPlayer'{player_id = PlayerID} = get_current(State),
-    publish_event(Relay, #tavla_next_turn{player = PlayerID}).
+    publish_event(Relay, #tavla_next_turn{table_id = TableId, player = PlayerID}).
 
 get_current(State) ->
     [First | _Rest] = State#state.players,
