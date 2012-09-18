@@ -6,8 +6,8 @@
 -include_lib("stdlib/include/qlc.hrl").
 -include_lib("alog/include/alog.hrl").
 
--export([start/0, stop/1, create_table/2, create_table/3, add_game/1, counter/1, game_requirements/1,
-         get_relay/1, subscribe/3, subscribe/2, unsubscribe/2]).
+-export([start/0, stop/1, create_table/2, create_table/3, add_game/1, counter/1, get_requirements/2,
+         get_relay/1, subscribe/3, subscribe/2, unsubscribe/2,game_requirements/1]).
 
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 
@@ -96,25 +96,24 @@ terminate(_Reason, _State) -> ok.
 
 code_change(_OldVsn, State, _Extra) -> {ok, State}.
 
-first_level_module(GameFSM, GameMode) ->
+game_monitor_module(GameFSM, GameMode) ->
     case {GameFSM, GameMode} of
         {game_tavla, paired} -> paired_tavla;
         _ -> relay
     end.
 
+get_requirements(GameFSM,M) -> (game_monitor_module(GameFSM, M)):get_requirements(GameFSM,M).
+
 -spec create_game_monitor(string(), pid(), [any()], [pid()], #state{}) -> {{'ok', pid()} | {'error', any()}, #state{}}.
-create_game_monitor(Topic, GameFSM, Params, Players, State) ->
-            GameMode = proplists:get_value(game_mode, Params, standard),
-            ?INFO("Create Root Game Process (Game Monitor): ~p Mode: ~p",[GameFSM, GameMode]),
-            RelayInit = case {GameFSM,GameMode} of
-                {{lobby,game_tavla},paired} -> paired_tavla:start(Topic, GameFSM, Params, Players, self());
-                X -> relay:start(Topic, GameFSM, Params, Players, self())
-            end,
-            case RelayInit of
-                {ok, Srv} ->
-                    Ref = erlang:monitor(process, Srv),
-                    {{ok, Srv}, State};
-                {error, Reason} ->
-                    {{error, Reason}, State}
-            end.
+create_game_monitor(Topic, {lobby,GameFSM}, Params, Players, State) ->
+    GameMode = proplists:get_value(game_mode, Params, standard),
+    ?INFO("Create Root Game Process (Game Monitor): ~p Mode: ~p",[GameFSM, GameMode]),
+    RelayInit = (game_monitor_module(GameFSM,GameMode)):start_link(Topic, {lobby,GameFSM}, Params, Players, self()),
+    case RelayInit of 
+        {ok, Srv} ->
+            Ref = erlang:monitor(process, Srv),
+            {{ok, Srv}, State};
+        {error, Reason} ->
+            {{error, Reason}, State}
+    end.
 

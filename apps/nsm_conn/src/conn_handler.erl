@@ -205,12 +205,12 @@ process_packets([T | H], #state{running_requests = RR, session = SPid} = State )
                              Res = try
                                        Msg = api_utils:to_known_record(Method, Args),
                                        Answer = game_session:process_request(SPid, "FLEX CLIENT", Msg),
-                                       ?INFO("           Method: ~p, Args: ~p", [Method, Args]),
-                                       ?INFO(" Id ~p Answer ~p", [Id, Answer]),
+%                                       ?INFO("           Method: ~p, Args: ~p", [Method, Args]),
+%                                       ?INFO(" Id ~p Answer ~p", [Id, Answer]),
                                        {reply, Id, {api_success, Answer}}
                                    catch
                                        _Err:Reason ->
-                                           ?INFO("process_packets ~p failed with msg: ~p", [T, {_Err,Reason}]),
+%                                           ?INFO("process_packets ~p failed with msg: ~p", [T, {_Err,Reason}]),
                                            {reply, Id, {api_error, Reason}}
                                    end,
                              gen_server:call(Self, Res)

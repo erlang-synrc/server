@@ -663,11 +663,12 @@ start_game() ->
     ?INFO("start game"),
     Owner = Table#game_table.owner,
     CUser = wf:user(),
-    MaxUser = proplists:get_value(max_users, game_requirements(Table)),
+    MaxUsers = proplists:get_value(max_users, game_requirements(Table)),
+    MinUsers = proplists:get_value(min_users, game_requirements(Table)),
     CurrentUser = length(Table#game_table.users),
-    ?INFO("StartGame: Owner ~p wf:User ~p (~p of ~p) ~p",[Owner,CUser,CurrentUser,MaxUser,Table]),
-    case CurrentUser of
-        MaxUser ->
+    ?INFO("StartGame: Owner ~p wf:User ~p (~p of ~p) ~p",[Owner,CUser,CurrentUser,MaxUsers,Table]),
+    case ((CurrentUser >= MinUsers) and (CurrentUser =< MaxUsers)) of
+        true ->
             case Table#game_table.creator of
                  CUser ->
                     io:fwrite("creating table: ~n", []),
@@ -835,8 +836,8 @@ rss_container() -> [ #panel { class="silver rss", body=rss() } ].
 rss() -> [ "Feeds" ].
 
 game_type() -> list_to_existing_atom("game_"++wf:q('__submodule__')).
-game_requirements(Table) -> rpc:call(?APPSERVER_NODE, table_manager, game_requirements, [Table#game_table.game_type]).
-game_requirements() -> rpc:call(?APPSERVER_NODE, table_manager, game_requirements, [game_type()]).
+game_requirements(Table) -> rpc:call(?GAMESRVR_NODE, game_manager, get_requirements, [Table#game_table.game_type,Table#game_table.game_mode]).
+%game_requirements() -> rpc:call(?GAMESERVER_NODE, game_manager, get_requirements, [game_type()]).
 binarize_name(robot) -> robot;
 binarize_name(Name) -> list_to_binary(Name).
 

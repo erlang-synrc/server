@@ -1267,7 +1267,7 @@ game_mode_to_text(Type) ->
         "evenodd" -> ?_T("Even/Odd");
         "color" -> ?_T("Color");
         "countdown" -> ?_T("Countdown from 10");
-        "pair" -> ?_T("Pair");
+        "paired" -> ?_T("Pair");
         "kakaratavla" -> ?_T("Kakara Tavla")
     end.
 

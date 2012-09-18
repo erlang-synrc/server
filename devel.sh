@@ -19,6 +19,7 @@ GEM_REL=rels/game/node/lib/nsg_games-1
 SES_REL=rels/game/node/lib/nsg_session-1
 GS_REL=rels/game/node/lib/nsg_srv-1
 SRV_REL_IN_WEB=rels/web/node/lib/nsm_srv-1
+SRV_REL_IN_GEM=rels/game/node/lib/nsm_srv-1
 
 WEB_REL_PRIV=$WEB_REL/priv
 WEB_REL_EBIN=$WEB_REL/ebin
@@ -60,6 +61,9 @@ ln -s $GS_EBIN $GS_REL_EBIN
 
 ## needed for make sync work
 mkdir -p $SRV_REL_IN_WEB/ebin
+mkdir -p $SRV_REL_IN_GEM/ebin
 ln -s $SRV/include $SRV_REL_IN_WEB/include
+ln -s $SRV/include $SRV_REL_IN_GEM/include
 
 echo "-pa ./lib/nsm_srv-1/ebin" >>  rels/web/node/etc/vm.args
+echo "-pa ./lib/nsm_srv-1/ebin" >>  rels/game/node/etc/vm.args

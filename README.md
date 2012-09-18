@@ -11,7 +11,7 @@ Contents
 * Tuning
 * Translations
 * JavaScript Compressing
-* Deploying to MASTER SRV3
+* Deploying to MASTER {SRV1,SRV2,SRV3}
 * Profiling
 
 Infrastructure
@@ -77,7 +77,8 @@ Symlink required riak libraries to your erlang libs dir:
 
     $ ln -s /mnt/glusterfs/apps/riak/rel/riak/lib/ \
          {riak_sysmon,riak_pipe,riak_kv,riak_core,poolboy, \
-         luke,erlang_js,bitcask,folsom,riak_api,sext,eleveldb}-* ~/erl-r14/lib/
+          luke,erlang_js,riak_pb,riak_control,webmachine,bitcask, \
+          folsom,riak_api,sext,eleveldb}-* ~/erl-r14/lib/
 
 For Ubuntu users please install riak from prebuilt binaries from Basho site.
 Then remove riak from autostart and put its libraries (given in previous example)
@@ -204,14 +205,15 @@ Get it using gem:
     $ juicer install yui_compressor
     $ juicer install jslint  # currently not used, but for future
 
-Deploying to MASTER SRV3
-------------------------
+Deploying to MASTER {SRV1,SRV2,SRV3}
+------------------------------------
 
-    $ go to srv3
+Go to srv3
+
     $ cd /home/kakauser/release/
-    $ run command: ./deploy.sh
-    $ check if everything is ok
-    $ enjoy
+    $ ./deploy.sh
+
+Check if everything is OK and Enjoy!
 
 Profiling
 ---------

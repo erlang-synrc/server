@@ -75,9 +75,9 @@ to_known_record(Bin, Members) when is_binary(Bin) ->
 to_known_record(Tag, Members0) when is_atom(Tag) ->
     try
         Names = recrunt:fields(Tag),
-        ?INFO("Names: ~p, Members: ~p",[Names,case Members0 of null -> []; X -> X end]),
+%        ?INFO("Names: ~p, Members: ~p",[Names,case Members0 of null -> []; X -> X end]),
         Members = case to_proper_proplists(Members0) of null -> []; Y -> Y end,
-        ?INFO("Members: ~p",[Members]),
+%        ?INFO("Members: ~p",[Members]),
         Rev = lists:map(fun(X) ->
                                 Res = proplists:get_value(X, Members),
                                 %% true = (Res =/= undefined),

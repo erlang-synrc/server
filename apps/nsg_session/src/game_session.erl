@@ -356,22 +356,22 @@ handle_call(#join_game{game = GameId}, _From, #state{user = User} = State) ->
         false ->
             case game_manager:get_relay(GameId) of
                 FirstLevelRelay when is_pid(FirstLevelRelay) ->
-                    case get_second_level_relay(FirstLevelRelay, UserId) of
+                    case get_second_level_relay(FirstLevelRelay, User) of
                         {ok, SecondLevelRelay} ->
                             ?INFO("join to game relay: ~p",[SecondLevelRelay]),
-                            case relay:can_observe(SecondLevelRelay, UserId) of
-                                true ->
+%                            case relay:can_observe(SecondLevelRelay, UserId) of
+%                                true ->
                                     relay:subscribe(SecondLevelRelay, self(), UserId),
                                     Ref = erlang:monitor(process, SecondLevelRelay),
                                     Part = #participation{ref = Ref,
                                                           game_id = GameId,
                                                           pid = SecondLevelRelay,
                                                           role = player},
-                                    Res = relay:get_table_info(SecondLevelRelay),
+                                    Res = #'TableInfo'{}, %relay:get_table_info(SecondLevelRelay),
                                     {reply, Res, State#state{games = [Part | State#state.games]}};
-                                false ->
-                                    {reply, {error, this_game_is_private}, State}
-                            end;
+%                                false ->
+%                                    {reply, {error, this_game_is_private}, State}
+%                            end;
                         {error, not_allowed} ->
                             {reply, {error, this_game_is_private}, State};
                         {error, timeout} ->

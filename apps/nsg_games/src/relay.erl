@@ -5,8 +5,8 @@
 -include_lib("nsg_srv/include/logging.hrl").
 -include_lib("nsg_srv/include/requests.hrl").
 -include_lib("nsg_srv/include/setup.hrl").
--include_lib("nsm_srv/include/table.hrl").
--include_lib("nsm_srv/include/accounts.hrl").
+-include_lib("nsm_db/include/table.hrl").
+-include_lib("nsm_db/include/accounts.hrl").
 -include_lib("alog/include/alog.hrl").
 -include_lib("nsg_srv/include/settings.hrl").
 -include_lib("stdlib/include/qlc.hrl").
@@ -20,15 +20,14 @@
          subscribe/2,
          subscribe/3,
          unsubscribe/2,
-         start/4,
-         start/5,
+         get_requirements/2,
+         start_link/5,
          stop/1,
          get_topic/1,
          get_player_state/2,
          get_table_info/1,
          update_gamestate/2,
          can_observe/2,
-         qlc/0,
          unreg/2]).
 
 -export([init/1, handle_call/3, handle_cast/2,
@@ -66,71 +65,37 @@
 
 -define(DISCONNECT_TIMEOUT, (60*1000)). % 1 Min
 
-publish(Srv, Msg) -> % published instantly
-    gen_server:cast(Srv, {publish, Msg}).
-
-submit(Srv, Msg) -> % passed to game_fsm, with answer returned to caller
-    gen_server:call(Srv, {submit, Msg}).
-
-signal(Srv, Msg) -> % send cast to game engine, not waiting for reply
-    gen_server:cast(Srv, {signal, Msg}).
-
-to_session(Srv, Session, Msg) -> % used for game engine -> session communication
-    gen_server:cast(Srv, {to_session, Session, Msg}).
-
-unreg(Srv, Key) ->
-    gen_server:call(Srv, {unreg, Key}).
-
-subscribe(Srv, Pid, PlayerId) ->
-    gen_server:cast(Srv, {subscribe, Pid, PlayerId}).
-
-subscribe(Srv, Pid) ->
-    gen_server:cast(Srv, {subscribe, Pid, null}).
-
-unsubscribe(Srv, Pid) ->
-    gen_server:cast(Srv, {unsubscribe, Pid}).
-
-do_rematch(Srv, Pid) ->
-    gen_server:call(Srv, {do_rematch, Pid}).
-
-get_topic(Srv) ->
-    gen_server:call(Srv, get_topic).
-
-get_player_state(Srv, UId) ->
-    gen_server:call(Srv, {get_player_state, UId}).
-
-get_table_info(Srv) ->
-    gen_server:call(Srv, get_table_info).
-
-update_gamestate(Srv, NewGameState) ->
-    gen_server:cast(Srv, {update_gamestate, NewGameState}).
-
-can_observe(Srv, Id) ->
-    gen_server:call(Srv, {can_observe, Id}).
-
-start(GameId, GameFSM, Pids, Manager) ->
-    start(GameId, GameFSM, [], Pids, Manager).
-start(GameId, GameFSM, Params, Pids, Manager) ->
-    ?INFO("relay:start/5 ~p~n",[{GameId, GameFSM, Params, Pids, Manager}]),
-    gen_server:start(?MODULE, [GameId, GameFSM, Params, Pids, Manager], []).
-
-stop(Srv) ->
-    gen_server:cast(Srv, stop).
-
-qlc() ->
-    qlc:e(qlc:q([Val || {{_,_,Val},_,_} <- gproc:table(props)])).
+publish(Srv, Msg) -> gen_server:cast(Srv, {publish, Msg}).
+submit(Srv, Msg) -> gen_server:call(Srv, {submit, Msg}).
+signal(Srv, Msg) -> gen_server:cast(Srv, {signal, Msg}).
+to_session(Srv, Session, Msg) -> gen_server:cast(Srv, {to_session, Session, Msg}).
+unreg(Srv, Key) -> gen_server:call(Srv, {unreg, Key}).
+subscribe(Srv, Pid, PlayerId) -> gen_server:cast(Srv, {subscribe, Pid, PlayerId}).
+subscribe(Srv, Pid) -> gen_server:cast(Srv, {subscribe, Pid, null}).
+unsubscribe(Srv, Pid) -> gen_server:cast(Srv, {unsubscribe, Pid}).
+do_rematch(Srv, Pid) -> gen_server:call(Srv, {do_rematch, Pid}).
+get_topic(Srv) -> gen_server:call(Srv, get_topic).
+get_player_state(Srv, UId) -> gen_server:call(Srv, {get_player_state, UId}).
+get_table_info(Srv) -> gen_server:call(Srv, get_table_info).
+update_gamestate(Srv, NewGameState) -> gen_server:cast(Srv, {update_gamestate, NewGameState}).
+can_observe(Srv, Id) -> gen_server:call(Srv, {can_observe, Id}).
+start_link(GameId, GameFSM, Params, Pids, Manager) -> gen_server:start(?MODULE, [GameId, GameFSM, Params, Pids, Manager], []).
+stop(Srv) -> gen_server:cast(Srv, stop).
 
 game(game_okey) -> okey;
 game(game_tavla) -> tavla;
 game(_) -> okey.
 
+get_requirements(game_tavla,_) -> [{max_users,2},{min_users,2}];
+get_requirements(game_okey,_) -> [{max_users,4},{min_users,4}];
+get_requirements(_,_) -> [{max_users,2},{min_users,2}].
 
 init([Topic, chat, _, _]) ->
     {ok, #state{topic = Topic, rules_pid = none, rules_module = chat,
                 players = [], reg_players = [], gamestate = no_game}};
 
 init([Topic, {lobby, GameFSM}, Params0, PlayerIds, Manager]) ->
-    ?INFO("init lobby ~p",[{GameFSM,Params0,PlayerIds,Manager}]),
+    ?INFO("~ninit lobby ~p",[{GameFSM,Params0,PlayerIds,Manager}]),
     Settings = GameFSM:get_settings(Params0),
     R = GameFSM:get_requirements(),
     NoOfPlayers = proplists:get_value(players, R),
@@ -150,7 +115,6 @@ init([Topic, {lobby, GameFSM}, Params0, PlayerIds, Manager]) ->
                                               kakush_winner = 1, kakush_other = 1, quota = 1}]}
                     end,
     FeelLucky = proplists:get_value(feel_lucky, Settings, false),
-%    Params = Params0 ++ [{pointing_rules, PR},{pointing_rules_ex, PREx}],
 
     GProcVal = #game_table{game_type = GameFSM, 
                            game_process = self(),
@@ -164,7 +128,6 @@ init([Topic, {lobby, GameFSM}, Params0, PlayerIds, Manager]) ->
                            rounds = Rounds,
                            pointing_rules   = P,
                            pointing_rules_ex = PE,
-       
                            users = [ case User of robot -> robot; _ -> erlang:binary_to_list(User) end || User <- PlayerIds],
                            name = TableName ++ " gaming " ++ erlang:integer_to_list(Topic) ++ " "
                },
@@ -177,41 +140,28 @@ init([Topic, {lobby, GameFSM}, Params0, PlayerIds, Manager]) ->
 
     {_RobotIds, HumanIds} = lists:partition(fun(robot) -> true; (_) -> false end, PlayerIds),
 
-    {only_robots_table, false} = {only_robots_table, length(HumanIds) < 1},
+%    {only_robots_table, false} = {only_robots_table, length(HumanIds) < 1},
 
     Relay = self(),
-    State = #state{topic = Topic, rules_pid = none, rules_module = GameFSM, rules_params = Params,
-		   players = [], reg_players = PlayerIds, lobby_list = HumanIds, manager = Manager,
-                   gamestate = lobby, from_lobby = true, table_settings = Settings},
-    ?INFO("State Lobby List: ~p",[State#state.lobby_list]),
-    gen_server:cast(Relay, {update_gamestate, State#state.gamestate}),
-    {ok, State};
 
-init([Topic, GameFSM, Params, Pids]) -> % TODO: remove this code (maxim)
-    ?INFO("INIT FSM"),
-    Settings = GameFSM:get_settings(Params),
-    try
-        Players = lists:map(fun(Session) ->
-                                    PlayerId = game_session:get_player_id(Session),
-                                    MonRef = erlang:monitor(process, Session),
-                                    #player{id = PlayerId, pid = Session, monref = MonRef}
-                            end, Pids),
-        PlayerIds = [ P#player.id || P <- Players ],
-       %% TODO: handle tournaments Params
-       %% NOTE: tournamets will call GenFSM:start from itself
-        {ok, FsmPid} = GameFSM:start(self(), Pids, Topic, Params),
-        erlang:monitor(process, FsmPid),
-        Relay = self(),
-        State = #state{topic = Topic,
-                       rules_pid = FsmPid, rules_module = GameFSM, rules_params = Params,
-                       players = Players, reg_players = PlayerIds, rematch_list = Pids,
-                       lobby_list = [], gamestate = started, table_settings = Settings},
-        gen_server:cast(Relay, {update_gamestate, State#state.gamestate}),
-        {ok, State}
-    catch
-        _Class:Reason ->
-            ?INFO("normal init - errored", []),
-            {error, Reason}
+    State = #state{topic = Topic, rules_pid = none, rules_module = GameFSM, rules_params = Params,
+                   players = [], reg_players = PlayerIds, lobby_list = HumanIds ++ _RobotIds, manager = Manager,
+                   gamestate = lobby, from_lobby = true, table_settings = Settings},
+
+
+    ?INFO("State Lobby List: ~p",[State#state.lobby_list]),
+
+    gen_server:cast(Relay, {update_gamestate, State#state.gamestate}),
+
+    ?INFO("Humans/Robots: ~p/~p",[length(HumanIds),length(_RobotIds)]),
+
+    case length(HumanIds) < 1 of
+        true -> {_,Bots} = lists:unzip(BotPids=[add_robot(State) || X <- _RobotIds]),
+                 BotPlayers = [#player{pid=RID,id=RN,monref=self(),is_bot=true}||{RID,RN}<-BotPids],
+                 ?INFO("Start Robots Only Game"),
+                 gen_server:cast(self(), room_ready),
+                {ok, State#state{robots = Bots,players=BotPlayers,lobby_list=[]}};
+        _ ->    {ok, State}
     end.
 
 handle_call({submit, _Msg}, _From, #state{rules_module = chat} = State) ->
@@ -268,6 +218,7 @@ handle_call({get_player_state, UId}, _From, State) ->
     {reply, Res, State};
 
 handle_call(get_table_info, _From, State) ->
+    ?INFO("get_table_info"),
     List = ets:tab2list(State#state.subs),
     Viewers = lists:map(fun(#subscriber{id = PlayerId}) ->
                                 PlayerId
@@ -322,6 +273,7 @@ handle_cast(room_ready, State) -> % deleyed fsm creation after all join the lobb
     Relay = self(),
     Fun = fun() ->
                   GameFSM = State#state.rules_module,
+                  ?INFO("Robots: ~p",[State#state.robots]),
                   Pids = [ P#player.pid || P <- State#state.players ],
                   {ok, RPid} = GameFSM:start(Relay, Pids, State#state.topic, State#state.rules_params),
                   gen_server:cast(Relay, {game_created, RPid})
@@ -487,32 +439,34 @@ publish0(Msg, State) ->
 no_of_subscribers(State) ->
     ets:info(State#state.subs, size).
 
-lobby_join(Ref, UserId, Pid, State = #state{lobby_list = [UserId]}) ->
+%lobby_join(Ref, UserId, Pid, State = #state{lobby_list = [UserId]}) ->
 %    ?INFO("joining last player to lobby: ~p", [UserId]),
-    R = (State#state.rules_module):get_requirements(),
-    NoOfPlayers = proplists:get_value(players, R),
-     Player = #player{id = UserId,
-                     monref = Ref,
-                     pid = Pid,
-                     is_bot = lists:member(UserId, State#state.robots)
-                    },
-    Players = lists:reverse([Player | State#state.players]),
-    RL = [ P#player.pid || P <- Players ],
-    {RobotIds, HumanIds} = lists:partition(fun(robot) -> true; (_) -> false end,
-                                           State#state.reg_players),
-    case length(Players) of
-        NoOfPlayers ->
-            gen_server:cast(self(), room_ready),
-            State#state{players = Players, rematch_list = RL, lobby_list = []};
-        _ ->
-            {_, RobotUIds} = lists:unzip([ add_robot(State) || _ <- RobotIds ]),
-            State#state{players = Players, rematch_list = RL, robots = RobotUIds,
-                        reg_players = HumanIds ++ RobotUIds, lobby_list = RobotUIds}
-    end;
+%    R = (State#state.rules_module):get_requirements(),
+%    NoOfPlayers = proplists:get_value(players, R),
+%     Player = #player{id = UserId,
+%                     monref = Ref,
+%                     pid = Pid,
+%                     is_bot = lists:member(UserId, State#state.robots)
+%                    },
+%    Players = lists:reverse([Player | State#state.players]),
+%    RL = [ P#player.pid || P <- Players ],
+%    {RobotIds, HumanIds} = lists:partition(fun(robot) -> true; (_) -> false end,
+%                                           State#state.reg_players),
+%    case length(Players) of
+%        NoOfPlayers ->
+%            gen_server:cast(self(), room_ready),
+%            State#state{players = Players, rematch_list = RL, lobby_list = []};
+%        _ ->
+%            {_, RobotUIds} = lists:unzip(Bots = [ add_robot(State) || _ <- RobotIds ]),
+%            State#state{, rematch_list = RL, robots = RobotUIds,
+%                        reg_players = HumanIds ++ RobotUIds, lobby_list = RobotUIds}
+%    end;
+
+only_robots_left(LobbyList) -> lists:all(fun(A) -> A =:= robot end, LobbyList).
 
 lobby_join(Ref, UserId, Pid, State) ->
-%    ?INFO("joining player to lobby: ~p", [UserId]),
     WL = State#state.lobby_list,
+    ?INFO("joining player to lobby: ~p", [{UserId,WL}]),
     case lists:member(UserId, WL) of
         true ->
             Player = #player{id = UserId,
@@ -521,9 +475,20 @@ lobby_join(Ref, UserId, Pid, State) ->
                              is_bot = lists:member(UserId, State#state.robots)
                             },
             Players = [Player | State#state.players],
-%            Val = gproc:get_value(players),
-%            gproc:set_value(Val+1),
-            State#state{players = Players, lobby_list = WL -- [UserId]};
+            ?INFO("Last : ~p",[only_robots_left(State#state.lobby_list -- [UserId])]),
+            case only_robots_left(State#state.lobby_list--[UserId]) of
+                 true ->
+
+                {RobotIds, HumanIds} = lists:partition(fun(robot) -> true; (_) -> false end, State#state.reg_players),
+
+                          {_, RobotUIds} = lists:unzip(Bots = [ add_robot(State) || _ <- RobotIds ]),
+                           gen_server:cast(self(), room_ready),
+                          State#state{players = Players ++ [#player{id=RN,monref=Ref,pid=RID,is_bot = true}||{RID,RN}<-Bots], 
+                                      lobby_list = WL -- [UserId],
+                                      robots = RobotUIds };
+                 false -> State#state{players = Players, lobby_list = WL -- [UserId]}
+            end;
+
         false ->
             ?INFO("not a player. Players left: ~p", [length(WL)]),
             State

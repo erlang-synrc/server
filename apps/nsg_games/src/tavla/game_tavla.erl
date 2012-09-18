@@ -19,7 +19,7 @@
          handle_sync_event/4, handle_info/3, terminate/3, code_change/4]).
 
 -include_lib("nsg_srv/include/requests.hrl").
--include_lib("nsm_srv/include/accounts.hrl").
+-include_lib("nsm_db/include/accounts.hrl").
 -include_lib("nsg_srv/include/setup.hrl").
 -include_lib("nsg_srv/include/game_tavla.hrl").
 -include_lib("nsg_srv/include/types.hrl").
@@ -149,11 +149,13 @@ get_player_stats(_PlayerId) ->
 
 init([Relay, Pids, GameId, Settings]) ->
 
-    ?INFO("Settings: ~p",[Settings]),
-    ?INFO("Get Settings: ~p",[get_settings(Settings)]),
+%    ?INFO("Settings: ~p Pids: ~p",[Settings,Pids]),
+%    ?INFO("Get Settings: ~p",[get_settings(Settings)]),
 
+   
     Players = lists:map(fun(Pid) -> 
                              PI = game_session:get_player_info(Pid),
+                             ?INFO("Session PI: ~p",[PI]),
                              #'TavlaPlayer'{pid = Pid, player_id = PI#'PlayerInfo'.id, player_info = PI,collected=0 }
                         end, Pids),
     TName = proplists:get_value(table_name, get_settings(Settings)),
@@ -360,12 +362,7 @@ state_vido({#tavla_vido_answer{from=From,to=To,answer=A}, Pid}, _, State) ->
 state_vido({#tavla_vido_request{}, _Pid}, _, State) ->
     {reply, ok, state_vido, State}.
 
-% SURRENDER
-
-state_surrender({#tavla_move{moves = Moves, player = Player}, Pid}, _, #state{wait_list = _List} = State) ->
-    tavla_move(Moves,Player,Pid,State);
-
-state_surrender({#tavla_surrender_answer{from=From,to=To,answer=A}, _Pid}, _, State) ->
+tavla_surrender_answer(From,To,A, _Pid, State) ->
     Relay = State#state.relay,
     TableId = State#state.table_id,
     Vido = State#state.vido,
@@ -384,12 +381,23 @@ state_surrender({#tavla_surrender_answer{from=From,to=To,answer=A}, _Pid}, _, St
                  publish_event(Relay, Message),
                 next_round(State#state{series_results = State#state.series_results ++ [Results]}, Results)
                %next_round(State, Results)
-    end;
+    end.
+
+% SURRENDER
+
+state_surrender({#tavla_move{moves = Moves, player = Player}, Pid}, _, #state{wait_list = _List} = State) ->
+    tavla_move(Moves,Player,Pid,State); 
+
+state_surrender({#tavla_surrender_answer{from=From,to=To,answer=A}, _Pid}, _, State) ->
+    tavla_surrender_answer(From,To,A,_Pid,State);
 
 state_surrender({#tavla_surrender_request{}, _Pid}, _, State) ->
     {reply, ok, state_vido, State}.
 
 % ROLLS/VIDO/SURRENDER
+
+state_rolls({#tavla_surrender_answer{from=From,to=To,answer=A}, _Pid}, _, State) ->
+    tavla_surrender_answer(From,To,A,_Pid,State);
 
 state_rolls({#tavla_skip{}, Pid}, _, State) ->
     TableId = State#state.table_id,

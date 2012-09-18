@@ -1,6 +1,6 @@
 #!/bin/bash
 
-LOCAL_IP=${1:-"192.168.1.16"}
+LOCAL_IP=${1:-"192.168.1.146"}
 APP=${2:-"kakaapp@srv3.kakaranet.com"}
 
 cd rels/app/node/etc
