@@ -33,7 +33,7 @@ post_is_create(ReqData, State) ->
 readlog() ->
     timer:sleep(500),   % for log needs time to be written
     {ok, Files} = file:list_dir("./log"),
-    case lists:member("error.log", Files) of
+    case lists:member("console.log", Files) of
         true ->
             {ok, Log} = file:read_file("./log/crash.log"),
             binary_to_list(Log);

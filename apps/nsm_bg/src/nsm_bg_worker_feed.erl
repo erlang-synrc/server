@@ -200,6 +200,46 @@ handle_notice(["feed", "user", UId, "scores", _Null, "add"] = _Route,
     end,
     {noreply, State};
 
+% groups
+handle_notice(["queue_action", "create_group"] = Route,
+              Message,
+              #state{owner = Owner,
+                     type =Type
+                    } = State) ->
+    {UId, GId, Name, Desc, Publicity} = Message,
+
+    ?INFO("queue_action(~p): create_group: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),
+
+    FId = nsm_db:feed_create(),
+    CTime = erlang:now(),
+    %%FIX: match results of such calls for success case
+    ok = nsm_db:put(#group{username = GId,
+                              name = Name,
+                              description = Desc,
+                              publicity = Publicity,
+                              creator = UId,
+                              created = CTime,
+                              owner = UId,
+                              feed = FId}),
+    nsm_groups:add_to_group(UId, GId, admin),    
+    {noreply, State};
+
+handle_notice(["queue_action", "add_to_group"] = Route, Message, #state{owner = Owner, type =Type} = State) ->
+    ?INFO("queue_action(~p): add_to_group: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),
+    {UId, GId, UType} = Message,
+    nsm_users:subscribe_user_mq(group, UId, GId),
+    nsm_db:add_to_group(UId, GId, UType),
+    {noreply, State};
+
+handle_notice(["queue_action", "remove_from_group"] = Route, Message, #state{owner = Owner, type =Type} = State) ->
+    ?INFO("queue_action(~p): remove_from_group: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),
+    {UId, GId} = Message,
+    nsm_users:remove_subscription_mq(group, UId, GId),
+    nsm_db:remove_from_group(UId, GId),
+    {noreply, State};
+
+
+% unexpected
 handle_notice(Route, Message, #state{owner = User} = State) ->
     ?DBG("feed(~p): unexpected notification received: User=~p, "
               "Route=~p, Message=~p", [self(), User, Route, Message]),

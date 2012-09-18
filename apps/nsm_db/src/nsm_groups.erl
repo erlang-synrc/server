@@ -6,7 +6,6 @@
 
 -export([create_group/4,
          create_group/5,
-         safe_create_group/5,
          remove_group/1,
          add_to_group/3,
          remove_from_group/2,
@@ -42,35 +41,15 @@ create_group(UId, GId, Name, Desc) ->
     create_group(UId, GId, Name, Desc, public).
 
 create_group(UId, GId, Name, Desc, Publicity) ->
-    FId = nsm_db:feed_create(),
-    CTime = erlang:now(),
-
-    %%FIX: match results of such calls for success case
-    ok = nsm_db:put(#group{username = GId,
-                              name = Name,
-                              description = Desc,
-                              publicity = Publicity,
-                              creator = UId,
-                              created = CTime,
-                              owner = UId,
-                              feed = FId}),
-    add_to_group(UId, GId, admin),
+    nsx_util_notification:qa_create_group(UId, GId, Name, Desc, Publicity),
     nsx_util_notification:notify([group, init], GId),
     GId.
 
-safe_create_group(UId, GId, Name, Desc, Publicity) ->
-    case nsm_db:get(group, Name) of
-        {ok, _}            -> {error, already_exists};
-        {error, not_found} -> create_group(UId, GId, Name, Desc, Publicity)
-    end.
-
 add_to_group(UId, GId, Type) ->
-    nsm_users:subscribe_user_mq(group, UId, GId),
-    nsm_db:add_to_group(UId, GId, Type).
+    nsx_util_notification:qa_add_to_group(UId, GId, Type).
 
 remove_from_group(UId, GId) ->
-    nsm_users:remove_subscription_mq(group, UId, GId),
-    nsm_db:remove_from_group(UId, GId).
+    nsx_util_notification:qa_remove_from_group(UId, GId).
 
 
 % remove group, feed, records and comments, group_member, group_member_rev

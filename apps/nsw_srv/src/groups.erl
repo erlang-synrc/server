@@ -26,8 +26,6 @@ main_authorized() ->
     if
         Tooltip /= undefined ->
             tooltip_content(Tooltip);
-        NewGroup == "new" ->
-            create_new_group();
         true ->
             webutils:add_raw("
                 <script src=\"/nitrogen/js/jquery.validate.min.js\" type=\"text/javascript\"></script>
@@ -97,18 +95,6 @@ get_page_from_path(PI) ->
     case re:run(PI, "^([^/]+)/(.+)") of
         {match,[_,{B,L},{B1,L1}]} -> {string:substr(PI, B+1, L), string:substr(PI, B1+1, L1)};
         _ -> default
-    end.
-
-create_new_group() ->
-    Name = wf:q("gname"),
-    Desc = wf:q("gdesc"),
-    Type = wf:q("gtype"),
-    case rpc:call(?APPSERVER_NODE,nsm_groups, safe_create_group, [wf:user(), Name, Desc, list_to_atom(Type)]) of
-        {error, already_exists} -> "{\"status\":\"failed\", \"error_description\":\""++
-            io_lib:format("Group '~s' already exists",[Name])++"\"}"
-        ;Gid                    ->
-            ?PRINT({"create_new_group", Name, Desc, Type, Gid}),
-            "{\"status\":\"ok\"}"
     end.
 
 body() ->

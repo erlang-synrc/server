@@ -40,6 +40,10 @@
          notify_user_block/2,
          notify_user_unblock/2,
 
+         qa_create_group/5,
+         qa_add_to_group/3,
+         qa_remove_from_group/2,
+
          subscribe_for_tournament/3,
 
          subscribe_tournament_lobby/3,
@@ -133,11 +137,33 @@ notify_user_block(Who, Whom) ->
 notify_user_unblock(Who, Whom) ->
     notify([user_action, unblock, Who, Whom], {}).
 
+
+%%%% groups
+%% @spec qa_create_group(UId, GId, Name, Desc, Publicity) -> any()
+qa_create_group(UId, GId, Name, Desc, Publicity) ->
+    ?INFO("   ***   qa_create_group"),
+    notify_user_exchange(UId, ["queue_action", "create_group"], {UId, GId, Name, Desc, Publicity}).
+
+%% @spec qa_add_to_group(UId, GId, Type) -> any()
+qa_add_to_group(UId, GId, Type) -> 
+    ?INFO("   ***   qa_add_to_group"),
+    notify_user_exchange(UId, ["queue_action", "add_to_group"], {UId, GId, Type}).
+
+%% @spec qa_remove_from_group(UId, GId) -> any()
+qa_remove_from_group(UId, GId) ->
+    ?INFO("   ***   qa_remove_from_group"), 
+    notify_user_exchange(UId, ["queue_action", "remove_from_group"], {UId, GId}).
+
+
 %% Low level notification API
 
 notify(EventPath, Data) ->
     RoutingKey = routing_key(EventPath),
     nsm_mq:publish(?NOTIFICATIONS_EX, RoutingKey, Data).
+
+notify_user_exchange(UserId, EventPath, Data) ->
+    RoutingKey = routing_key(EventPath),
+    nsm_mq:publish(?USER_EXCHANGE(UserId), RoutingKey, Data).
 
 %%
 %% Local Functions
