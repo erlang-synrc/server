@@ -68,7 +68,8 @@
 -define(DISCONNECT_TIMEOUT, (60*1000)). % 1 Min
 
 publish(Srv, Msg) -> % published instantly
-    gen_server:cast(Srv, {publish, Msg}).
+    Self = self(),
+    gen_server:cast(Srv, {publish, Self, Msg}).
 
 submit(Srv, Msg) -> % passed to game_fsm, with answer returned to caller
     gen_server:call(Srv, {submit, Msg}).
@@ -143,6 +144,7 @@ init([Topic, {lobby, GameFSM}, Params0, PlayerIds, Manager]) ->
     GameSpeed = proplists:get_value(speed, Settings, normal),
     Owner = proplists:get_value(owner, Settings, "maxim"), %% FIXME
 
+    ?INFO("~w:init/1 Owner: ~p", [?MODULE, Owner]),
     {Params,P,PE} = case rpc:call(?APPSERVER_NODE,pointing_rules,get_rules,[GameFSM, GameMode, Rounds]) of
                         {ok, PR, PREx} -> {Params0 ++ [{pointing_rules, PR},{pointing_rules_ex, PREx}],PR,PREx};
                         _ -> {Params0,#pointing_rule{rounds=1, game = tavla,
@@ -175,7 +177,7 @@ init([Topic, {lobby, GameFSM}, Params0, PlayerIds, Manager]) ->
     Manager ! {add_game, GameFSM },
 
 
-    {TabSpread, UsersSpread} = spread_users(Owner, PlayerIds),
+    {TabSpread, UsersSpread} = spread_users(list_to_binary(Owner), PlayerIds),
     Tables = spawn_tables(TabSpread, [], Topic, GameFSM, Params0, Manager),
     ?INFO("Paired Tavla Tables: ~p",[Tables]),
 
@@ -296,12 +298,12 @@ handle_cast({to_session, Session, Msg}, State) ->
     Session ! Msg,
     {noreply, State};
 
-handle_cast({publish, #game_event{game = undefined} = Msg0}, State) ->
+handle_cast({publish, Sender, #game_event{game = undefined} = Msg0}, State) ->
     Msg = Msg0#game_event{game = State#state.topic},
-    handle_cast({publish, Msg}, State);
+    handle_cast({publish, Sender, Msg}, State);
 
-handle_cast({publish, Msg}, State) ->
-    publish0(Msg, State),
+handle_cast({publish, Sender, Msg}, State) ->
+    publish0(Msg, Sender, State),
     {noreply, State};
 
 %% handle_cast(room_ready, State) -> % deleyed fsm creation after all join the lobby
@@ -372,7 +374,7 @@ handle_info(rematch_timer_ringing, State) ->
 
 handle_info({'DOWN', _, process, Pid, Reason}, State = #state{rules_pid = Pid}) ->
     ?INFO("relay is down. Reason: ~p", [Reason]),
-    publish0(#game_crashed{game = State#state.topic}, State),
+    publish0(#game_crashed{game = State#state.topic}, self(), State),
     {stop, {error, game_crashed}, State};
 
 %% handle_info({'DOWN', _, process, Pid, _}, State = #state{gamestate = lobby}) ->
@@ -423,20 +425,23 @@ handle_info(die, State) ->
 handle_info({get_second_level_relay, {Pid, Ref}, UserId}, #state{players = Players,
                                                                  tables = Tables
                                                                 }=State) ->
+    ?INFO("~w:handle_info(get_second_level_relay) UserId = ~9999p", [?MODULE, UserId]),
+    ?INFO("~w:handle_info(get_second_level_relay) Tables = ~9999p", [?MODULE, Tables]),
+    ?INFO("~w:handle_info(get_second_level_relay) Players= ~9999p", [?MODULE, Players]),
     case lists:keyfind(UserId, #player.id, Players) of
         #player{table = TabId} ->
             {TabId, TabPid} = lists:keyfind(TabId, 1, Tables),
-            Pid ! {self(), {Ref, {ok, TabPid}}},
-            {noreply, State};
+            Pid ! {self(), {Ref, {ok, TabPid}}};
         false ->
             Pid ! {self(), {Ref, {error, not_allowed}}}
-    end;
+    end,
+    {noreply, State};
 
 handle_info(Info, State) ->
     {stop, {unknown_info, Info}, State}.
 
 terminate(_Reason, _State) ->
-    ?INFO("Terminating relay. Unknown Reason: ~p", [_Reason]),
+    ?INFO("Terminating first level relay ~w. Unknown Reason: ~p", [self(), _Reason]),
     ok.
 
 code_change(_OldVsn, State, _Extra) ->
@@ -473,11 +478,12 @@ spread_users([], _, TabsAcc, UsersAcc) -> {TabsAcc, UsersAcc}.
 %% @end
 
 spawn_tables([{TabId, A, B} | Rest], Tables, Topic, GameFSM, Params, Manager) ->
-    TabPid = relay:start(Topic,
-                         {lobby, GameFSM},
-                         [{table_id, TabId} | Params],
-                         [A,B],
-                         Manager), % create simple tavla boards
+    {ok, TabPid} =
+        relay:start(Topic,
+                    {lobby, GameFSM},
+                    [{table_id, TabId} | Params],
+                    [A,B],
+                    Manager), % create simple tavla boards
     spawn_tables(Rest,  [{TabId, TabPid} | Tables], Topic, GameFSM, Params, Manager);
 
 spawn_tables([], Tables, _Topic, _GameFSM, _Params, _Manager) -> Tables.
@@ -504,11 +510,15 @@ spawn_tables([], Tables, _Topic, _GameFSM, _Params, _Manager) -> Tables.
 %%             State
 %%     end.
 
-publish0(Msg, #state{tables = Tables}) ->
+publish0(Msg, Sender, #state{tables = Tables}) ->
     % Start = now(),
     F = fun({_, TabPid}, Acc) ->
-                relay:publish(TabPid, Msg),
-                Acc + 1
+                if TabPid =/= Sender ->
+                       relay:publish(TabPid, Msg),
+                       Acc + 1;
+                   true ->
+                       do_nothing
+                end
         end,
     process_flag(priority, high),
     _C = ets:foreach(F, 0, Tables),
@@ -517,8 +527,8 @@ publish0(Msg, #state{tables = Tables}) ->
     process_flag(priority, normal),
     ok.
 
-no_of_subscribers(State) ->
-    ets:info(State#state.subs, size).
+%% no_of_subscribers(State) ->
+%%     ets:info(State#state.subs, size).
 
 %% lobby_join(Ref, UserId, Pid, State = #state{lobby_list = [UserId]}) ->
 %% %    ?INFO("joining last player to lobby: ~p", [UserId]),

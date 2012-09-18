@@ -361,7 +361,7 @@ handle_call(#join_game{game = GameId}, _From, #state{user = User} = State) ->
                             ?INFO("join to game relay: ~p",[SecondLevelRelay]),
                             case relay:can_observe(SecondLevelRelay, UserId) of
                                 true ->
-                                    game_manager:subscribe(self(), GameId, UserId),
+                                    relay:subscribe(SecondLevelRelay, self(), UserId),
                                     Ref = erlang:monitor(process, SecondLevelRelay),
                                     Part = #participation{ref = Ref,
                                                           game_id = GameId,

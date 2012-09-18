@@ -96,6 +96,12 @@ terminate(_Reason, _State) -> ok.
 
 code_change(_OldVsn, State, _Extra) -> {ok, State}.
 
+first_level_module(GameFSM, GameMode) ->
+    case {GameFSM, GameMode} of
+        {game_tavla, paired} -> paired_tavla;
+        _ -> relay
+    end.
+
 -spec create_game_monitor(string(), pid(), [any()], [pid()], #state{}) -> {{'ok', pid()} | {'error', any()}, #state{}}.
 create_game_monitor(Topic, GameFSM, Params, Players, State) ->
             GameMode = proplists:get_value(game_mode, Params, standard),
