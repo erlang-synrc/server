@@ -7,8 +7,9 @@
 -include_lib("alog/include/alog.hrl").
 
 -export([start/0, stop/1, create_table/2, create_table/3, add_game/1, counter/1, game_requirements/1,
-         get_relay/1, subscribe/3, subscribe/2, unsubscribe/2,
-         init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
+         get_relay/1, subscribe/3, subscribe/2, unsubscribe/2]).
+
+-export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 
 -record(state, { game_tavla = 0, game_okey = 0 }).
 

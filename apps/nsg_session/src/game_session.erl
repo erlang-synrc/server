@@ -346,31 +346,67 @@ handle_call(#match_me{game_type = Game}, _From, State) when is_binary(Game) ->
     RequestRef = match_maker:match_me(GameModule),
     {reply, RequestRef, State#state{match_request = RequestRef}};
 
-handle_call(#join_game{game = GameId}, _From, State) ->
-    Participation = get_relay(GameId, State#state.games),
-    User = State#state.user,
-    Id = User#'PlayerInfo'.id,
-%    ?INFO("join game user ~p from ~p", [Id,_From]),
-    case {Participation, game_manager:get_relay(GameId) =/= undefined} of
-        {#participation{}, _} ->
+handle_call(#join_game{game = GameId}, _From, #state{user = User} = State) ->
+    UserId = User#'PlayerInfo'.id,
+%    ?INFO("join game user ~p from ~p", [UserId,_From]),
+
+    case get_relay(GameId, State#state.games) of
+        #participation{} ->
             {reply, {error, already_joined}, State};
-        {false, true} ->
-            Relay = game_manager:get_relay(GameId),
-            ?INFO("join to game relay: ~p",[Relay]),
-            true = is_pid(Relay),
-            case relay:can_observe(Relay, Id) of
-                true ->
-                    game_manager:subscribe(self(), GameId, Id),
-                    Ref = erlang:monitor(process, Relay),
-                    Part = #participation{ref = Ref, game_id = GameId, pid = Relay, role = player},
-                    Res = relay:get_table_info(Relay),
-                    {reply, Res, State#state{games = [Part | State#state.games]}};
-                false ->
-                    {reply, {error, this_game_is_private}, State}
-            end;
-        {false, false} ->
-            {reply, {error, game_not_found}, State}
+        false ->
+            case game_manager:get_relay(GameId) of
+                FirstLevelRelay when is_pid(FirstLevelRelay) ->
+                    case get_second_level_relay(FirstLevelRelay, UserId) of
+                        {ok, SecondLevelRelay} ->
+                            ?INFO("join to game relay: ~p",[SecondLevelRelay]),
+                            case relay:can_observe(SecondLevelRelay, UserId) of
+                                true ->
+                                    game_manager:subscribe(self(), GameId, UserId),
+                                    Ref = erlang:monitor(process, SecondLevelRelay),
+                                    Part = #participation{ref = Ref,
+                                                          game_id = GameId,
+                                                          pid = SecondLevelRelay,
+                                                          role = player},
+                                    Res = relay:get_table_info(SecondLevelRelay),
+                                    {reply, Res, State#state{games = [Part | State#state.games]}};
+                                false ->
+                                    {reply, {error, this_game_is_private}, State}
+                            end;
+                        {error, not_allowed} ->
+                            {reply, {error, this_game_is_private}, State};
+                        {error, timeout} ->
+                            {reply, {error, game_not_found}, State}
+                    end;
+                undefined ->
+                    {reply, {error, game_not_found}, State}
+            end
     end;
+
+%%handle_call(#join_game{game = GameId}, _From, #state{user = User} = State) ->
+%%    UserId = User#'PlayerInfo'.id,
+%%%    ?INFO("join game user ~p from ~p", [UserId,_From]),
+%%    Participation = get_relay(GameId, State#state.games)
+%%     
+%%     case {Participation, game_manager:get_relay(GameId) =/= undefined} of
+%%         {#participation{}, _} ->
+%%             {reply, {error, already_joined}, State};
+%%         {false, true} ->
+%%             Relay = game_manager:get_relay(GameId, UserId),
+%%             ?INFO("join to game relay: ~p",[Relay]),
+%%             true = is_pid(Relay),
+%%             case relay:can_observe(Relay, Id) of
+%%                 true ->
+%%                     game_manager:subscribe(self(), GameId, Id),
+%%                     Ref = erlang:monitor(process, Relay),
+%%                     Part = #participation{ref = Ref, game_id = GameId, pid = Relay, role = player},
+%%                     Res = relay:get_table_info(Relay),
+%%                     {reply, Res, State#state{games = [Part | State#state.games]}};
+%%                 false ->
+%%                     {reply, {error, this_game_is_private}, State}
+%%             end;
+%%         {false, false} ->
+%%             {reply, {error, game_not_found}, State}
+%%     end;
 
 handle_call(#rematch{game = GameId}, _From, State) ->
     ?INFO("rematch", []),
@@ -591,6 +627,30 @@ code_change(_OldVsn, State, _Extra) ->
 
 get_relay(GameId, GameList) ->
     lists:keyfind(GameId, #participation.game_id, GameList).
+
+%% @spec get_second_level_relay(FirstLevelRelay, UserId) -> {ok, Pid} |
+%%                                                          {error, Reason}
+%% @doc
+%% Types:
+%%     FirstLevelRelay = pid()
+%%     UserId = binary()
+%%     Reason = not_allowed |
+%%              timeout
+%% @end
+
+get_second_level_relay(FirstLevelRelay, UserId) ->
+    Ref = make_ref(),
+    From = {self(), Ref},
+    FirstLevelRelay ! {get_second_level_relay, From, UserId},
+    receive
+        {FirstLevelRelay, {Ref, {ok, Pid}}} ->
+            {ok, Pid};
+        {FirstLevelRelay, {Ref, {error, not_allowed}}} ->
+            {error, not_allowed}
+    after 5000 ->
+            {error, timeout}
+    end.
+
 
 maybe_send_message(RPC, Msg, State) ->
 %    try conn_kamf_worker:send_message(RPC, Msg) of
