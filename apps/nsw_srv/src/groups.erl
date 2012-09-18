@@ -146,32 +146,37 @@ content(PageNumber) ->
 
 inner_content(PageNumber) ->
     GroupsView = get_group_rows(PageNumber), %PHASE1 get_group_rows returns some tuple, not the list now
-    {_, _, _, _, _, _, _, _, _, _, GroupsViewList} = GroupsView,
+    case is_list(GroupsView) of
+        true ->
+            #span{text=GroupsView};
+        false ->
+            {_, _, _, _, _, _, _, _, _, _, GroupsViewList} = GroupsView,
 
-    %PHASE1 this isn't right, but will do for now
-    %PHASE1 if length(GroupsViewList) == ?GROUPPERPAGE/2 we can still have our next page bloked, 
-    %       if our current is the last one and full!
-    NextButton = if
-        length(GroupsViewList) < ?GROUPPERPAGE
-             -> #listitem{body=#link{text=">", url="javascript:void(0)", class="inactive"}};
-        true -> #listitem{body=#link{text=">", postback={page, PageNumber + 1}}}
-    end,
-    PrevButton = case PageNumber of
-        I when is_integer(I),I>1 -> #listitem{body=#link{text="<", postback={page, PageNumber - 1}}};
-        _                        -> #listitem{body=#link{text="<", url="javascript:void(0)", class="inactive"}}
-    end,
-    [
-        GroupsView,
-        #panel{class="paging-2", body=[
-        #panel{class="center", body=[
-            #list{body=[
-                    PrevButton,
-                    #listitem{body=#link{class="inactive", url="javascript:void(0)", text=io_lib:format("~b",[PageNumber])}},
-                    NextButton
+            %PHASE1 this isn't right, but will do for now
+            %PHASE1 if length(GroupsViewList) == ?GROUPPERPAGE/2 we can still have our next page bloked, 
+            %       if our current is the last one and full!
+            NextButton = if
+                length(GroupsViewList) < ?GROUPPERPAGE
+                     -> #listitem{body=#link{text=">", url="javascript:void(0)", class="inactive"}};
+                true -> #listitem{body=#link{text=">", postback={page, PageNumber + 1}}}
+            end,
+            PrevButton = case PageNumber of
+                I when is_integer(I),I>1 -> #listitem{body=#link{text="<", postback={page, PageNumber - 1}}};
+                _                        -> #listitem{body=#link{text="<", url="javascript:void(0)", class="inactive"}}
+            end,
+            [
+                GroupsView,
+                #panel{class="paging-2", body=[
+                #panel{class="center", body=[
+                    #list{body=[
+                            PrevButton,
+                            #listitem{body=#link{class="inactive", url="javascript:void(0)", text=io_lib:format("~b",[PageNumber])}},
+                            NextButton
+                        ]}
+                    ]}
                 ]}
-            ]}
-        ]}
-    ].
+            ]
+    end.
 
 searched_content(PageNumber, Content) ->
     GroupsView = [group_row(X) || X <- split_subs(Content, [])],

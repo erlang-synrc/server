@@ -458,7 +458,8 @@ add_to_group(MeId, FrId,Type) ->
         {ok,#group_member_rev{who=RevSubscriptions}} ->
             [ Sub || Sub <- RevSubscriptions, Sub#group_member_rev.who=/=MeId ]
         end],
-    nsm_db:put(#group_member_rev{who=RevList, group=FrId, type=list}).
+    nsx_util_notification:qa_group_put(FrId, #group_member_rev{who=RevList, group=FrId, type=list}).
+%    nsm_db:put(#group_member_rev{who=RevList, group=FrId, type=list}).
 
 remove_from_group(MeId, FrId) ->
     List = list_membership(MeId),
@@ -466,7 +467,8 @@ remove_from_group(MeId, FrId) ->
     nsm_db:put(#group_member{who = MeId, group=NewList, type=list}),
     RevList = list_group_users(FrId),
     NewRevList = [ Rec || Rec<-RevList, not(Rec#group_member_rev.who==MeId andalso Rec#group_member_rev.group==FrId) ],
-    nsm_db:put(#group_member_rev{who = NewRevList, group = FrId, type=list}).
+    nsx_util_notification:qa_group_put(FrId, #group_member_rev{who = NewRevList, group = FrId, type=list}).
+%    nsm_db:put(#group_member_rev{who = NewRevList, group = FrId, type=list}).
 
 list_membership(#user{username = UId}) -> list_membership(UId);
 list_membership(UId) when is_list(UId) ->
