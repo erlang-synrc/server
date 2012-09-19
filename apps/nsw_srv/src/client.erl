@@ -38,6 +38,7 @@ token() ->
         Debug,
         io_lib:fwrite("flashvars.tokenKey = encodeURIComponent(\"~s\");~n", [T]),
         io_lib:fwrite("flashvars.port = ~b;~n", [?SERVER_PORT]),
+        io_lib:fwrite("flashvars.user = ~b;~n", [wf:user()]),
         io_lib:fwrite("flashvars.locale = '~s';~n", [site_utils:detect_language()]),
         io_lib:fwrite("flashvars.host = \"~s\";~n", [case ?SERVER_HOST of
                                                         "188.40.111.154" -> "test.kakaranet.com";
