@@ -39,17 +39,28 @@
 
 init(Params) ->
     Owner = ?gv(owner, Params),
-    ?INFO(" +++ Init worker with start params: ~p", [Params]),
-    case feed:get_feed_by_user_or_group(Owner) of
-        {ok, Type, FeedId, DirectId} ->
-            ?INFO(" +++ Owner: ~p, Type: ~p, FeedId: ~p, DirectId: ~p",
-                  [Owner, Type, FeedId, DirectId]),
+    GivenFeedId = ?gv(feed_id, Params),
+    ?INFO(" ++ Init worker with start params: ~p", [Params]),
+    case GivenFeedId of
+        undefined ->
+            case feed:get_feed_by_user_or_group(Owner) of
+                {ok, Type, FeedId, DirectId} ->
+                    ?INFO(" ++ Owner: ~p, Type: ~p, FeedId: ~p, DirectId: ~p",
+                          [Owner, Type, FeedId, DirectId]),
+                    {ok, #state{owner = Owner,
+                                type = Type,
+                                feed = FeedId,
+                                direct = DirectId}};
+                Error ->
+                    ?INFO(" ++ Worker init error ~p", [Error]),
+                    {stop, Error}
+            end;
+        OkFeedId ->
+            ?INFO(" ++ Inited from given owner: ~p, FeedId: ~p", [Owner, OkFeedId]),
             {ok, #state{owner = Owner,
-                        type = Type,
-                        feed = FeedId,
-                        direct = DirectId}};
-        Error ->
-            {stop, Error}
+                        type = group,
+                        feed = OkFeedId,
+                        direct = undefined}}
     end.
 
 handle_notice(["feed", "delete", Owner] = Route, Message,
@@ -231,7 +242,9 @@ handle_notice(["wrong", "user", UId, "create_group"] = Route,
                               owner = UId,
                               feed = FId}),
     ?INFO(" +++ init mq for group"),
+    nsx_util_notification:notify([group, init], {GId, FId}),
     nsm_users:init_mq_for_group(GId),
+
     ?INFO(" +++ add admin ~p to group", [UId]),
     nsm_groups:add_to_group(UId, GId, admin),
     {noreply, State};
@@ -239,7 +252,7 @@ handle_notice(["wrong", "user", UId, "create_group"] = Route,
 handle_notice(["subscription", "user", UId, "add_to_group"] = Route, Message, #state{owner = Owner, type =Type} = State) ->
     ?INFO("queue_action(~p): add_to_group: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),
     {GId, UType} = Message,
-    ?INFO(" ++ add ~p to group ~p", [UId, GId]),
+    ?INFO("add ~p to group ~p", [UId, GId]),
     nsm_users:subscribe_user_mq(group, UId, GId),
     nsm_db:add_to_group(UId, GId, UType),
     {noreply, State};
@@ -247,7 +260,7 @@ handle_notice(["subscription", "user", UId, "add_to_group"] = Route, Message, #s
 handle_notice(["subscription", "user", UId, "remove_from_group"] = Route, Message, #state{owner = Owner, type =Type} = State) ->
     ?INFO("queue_action(~p): remove_from_group: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),    
     {GId} = Message,
-    ?INFO(" ++ remove ~p from group ~p", [UId, GId]),
+    ?INFO("remove ~p from group ~p", [UId, GId]),
     nsm_users:remove_subscription_mq(group, UId, GId),
     nsm_db:remove_from_group(UId, GId),
     {noreply, State};

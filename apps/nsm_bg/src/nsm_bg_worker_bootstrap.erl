@@ -57,6 +57,12 @@ handle_notice(["user", "init"], User, State) ->
     start_local_if_not_started(user, User),
     {noreply, State};
 
+handle_notice(["group", "init"], {Group, FeedId}, State) ->
+    ?INFO("internal_config(~p): feed ~p initialization message received: ~p",
+          [self(), FeedId, Group]),
+    start_local_if_not_started(user, Group, FeedId),
+    {noreply, State};
+
 handle_notice(["group", "init"], Group, State) ->
     ?INFO("internal_config(~p): feed initialization message received: ~p",
           [self(), Group]),
@@ -111,12 +117,12 @@ start_workers() ->
     Groups = nsm_db:all(group),
     [begin
          timer:sleep(15+random:uniform(20)),
-         ?INFO("start group: ~p",[G#group.username]),
+         ?INFO(" ++ start group: ~p",[G#group.username]),
          start_worker(G)
      end || G <- Groups],
     [begin
          timer:sleep(15+random:uniform(20)),
-         ?INFO("start user: ~p",[U#user.username]),
+         ?INFO(" ++ start user: ~p",[U#user.username]),
          start_worker(U)
      end || U <- Users].
 
@@ -125,6 +131,10 @@ start_worker(#user{username = U}) ->
 start_worker(#group{username = G}) ->
     start_global_if_not_started(group, G).
 
+
+start_local_if_not_started(Type, Name, FeedId) ->
+    Action = fun() -> nsm_bg:start_feed_worker(Name, FeedId) end,
+    start_worker(Type, Name, Action).
 
 start_local_if_not_started(Type, Name) ->
     Action = fun() -> nsm_bg:start_feed_worker(Name) end,

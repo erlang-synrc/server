@@ -6,8 +6,10 @@
 
 -export([create_group/4,
          create_group/5,
+         create_group_directly_to_db/5,
          remove_group/1,
          add_to_group/3,
+         add_to_group_directly_to_db/3,
          remove_from_group/2,
          list_group_per_user/2, list_group_per_user/1,  % the old one /2 was for mnesia (uses id), new is for riak.
          list_group_membership/1,
@@ -42,11 +44,56 @@ create_group(UId, GId, Name, Desc) ->
 
 create_group(UId, GId, Name, Desc, Publicity) ->
     nsx_util_notification:qa_create_group(UId, GId, Name, Desc, Publicity),
-    nsx_util_notification:notify([group, init], GId),
+    GId.
+
+create_group_directly_to_db(UId, GId, Name, Desc, Publicity) ->
+    FId = nsm_db:feed_create(),
+    CTime = erlang:now(),
+    nsm_db:put(#group{username = GId,
+                      name = Name,
+                      description = Desc,
+                      publicity = Publicity,
+                      creator = UId,
+                      created = CTime,
+                      owner = UId,
+                     feed = FId}),
+    nsm_users:init_mq_for_group(GId),
+    nsm_groups:add_to_group_directly_to_db(UId, GId, admin),
     GId.
 
 add_to_group(UId, GId, Type) ->
     nsx_util_notification:qa_add_to_group(UId, GId, Type).
+
+add_to_group_directly_to_db(UId, GId, Type) ->
+    nsm_users:subscribe_user_mq(group, UId, GId),
+    MeShow = case nsm_db:get(user, UId) of
+        {ok, #user{name=MeName,surname=MeSur}} ->
+            io_lib:format("~s ~s", [MeName,MeSur]);
+        _ ->
+            UId
+    end,
+    FrShow = case nsm_db:get(group, GId) of
+        {ok, #group{name=FrName}} -> FrName;
+        _ -> GId
+    end,
+    List = [#group_member{who=UId, group=GId, group_name=FrShow, type=Type} |
+        case nsm_db:get(group_member, UId) of
+        {error,notfound} ->
+            nsm_db:delete(group_member, UId),
+            [];
+        {ok,#group_member{group=Subscriptions}} ->
+            [ Sub || Sub <- Subscriptions, Sub#group_member.group=/=GId ]
+        end],
+    nsm_db:put(#group_member{who=UId, group=List, type=list}),
+    RevList = [#group_member_rev{ group= GId, who=UId, who_name=MeShow, type= Type} |
+        case nsm_db:get(group_member_rev, GId) of
+        {error,notfound} ->
+            nsm_db:delete(group_member_rev, GId),
+            [];
+        {ok,#group_member_rev{who=RevSubscriptions}} ->
+            [ Sub || Sub <- RevSubscriptions, Sub#group_member_rev.who=/=UId ]
+        end],
+    nsm_db:put(#group_member_rev{who=RevList, group=GId, type=list}).
 
 remove_from_group(UId, GId) ->
     nsx_util_notification:qa_remove_from_group(UId, GId).

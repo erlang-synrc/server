@@ -381,7 +381,8 @@ get_feed_by_user_or_group(UserOrGroup) ->
         {ok, User} -> {ok, user, User#user.feed, User#user.direct};
         _          -> case nsm_db:get(group, UserOrGroup) of
                         {ok, Group} -> {ok, group, Group#group.feed, undefined};
-                        _           -> {error, not_found}
+                        _           -> {ok, group, undefined, undefined}    % group may be late to a base
+%                        _           -> {error, not_found}
                       end
     end.
 
