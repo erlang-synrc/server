@@ -141,7 +141,7 @@
 
 -record(tavla_roll, {table_id :: any()}).
 
--record('TavlaAtomicMove', { from :: 'Position'(), to :: 'Position'() } ).
+-record('TavlaAtomicMove', { table_id::integer(),from :: 'Position'(), to :: 'Position'() } ).
 -record(tavla_move, { table_id  :: integer(), moves :: list(#'TavlaAtomicMove'{}), player :: 'PlayerId'() }).
 
 -record(tavla_skip, {table_id  :: integer()}).

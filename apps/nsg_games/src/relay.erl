@@ -1,4 +1,5 @@
 -module(relay).
+-author('Maxim Sokhatsky <maxim@synrc.com>').
 -behaviour(gen_server).
 
 -include_lib("nsg_srv/include/social_actions.hrl").
@@ -11,42 +12,13 @@
 -include_lib("nsg_srv/include/settings.hrl").
 -include_lib("stdlib/include/qlc.hrl").
 
--export([do_rematch/2,
-         signal/2,
-         publish/2,
-         submit/2,
-         republish/2,
-         notify_table/2,
-         game/1,
-         to_session/3,
-         subscribe/2,
-         subscribe/3,
-         unsubscribe/2,
-         get_requirements/2,
-         start_link/5,
-         stop/1,
-         get_topic/1,
-         get_player_state/2,
-         get_table_info/1,
-         update_gamestate/2,
-         can_observe/2,
-         unreg/2,
-         im_ready/1]).
+-export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
+-export([do_rematch/2, signal/2, publish/2, submit/2, republish/2, notify_table/2, game/1, to_session/3,
+         subscribe/2, subscribe/3, unsubscribe/2, get_requirements/2, start_link/5, stop/1, get_topic/1,
+         get_player_state/2, get_table_info/1, update_gamestate/2, can_observe/2, unreg/2, im_ready/1]).
 
--export([init/1, handle_call/3, handle_cast/2,
-         handle_info/2, terminate/2, code_change/3]).
-
--record(subscriber, {
-          pid,
-          id,
-          ref}).
-
--record(player, {
-          id     :: 'PlayerId'(),
-          pid    :: pid(),
-          monref :: 'MonitorRef'(),
-          is_bot = false
-         }).
+-record(subscriber, { pid, id, ref}).
+-record(player, { id :: 'PlayerId'(), pid :: pid(), monref :: 'MonitorRef'(), is_bot = false }).
 
 -record(state, {
           topic :: any(),                       %% game id
@@ -104,7 +76,6 @@ init([Topic, chat, _, _]) ->
 
 init([Topic, {lobby, GameFSM}, Params0, PlayerIds, Manager]) ->
     ?INFO("~ninit lobby ~p",[{GameFSM,Params0,PlayerIds,Manager}]),
-%    Settings = GameFSM:get_settings(Params0),
 
     Settings = Params0,
 
@@ -194,21 +165,6 @@ handle_call({do_rematch, Pid}, _From, State) ->
     publish(self(), #game_rematched{game = State#state.topic}),
     PlayersPids = [ Player#player.pid || Player <- State#state.players],
     {reply, ok, State#state{rematch_list = PlayersPids, rematch_timer = undefined}};
-
-%handle_call({do_rematch, Pid}, _From, State) -> % = #state{rematch_timer = {running, _}}) ->
-%    ?INFO("rematch B. Pid:~p", [Pid]),
-%    RematchList = State#state.rematch_list,
-%    WLStatus = lists:member(Pid, RematchList),
-%    case WLStatus of
-%        true ->
-%            {reply, ok, State#state{rematch_list = RematchList--[Pid]}};
-%        {_, _} ->
-%            {reply, {error, you_are_not_a_player}, State}
-%    end;
-
-%handle_call({do_rematch, Pid}, _From, State) ->
-%    ?INFO("Error. Pid ~p has asked for rematch. Not possible!~nTimer state: ~p", [Pid, State#state.rematch_timer]),
-%    {reply, {error, rematch_not_possible}, State};
 
 handle_call(get_topic, _From, State) ->
     {reply, State#state.topic, State};
@@ -563,16 +519,6 @@ notify_if_user_leaving(Pid, State) ->
             ?INFO("robot replacement allowed => do it. Player left: ~p", [PlayerId]),
             replace_with_robot(Player, Pid, State)
     end.
-
-%%--------------------------------------------------------------------
-%% Function: replace_session(MonRef, SessionPid, PlayerId, State1) -> State2
-%% Types:
-%%     MonRef = reference()
-%%     SessionPid = pid()
-%%     PlayerId = 'PlayerId'()
-%%     State1 = State2 = state()
-%% Description: Replace the old user session by the new one if the old session
-%%     exists.
 
 replace_session(MonRef, SessionPid, PlayerId, #state{players=Players,
                                                      subs=Subs,

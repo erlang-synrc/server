@@ -3,8 +3,8 @@
 -behaviour(gen_server).
 
 -export([start/3, start_link/3, robot_init/1, init_state/2, join_game/1, get_session/1,
-         send_message/2, call_rpc/2, do_skip/1, do_rematch/1, first_move_table/0,
-         make_first_move/1, follow_board/2 ]).
+         send_message/2, call_rpc/2, do_skip/2, do_rematch/1, first_move_table/0,
+         make_first_move/2, follow_board/2 ]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 
 -include_lib("nsg_srv/include/conf.hrl").
@@ -111,7 +111,7 @@ handle_cast({init_state, Situation}, State) ->
     SPid = State#state.session,
     game_session:bot_join_game(SPid, GId),
     ?INFO("Init State User ~p",[State#state.user]),
-    BPid = proc_lib:spawn_link(game_tavla_bot, robot_init, [#state{gid = GId, uid = UId, conn = self(), user = State#state.user}]),
+    BPid = proc_lib:spawn_link(game_tavla_bot, robot_init, [#state{gid = GId, uid = UId, conn = self(), table_id = State#state.table_id, user = State#state.user}]),
     BPid ! {init_hand, Situation},
     {noreply, State#state{bot = BPid, owner_mon = Mon}};
 
@@ -120,7 +120,7 @@ handle_cast(join_game, State) ->
     UId = State#state.uid,
     GId = State#state.gid,
     ?INFO("Init State User ~p",[State#state.user]),
-    BPid = proc_lib:spawn_link(game_tavla_bot, robot_init, [#state{gid = GId, uid = UId, conn = self(), user = State#state.user}]),
+    BPid = proc_lib:spawn_link(game_tavla_bot, robot_init, [#state{gid = GId, uid = UId, conn = self(), table_id = State#state.table_id, user = State#state.user}]),
     BPid ! join_game,
     {noreply, State#state{bot = BPid, owner_mon = Mon}};
 
@@ -183,14 +183,14 @@ tavla_client_loop(State) -> % incapsulate tavla protocol
             case {proplists:get_value(player, Params), State#state.started} of
                         {Id,false} ->
                             case State#state.next_initiated of
-                                false -> roll_action(State);
+                                false -> roll_action(State,TableId);
                                 true -> ignore
                             end;
                         {Id,true} ->
-                            roll_action(State);
+                            roll_action(State,TableId);
                         {_, false} ->
                             case State#state.next_initiated of
-                                false -> roll_action(State);
+                                false -> roll_action(State,TableId);
                                 true -> ignore
                             end;
                         {_, true} -> ignore
@@ -216,7 +216,7 @@ tavla_client_loop(State) -> % incapsulate tavla protocol
 
             ?INFO("tavla moves: ~p",[Params]),
             To = proplists:get_value(from, Params),
-            vido(State,To),
+            vido(State,To,TableId),
             tavla_client_loop(State);
 
             _ -> tavla_client_loop(State) end;
@@ -226,7 +226,7 @@ tavla_client_loop(State) -> % incapsulate tavla protocol
 
             ?INFO("tavla moves: ~p",[Params]),
             To = proplists:get_value(from, Params),
-            surrender(State,To),
+            surrender(State,To,TableId),
             tavla_client_loop(State);
 
             _ -> tavla_client_loop(State) end;
@@ -248,14 +248,15 @@ tavla_client_loop(State) -> % incapsulate tavla protocol
             _ -> tavla_client_loop(State) end;
         #game_event{event = <<"tavla_rolls">>, args = Params} ->
             TableId = proplists:get_value(table_id, Params, 0),
+            ?INFO("Tavla Rolls from Table ~p received",[{TableId,State#state.table_id}]),
             case TableId == State#state.table_id of true ->
             ?INFO("tavla rolls: ~p",[{proplists:get_value(player, Params),State#state.started}]),
             State2 = case {proplists:get_value(player, Params),State#state.started} of
                 {Id,_} ->
                       ?INFO("tavla rolls: dices=~p",[proplists:get_value(dices, Params)]),
                       case {Dices = proplists:get_value(dices, Params),State#state.started} of
-                        {[_A,_B],false} -> do_move(State,Dices), State#state{started = true, moves = State#state.moves + 1};
-                        {[_A,_B],true} -> do_move(State,Dices), State#state{moves = State#state.moves + 1};
+                        {[_A,_B],false} -> do_move(State,Dices,TableId), State#state{started = true, moves = State#state.moves + 1};
+                        {[_A,_B],true} -> do_move(State,Dices,TableId), State#state{moves = State#state.moves + 1};
                         {[_C],_} -> State
                       end;
                 _  -> State
@@ -304,7 +305,7 @@ tavla_client_loop(State) -> % incapsulate tavla protocol
         #game_event{event = <<"tavla_game_ended">>, args = Params} ->
             TableId = proplists:get_value(table_id, Params, 0),
             case TableId == State#state.table_id of true ->
-            say_ready(State),
+            say_ready(State,TableId),
             tavla_client_loop(State);
             _ -> tavla_client_loop(State) end;
         X ->
@@ -386,10 +387,10 @@ all_in_home(Board,Color) ->
          _ -> false
     end.
 
-make_decision(Board,Dices2,Color) -> % produces tavla moves
+make_decision(Board,Dices2,Color,TableId) -> % produces tavla moves
     [X,Y] = Dices2,
     Dices = case X =:= Y of true -> [X,X,X,X]; false -> Dices2 end,
-    Decision = first_available_move(Board,Dices,Color),
+    Decision = first_available_move(Board,Dices,Color,TableId),
     ?INFO("Decision: ~p",[Decision]),
     Decision.
 
@@ -416,9 +417,9 @@ first_move_table() -> [{{6,6},[{13,7},{13,7},{24,18},{24,18}]}, % based on
                        {{2,1},[{13,11},{6,5}]},
                        {{1,1},[{8,7},{8,7},{6,5},{6,5}]}
                       ].
-make_first_move(Dices) -> 
+make_first_move(Dices,TableId) -> 
     {_,Moves} = lists:keyfind(norm(Dices),1,first_move_table()),
-    [ #'TavlaAtomicMove'{from=25-From,to=25-To} || {From,To} <- Moves].
+    [ #'TavlaAtomicMove'{table_id = TableId,from=25-From,to=25-To} || {From,To} <- Moves].
 
 %replace_position(Board, Pos, C) ->
 %    [ case No of Pos -> C; _ -> Cell end || {Cell,No} <- lists:zip(Board,lists:seq(0,27))].
@@ -434,7 +435,7 @@ tactical_criteria(Board,Color) ->
 
 %kicks_available(Board,Dices,Color) -> 0.
 %covers_available(Board,Dices,Color) -> 0.
-first_available_move(Board,XY,Color) ->
+first_available_move(Board,XY,Color,TableId) ->
     {List,Dices,Found,NewBoard} = 
         lists:foldl(fun (A,Acc2) ->
              {List,D,_F,B} = Acc2,
@@ -483,9 +484,9 @@ first_available_move(Board,XY,Color) ->
              end end
         end, {[], XY, 0, Board}, lists:zip(Board,lists:seq(0,27))),
     ?INFO("moves found: ~p",[{List,Dices}]),
-    [#'TavlaAtomicMove'{from=From,to=To} || {From,To} <- List] ++
+    [#'TavlaAtomicMove'{table_id = TableId,from=From,to=To} || {From,To} <- List] ++
     case {length(Dices) > 0,Found} of
-         {true,1} -> first_available_move(NewBoard,Dices,Color);
+         {true,1} -> first_available_move(NewBoard,Dices,Color,TableId);
          _ -> []
     end.
 
@@ -496,39 +497,39 @@ do_rematch(State) ->
     GameId = State#state.gid,
     ok = call_rpc(S, #rematch{game = GameId}).
 
-say_ready(State) ->
+say_ready(State,TableId) ->
     S = State#state.conn,
     GameId = State#state.gid,
-    ok = call_rpc(S, #game_action{game = GameId, action = tavla_ready, args = []}).
+    ok = call_rpc(S, #game_action{game = GameId, action = tavla_ready, args = [{table_id,TableId}]}).
 
-vido(State,To) ->
+vido(State,To,TableId) ->
     S = State#state.conn,
     GameId = State#state.gid,
     ok = call_rpc(S, #game_action{game = GameId, 
                                   action = tavla_vido_answer,
-                                  args = [{from,State#state.uid},{to,To},{answer,false}]}).
+                                  args = [{table_id,TableId},{from,State#state.uid},{to,To},{answer,false}]}).
 
-surrender(State,To) ->
+surrender(State,To,TableId) ->
     S = State#state.conn,
     GameId = State#state.gid,
     ok = call_rpc(S, #game_action{game = GameId, 
                                   action = tavla_surrender_answer,
-                                  args = [{from,State#state.uid},{to,To},{answer,true}]}).
+                                  args = [{table_id,TableId},{from,State#state.uid},{to,To},{answer,true}]}).
 
-roll_action(State) ->
+roll_action(State,TableId) ->
     S = State#state.conn,
     GameId = State#state.gid,
-    ok = call_rpc(S, #game_action{game = GameId, action = tavla_roll, args = []}).
+    ok = call_rpc(S, #game_action{game = GameId, action = tavla_roll, args = [{table_id,TableId}]}).
 
-do_skip(State) ->
+do_skip(State,TableId) ->
     S = State#state.conn,
     GameId = State#state.gid,
     call_rpc(S, #game_action{
                         game = GameId,
                         action = tavla_skip,
-                        args = []}).
+                        args = [{table_id,TableId}]}).
 
-do_move(State, Dices) ->
+do_move(State, Dices,TableId) ->
     Delay = get_delay(State),
     simulate_delay(take, Delay),
     S = State#state.conn,
@@ -537,9 +538,9 @@ do_move(State, Dices) ->
     case A = call_rpc(S, #game_action{
                         game = GameId,
                         action = tavla_move,
-                        args = [ {player, Id},{moves, case State#state.moves of 
-                                                           0 -> make_first_move(Dices);
-                                                           _ -> make_decision(State#state.board, Dices, 1) end} ]}) of
+                        args = [ {table_id, TableId},{player, Id},{moves, case State#state.moves of 
+                                                           0 -> make_first_move(Dices,TableId);
+                                                           _ -> make_decision(State#state.board, Dices, 1,TableId) end} ]}) of
         _ ->
             ?INFO("do_move: A ~p ~p", [Id, A]),
             {false, Dices}

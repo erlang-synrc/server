@@ -113,6 +113,7 @@ get_settings0(Settings00) ->
     utils:apply_defauls(DefaultSettings, Settings0).
 
 -spec get_timeout(atom(), iolist()) -> integer().
+get_timeout(turn, undefined) -> get_timeout(turn, fast);
 get_timeout(turn, fast) ->
     {ok, Val} = rpc:call(?APPSERVER_NODE,nsm_db,get,[config,"games/tavla/turn_timeout_fast", 15000]), Val;
 get_timeout(turn, normal) ->
@@ -120,6 +121,7 @@ get_timeout(turn, normal) ->
 get_timeout(turn, slow) ->
     {ok, Val} = rpc:call(?APPSERVER_NODE,nsm_db,get,[config,"games/tavla/turn_timeout_slow", 60000]), Val;
 
+get_timeout(challenge, undefined) -> get_timeout(challenge, fast);
 get_timeout(challenge, fast) ->
     {ok, Val} = rpc:call(?APPSERVER_NODE,nsm_db,get,[config,"games/tavla/challenge_timeout_fast", 15000]), Val;
 get_timeout(challenge, normal) ->
@@ -127,6 +129,7 @@ get_timeout(challenge, normal) ->
 get_timeout(challenge, slow) ->
     {ok, Val} = rpc:call(?APPSERVER_NODE,nsm_db,get,[config,"games/tavla/challenge_timeout_slow", 60000]), Val;
 
+get_timeout(ready, undefined) -> get_timeout(ready, fast);
 get_timeout(ready, fast) ->
     {ok, Val} = rpc:call(?APPSERVER_NODE,nsm_db,get,[config,"games/tavla/ready_timeout_fast", 15000]), Val;
 get_timeout(ready, normal) ->
@@ -134,6 +137,7 @@ get_timeout(ready, normal) ->
 get_timeout(ready, slow) ->
     {ok, Val} = rpc:call(?APPSERVER_NODE,nsm_db,get,[config,"games/tavla/ready_timeout_slow", 45000]), Val;
 
+get_timeout(robot_production, undefined) -> get_timeout(robot_production, fast);
 get_timeout(robot, Speed) ->
     get_timeout(robot_production, Speed);
 get_timeout(robot_production, fast) ->
