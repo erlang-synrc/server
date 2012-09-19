@@ -152,7 +152,7 @@ init([Relay, Pids, GameId, Settings]) ->
 %    ?INFO("Settings: ~p Pids: ~p",[Settings,Pids]),
 %    ?INFO("Get Settings: ~p",[get_settings(Settings)]),
 
-   
+    ?INFO("Starting Tavla Game ~p with Players: ~p",[GameId,Pids]),
     Players = lists:map(fun(Pid) -> 
                              PI = game_session:get_player_info(Pid),
                              ?INFO("Session PI: ~p",[PI]),

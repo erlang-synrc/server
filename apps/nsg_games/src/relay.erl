@@ -47,6 +47,7 @@
 
 -record(state, {
           topic :: any(),                       %% game id
+          robots_joining = false :: boolean(),
           manager :: pid(),
           subs = ets:new(subs, [ordered_set, {keypos, #subscriber.pid}]), %% subscribed players/viewers
           players :: list(#player{}),           %% list of connected players, not undefined iff rules_module =/= chat
@@ -159,8 +160,7 @@ init([Topic, {lobby, GameFSM}, Params0, PlayerIds, Manager]) ->
         true -> {_,Bots} = lists:unzip(BotPids=[add_robot(State) || X <- _RobotIds]),
                  BotPlayers = [#player{pid=RID,id=RN,monref=self(),is_bot=true}||{RID,RN}<-BotPids],
                  ?INFO("Start Robots Only Game"),
-                 gen_server:cast(self(), room_ready),
-                {ok, State#state{robots = Bots,players=BotPlayers,lobby_list=[]}};
+                {ok, State#state{robots = Bots,players=BotPlayers,lobby_list=[],robots_joining = true}};
         _ ->    {ok, State}
     end.
 
@@ -273,7 +273,7 @@ handle_cast(room_ready, State) -> % deleyed fsm creation after all join the lobb
     Relay = self(),
     Fun = fun() ->
                   GameFSM = State#state.rules_module,
-                  ?INFO("Robots: ~p",[State#state.robots]),
+                  ?INFO("Robots: ~p",[State#state.players]),
                   Pids = [ P#player.pid || P <- State#state.players ],
                   {ok, RPid} = GameFSM:start(Relay, Pids, State#state.topic, State#state.rules_params),
                   gen_server:cast(Relay, {game_created, RPid})
@@ -296,19 +296,19 @@ handle_cast(stop, State) ->
 handle_cast({subscribe, Pid, PlayerId}, State = #state{gamestate = lobby}) -> % automatically unsubscribe when dead
     Ref = erlang:monitor(process, Pid),
     Pid ! ack,
-    ets:insert(State#state.subs, #subscriber{pid = Pid, id = PlayerId, ref = Ref}),
+    ets:insert(State#state.subs, #subscriber{pid = Pid, id = PlayerId#'PlayerInfo'.id, ref = Ref}),
     State1 = lobby_join(Ref, PlayerId, Pid, State),
     {noreply, State1};
 
 handle_cast({subscribe, Pid, PlayerId}, #state{players=Players, subs=Subs}=State) ->
     Ref = erlang:monitor(process, Pid),
     Pid ! ack,
-    ets:insert(Subs, #subscriber{pid = Pid, id = PlayerId, ref = Ref}),
+    ets:insert(Subs, #subscriber{pid = Pid, id = PlayerId#'PlayerInfo'.id, ref = Ref}),
     %% Replace old session by the new one if the player id is matched.
     case lists:keyfind(PlayerId, #player.id, Players) of
         #player{} ->
             %% This is needed to avoid possible deadlock
-            timer:send_after(5000, {replace, Pid, PlayerId, Ref});
+            timer:send_after(5000, {replace, Pid, PlayerId#'PlayerInfo'.id, Ref});
         false ->
             void
     end,
@@ -439,60 +439,35 @@ publish0(Msg, State) ->
 no_of_subscribers(State) ->
     ets:info(State#state.subs, size).
 
-%lobby_join(Ref, UserId, Pid, State = #state{lobby_list = [UserId]}) ->
-%    ?INFO("joining last player to lobby: ~p", [UserId]),
-%    R = (State#state.rules_module):get_requirements(),
-%    NoOfPlayers = proplists:get_value(players, R),
-%     Player = #player{id = UserId,
-%                     monref = Ref,
-%                     pid = Pid,
-%                     is_bot = lists:member(UserId, State#state.robots)
-%                    },
-%    Players = lists:reverse([Player | State#state.players]),
-%    RL = [ P#player.pid || P <- Players ],
-%    {RobotIds, HumanIds} = lists:partition(fun(robot) -> true; (_) -> false end,
-%                                           State#state.reg_players),
-%    case length(Players) of
-%        NoOfPlayers ->
-%            gen_server:cast(self(), room_ready),
-%            State#state{players = Players, rematch_list = RL, lobby_list = []};
-%        _ ->
-%            {_, RobotUIds} = lists:unzip(Bots = [ add_robot(State) || _ <- RobotIds ]),
-%            State#state{, rematch_list = RL, robots = RobotUIds,
-%                        reg_players = HumanIds ++ RobotUIds, lobby_list = RobotUIds}
-%    end;
-
 only_robots_left(LobbyList) -> lists:all(fun(A) -> A =:= robot end, LobbyList).
 
-lobby_join(Ref, UserId, Pid, State) ->
+lobby_join(Ref, User, Pid, State) ->
+    UserId = User#'PlayerInfo'.id,
+    IsRobot = User#'PlayerInfo'.robot,
     WL = State#state.lobby_list,
-    ?INFO("joining player to lobby: ~p", [{UserId,WL}]),
-    case lists:member(UserId, WL) of
-        true ->
-            Player = #player{id = UserId,
-                             monref = Ref,
-                             pid = Pid,
-                             is_bot = lists:member(UserId, State#state.robots)
-                            },
-            Players = [Player | State#state.players],
-            ?INFO("Last : ~p",[only_robots_left(State#state.lobby_list -- [UserId])]),
-            case only_robots_left(State#state.lobby_list--[UserId]) of
-                 true ->
+    LeftPlayers = WL -- [case IsRobot of true -> robot; _ -> UserId end],
+    NewState = case ((lists:member(UserId, WL)) or (IsRobot)) of
+        true ->  Player = #player{id = UserId, monref = Ref, pid = Pid, is_bot = IsRobot },
 
-                {RobotIds, HumanIds} = lists:partition(fun(robot) -> true; (_) -> false end, State#state.reg_players),
+                 Players = [Player | State#state.players],
 
-                          {_, RobotUIds} = lists:unzip(Bots = [ add_robot(State) || _ <- RobotIds ]),
-                           gen_server:cast(self(), room_ready),
-                          State#state{players = Players ++ [#player{id=RN,monref=Ref,pid=RID,is_bot = true}||{RID,RN}<-Bots], 
-                                      lobby_list = WL -- [UserId],
-                                      robots = RobotUIds };
-                 false -> State#state{players = Players, lobby_list = WL -- [UserId]}
-            end;
+                 ?INFO("Joining from wating list to signed-in: ~p", [{UserId,LeftPlayers,State#state.players}]),
 
-        false ->
-            ?INFO("not a player. Players left: ~p", [length(WL)]),
-            State
-    end.
+                 case (only_robots_left(LeftPlayers)and(not State#state.robots_joining)) of
+                     true -> {BotPids, BotNames} = lists:unzip(Bots = [ add_robot(State) || _ <- LeftPlayers ]),
+                              RestBots = [#player{id=RN,monref=Ref,pid=RID,is_bot = true} || {RID,RN} <- Bots ],
+                              State#state{ robots_joining = true, players = Players, lobby_list = LeftPlayers, robots = BotNames };
+                     false -> State#state{players = Players, lobby_list = LeftPlayers}
+                 end;
+
+        false -> ?INFO("Player ~p should be one of the left: ~p", [UserId,WL]), State
+    end,
+    case LeftPlayers == [] of
+         true ->  ?INFO("All players ready, starting the game ~p.",[State#state.players]),
+                  gen_server:cast(self(), room_ready);
+         false -> wait
+    end,
+    NewState.
 
 lobby_leave(Pid, State) ->
     Players = State#state.players,
