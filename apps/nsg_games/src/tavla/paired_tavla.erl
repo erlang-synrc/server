@@ -4,6 +4,7 @@
 -export([do_rematch/2,
          signal/2,
          publish/2,
+         notify_tables/2,
          submit/2,
          to_session/3,
          get_requirements/2,
@@ -17,7 +18,8 @@
          get_table_info/1,
          update_gamestate/2,
          can_observe/2,
-         unreg/2]).
+         unreg/2,
+         im_ready/1]).
 
 -include_lib("nsg_srv/include/social_actions.hrl").
 -include_lib("nsg_srv/include/logging.hrl").
@@ -62,12 +64,14 @@
           gamestate :: atom(),
           rematch_timer :: tuple(running, any()) | expired | undefined,
           from_lobby = false,
-          table_settings
+          table_settings,
+          ready_counter :: integer()
          }).
 
 -define(DISCONNECT_TIMEOUT, (60*1000)). % 1 Min
 
 publish(Srv, Msg) -> Self = self(), gen_server:cast(Srv, {publish, Self, Msg}).
+notify_tables(Srv, Msg) -> Self = self(), gen_server:cast(Srv, {notify_tables, Self, Msg}).
 submit(Srv, Msg) -> gen_server:call(Srv, {submit, Msg}).
 signal(Srv, Msg) -> gen_server:cast(Srv, {signal, Msg}).
 to_session(Srv, Session, Msg) -> gen_server:cast(Srv, {to_session, Session, Msg}).
@@ -84,6 +88,7 @@ can_observe(Srv, Id) -> gen_server:call(Srv, {can_observe, Id}).
 stop(Srv) -> gen_server:cast(Srv, stop).
 start_link(GameId, GameFSM, Params, Pids, Manager) -> gen_server:start_link(?MODULE, [GameId, GameFSM, Params, Pids, Manager], []).
 get_requirements(GameFSM,Mode) -> [{max_users,10},{min_users,4}].
+im_ready(Srv) -> Self = self(), gen_server:cast(Srv, {im_ready, Self}).
 
 init([Topic, {lobby, GameFSM}, Params0, PlayerIds, Manager]) ->
 
@@ -165,7 +170,8 @@ init([Topic, {lobby, GameFSM}, Params0, PlayerIds, Manager]) ->
                    from_lobby = true,
                    table_settings = Settings,
                    tables_users = TabSpread,
-                   tables_pids = Tables
+                   tables_pids = Tables,
+                   ready_counter = TablesNum
                   },
     ?INFO("State Lobby List: ~p",[State#state.lobby_list]),
     gen_server:cast(self(), {update_gamestate, State#state.gamestate}),
@@ -252,6 +258,10 @@ handle_cast({publish, Sender, Msg}, State) ->
     publish0(Msg, Sender, State),
     {noreply, State};
 
+handle_cast({notify_tables, Sender, Msg}, State) ->
+    notify_tables0(Msg, Sender, State),
+    {noreply, State};
+
 handle_cast({game_created, RPid}, State) ->
     ?INFO("room ready, starting game ~p~n", [{self(),RPid}]),
     GameFSM = State#state.rules_module,
@@ -259,6 +269,15 @@ handle_cast({game_created, RPid}, State) ->
     State2 = State#state{rules_pid = RPid, gamestate = started},
     GameFSM:signal(RPid, state_created),
     {noreply, State2};
+
+handle_cast({im_ready, _ChPid}, #state{ready_counter = Counter}=State) ->
+    ?INFO("I'm ready, starting game ~p~n", [{self(),_ChPid}]),
+    if Counter == 1 ->
+           notify_tables0(start, self(), State),
+           {noreply, State#state{ready_counter = 0}};
+       true ->
+           {noreply, State#state{ready_counter = Counter -1}}
+    end;
 
 handle_cast(stop, State) ->
     ?INFO("relay stop"),
@@ -370,7 +389,7 @@ handle_info({get_second_level_relay, {Pid, Ref}, User}, #state{tables_pids = Tab
       false -> {lists:keyfind(User#'PlayerInfo'.id, 2, Tables),
                 lists:keyfind(User#'PlayerInfo'.id, 3, Tables)}
      end,
-     
+
      {Res,Pos} = case First of false -> {Second,3}; _ -> {First,2} end,
      {TabId,_,_} = Res,
      {TabId,TabPid} = lists:keyfind(TabId,1,TablesPids),
@@ -469,19 +488,30 @@ spawn_tables([], Tables, _Topic, _GameFSM, _Params, _Manager, _TablesNum) -> Tab
 %%     end.
 
 publish0(Msg, Sender, #state{tables_pids = Tables}) ->
-    % Start = now(),
     F = fun({_, TabPid}, Acc) ->
                 if TabPid =/= Sender ->
-                       relay:publish(TabPid, Msg),
+                       relay:republish(TabPid, Msg),
                        Acc + 1;
                    true ->
-                       do_nothing
+                       Acc
                 end
         end,
     process_flag(priority, high),
-%    _C = ets:foreach(F, 0, Tables),
-    % ?INFO("msg ~p sent to ~p parties", [Msg, C]),
-    % io:format("time: ~p~n, Msg: ~p", [timer:now_diff(now(), Start) / 1000, Msg]),
+    _C = lists:foldl(F, 0, Tables),
+    process_flag(priority, normal),
+    ok.
+
+notify_tables0(Msg, Sender, #state{tables_pids = Tables}) ->
+    F = fun({_, TabPid}, Acc) ->
+                if TabPid =/= Sender ->
+                       relay:notify_table(TabPid, Msg),
+                       Acc + 1;
+                   true ->
+                       Acc
+                end
+        end,
+    process_flag(priority, high),
+    _C = lists:foldl(F, 0, Tables),
     process_flag(priority, normal),
     ok.
 

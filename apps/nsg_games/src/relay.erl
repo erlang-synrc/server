@@ -15,6 +15,8 @@
          signal/2,
          publish/2,
          submit/2,
+         republish/2,
+         notify_table/2,
          game/1,
          to_session/3,
          subscribe/2,
@@ -28,7 +30,8 @@
          get_table_info/1,
          update_gamestate/2,
          can_observe/2,
-         unreg/2]).
+         unreg/2,
+         im_ready/1]).
 
 -export([init/1, handle_call/3, handle_cast/2,
          handle_info/2, terminate/2, code_change/3]).
@@ -48,6 +51,7 @@
 -record(state, {
           topic :: any(),                       %% game id
           parent_relay :: undefined | {atom(), pid()}, %% {ParentModule, ParentPid}
+          table_id :: integer(),
           robots_joining = false :: boolean(),
           manager :: pid(),
           subs = ets:new(subs, [ordered_set, {keypos, #subscriber.pid}]), %% subscribed players/viewers
@@ -68,6 +72,8 @@
 -define(DISCONNECT_TIMEOUT, (60*1000)). % 1 Min
 
 publish(Srv, Msg) -> gen_server:cast(Srv, {publish, Msg}).
+republish(Srv, Msg) -> gen_server:cast(Srv, {republish, Msg}).
+notify_table(Srv, Msg) -> gen_server:cast(Srv, {notify_table, Msg}).
 submit(Srv, Msg) -> gen_server:call(Srv, {submit, Msg}).
 signal(Srv, Msg) -> gen_server:cast(Srv, {signal, Msg}).
 to_session(Srv, Session, Msg) -> gen_server:cast(Srv, {to_session, Session, Msg}).
@@ -110,7 +116,7 @@ init([Topic, {lobby, GameFSM}, Params0, PlayerIds, Manager]) ->
     TableName = proplists:get_value(table_name, Settings, "no table"),
     Rounds = proplists:get_value(rounds, Settings, 1),
     TableId = proplists:get_value(table_id, Settings, 1),
-    ParentRelay = proplists:get_value(parent_relay, Settings, undefined),
+    ParentRelay = proplists:get_value(parent_relay, Settings, {?MODULE, self()}),
     GameMode = proplists:get_value(game_mode, Settings, standard),
     GameSpeed = proplists:get_value(speed, Settings, normal),
     Owner = proplists:get_value(owner, Settings, "maxim"), %% FIXME
@@ -149,7 +155,8 @@ init([Topic, {lobby, GameFSM}, Params0, PlayerIds, Manager]) ->
 
     State = #state{topic = Topic, rules_pid = none, rules_module = GameFSM, rules_params = Params,
                    players = [], reg_players = PlayerIds, lobby_list = HumanIds ++ RobotIds, manager = Manager,
-                   gamestate = lobby, from_lobby = true, table_settings = Settings, parent_relay = ParentRelay},
+                   gamestate = lobby, from_lobby = true, table_id = TableId, table_settings = Settings,
+                   parent_relay = ParentRelay},
 
 
     ?INFO("State Lobby List: ~p",[State#state.lobby_list]),
@@ -266,6 +273,18 @@ handle_cast({publish, #game_event{game = undefined} = Msg0}, State) ->
 
 handle_cast({publish, Msg}, State) ->
     publish0(Msg, State),
+    {noreply, State};
+
+handle_cast({republish, Msg}, State) ->
+    republish0(Msg, State),
+    {noreply, State};
+
+handle_cast({notify_table, start}, State) ->
+    gen_server:cast(self(), room_ready),
+    {noreply, State};
+
+handle_cast({notify_table, Msg}, State) ->
+    ?INFO("~w:handle_cast Unhandled table notifivation: ~999p", [?MODULE, Msg]),
     {noreply, State};
 
 handle_cast(room_ready, State) -> % deleyed fsm creation after all join the lobby
@@ -424,23 +443,40 @@ unsubscribe1(Pid, #state{gamestate = Gamestate,
 
 publish0(Msg, #state{subs = Subs,
                      parent_relay = ParentRelay
-                    } = State) ->
-    % Start = now(),
+                    }) ->
     F = fun(#subscriber{pid = Pid}, Acc) ->
                 gen_server:cast(Pid, Msg),
                 Acc + 1
         end,
     process_flag(priority, high),
     _C = ets:foldr(F, 0, Subs),
-    %% Send message to a parent relay if it exists
+
+    Self = self(),
     case ParentRelay of
-        {ParentModule, ParentPid} ->
-           ParentModule:publish(ParentPid, Msg);
-        undefined -> do_nothing
+        {_, Self} -> do_nothing;
+        {ParentModule, ParentPid} -> ParentModule:publish(ParentPid, Msg)
     end,
-    % ?INFO("msg ~p sent to ~p parties", [Msg, C]),
-    % io:format("time: ~p~n, Msg: ~p", [timer:now_diff(now(), Start) / 1000, Msg]),
     process_flag(priority, normal),
+    ok.
+
+republish0(Msg, #state{subs = Subs}) ->
+    F = fun(#subscriber{pid = Pid}, Acc) ->
+                gen_server:cast(Pid, Msg),
+                Acc + 1
+        end,
+    process_flag(priority, high),
+    _C = ets:foldr(F, 0, Subs),
+    process_flag(priority, normal),
+    ok.
+
+notify_tables(Msg, #state{parent_relay = ParentRelay
+                         }) ->
+    Self = self(),
+    case ParentRelay of
+        {_, Self} -> do_nothing;
+        {ParentModule, ParentPid} ->
+            ParentModule:notify_tables(ParentPid, Msg)
+    end,
     ok.
 
 no_of_subscribers(State) ->
@@ -462,11 +498,15 @@ lobby_join(Ref, User, Pid, State) ->
         false -> ?INFO("Player ~p should be one of the left: ~p", [UserId,WL]), State
     end,
     case LeftPlayers == [] of
-         true ->  ?INFO("All players ready, starting the game ~p.",[NewState#state.players]),
-                  gen_server:cast(self(), room_ready);
-         false -> wait
-    end,
-    NewState.
+        true ->  ?INFO("All players ready, starting the game ~p.",[NewState#state.players]),
+                 {PRelMod, PRelPid} = State#state.parent_relay,
+                 PRelMod:im_ready(PRelPid),
+                 NewState;
+        false -> NewState
+    end.
+
+im_ready(Pid) ->
+   gen_server:cast(Pid, room_ready).
 
 lobby_leave(Pid, State) ->
     Players = State#state.players,
