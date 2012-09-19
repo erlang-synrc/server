@@ -303,6 +303,7 @@ add_sample_users() ->
     nsm_db:delete(subscription_rev, Me#user.username)
       end || Me <- UserList],
 
+    ?INFO("creating groups"),
 
     nsm_users:init_mq("ahmettez", ["kakaranet", "yeniler"]),
 
@@ -327,7 +328,7 @@ add_sample_users() ->
           nsm_users:init_mq(Me#user.username, [GId1, GId2]),
           subscribe_user_to_list(Me#user.username, UserList),
           case Me#user.username of
-              "alice" -> ok; % alice already in groups, as admin
+              "ahmettez" -> ok; % ahmettez already in groups, as admin
               _ ->
                   nsm_groups:add_to_group(Me#user.username, GId1, member),
                   nsm_groups:add_to_group(Me#user.username, GId2, member)

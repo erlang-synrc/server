@@ -39,10 +39,10 @@
 
 init(Params) ->
     Owner = ?gv(owner, Params),
-    ?INFO("Start params: ~p", [Params]),
+    ?INFO(" +++ Init worker with start params: ~p", [Params]),
     case feed:get_feed_by_user_or_group(Owner) of
         {ok, Type, FeedId, DirectId} ->
-            ?INFO("Owner: ~p, Type: ~p, FeedId: ~p, DirectId: ~p",
+            ?INFO(" +++ Owner: ~p, Type: ~p, FeedId: ~p, DirectId: ~p",
                   [Owner, Type, FeedId, DirectId]),
             {ok, #state{owner = Owner,
                         type = Type,
@@ -201,13 +201,14 @@ handle_notice(["feed", "user", UId, "scores", _Null, "add"] = _Route,
     {noreply, State};
 
 % nsm calls
-handle_notice(["feed", "group", GId, "put"] = Route, Message, #state{owner = Owner, type =Type} = State) ->
+handle_notice(["db", "group", GId, "put"] = Route, Message, #state{owner = Owner, type =Type} = State) ->
     ?INFO("queue_action(~p): put: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),
+    ?INFO(" +++ group worker got put!"),
     nsm_db:put(Message),
     {noreply, State};
 
 % groups
-handle_notice(["feed", "user", UId, "create_group"] = Route,
+handle_notice(["wrong", "user", UId, "create_group"] = Route,
               Message,
               #state{owner = Owner,
                      type =Type
@@ -215,11 +216,12 @@ handle_notice(["feed", "user", UId, "create_group"] = Route,
     {GId, Name, Desc, Publicity} = Message,
 
     ?INFO("queue_action(~p): create_group: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),
+    ?INFO(" ++ create group ~p", [GId]),
 
     FId = nsm_db:feed_create(),
     CTime = erlang:now(),
-    nsm_users:init_mq_for_group(GId),
     %%FIX: match results of such calls for success case
+    ?INFO(" +++ put group to db"),    
     ok = nsm_db:put(#group{username = GId,
                               name = Name,
                               description = Desc,
@@ -228,19 +230,24 @@ handle_notice(["feed", "user", UId, "create_group"] = Route,
                               created = CTime,
                               owner = UId,
                               feed = FId}),
+    ?INFO(" +++ init mq for group"),
+    nsm_users:init_mq_for_group(GId),
+    ?INFO(" +++ add admin ~p to group", [UId]),
     nsm_groups:add_to_group(UId, GId, admin),
     {noreply, State};
 
-handle_notice(["feed", "user", UId, "add_to_group"] = Route, Message, #state{owner = Owner, type =Type} = State) ->
+handle_notice(["subscription", "user", UId, "add_to_group"] = Route, Message, #state{owner = Owner, type =Type} = State) ->
     ?INFO("queue_action(~p): add_to_group: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),
     {GId, UType} = Message,
+    ?INFO(" ++ add ~p to group ~p", [UId, GId]),
     nsm_users:subscribe_user_mq(group, UId, GId),
     nsm_db:add_to_group(UId, GId, UType),
     {noreply, State};
 
-handle_notice(["feed", "user", UId, "remove_from_group"] = Route, Message, #state{owner = Owner, type =Type} = State) ->
-    ?INFO("queue_action(~p): remove_from_group: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),
+handle_notice(["subscription", "user", UId, "remove_from_group"] = Route, Message, #state{owner = Owner, type =Type} = State) ->
+    ?INFO("queue_action(~p): remove_from_group: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),    
     {GId} = Message,
+    ?INFO(" ++ remove ~p from group ~p", [UId, GId]),
     nsm_users:remove_subscription_mq(group, UId, GId),
     nsm_db:remove_from_group(UId, GId),
     {noreply, State};
@@ -274,10 +281,14 @@ get_opts(#state{type = group, owner = Owner}) ->
     %% group worker listen only for direct messages
     %% and special message to stop worker
     [{routes, [[feed, delete, Owner],
+
+               [db, group, Owner, put], % ??
+
                [feed, group, Owner, '*', '*', '*']]},
      {gproc_name, Name},
      {consume_options, [exclusive]},
      {queue, QueueName},
+     {exchange, ?GROUP_EXCHANGE(Owner)},    % ?? I have no idea what am I doing
      {queue_options, queue_options()}].
 
 %% --------------------------------------------------------------------

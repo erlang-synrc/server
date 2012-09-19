@@ -144,25 +144,21 @@ notify_user_unblock(Who, Whom) ->
 
 %% @spec qa_group_put(GId, Data) -> any()
 qa_group_put(GId, Data) ->
-    ?INFO("   ***   qa_group_put"),
-    notify(["feed", "group", GId, "put"], Data).
+    notify(["db", "group", GId, "put"], Data).
 
 
 %%%% groups
 %% @spec qa_create_group(UId, GId, Name, Desc, Publicity) -> any()
 qa_create_group(UId, GId, Name, Desc, Publicity) -> % this should go to special unique system key
-    ?INFO("   ***   qa_create_group"),
-    notify(["feed", "user", UId, "create_group"], {GId, Name, Desc, Publicity}).
+    notify(["wrong", "user", UId, "create_group"], {GId, Name, Desc, Publicity}).
 
 %% @spec qa_add_to_group(UId, GId, Type) -> any()
 qa_add_to_group(UId, GId, Type) -> 
-    ?INFO("   ***   qa_add_to_group"),
-    notify(["feed", "user", UId, "add_to_group"], {GId, Type}).
+    notify(["subscription", "user", UId, "add_to_group"], {GId, Type}).
 
 %% @spec qa_remove_from_group(UId, GId) -> any()
 qa_remove_from_group(UId, GId) ->
-    ?INFO("   ***   qa_remove_from_group"), 
-    notify(["feed", "user", UId, "remove_from_group"], {GId}).
+    notify(["subscription", "user", UId, "remove_from_group"], {GId}).
 
 
 %% Low level notification API
