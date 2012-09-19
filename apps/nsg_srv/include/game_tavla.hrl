@@ -50,6 +50,7 @@
           game_mode = undefined :: atom(),
           set_no :: integer, %% number of current set
           table_id  :: integer(),
+          tables_num :: integer(),
           current_round :: integer(),
           rounds :: integer(),
           players :: list(#'PlayerInfo'{}),

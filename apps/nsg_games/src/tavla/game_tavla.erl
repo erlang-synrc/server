@@ -39,6 +39,7 @@
           vido                  :: integer(),
           game_mode = undefined :: atom(),
           table_id = 1          :: integer(),
+          tables_num = 1        :: integer(),
           relay_monitor		:: pid(),
           rounds                :: integer(),
           current_round         :: integer(),
@@ -166,6 +167,7 @@ init([Relay, Pids, GameId, Settings]) ->
     State = #state{players = ColoredPlayers, wait_list = Pids, relay = Relay},
     Speed = proplists:get_value(speed, Settings),
     TableId = proplists:get_value(table_id, Settings),
+    TablesNum = proplists:get_value(tables_num, Settings),
     MulFactor = proplists:get_value(double_points, Settings, 1),
     SlangFlag = proplists:get_value(slang, Settings, false),
     ObserverFlag = proplists:get_value(deny_observers, Settings, false),
@@ -197,6 +199,7 @@ init([Relay, Pids, GameId, Settings]) ->
 
     {ok, state_created, State#state{game_id=GameId,
                                     table_id = TableId,
+                                    tables_num = TablesNum,
                                     table_name = iolist_to_binary(TName), 
                                     results = Results, 
                                     turn_timeout = get_timeout(turn, Speed),
@@ -662,6 +665,7 @@ start_game(State) ->
     Players = State#state.players,
 
     TableId = State#state.table_id,
+    TablesNum = State#state.tables_num,
     TableName = State#state.table_name,
     PInfos = lists:map(fun(#'TavlaPlayer'{player_info = PI}) ->
                                PI
@@ -672,6 +676,7 @@ start_game(State) ->
     publish_event(Relay, #tavla_game_info{game_type = game_tavla, 
                                           table_name = TableName,
                                           table_id = TableId,
+                                          tables_num = TablesNum,
                                           current_round = State#state.current_round,
                                           rounds = State#state.rounds,
                                           players = PInfos, 
