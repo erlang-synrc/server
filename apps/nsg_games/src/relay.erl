@@ -97,7 +97,10 @@ init([Topic, chat, _, _]) ->
 
 init([Topic, {lobby, GameFSM}, Params0, PlayerIds, Manager]) ->
     ?INFO("~ninit lobby ~p",[{GameFSM,Params0,PlayerIds,Manager}]),
-    Settings = GameFSM:get_settings(Params0),
+%    Settings = GameFSM:get_settings(Params0),
+
+    Settings = Params0,
+
     R = GameFSM:get_requirements(),
     NoOfPlayers = proplists:get_value(players, R),
     true = NoOfPlayers =/= undefined,
@@ -105,6 +108,7 @@ init([Topic, {lobby, GameFSM}, Params0, PlayerIds, Manager]) ->
 
     TableName = proplists:get_value(table_name, Settings, "no table"),
     Rounds = proplists:get_value(rounds, Settings, 1),
+    TableId = proplists:get_value(table_id, Settings, 1),
     GameMode = proplists:get_value(game_mode, Settings, standard),
     GameSpeed = proplists:get_value(speed, Settings, normal),
     Owner = proplists:get_value(owner, Settings, "maxim"), %% FIXME
