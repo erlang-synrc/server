@@ -47,6 +47,7 @@
 
 -record(state, {
           topic :: any(),                       %% game id
+          parent_relay :: undefined | {atom(), pid()}, %% {ParentModule, ParentPid}
           robots_joining = false :: boolean(),
           manager :: pid(),
           subs = ets:new(subs, [ordered_set, {keypos, #subscriber.pid}]), %% subscribed players/viewers
@@ -109,6 +110,7 @@ init([Topic, {lobby, GameFSM}, Params0, PlayerIds, Manager]) ->
     TableName = proplists:get_value(table_name, Settings, "no table"),
     Rounds = proplists:get_value(rounds, Settings, 1),
     TableId = proplists:get_value(table_id, Settings, 1),
+    ParentRelay = proplists:get_value(parent_relay, Settings, undefined),
     GameMode = proplists:get_value(game_mode, Settings, standard),
     GameSpeed = proplists:get_value(speed, Settings, normal),
     Owner = proplists:get_value(owner, Settings, "maxim"), %% FIXME
@@ -147,7 +149,7 @@ init([Topic, {lobby, GameFSM}, Params0, PlayerIds, Manager]) ->
 
     State = #state{topic = Topic, rules_pid = none, rules_module = GameFSM, rules_params = Params,
                    players = [], reg_players = PlayerIds, lobby_list = HumanIds ++ RobotIds, manager = Manager,
-                   gamestate = lobby, from_lobby = true, table_settings = Settings},
+                   gamestate = lobby, from_lobby = true, table_settings = Settings, parent_relay = ParentRelay},
 
 
     ?INFO("State Lobby List: ~p",[State#state.lobby_list]),
@@ -420,14 +422,22 @@ unsubscribe1(Pid, #state{gamestate = Gamestate,
             State
     end.
 
-publish0(Msg, State) ->
+publish0(Msg, #state{subs = Subs,
+                     parent_relay = ParentRelay
+                    } = State) ->
     % Start = now(),
     F = fun(#subscriber{pid = Pid}, Acc) ->
                 gen_server:cast(Pid, Msg),
                 Acc + 1
         end,
     process_flag(priority, high),
-    _C = ets:foldr(F, 0, State#state.subs),
+    _C = ets:foldr(F, 0, Subs),
+    %% Send message to a parent relay if it exists
+    case ParentRelay of
+        {ParentModule, ParentPid} ->
+           ParentModule:publish(ParentPid, Msg);
+        undefined -> do_nothing
+    end,
     % ?INFO("msg ~p sent to ~p parties", [Msg, C]),
     % io:format("time: ~p~n, Msg: ~p", [timer:now_diff(now(), Start) / 1000, Msg]),
     process_flag(priority, normal),
