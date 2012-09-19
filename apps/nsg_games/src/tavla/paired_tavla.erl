@@ -374,9 +374,10 @@ handle_info({get_second_level_relay, {Pid, Ref}, User}, #state{tables_pids = Tab
      {TabId,_,_} = Res,
      {TabId,TabPid} = lists:keyfind(TabId,1,TablesPids),
      NewTableArray  = Tables -- [Res],
+     ?INFO("New Tables Array: ~p",[ {NewTableArray,Res} ]),
      TablesUsers = NewTableArray ++ [setelement(Pos,Res,User#'PlayerInfo'.id)],
-     ?INFO("New Tables Array: ~p",[ TablesUsers ]),
-     ?INFO("Free Slot Found: ~p",[TabId,TabPid]),
+     ?INFO("Tables Users: ~p",[ TablesUsers ]),
+     ?INFO("Free Slot Found: ~p : ~p",[TabId,TabPid]),
      Pid ! { self(), {Ref, {ok, TabPid}} },
 
 %    case lists:keyfind(UserId, #player.id, Players) of

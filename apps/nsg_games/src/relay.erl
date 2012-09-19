@@ -139,30 +139,23 @@ init([Topic, {lobby, GameFSM}, Params0, PlayerIds, Manager]) ->
 
     Manager ! {add_game, GameFSM },
 
-    {_RobotIds, HumanIds} = lists:partition(fun(robot) -> true; (_) -> false end, PlayerIds),
-
-%    {only_robots_table, false} = {only_robots_table, length(HumanIds) < 1},
-
-    Relay = self(),
+    {RobotIds, HumanIds} = lists:partition(fun(robot) -> true; (_) -> false end, PlayerIds),
 
     State = #state{topic = Topic, rules_pid = none, rules_module = GameFSM, rules_params = Params,
-                   players = [], reg_players = PlayerIds, lobby_list = HumanIds ++ _RobotIds, manager = Manager,
+                   players = [], reg_players = PlayerIds, lobby_list = HumanIds ++ RobotIds, manager = Manager,
                    gamestate = lobby, from_lobby = true, table_settings = Settings},
 
 
     ?INFO("State Lobby List: ~p",[State#state.lobby_list]),
 
-    gen_server:cast(Relay, {update_gamestate, State#state.gamestate}),
+    gen_server:cast(self(), {update_gamestate, State#state.gamestate}),
 
-    ?INFO("Humans/Robots: ~p/~p",[length(HumanIds),length(_RobotIds)]),
+    ?INFO("Humans/Robots: ~p/~p",[length(HumanIds),length(RobotIds)]),
 
-    case length(HumanIds) < 1 of
-        true -> {_,Bots} = lists:unzip(BotPids=[add_robot(State) || X <- _RobotIds]),
-                 BotPlayers = [#player{pid=RID,id=RN,monref=self(),is_bot=true}||{RID,RN}<-BotPids],
-                 ?INFO("Start Robots Only Game"),
-                {ok, State#state{robots = Bots,players=BotPlayers,lobby_list=[],robots_joining = true}};
-        _ ->    {ok, State}
-    end.
+    [add_robot(State) || _ <- RobotIds],
+    ?INFO("Start Robots"),
+
+    {ok, State}.
 
 handle_call({submit, _Msg}, _From, #state{rules_module = chat} = State) ->
     {reply, {error, chat_has_no_game_fsm_module__cant_submit}, State};
@@ -273,7 +266,7 @@ handle_cast(room_ready, State) -> % deleyed fsm creation after all join the lobb
     Relay = self(),
     Fun = fun() ->
                   GameFSM = State#state.rules_module,
-                  ?INFO("Robots: ~p",[State#state.players]),
+                  ?INFO("Players: ~p",[State#state.players]),
                   Pids = [ P#player.pid || P <- State#state.players ],
                   {ok, RPid} = GameFSM:start(Relay, Pids, State#state.topic, State#state.rules_params),
                   gen_server:cast(Relay, {game_created, RPid})
@@ -442,28 +435,20 @@ no_of_subscribers(State) ->
 only_robots_left(LobbyList) -> lists:all(fun(A) -> A =:= robot end, LobbyList).
 
 lobby_join(Ref, User, Pid, State) ->
+    ?INFO("Player ~p with pid ~p comes to ~p",[User#'PlayerInfo'.id,Pid,self()]),
     UserId = User#'PlayerInfo'.id,
     IsRobot = User#'PlayerInfo'.robot,
     WL = State#state.lobby_list,
     LeftPlayers = WL -- [case IsRobot of true -> robot; _ -> UserId end],
-    NewState = case ((lists:member(UserId, WL)) or (IsRobot)) of
+    NewState = case (lists:member(UserId, WL)or(IsRobot)) of
         true ->  Player = #player{id = UserId, monref = Ref, pid = Pid, is_bot = IsRobot },
-
                  Players = [Player | State#state.players],
-
-                 ?INFO("Joining from wating list to signed-in: ~p", [{UserId,LeftPlayers,State#state.players}]),
-
-                 case (only_robots_left(LeftPlayers)and(not State#state.robots_joining)) of
-                     true -> {BotPids, BotNames} = lists:unzip(Bots = [ add_robot(State) || _ <- LeftPlayers ]),
-                              RestBots = [#player{id=RN,monref=Ref,pid=RID,is_bot = true} || {RID,RN} <- Bots ],
-                              State#state{ robots_joining = true, players = Players, lobby_list = LeftPlayers, robots = BotNames };
-                     false -> State#state{players = Players, lobby_list = LeftPlayers}
-                 end;
-
+                 ?INFO("Joining from wating list to signed-in ~p: ~p", [self(),{UserId,LeftPlayers,Players}]),
+                 State#state{players = Players, lobby_list = LeftPlayers };
         false -> ?INFO("Player ~p should be one of the left: ~p", [UserId,WL]), State
     end,
     case LeftPlayers == [] of
-         true ->  ?INFO("All players ready, starting the game ~p.",[State#state.players]),
+         true ->  ?INFO("All players ready, starting the game ~p.",[NewState#state.players]),
                   gen_server:cast(self(), room_ready);
          false -> wait
     end,
