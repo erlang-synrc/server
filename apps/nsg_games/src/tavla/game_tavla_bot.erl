@@ -9,6 +9,7 @@
 
 -include_lib("nsg_srv/include/conf.hrl").
 -include_lib("alog/include/alog.hrl").
+-include_lib("nsg_srv/include/basic_types.hrl").
 -include_lib("nsg_srv/include/requests.hrl").
 -include_lib("nsg_srv/include/game_tavla.hrl").
 -include_lib("nsg_srv/include/game_okey.hrl").
@@ -17,6 +18,7 @@
         moves = 0 :: integer(),
         started = false :: boolean(),
         next_initiated = false :: boolean(),
+        table_id :: integer(),
         is_robot = true :: boolean(),
         board :: list(tuple('Color'(), integer) | null),
         user :: #'PlayerInfo'{},
@@ -59,11 +61,9 @@ start_link(Owner, PlayerInfo, GameId) ->
     gen_server:start_link(?MODULE, [Owner, PlayerInfo, GameId], []).
 
 init([Owner, PlayerInfo, GameId]) ->
-    {ok, SPid} = game_session:start_link(self()),
-    game_session:bot_session_attach(SPid, PlayerInfo),
-    ?INFO("TAVLABOT started with game_session pid: ~p", [SPid]),
     UId = PlayerInfo#'PlayerInfo'.id,
-    {ok, #state{user = PlayerInfo, uid = UId, owner = Owner, gid = GameId, session = SPid}}.
+    ?INFO("TAVLABOT started with game_session pid: ~p user: ~p", [self(),PlayerInfo]),
+    {ok, #state{user = PlayerInfo, uid = UId, owner = Owner, gid = GameId}}.
 
 handle_call({send_message, Msg0}, _From, State) ->
     BPid = State#state.bot,
@@ -95,7 +95,9 @@ handle_call({reply, Id, Answer}, _From, State) ->
     {reply, ok, State};
 
 handle_call(get_session, _From, State) ->
-    {reply, State#state.session, State};
+    {ok, SPid} = game_session:start_link(self()),
+    game_session:bot_session_attach(SPid, State#state.user),
+    {reply, State#state.session, State#state{session = SPid}};
 
 handle_call(Request, _From, State) ->
     Reply = ok,
@@ -108,7 +110,8 @@ handle_cast({init_state, Situation}, State) ->
     GId = State#state.gid,
     SPid = State#state.session,
     game_session:bot_join_game(SPid, GId),
-    BPid = proc_lib:spawn_link(game_tavla_bot, robot_init, [#state{gid = GId, uid = UId, conn = self()}]),
+    ?INFO("Init State User ~p",[State#state.user]),
+    BPid = proc_lib:spawn_link(game_tavla_bot, robot_init, [#state{gid = GId, uid = UId, conn = self(), user = State#state.user}]),
     BPid ! {init_hand, Situation},
     {noreply, State#state{bot = BPid, owner_mon = Mon}};
 
@@ -116,7 +119,8 @@ handle_cast(join_game, State) ->
     Mon = erlang:monitor(process, State#state.owner),
     UId = State#state.uid,
     GId = State#state.gid,
-    BPid = proc_lib:spawn_link(game_tavla_bot, robot_init, [#state{gid = GId, uid = UId, conn = self()}]),
+    ?INFO("Init State User ~p",[State#state.user]),
+    BPid = proc_lib:spawn_link(game_tavla_bot, robot_init, [#state{gid = GId, uid = UId, conn = self(), user = State#state.user}]),
     BPid ! join_game,
     {noreply, State#state{bot = BPid, owner_mon = Mon}};
 
@@ -139,6 +143,7 @@ code_change(_OldVsn, State, _Extra) ->
 % loops
 
 robot_init(State) ->
+    ?INFO("Robot Init User Info ~p",[State#state.user]),
     robot_init_loop(State).
 
 robot_init_loop(State) -> % receiving messages from relay
@@ -165,11 +170,15 @@ robot_init_loop(State) -> % receiving messages from relay
     end.
 
 tavla_client_loop(State) -> % incapsulate tavla protocol
+    timer:sleep(300),
     S = State#state.conn,
     GameId = State#state.gid,
     Id = State#state.uid,
     receive
         #game_event{event = <<"tavla_next_turn">>, args = Params} ->
+            TableId = proplists:get_value(table_id, Params, 0),
+            case TableId == State#state.table_id of true ->
+
             ?INFO("tavla next turn: ~p",[{Id,State#state.started,State#state.next_initiated}]),
             case {proplists:get_value(player, Params), State#state.started} of
                         {Id,false} ->
@@ -187,32 +196,59 @@ tavla_client_loop(State) -> % incapsulate tavla protocol
                         {_, true} -> ignore
                     end,
             tavla_client_loop(State#state{next_initiated=true});
+
+            _ -> tavla_client_loop(State) end;
         #game_event{event = <<"tavla_moves">>, args = Params} ->
+            TableId = proplists:get_value(table_id, Params, 0),
+            case TableId == State#state.table_id of true ->
+
             ?INFO("tavla moves: ~p",[Params]),
             _Player = proplists:get_value(player, Params),
             From = proplists:get_value(from, Params),
             To = proplists:get_value(to, Params),
             NewBoard = follow_board(State#state.board,From,To),
             tavla_client_loop(State#state{started=true,board = NewBoard});
+
+            _ -> tavla_client_loop(State) end;
         #game_event{event = <<"tavla_vido_request">>, args = Params} ->
+            TableId = proplists:get_value(table_id, Params, 0),
+            case TableId == State#state.table_id of true ->
+
             ?INFO("tavla moves: ~p",[Params]),
             To = proplists:get_value(from, Params),
             vido(State,To),
             tavla_client_loop(State);
+
+            _ -> tavla_client_loop(State) end;
         #game_event{event = <<"tavla_surrender_request">>, args = Params} ->
+            TableId = proplists:get_value(table_id, Params, 0),
+            case TableId == State#state.table_id of true ->
+
             ?INFO("tavla moves: ~p",[Params]),
             To = proplists:get_value(from, Params),
             surrender(State,To),
             tavla_client_loop(State);
+
+            _ -> tavla_client_loop(State) end;
         #game_event{event = <<"tavla_ack">>, args = Params} ->
+            TableId = proplists:get_value(table_id, Params, 0),
+            case TableId == State#state.table_id of true ->
+
             ?INFO("tavla moves: ~p",[Params]),
             _To = proplists:get_value(from, Params),
             _Type = proplists:get_value(type, Params),
             tavla_client_loop(State);
-        #game_event{event = <<"tavla_game_started">>, args = _Args} ->
+
+            _ -> tavla_client_loop(State) end;
+        #game_event{event = <<"tavla_game_started">>, args = Params} ->
+            TableId = proplists:get_value(table_id, Params, 0),
+            case TableId == State#state.table_id of true ->
             Board = game_tavla:setup_board(), % proplists:get_value(board, _Args),
             tavla_client_loop(State#state{board = Board,moves=0,started=false,next_initiated=false});
+            _ -> tavla_client_loop(State) end;
         #game_event{event = <<"tavla_rolls">>, args = Params} ->
+            TableId = proplists:get_value(table_id, Params, 0),
+            case TableId == State#state.table_id of true ->
             ?INFO("tavla rolls: ~p",[{proplists:get_value(player, Params),State#state.started}]),
             State2 = case {proplists:get_value(player, Params),State#state.started} of
                 {Id,_} ->
@@ -225,33 +261,52 @@ tavla_client_loop(State) -> % incapsulate tavla protocol
                 _  -> State
             end,
             tavla_client_loop(State2);
+            _ -> tavla_client_loop(State) end;
         #game_rematched{game = GI} when GameId == GI ->
             ?INFO("tavla rematched: ~p", [{GameId}]);
-        #game_event{event = <<"player_left">>, args = Args} ->
-            ?INFO("tavla player left: ~p", [Args]),
-            Replaced = proplists:get_value(bot_replaced, Args, false) orelse
-                       proplists:get_value(human_replaced, Args, false),
+        #game_event{event = <<"player_left">>, args = Params} ->
+            TableId = proplists:get_value(table_id, Params, 0),
+            case TableId == State#state.table_id of true ->
+            ?INFO("tavla player left: ~p", [Params]),
+            Replaced = proplists:get_value(bot_replaced, Params, false) orelse
+                       proplists:get_value(human_replaced, Params, false),
             case Replaced of
                 false ->
                     call_rpc(S, #logout{});
                 true ->
                     tavla_client_loop(State)
             end;
+            _ -> tavla_client_loop(State) end;
         #game_event{event = <<"tavla_game_info">>, args = Args} ->
+             User = State#state.user,
              Mode = proplists:get_value(game_type, Args),
              SM = proplists:get_value(sets, Args),
+             TableId = proplists:get_value(table_id, Args),
+             ?INFO("TAVLABOT game_info ~p ~p",[self(),User]),
              SC = proplists:get_value(set_no, Args),
              RM = proplists:get_value(rounds, Args),
              _TO = proplists:get_value(timeouts, Args),
              Players = proplists:get_value(players, Args),
+             ?INFO("TAVLABOT players: ~p",[Players]),
              Delay = game_tavla:get_timeout(robot, fast),
              ST = #'TavlaSetState'{round_cur = 1, round_max = RM, set_cur = SC, set_max = SM},
-             tavla_client_loop( State#state{set_state = ST, delay = Delay, mode = Mode, players = Players});
-        #game_event{event = <<"tavla_series_ended">>, args = _Params} ->
+             CatchTID = case User == undefined of 
+                            false -> FoundMyself = lists:keyfind(User#'PlayerInfo'.id,#'PlayerInfo'.id,Players),
+                                    case FoundMyself of false -> undefined; _ -> TableId end;
+                            true -> ?INFO("ERROR USER in ~p is not set!",[self()]), undefined
+             end,
+             tavla_client_loop( State#state{set_state = ST, table_id = CatchTID, delay = Delay, mode = Mode, players = Players});
+        #game_event{event = <<"tavla_series_ended">>, args = Params} ->
+            TableId = proplists:get_value(table_id, Params, 0),
+            case TableId == State#state.table_id of true ->
             tavla_client_loop(State);
-        #game_event{event = <<"tavla_game_ended">>, args = _Params} ->
+            _ -> tavla_client_loop(State) end;
+        #game_event{event = <<"tavla_game_ended">>, args = Params} ->
+            TableId = proplists:get_value(table_id, Params, 0),
+            case TableId == State#state.table_id of true ->
             say_ready(State),
             tavla_client_loop(State);
+            _ -> tavla_client_loop(State) end;
         X ->
             ?INFO("TAVLABOT received UNKNOWN event: ~p",[X]),
             tavla_client_loop(State)

@@ -479,7 +479,7 @@ publish0(Msg, Sender, #state{tables_pids = Tables}) ->
                 end
         end,
     process_flag(priority, high),
-    _C = ets:foreach(F, 0, Tables),
+%    _C = ets:foreach(F, 0, Tables),
     % ?INFO("msg ~p sent to ~p parties", [Msg, C]),
     % io:format("time: ~p~n, Msg: ~p", [timer:now_diff(now(), Start) / 1000, Msg]),
     process_flag(priority, normal),

@@ -662,6 +662,7 @@ add_robot(State) ->
 create_robot(State) ->
     User = auth_server:robot_credentials(),
     NUId = User#'PlayerInfo'.id,
+    ?INFO("Created Fake Credentials for Robot : ~p",[User]),
     BM = bot_module(State#state.rules_module),
     {ok, NPid} = BM:start_link(self(), User, State#state.topic),
     SPid = BM:get_session(NPid),
