@@ -293,7 +293,7 @@ tavla_client_loop(State) -> % incapsulate tavla protocol
              ST = #'TavlaSetState'{round_cur = 1, round_max = RM, set_cur = SC, set_max = SM},
              CatchTID = case User == undefined of 
                             false -> FoundMyself = lists:keyfind(User#'PlayerInfo'.id,#'PlayerInfo'.id,Players),
-                                    case FoundMyself of false -> undefined; _ -> TableId end;
+                                    case FoundMyself of false -> State#state.table_id; _ -> TableId end;
                             true -> ?INFO("ERROR USER in ~p is not set!",[self()]), undefined
              end,
              tavla_client_loop( State#state{set_state = ST, table_id = CatchTID, delay = Delay, mode = Mode, players = Players});
@@ -530,6 +530,7 @@ do_skip(State,TableId) ->
                         args = [{table_id,TableId}]}).
 
 do_move(State, Dices,TableId) ->
+    ?INFO("TAVLABOT DO_MOVE ~p",[{Dices,TableId}]),
     Delay = get_delay(State),
     simulate_delay(take, Delay),
     S = State#state.conn,

@@ -160,7 +160,7 @@ init([Relay, Pids, GameId, Settings]) ->
     ?INFO("Starting Tavla Game ~p with Players: ~p",[GameId,Pids]),
     Players = lists:map(fun(Pid) -> 
                              PI = game_session:get_player_info(Pid),
-                             ?INFO("Session PI: ~p",[PI]),
+%                             ?INFO("Session PI: ~p",[PI]),
                              #'TavlaPlayer'{pid = Pid, player_id = PI#'PlayerInfo'.id, player_info = PI,collected=0 }
                         end, Pids),
     TName = proplists:get_value(table_name, get_settings(Settings)),
@@ -199,7 +199,7 @@ init([Relay, Pids, GameId, Settings]) ->
                 {pointing_rules_lucky, TestLuckyPR},
                 {users_options, UserOpts}],
 
-    ?INFO("GameInfo: ~p",[GameInfo]),
+%    ?INFO("GameInfo: ~p",[GameInfo]),
 
     {ok, state_created, State#state{game_id=GameId,
                                     table_id = TableId,
@@ -276,7 +276,7 @@ tavla_roll(Pid,State) ->
 tavla_move(Moves, Player, _Pid, State) ->
     TableId = State#state.table_id,
     Relay = State#state.relay,
-    ?INFO("tavla_move{} received from client ~p",[{Moves,Player}]),
+%    ?INFO("tavla_move{} received from client ~p",[{Moves,Player}]),
     TP1 = lists:nth(1,State#state.players),
     TP2 = lists:nth(2,State#state.players),
     P1 = TP1#'TavlaPlayer'.player_id,
@@ -380,7 +380,7 @@ tavla_surrender_answer(From,To,A, _Pid, State) ->
                    players = [#'TavlaPlayerScore'{player_id = From, score = 2 * Vido, winner = <<"true">>}, 
                    #'TavlaPlayerScore'{player_id = To, score = 0, winner = <<"none">>}]},
 
-                ?INFO("Assign Points: ~p",[{Results,State#state.game_info}]),
+%                ?INFO("Assign Points: ~p",[{Results,State#state.game_info}]),
 
                 Message = #tavla_game_ended{table_id = TableId,
                               winner = From,
@@ -697,8 +697,8 @@ start_game(State) ->
     M = #tavla_game_started{ table_id = TableId, players= [#tavla_color_info{ name = P1, color = 1},
                                        #tavla_color_info{ name = P2, color = 2}]},
 
-    ?INFO("tavla game started: ~p",[M]),
-    ?INFO("with game_info: ~p",[State#state.game_info]),
+%    ?INFO("tavla game started: ~p",[M]),
+%    ?INFO("with game_info: ~p",[State#state.game_info]),
     publish_event(Relay, M),
 
     #'TavlaPlayer'{player_id = PlayerID} = get_current(State),
