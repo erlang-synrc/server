@@ -139,7 +139,8 @@ init([Topic, {lobby, GameFSM}, Params0, PlayerIds, Manager]) ->
 
     {TabSpread, UsersSpread} = spread_users(list_to_binary(Owner), PlayerIds),
     ?INFO("Spread: ~p",[ {TabSpread, UsersSpread}]),
-    Tables = spawn_tables(TabSpread, [], Topic, GameFSM, Params0, Manager),
+    TablesNum = length(TabSpread),
+    Tables = spawn_tables(TabSpread, [], Topic, GameFSM, Params0, Manager, TablesNum),
     ?INFO("Paired Tavla Tables: ~p",[Tables]),
 
     {_RobotIds, HumanIds} = lists:partition(fun(robot) -> true; (_) -> false end, PlayerIds),
@@ -423,23 +424,27 @@ spread_users([A,B|Rest], TabId, TabsAcc, UsersAcc) ->
     spread_users(Rest, TabId+1, NewTabsAcc, NewUsersAcc2);
 spread_users([], _, TabsAcc, UsersAcc) -> {TabsAcc, UsersAcc}.
 
-%% @spec spawn_tables(Specs, Tables, Topic, GameFSM, Params, Manager) -> List
+%% @spec spawn_tables(Specs, Tables, Topic, GameFSM, Params, Manager, TablesNum) -> List
 %% @doc
 %% Types:
 %%     Specs = list({table_id(), user_id(), user_id()})
+%%     TablesNum = pos_integer()
 %%     List = list({table_id(), pid()})
 %% @end
 
-spawn_tables([{TabId, A, B} | Rest], Tables, Topic, GameFSM, Params, Manager) ->
+spawn_tables([{TabId, A, B} | Rest], Tables, Topic, GameFSM, Params, Manager, TablesNum) ->
     {ok, TabPid} =
         relay:start_link(Topic,
                     {lobby, GameFSM},
-                    [{table_id, TabId} | Params],
+                    [{table_id, TabId},
+                     {parent_relay, {?MODULE, self()}},
+                     {tables_num, TablesNum}
+                      | Params],
                     [A,B],
                     Manager), % create simple tavla boards
-    spawn_tables(Rest,  [{TabId, TabPid} | Tables], Topic, GameFSM, Params, Manager);
+    spawn_tables(Rest,  [{TabId, TabPid} | Tables], Topic, GameFSM, Params, Manager, TablesNum);
 
-spawn_tables([], Tables, _Topic, _GameFSM, _Params, _Manager) -> Tables.
+spawn_tables([], Tables, _Topic, _GameFSM, _Params, _Manager, _TablesNum) -> Tables.
 
 
 %% unsubscribe1(Pid, #state{gamestate = Gamestate,
