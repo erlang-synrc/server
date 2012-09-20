@@ -294,14 +294,10 @@ get_opts(#state{type = group, owner = Owner}) ->
     %% group worker listen only for direct messages
     %% and special message to stop worker
     [{routes, [[feed, delete, Owner],
-
-               [db, group, Owner, put], % ??
-
                [feed, group, Owner, '*', '*', '*']]},
      {gproc_name, Name},
      {consume_options, [exclusive]},
      {queue, QueueName},
-     {exchange, ?GROUP_EXCHANGE(Owner)},    % ?? I have no idea what am I doing
      {queue_options, queue_options()}].
 
 %% --------------------------------------------------------------------
