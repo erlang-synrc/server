@@ -4,7 +4,7 @@
 
 -export([start/3, start_link/3, robot_init/1, init_state/2, join_game/1, get_session/1,
          send_message/2, call_rpc/2, do_skip/2, do_rematch/1, first_move_table/0,
-         make_first_move/2, follow_board/2 ]).
+         make_first_move/3, follow_board/3 ]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 
 -include_lib("nsg_srv/include/conf.hrl").
@@ -22,6 +22,7 @@
         is_robot = true :: boolean(),
         board :: list(tuple('Color'(), integer) | null),
         user :: #'PlayerInfo'{},
+        player_color :: integer(),
         players,
         uid :: 'PlayerId'(),
         owner :: pid(),
@@ -202,11 +203,12 @@ tavla_client_loop(State) -> % incapsulate tavla protocol
             TableId = proplists:get_value(table_id, Params, 0),
             case TableId == State#state.table_id of true ->
 
-            ?INFO("tavla moves: ~p",[Params]),
+%            ?INFO("tavla moves: ~p",[Params]),
             _Player = proplists:get_value(player, Params),
+            PlayerColor = State#state.player_color,
             From = proplists:get_value(from, Params),
             To = proplists:get_value(to, Params),
-            NewBoard = follow_board(State#state.board,From,To),
+            NewBoard = follow_board(State#state.board,From,To,PlayerColor),
             tavla_client_loop(State#state{started=true,board = NewBoard});
 
             _ -> tavla_client_loop(State) end;
@@ -214,7 +216,7 @@ tavla_client_loop(State) -> % incapsulate tavla protocol
             TableId = proplists:get_value(table_id, Params, 0),
             case TableId == State#state.table_id of true ->
 
-            ?INFO("tavla moves: ~p",[Params]),
+%            ?INFO("tavla moves: ~p",[Params]),
             To = proplists:get_value(from, Params),
             vido(State,To,TableId),
             tavla_client_loop(State);
@@ -224,7 +226,7 @@ tavla_client_loop(State) -> % incapsulate tavla protocol
             TableId = proplists:get_value(table_id, Params, 0),
             case TableId == State#state.table_id of true ->
 
-            ?INFO("tavla moves: ~p",[Params]),
+%            ?INFO("tavla moves: ~p",[Params]),
             To = proplists:get_value(from, Params),
             surrender(State,To,TableId),
             tavla_client_loop(State);
@@ -233,8 +235,7 @@ tavla_client_loop(State) -> % incapsulate tavla protocol
         #game_event{event = <<"tavla_ack">>, args = Params} ->
             TableId = proplists:get_value(table_id, Params, 0),
             case TableId == State#state.table_id of true ->
-
-            ?INFO("tavla moves: ~p",[Params]),
+            ?INFO("TAVLABOT moves: ~p",[Params]),
             _To = proplists:get_value(from, Params),
             _Type = proplists:get_value(type, Params),
             tavla_client_loop(State);
@@ -243,20 +244,25 @@ tavla_client_loop(State) -> % incapsulate tavla protocol
         #game_event{event = <<"tavla_game_started">>, args = Params} ->
             TableId = proplists:get_value(table_id, Params, 0),
             case TableId == State#state.table_id of true ->
-            Board = game_tavla:setup_board(), % proplists:get_value(board, _Args),
-            tavla_client_loop(State#state{board = Board,moves=0,started=false,next_initiated=false});
+            Players = proplists:get_value(players, Params),
+            User = State#state.user,
+            FoundMyself = lists:keyfind(User#'PlayerInfo'.id,#tavla_color_info.name,Players),
+            ?INFO("TAVLABOT game_started my colored: ~p",[FoundMyself]),
+            PlayerColor = case FoundMyself#tavla_color_info.color of 1 -> 2; 2 -> 1 end,
+            Board = game_tavla:setup_board(PlayerColor),
+            tavla_client_loop(State#state{board = Board,moves=0,started=false,next_initiated=false,player_color=PlayerColor});
             _ -> tavla_client_loop(State) end;
         #game_event{event = <<"tavla_rolls">>, args = Params} ->
             TableId = proplists:get_value(table_id, Params, 0),
-            ?INFO("Tavla Rolls from Table ~p received",[{TableId,State#state.table_id}]),
+            ?INFO("TAVLABOT Rolls from Table ~p received",[{TableId,State#state.table_id}]),
             case TableId == State#state.table_id of true ->
-            ?INFO("tavla rolls: ~p",[{proplists:get_value(player, Params),State#state.started}]),
+            ?INFO("TAVLABOT rolls: ~p",[{proplists:get_value(player, Params),State#state.started}]),
             State2 = case {proplists:get_value(player, Params),State#state.started} of
                 {Id,_} ->
                       ?INFO("tavla rolls: dices=~p",[proplists:get_value(dices, Params)]),
                       case {Dices = proplists:get_value(dices, Params),State#state.started} of
-                        {[_A,_B],false} -> do_move(State,Dices,TableId), State#state{started = true, moves = State#state.moves + 1};
-                        {[_A,_B],true} -> do_move(State,Dices,TableId), State#state{moves = State#state.moves + 1};
+                        {[_A,_B],false} -> do_move(State,Dices,TableId,State#state.player_color), State#state{started = true, moves = State#state.moves + 1};
+                        {[_A,_B],true} -> do_move(State,Dices,TableId,State#state.player_color), State#state{moves = State#state.moves + 1};
                         {[_C],_} -> State
                       end;
                 _  -> State
@@ -315,11 +321,12 @@ tavla_client_loop(State) -> % incapsulate tavla protocol
 
 % logic
 
-follow_board(Board,Moves) ->
-    lists:foldl(fun ({From,To}, Acc) -> follow_board(Acc,From,To) end, Board, Moves).
+follow_board(Board,Moves,PlayerColor) ->
+    lists:foldl(fun ({From,To}, Acc) -> follow_board(Acc,From,To,PlayerColor) end, Board, Moves).
 
-follow_board(Board,From,To) -> % track the moves to keep board consistent
+follow_board(Board,From,To,PlayerColor) -> % track the moves to keep board consistent
 %%    ?INFO("Board: ~p",[Board]),
+    OppositePlayerColor = case PlayerColor of 1 -> 2; 2 -> 1 end,
     FromCell = lists:nth(From + 1,Board),
     {FromColor,_FromCount} = case FromCell of 
                                  null -> {0,0};
@@ -329,7 +336,8 @@ follow_board(Board,From,To) -> % track the moves to keep board consistent
           From -> case Cell of
                        {_Color,1} -> {{0,0},null};
                        {Color,Count} -> {{0,0},{Color,Count-1}};
-                       _ -> ?INFO("follow_board: cant move from empty slot"), {{0,0},null}
+                       _ -> ?INFO("Board: ~p From ~p To ~p",[Board,From,To]),
+                            ?INFO("follow_board: cant move from empty slot"), exit(self(),kill), {{0,0},null}
                   end;
             To -> case Cell of
                        null -> case FromColor of 0 -> {{0,0},null}; _ -> {{0,0},{FromColor,1}} end;
@@ -339,7 +347,8 @@ follow_board(Board,From,To) -> % track the moves to keep board consistent
                                  true -> {{0,0},{Color,Count+1}};
                                  false -> case Count of
                                                1 when FromColor =/= 0 -> {{Color,1},{FromColor,1}};
-                                               _ -> ?INFO("follow_board: cant kick tower"), {{0,0},{Color,Count}}
+                                               _ -> ?INFO("Board: ~p From ~p To ~p",[Board,From,To]),
+                                                    ?INFO("follow_board: cant kick tower"), exit(self(),kill), {{0,0},{Color,Count}}
                                           end
                             end
                   end;
@@ -352,7 +361,7 @@ follow_board(Board,From,To) -> % track the moves to keep board consistent
                        _ -> {KC,Sum+KA} 
                   end
             end,{0,0}, BoardWithKicks),
-%%    ?INFO("Kick: ~p",[{KickColor,KickAmount}]),
+    ?INFO("Kick: ~p",[{KickColor,KickAmount}]),
     NewBoard = [ case {No,KickColor} of
         {25,2} -> case Cell of
                        null -> {KickColor,KickAmount};
@@ -364,33 +373,34 @@ follow_board(Board,From,To) -> % track the moves to keep board consistent
                   end;
         _ -> Cell
     end || {{{_KC,_KA},Cell},No} <- lists:zip(BoardWithKicks,lists:seq(0,27))],
-%%    ?INFO("From: ~p", [From]),
-%%    ?INFO("To: ~p", [To]),
+%    ?INFO("TAVLABOT ~p From To: ~p", [case PlayerColor of 1 -> "WHITE"; 2->"BLACK" end,{From,To}]),
 %    ?INFO("NewBoard: ~p",[NewBoard]),
     NewBoard.
 
-all_in_home(Board,Color) ->
+all_in_home(Board,Color,PlayerColor) ->
     case Color of
-         1 -> Lates = lists:foldr(fun (A,Acc) -> 
+         PlayerColor -> Lates = lists:foldr(fun (A,Acc) -> 
 %                              ?INFO("AIH: ~p",[{A,Acc}]),
                               case A of
                                    {null,_No} -> Acc;
-                                   {{C,_Count},No} -> 
-                                       case {C, No < 19} of
-                                            {1,true} -> Acc + 1;
+                                   {{C,_Count},No} -> NotInHome = case PlayerColor of
+                                                           1 -> No < 19;
+                                                           2 -> No > 6 end,
+                                       case {C, NotInHome} of
+                                            {PlayerColor,true} -> Acc + 1;
                                             _ -> Acc
                                        end
                               end
                           end,0,lists:zip(Board,lists:seq(0,27))),
-              ?INFO("AIF foldr end: ~p",[Lates]),
+%              ?INFO("AIF foldr end: ~p",[Lates]),
               Lates =:= 0;
          _ -> false
     end.
 
-make_decision(Board,Dices2,Color,TableId) -> % produces tavla moves
+make_decision(Board,Dices2,Color,TableId,PlayerColor) -> % produces tavla moves
     [X,Y] = Dices2,
     Dices = case X =:= Y of true -> [X,X,X,X]; false -> Dices2 end,
-    Decision = first_available_move(Board,Dices,Color,TableId),
+    Decision = first_available_move(Board,Dices,Color,TableId,PlayerColor),
     ?INFO("Decision: ~p",[Decision]),
     Decision.
 
@@ -417,17 +427,20 @@ first_move_table() -> [{{6,6},[{13,7},{13,7},{24,18},{24,18}]}, % based on
                        {{2,1},[{13,11},{6,5}]},
                        {{1,1},[{8,7},{8,7},{6,5},{6,5}]}
                       ].
-make_first_move(Dices,TableId) -> 
+make_first_move(Dices,TableId,PlayerColor) -> 
     {_,Moves} = lists:keyfind(norm(Dices),1,first_move_table()),
-    [ #'TavlaAtomicMove'{table_id = TableId,from=25-From,to=25-To} || {From,To} <- Moves].
+    case PlayerColor of
+         1 -> [ #'TavlaAtomicMove'{table_id = TableId,from=25-From,to=25-To} || {From,To} <- Moves];
+         2 -> [ #'TavlaAtomicMove'{table_id = TableId,from=From,to=To} || {From,To} <- Moves]
+    end.
 
 %replace_position(Board, Pos, C) ->
 %    [ case No of Pos -> C; _ -> Cell end || {Cell,No} <- lists:zip(Board,lists:seq(0,27))].
 
-tactical_criteria(Board,Color) -> 
-   case all_in_home(Board,Color) of
+tactical_criteria(Board,Color,PlayerColor) -> 
+   case all_in_home(Board,Color,PlayerColor) of
         true  -> finish;
-        false -> case lists:nth(27,Board) of
+        false -> case lists:nth(case PlayerColor of 1 -> 27; 2 -> 26 end,Board) of
                       {Color,_} -> kicks;
                       _ -> race
                  end
@@ -435,11 +448,23 @@ tactical_criteria(Board,Color) ->
 
 %kicks_available(Board,Dices,Color) -> 0.
 %covers_available(Board,Dices,Color) -> 0.
-first_available_move(Board,XY,Color,TableId) ->
-    {List,Dices,Found,NewBoard} = 
-        lists:foldl(fun (A,Acc2) ->
+first_available_move(Board1,XY,Color,TableId,PlayerColor) ->
+    Color = PlayerColor,
+    ?INFO("First Available Move calculation for ~p",[case PlayerColor of 1 -> "WHITE"; 2 -> "BLACK" end]),
+    [BE|Rest] = Board1,
+    %[BE|Rest1|BK,WK,WE]
+    [WE,WK,BK|Rest1] = lists:reverse(Rest),
+    Board = case PlayerColor of
+         1 -> Board1;
+         2 -> [WE] ++ Rest1 ++ [WK,BK,BE]
+    end,
+
+    OppositePlayerColor = case PlayerColor of 1 -> 2; 2 -> 1 end,
+    WalkFun = fun lists:foldl/3,%case PlayerColor of 1 -> fun lists:foldl/3; 2 -> fun lists:foldl/3 end,
+    {List,Dices,Found,NewBoard} =
+        WalkFun(fun (A,Acc2) ->
              {List,D,_F,B} = Acc2,
-             Tactic = tactical_criteria(B,Color),
+             Tactic = tactical_criteria(B,Color,PlayerColor),
              case D of [] -> Acc2; _ ->
              {Cell,No}=A,
              [H|T] = D,
@@ -448,26 +473,26 @@ first_available_move(Board,XY,Color,TableId) ->
              case Cell of
                  null -> case Tactic of
                               kicks when No =:= H -> ?INFO("found kick to empty: ~p",[H]),
-                                       {List ++ [{26,H}], T,1,follow_board(B,26,H)};
+                                       {List ++ [{26,H}], T,1,follow_board(B,26,H,PlayerColor)};
                                   _ -> Acc2
                          end;
-                 {2,1} when Tactic =:= kicks andalso H =:= No -> 
+                 {OppositePlayerColor,1} when Tactic =:= kicks andalso H =:= No -> 
                             ?INFO("found kick kick: ~p",[H]),
-                            {List ++ [{26,H}], T,1,follow_board(B,26,H)};
+                            {List ++ [{26,H}], T,1,follow_board(B,26,H,PlayerColor)};
                  {Color,_Count} -> 
                       case Tactic of
                            kicks when H =:= No ->
                                 ?INFO("found kick over own: ~p",[H]),
-                                {List ++ [{26,H}], T,1,follow_board(B,26,H)};
+                                {List ++ [{26,H}], T,1,follow_board(B,26,H,PlayerColor)};
                            race ->
                                 case No + H + 1 < 25 of
                                      true  -> case lists:nth(No+H+1,Board) of
                                                    null      -> ?INFO("found race to empty: ~p",[No]),
-                                                                {List ++ [{No,No+H}], T,1,follow_board(B,No,No+H)};
-                                                   {Color,_} -> ?INFO("found race over own: ~p",[No]), 
-                                                                {List ++ [{No,No+H}], T,1,follow_board(B,No,No+H)};
-                                                   {2,1}     -> ?INFO("found race kick: ~p",[No]), 
-                                                                {List ++ [{No,No+H}], T,1,follow_board(B,No,No+H)};
+                                                                {List ++ [{No,No+H}], T,1,follow_board(B,No,No+H,PlayerColor)};
+                                                   {Color,_} -> ?INFO("found race over own: ~p",[No]),
+                                                                {List ++ [{No,No+H}], T,1,follow_board(B,No,No+H,PlayerColor)};
+                                                   {OppositePlayerColor,1}     -> ?INFO("found race kick: ~p",[No]), 
+                                                                {List ++ [{No,No+H}], T,1,follow_board(B,No,No+H,PlayerColor)};
                                                            _ -> Acc2
                                               end;
                                      false -> Acc2
@@ -475,7 +500,7 @@ first_available_move(Board,XY,Color,TableId) ->
                            finish ->
                                 case No + H + 1 >= 25 of
                                      true  -> ?INFO("found finish move: ~p",[No]),
-                                              {List ++ [{No,27}],T,1,follow_board(B,No,27)};
+                                              {List ++ [{No,27}],T,1,follow_board(B,No,27,PlayerColor)};
                                      false -> Acc2
                                 end;
                            _ -> Acc2
@@ -484,9 +509,22 @@ first_available_move(Board,XY,Color,TableId) ->
              end end
         end, {[], XY, 0, Board}, lists:zip(Board,lists:seq(0,27))),
     ?INFO("moves found: ~p",[{List,Dices}]),
-    [#'TavlaAtomicMove'{table_id = TableId,from=From,to=To} || {From,To} <- List] ++
+    case PlayerColor of
+         1 -> [#'TavlaAtomicMove'{table_id = TableId,from=From,to=To} || {From,To} <- List];
+         2 -> [#'TavlaAtomicMove'{table_id = TableId,from=case From of 
+                                                               26 -> 25;
+                                                               27 -> 0; 
+                                                               0 -> 27;
+                                                               _ -> 25-From end,
+                                                     to=  case To of
+                                                               25 -> 26;
+                                                               27 -> 0; 
+                                                               0 -> 27;
+                                                               _ -> 25-To end} || {From,To} <- List]
+    end
+    ++
     case {length(Dices) > 0,Found} of
-         {true,1} -> first_available_move(NewBoard,Dices,Color,TableId);
+         {true,1} -> first_available_move(NewBoard,Dices,Color,TableId,PlayerColor);
          _ -> []
     end.
 
@@ -529,19 +567,21 @@ do_skip(State,TableId) ->
                         action = tavla_skip,
                         args = [{table_id,TableId}]}).
 
-do_move(State, Dices,TableId) ->
-    ?INFO("TAVLABOT DO_MOVE ~p",[{Dices,TableId}]),
+do_move(State, Dices,TableId,PlayerColor) ->
+    OppositePlayerColor = case PlayerColor of 1 -> 2; 2 -> 1 end,
     Delay = get_delay(State),
     simulate_delay(take, Delay),
     S = State#state.conn,
     GameId = State#state.gid,
     Id = State#state.uid,
+    Decision = make_decision(State#state.board, Dices, PlayerColor,TableId,PlayerColor),
+    ?INFO("DO_MOVE: ~p",[Decision]),
     case A = call_rpc(S, #game_action{
                         game = GameId,
                         action = tavla_move,
                         args = [ {table_id, TableId},{player, Id},{moves, case State#state.moves of 
-                                                           0 -> make_first_move(Dices,TableId);
-                                                           _ -> make_decision(State#state.board, Dices, 1,TableId) end} ]}) of
+                                                           0 -> make_first_move(Dices,TableId,PlayerColor);
+                                                           _ -> Decision end} ]}) of
         _ ->
             ?INFO("do_move: A ~p ~p", [Id, A]),
             {false, Dices}

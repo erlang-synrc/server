@@ -4,7 +4,7 @@
 
 -export([start_link/2, start/3, start/4]).
 -export([signal/2, make_move/3, get_requirements/0, get_settings/1]).
--export([setup_board/0, get_timeout/2,roll/1, get_player_stats/1]).
+-export([setup_board/1, get_timeout/2,roll/1, get_player_stats/1]).
 -export([state_wait/3,
 		 state_start_rolls/3,
 		 state_move/3,
@@ -31,7 +31,7 @@
           players               :: list(#'TavlaPlayer'{}),
           c_rolls = []          :: list(integer),                             %% unused dices values
           b_rolls = []          :: list(tuple(pid(), integer)),               %% used when determing player making first move
-          board = setup_board() :: list(tuple('Color'(), integer) | null),
+          board = setup_board(1) :: list(tuple('Color'(), integer) | null),
           bar = []              :: list('Color'()),
           wait_list             :: list(pid()),
           stats			:: pid(),
@@ -170,8 +170,8 @@ init([Relay, Pids, GameId, Settings]) ->
                                end,Players, [1,2]),
     State = #state{players = ColoredPlayers, wait_list = Pids, relay = Relay},
     Speed = proplists:get_value(speed, Settings),
-    TableId = proplists:get_value(table_id, Settings),
-    TablesNum = proplists:get_value(tables_num, Settings),
+    TableId = proplists:get_value(table_id, Settings, 1),
+    TablesNum = proplists:get_value(tables_num, Settings, 1),
     MulFactor = proplists:get_value(double_points, Settings, 1),
     SlangFlag = proplists:get_value(slang, Settings, false),
     ObserverFlag = proplists:get_value(deny_observers, Settings, false),
@@ -711,7 +711,7 @@ get_current(State) ->
 roll(N) ->
     [ crypto:rand_uniform(1, 7) || _X <- lists:seq(1, N) ].
 
-setup_board() ->
+setup_board(Color) ->
     B = array:new(26, {default, null}),
     B1 = set_side(B, 1),
     B2 = array_reverse(B1),
