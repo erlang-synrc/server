@@ -269,7 +269,7 @@ tavla_roll(Pid,State) ->
     Diceroll = roll(2),
     Relay = State#state.relay,
     PI = lists:keyfind(Pid, #'TavlaPlayer'.pid, State#state.players),
-    publish_event(Relay, #tavla_rolls{table_id = TableId, player = PI#'TavlaPlayer'.player_id,dices=Diceroll}),
+    publish_event(Relay, #tavla_rolls{color = PI#'TavlaPlayer'.color,table_id = TableId, player = PI#'TavlaPlayer'.player_id,dices=Diceroll}),
     {reply, ok, state_move, State}.
 
 
@@ -467,7 +467,7 @@ state_start_rolls({#tavla_roll{}, Pid}, _,  #state{wait_list = List} = State ) -
         {true, false, [Pid]} ->
             [Diceroll] = roll(1),
             PI = lists:keyfind(Pid, #'TavlaPlayer'.pid, State#state.players),
-            publish_event(Relay, #tavla_rolls{table_id = TableId, player = PI#'TavlaPlayer'.player_id,dices=[Diceroll]}),
+            publish_event(Relay, #tavla_rolls{table_id = TableId, color = PI#'TavlaPlayer'.color,player = PI#'TavlaPlayer'.player_id,dices=[Diceroll]}),
             BRolls2 = lists:keysort(2, [{Pid, Diceroll} | BRolls]),
             case BRolls2 of
                 [{_Loser, X}, {Winner, X}] ->
@@ -475,14 +475,14 @@ state_start_rolls({#tavla_roll{}, Pid}, _,  #state{wait_list = List} = State ) -
                     _Pids = [P#'TavlaPlayer'.pid || P <- State#state.players],
                     PI2 = lists:keyfind(Winner, #'TavlaPlayer'.pid, State#state.players),
                     publish_event(Relay, #tavla_next_turn{table_id = TableId, player = PI2#'TavlaPlayer'.player_id}),
-                    publish_event(Relay, #tavla_rolls{table_id = TableId, player = PI2#'TavlaPlayer'.player_id, dices = [X, X]}),
+                    publish_event(Relay, #tavla_rolls{color = PI2#'TavlaPlayer'.color,table_id = TableId, player = PI2#'TavlaPlayer'.player_id, dices = [X, X]}),
                     State2 = State#state{wait_list = [], c_rolls = BRolls2},
                     {reply, ok, state_move, State2#state{vido = 1}};
                 [{Loser, X}, {Winner, Y}] ->
                     ?INFO("rolls normal: ~p",[{{Winner,X},{Loser,Y}}]),
                     PI2 = lists:keyfind(Winner, #'TavlaPlayer'.pid, State#state.players),
                     publish_event(Relay, #tavla_next_turn{table_id = TableId, player = PI2#'TavlaPlayer'.player_id}),
-                    publish_event(Relay, #tavla_rolls{table_id = TableId, player = PI2#'TavlaPlayer'.player_id, dices = [X, Y]}),
+                    publish_event(Relay, #tavla_rolls{color = PI2#'TavlaPlayer'.color,table_id = TableId, player = PI2#'TavlaPlayer'.player_id, dices = [X, Y]}),
                     State2 = State#state{wait_list = [], c_rolls = BRolls2},
                     {reply, ok, state_move, State2#state{vido = 1}}
             end;
@@ -490,7 +490,7 @@ state_start_rolls({#tavla_roll{}, Pid}, _,  #state{wait_list = List} = State ) -
             ?INFO("tavla: rolls init: ~p",[BRolls]),
             [Diceroll] = roll(1),
             PI3 = lists:keyfind(Pid, #'TavlaPlayer'.pid, State#state.players),
-            publish_event(Relay, #tavla_rolls{table_id = TableId, player = PI3#'TavlaPlayer'.player_id, dices=[Diceroll]}),
+            publish_event(Relay, #tavla_rolls{color = PI3#'TavlaPlayer'.color,table_id = TableId, player = PI3#'TavlaPlayer'.player_id, dices=[Diceroll]}),
             List2 = lists:delete(Pid, List),
             State2 = State#state{wait_list = List2, b_rolls = [{Pid, Diceroll} | BRolls]},
             {reply, ok, state_start_rolls, State2};

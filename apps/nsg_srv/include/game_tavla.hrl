@@ -97,6 +97,7 @@
 -record(tavla_rolls, {
           table_id  :: integer(),
           player  :: 'PlayerId'(),
+          color :: integer(),
           dices   :: list(integer())
                      }).
 
