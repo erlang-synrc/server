@@ -40,26 +40,13 @@
 
 % gen_server
 
-send_message(Pid, Message) -> % session talks to bot
-    gen_server:call(Pid, {send_message, Message}).
-
-call_rpc(Pid, Message) -> % bot talks to session
-    gen_server:call(Pid, {call_rpc, Message}).
-
-get_session(Pid) ->
-    gen_server:call(Pid, get_session).
-
-init_state(Pid, Situation) ->
-    gen_server:cast(Pid, {init_state, Situation}).
-
-join_game(Pid) ->
-    gen_server:cast(Pid, join_game).
-
-start(Owner, PlayerInfo, GameId) ->
-    gen_server:start(?MODULE, [Owner, PlayerInfo, GameId], []).
-
-start_link(Owner, PlayerInfo, GameId) ->
-    gen_server:start_link(?MODULE, [Owner, PlayerInfo, GameId], []).
+send_message(Pid, Message) -> gen_server:call(Pid, {send_message, Message}).
+call_rpc(Pid, Message) -> gen_server:call(Pid, {call_rpc, Message}).
+get_session(Pid) -> gen_server:call(Pid, get_session).
+init_state(Pid, Situation) -> gen_server:cast(Pid, {init_state, Situation}).
+join_game(Pid) -> gen_server:cast(Pid, join_game).
+start(Owner, PlayerInfo, GameId) -> gen_server:start(?MODULE, [Owner, PlayerInfo, GameId], []).
+start_link(Owner, PlayerInfo, GameId) -> gen_server:start_link(?MODULE, [Owner, PlayerInfo, GameId], []).
 
 init([Owner, PlayerInfo, GameId]) ->
     UId = PlayerInfo#'PlayerInfo'.id,
@@ -134,11 +121,8 @@ handle_info({'DOWN', Ref, process, _, Reason}, State = #state{owner_mon = OMon})
 handle_info(Info, State) ->
     {stop, {unrecognized_info, Info}, State}.
 
-terminate(_Reason, _State) ->
-    ok.
-
-code_change(_OldVsn, State, _Extra) ->
-    {ok, State}.
+terminate(_Reason, _State) -> ok.
+code_change(_OldVsn, State, _Extra) -> {ok, State}.
 
 % loops
 
