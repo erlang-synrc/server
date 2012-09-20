@@ -345,6 +345,9 @@ add_sample_users() ->
     nsm_acl:define_access({user, "maxim"},    {feature, admin}, allow),
     nsm_acl:define_access({user_type, admin}, {feature, admin}, allow),
 
+    {ok, G} = nsm_gifts_plugin_enilginc:get_gifts_test(),
+    nsm_gifts_tools:dumb_store(G),
+
     %% init feed workers infrastructure
 %    catch nsm_bg:start_all_feed_workers(),
     ok.
