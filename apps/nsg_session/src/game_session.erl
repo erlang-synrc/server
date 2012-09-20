@@ -53,76 +53,13 @@ bot_session_attach(Pid, UserInfo) ->
 bot_join_game(Pid, GameId) ->
     gen_server:cast(Pid, {bot_join_game, GameId}).
 
-%process_request(Pid, Source, Msg = #rematch{game = _Game}) ->
-%    ?INFO("API from ~p payload ~p pid ~p",[Source,Msg,Pid]),
-%    gen_server:call(Pid, Source, Msg);
 process_request(Pid, Source, Msg) ->
     ?INFO("API from ~p payload ~p pid ~p",[Source,Msg,Pid]),
     gen_server:call(Pid, Msg).
 
-%process_request(Pid, Source, Msg = #session_attach_debug{}) ->
-%    ?INFO("API from ~p payload ~p",[Source,Msg],),
-%    gen_server:call(Pid, Msg);
-
-%process_request(Pid, Source, Msg = #get_game_info{game = Game}) when is_number(Game) ->
-%    ?INFO("API from ~p payload ~p",[Source,Msg],),
-%    gen_server:call(Pid, Msg);
-
-%process_request(Pid, Source, Msg = #match_me{game_type = _Game}) ->
-%    ?INFO("API from ~p payload ~p",[Source,Msg],),
-%    gen_server:call(Pid, Msg);
-
-
-%process_request(Pid, Source, Msg = #join_game{}) ->
-%    gen_server:call(Pid, Msg);
-
-%process_request(Pid, Source, Msg = #game_action{}) ->
-%    gen_server:call(Pid, Msg);
-
-%process_request(Pid, Source, Msg = #game_event{}) ->
-%    gen_server:call(Pid, Msg);
-
-%process_request(Pid, Source, Msg = #pause_game{}) ->
-%    gen_server:call(Pid, Msg);
-
-
-%process_request(Pid, Source, Msg = #logout{}) ->
-%    gen_server:call(Pid, Msg);
-
-%process_request(Pid, Source, Msg = #get_player_info{}) ->
-%    gen_server:call(Pid, Msg);
-
-%process_request(Pid, Source, Msg = #get_player_stats{}) ->
-%    gen_server:call(Pid, Msg, infinity);
-
-%process_request(Pid, Source, Msg = #chat{}) ->
-%    gen_server:call(Pid, Msg);
-%process_request(Pid, Source, Msg = #social_action{}) ->
-%    gen_server:call(Pid, Msg);
-
-%%% tests
-%process_request(Pid, Source, Msg = #getobjecttypefromserver{}) ->
-%    gen_server:call(Pid, Msg);
-%process_request(Pid, Source, Msg = #getstringtypefromserver{}) ->
-%    gen_server:call(Pid, Msg);
-%process_request(Pid, Source, Msg = #getintegertypefromserver{}) ->
-%    gen_server:call(Pid, Msg);
-%process_request(Pid, Source, Msg = #getmixedtypesfromserver{}) ->
-%    gen_server:call(Pid, Msg).
-
 init([RPC]) ->
     MonRef = erlang:monitor(process, RPC),
     {ok, #state{rpc = RPC, rpc_mon = MonRef}}.
-
-%handle_call(#getobjecttypefromserver{}, _From, State) ->
-%    {reply, test_service:getobjecttypefromserver(), State};
-%handle_call(#getstringtypefromserver{}, _From, State) ->
-%    {reply, test_service:getstringtypefromserver(), State};
-%handle_call(#getintegertypefromserver{}, _From, State) ->
-%    {reply, test_service:getintegertypefromserver(), State};
-%handle_call(#getmixedtypesfromserver{}, _From, State) ->
-%    {reply, test_service:getmixedtypesfromserver(), State};
-%%% /debug
 
 handle_call(#session_attach{token = Token}, _From, State = #state{user = undefined}) ->
     ?INFO("checking session token: ~p", [Token]),
@@ -134,8 +71,6 @@ handle_call(#session_attach{token = Token}, _From, State = #state{user = undefin
         UserInfo ->
             ?INFO("successfull session attach. Your user info: ~p", [UserInfo]),
             {reply, UserInfo, State#state{user = UserInfo}}
-%        _ ->
-%            ?INFO("auth server unknown user info", [])
     end;
 
 handle_call(#session_attach_debug{token = Token, id = Id}, _From, State = #state{user = undefined}) ->
@@ -167,8 +102,7 @@ handle_call(#get_game_info{}, _From, State) ->
 
 handle_call(#logout{}, _From, State) ->
     ?INFO("client requests #logout{}", []),
-    self() ! terminate, %% using such construction since session must
-    %% first return result, and only after that terminate itself
+    self() ! terminate,
     {reply, ok, State};
 
 handle_call(#get_player_stats{player_id = PlayerId, game_type = Game}, _From, State) when is_binary(Game) ->
@@ -200,18 +134,6 @@ handle_call(#chat{chat_id = GameId, message = Msg0}, _From,
                   relay:publish(Srv, Msg)
           end,
     {reply, Res, State};
-
-%% handle_call(#social_action_msg{type=Type,initiator=P1,recipient=P2} = Msg, _From, State = #state{}) ->
-%%     ?INFO("social action msg from ~p to ~p", [P1,P2]),
-%%     case P1 of 
-%%          A when is_binary(P1) -> case P2 of
-%%                                  B when is_binary(P2) ->
-%%     rpc:call(?APPSERVER_NODE,users,subscribe_user,[erlang:binary_to_list(P1),erlang:binary_to_list(P2)]);
-%%                                  _ -> nothing
-%%                                  end;
-%%          _ -> nothing
-%%     end,
-%%     {reply, ok, State};
 
 handle_call(#social_action_msg{type=Type, initiator=P1, recipient=P2} = _Msg,
             _From, #state{user=User} = State) when User =/= undefined ->
@@ -348,8 +270,7 @@ handle_call(#match_me{game_type = Game}, _From, State) when is_binary(Game) ->
 
 handle_call(#join_game{game = GameId}, _From, #state{user = User} = State) ->
     UserId = User#'PlayerInfo'.id,
-%    ?INFO("join game user ~p from ~p", [UserId,_From]),
-
+    ?INFO("join game user ~p from ~p", [UserId,_From]),
     case get_relay(GameId, State#state.games) of
         #participation{} ->
             {reply, {error, already_joined}, State};
@@ -359,19 +280,11 @@ handle_call(#join_game{game = GameId}, _From, #state{user = User} = State) ->
                     case get_second_level_relay(FirstLevelRelay, User) of
                         {ok, SecondLevelRelay} ->
                             ?INFO("join to game relay: ~p",[SecondLevelRelay]),
-%                            case relay:can_observe(SecondLevelRelay, UserId) of
-%                                true ->
-                                    relay:subscribe(SecondLevelRelay, self(), User),
-                                    Ref = erlang:monitor(process, SecondLevelRelay),
-                                    Part = #participation{ref = Ref,
-                                                          game_id = GameId,
-                                                          pid = SecondLevelRelay,
-                                                          role = player},
-                                    Res = #'TableInfo'{}, %relay:get_table_info(SecondLevelRelay),
-                                    {reply, Res, State#state{games = [Part | State#state.games]}};
-%                                false ->
-%                                    {reply, {error, this_game_is_private}, State}
-%                            end;
+                            relay:subscribe(SecondLevelRelay, self(), User),
+                            Ref = erlang:monitor(process, SecondLevelRelay),
+                            Part = #participation{ref = Ref, game_id = GameId, pid = SecondLevelRelay, role = player},
+                            Res = #'TableInfo'{}, %relay:get_table_info(SecondLevelRelay),
+                            {reply, Res, State#state{games = [Part | State#state.games]}};
                         {error, not_allowed} ->
                             {reply, {error, this_game_is_private}, State};
                         {error, timeout} ->
@@ -381,32 +294,6 @@ handle_call(#join_game{game = GameId}, _From, #state{user = User} = State) ->
                     {reply, {error, game_not_found}, State}
             end
     end;
-
-%%handle_call(#join_game{game = GameId}, _From, #state{user = User} = State) ->
-%%    UserId = User#'PlayerInfo'.id,
-%%%    ?INFO("join game user ~p from ~p", [UserId,_From]),
-%%    Participation = get_relay(GameId, State#state.games)
-%%     
-%%     case {Participation, game_manager:get_relay(GameId) =/= undefined} of
-%%         {#participation{}, _} ->
-%%             {reply, {error, already_joined}, State};
-%%         {false, true} ->
-%%             Relay = game_manager:get_relay(GameId, UserId),
-%%             ?INFO("join to game relay: ~p",[Relay]),
-%%             true = is_pid(Relay),
-%%             case relay:can_observe(Relay, Id) of
-%%                 true ->
-%%                     game_manager:subscribe(self(), GameId, Id),
-%%                     Ref = erlang:monitor(process, Relay),
-%%                     Part = #participation{ref = Ref, game_id = GameId, pid = Relay, role = player},
-%%                     Res = relay:get_table_info(Relay),
-%%                     {reply, Res, State#state{games = [Part | State#state.games]}};
-%%                 false ->
-%%                     {reply, {error, this_game_is_private}, State}
-%%             end;
-%%         {false, false} ->
-%%             {reply, {error, game_not_found}, State}
-%%     end;
 
 handle_call(#rematch{game = GameId}, _From, State) ->
     ?INFO("rematch", []),
@@ -598,30 +485,10 @@ handle_info(ack, State) ->
 handle_info(Info, State) ->
     {stop, {error, {unknown_info, Info}}, State}.
 
-%%--------------------------------------------------------------------
-%% @private
-%% @doc
-%% This function is called by a gen_server when it is about to
-%% terminate. It should be the opposite of Module:init/1 and do any
-%% necessary cleaning up. When it returns, the gen_server terminates
-%% with Reason. The return value is ignored.
-%%
-%% @spec terminate(Reason, State) -> void()
-%% @end
-%%--------------------------------------------------------------------
-
 terminate(Reason, _State) ->
     ?INFO("terminating session. reason: ~p", [Reason]),
     ok.
 
-%%--------------------------------------------------------------------
-%% @private
-%% @doc
-%% Convert process state when code is changed
-%%
-%% @spec code_change(OldVsn, State, Extra) -> {ok, NewState}
-%% @end
-%%--------------------------------------------------------------------
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
 

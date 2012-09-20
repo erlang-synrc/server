@@ -373,39 +373,11 @@ spawn_tables([{TabId, A, B} | Rest], Tables, Topic, GameFSM, Params, Manager, Ta
 
 spawn_tables([], Tables, _Topic, _GameFSM, _Params, _Manager, _TablesNum) -> Tables.
 
-publish0(Msg, Sender, #state{tables_pids = Tables}) ->
-    F = fun({_, TabPid}, Acc) ->
-                if TabPid =/= Sender ->
-                       relay:republish(TabPid, Msg),
-                       Acc + 1;
-                   true ->
-                       Acc
-                end
-        end,
-    process_flag(priority, high),
-    _C = lists:foldl(F, 0, Tables),
-    process_flag(priority, normal),
-    ok.
+publish0(Msg, Sender, #state{tables_pids = Tables}) -> [relay:republish(Pid,Msg)||{_,Pid} <- Tables, Pid =/= Sender].
+notify_tables0(Msg, Sender, #state{tables_pids = Tables}) -> [relay:notify_table(Pid,Msg)||{_,Pid}<-Tables, Pid =/= Sender].
 
-notify_tables0(Msg, Sender, #state{tables_pids = Tables}) ->
-    F = fun({_, TabPid}, Acc) ->
-                if TabPid =/= Sender ->
-                       relay:notify_table(TabPid, Msg),
-                       Acc + 1;
-                   true ->
-                       Acc
-                end
-        end,
-    process_flag(priority, high),
-    _C = lists:foldl(F, 0, Tables),
-    process_flag(priority, normal),
-    ok.
-
-bot_module(game_okey) ->
-    game_okey_bot;
-
-bot_module(game_tavla) ->
-    game_tavla_bot.
+bot_module(game_okey) -> game_okey_bot;
+bot_module(game_tavla) -> game_tavla_bot.
 
 init_replacement_robot(UId, State) ->
     {NPid, SPid, NUId, User} = create_robot(State),

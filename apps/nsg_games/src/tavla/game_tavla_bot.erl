@@ -321,9 +321,6 @@ follow_board(Board,Moves,PlayerColor) ->
     lists:foldl(fun ({From,To}, Acc) -> follow_board(Acc,From,To,PlayerColor) end, Board, Moves).
 
 follow_board(Board,From,To,PlayerColor) -> % track the moves to keep board consistent
-%%    ?INFO("Board: ~p",[Board]),
-
-%    {From,To} = case PlayerColor of 1 -> {From1,To1}; 2 -> {25-From1,25-From2} end,
     OppositePlayerColor = case PlayerColor of 1 -> 2; 2 -> 1 end,
     FromCell = lists:nth(From + 1,Board),
     {FromColor,_FromCount} = case FromCell of 
@@ -371,8 +368,6 @@ follow_board(Board,From,To,PlayerColor) -> % track the moves to keep board consi
                   end;
         _ -> Cell
     end || {{{_KC,_KA},Cell},No} <- lists:zip(BoardWithKicks,lists:seq(0,27))],
-%    ?INFO("TAVLABOT ~p From To: ~p", [case PlayerColor of 1 -> "WHITE"; 2->"BLACK" end,{From,To}]),
-%    ?INFO("NewBoard: ~p",[NewBoard]),
     NewBoard.
 
 all_in_home(Board,Color,PlayerColor) ->
@@ -425,15 +420,13 @@ first_move_table() -> [{{6,6},[{13,7},{13,7},{24,18},{24,18}]}, % based on
                        {{2,1},[{13,11},{6,5}]},
                        {{1,1},[{8,7},{8,7},{6,5},{6,5}]}
                       ].
+
 make_first_move(Dices,TableId,PlayerColor) -> 
     {_,Moves} = lists:keyfind(norm(Dices),1,first_move_table()),
     case PlayerColor of
          1 -> [ #'TavlaAtomicMove'{table_id = TableId,from=25-From,to=25-To} || {From,To} <- Moves];
          2 -> [ #'TavlaAtomicMove'{table_id = TableId,from=From,to=To} || {From,To} <- Moves]
     end.
-
-%replace_position(Board, Pos, C) ->
-%    [ case No of Pos -> C; _ -> Cell end || {Cell,No} <- lists:zip(Board,lists:seq(0,27))].
 
 tactical_criteria(Board,Color,PlayerColor) -> 
    case all_in_home(Board,Color,PlayerColor) of
@@ -444,9 +437,6 @@ tactical_criteria(Board,Color,PlayerColor) ->
                  end
    end.
 
-%kicks_available(Board,Dices,Color) -> 0.
-%covers_available(Board,Dices,Color) -> 0.
-
 rel(X,C) -> case C of 2 -> case X of 0->27;27->0;26->25;25->26;_->25-X end; 
                       1 -> X end.
 
@@ -454,7 +444,7 @@ first_available_move(RealBoard,XY,Color,TableId,PlayerColor) ->
     Color = PlayerColor,
     ?INFO("First Available Move calculation for ~p",[case PlayerColor of 1 -> "WHITE"; 2 -> "BLACK" end]),
     [BE|Rest] = RealBoard,
-    %[BE|Rest1|BK,WK,WE]
+    % [BE|Rest1|BK,WK,WE]
     [WE,WK,BK|Rest1] = lists:reverse(Rest),
 
     RelativeBoard = case PlayerColor of
@@ -463,7 +453,7 @@ first_available_move(RealBoard,XY,Color,TableId,PlayerColor) ->
     end,
 
     OppositePlayerColor = case PlayerColor of 1 -> 2; 2 -> 1 end,
-    WalkFun = fun lists:foldl/3,%case PlayerColor of 1 -> fun lists:foldl/3; 2 -> fun lists:foldl/3 end,
+    WalkFun = fun lists:foldl/3, %case PlayerColor of 1 -> fun lists:foldl/3; 2 -> fun lists:foldl/3 end,
     {List,Dices,Found,NewBoard} =
         WalkFun(fun (A,Acc2) ->
              {List,D,_F,B} = Acc2,
@@ -595,11 +585,7 @@ do_move(State, Dices,TableId,PlayerColor) ->
     case A = call_rpc(S, #game_action{
                         game = GameId,
                         action = tavla_move,
-                        args = [ {table_id, TableId},{player, Id},{moves, Decision
-%                                                           case State#state.moves of 
-%                                                           0 -> make_first_move(Dices,TableId,PlayerColor);
-%                                                           _ -> Decision end
-                                                                 } ]}) of
+                        args = [ {table_id, TableId},{player, Id},{moves, Decision } ]}) of
         _ ->
             ?INFO("do_move: A ~p ~p", [Id, A]),
             {false, Dices}

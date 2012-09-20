@@ -19,7 +19,7 @@
 -include_lib("nsg_srv/include/game_okey.hrl").
 -include_lib("nsx_config/include/config.hrl").
 -include_lib("nsg_srv/include/types.hrl").
--include_lib("nsm_srv/include/accounts.hrl").
+-include_lib("nsm_db/include/accounts.hrl").
 -include_lib("alog/include/alog.hrl").
 -include_lib("eunit/include/eunit.hrl").
 
@@ -72,16 +72,6 @@
           paused_who                       :: 'PlayerId'()
          }).
 
-%% data structures:
-
-
-%%% API
-%%%
-%%% Notes on API:
-%%% Incoming msg are #game_action, outgoing are listed above.
-%%% If server returns "ok" atom, it should be ignored.
-%%% If server receives invalid message it will return {error, reason}
-%%%
 hand_size() ->
     ?HS.
 
@@ -147,47 +137,19 @@ init([Relay, Pids, GameId, Settings0]) ->
     TestLuckyPR = #pointing_rule{game = okey, game_type = feellucky, kakush_winner = 0,
                                  kakush_other = 0, game_points = 0, quota = 1},
 
-    case {Mode, ?PRODUCTION, ?IS_TEST} of
-        {countdown, _, _} -> %% countdown mode
-%%            Sets = 1,
-            Rounds = undefined,
-            PR = proplists:get_value(pointing_rules, Settings1),
-            %% get lucky mode rules from exteneded pointing rules option
-            [PRLucky] = proplists:get_value(pointing_rules_ex, Settings1);
-%            PRLucky = TestLuckyPR;
-        {_, true, _} ->      %% production
-%%            Sets = proplists:get_value(sets, Settings1),
-            Rounds = proplists:get_value(rounds, Settings1),
-            PR = proplists:get_value(pointing_rules, Settings1),
-            %% get lucky mode rules from exteneded pointing rules option
-            [PRLucky] = proplists:get_value(pointing_rules_ex, Settings1);
-        {_, _, false} ->     %% staging
-%%            Sets = proplists:get_value(sets, Settings1),
-            Rounds = proplists:get_value(rounds, Settings1),
-            PR = proplists:get_value(pointing_rules, Settings1),
-            %PRLuckyRes = proplists:get_value(pointing_rules_ex, Settings1);
-            [PRLucky] = proplists:get_value(pointing_rules_ex, Settings1);
-%           PRLucky = TestLuckyPR;
-        {_, _, true} ->      %% eunit test
-%%            Sets = proplists:get_value(sets, Settings1),
-            Rounds = proplists:get_value(rounds, Settings1),
-            PR = proplists:get_value(pointing_rules, Settings1),
-            [PRLucky] = proplists:get_value(pointing_rules_ex, Settings1)
-            %PR = TestPR, PRLucky = TestLuckyPR
-    end,
+    Rounds = case Mode of countdown -> undefined; _ -> proplists:get_value(rounds, Settings1) end,
+    PR = proplists:get_value(pointing_rules, Settings1, TestPR),
+    [PRLucky] = proplists:get_value(pointing_rules_ex, Settings1, TestLuckyPR),
     Sets = 1,
-    ?INFO("PR: ~p",[PR]),
+
     Settings2 = lists:keystore(rounds, 1, Settings1, {rounds, Rounds}),
     Settings = lists:keystore(sets, 1, Settings2, {sets, Sets}),
     UserOpts = proplists:get_value(users_options, Settings, []),
-    %% add players info to scoring init params
     PlayersWithInfo = [game_session:get_player_info(Pid) || Pid <- Pids],
     DP = proplists:get_value(double_points, Settings, 1),
     SlangFlag = proplists:get_value(slang, Settings, false),
     ObserverFlag = proplists:get_value(deny_observers, Settings, false),
 
-    ?INFO("DP: ~p",[DP]),
-    %% put all information needed for pointing to one field
     GameInfo = [{id, GameId},
                 {double_points, DP},
                 {mode, Mode},
@@ -266,32 +228,6 @@ init_game(Relay, Pids, GameId, State) ->
                 wait_list = Pids, relay = Relay, game_id = GameId,
                 relay_monitor = Ref}.
 
-%%--------------------------------------------------------------------
-%% @private
-%% @doc
-%% There should be one instance of this function for each possible
-%% state name. Whenever a gen_fsm receives an event sent using
-%% gen_fsm:sync_send_event/[2,3], the instance of this function with
-%% the same name as the current state name StateName is called to
-%% handle the event.
-%%
-%% @spec state_name(Event, From, State) ->
-%%                   {next_state, NextStateName, NextState} |
-%%                   {next_state, NextStateName, NextState, Timeout} |
-%%                   {reply, Reply, NextStateName, NextState} |
-%%                   {reply, Reply, NextStateName, NextState, Timeout} |
-%%                   {stop, Reason, NewState} |
-%%                   {stop, Reason, Reply, NewState}
-%% @end
-%%--------------------------------------------------------------------
-%state_created(Event, #state{} = State) ->
-%   ?INFO("OKEY GAME state_created: ~p", [Event]),
-%    {reply, ok, state_created, State}.
-
-%state_created(Event, _, #state{} = State) ->
-%    ?INFO("OKEY GAME state_created/3: ~p", [Event]),
-%    {reply, ok, state_created, State}.
-
 state_wait({#okey_ready{}, Pid}=Event, _, #state{wait_list = [Pid]} = State) ->
     ?INFO("OKEY GAME state_wait: ~p", [Event]),
     PI = get_player(Pid, State),
@@ -305,7 +241,6 @@ state_wait({#okey_ready{}, Pid}=Event, _, #state{wait_list = [Pid]} = State) ->
 state_wait({#okey_ready{}, Pid}=Event, _, #state{wait_list = List} = State) ->
     ?INFO("OKEY GAME state_wait: ~p", [Event]),
     Relay = State#state.relay,
-%    ?INFO("okey_ready B. Pid: ~p, List: ~p", [Pid, List]),
     case lists:member(Pid, List) of
         true ->
             ?INFO("okey_ready B 1.", []),
@@ -329,23 +264,16 @@ state_wait(timeout=Event, State) ->
                                        wait_list = [],
                                        time_mark = timeout_at(State#state.turn_timeout)}, State#state.turn_timeout}.
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%% timeouts %%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%
 add_tash_to_hand(#okey_player{can_show_gosterge = Old,
                               hand = OldHand} = Player, PileNum, DrawnTash, State) ->
     Player#okey_player{hand = [DrawnTash | OldHand],
                        can_show_gosterge = check_gosterge_restriction(Old, PileNum, DrawnTash, State)
                       }.
 
-check_gosterge_restriction(false, _PileNum, _DrawnTash, _State) ->
-    false;
-check_gosterge_restriction(_,     0,        _DrawnTash, _State) ->
-    false;
-check_gosterge_restriction(_,     1,        Gosterge,   #state{gosterge = Gosterge}) ->
-    false;
-check_gosterge_restriction(_,     _,        _,          _) ->
-    true.
+check_gosterge_restriction(false, _PileNum, _DrawnTash, _State) -> false;
+check_gosterge_restriction(_,     0,        _DrawnTash, _State) -> false;
+check_gosterge_restriction(_,     1,        Gosterge,   #state{gosterge = Gosterge}) -> false;
+check_gosterge_restriction(_,     _,        _,          _) -> true.
 
 state_take(timeout, State) ->
     ?INFO("OKEY GAME state_take: ~p",[timeout]),
@@ -554,39 +482,10 @@ state_dead(_Msg, _, State) ->
     ?INFO("game is dead, still receiving messages: ~p", [_Msg]),
     {reply, {error, game_has_already_ended}, state_dead, State}.
 
-%%--------------------------------------------------------------------
-%% @private
-%% @doc
-%% Whenever a gen_fsm receives an event sent using
-%% gen_fsm:send_all_state_event/2, this function is called to handle
-%% the event.
-%%
-%% @spec handle_event(Event, StateName, State) ->
-%%                   {next_state, NextStateName, NextState} |
-%%                   {next_state, NextStateName, NextState, Timeout} |
-%%                   {stop, Reason, NewState}
-%% @end
-%%--------------------------------------------------------------------
 handle_event(_Event, StateName, State) ->
     ?INFO("OKEY GAME EVENT: ~p",[{_Event,StateName}]),
     {next_state, StateName, State}.
 
-%%--------------------------------------------------------------------
-%% @private
-%% @doc
-%% Whenever a gen_fsm receives an event sent using
-%% gen_fsm:sync_send_all_state_event/[2,3], this function is called
-%% to handle the event.
-%%
-%% @spec handle_sync_event(Event, From, StateName, State) ->
-%%                   {next_state, NextStateName, NextState} |
-%%                   {next_state, NextStateName, NextState, Timeout} |
-%%                   {reply, Reply, NextStateName, NextState} |
-%%                   {reply, Reply, NextStateName, NextState, Timeout} |
-%%                   {stop, Reason, NewState} |
-%%                   {stop, Reason, Reply, NewState}
-%% @end
-%%--------------------------------------------------------------------
 handle_sync_event(get_settings=Event, _From, StateName, #state{} = State) ->
     ?INFO("OKEY GAME SYNCEVENT: ~p",[{Event,_From,StateName}]),
     Res = State#state.settings,
@@ -810,19 +709,6 @@ handle_sync_event({#okey_has_gosterge{}, _Pid}, _From, StateName, State) ->
 handle_sync_event(_Event, _From, _StateName, State) ->
     {stop, {unknown_sync_event, {_Event, _From, _StateName}}, State}.
 
-%%--------------------------------------------------------------------
-%% @private
-%% @doc
-%% This function is called by a gen_fsm when it receives any
-%% message other than a synchronous or asynchronous event
-%% (or a system message).
-%%
-%% @spec handle_info(Info,StateName,State)->
-%%                   {next_state, NextStateName, NextState} |
-%%                   {next_state, NextStateName, NextState, Timeout} |
-%%                   {stop, Reason, NewState}
-%% @end
-%%--------------------------------------------------------------------
 handle_info({'DOWN', Ref, _, _, Reason}, _StateName, #state{relay_monitor = Ref} = State) ->
     ?INFO("relay terminates with reason ~p, so does the game", [Reason]),
     {stop, Reason, State};
@@ -836,29 +722,9 @@ handle_info(Info, StateName, State) ->
     ?INFO("unknown info: ~p, StateName: ~p; dying", [Info, StateName]),
     {stop, {unknown_info, Info}, State}.
 
-%%--------------------------------------------------------------------
-%% @private
-%% @doc
-%% This function is called by a gen_fsm when it is about to
-%% terminate. It should be the opposite of Module:init/1 and do any
-%% necessary cleaning up. When it returns, the gen_fsm terminates with
-%% Reason. The return value is ignored.
-%%
-%% @spec terminate(Reason, StateName, State) -> void()
-%% @end
-%%--------------------------------------------------------------------
 terminate(_Reason, _StateName, _State) ->
     ok.
 
-%%--------------------------------------------------------------------
-%% @private
-%% @doc
-%% Convert process state when code is changed
-%%
-%% @spec code_change(OldVsn, StateName, State, Extra) ->
-%%                   {ok, StateName, NewState}
-%% @end
-%%--------------------------------------------------------------------
 code_change(_OldVsn, StateName, State, _Extra) ->
     {ok, StateName, State}.
 
@@ -878,42 +744,22 @@ get_settings0(Settings00) ->
                       ],
     utils:apply_defauls(DefaultSettings, Settings0).
 
--spec get_timeout(atom(), iolist()) -> integer().
-get_timeout(turn, fast) ->
-    {ok, Val} = rpc:call(?APPSERVER_NODE,nsm_db,get,[config,"games/okey/turn_timeout_fast", 15000]), Val;
-get_timeout(turn, normal) ->
-    {ok, Val} = rpc:call(?APPSERVER_NODE,nsm_db,get,[config,"games/okey/turn_timeout_normal", 30000]), Val;
-get_timeout(turn, slow) ->
-    {ok, Val} = rpc:call(?APPSERVER_NODE,nsm_db,get,[config,"games/okey/turn_timeout_slow", 60000]), Val;
+get_timeout(turn, fast) -> {ok, Val} = rpc:call(?APPSERVER_NODE,nsm_db,get,[config,"games/okey/turn_timeout_fast", 15000]), Val;
+get_timeout(turn, normal) -> {ok, Val} = rpc:call(?APPSERVER_NODE,nsm_db,get,[config,"games/okey/turn_timeout_normal", 30000]), Val;
+get_timeout(turn, slow) -> {ok, Val} = rpc:call(?APPSERVER_NODE,nsm_db,get,[config,"games/okey/turn_timeout_slow", 60000]), Val;
 
-get_timeout(challenge, fast) ->
-    {ok, Val} = rpc:call(?APPSERVER_NODE,nsm_db,get,[config,"games/okey/challenge_timeout_fast", 5000]), Val;
-get_timeout(challenge, normal) ->
-    {ok, Val} = rpc:call(?APPSERVER_NODE,nsm_db,get,[config,"games/okey/challenge_timeout_normal", 10000]), Val;
-get_timeout(challenge, slow) ->
-    {ok, Val} = rpc:call(?APPSERVER_NODE,nsm_db,get,[config,"games/okey/challenge_timeout_slow", 20000]), Val;
+get_timeout(challenge, fast) ->  {ok, Val} = rpc:call(?APPSERVER_NODE,nsm_db,get,[config,"games/okey/challenge_timeout_fast", 5000]), Val;
+get_timeout(challenge, normal) ->  {ok, Val} = rpc:call(?APPSERVER_NODE,nsm_db,get,[config,"games/okey/challenge_timeout_normal", 10000]), Val;
+get_timeout(challenge, slow) -> {ok, Val} = rpc:call(?APPSERVER_NODE,nsm_db,get,[config,"games/okey/challenge_timeout_slow", 20000]), Val;
 
-get_timeout(ready, fast) ->
-    {ok, Val} = rpc:call(?APPSERVER_NODE,nsm_db,get,[config,"games/okey/ready_timeout_fast", 15000]), Val;
-get_timeout(ready, normal) ->
-    {ok, Val} = rpc:call(?APPSERVER_NODE,nsm_db,get,[config,"games/okey/ready_timeout_normal", 25000]), Val;
-get_timeout(ready, slow) ->
-    {ok, Val} = rpc:call(?APPSERVER_NODE,nsm_db,get,[config,"games/okey/ready_timeout_slow", 45000]), Val;
+get_timeout(ready, fast) -> {ok, Val} = rpc:call(?APPSERVER_NODE,nsm_db,get,[config,"games/okey/ready_timeout_fast", 15000]), Val;
+get_timeout(ready, normal) -> {ok, Val} = rpc:call(?APPSERVER_NODE,nsm_db,get,[config,"games/okey/ready_timeout_normal", 25000]), Val;
+get_timeout(ready, slow) -> {ok, Val} = rpc:call(?APPSERVER_NODE,nsm_db,get,[config,"games/okey/ready_timeout_slow", 45000]), Val;
 
-get_timeout(robot, Speed) ->
-    case ?IS_TEST of
-        true ->
-            1;
-        false ->
-            get_timeout(robot_production, Speed)
-    end;
-
-get_timeout(robot_production, fast) ->
-    {ok, Val} = rpc:call(?APPSERVER_NODE,nsm_db,get,[config,"games/okey/robot_delay_fast", 6000]), Val;
-get_timeout(robot_production, normal) ->
-    {ok, Val} = rpc:call(?APPSERVER_NODE,nsm_db,get,[config,"games/okey/robot_delay_normal", 9000]), Val;
-get_timeout(robot_production, slow) ->
-    {ok, Val} = rpc:call(?APPSERVER_NODE,nsm_db,get,[config,"games/okey/robot_delay_slow", 15000]), Val.
+get_timeout(robot, Speed) -> case ?IS_TEST of true -> 1; false -> get_timeout(robot_production, Speed) end;
+get_timeout(robot_production, fast) -> {ok, Val} = rpc:call(?APPSERVER_NODE,nsm_db,get,[config,"games/okey/robot_delay_fast", 6000]), Val;
+get_timeout(robot_production, normal) -> {ok, Val} = rpc:call(?APPSERVER_NODE,nsm_db,get,[config,"games/okey/robot_delay_normal", 9000]), Val;
+get_timeout(robot_production, slow) -> {ok, Val} = rpc:call(?APPSERVER_NODE,nsm_db,get,[config,"games/okey/robot_delay_slow", 15000]), Val.
 
 -spec i_saw_okey(atom(),pid(),#state{}) -> {atom(),atom(),atom()|tuple(atom(),atom()),#state{},integer()}.
 i_saw_okey(StateName, Pid, State) ->
@@ -1138,13 +984,9 @@ game_results(State = #state{}) ->
     message_session(Relay, PlayerPid, B),
     {ok, Next, State}.
 
-simplify_next({done, _}) ->
-    done;
-simplify_next({next_set, _}) ->
-    next_set;
-simplify_next({next_round, _}) ->
-    next_round.
-
+simplify_next({done, _}) ->  done;
+simplify_next({next_set, _}) -> next_set;
+simplify_next({next_round, _}) -> next_round.
 
 generate_pieces() ->
     S1 = sofs:set([element(1, #'OkeyPiece'{})]),
@@ -1176,28 +1018,8 @@ split_pile(List) ->
     {D, Pile} = lists:split(?HS, CR),
     {[A, B, C, D], Pile}.
 
-%hand_out_color() ->
-%    Hands = [ [ #'OkeyPiece'{value =  V, color = C} || V <- lists:seq(1, 13) ++ [1] ] || C <- lists:seq(1,4) ],
-%    {Gosterge, List0} = kakamath:draw_random(generate_pieces()),
-%    List1 = [ ?FALSE_OKEY, ?FALSE_OKEY |  List0 ],
-%    Pile0 = ordsets:subtract(ordsets:from_list(List1), ordsets:from_list(lists:flatten(Hands))),
-%    {Gosterge, Hands, kakamath:variate(Pile0)}.
-
-%hand_out_even() ->
-%    T7 = [ #'OkeyPiece'{value =  V, color = 2} || V <- lists:seq(1, 7) ],
-%    Hand = T7 ++ T7,
-%    {Gosterge, List0} = kakamath:draw_random(generate_pieces()),
-%    List1 = [ ?FALSE_OKEY, ?FALSE_OKEY |  List0 ],
-%    List = kakamath:variate(ordsets:subtract(ordsets:from_list(List1), ordsets:from_list(lists:flatten(Hand)))),
-%    {A, AR} = lists:split(?HS, List),
-%    {B, BR} = lists:split(?HS, AR),
-%    {C, Pile} = lists:split(?HS, BR),
-%    {Gosterge, [Hand, A, B, C], Pile}.
-
-take_tile(0, State) ->
-    take_tile_0(State);
-take_tile(1, State) ->
-    take_tile_1(State).
+take_tile(0, State) -> take_tile_0(State);
+take_tile(1, State) -> take_tile_1(State).
 
 take_tile_0(State) ->
     [Tash | Rest] = State#state.pile0,
@@ -1225,44 +1047,24 @@ discard_tile(Tile, State) ->
     true = lists:member(Tile, Hand),
     Hand1 = lists:delete(Tile, Hand),
     P1 = P#okey_player{hand = Hand1},
-
     PNext1 = PNext#okey_player{pile = [Tile | PNext#okey_player.pile]},
     State1 = update_current(P1, State),
     update_next(PNext1, State1).
 
-get_current(State) ->
-    queue:get(State#state.players).
-get_next(State) ->
-    {_, Q2} = queue:out(State#state.players),
-    queue:get(Q2).
+
+is_player(Pid, State) -> false /= get_player(Pid, State).
+get_player(Pid, State) when is_pid(Pid) -> lists:keyfind(Pid, #okey_player.pid, queue:to_list(State#state.players));
+get_player(UId, State) -> lists:keyfind(UId, #okey_player.player_id, queue:to_list(State#state.players)).
+get_player_id(Pid, State) -> (get_player(Pid, State))#okey_player.player_id.
+get_players_pids(State) -> [ P#okey_player.pid || P <- queue:to_list(State#state.players) ].
+is_current(Pid, State) -> P = get_current(State), Pid == P#okey_player.pid.
+get_current(State) -> queue:get(State#state.players).
+get_next(State) -> {_, Q2} = queue:out(State#state.players), queue:get(Q2).
 set_next(State) ->
     { {value, L}, Q } = queue:out(State#state.players),
     NewState = State#state{players = queue:in(L, Q)},
     NextPlayer = queue:get(NewState#state.players),
     {NextPlayer, NewState}.
-
-is_player(Pid, State) ->
-    false /= get_player(Pid, State).
-
-get_player(Pid, State) when is_pid(Pid) ->
-    Players = queue:to_list(State#state.players),
-    lists:keyfind(Pid, #okey_player.pid, Players);
-get_player(UId, State) ->
-    Players = queue:to_list(State#state.players),
-    lists:keyfind(UId, #okey_player.player_id, Players).
-
-get_player_id(Pid, State) ->
-    (get_player(Pid, State))#okey_player.player_id.
-
-get_players_pids(State) ->
-    [ P#okey_player.pid || P <- queue:to_list(State#state.players) ].
-
-%get_players_uids(State) ->
-%    [ P#okey_player.player_id || P <- queue:to_list(State#state.players) ].
-
-is_current(Pid, State) ->
-    P = get_current(State),
-    Pid == P#okey_player.pid.
 
 update_current(Player, State) ->
     {_, Q2} = queue:out(State#state.players),
@@ -1312,12 +1114,9 @@ is_winning_hand(ReceivedHand, Gosterge) ->
     ProperHand orelse PowerHand.
 
 %%FIX: move to utils
-split_by_delimiter(Delimiter, Hand) ->
-    split_by_delimiter(Delimiter, Hand, []).
-split_by_delimiter(_, [], Acc) ->
-    lists:reverse(Acc);
-split_by_delimiter(Delimiter, [Delimiter | Hand], Acc) ->
-    split_by_delimiter(Delimiter, Hand, Acc);
+split_by_delimiter(Delimiter, Hand) -> split_by_delimiter(Delimiter, Hand, []).
+split_by_delimiter(_, [], Acc) -> lists:reverse(Acc);
+split_by_delimiter(Delimiter, [Delimiter | Hand], Acc) -> split_by_delimiter(Delimiter, Hand, Acc);
 split_by_delimiter(Delimiter, Hand, Acc) ->
     {L, Rest} = lists:splitwith(fun(X) when X == Delimiter ->
                                         false;
@@ -1326,7 +1125,7 @@ split_by_delimiter(Delimiter, Hand, Acc) ->
                                 end, Hand),
     split_by_delimiter(Delimiter, Rest, [L | Acc]).
 
-normalize_hand(Del, [H | T]) when is_list(H) ->
+normalize_hand(Del, [H | T]) when is_list(H) -> 
     A = lists:foldl(fun(X, Acc) -> [X, Del | Acc] end, [H], T),
     lists:flatten(lists:reverse(A));
 normalize_hand(_, List) ->
@@ -1367,54 +1166,31 @@ is_run0(Set) ->
                    end, LofL),
     SameColor andalso RR.
 
-run_run_f(L) ->
-    run_run_f(hd(L), tl(L)).
-run_run_f(_Last, []) ->
-    true;
-run_run_f(okey, [H | T]) ->
-    run_run_f(H, T);
-run_run_f(14, [okey | _T]) ->
-    false;
-run_run_f(Last, [okey | T]) ->
-    run_run_f(Last+1, T);
-run_run_f(Last, [H | T]) when H - Last == 1 ->
-    run_run_f(H, T);
-run_run_f(_Last, [_H | _T]) ->
-    false.
+run_run_f(L) -> run_run_f(hd(L), tl(L)).
+run_run_f(_Last, []) -> true;
+run_run_f(okey, [H | T]) -> run_run_f(H, T);
+run_run_f(14, [okey | _T]) -> false;
+run_run_f(Last, [okey | T]) -> run_run_f(Last+1, T);
+run_run_f(Last, [H | T]) when H - Last == 1 -> run_run_f(H, T);
+run_run_f(_Last, [_H | _T]) -> false.
 
-run_run_b(L) ->
-    run_run_b(hd(L), tl(L)).
-run_run_b(_Last, []) ->
-    true;
-run_run_b(okey, [H | T]) ->
-    run_run_b(H, T);
-run_run_b(1, [okey | _T]) ->
-    false;
-run_run_b(Last, [okey | T]) ->
-    run_run_b(Last-1, T);
-run_run_b(Last, [H | T]) when H - Last == -1 ->
-    run_run_b(H, T);
-run_run_b(_Last, [_H | _T]) ->
-    false.
+run_run_b(L) -> run_run_b(hd(L), tl(L)).
+run_run_b(_Last, []) -> true;
+run_run_b(okey, [H | T]) -> run_run_b(H, T);
+run_run_b(1, [okey | _T]) -> false;
+run_run_b(Last, [okey | T]) -> run_run_b(Last-1, T);
+run_run_b(Last, [H | T]) when H - Last == -1 -> run_run_b(H, T);
+run_run_b(_Last, [_H | _T]) -> false.
 
-is_pair([_A, okey]) ->
-    true;
-is_pair([okey, _B]) ->
-    true;
-is_pair([A, A]) ->
-    true;
-is_pair(_) ->
-    false.
+is_pair([_A, okey]) -> true;
+is_pair([okey, _B]) -> true;
+is_pair([A, A]) -> true;
+is_pair(_) -> false.
 
-
-get_okey(State = #state{}) ->
-    get_okey(State#state.gosterge);
+get_okey(State = #state{}) -> get_okey(State#state.gosterge);
 get_okey(Gosterge = #'OkeyPiece'{}) ->
     #'OkeyPiece'{color = Color, value = GValue} = Gosterge,
-    Value = case GValue of
-                ?HS - 1 -> 1;
-                _ -> GValue + 1
-            end,
+    Value = case GValue of ?HS - 1 -> 1; _ -> GValue + 1 end,
     #'OkeyPiece'{color = Color, value = Value}.
 
 start_game(State) ->

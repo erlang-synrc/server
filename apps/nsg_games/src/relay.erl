@@ -1,4 +1,4 @@
--module(relay).
+-module(relay). % simple game monitor for single boarded games
 -author('Maxim Sokhatsky <maxim@synrc.com>').
 -behaviour(gen_server).
 
@@ -24,12 +24,10 @@
           topic :: any(),                       %% game id
           parent_relay :: undefined | {atom(), pid()}, %% {ParentModule, ParentPid}
           table_id :: integer(),
-          robots_joining = false :: boolean(),
           manager :: pid(),
           subs = ets:new(subs, [ordered_set, {keypos, #subscriber.pid}]), %% subscribed players/viewers
           players :: list(#player{}),           %% list of connected players, not undefined iff rules_module =/= chat
           reg_players :: list('PlayerId'()),    %% list of registered players, connected or not
-          robots = [] :: list('PlayerId'()),
           lobby_list :: list('PlayerId'()) | list(pid()),  %% wait list for lobby
           rematch_list :: list('PlayerId'()) | list(pid()),  %% wait list for rematch
           rules_pid :: pid(),                   %% game state machine pid
@@ -61,6 +59,7 @@ update_gamestate(Srv, NewGameState) -> gen_server:cast(Srv, {update_gamestate, N
 can_observe(Srv, Id) -> gen_server:call(Srv, {can_observe, Id}).
 start_link(GameId, GameFSM, Params, Pids, Manager) -> gen_server:start(?MODULE, [GameId, GameFSM, Params, Pids, Manager], []).
 stop(Srv) -> gen_server:cast(Srv, stop).
+im_ready(Srv) -> gen_server:cast(Srv, room_ready).
 
 game(game_okey) -> okey;
 game(game_tavla) -> tavla;
@@ -153,11 +152,7 @@ handle_call({do_rematch, _}, _From, State = #state{gamestate = lobby}) ->
     {reply, {error, cannot_rematch_in_lobby}, State};
 
 handle_call({do_rematch, Pid}, _From, State) ->
-%   State = #state{rematch_list = [Pid], rematch_timer = {running, Timer}}) ->
-%   timer:cancel(Timer),
     ?INFO("rematch A. Pid:~p", [Pid]),
-%   RematchList = State#state.rematch_list,
-%   WLStatus = lists:member(Pid, RematchList),
     GameFSMPid = State#state.rules_pid,
     GameFSM = State#state.rules_module,
     ?INFO("rematch A. finished", []),
@@ -182,14 +177,11 @@ handle_call({get_player_state, UId}, _From, State) ->
 handle_call(get_table_info, _From, State) ->
     ?INFO("get_table_info"),
     List = ets:tab2list(State#state.subs),
-    Viewers = lists:map(fun(#subscriber{id = PlayerId}) ->
-                                PlayerId
-                        end, List),
+    Viewers = lists:map(fun(#subscriber{id = PlayerId}) -> PlayerId end, List),
     Players = [ PlayerId || #player{id = PlayerId} <- State#state.players ],
     GameStatus = list_to_binary(atom_to_list(State#state.gamestate)),
     GameName = api_utils:gamemodule_to_gametype(State#state.rules_module),
-    Res = #'TableInfo'{viewers = Viewers, players = Players, chat = [],
-                       game = GameName, game_status = GameStatus},
+    Res = #'TableInfo'{viewers = Viewers, players = Players, chat = [], game = GameName, game_status = GameStatus},
     {reply, Res, State};
 
 handle_call({can_observe, Id}, _From, State) ->
@@ -438,8 +430,6 @@ notify_tables(Msg, #state{parent_relay = ParentRelay
 no_of_subscribers(State) ->
     ets:info(State#state.subs, size).
 
-only_robots_left(LobbyList) -> lists:all(fun(A) -> A =:= robot end, LobbyList).
-
 lobby_join(Ref, User, Pid, State) ->
     ?INFO("Player ~p with pid ~p comes to ~p",[User#'PlayerInfo'.id,Pid,self()]),
     UserId = User#'PlayerInfo'.id,
@@ -461,8 +451,6 @@ lobby_join(Ref, User, Pid, State) ->
         false -> NewState
     end.
 
-im_ready(Pid) ->
-   gen_server:cast(Pid, room_ready).
 
 lobby_leave(Pid, State) ->
     Players = State#state.players,
@@ -578,14 +566,10 @@ replace_with_player(OldPlayer, OldPid, NewPid, State) ->
     ?INFO("player info: ~p", [NewUser]),
     NewUId = NewUser#'PlayerInfo'.id,
     OldUId = OldPlayer#player.id,
-
     RMod = State#state.rules_module,
     RPid = State#state.rules_pid,
     {PlayerMsgs, _RobotData} = RMod:signal(RPid, {replace_player, OldUId, NewUId, NewUser, NewPid}),
-    [ NewPid ! #game_event{game = State#state.topic,
-                           event = api_utils:name(Msg),
-                           args = api_utils:members(Msg)}
-      || Msg <- PlayerMsgs ],
+    [ NewPid ! #game_event{game = State#state.topic, event = api_utils:name(Msg), args = api_utils:members(Msg)}|| Msg <- PlayerMsgs ],
     subscribe(self(), NewPid),
     Msg = #player_left{player = OldUId, human_replaced = true, replacement = NewUser},
     publish(self(), #game_event{event = api_utils:name(Msg), args = api_utils:members(Msg)}),
@@ -617,18 +601,11 @@ game_ended(PlayerId, Pid, State) ->
 
 is_last_human_player(Pid, Players) ->
     L2 = lists:keydelete(Pid, #player.pid, Players),
-    lists:all(fun
-                  (#player{is_bot = true}) ->
-                      true;
-                  (#player{is_bot = _}) ->
-                      false
-              end, L2).
+    lists:all(fun (#player{is_bot = true}) -> true;
+                  (#player{is_bot = _}) -> false end, L2).
 
-bot_module(game_okey) ->
-    game_okey_bot;
-
-bot_module(game_tavla) ->
-    game_tavla_bot.
+bot_module(game_okey) -> game_okey_bot;
+bot_module(game_tavla) -> game_tavla_bot.
 
 init_replacement_robot(UId, State) ->
     {NPid, SPid, NUId, User} = create_robot(State),
@@ -654,13 +631,7 @@ create_robot(State) ->
     SPid = BM:get_session(NPid),
     {NPid, SPid, NUId, User}.
 
-is_player(Pid, _State) when is_pid(Pid) ->
-    erlang:error(not_implemented);
-is_player(UId, State) ->
-    PL = State#state.reg_players,
-    lists:member(UId, PL).
-
-can_observe0(Id, State) ->
-    ObsAllowed = proplists:get_value(observers, State#state.table_settings, true),
-    ObsAllowed orelse is_player(Id, State).
+is_player(Pid, _State) when is_pid(Pid) -> erlang:error(not_implemented);
+is_player(UId, State) ->  lists:member(UId, State#state.reg_players).
+can_observe0(Id, State) -> proplists:get_value(observers, State#state.table_settings, true) orelse is_player(Id, State).
 
