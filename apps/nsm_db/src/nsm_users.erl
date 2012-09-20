@@ -41,7 +41,8 @@
          init_mq/2, subscribe_user_mq/3, remove_subscription_mq/3,
          init_mq_for_group/1,
          %% for use from nsm_db_update
-         bind_user_exchange/3, unbind_user_exchange/3
+         bind_user_exchange/3, unbind_user_exchange/3,
+         bind_group_exchange/3, unbind_group_exchange/3, rk_group_feed/1
          ]).
 
 
@@ -468,8 +469,12 @@ build_user_relations(User, Groups) ->
     [rk_user_feed(User),
      %% API
      rk( [wrong, user, User, create_group]), % temp
+     rk( [wrong, user, User, update_group]), % temp
      rk( [subscription, user, User, add_to_group]),
      rk( [subscription, user, User, remove_from_group]),
+     rk( [subscription, user, User, invite_to_group]),
+     rk( [subscription, user, User, reject_invite_to_group]),
+     rk( [subscription, user, User, leave_group]),
      %% system message format: feed.system.ElementType.Action
      rk( [feed, system, '*', '*']) |
      [rk_group_feed(G) || G <- Groups]].
@@ -489,24 +494,23 @@ unbind_user_exchange(Channel, User, RoutingKey) ->
                                         ?NOTIFICATIONS_EX, RoutingKey)}.
 %% same stuff for groups
 init_mq_for_group(Group) ->
-    ?INFO(" ++++ ~p init mq...", [Group]),
     GroupExchange = ?GROUP_EXCHANGE(Group),
     ExchangeOptions = [{type, <<"fanout">>},
                        durable,
                        {auto_delete, false}],   
     {ok, Channel} = nsm_mq:open([]),
     ok = nsm_mq_channel:create_exchange(Channel, GroupExchange, ExchangeOptions),
-    ?INFO(" ++++ create exchange"),
     Relations = build_group_relations(Group),
     [bind_group_exchange(Channel, Group, RK) || RK <- Relations],
-    ?INFO(" ++++ build and bind relations: ~p", [Relations]),
     nsm_mq_channel:close(Channel),
-    ?INFO(" ++++ close channel ~p", [Channel]),
     ok.
 
 build_group_relations(Group) ->
     [
-        rk( [db, group, Group, put] )
+        rk( [db, group, Group, put] ),
+        rk( [db, group, Group, remove_group] ),
+        rk( [feed, delete, Group] ),
+        rk( [feed, group, Group, '*', '*', '*'] )
     ].
 
 bind_group_exchange(Channel, Group, RoutingKey) ->

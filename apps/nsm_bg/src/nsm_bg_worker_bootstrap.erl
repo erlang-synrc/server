@@ -117,12 +117,12 @@ start_workers() ->
     Groups = nsm_db:all(group),
     [begin
          timer:sleep(15+random:uniform(20)),
-         ?INFO(" ++ start group: ~p",[G#group.username]),
+         ?INFO(" start group: ~p",[G#group.username]),
          start_worker(G)
      end || G <- Groups],
     [begin
          timer:sleep(15+random:uniform(20)),
-         ?INFO(" ++ start user: ~p",[U#user.username]),
+         ?INFO(" start user: ~p",[U#user.username]),
          start_worker(U)
      end || U <- Users].
 

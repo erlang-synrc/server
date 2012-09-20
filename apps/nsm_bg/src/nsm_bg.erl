@@ -41,10 +41,10 @@ start_link() ->
 start_feed_worker(Owner) ->
     case nsm_bg_workers_sup:start_worker(nsm_bg_worker_feed, [{owner, Owner}]) of
 	{ok, Pid} ->
-	    ?INFO(" ++ Consumer process started with pid: ~p for ~p", [Pid, Owner]),
+	    ?INFO(" Consumer process started with pid: ~p for ~p", [Pid, Owner]),
         ok;
 	Error ->
-	    ?ERROR(" ++ Feed consumer process starting error. Owner: ~p, Reason: ~p",
+	    ?ERROR(" Feed consumer process starting error. Owner: ~p, Reason: ~p",
 		   [Owner, Error]),
 	    Error
     end.
@@ -52,10 +52,10 @@ start_feed_worker(Owner) ->
 start_feed_worker(Owner, FeedId) ->
     case nsm_bg_workers_sup:start_worker(nsm_bg_worker_feed, [{owner, Owner}, {feed_id, FeedId}]) of
 	{ok, Pid} ->
-	    ?INFO(" ++ Consumer process started with pid: ~p for ~p", [Pid, Owner]),
+	    ?INFO(" Consumer process started with pid: ~p for ~p", [Pid, Owner]),
         ok;
 	Error ->
-	    ?ERROR(" ++ Feed consumer process starting error. Owner: ~p, Reason: ~p",
+	    ?ERROR(" Feed consumer process starting error. Owner: ~p, Reason: ~p",
 		   [Owner, Error]),
 	    Error
     end.
