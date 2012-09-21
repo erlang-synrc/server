@@ -208,7 +208,7 @@ entry_element_usual(E, Comments, Avatar, {MediaThumb, MediaLists0}, _TargetMedia
         OL when is_list(OL) ->
             L = lists:reverse(OL),
             #one_like{user_id=LastUid} = lists:last(L),
-            LeftPart = admin:nitrojoin([    %TODO once again, this is a chaos, I have to add a module for this stuff
+            LeftPart = kakaadmin:nitrojoin([    %TODO once again, this is a chaos, I have to add a module for this stuff
                     case Uid == wf:user() of
                         true ->
                             #link{text=?_T("You"), url=site_utils:user_link(Uid)};
