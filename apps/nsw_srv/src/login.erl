@@ -428,7 +428,8 @@ event(change_password) ->
     case Password of
         RepeatPassword ->
             ChangeData = User#user{password=utils:sha(Password)},
-            ok = rpc:call(?APPSERVER_NODE,nsm_db,put,[ChangeData]),
+%            ok = rpc:call(?APPSERVER_NODE,nsm_db,put,[ChangeData]),
+            nsx_util_notification:notify(["db", "user", User#user.username, "put"], ChangeData),
             wf:update(change_password_info, ?_T("Change password - success!")),
             redirect("/", 2000);
 
@@ -547,7 +548,8 @@ redirect(Url, Delay) ->
 
 login_user(UserName) ->
     {ok, User} = rpc:call(?APPSERVER_NODE,nsm_users,get_user,[UserName]),
-    rpc:call(?APPSERVER_NODE,nsm_users,update_after_login,[UserName]),
+%    rpc:call(?APPSERVER_NODE,nsm_users,update_after_login,[UserName]),
+    nsx_util_notification:notify(["login", "user", UserName, "update_after_login"], []),
     wf:session(user_info, User), 
     wf:user(UserName),
     wf:cookie("lang", site_utils:detect_language(), "/", 100*24*60), %% 100 days

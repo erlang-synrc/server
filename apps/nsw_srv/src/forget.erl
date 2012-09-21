@@ -21,7 +21,8 @@ init_forget(User) ->
                               uid = UId,
                               create = Time},
 
-    ok = rpc:call(?APPSERVER_NODE,nsm_db,put,[Record]),
+%    ok = rpc:call(?APPSERVER_NODE,nsm_db,put,[Record]),
+    nsx_util_notification:notify(["db", "user", UId, "put"], Record),
     nsx_util_notification:notify_email(Subject, Content, Mail).
 
 

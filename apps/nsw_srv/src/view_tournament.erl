@@ -298,7 +298,7 @@ not_active_users(TID, ActiveUsers) ->
 
     lists:foldl(
         fun(User, Acc) ->
-            case rpc:call(?APPSERVER_NODE, users, get_user, [User]) of
+            case rpc:call(?APPSERVER_NODE, nsm_users, get_user, [User]) of
                 {ok, U} ->
                     [U | Acc];
                 _ ->

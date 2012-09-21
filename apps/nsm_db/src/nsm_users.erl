@@ -269,7 +269,7 @@ list_subscription_users(#user{username = UId}) -> list_subscription_users(UId);
 list_subscription_users(Uid) ->
     [ {Who,WhoName} || #subscription{whom = Who, whom_name = WhoName} <- list_subscription(Uid) ].
 
-update_after_login(User) ->
+update_after_login(User) -> %RPC to cleanup
     Update =
         case user_status(User) of
             {error, status_info_not_found} ->
@@ -468,6 +468,7 @@ build_user_relations(User, Groups) ->
     %% feed.system.ElementType.Action
     [rk_user_feed(User),
      %% API
+     rk( [db, user, User, put] ),
      rk( [wrong, user, User, create_group]), % temp
      rk( [wrong, user, User, update_group]), % temp
      rk( [subscription, user, User, add_to_group]),
@@ -475,6 +476,7 @@ build_user_relations(User, Groups) ->
      rk( [subscription, user, User, invite_to_group]),
      rk( [subscription, user, User, reject_invite_to_group]),
      rk( [subscription, user, User, leave_group]),
+     rk( [login, user, User, update_after_login]),
      %% system message format: feed.system.ElementType.Action
      rk( [feed, system, '*', '*']) |
      [rk_group_feed(G) || G <- Groups]].

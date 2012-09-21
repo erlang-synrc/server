@@ -213,7 +213,12 @@ handle_notice(["feed", "user", UId, "scores", _Null, "add"] = _Route,
 
 % nsm calls
 handle_notice(["db", "group", Owner, "put"] = Route, Message, #state{owner = Owner, type =Type} = State) ->
-    ?INFO("queue_action(~p): put: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),
+    ?INFO("queue_action(~p): group put: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),
+    nsm_db:put(Message),
+    {noreply, State};
+
+handle_notice(["db", "user", Owner, "put"] = Route, Message, #state{owner = Owner, type =Type} = State) ->
+    ?INFO("queue_action(~p): user put: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),
     nsm_db:put(Message),
     {noreply, State};
 
@@ -414,6 +419,27 @@ handle_notice(["subscription", "user", UId, "leave_group"] = Route, Message, #st
             end;
         _ -> % user is just someone, remove it
             nsx_util_notification:notify(["subscription", "user", UId, "remove_from_group"], {GId})
+    end,
+    {noreply, State};
+
+handle_notice(["login", "user", UId, "update_after_login"] = Route, Message, #state{owner = Owner, type =Type} = State) ->
+    ?INFO("queue_action(~p): remove_from_group: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),    
+    Update =
+        case nsm_users:user_status(UId) of
+            {error, status_info_not_found} ->
+                #user_status{username = UId,
+                             last_login = erlang:now()};
+            {ok, UserStatus} ->
+                UserStatus#user_status{last_login = erlang:now()}
+        end,
+    nsm_db:put(Update),
+
+    case nsm_db:get(user_counter, UId) of
+        {error, not_found} ->
+            UC = #user_counter{username = UId},
+            nsm_db:put(UC);
+        _ ->
+            ok
     end,
     {noreply, State};
 
