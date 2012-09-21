@@ -1186,7 +1186,8 @@ u_event(show_game_rules) ->
     case q_game_type() of
         "okey" ->
             Body = [
-                #panel{class=holder, style="max-height:600px; overflow-y:scroll;", body=[
+                #panel{class=holder, style="max-height:600px;", body=[
+                    #h1{text="OKEY OYUNLARI HAKKINDA", style="font-size:26px; margin-bottom:14px;"},
                     #h1{text="OYUNU OYNAMA", style="font-size:20px; margin-bottom:10px;"},
          
                     #table { rows=[
@@ -1278,30 +1279,7 @@ u_event(show_game_rules) ->
                                         ++ "Oyun içinde yapılmayan gösterme puanları çanağa eklenir. Okey atan, çift açan, 8 taş yapan, renk açanlar açma puanlarına ilave olarak. "
                                         ++ "Çanak içindeki birikmiş puanı da kazanırlar. "
                                         ++ "Boşalan çanağa, sistem tarafından oyun puanı yeniden eklenir. Böylece çanak hiçbir el için boş kalmamış olur."}
-                        ]}
-                    ]},
-
-                    #panel{style="padding:10px 30px;", 
-                            text="Ayrıca Tek-çift ve Renkli oyunlar için geçerli aşağıda açıklanan 
-                                özel açma şekilleri de bulunur ve ikramiyeli puan hesabı yapılır."},
-
-                    #table { rows=[
-                        #tablerow { cells=[
-                            #tablecell { style="vertical-align:top; text-align:right; font-weight:bold; width:130px; padding:5px;", text="Renk açmak:"},
-                            #tablecell { style="padding:5px; text-align:left; ", body="Açmanın eldeki taşların tamamının aynı renkten taşlarla yapılması esasına dayanır. Normal oyundaki gibi okeyler eksik taşların yerine kullanılabilir. "
-                                        ++ "Oyuna esas puanlamanın 8 katı açma puanı olarak uygulanır. Bu durumda okey atılırsa 16 katı uygulanır."}
-                        ]},
-                        #tablerow { cells=[
-                            #tablecell { style="vertical-align:top; text-align:right; font-weight:bold; width:130px; padding:5px;", text="Renkten çift açmak:"},
-                            #tablecell { style="padding:5px; text-align:left;", body="Bütün çift taşların aynı renkten olması hali. Renk açmanın iki katı puan uygulanır. Okey taşları kullanılabilir. "}
-                        ]},
-                        #tablerow { cells=[
-                            #tablecell { style="vertical-align:top; text-align:right; font-weight:bold; width:130px; padding:5px;", text="Sekiz taş:"},
-                            #tablecell { style="padding:5px; text-align:left; ", body="Oyun esnasında, oyun taşları içinde herhangi bir taşın 8 tanesini birden ıstakada toplamak demektir. "
-                                        ++ "Örn. 8 tane 4'lü gibi. "
-                                        ++ "8 taşı toplayan oyuncu ekranındaki \"8 Taş\" düğmesini tıkladığında eli açıp açmamasına bakılmaksızın oyun puanının 4 katı puanı ve "
-                                        ++ "çanakta biriken puanı ödül olarak kazanır. "}
-                        ]},
+                        ]},                  
                         #tablerow { cells=[
                             #tablecell { style="vertical-align:top; text-align:right; font-weight:bold; width:130px; padding:5px; padding-top:10px;", text="10' dan düşmeli oyun:"},
                             #tablecell { style="padding:5px; padding-top:10px; text-align:left; ", body=[
@@ -1329,7 +1307,7 @@ u_event(show_game_rules) ->
                                         ]},
                                         #tablerow { cells=[
                                             #tablecell { style="padding:3px;", text=""},
-                                            #tablecell { style="padding:3px;", text="olmak üzere puan düşümü yapılır."}
+                                            #tablecell { style="padding:3px;", body=["olmak üzere puan düşümü yapılır. ", #br{}, "Puanını ilk önce bitiren oyuncu oyunu kazanır."]}
                                         ]}                                         
                                     ]}
                                 ]}
@@ -1337,10 +1315,177 @@ u_event(show_game_rules) ->
                         ]}
                     ]},
 
+                    
+
+                    #h1{text="FARKLI OYUN BİTİRME ÇEŞİTLERİ", style="font-size:20px; margin-bottom:4px;"},
+
                     #panel{style="padding:10px 30px;", 
-                        body="Puanını ilk önce bitiren oyuncu oyunu kazanır. 
-                                Oyun ve puanlama seçenekleri masa açılışında set edilir. 
-                                Masa açılışında herhangi bir oyun seçilmez ise standart oyun yüklenir."},
+                            text="Ayrıca Tek-çift ve Renkli oyunlar için geçerli aşağıda açıklanan 
+                                özel açma şekilleri de bulunur ve ikramiyeli puan hesabı yapılır."},
+
+                    #table { rows=[
+                        #tablerow { cells=[
+                            #tablecell { style="vertical-align:top; text-align:right; font-weight:bold; width:130px; padding:5px;", text="Renk açmak:"},
+                            #tablecell { style="padding:5px; text-align:left; ", body="Açmanın eldeki taşların tamamının aynı renkten taşlarla yapılması esasına dayanır. Normal oyundaki gibi okeyler eksik taşların yerine kullanılabilir. "
+                                        ++ "Oyuna esas puanlamanın 8 katı açma puanı olarak uygulanır. Bu durumda okey atılırsa 16 katı uygulanır."}
+                        ]},
+                        #tablerow { cells=[
+                            #tablecell { style="vertical-align:top; text-align:right; font-weight:bold; width:130px; padding:5px;", text="Renkten çift açmak:"},
+                            #tablecell { style="padding:5px; text-align:left;", body="Bütün çift taşların aynı renkten olması hali. Renk açmanın iki katı puan uygulanır. Okey taşları kullanılabilir. "}
+                        ]},
+                        #tablerow { cells=[
+                            #tablecell { style="vertical-align:top; text-align:right; font-weight:bold; width:130px; padding:5px;", text="Sekiz taş:"},
+                            #tablecell { style="padding:5px; text-align:left; ", body="Oyun esnasında, oyun taşları içinde herhangi bir taşın 8 tanesini birden ıstakada toplamak demektir. "
+                                        ++ "Örn. 8 tane 4'lü gibi. "
+                                        ++ "8 taşı toplayan oyuncu ekranındaki \"8 Taş\" düğmesini tıkladığında eli açıp açmamasına bakılmaksızın oyun puanının 4 katı puanı ve "
+                                        ++ "çanakta biriken puanı ödül olarak kazanır. "}
+                        ]}
+                    ]},
+
+                    #panel{style="padding:10px 30px;", text="Oyun ve puanlama seçenekleri masa açılışında set edilir. Masa açılışında herhangi bir oyun seçilmez ise standart oyun yüklenir."},
+
+                    #table { rows=[
+                        #tablerow { cells=[
+                            #tableheader { style="padding:5px;", text="" },
+                            #tableheader { style="padding:5px;", text="" },
+                            #tableheader { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="Tek-çift", colspan=2 },
+                            #tableheader { style="padding:5px; background-color:#ddbbff; text-align:center;", text="Renkli", colspan=2 },
+                            #tableheader { style="padding:5px;", text="" },
+                            #tableheader { style="padding:5px;", text="" }
+                        ]},
+                        #tablerow { cells=[
+                            #tableheader { style="padding:5px;", text="" },
+                            #tableheader { style="padding:5px; background-color:#ddddff; text-align:center;", text="standart" },
+                            #tableheader { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="tek" },
+                            #tableheader { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="çift" },
+                            #tableheader { style="padding:5px; background-color:#ddbbff; text-align:center;", body=["sarı-mavi ÇİFT", #br{}, "siyah-kırmızı TEK"] },
+                            #tableheader { style="padding:5px; background-color:#ddbbff; text-align:center;", text="Siyah kırmızı ÇİFT" },
+                            #tableheader { style="padding:5px; background-color:#ddffdd; text-align:center;", text="10'dan düşmeli" },
+                            #tableheader { style="padding:5px; text-align:center;", text="Çanakta biriken" }
+                        ]},
+                        #tablerow { cells=[
+                            #tableheader { style="padding:5px;", text="Gösterme" },
+                            #tablecell { style="padding:5px; background-color:#ddddff; text-align:center;", text="1" },
+                            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="1" },
+                            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="2" },
+                            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="2" },
+                            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="4" },
+                            #tablecell { style="padding:5px; background-color:#ddffdd; text-align:center;", text="1" },
+                            #tablecell { style="padding:5px; text-align:center;", body="&mdash;" }
+                        ]},
+                        #tablerow { cells=[
+                            #tableheader { style="padding:5px;", text="Açma" },
+                            #tablecell { style="padding:5px; background-color:#ddddff; text-align:center;", text="3" },
+                            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="3" },
+                            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="6" },
+                            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="6" },
+                            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="12" },
+                            #tablecell { style="padding:5px; background-color:#ddffdd; text-align:center;", text="2" },
+                            #tablecell { style="padding:5px; text-align:center;", body="&mdash;" }
+                        ]},
+                        #tablerow { cells=[
+                            #tableheader { style="padding:5px;", text="Okey atma" },
+                            #tablecell { style="padding:5px; background-color:#ddddff; text-align:center;", text="6" },
+                            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="6" },
+                            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="12" },
+                            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="12" },
+                            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="24" },
+                            #tablecell { style="padding:5px; background-color:#ddffdd; text-align:center;", text="4" },
+                            #tablecell { style="padding:5px; text-align:center;", body="açana" }
+                        ]},
+                        #tablerow { cells=[
+                            #tableheader { style="padding:5px;", text="Taş çifti" },
+                            #tablecell { style="padding:5px; background-color:#ddddff; text-align:center;", text="6" },
+                            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="6" },
+                            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="12" },
+                            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="12" },
+                            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="24" },
+                            #tablecell { style="padding:5px; background-color:#ddffdd; text-align:center;", text="4" },
+                            #tablecell { style="padding:5px; text-align:center;", body="açana" }
+                        ]},
+                        #tablerow { cells=[
+                            #tableheader { style="padding:5px;", text="8 taş" },
+                            #tablecell { style="padding:5px; background-color:#ddddff; text-align:center;", text="yok" },
+                            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="12" },
+                            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="24" },
+                            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="24" },
+                            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="48" },
+                            #tablecell { style="padding:5px; background-color:#ddffdd; text-align:center;", text="yok" },
+                            #tablecell { style="padding:5px; text-align:center;", body="yapana" }
+                        ]},
+                        #tablerow { cells=[
+                            #tableheader { style="padding:5px;", text="Renk açma" },
+                            #tablecell { style="padding:5px; background-color:#ddddff; text-align:center;", text="yok" },
+                            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="24" },
+                            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="48" },
+                            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="48" },
+                            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="96" },
+                            #tablecell { style="padding:5px; background-color:#ddffdd; text-align:center;", text="yok" },
+                            #tablecell { style="padding:5px; text-align:center;", body="açana" }
+                        ]},
+                        #tablerow { cells=[
+                            #tableheader { style="padding:5px;", text="Renkten Taş çifti" },
+                            #tablecell { style="padding:5px; background-color:#ddddff; text-align:center;", text="yok" },
+                            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="48" },
+                            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="96" },
+                            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="96" },
+                            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="192" },
+                            #tablecell { style="padding:5px; background-color:#ddffdd; text-align:center;", text="yok" },
+                            #tablecell { style="padding:5px; text-align:center;", body="açana" }
+                        ]},
+                        #tablerow { cells=[
+                            #tableheader { style="padding:5px;", text="Renkten okey atma" },
+                            #tablecell { style="padding:5px; background-color:#ddddff; text-align:center;", text="yok" },
+                            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="48" },
+                            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="96" },
+                            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="96" },
+                            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="192" },
+                            #tablecell { style="padding:5px; background-color:#ddffdd; text-align:center;", text="yok" },
+                            #tablecell { style="padding:5px; text-align:center;", body="açana" }
+                        ]},
+                        #tablerow { cells=[
+                            #tableheader { style="padding:5px;", text="Renkten Taş çifti okey atma" },
+                            #tablecell { style="padding:5px; background-color:#ddddff; text-align:center;", text="yok" },
+                            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="96" },
+                            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="192" },
+                            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="192" },
+                            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="384" },
+                            #tablecell { style="padding:5px; background-color:#ddffdd; text-align:center;", text="yok" },
+                            #tablecell { style="padding:5px; text-align:center;", body="açana" }
+                        ]},
+                        #tablerow { cells=[
+                            #tableheader { style="padding:5px;", text="Yanlış açan" },
+                            #tablecell { style="padding:5px; background-color:#ddddff; text-align:center;", text="-9" },
+                            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="-9" },
+                            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="-18" },
+                            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="-18" },
+                            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="-36" },
+                            #tablecell { style="padding:5px; background-color:#ddffdd; text-align:center;", text="-2" },
+                            #tablecell { style="padding:5px; text-align:center;", body="&mdash;" }
+                        ]},
+                        #tablerow { cells=[
+                            #tableheader { style="padding:5px;", text="Yanlış açışta diğerleri" },
+                            #tablecell { style="padding:5px; background-color:#ddddff; text-align:center;", text="3" },
+                            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="3" },
+                            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="6" },
+                            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="6" },
+                            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="12" },
+                            #tablecell { style="padding:5px; background-color:#ddffdd; text-align:center;", text="yok" },
+                            #tablecell { style="padding:5px; text-align:center;", body="&mdash;" }
+                        ]},
+                        #tablerow { cells=[
+                            #tableheader { style="padding:5px;", text="Çanak boşalınca çanağa eklenen" },
+                            #tablecell { style="padding:5px; background-color:#ddddff; text-align:center;", text="yok" },
+                            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="4" },
+                            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="8" },
+                            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="8" },
+                            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="16" },
+                            #tablecell { style="padding:5px; background-color:#ddffdd; text-align:center;", text="yok" },
+                            #tablecell { style="padding:5px; text-align:center;", body="&mdash;" }
+                        ]}
+                    ]},
+
+
 
                     #singlerow{style="margin: 20px;", cells=[
                         #tablecell{
