@@ -28,7 +28,7 @@ main() ->
     FeedOwner = wf:state(feed_owner),
     case FeedOwner of
         undefined ->
-            {ok, UserInfo} = rpc:call(?APPSERVER_NODE, users, get_user, [wf:user()]),
+            {ok, UserInfo} = rpc:call(?APPSERVER_NODE, nsm_users, get_user, [wf:user()]),
             FeedId = UserInfo#user.feed;
         {UserOrGroup, Info} ->
             case UserOrGroup of
