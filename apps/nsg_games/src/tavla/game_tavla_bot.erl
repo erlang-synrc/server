@@ -4,7 +4,8 @@
 
 -export([start/3, start_link/3, robot_init/1, init_state/2, join_game/1, get_session/1,
          send_message/2, call_rpc/2, do_skip/2, do_rematch/1, first_move_table/0,
-         make_first_move/3, follow_board/3 ]).
+%%         make_first_move/3,
+         follow_board/3 ]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 
 -include_lib("nsg_srv/include/conf.hrl").
@@ -13,6 +14,7 @@
 -include_lib("nsg_srv/include/requests.hrl").
 -include_lib("nsg_srv/include/game_tavla.hrl").
 -include_lib("nsg_srv/include/game_okey.hrl").
+-include_lib("nsg_srv/include/settings.hrl").
 
 -record(state, {
         moves = 0 :: integer(),
@@ -137,7 +139,7 @@ robot_init_loop(State) -> % receiving messages from relay
     receive
         {init_hand, {[GI, GS], RobotInfo}} ->
             {_Next, Delay} = RobotInfo,
-            #tavla_game_info{game_type = Mode} = GI,
+            #tavla_game_info{game_mode = Mode} = GI,
             #tavla_game_player_state{whos_move = Turn, game_state = GameState, places = Hand} = GS,
             State1 = State#state{delay = Delay, mode = Mode},
             case {Turn, GameState} of
@@ -158,29 +160,37 @@ tavla_client_loop(State) -> % incapsulate tavla protocol
     S = State#state.conn,
     GameId = State#state.gid,
     Id = State#state.uid,
+    Color = State#state.player_color,
+    GameMode = State#state.mode,
     receive
         #game_event{event = <<"tavla_next_turn">>, args = Params} ->
             TableId = proplists:get_value(table_id, Params, 0),
-            case TableId == State#state.table_id of true ->
-
-            ?INFO("tavla next turn: ~p",[{Id,State#state.started,State#state.next_initiated}]),
-            case {proplists:get_value(player, Params), State#state.started} of
-                        {Id,false} ->
-                            case State#state.next_initiated of
-                                false -> roll_action(State,TableId);
-                                true -> ignore
-                            end;
-                        {Id,true} ->
-                            roll_action(State,TableId);
-                        {_, false} ->
-                            case State#state.next_initiated of
-                                false -> roll_action(State,TableId);
-                                true -> ignore
-                            end;
-                        {_, true} -> ignore
-                    end,
-            tavla_client_loop(State#state{next_initiated=true});
-
+            case TableId == State#state.table_id of
+                true ->
+                    ?INFO("TAVLABOT ~p tavla_next_turn: GameMode:~p TableId~p Params:~p", [Id, GameMode, TableId, Params]),
+                    case check_can_roll(GameMode, TableId) of
+                       true ->
+                           ?INFO("TAVLABOT ~p tavla next turn: ~p",[Id, {State#state.started,State#state.next_initiated}]),
+                           case {proplists:get_value(player, Params), State#state.started} of
+                               {Id,false} ->
+                                   case State#state.next_initiated of
+                                       false -> roll_action(State,TableId);
+                                       true -> ignore
+                                   end;
+                               {Id,true} ->
+                                   roll_action(State,TableId);
+                               {_, false} ->
+                                   case State#state.next_initiated of
+                                       false -> roll_action(State,TableId);
+                                       true -> ignore
+                                   end;
+                               {_, true} -> ignore
+                           end,
+                           tavla_client_loop(State#state{next_initiated=true});
+                       false ->
+                           ?INFO("TAVLABOT ~p tavla next turn: ignoring (not main table)", [Id]),
+                           tavla_client_loop(State)
+                    end;
             _ -> tavla_client_loop(State) end;
         #game_event{event = <<"tavla_moves">>, args = Params} ->
             TableId = proplists:get_value(table_id, Params, 0),
@@ -229,23 +239,25 @@ tavla_client_loop(State) -> % incapsulate tavla protocol
             Players = proplists:get_value(players, Params),
             User = State#state.user,
             FoundMyself = lists:keyfind(User#'PlayerInfo'.id,#tavla_color_info.name,Players),
-            ?INFO("TAVLABOT game_started ~p color: ~p",[User#'PlayerInfo'.id, FoundMyself]),
-            PlayerColor = case FoundMyself#tavla_color_info.color of 1 -> 2; 2 -> 1 end,
+%%            PlayerColor = case FoundMyself#tavla_color_info.color of 1 -> 2; 2 -> 1 end,
+            PlayerColor = fix_color(FoundMyself#tavla_color_info.color),
+            ?INFO("TAVLABOT ~p game_started, color: ~p",[User#'PlayerInfo'.id, PlayerColor]),
             Board = game_tavla:setup_board(PlayerColor),
             tavla_client_loop(State#state{board = Board,moves=0,started=false,next_initiated=false,player_color=PlayerColor});
             _ -> tavla_client_loop(State) end;
         #game_event{event = <<"tavla_rolls">>, args = Params} ->
             TableId = proplists:get_value(table_id, Params, 0),
             case TableId == State#state.table_id of true ->
-            State2 = case {proplists:get_value(player, Params),State#state.started} of
-                {Id,_} ->
-                      ?INFO("tavla rolls: dices=~p",[proplists:get_value(dices, Params)]),
+            ?INFO("TAVLABOT ~p (color: ~p) tavla_rolls: ~p",[Id, Color, Params]),
+            State2 = case {fix_color(proplists:get_value(color, Params)),State#state.started} of
+                {Color,_} ->
+                      ?INFO("TAVLABOT ~p tavla rolls: dices=~p",[Id, proplists:get_value(dices, Params)]),
                       case {Dices = proplists:get_value(dices, Params),State#state.started} of
                         {[_A,_B],false} -> do_move(State,Dices,TableId,State#state.player_color), State#state{started = true, moves = State#state.moves + 1};
                         {[_A,_B],true} -> do_move(State,Dices,TableId,State#state.player_color), State#state{moves = State#state.moves + 1};
                         {[_C],_} -> State
                       end;
-                _  -> State
+                _  -> ?INFO("TAVLABOT ~p tavla rolls: Ignore rolls (another color)",[Id]), State
             end,
             tavla_client_loop(State2);
             _ -> tavla_client_loop(State) end;
@@ -266,7 +278,7 @@ tavla_client_loop(State) -> % incapsulate tavla protocol
             _ -> tavla_client_loop(State) end;
         #game_event{event = <<"tavla_game_info">>, args = Args} ->
              User = State#state.user,
-             Mode = proplists:get_value(game_type, Args),
+             Mode = proplists:get_value(game_mode, Args),
              SM = proplists:get_value(sets, Args),
              TableId = proplists:get_value(table_id, Args),
              ?INFO("TAVLABOT game_info ~p ~p",[self(),User]),
@@ -299,13 +311,24 @@ tavla_client_loop(State) -> % incapsulate tavla protocol
             tavla_client_loop(State)
     end.
 
+fix_color(Color) ->  case Color of 1 -> 2; 2 -> 1 end.
+
+
+
+check_can_roll(Mode, TableId) ->
+    case Mode of
+        <<"paired">> -> TableId==1 orelse ?PAIRED_TAVLA_ASYNC == true;
+        _ -> true
+    end.
+
+
+
 % logic
 
 follow_board(Board,Moves,PlayerColor) ->
     lists:foldl(fun ({From,To}, Acc) -> follow_board(Acc,From,To,PlayerColor) end, Board, Moves).
 
 follow_board(Board,From,To,PlayerColor) -> % track the moves to keep board consistent
-    OppositePlayerColor = case PlayerColor of 1 -> 2; 2 -> 1 end,
     FromCell = lists:nth(From + 1,Board),
     {FromColor,_FromCount} = case FromCell of 
                                  null -> {0,0};
@@ -405,12 +428,12 @@ first_move_table() -> [{{6,6},[{13,7},{13,7},{24,18},{24,18}]}, % based on
                        {{1,1},[{8,7},{8,7},{6,5},{6,5}]}
                       ].
 
-make_first_move(Dices,TableId,PlayerColor) -> 
-    {_,Moves} = lists:keyfind(norm(Dices),1,first_move_table()),
-    case PlayerColor of
-         1 -> [ #'TavlaAtomicMove'{table_id = TableId,from=25-From,to=25-To} || {From,To} <- Moves];
-         2 -> [ #'TavlaAtomicMove'{table_id = TableId,from=From,to=To} || {From,To} <- Moves]
-    end.
+%make_first_move(Dices,TableId,PlayerColor) -> 
+%    {_,Moves} = lists:keyfind(norm(Dices),1,first_move_table()),
+%    case PlayerColor of
+%         1 -> [ #'TavlaAtomicMove'{table_id = TableId,from=25-From,to=25-To} || {From,To} <- Moves];
+%         2 -> [ #'TavlaAtomicMove'{table_id = TableId,from=From,to=To} || {From,To} <- Moves]
+%    end.
 
 tactical_criteria(Board,Color,PlayerColor) -> 
    case all_in_home(Board,Color,PlayerColor) of
@@ -558,7 +581,6 @@ do_skip(State,TableId) ->
                         args = [{table_id,TableId}]}).
 
 do_move(State, Dices,TableId,PlayerColor) ->
-    OppositePlayerColor = case PlayerColor of 1 -> 2; 2 -> 1 end,
     Delay = get_delay(State),
     simulate_delay(take, Delay),
     S = State#state.conn,

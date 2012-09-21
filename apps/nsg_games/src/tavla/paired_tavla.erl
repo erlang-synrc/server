@@ -12,6 +12,7 @@
 -include_lib("nsg_srv/include/requests.hrl").
 -include_lib("nsg_srv/include/setup.hrl").
 -include_lib("nsg_srv/include/basic_types.hrl").
+-include_lib("nsg_srv/include/game_tavla.hrl").
 -include_lib("nsm_db/include/table.hrl").
 -include_lib("nsm_db/include/accounts.hrl").
 -include_lib("alog/include/alog.hrl").
@@ -296,8 +297,8 @@ handle_info({get_second_level_relay, {Pid, Ref}, User}, #state{tables_pids = Tab
                                                                  tables_users = Tables
                                                                 }=State) ->
 
-    ?INFO("~w:handle_info(get_second_level_relay) UserId = ~9999p", [?MODULE, User]),
-    ?INFO("~w:handle_info(get_second_level_relay) Tables = ~9999p", [?MODULE, Tables]),
+    ?INFO("~w:handle_info(get_second_level_relay) UserId = ~p", [?MODULE, User]),
+    ?INFO("~w:handle_info(get_second_level_relay) Tables = ~p", [?MODULE, Tables]),
 
     {First,Second} = case User#'PlayerInfo'.robot of
       true ->  {lists:keyfind(robot, 2, Tables),
@@ -373,8 +374,34 @@ spawn_tables([{TabId, A, B} | Rest], Tables, Topic, GameFSM, Params, Manager, Ta
 
 spawn_tables([], Tables, _Topic, _GameFSM, _Params, _Manager, _TablesNum) -> Tables.
 
-publish0(Msg, Sender, #state{tables_pids = Tables}) -> [relay:republish(Pid,Msg)||{_,Pid} <- Tables, Pid =/= Sender].
 notify_tables0(Msg, Sender, #state{tables_pids = Tables}) -> [relay:notify_table(Pid,Msg)||{_,Pid}<-Tables, Pid =/= Sender].
+publish0(OrigMsg, Sender, #state{tables_pids = Tables}) ->
+    ?INFO("~w:publish0 OrigMsg: ~p", [?MODULE, OrigMsg]),
+    [begin
+         Msg = case OrigMsg of
+                   %% Dices of main table passed to all tables like as original
+                   #game_event{event = tavla_rolls, args = Args} ->
+                       case length(proplists:get_value(dices, Args)) == 2 of
+                           true ->
+                               NewArgs = replace_table_id(Args, TabId),
+                               OrigMsg#game_event{args = NewArgs};
+                           false ->
+                               OrigMsg
+                       end;
+                   _ ->
+                       OrigMsg
+               end,
+         ?INFO("~w:publish0 Msg: ~p", [?MODULE, Msg]),
+         relay:republish(TabPid, Msg)
+     end || {TabId, TabPid} <- Tables, TabPid =/= Sender],
+    ok.
+
+
+replace_table_id(Args, TabId) ->
+    case lists:member({table_id, 1}, Args) of
+        true -> [{table_id, TabId} | Args -- [{table_id, 1}]];
+        false -> Args
+    end.
 
 bot_module(game_okey) -> game_okey_bot;
 bot_module(game_tavla) -> game_tavla_bot.

@@ -25,6 +25,7 @@
 -include_lib("nsg_srv/include/types.hrl").
 -include_lib("alog/include/alog.hrl").
 -include_lib("eunit/include/eunit.hrl").
+-include_lib("nsg_srv/include/settings.hrl").
 
 -record(state, {
 		  game_id               :: any(),
@@ -273,7 +274,7 @@ tavla_roll(Pid,State) ->
     {reply, ok, state_move, State}.
 
 
-tavla_move(Moves, Player, _Pid, State) ->
+tavla_move(Moves, Player, _Pid, #state{game_mode = Mode, table_id = TabId} = State) ->
     TableId = State#state.table_id,
     Relay = State#state.relay,
 %    ?INFO("tavla_move{} received from client ~p",[{Moves,Player}]),
@@ -297,7 +298,13 @@ tavla_move(Moves, Player, _Pid, State) ->
     NewState = State#state{players=[TP1#'TavlaPlayer'{collected=P1Collected},
                                     TP2#'TavlaPlayer'{collected=P2Collected}]},
     case check_game_ended(P1Collected, P2Collected, P1, P2, Relay, Player,State) of
-        no -> {reply, ok, state_rolls, NewState};
+        no -> 
+            case check_can_roll(Mode,TabId) of
+                true ->
+                   {reply, ok, state_move, NewState};
+                false->
+                   {reply, ok, state_rolls, NewState}
+            end;
         {yes, Results} -> 
                %game_stats:assign_points(Results, State#state.game_info),
                next_round(NewState#state{series_results = NewState#state.series_results ++ [Results]}, Results) 
@@ -305,6 +312,9 @@ tavla_move(Moves, Player, _Pid, State) ->
     end.
 
 % MOVE
+
+check_can_roll(Mode, TableId) ->
+    Mode==paired andalso TableId=/=1 andalso ?PAIRED_TAVLA_ASYNC == false.
 
 check_game_ended(P1Collected, P2Collected, P1, P2, Relay, Player,State) ->
     TableId = State#state.table_id,
@@ -519,12 +529,20 @@ handle_event(_Event, StateName, State) ->
 handle_sync_event(get_settings, _From, StateName, #state{} = State) ->
     Res = State#state.settings,
     {reply, Res, StateName, State}; %settings
-handle_sync_event({signal, state_created}=Event, _From, state_created=StateName, #state{} = State) ->
+
+handle_sync_event({signal, state_created}=Event, _From, state_created=StateName,
+                  #state{game_mode = Mode, table_id = TabId} = State) ->
     ?INFO("HANDLE_SYNC_EVENT: ~p",[{Event,_From,StateName}]),
     _Relay = State#state.relay,
     game_stats:charge_quota(State#state.game_info),
     start_game(State),
-    {reply, ok, state_start_rolls, State};
+    case check_can_roll(Mode,TabId) of
+        true ->
+            {reply, ok, state_move, State};
+        false ->
+            {reply, ok, state_start_rolls, State}
+    end;
+
 handle_sync_event({signal, do_rematch}, _From, _StateName, State) ->
     Pids = [P#'TavlaPlayer'.pid || P <- State#state.players],
     NewState = State#state{ready = 0, b_rolls = [], c_rolls = [], wait_list = Pids, current_round = 1},
