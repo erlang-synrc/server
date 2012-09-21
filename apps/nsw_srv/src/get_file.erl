@@ -2,8 +2,8 @@
 -module(get_file).
 -compile(export_all).
 -include_lib("nitrogen_core/include/wf.hrl").
--include_lib("nsm_srv/include/feed.hrl").
--include_lib("nsm_srv/include/user.hrl").
+-include_lib("nsm_db/include/feed.hrl").
+-include_lib("nsm_db/include/user.hrl").
 -include_lib("alog/include/alog.hrl").
 -include("setup.hrl").
 
@@ -55,8 +55,8 @@ main() ->
 
     {attachment, Type} = Media#media.type,
     MediaPath = lists:concat([code:priv_dir(nsw_srv), "/static", Media#media.url]),
-    {ok, Bin} = file:read_file(MediaPath),
+    {ok, Bin} = file:read_file(MediaPath), 
 
-    wf:header('Content-Disposition', "attachment; filename=\"" ++ Media#media.title ++ "\""),
+    wf:header(<<"Content-Disposition">>, "attachment; filename=\"" ++ Media#media.title ++ "\""),
     wf:content_type(Type),
     Bin.

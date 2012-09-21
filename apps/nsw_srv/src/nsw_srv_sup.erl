@@ -104,7 +104,7 @@ init([]) ->
 
     case nsm_db:get(config, "debug/production", false) of
          {ok, true} -> ok;
-         _ -> create_tables(100)
+         _ -> create_tables(10)
     end,
 
     rpc:call(?APPSERVER_NODE,nsm_bg,init_workers,[]),
@@ -122,11 +122,11 @@ init([]) ->
 
 mime() ->
     [
-     {<<".html">>, [<<"text/html">>]},
-     {<<".css">>, [<<"text/css">>]},
-     {<<".png">>, [<<"image/png">>]},
-     {<<".gif">>, [<<"image/gif">>]},
-     {<<".jpg">>, [<<"image/jpeg">>]},
-     {<<".js">>, [<<"application/javascript">>]}
+     {<<"html">>, [<<"text/html">>]},
+     {<<"css">>, [<<"text/css">>]},
+     {<<"png">>, [<<"image/png">>]},
+     {<<"gif">>, [<<"image/gif">>]},
+     {<<"jpg">>, [<<"image/jpeg">>]},
+     {<<"js">>, [<<"application/javascript">>]}
     ].
 
