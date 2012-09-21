@@ -143,19 +143,19 @@ handle_call(#social_action_msg{type=Type, initiator=P1, recipient=P2} = _Msg,
     case Type of
         ?SOCIAL_ACTION_SUBSCRIBE ->
             Subject = binary_to_list(P2),
-            rpc:call(?APPSERVER_NODE, users, subscribe_user, [UserId, Subject]),
+            rpc:call(?APPSERVER_NODE, nsm_users, subscribe_user, [UserId, Subject]),
             {reply, ok, State};
         ?SOCIAL_ACTION_UNSUBSCRIBE ->
             Subject = binary_to_list(P2),
-            rpc:call(?APPSERVER_NODE, users, remove_subscribe, [UserId, Subject]),
+            rpc:call(?APPSERVER_NODE, nsm_users, remove_subscribe, [UserId, Subject]),
             {reply, ok, State};
         ?SOCIAL_ACTION_BLOCK ->
             Subject = binary_to_list(P2),
-            rpc:call(?APPSERVER_NODE, users, block_user, [UserId, Subject]),
+            rpc:call(?APPSERVER_NODE, nsm_users, block_user, [UserId, Subject]),
             {reply, ok, State};
         ?SOCIAL_ACTION_UNBLOCK ->
             Subject = binary_to_list(P2),
-            rpc:call(?APPSERVER_NODE, users, unblock_user, [UserId, Subject]),
+            rpc:call(?APPSERVER_NODE, nsm_users, unblock_user, [UserId, Subject]),
             {reply, ok, State};
         ?SOCIAL_ACTION_LOVE ->
             {reply, ok, State};
@@ -220,7 +220,7 @@ handle_call(#subscribe_player_rels{players = Players}, _From,
         fun(PlayerId) ->
                 PlayerIdStr = binary_to_list(PlayerId),
                 Type = case rpc:call(?APPSERVER_NODE,
-                                     users, is_user_subscribed,
+                                     nsm_users, is_user_subscribed,
                                      [UserIdStr, PlayerIdStr]) of
                            true -> ?SOCIAL_ACTION_SUBSCRIBE;
                            false -> ?SOCIAL_ACTION_UNSUBSCRIBE
