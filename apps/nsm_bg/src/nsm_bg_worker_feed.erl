@@ -445,8 +445,7 @@ get_opts(#state{type = group, owner = Owner}) ->
     QueueName = nsm_mq_lib:list_to_key(Name),
     %% group worker listen only for direct messages
     %% and special message to stop worker
-    [{routes, [[feed, delete, Owner],
-               [feed, group, Owner, '*', '*', '*']]},
+    [{routes, [""]},
      {gproc_name, Name},
      {consume_options, [exclusive]},
      {queue, QueueName},

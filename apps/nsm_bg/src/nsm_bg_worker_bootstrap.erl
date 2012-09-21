@@ -52,26 +52,22 @@ init([{name, Name}]) ->
     end.
 
 handle_notice(["user", "init"], User, State) ->
-    ?INFO("internal_config(~p): feed initialization message received: ~p",
-          [self(), User]),
+    ?INFO("internal_config(~p): user feed initialization message received: ~p", [self(), User]),
     start_local_if_not_started(user, User),
     {noreply, State};
 
 handle_notice(["group", "init"], {Group, FeedId}, State) ->
-    ?INFO("internal_config(~p): feed ~p initialization message received: ~p",
-          [self(), FeedId, Group]),
+    ?INFO("internal_config(~p): group feed ~p initialization message received: ~p", [self(), FeedId, Group]),
     start_local_if_not_started(user, Group, FeedId),
     {noreply, State};
 
 handle_notice(["group", "init"], Group, State) ->
-    ?INFO("internal_config(~p): feed initialization message received: ~p",
-          [self(), Group]),
+    ?INFO("internal_config(~p): group feed initialization message received: ~p", [self(), Group]),
     start_local_if_not_started(user, Group),
     {noreply, State};
 
 handle_notice(Route, Message, State) ->
-    ?INFO("internal_config(~p): notification received: ",
-          [self(), Route, Message]),
+    ?INFO("internal_config(~p): notification received: ", [self(), Route, Message]),
     {noreply, State}.
 
 
@@ -85,8 +81,7 @@ handle_info(start_all, State) ->
     {noreply, State};
 
 handle_info({gproc, unreg, _Ref, {n, g, ?FEED_WORKER_NAME(Type, Name)}}, State) ->
-    ?INFO(" feed worker exited: ~p ~p, try restart",
-          [Type, Name]),
+    ?INFO(" feed worker exited: ~p ~p, try restart", [Type, Name]),
     timer:sleep(100),
     start_local_if_not_started(Type, Name),
     {noreply, State};
