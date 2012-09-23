@@ -2,8 +2,8 @@
 -author('Maxim Sokhatsky <maxim@synrc.com>').
 -compile(export_all).
 -include_lib("nitrogen_core/include/wf.hrl").
--include_lib("nsm_srv/include/config.hrl").
--include_lib("nsm_srv/include/table.hrl").
+-include_lib("nsm_db/include/config.hrl").
+-include_lib("nsm_db/include/table.hrl").
 -include("setup.hrl").
 -include("loger.hrl").
 -include("gettext.hrl").

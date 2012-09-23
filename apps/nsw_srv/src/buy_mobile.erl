@@ -1,5 +1,5 @@
 -module(buy_mobile).
--author('Vladimir Baranov <vladimir.baranoff@gmail.com>').
+-author('Maxim Sokhatsky <maxim@synrc.com>').
 -compile(export_all).
 
 -include_lib("nitrogen_core/include/wf.hrl").
@@ -50,17 +50,18 @@ process_result(success) ->
     Referer = wf:header(referer),
 
     ?INFO("Mobile Operator Income URL: ~p",[Referer]),
-    Request = wf_context:request_bridge(),
-    ?INFO("Request Bridge: ~p",[Request]),
 
-    {Proto,No,Site,Port,Page,S} = http_uri:parse(Referer),
+    Site = case Referer of
+         undefined -> "local";
+         _ -> {Proto,No,S,Port,Page,_} = http_uri:parse(Referer), S
+    end,
+
 
     case Site =:= "www.mikro-odeme.com" of
-         true ->  User = case rpc:call(?APPSERVER_NODE, nsm_membership_packages, get_purchase, [PurchaseId]) of
+         true ->  case rpc:call(?APPSERVER_NODE, nsm_membership_packages, get_purchase, [PurchaseId]) of
                   {ok, Purchase} ->
-
-                         ok = rpc:call(?APPSERVER_NODE, nsm_membership_packages,
-				 set_purchase_state, [Purchase#membership_purchase.id, done, mobile]),
+                          rpc:call(?APPSERVER_NODE, nsm_membership_packages,
+                                    set_purchase_state, [element(2,Purchase), done, mobile]),
 
                             wf:redirect("/profile/account");
 

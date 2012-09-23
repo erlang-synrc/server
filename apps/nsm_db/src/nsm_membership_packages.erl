@@ -1,56 +1,24 @@
-%%----------------------------------------------------------------------
-%% @author Vladimir Baranov <baranoff.vladimir@gmail.com>
-%% @copyright Paynet Internet ve Bilisim Hizmetleri A.S. All Rights Reserved.
-%% @doc
-%% Membership packages. FIXME: database data structures have to be changed!
-%% @end
-%%--------------------------------------------------------------------
 -module(nsm_membership_packages).
+-author('Vladimir Baranov <baranoff.vladimir@gmail.com>').
 
-%%
-%% Include files
-%%
 -include("membership_packages.hrl").
 -include_lib("alog/include/alog.hrl").
 -include("accounts.hrl").
-%-ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").
-%-endif.
-
-%%
-%% Exported Functions
-%%
-
--export([add_package/1,
-         list_packages/0,
-         list_packages/1,
-         get_package/1,
-         available_for_sale/2]).
-
--export([add_purchase/1,
-         add_purchase/3,
-         get_purchase/1,
-         set_purchase_external_id/2,
-         set_purchase_state/3,
-         set_purchase_info/2,
-         list_purchases/0,
-         list_purchases/1,
-         purchase_id/0]).
 
 -export([create_storage/0, add_sample_data/0]).
+-export([add_package/1, list_packages/0, list_packages/1, get_package/1, available_for_sale/2]).
+-export([add_purchase/1, add_purchase/3, get_purchase/1, set_purchase_external_id/2,
+         set_purchase_state/3, set_purchase_info/2, list_purchases/0, list_purchases/1,
+         purchase_id/0]).
 
 -type package_id() :: integer().
 -type list_options()::[{payment_type, payment_type()}|{available_for_sale, boolean()}].
-
-%%
-%% API Functions
-%%
 
 -spec add_package(#membership_package{})->{ok, Id::package_id()}|{error, Reason::any()}.
 add_package(#membership_package{}=Package)->
     Id = generate_id(),
     save_package(Package#membership_package{id = Id}).
-
 
 -spec get_package(any())-> {ok, #membership_package{}} | {error, Reason::any()}.
 get_package(PackageId)->
@@ -61,7 +29,6 @@ get_package(PackageId)->
             {error, Reason}
     end.
 
-
 -spec list_packages(SelectOptions::list_options())->[#membership_package{}].
 list_packages(Options) ->
     Predicate =
@@ -71,12 +38,10 @@ list_packages(Options) ->
 
     select(membership_package, Predicate).
 
-
 -spec list_packages()->[#membership_package{}].
 list_packages()->
      nsm_db:all(membership_package).
 
-%% @doc setter for available_for_sale option of package
 -spec available_for_sale(package_id(), boolean()) -> ok | {error, any()}.
 available_for_sale(PackageId, State) ->
     case get_package(PackageId) of
@@ -93,19 +58,18 @@ available_for_sale(PackageId, State) ->
     end.
 
 -spec add_purchase(#membership_purchase{}) -> {ok, PurchaseId::string()}.
-
 add_purchase(#membership_purchase{} = MP) ->
     add_purchase(#membership_purchase{} = MP, undefined, undefined).
 
 -spec add_purchase(#membership_purchase{}, purchase_state(), StateInfo::any()) -> {ok, PurchaseId::string()}.
-
-
 add_purchase(#membership_purchase{} = MP, State0, Info) ->
+    ?INFO("111111111"),
     case nsm_db:get(membership_purchase, MP#membership_purchase.id) of
         {ok, _} -> {error, already_bought_that_one};
         {error, notfound} ->
             %% fill needed fields
 
+    ?INFO("2222222222222222"),
             Start = now(),
             State = default_if_undefined(State0, undefined, ?MP_STATE_ADDED),
             %% FIXME: uniform info field if needed
@@ -127,19 +91,14 @@ add_purchase(#membership_purchase{} = MP, State0, Info) ->
                                               state_log = StateLog},
 
             %% notify about purchase added
-            nsx_util_notification:notify_purchase(Purchase),
+%            nsx_util_notification:notify_purchase(Purchase),
 
-            case nsm_db:put(Purchase) of
-                ok ->
-                    {ok, Id};
-                Error ->
-                    Error
-            end
+    ?INFO("33333333333333 ~p ~p",[Purchase#membership_purchase.user_id, Purchase]),
+
+            nsm_riak:add_purchase_to_user(Purchase#membership_purchase.user_id, Purchase)
     end.
 
-
 -spec get_purchase(string())-> {ok, #membership_purchase{}} | {error, Reason::any()}.
-
 get_purchase(PurchaseId)->
     case nsm_db:get(membership_purchase, PurchaseId) of
         {ok, #membership_purchase{} = Package}->
@@ -148,11 +107,10 @@ get_purchase(PurchaseId)->
             {error, Reason}
     end.
 
-%% FIXME: find another safe way of changing values in purchase records.
-
 -spec set_purchase_state(term(), purchase_state(), term()) -> ok.
 set_purchase_state(MPId, NewState, Info) ->
-    {ok, MP} = nsm_db:get(membership_purchase, MPId),
+    case nsm_db:get(membership_purchase, MPId) of 
+      {ok, MP} ->
 
     Time = now(),
     StateLog = MP#membership_purchase.state_log,
@@ -170,7 +128,7 @@ set_purchase_state(MPId, NewState, Info) ->
                                       state_log = NewStateLog},
 
     %% notify aboput state change
-    nsx_util_notification:notify_purchase(Purchase),
+%    nsx_util_notification:notify_purchase(Purchase),
     NewMP=MP#membership_purchase{state = NewState,
                                          end_time = EndTime,
                                          state_log = NewStateLog},
@@ -183,15 +141,16 @@ set_purchase_state(MPId, NewState, Info) ->
         true ->
             ok
     end,
-    ok.
+    ok;
+  
+    Error -> ?INFO("Can't set purchase state, not yet in db"), Error
+    end.
 
 
 -spec set_purchase_info(term(), term()) -> ok | {error, not_found}.
-
 set_purchase_info(MPId, Info) ->
     {ok, MP} = nsm_db:get(membership_purchase, MPId),
     nsm_db:put(MP#membership_purchase{info = Info}).
-
 
 set_purchase_external_id(MPId, ExternalId) ->
     {ok, MP} = nsm_db:get(membership_purchase, MPId),
@@ -212,12 +171,10 @@ create_storage()->
                                     record_info(fields, membership_purchase),
                                     [{storage, permanent}]).
 
-%% @doc Get all purchases
 -spec list_purchases() -> list(#membership_purchase{}).
 list_purchases() ->
     nsm_db:all(membership_purchase).
 
-%% @doc Get purchases with criteria
 -spec list_purchases(SelectOptions::list()) -> list(#membership_purchase{}).
 list_purchases(SelectOptions) ->
     Predicate =
@@ -227,10 +184,7 @@ list_purchases(SelectOptions) ->
 
     select(membership_purchase, Predicate).
 
-
-%% @doc generate purchase id
 -spec purchase_id() -> string().
-
 purchase_id() ->
     %% get next generated id for membership purchase
     NextId = nsm_db:next_id("membership_purchase"),
@@ -301,9 +255,6 @@ add_sample_data()->
 
     nsm_db:put(Enabled).
 
-%%
-%% Local Functions
-%%
 generate_id()->
     Id = nsm_db:next_id("membership_package"),
     integer_to_list(Id).

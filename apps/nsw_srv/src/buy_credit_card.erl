@@ -1,13 +1,5 @@
-%%----------------------------------------------------------------------
-%% @author Vladimir Baranov <vladimir.b.n.b@gmail.com>
-%% @copyright Paynet Internet ve Bilisim Hizmetleri A.S. All Rights Reserved.
-%% @doc
-%% Credit card purchases page
-%% @end
-%%---------------------------------------------------------------------
-
 -module(buy_credit_card).
-
+-author('Vladimir Baranov <baranoff.vladimir@gmail.com>').
 -compile(export_all).
 
 -include_lib("nitrogen_core/include/wf.hrl").
@@ -18,7 +10,6 @@
 -include("elements/records.hrl").
 -include("setup.hrl").
 -include("common.hrl").
-
 
 %% FIXME: move ip to configs
 -define(CC_IP, "188.40.111.156").

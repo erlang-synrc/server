@@ -2,8 +2,8 @@
 
 -compile(export_all).
 -include_lib("nitrogen_core/include/wf.hrl").
--include_lib("nsm_srv/include/user.hrl").
--include_lib("nsm_srv/include/config.hrl").
+-include_lib("nsm_db/include/user.hrl").
+-include_lib("nsm_db/include/config.hrl").
 
 -include("gettext.hrl").
 -include("setup.hrl").

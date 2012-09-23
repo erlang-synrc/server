@@ -42,11 +42,18 @@
          user_id               :: any(),
          state                 :: purchase_state(),
          membership_package    :: #membership_package{},
+         next                  :: any(),
+         prev                  :: any(),
          start_time            :: erlang:now(),
          end_time              :: erlang:now(),
          state_log = []        :: [#state_change{}],
          info                  :: any()      % payment-specific info about purchase if any
         }).
+
+-record(user_purchase,
+        {user                    :: any(),
+         top           :: any()
+         }).
 
 %% Purchase states. MP = membership purchase
 

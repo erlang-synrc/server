@@ -10,7 +10,7 @@
 %    - tournaments, teams and play records
 %    - table manager
 %
-% Currently Zealot supports following store backends:
+% Currently nsm_db supports following store backends:
 %
 %    - Mnesia
 %    - Riak
@@ -53,7 +53,7 @@
          block_user/2, unblock_user/2, list_blocks/1, list_blocked_me/1, is_user_blocked/2,
          add_translations/0,
          select/2, multi_select/2, version/0,
-         invite_code_by_user/1, get_translation/1,
+         invite_code_by_user/1, get_translation/1, add_purchases/0,
          tournament_waiting_queue/1, join_tournament/2, tournament_pop_waiting_player/1,
          play_record_add_entry/4,user_tournaments/1, make_rich/1,
          groups_184_update/0, subscriptions_update/0, fast_timeouts/0, make_admin/1]).
@@ -141,35 +141,32 @@ add_purchases() ->
     {ok, Pkg2} = nsm_membership_packages:get_package(2),
     {ok, Pkg3} = nsm_membership_packages:get_package(3),
     {ok, Pkg4} = nsm_membership_packages:get_package(4),
-    PList=
-        [{"kunthar", Pkg1},{"maxim", Pkg2},{"maxim",Pkg4},
-         {"kate", Pkg3}
-        ],
+    PList = [{"kunthar", Pkg1},{"maxim", Pkg2},{"maxim",Pkg4}, {"kate", Pkg3} ],
     [ok = add_purchase(U, P) || {U, P} <- PList],
     ?INFO("~w:add_purchases/0 Finished", [?MODULE]),
     ok.
 
 add_purchase(UserId, Package) ->
-    {ok, MPId} = nsm_membership_packages:add_purchase(#membership_purchase{user_id=UserId,
-                                                                               membership_package=Package
-                                                                              }),
-    ok = nsm_membership_packages:set_purchase_state(MPId, ?MP_STATE_DONE, undefined).
+    {ok, MPId} = nsm_membership_packages:add_purchase(
+                         #membership_purchase{user_id=UserId, membership_package=Package }),
+    ?INFO("Purchase Added: ~p",[MPId]),
+    nsm_membership_packages:set_purchase_state(MPId, ?MP_STATE_DONE, undefined).
 
 
 
 add_seq_ids() ->
     Init = fun(Key) ->
-	       case nsm_db:get(id_seq, Key) of
-		   {error, _} ->
-		       ok = nsm_db:put(#id_seq{thing = Key, id = 0});
-		   {ok, _} -> ignore
-	       end
-	   end,
+           case nsm_db:get(id_seq, Key) of
+                {error, _} -> ok = nsm_db:put(#id_seq{thing = Key, id = 0});
+                {ok, _} -> ignore
+           end
+    end,
     Init("player_scoring"),
     Init("scoring_record"),
     Init("tournament"),
     Init("team"),
     Init("play_record"),
+    Init("membership_purchase"),
     Init("table"),
     Init("acl"),
     Init("acl_entry"),
@@ -183,23 +180,13 @@ add_seq_ids() ->
 
 add_translations() ->
     lists:foreach(fun({English, Lang, Word}) ->
-%                          ok = nsm_db:put(#ut_word{word    = English, % TODO: why we need translation from en -> en?
-%                                            lang    = "en",    % It is needed to detect english language in URI
-%                                            english = English}),
-                          ok = nsm_db:put(#ut_word{english    = English,
-                                            lang    = "en",
-                                            word = English}),
-                          ok = nsm_db:put(#ut_word{word    = Word,
-                                            lang    = Lang,
-                                            english = Word}),
-                          ok = nsm_db:put(#ut_translation{source   = {Lang, Word},
-                                                   word     = English}),
-                          ok = nsm_db:put(#ut_translation{source   = {"en", English},
-                                                   word     = English}),
-                          ok = nsm_db:put(#ut_translation{source   = {Lang, English},
-                                                   word     = Word}),
+                          ok = nsm_db:put(#ut_word{english = English, lang = "en",  word = English}),
+                          ok = nsm_db:put(#ut_word{english = Word,    lang = Lang,  word = Word}),
+                          ok = nsm_db:put(#ut_translation{source = {Lang, Word},    word = English}),
+                          ok = nsm_db:put(#ut_translation{source = {"en", English}, word = English}),
+                          ok = nsm_db:put(#ut_translation{source = {Lang, English}, word = Word}),
               ok
-                  end, ?URI_DICTIONARY).
+    end, ?URI_DICTIONARY).
 
 add_sample_users() ->
     UserList =

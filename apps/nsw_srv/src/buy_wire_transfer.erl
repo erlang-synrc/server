@@ -1,15 +1,7 @@
-%%----------------------------------------------------------------------
-%% @author Vladimir Baranov <vladimir.b.n.b@gmail.com>
-%% @copyright Paynet Internet ve Bilisim Hizmetleri A.S. All Rights Reserved.
-%% @doc
-%% Wire transfer payment page
-%% @end
-%%---------------------------------------------------------------------
-
 -module(buy_wire_transfer).
-
+-author('Vladimir Baranov <vladimir.b.n.b@gmail.com>').
+-copyright('Paynet Internet ve Bilisim Hizmetleri A.S. All Rights Reserved.').
 -compile(export_all).
-
 
 -include_lib("nitrogen_core/include/wf.hrl").
 -include_lib("nsm_db/include/membership_packages.hrl").

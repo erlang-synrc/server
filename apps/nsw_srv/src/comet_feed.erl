@@ -1,16 +1,14 @@
-%% -*- mode: nitrogen -*-
-%% @doc Comet fucntions to handle feeds comet
-
 -module(comet_feed).
 
 -define(COMET_POOL, feed).
 
 -include_lib("nitrogen_core/include/wf.hrl").
--include_lib("nsm_srv/include/user.hrl").
--include_lib("nsm_srv/include/feed.hrl").
--include("elements/records.hrl").
+-include_lib("nsm_db/include/user.hrl").
+-include_lib("nsm_db/include/feed.hrl").
 -include_lib("nsw_srv/include/common.hrl").
 -include_lib("nsw_srv/include/setup.hrl").
+
+-include("elements/records.hrl").
 
 -export([start/4]).
 

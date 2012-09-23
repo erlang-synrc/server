@@ -1,8 +1,8 @@
 -module(forget).
 
 -include_lib("setup.hrl").
--include_lib("nsm_srv/include/user.hrl").
--include_lib("nsm_srv/include/config.hrl").
+-include_lib("nsm_db/include/user.hrl").
+-include_lib("nsm_db/include/config.hrl").
 
 
 -export([init_forget/1,

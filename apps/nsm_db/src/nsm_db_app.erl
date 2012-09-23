@@ -24,7 +24,10 @@ start(_StartType, _StartArgs) ->
     nsm_db:initialize(),
     ?INFO("Waiting for Riak to Initialize...."),
     wait_vnodes(),
-    nsm_db:init_db(),
+    case db_opt:get_pass_init_db() of 
+         false -> nsm_db:init_db();
+         true -> pass
+    end,
     nsm_db_sup:start_link().
 
 stop(_State) ->

@@ -12,7 +12,7 @@
 -export([process_uploaded_file/4,
          get_default_thumb/1]).
 
--include_lib("nsm_srv/include/attachment.hrl").
+-include_lib("nsm_db/include/attachment.hrl").
 -include_lib("nitrogen_core/include/wf.hrl").
 -include("setup.hrl").
 -include("common.hrl").

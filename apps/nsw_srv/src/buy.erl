@@ -1,15 +1,8 @@
-%%----------------------------------------------------------------------
-%% @author Vladimir Baranov <vladimir.b.n.b@gmail.com>
-%% @copyright Paynet Internet ve Bilisim Hizmetleri A.S. All Rights Reserved.
-%% @doc
-%% Purchases page
-%% @end
-%%---------------------------------------------------------------------
 -module(buy).
+-author('Vladimir Baranov <baranoff.vladimir@gmail.com>').
+-copyright('Paynet Internet ve Bilisim Hizmetleri A.S.').
+-compile(export_all).
 
-%%
-%% Include files
-%%
 -include_lib("nitrogen_core/include/wf.hrl").
 -include_lib("nsm_db/include/membership_packages.hrl").
 -include_lib("nsm_db/include/accounts.hrl").
@@ -22,15 +15,6 @@
 -define(CURRENT_PACKAGE_STATE_KEY, current_package).
 -define(DEFAULT_REQ_TIMEOUT, 10000).
 
-
-%%
-%% Exported Functions
-%%
--compile(export_all).
-
-%%
-%% API Functions
-%%
 main() ->
     ?INFO("Buy page: ~p",[wf:user()]),
     User = wf:user(),

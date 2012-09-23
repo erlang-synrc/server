@@ -1,5 +1,5 @@
-%% -*- mode: nitrogen -*-
 -module (affiliates).
+-author('Serge Polkovnikov <serge,polkovnikov@gmail.com>').
 -compile(export_all).
 -include_lib("nitrogen_core/include/wf.hrl").
 -include_lib("nsm_db/include/user.hrl").

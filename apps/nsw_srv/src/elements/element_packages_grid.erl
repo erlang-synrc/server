@@ -17,7 +17,7 @@
 -include("common.hrl").
 -include("setup.hrl").
 
--include_lib("nsm_srv/include/membership_packages.hrl").
+-include_lib("nsm_db/include/membership_packages.hrl").
 
 
 reflect() -> record_info(fields, packages_grid).

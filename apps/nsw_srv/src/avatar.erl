@@ -6,9 +6,7 @@
 -include("loger.hrl").
 -include("setup.hrl").
 
--export([get_avatar/2,
-	 get_avatar_by_username/2,
-	 process_uploaded_avatar/3]).
+-export([get_avatar/2, get_avatar_by_username/2, process_uploaded_avatar/3]).
 
 -spec get_avatar_by_username(string(), atom()) -> string().
 get_avatar_by_username(UserName, Size) ->

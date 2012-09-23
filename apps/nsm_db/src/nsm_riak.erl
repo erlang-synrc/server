@@ -29,37 +29,25 @@
          user_by_verification_code/1, user_by_email/1, user_by_facebook_id/1, user_by_username/1,
          feed_add_entry/5, feed_add_entry/7, feed_add_direct_message/6,
          entry_by_id/1, comment_by_id/1, comments_by_entry/1, feed_direct_messages/5,
-         feed_add_comment/7, entries_in_feed/3,
+         feed_add_comment/7, entries_in_feed/3, purchases/1,
          subscribe_user/2, remove_subscription/2, list_subscriptions/1, list_subscription_me/1, is_user_subscribed/2,
          block_user/2, unblock_user/2, list_blocks/1, list_blocked_me/1, is_user_blocked/2,
          membership/2, get_save_tables/1, save_game_table_by_id/1, invite_code_by_issuer/1, invite_code_by_user/1,
          get_translation/1, tournament_waiting_queue/1,join_tournament/2,tournament_pop_waiting_player/1,
-         play_record_add_entry/4,user_tournaments/1,riak_read_tournament_waiting_queue/3]).
+         play_record_add_entry/4,user_tournaments/1,riak_read_tournament_waiting_queue/3,
+         get_purchases_by_user/3, get_purchases_by_user/4, put_into_invitation_tree/3, invitation_tree/2,
+         invitation_tree_delete_child_link/2, add_purchase_to_user/2]).
 
--export([get_purchases_by_user/3,
-         get_purchases_by_user/4]).
+delete() -> ok.
+start() -> ok.
+stop() -> stopped.
 
--export([put_into_invitation_tree/3, invitation_tree/2,
-         invitation_tree_delete_child_link/2]).
-
--spec start() -> ok.
-start() ->
-    ok.
-
--spec stop() -> 'stopped' | {'error',_}.
-stop() -> 'stopped'.
-
--spec initialize() -> ok.
 initialize() ->
     C = riak:client_connect(?RIAKSERVER),
     ets:new(config, [named_table,{keypos,#config.key}]),
     ets:insert(config, #config{ key = "riak_client", value = C}),
     ok.
 
--spec delete() -> ok.
-delete() -> ok.
-
--spec init_db() -> ok.
 init_db() ->
     ?INFO("~w:init_db/0: started", [?MODULE]),
     ok = nsm_affiliates:init_db(),
@@ -85,7 +73,6 @@ riak_clean() ->
     riak_clean(save_game_table),
     riak_clean(game_table),
     riak_clean(entry),
-    riak_clean(like_entry), %PUBLIC BETA obsolete
     riak_clean(likes),
     riak_clean(one_like),
     riak_clean(feed),
@@ -119,175 +106,75 @@ riak_clean(Table) ->
 
 % Convert Erlang records to Riak objects
 
-make_object(T, feed) ->
-    riak_object:new(<<"feed">>, erlang:list_to_binary(erlang:integer_to_list(T#feed.id)), T);
-
-make_object(T, user) ->
-    riak_object:new(<<"user">>, erlang:list_to_binary(T#user.username), T);
-
-make_object(T, game_table) ->
-    riak_object:new(<<"game_table">>, erlang:list_to_binary(T#game_table.id), T);
-
-make_object(T, player_scoring) ->
-    riak_object:new(<<"player_scoring">>, erlang:list_to_binary(T#player_scoring.id), T);
-
-make_object(T, scoring_record) ->
-    riak_object:new(<<"scoring_record">>, erlang:list_to_binary(erlang:integer_to_list(T#scoring_record.id)), T);
-
-make_object(T, save_game_table) ->
-    riak_object:new(<<"save_game_table">>, erlang:list_to_binary(erlang:integer_to_string(T#save_game_table.id)), T);
-
-make_object(T, browser_counter) ->
-    riak_object:new(<<"browser_counter">>, T#browser_counter.id, T);
-
-make_object(T, feature) ->
-    riak_object:new(<<"feature">>, erlang:list_to_binary(T#feature.name), T);
-
-make_object(T, config) ->
-    riak_object:new(<<"config">>, erlang:list_to_binary(T#config.key), T);
-
-make_object(T = {user_by_email, _User, Email}, user_by_email) ->
-    riak_object:new(<<"user_by_email">>, erlang:list_to_binary(Email), T);
-
-make_object(T = {user_by_verification_code, _User, Code}, user_by_verification_code) ->
-    riak_object:new(<<"user_by_verification_code">>, erlang:list_to_binary(Code), T);
-
-make_object(T = {user_by_facebook_id, _User, FB}, user_by_facebook_id) ->
-    riak_object:new(<<"user_by_facebook_id">>, erlang:list_to_binary(FB), T);
-
-make_object(T, forget_password) ->
-    riak_object:new(<<"forget_password">>, erlang:list_to_binary(T#forget_password.token), T);
-
-make_object(T, entry) ->
-    [Key] = io_lib:format("~p", [T#entry.id]),
-    riak_object:new(<<"entry">>, erlang:list_to_binary(Key), T);
-
-make_object(T, comment) ->
-    [Key] = io_lib:format("~p", [T#comment.id]),
-    riak_object:new(<<"comment">>, erlang:list_to_binary(Key), T);
-
-make_object(T = {_,Key,_}, id_seq) ->
-    riak_object:new(<<"id_seq">>, erlang:list_to_binary(Key), T);
-
-make_object(T, group) ->
-    riak_object:new(<<"group">>, erlang:list_to_binary(T#group.username), T);
-
-make_object(T, tournament) ->
-    riak_object:new(<<"tournament">>, erlang:list_to_binary(erlang:integer_to_list(T#tournament.id)), T);
-
-make_object(T, team) ->
-    riak_object:new(<<"team">>, erlang:list_to_binary(erlang:integer_to_list(T#team.id)), T);
-
-make_object(T, play_record) ->
-    riak_object:new(<<"play_record">>, erlang:list_to_binary(erlang:integer_to_list(T#play_record.id)), T);
-
-make_object(T, acl) ->
-    [Key] = io_lib:format("~p", [T#acl.id]),
-    riak_object:new(<<"acl">>, erlang:list_to_binary(Key), T);
-
-make_object(T, acl_entry) ->
-    [Key] = io_lib:format("~p", [T#acl_entry.id]),
-    riak_object:new(<<"acl_entry">>, erlang:list_to_binary(Key), T);
-
-make_object(T, group_member) ->
-    riak_object:new(<<"group_member">>, erlang:list_to_binary(T#group_member.who), T);
-
-make_object(T, group_member_rev) ->
-    riak_object:new(<<"group_member_rev">>, erlang:list_to_binary(T#group_member_rev.group), T);
-
-make_object(T, subscription) ->
-    riak_object:new(<<"subscription">>, erlang:list_to_binary(T#subscription.who), T);
-
-make_object(T, subscription_rev) ->
-    riak_object:new(<<"subscription_rev">>, erlang:list_to_binary(T#subscription_rev.whom), T);
-
-make_object(T, user_ignores) ->
-    riak_object:new(<<"user_ignores">>, erlang:list_to_binary(T#user_ignores.who), T);
-
-make_object(T, user_ignores_rev) ->
-    riak_object:new(<<"user_ignores_rev">>, erlang:list_to_binary(T#user_ignores_rev.whom), T);
-
-make_object(T, ut_word) ->
-    riak_object:new(<<"ut_word">>, erlang:list_to_binary(T#ut_word.english), T);
-
-make_object(T, ut_translation) ->
-    {Lang, English} = T#ut_translation.source,
-    riak_object:new(<<"ut_translation">>, erlang:list_to_binary(Lang ++ "_" ++ English), T);
-
-make_object(T, membership_package) ->
-    riak_object:new(<<"membership_package">>, erlang:list_to_binary(T#membership_package.id), T);
-
-make_object(T, membership_purchase) ->
-    riak_object:new(<<"membership_purchase">>, erlang:list_to_binary(T#membership_purchase.id), T);
+make_object(T, account) -> [Key] = io_lib:format("~p", [T#account.id]), riak_object:new(<<"account">>, list_to_binary(Key), T);
+make_object(T, feed) -> riak_object:new(<<"feed">>, list_to_binary(integer_to_list(T#feed.id)), T);
+make_object(T, user) -> riak_object:new(<<"user">>, list_to_binary(T#user.username), T);
+make_object(T, game_table) -> riak_object:new(<<"game_table">>, list_to_binary(T#game_table.id), T);
+make_object(T, player_scoring) -> riak_object:new(<<"player_scoring">>, list_to_binary(T#player_scoring.id), T);
+make_object(T, scoring_record) -> riak_object:new(<<"scoring_record">>, list_to_binary(integer_to_list(T#scoring_record.id)), T);
+make_object(T, save_game_table) -> riak_object:new(<<"save_game_table">>, list_to_binary(integer_to_list(T#save_game_table.id)), T);
+make_object(T, browser_counter) -> riak_object:new(<<"browser_counter">>, T#browser_counter.id, T);
+make_object(T, feature) -> riak_object:new(<<"feature">>, list_to_binary(T#feature.name), T);
+make_object(T, config) -> riak_object:new(<<"config">>, list_to_binary(T#config.key), T);
+make_object(T = {user_by_email, _User, Email}, user_by_email) -> riak_object:new(<<"user_by_email">>, list_to_binary(Email), T);
+make_object(T = {user_by_verification_code, _User, Code}, user_by_verification_code) -> riak_object:new(<<"user_by_verification_code">>, list_to_binary(Code), T);
+make_object(T = {user_by_facebook_id, _User, FB}, user_by_facebook_id) -> riak_object:new(<<"user_by_facebook_id">>, list_to_binary(FB), T);
+make_object(T, forget_password) -> riak_object:new(<<"forget_password">>, list_to_binary(T#forget_password.token), T);
+make_object(T, entry) -> [Key] = io_lib:format("~p", [T#entry.id]), riak_object:new(<<"entry">>, list_to_binary(Key), T);
+make_object(T, comment) -> [Key] = io_lib:format("~p", [T#comment.id]), riak_object:new(<<"comment">>, list_to_binary(Key), T);
+make_object(T = {_,Key,_}, id_seq) -> riak_object:new(<<"id_seq">>, list_to_binary(Key), T);
+make_object(T, group) -> riak_object:new(<<"group">>, list_to_binary(T#group.username), T);
+make_object(T, tournament) -> riak_object:new(<<"tournament">>, list_to_binary(integer_to_list(T#tournament.id)), T);
+make_object(T, team) -> riak_object:new(<<"team">>, list_to_binary(integer_to_list(T#team.id)), T);
+make_object(T, play_record) -> riak_object:new(<<"play_record">>, list_to_binary(integer_to_list(T#play_record.id)), T);
+make_object(T, acl) -> [Key] = io_lib:format("~p", [T#acl.id]), riak_object:new(<<"acl">>, list_to_binary(Key), T);
+make_object(T, acl_entry) -> [Key] = io_lib:format("~p", [T#acl_entry.id]), riak_object:new(<<"acl_entry">>, list_to_binary(Key), T);
+make_object(T, group_member) -> riak_object:new(<<"group_member">>, list_to_binary(T#group_member.who), T);
+make_object(T, group_member_rev) -> riak_object:new(<<"group_member_rev">>, list_to_binary(T#group_member_rev.group), T);
+make_object(T, subscription) -> riak_object:new(<<"subscription">>, list_to_binary(T#subscription.who), T);
+make_object(T, subscription_rev) -> riak_object:new(<<"subscription_rev">>, list_to_binary(T#subscription_rev.whom), T);
+make_object(T, user_ignores) -> riak_object:new(<<"user_ignores">>, list_to_binary(T#user_ignores.who), T);
+make_object(T, user_ignores_rev) -> riak_object:new(<<"user_ignores_rev">>, list_to_binary(T#user_ignores_rev.whom), T);
+make_object(T, ut_word) -> riak_object:new(<<"ut_word">>, list_to_binary(T#ut_word.english), T);
+make_object(T, ut_translation) -> {Lang, English} = T#ut_translation.source, riak_object:new(<<"ut_translation">>, list_to_binary(Lang ++ "_" ++ English), T);
+make_object(T, membership_package) -> riak_object:new(<<"membership_package">>, list_to_binary(T#membership_package.id), T);
+make_object(T, membership_purchase) -> riak_object:new(<<"membership_purchase">>, list_to_binary(T#membership_purchase.id), T);
+make_object(T, user_purchase) -> riak_object:new(<<"user_purchase">>, list_to_binary(T#user_purchase.user), T);
+make_object(T, pointing_rule) -> [Key] = io_lib:format("~p", [T#pointing_rule.id]), riak_object:new(<<"pointing_rule">>, list_to_binary(Key), T);
+make_object(T, transaction) -> riak_object:new(<<"transaction">>, list_to_binary(T#transaction.id), T);
+make_object({_, T}, {transaction, _AccountId} = B) -> [Bucket] = io_lib:format("~p", [B]), riak_object:new(list_to_binary(Bucket), list_to_binary(T#transaction.id), T);
+make_object(T = {feed_blocked_users, UserId, _BlockedUsers} = T, feed_blocked_users) -> riak_object:new(<<"feed_blocked_users">>, list_to_binary(UserId), T);
+make_object(T, uploads) -> [Key] = io_lib:format("~p", [T#uploads.key]), riak_object:new(<<"uploads">>, list_to_binary(Key), T);
+make_object(T, invite_code) -> riak_object:new(<<"invite_code">>, list_to_binary(T#invite_code.code), T);
+make_object(T = {invite_code_by_issuer, User, _Code}, invite_code_by_issuer) -> riak_object:new(<<"invite_code_by_issuer">>, list_to_binary(User), T);
+make_object(T = {invite_code_by_user, User, _Code}, invite_code_by_user) -> riak_object:new(<<"invite_code_by_user">>, list_to_binary(User), T);
+make_object(T, entry_likes) -> riak_object:new(<<"entry_likes">>, list_to_binary(T#entry_likes.entry_id), T);
+make_object(T, user_likes) -> riak_object:new(<<"user_likes">>, list_to_binary(T#user_likes.user_id), T);
+make_object(T, one_like) -> riak_object:new(<<"one_like">>, list_to_binary(integer_to_list(T#one_like.id)), T);
+make_object(T, user_etries_count) -> riak_object:new(<<"user_etries_count">>, list_to_binary(T#user_etries_count.user_id), T);
+make_object(T, invitation_tree) -> [K] = io_lib:format("~p", [T#invitation_tree.user]), riak_object:new(<<"invitation_tree">>, list_to_binary(K), T);
+make_object(T, Unsupported) -> riak_object:new(<<"unsuported">>, term_to_binary(Unsupported), T).
 
 %% user purchases bucket
-make_object(T = {_, Id, _Next}, {membership_purchase_by_user, _UserId} = B) ->
-    [Bucket] = io_lib:format("~p", [B]),
-    riak_object:new(list_to_binary(Bucket), erlang:list_to_binary(Id), T);
+%make_object(T = {_, Id, _Next}, {membership_purchase_by_user, _UserId} = B) ->
+%    [Bucket] = io_lib:format("~p", [B]),
+%    riak_object:new(list_to_binary(Bucket), erlang:list_to_binary(Id), T);
 
-make_object(T = {_, UserId, _Top}, membership_purchase_by_user) ->
-    riak_object:new(<<"membership_purchase_by_user">>, erlang:list_to_binary(UserId), T);
+%make_object(T = {_, UserId, _Top}, membership_purchase_by_user) ->
+%    riak_object:new(<<"membership_purchase_by_user">>, erlang:list_to_binary(UserId), T);
 
-make_object(T, pointing_rule) ->
-    [Key] = io_lib:format("~p", [T#pointing_rule.id]),
-    riak_object:new(<<"pointing_rule">>, erlang:list_to_binary(Key), T);
 
-make_object(T, transaction) ->
-    riak_object:new(<<"transaction">>, erlang:list_to_binary(T#transaction.id), T);
+%make_object(T, invitation_tree) ->
+%    Key = case T#invitation_tree.user of
+%        ?INVITATION_TREE_ROOT ->
+%            [K] = io_lib:format("~p", [T#invitation_tree.user]),
+%            K;
+%        String ->
+%            String
+%    end,
+%    riak_object:new(<<"invitation_tree">>, list_to_binary(Key), T);
 
-%% user transactions bucket
-make_object({_, T}, {transaction, _AccountId} = B) ->
-    [Bucket] = io_lib:format("~p", [B]),
-    riak_object:new(list_to_binary(Bucket), erlang:list_to_binary(T#transaction.id), T);
-
-make_object(T, account) ->
-    [Key] = io_lib:format("~p", [T#account.id]),
-    riak_object:new(<<"account">>, erlang:list_to_binary(Key), T);
-
-make_object(T = {feed_blocked_users, UserId, _BlockedUsers} = T, feed_blocked_users) ->
-    riak_object:new(<<"feed_blocked_users">>, erlang:list_to_binary(UserId), T);
-
-make_object(T, uploads) ->
-    [Key] = io_lib:format("~p", [T#uploads.key]),
-    riak_object:new(<<"uploads">>, erlang:list_to_binary(Key), T);
-
-make_object(T, invite_code) ->
-    riak_object:new(<<"invite_code">>, erlang:list_to_binary(T#invite_code.code), T);
-
-make_object(T = {invite_code_by_issuer, User, _Code}, invite_code_by_issuer) ->
-    riak_object:new(<<"invite_code_by_issuer">>, erlang:list_to_binary(User), T);
-
-make_object(T = {invite_code_by_user, User, _Code}, invite_code_by_user) ->
-    riak_object:new(<<"invite_code_by_user">>, erlang:list_to_binary(User), T);
-
-make_object(T, invitation_tree) ->
-    Key = case T#invitation_tree.user of
-        ?INVITATION_TREE_ROOT ->
-            [K] = io_lib:format("~p", [T#invitation_tree.user]),
-            K;
-        String ->
-            String
-    end,
-    riak_object:new(<<"invitation_tree">>, list_to_binary(Key), T);
-
-make_object(T, entry_likes) ->
-    riak_object:new(<<"entry_likes">>, erlang:list_to_binary(T#entry_likes.entry_id), T);
-
-make_object(T, user_likes) ->
-    riak_object:new(<<"user_likes">>, erlang:list_to_binary(T#user_likes.user_id), T);
-
-make_object(T, one_like) ->
-    riak_object:new(<<"one_like">>, erlang:list_to_binary(erlang:integer_to_list(T#one_like.id)), T);
-
-make_object(T, user_etries_count) ->
-    riak_object:new(<<"user_etries_count">>, erlang:list_to_binary(T#user_etries_count.user_id), T);
-
-make_object(T, Unsupported) ->
-    riak_object:new(<<"unsuported">>, erlang:term_to_binary(Unsupported), T).
-
-riak_client() ->
-    [{_,_,{_,C}}] = ets:lookup(config, "riak_client"),
-    C.
+riak_client() -> [{_,_,{_,C}}] = ets:lookup(config, "riak_client"), C.
 
 % put
 
@@ -334,10 +221,8 @@ post_write_hooks(Class,R,C) ->
             end,
 
             case R#invite_code.created_user of
-                undefined ->
-                    nothing;
-                User ->
-                    C:put(make_object({invite_code_by_user, User, R#invite_code.code}, invite_code_by_user))
+                undefined -> nothing;
+                User -> C:put(make_object({invite_code_by_user, User, R#invite_code.code}, invite_code_by_user))
             end,
 
             case R#invite_code.issuer of
@@ -347,9 +232,10 @@ post_write_hooks(Class,R,C) ->
                     C:put(make_object({invite_code_by_issuer, Issuer, R#invite_code.code}, invite_code_by_issuer))
             end;
 
-        membership_purchase ->
-            User = R#membership_purchase.user_id,
-            add_purchase_by_user(User, R#membership_purchase.id);
+%        membership_purchase ->
+%            User = R#membership_purchase.user_id,
+%            add_purchase_to_user(User, R);
+%           add_purchase_by_user(User, R#membership_purchase.id); % remove vlad's buggy approach
 
         transaction->
             %% FIXME: move this actions to db workers
@@ -456,11 +342,14 @@ all(RecordName) ->
     [RecordStr] = io_lib:format("~p",[RecordName]),
     RecordBin = erlang:list_to_binary(RecordStr),
     {ok,Keys} = Riak:list_keys(RecordBin),
-    [ get_record_from_table({RecordBin,Key,Riak}) || Key <- Keys ].
+    Results = [ get_record_from_table({RecordBin, Key, Riak}) || Key <- Keys ],
+    [ Object || Object <- Results, Object =/= failure ].
 
 get_record_from_table({RecordBin, Key, Riak}) ->
-    {ok,O} = Riak:get(RecordBin, Key),
-    riak_object:get_value(O).
+    case Riak:get(RecordBin, Key) of
+        {ok,O} -> riak_object:get_value(O);
+        X -> failure
+    end.
 
 % id generator
 
@@ -596,16 +485,14 @@ remove_from_group(MeId, FrId) ->
     NewRevList = [ Rec || Rec<-RevList, not(Rec#group_member_rev.who==MeId andalso Rec#group_member_rev.group==FrId) ],
     nsm_db:put(#group_member_rev{who = NewRevList, group = FrId, type=list}).
 
-list_membership(#user{username = UId}) ->
-    list_membership(UId);
+list_membership(#user{username = UId}) -> list_membership(UId);
 list_membership(UId) when is_list(UId) ->
     case nsm_db:get(group_member, UId) of
 	{ok,#group_member{group = C}} -> C;
 	_ -> []
     end.
 
-list_membership_count(#user{username = UId}) ->
-    list_membership_count(UId);
+list_membership_count(#user{username = UId}) -> list_membership_count(UId);
 list_membership_count(UId) when is_list(UId) ->
     [{G, length(list_group_users(element(3, G)))} || G <-list_membership(UId)].
 
@@ -715,8 +602,7 @@ get_save_tables(Id) ->
 	{ok,R} -> R
     end.
 
-save_game_table_by_id(Id) ->
-    nsm_db:get(save_game_table, Id).
+save_game_table_by_id(Id) -> nsm_db:get(save_game_table, Id).
 
 % subscriptions
 
@@ -772,8 +658,7 @@ remove_subscription(MeId, FrId) ->
     Revs = [ Rev || Rev <- List2, not(Rev#subscription_rev.who==MeId andalso Rev#subscription_rev.whom==FrId) ],
     nsm_db:put(#subscription_rev{who = Revs, whom = FrId}).
 
-list_subscriptions(#user{username = UId}) ->
-    list_subscriptions(UId);
+list_subscriptions(#user{username = UId}) -> list_subscriptions(UId);
 list_subscriptions(UId) when is_list(UId) ->
     case nsm_db:get(subscription, UId) of
 	{ok,#subscription{whom = C}} -> C;
@@ -841,8 +726,7 @@ unblock_user(Who, Whom) ->
             do_nothing
     end.
 
-list_blocks(#user{username = UId}) ->
-    list_blocks(UId);
+list_blocks(#user{username = UId}) -> list_blocks(UId);
 list_blocks(UId) when is_list(UId) ->
     case nsm_db:get(user_ignores, UId) of
         {ok,#user_ignores{whom = C}} -> C;
@@ -864,18 +748,13 @@ is_user_blocked(Who, Whom) ->
 
 % feeds
 
-feed_add_direct_message(FId, User, To, EntryId, Desc, Medias) ->
-    feed_add_entry(FId, User, To, EntryId, Desc, Medias, {user, direct}).
-
-feed_add_entry(FId, From, EntryId, Desc, Medias) ->
-    feed_add_entry(FId, From, undefined, EntryId, Desc, Medias, {user, normal}).
-feed_add_entry(FId, User, To, EntryId, Desc, Medias, Type) ->
+feed_add_direct_message(FId,User,To,EntryId,Desc,Medias) -> feed_add_entry(FId,User,To,EntryId,Desc,Medias,{user,direct}).
+feed_add_entry(FId,From,EntryId,Desc,Medias) -> feed_add_entry(FId,From,undefined,EntryId,Desc,Medias,{user,normal}).
+feed_add_entry(FId, User, To, EntryId,Desc,Medias,Type) ->
     %% prevent adding of duplicate records to feed
     case nsm_db:entry_by_id({EntryId, FId}) of
-        {ok, _} ->
-            ok;
-        _ ->
-            do_feed_add_entry(FId, User, To, EntryId, Desc, Medias, Type)
+        {ok, _} -> ok;
+        _ -> do_feed_add_entry(FId, User, To, EntryId, Desc, Medias, Type)
     end.
 
 do_feed_add_entry(FId, User, To, EntryId, Desc, Medias, Type) ->
@@ -969,6 +848,54 @@ feed_add_comment(FId, User, EntryId, ParentComment, CommentId, Content, Medias) 
     nsm_db:put(Comment),
     {ok, Comment}.
 
+add_purchase_to_user(UserId,Purchase) ->
+    {ok,Team} = case nsm_db:get(user_purchase, UserId) of
+                     {ok,T} -> ?INFO("user_purchase found"), {ok,T};
+                     _ -> ?INFO("user_purchase not found"),
+                          Head = #user_purchase{ user = UserId, top = undefined},
+                          {nsm_db:put(Head),Head}
+                end,
+
+    EntryId = Purchase#membership_purchase.id, %nsm_db:next_id("membership_purchase",1),
+    Prev = undefined,
+    case Team#user_purchase.top of
+        undefined -> Next = undefined;
+        X -> case nsm_db:get(membership_purchase, X) of
+                 {ok, TopEntry} ->
+                     Next = TopEntry#membership_purchase.id,
+                     EditedEntry = #membership_purchase{
+                           external_id = TopEntry#membership_purchase.external_id,
+                           user_id = TopEntry#membership_purchase.user_id,
+                           state = TopEntry#membership_purchase.state,
+                           membership_package = TopEntry#membership_purchase.membership_package,
+                           start_time = TopEntry#membership_purchase.start_time,
+                           end_time = TopEntry#membership_purchase.end_time,
+                           state_log = TopEntry#membership_purchase.state_log,
+                           info = TopEntry#membership_purchase.info,
+                           id = TopEntry#membership_purchase.id,
+                           next = TopEntry#membership_purchase.next,
+                           prev = EntryId},
+                    nsm_db:put(EditedEntry); % update prev entry
+                 {error,notfound} -> Next = undefined
+             end
+    end,
+
+    nsm_db:put(#user_purchase{ user = UserId, top = EntryId}), % update teaam top with current
+
+    Entry  = #membership_purchase{id = EntryId,
+                                  user_id = UserId,
+                                  external_id = Purchase#membership_purchase.external_id,
+                                  state = Purchase#membership_purchase.state,
+                                  membership_package = Purchase#membership_purchase.membership_package,
+                                  start_time = Purchase#membership_purchase.start_time,
+                                  end_time = Purchase#membership_purchase.end_time,
+                                  state_log = Purchase#membership_purchase.state_log,
+                                  info = Purchase#membership_purchase.info,
+                                  next = Next,
+                                  prev = Prev},
+
+    case nsm_db:put(Entry) of ok -> {ok, EntryId};
+                           Error -> ?INFO("Cant write purchase"), {failure,Error} end.
 
 
 acl_add_entry(Resource, Accessor, Action) ->
@@ -1162,8 +1089,7 @@ user_tournaments_list(TID) when is_list(TID) ->
 user_tournaments_list(TID) ->
     user_tournaments_list(TID#user.username).
 
-riak_read_tournament_waiting_queue(_, undefined, Result) ->
-    Result;
+riak_read_tournament_waiting_queue(_, undefined, Result) -> Result;
 riak_read_tournament_waiting_queue(C, Next, Result) ->
     RA = nsm_db:get(play_record,Next),
     case RA of
@@ -1173,14 +1099,10 @@ riak_read_tournament_waiting_queue(C, Next, Result) ->
     end.
 
 -spec entry_by_id(term()) -> {ok, #entry{}} | {error, not_found}.
-entry_by_id(EntryId) ->
-    nsm_db:get(entry, EntryId).
+entry_by_id(EntryId) -> nsm_db:get(entry, EntryId).
 
--spec comment_by_id({{EntryId::term(), FeedId::term()}, CommentId::term()}) ->
-          {ok, #comment{}}.
-comment_by_id(CommentId) ->
-    nsm_db:get(CommentId).
-
+-spec comment_by_id({{EntryId::term(), FeedId::term()}, CommentId::term()}) -> {ok, #comment{}}.
+comment_by_id(CommentId) -> nsm_db:get(CommentId).
 
 -spec comments_by_entry(EId::{string(), term()}) -> [#comment{}].
 comments_by_entry({EId, FId}) ->
@@ -1193,66 +1115,65 @@ comments_by_entry({EId, FId}) ->
             []
     end.
 
-read_comments(undefined) ->
-    [];
-read_comments([#comment{comments = C} | Rest]) ->
-    [read_comments(C) | read_comments(Rest)];
-read_comments(C) ->
-    riak_traversal(comment, #comment.prev, C, all).
+purchases(UserId) -> purchases_in_basket(UserId, undefined, 1000).
 
-
-read_comments_rev(undefined) ->
-    [];
-read_comments_rev([#comment{comments = C} | Rest]) ->
-    [read_comments_rev(C) | read_comments_rev(Rest)];
-read_comments_rev(C) ->
-    riak_traversal(comment, #comment.next, C, all).
-
-
-riak_traversal( _, _, undefined, _) ->
-    [];
-riak_traversal(_, _, _, 0) ->
-    [];
-riak_traversal(RecordType, PrevPos, Next, Count)->
-    case nsm_riak:get(RecordType, Next) of
-        {ok, R} ->
-            Prev = element(PrevPos, R),
-            Count1 = case Count of
-                         C when is_integer(C) -> C -1;
-                         _-> Count
-                     end,
-            [R | riak_traversal(RecordType, PrevPos, Prev, Count1)];
-        {error,notfound} ->
-            []
+get_purchases_by_user(UserId, Count, States) -> get_purchases_by_user(UserId, undefined, Count, States).
+get_purchases_by_user(UserId, Start, Count, States) ->
+    List = purchases_in_basket(UserId, Start, Count),
+    case States == all of
+        true -> List;
+        false -> [P||P<-List, lists:member(P#membership_purchase.state, States)]
     end.
 
-riak_read_acl_entries(_, undefined, Result) ->
-    Result;
+purchases_in_basket(UserId, undefined, PageAmount) ->
+    case nsm_db:get(user_purchase, UserId) of
+        {ok, O} -> purchases_in_basket(UserId, O#user_purchase.top, PageAmount);
+        {error, notfound} -> []
+    end;
+purchases_in_basket(UserId, StartFrom, Limit) ->
+    case nsm_db:get(membership_purchase,StartFrom) of
+        {ok, #membership_purchase{next = N}=P} -> [ P | riak_traversal(membership_purchase, #membership_purchase.next, N, Limit)];
+        X -> []
+    end.
+
+read_comments(undefined) -> [];
+read_comments([#comment{comments = C} | Rest]) -> [read_comments(C) | read_comments(Rest)];
+read_comments(C) -> riak_traversal(comment, #comment.prev, C, all).
+
+read_comments_rev(undefined) -> [];
+read_comments_rev([#comment{comments = C} | Rest]) -> [read_comments_rev(C) | read_comments_rev(Rest)];
+read_comments_rev(C) -> riak_traversal(comment, #comment.next, C, all).
+
+riak_traversal( _, _, undefined, _) -> [];
+riak_traversal(_, _, _, 0) -> [];
+riak_traversal(RecordType, PrevPos, Next, Count)->
+    case nsm_riak:get(RecordType, Next) of
+        {error,notfound} -> [];
+        {ok, R} ->
+            Prev = element(PrevPos, R),
+            Count1 = case Count of C when is_integer(C) -> C - 1; _-> Count end,
+            [R | riak_traversal(RecordType, PrevPos, Prev, Count1)]
+    end.
+
+riak_read_acl_entries(_, undefined, Result) -> Result;
 riak_read_acl_entries(C, Next, Result) ->
     NextStr = io_lib:format("~p",[Next]),
     RA = C:get(<<"acl_entry">>,erlang:list_to_binary(NextStr)),
     case RA of
-	{ok,RO} ->
-	    O = riak_object:get_value(RO),
-	    riak_read_acl_entries(C, O#acl_entry.prev, Result ++ [O]);
-	{error,notfound} -> Result
+         {ok,RO} -> O = riak_object:get_value(RO), riak_read_acl_entries(C, O#acl_entry.prev, Result ++ [O]);
+         {error,notfound} -> Result
     end.
 
-% but this completely ignores paging (I'd have to speap it under the carpet for %PHASE1 in dashboard.erl as soon as it is ok here, I'll remove the crouches)
 entries_in_feed(FeedId, undefined, PageAmount) ->
     case nsm_db:get(feed, FeedId) of
-        {ok, O} ->
-            riak_traversal(entry, #entry.prev, O#feed.top, PageAmount);
-        {error, notfound} ->
-            []
+        {ok, O} -> riak_traversal(entry, #entry.prev, O#feed.top, PageAmount);
+        {error, notfound} -> []
     end;
 entries_in_feed(FeedId, StartFrom, PageAmount) ->
     %% construct entry unic id
     case nsm_db:get(entry,{StartFrom, FeedId}) of
-        {ok, #entry{prev = Prev}} ->
-            riak_traversal(entry, #entry.prev, Prev, PageAmount);
-        _ ->
-            []
+        {ok, #entry{prev = Prev}} -> riak_traversal(entry, #entry.prev, Prev, PageAmount);
+        _ -> []
     end.
 
 acl_entries(AclId) ->
@@ -1261,8 +1182,8 @@ acl_entries(AclId) ->
     RA = C:get(<<"acl">>, erlang:list_to_binary(AclStr)),
     case RA of
         {ok,RO} ->
-    	    O = riak_object:get_value(RO),
-    	    riak_read_acl_entries(C, O#acl.top, []);
+            O = riak_object:get_value(RO),
+            riak_read_acl_entries(C, O#acl.top, []);
         {error, notfound} -> []
     end.
 
@@ -1272,90 +1193,87 @@ feed_direct_messages(_FId, Page, PageAmount, CurrentUser, CurrentFId) ->
     [].
 
 %% @private
-check_purchase_by_user_double(User, PurchaseId) ->
-    case nsm_db:get(membership_purchase_by_user, User) of
-        {ok, {_, _, undefined}} ->
-            false;
-        {ok, {_, _, StartFrom}} ->
-            check_purchase_by_user_double(User, PurchaseId, StartFrom);
-        _ -> 
-            false
-    end.
+%check_purchase_by_user_double(User, PurchaseId) ->
+%    case nsm_db:get(membership_purchase_by_user, User) of
+%        {ok, {_, _, undefined}} ->
+%            false;
+%        {ok, {_, _, StartFrom}} ->
+%            check_purchase_by_user_double(User, PurchaseId, StartFrom);
+%        _ -> 
+%            false
+%    end.
 
-check_purchase_by_user_double(User, PurchaseId, This) ->
-    if
-        This == last ->
-            false;
-        PurchaseId == This ->
-            true;
-        true ->
-            {ok, {_, _, Next}} = nsm_db:get({membership_purchase_by_user, User}, This),
-            check_purchase_by_user_double(User, PurchaseId, Next)
-    end.
+%check_purchase_by_user_double(User, PurchaseId, This) ->
+%    if
+%        This == last ->
+%            false;
+%        PurchaseId == This ->
+%            true;
+%        true ->
+%            {ok, {_, _, Next}} = nsm_db:get({membership_purchase_by_user, User}, This),
+%            check_purchase_by_user_double(User, PurchaseId, Next)
+%    end.
 
-add_purchase_by_user(UserId, PurchaseId) ->
-    case check_purchase_by_user_double(UserId, PurchaseId) of
-        true ->
-            ok; % error actually
-        false ->
-            Top = case nsm_db:get(membership_purchase_by_user, UserId) of
-                      {ok, {_, UserId, undefined}} ->
-                          last;
-                      {ok, {_, UserId, CurrentTop}} ->
-                          CurrentTop;
-                      _ ->
-                          last
-                  end,
-            if
-                Top /= PurchaseId ->
-                    %% current purcase became top
-                    nsm_db:put({membership_purchase_by_user, UserId, PurchaseId}),
-                    %% previos purchase became next of the top
-                    nsm_db:put({{membership_purchase_by_user, UserId}, PurchaseId, Top});
-                true ->
-                    ok
-           end
-    end.
+%add_purchase_by_user(UserId, PurchaseId) ->
+%    case check_purchase_by_user_double(UserId, PurchaseId) of
+%        true ->
+%            ok; % error actually
+%        false ->
+%            Top = case nsm_db:get(membership_purchase_by_user, UserId) of
+%                      {ok, {_, UserId, undefined}} ->
+%                          last;
+%                      {ok, {_, UserId, CurrentTop}} ->
+%                          CurrentTop;
+%                      _ ->
+%                          last
+%                  end,
+%            if
+%                Top /= PurchaseId ->
+%                    %% current purcase became top
+%                    nsm_db:put({membership_purchase_by_user, UserId, PurchaseId}),
+%                    %% previos purchase became next of the top
+%                    nsm_db:put({{membership_purchase_by_user, UserId}, PurchaseId, Top});
+%                true ->
+%                    ok
+%           end
+%    end.
 
-get_purchases_by_user(_UserId, Count, States) ->
-    get_purchases_by_user(_UserId, undefined, Count, States).
-
-get_purchases_by_user(_UserId, _StartFrom, 0, _States) ->
-    [];
-get_purchases_by_user(UserId, undefined, Count, States) ->
-    case nsm_db:get(membership_purchase_by_user, UserId) of
-        {ok, {_, UserId, undefined}} ->
-            [];
-        {ok, {_, UserId, Top}} ->
-            io:format("TOP: ~p~n", [Top]),
-            get_purchases_by_user(UserId, Top, Count, States);
-        _ ->
-            []
-    end;
-get_purchases_by_user(_UserId, last, _Count, _States) ->
-    [];
-get_purchases_by_user(UserId, PurchaseId, Count, States) ->
-    {ok, {_, _, NextId}} = nsm_db:get({membership_purchase_by_user, UserId},
-                                         PurchaseId),
-
-    case nsm_db:get(membership_purchase, PurchaseId) of
-        {ok, Purchase} when States == all ->
-            [Purchase | get_purchases_by_user(UserId, NextId, Count-1, States)];
-
-        {ok, Purchase} when is_list(States) ->
-            #membership_purchase{state = S} = Purchase,
-            case lists:member(S, States) of
-                true ->
-                    [Purchase | get_purchases_by_user(UserId, NextId, Count-1, States)];
-                false ->
-                    get_purchases_by_user(UserId, NextId, Count, States)
-            end;
-
-        {error, _} ->
-            ?WARNING("purchase ~p removed but still present in ~p list",
-                     [PurchaseId, UserId]),
-            get_purchases_by_user(UserId, NextId, Count, States)
-    end.
+%get_purchases_by_user(_UserId, Count, States) -> get_purchases_by_user(_UserId, undefined, Count, States).
+%get_purchases_by_user(_UserId, _StartFrom, 0, _States) -> [];
+%get_purchases_by_user(UserId, undefined, Count, States) ->
+%    case nsm_db:get(membership_purchase_by_user, UserId) of
+%        {ok, {_, UserId, undefined}} ->
+%            [];
+%        {ok, {_, UserId, Top}} ->
+%            io:format("TOP: ~p~n", [Top]),
+%            get_purchases_by_user(UserId, Top, Count, States);
+%        _ ->
+%            []
+%    end;
+%get_purchases_by_user(_UserId, last, _Count, _States) ->
+%    [];
+%get_purchases_by_user(UserId, PurchaseId, Count, States) ->
+%    {ok, {_, _, NextId}} = nsm_db:get({membership_purchase_by_user, UserId},
+%                                         PurchaseId),
+%
+%    case nsm_db:get(membership_purchase, PurchaseId) of
+%        {ok, Purchase} when States == all ->
+%            [Purchase | get_purchases_by_user(UserId, NextId, Count-1, States)];
+%
+%        {ok, Purchase} when is_list(States) ->
+%            #membership_purchase{state = S} = Purchase,
+%            case lists:member(S, States) of
+%                true ->
+%                    [Purchase | get_purchases_by_user(UserId, NextId, Count-1, States)];
+%                false ->
+%                    get_purchases_by_user(UserId, NextId, Count, States)
+%            end;
+%
+%        {error, _} ->
+%            ?WARNING("purchase ~p removed but still present in ~p list",
+%                     [PurchaseId, UserId]),
+%            get_purchases_by_user(UserId, NextId, Count, States)
+%    end.
 
 
 -spec put_into_invitation_tree(Parent::string()|{root}, User::string(),
