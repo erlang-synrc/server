@@ -14,14 +14,9 @@ main() ->
     webutils:add_script("/nitrogen/blockui.js"),
     #template { file=code:priv_dir(nsw_srv)++"/templates/bare.html" }.
 
-replace_all(In, []) ->
-    In;
-replace_all(In, [H | T]) ->
-    {Before, After} = H,
-    replace_all( get_file:replace(In, Before, After), T).
-    
+   
 decode_letters(In) ->
-    replace_all(In, [ 
+    ling:replace_a_lot(In, [ 
         {[286], "Ğ"},    % 'unicode'
         {[287], "ğ"},
         {[304], "İ"},
@@ -46,10 +41,10 @@ decode_letters(In) ->
     ]).
 
 decode_amp(In) ->
-    get_file:replace(In, "&amp;", "&").
+    ling:replace(In, "&amp;", "&").
 
 decode_entities(In) ->
-    replace_all(In, [
+    ling:replace_a_lot(In, [
         {"&lt;", "<"},
         {"&gt;", ">"},
         {"&quot;", "'"},
@@ -59,7 +54,7 @@ decode_entities(In) ->
     ]).
 
 assume_eq(In) ->
-    replace_all(In, [
+    ling:replace_a_lot(In, [
         {"style'", "style='"},
         {"align'", "align='"},
         {"src'", "src='"}

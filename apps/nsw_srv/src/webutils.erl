@@ -1095,7 +1095,7 @@ affiliates(User) ->
         [] ->
             [];
         AL ->
-            ShortList = affiliates:part(AL, 1, 10),
+            ShortList = ling:part(AL, 1, 10),
             #panel{class="box", body=[
                 #h3{text=?_T("AFFILIATE")},
                 #list{class="list-photo", body=[
