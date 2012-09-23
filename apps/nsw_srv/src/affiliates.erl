@@ -29,7 +29,7 @@ main_authorized() ->
     case catch rpc:call(?APPSERVER_NODE,nsm_users,get_user,[UserName]) of
         {ok, UserInfo} ->
             wf:state(user, UserInfo),
-            wf:state(feed_owner, {user, UserName}),
+            wf:state(affiliates_of, UserName),
             dashboard:main_authorized();
         Reason ->
             ?ERROR("unable to get user info: User=~p, Reason=~p", [UserName, Reason]),
@@ -62,35 +62,10 @@ total_ammount(ContractId) ->
 
 
 % utils (maybe migrate them to site_utils?)
-part([], _, _) ->
-    [];
-part(List, From, To) ->
-    N = fun(X) ->
-        case X<0 of
-            true ->
-                XX = length(List) + 1 + X,
-                case XX<1 of
-                    true -> 1;
-                    false -> XX
-                end;
-            false ->
-                case X > length(List) of
-                    true -> length(List);
-                    false -> X
-                end
-        end
-    end,
-    RealFrom = N(From),
-    RealTo = N(To),
-    case RealTo<RealFrom of
-        true -> "";
-        false -> string:sub_string(List, N(From), N(To))
-    end.
-
 trim_dot_zero(T) ->
-    case part(T, -1,-1) of
-       "." -> trim_dot_zero(part(T, 1, -2));
-       "0" -> trim_dot_zero(part(T, 1, -2));
+    case ling:part(T, -1,-1) of
+       "." -> trim_dot_zero(ling:part(T, 1, -2));
+       "0" -> trim_dot_zero(ling:part(T, 1, -2));
         _ -> T
     end.
 
@@ -103,7 +78,7 @@ kurus_to_string(Kurus) ->
     SKurus = integer_to_list(Kurus),
     case Kurus >= 100 of 
         true ->
-            part(SKurus, 1, -3) ++ "." ++ part(SKurus, -2, -1);
+            ling:part(SKurus, 1, -3) ++ "." ++ ling:part(SKurus, -2, -1);
         false ->
             case Kurus >= 10 of
                 true ->
@@ -120,7 +95,7 @@ content() ->
             #h1{text=?_T("Affiliate contracts")}
         ]},
         #panel{id=page_content, body=[
-            paged_content((wf:state(user))#user.username)
+            paged_content(affiliates_of)
         ]}
     ].
 
@@ -130,7 +105,7 @@ paged_content(UserId) ->
 
 paged_content(Page, UserId) ->
     Contracts = lists:reverse( lists:sort( get_contracts_data_from_bd(UserId) ) ),
-    ThisPageContracts = part(Contracts, 1 + (Page-1)*?CONTRACTSPERPAGE, Page*?CONTRACTSPERPAGE),
+    ThisPageContracts = ling:part(Contracts, 1 + (Page-1)*?CONTRACTSPERPAGE, Page*?CONTRACTSPERPAGE),
     Buttons = case length(Contracts) > ?CONTRACTSPERPAGE of
         true ->
             #panel{class="paging-2", body=[
@@ -178,7 +153,7 @@ paged_content(Page, UserId) ->
 
 contract_details_page(ContractId, Page, SelfPanelId) ->
     Details = lists:sort(get_contract_details_from_bd(ContractId)),
-    ThisPageDetails = part(Details, 1 + (Page-1)*?DETAILSPERPAGE, Page*?DETAILSPERPAGE),
+    ThisPageDetails = ling:part(Details, 1 + (Page-1)*?DETAILSPERPAGE, Page*?DETAILSPERPAGE),
     Buttons = case length(Details) > ?DETAILSPERPAGE of
         true ->
             #panel{class="paging-2", style="padding: 10px 0px 0px 0px;", body=[

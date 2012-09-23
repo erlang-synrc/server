@@ -8,17 +8,6 @@
 -include("setup.hrl").
 
 
-%PUBLIC BETA maybe we should have a module for this stuff?
-replace(String, Dirt, Icecream) ->
-    Pos = string:str(String, Dirt),
-    case Pos of
-        0 ->
-            String;
-        _ ->
-            string:left(String, Pos-1) ++ Icecream ++ replace(string:right(String, length(String) - length(Dirt) - Pos + 1), Dirt, Icecream)
-    end.
-
-
 main() ->
     EntryId = wf:q(fid),    % this is definetly wrong
     CommentId = list_to_integer(wf:q(cid)),
@@ -39,8 +28,7 @@ main() ->
             end
      end,
 
-    RealEntryId = replace(EntryId, "_", "-"),   % I can't express an amount of bricks I shited seing how riak rejects perfectly good key for no fucking reason
-
+    RealEntryId = ling:replace(EntryId, "_", "-"), 
     Media = case CommentId of
 		0 -> 
              {ok, Entry} = rpc:call(?APPSERVER_NODE, nsm_db, get, [entry, {RealEntryId, FeedId}]),
