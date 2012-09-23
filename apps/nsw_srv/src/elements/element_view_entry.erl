@@ -145,7 +145,7 @@ entry_element(E, Comments, Avatar, {MediaThumb, MediaLists0}, _TargetMedia, Anch
                                 body=[
                                     Desc1, 
                                     #link{style="font-weight:bold;", url=URL, text=Link},
-                                    get_file:replace(Desc2, ?_T("Game"), "<br/>" ++ ?_T("Game") )  
+                                    ling:replace(Desc2, ?_T("Game"), "<br/>" ++ ?_T("Game") )  
                                 ],
                                 delay = TimeLeftAndSomeMore * 1000
                             };
