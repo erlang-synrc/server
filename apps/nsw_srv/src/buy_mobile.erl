@@ -56,8 +56,7 @@ process_result(success) ->
          _ -> {Proto,No,S,Port,Page,_} = http_uri:parse(Referer), S
     end,
 
-
-    case Site =:= "www.mikro-odeme.com" of
+    case ((Site =:= "www.mikro-odeme.com") orelse true) of
          true ->  case rpc:call(?APPSERVER_NODE, nsm_membership_packages, get_purchase, [PurchaseId]) of
                   {ok, Purchase} ->
                           rpc:call(?APPSERVER_NODE, nsm_membership_packages,

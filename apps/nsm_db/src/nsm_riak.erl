@@ -19,13 +19,13 @@
 -include_lib("stdlib/include/qlc.hrl").
 -include_lib("alog/include/alog.hrl").
 
--export([start/0, stop/0, initialize/0, delete/0, init_db/0,
+-export([start/0, stop/0, initialize/0, delete/0, init_db/0, dir/0,
          put/1, count/1, get/2, select/2, multi_select/2, all/1, next_id/1, next_id/2, delete/1, delete/2,
          delete_browser_counter_older_than/1,browser_counter_by_game/1, unused_invites/0,
          riak_client/0, get_word/1, add_to_group/3, remove_from_group/2, list_membership_count/1,
          list_group_users/1, list_membership/1, move_group_members/3, get_group_members/1,
          get_group_members_count/1, change_group_name/2, riak_clean/1,
-         riak_clean/0, acl_entries/1, acl_add_entry/3, update_user_name/3,
+         clean/0, acl_entries/1, acl_add_entry/3, update_user_name/3,
          user_by_verification_code/1, user_by_email/1, user_by_facebook_id/1, user_by_username/1,
          feed_add_entry/5, feed_add_entry/7, feed_add_direct_message/6,
          entry_by_id/1, comment_by_id/1, comments_by_entry/1, feed_direct_messages/5,
@@ -55,39 +55,33 @@ init_db() ->
     ?INFO("~w:init_db/0: done", [?MODULE]),
     ok.
 
-riak_clean() ->
-    riak_clean(user),
-    riak_clean(user_by_email),
-    riak_clean(user_by_facebook_id),
+dir() ->
+    C = riak_client(),
+    {ok,Buckets} = C:list_buckets(),
+    [binary_to_list(X)||X<-Buckets].
+
+clean() ->
+    riak_clean(affiliates_contracts), riak_clean(affiliates_rels),
+    riak_clean(gifts_counters), riak_clean(gifts_config),
+    riak_clean(play_record), riak_clean(player_scoring), riak_clean(scoring_record), riak_clean(pointing_rule),
+    riak_clean(tournament), riak_clean(team),
+    riak_clean(membership_package), riak_clean(user_purchase), riak_clean(membership_purchase),
     riak_clean(group),
-    riak_clean(tournament),
-    riak_clean(play_record),
-    riak_clean(player_scoring),
-    riak_clean(scoring_record),
-    riak_clean(team),
-    riak_clean(acl),
-    riak_clean(acl_entry),
+    riak_clean(browser_counter),
+    riak_clean(invite_code), riak_clean(forget_password),
+    riak_clean(user), riak_clean(user_by_email), riak_clean(user_by_facebook_id),
+    riak_clean(uploads),
+    riak_clean(acl), riak_clean(acl_entry),
+    riak_clean(account), riak_clean(transaction),
     riak_clean(feature),
     riak_clean(table),
     riak_clean(config),
     riak_clean(save_game_table),
-    riak_clean(game_table),
-    riak_clean(entry),
-    riak_clean(likes),
-    riak_clean(one_like),
-    riak_clean(feed),
-    riak_clean(comment),
     riak_clean(save_table),
-    riak_clean(group_member),
-    riak_clean(invite_code),
-    riak_clean(group_member_rev),
-    riak_clean(subscription),
-    riak_clean(browser_counter),
-    riak_clean(subscription_rev),
-    riak_clean(ut_word),
-    riak_clean(ut_translation),
-    riak_clean(uploads),
-    riak_clean(forget_password),
+    riak_clean(game_table),
+    riak_clean(entry), riak_clean(likes), riak_clean(one_like), riak_clean(feed), riak_clean(comment),
+    riak_clean(group_member), riak_clean(group_member_rev), riak_clean(subscription), riak_clean(subscription_rev),
+    riak_clean(ut_word), riak_clean(ut_translation),
     riak_clean("unsuported"),
     riak_clean("__riak_client_test__"),
     riak_clean(id_seq),
@@ -155,15 +149,6 @@ make_object(T, user_etries_count) -> riak_object:new(<<"user_etries_count">>, li
 make_object(T, invitation_tree) -> [K] = io_lib:format("~p", [T#invitation_tree.user]), riak_object:new(<<"invitation_tree">>, list_to_binary(K), T);
 make_object(T, Unsupported) -> riak_object:new(<<"unsuported">>, term_to_binary(Unsupported), T).
 
-%% user purchases bucket
-%make_object(T = {_, Id, _Next}, {membership_purchase_by_user, _UserId} = B) ->
-%    [Bucket] = io_lib:format("~p", [B]),
-%    riak_object:new(list_to_binary(Bucket), erlang:list_to_binary(Id), T);
-
-%make_object(T = {_, UserId, _Top}, membership_purchase_by_user) ->
-%    riak_object:new(<<"membership_purchase_by_user">>, erlang:list_to_binary(UserId), T);
-
-
 %make_object(T, invitation_tree) ->
 %    Key = case T#invitation_tree.user of
 %        ?INVITATION_TREE_ROOT ->
@@ -175,8 +160,6 @@ make_object(T, Unsupported) -> riak_object:new(<<"unsuported">>, term_to_binary(
 %    riak_object:new(<<"invitation_tree">>, list_to_binary(Key), T);
 
 riak_client() -> [{_,_,{_,C}}] = ets:lookup(config, "riak_client"), C.
-
-% put
 
 -spec put(tuple() | [tuple()]) -> ok.
 put(Records) when is_list(Records) ->
@@ -958,12 +941,12 @@ play_record_add_entry(TeamId, UserId, TournamentId, GameId) ->
     case Team#team.play_record of
         undefined ->
             Next = undefined;
-	X ->
-	    case nsm_db:get(play_record, erlang:integer_to_list(X)) of
-	       {ok, TopEntry} ->
-		    Next = TopEntry#play_record.id,
-		    EditedEntry = #play_record{
-		      id = TopEntry#play_record.id,
+        X ->
+            case nsm_db:get(play_record, erlang:integer_to_list(X)) of
+                {ok, TopEntry} ->
+                    Next = TopEntry#play_record.id,
+                    EditedEntry = #play_record{
+                      id = TopEntry#play_record.id,
                       team = TopEntry#play_record.team,
                       tournament = TopEntry#play_record.tournament,
                       game_id = TopEntry#play_record.game_id,
@@ -973,7 +956,7 @@ play_record_add_entry(TeamId, UserId, TournamentId, GameId) ->
                       prev = EntryId},
                     nsm_db:put(EditedEntry); % update prev entry
             {error,notfound} -> Next = undefined
-	    end
+            end
     end,
 
     nsm_db:put(#team{ id = TeamId, name = Team#team.name, play_record = EntryId}), % update teaam top with current
@@ -987,8 +970,7 @@ play_record_add_entry(TeamId, UserId, TournamentId, GameId) ->
                     prev = Prev},
 
     case nsm_db:put(Entry) of
-        ok ->
-            {ok, Entry}
+        ok -> {ok, Entry}
     end.
 
 tournament_pop_waiting_player(TournamentID) ->
@@ -997,15 +979,13 @@ tournament_pop_waiting_player(TournamentID) ->
         undefined ->
             Prev = undefined;
         X ->
-	    case nsm_db:get(play_record, erlang:integer_to_list(X)) of
-		{ok,TopEntry} -> Prev = TopEntry#play_record.next, TopEntry;
-		{error, notfound} -> Prev = undefined
-	    end
+            case nsm_db:get(play_record, erlang:integer_to_list(X)) of
+                {ok,TopEntry} -> Prev = TopEntry#play_record.next, TopEntry;
+                {error, notfound} -> Prev = undefined
+            end
     end,
 
-    nsm_db:put(Tournament#tournament{id = TournamentID,
-                                        waiting_queue = Prev
-                                       }),
+    nsm_db:put(Tournament#tournament{id = TournamentID, waiting_queue = Prev }),
     Top.
 
 join_tournament(UserId, TournamentId) ->
@@ -1192,93 +1172,7 @@ feed_direct_messages(_FId, Page, PageAmount, CurrentUser, CurrentFId) ->
     Page, PageAmount, CurrentUser, CurrentFId,
     [].
 
-%% @private
-%check_purchase_by_user_double(User, PurchaseId) ->
-%    case nsm_db:get(membership_purchase_by_user, User) of
-%        {ok, {_, _, undefined}} ->
-%            false;
-%        {ok, {_, _, StartFrom}} ->
-%            check_purchase_by_user_double(User, PurchaseId, StartFrom);
-%        _ -> 
-%            false
-%    end.
-
-%check_purchase_by_user_double(User, PurchaseId, This) ->
-%    if
-%        This == last ->
-%            false;
-%        PurchaseId == This ->
-%            true;
-%        true ->
-%            {ok, {_, _, Next}} = nsm_db:get({membership_purchase_by_user, User}, This),
-%            check_purchase_by_user_double(User, PurchaseId, Next)
-%    end.
-
-%add_purchase_by_user(UserId, PurchaseId) ->
-%    case check_purchase_by_user_double(UserId, PurchaseId) of
-%        true ->
-%            ok; % error actually
-%        false ->
-%            Top = case nsm_db:get(membership_purchase_by_user, UserId) of
-%                      {ok, {_, UserId, undefined}} ->
-%                          last;
-%                      {ok, {_, UserId, CurrentTop}} ->
-%                          CurrentTop;
-%                      _ ->
-%                          last
-%                  end,
-%            if
-%                Top /= PurchaseId ->
-%                    %% current purcase became top
-%                    nsm_db:put({membership_purchase_by_user, UserId, PurchaseId}),
-%                    %% previos purchase became next of the top
-%                    nsm_db:put({{membership_purchase_by_user, UserId}, PurchaseId, Top});
-%                true ->
-%                    ok
-%           end
-%    end.
-
-%get_purchases_by_user(_UserId, Count, States) -> get_purchases_by_user(_UserId, undefined, Count, States).
-%get_purchases_by_user(_UserId, _StartFrom, 0, _States) -> [];
-%get_purchases_by_user(UserId, undefined, Count, States) ->
-%    case nsm_db:get(membership_purchase_by_user, UserId) of
-%        {ok, {_, UserId, undefined}} ->
-%            [];
-%        {ok, {_, UserId, Top}} ->
-%            io:format("TOP: ~p~n", [Top]),
-%            get_purchases_by_user(UserId, Top, Count, States);
-%        _ ->
-%            []
-%    end;
-%get_purchases_by_user(_UserId, last, _Count, _States) ->
-%    [];
-%get_purchases_by_user(UserId, PurchaseId, Count, States) ->
-%    {ok, {_, _, NextId}} = nsm_db:get({membership_purchase_by_user, UserId},
-%                                         PurchaseId),
-%
-%    case nsm_db:get(membership_purchase, PurchaseId) of
-%        {ok, Purchase} when States == all ->
-%            [Purchase | get_purchases_by_user(UserId, NextId, Count-1, States)];
-%
-%        {ok, Purchase} when is_list(States) ->
-%            #membership_purchase{state = S} = Purchase,
-%            case lists:member(S, States) of
-%                true ->
-%                    [Purchase | get_purchases_by_user(UserId, NextId, Count-1, States)];
-%                false ->
-%                    get_purchases_by_user(UserId, NextId, Count, States)
-%            end;
-%
-%        {error, _} ->
-%            ?WARNING("purchase ~p removed but still present in ~p list",
-%                     [PurchaseId, UserId]),
-%            get_purchases_by_user(UserId, NextId, Count, States)
-%    end.
-
-
--spec put_into_invitation_tree(Parent::string()|{root}, User::string(),
-                             InviteCode::string()) -> #invitation_tree{}.
-
+-spec put_into_invitation_tree(Parent::string()|{root}, User::string(), InviteCode::string()) -> #invitation_tree{}.
 put_into_invitation_tree(Parent, User, InviteCode) ->
     URecord =  #invitation_tree{user = User,
                                 invite_code = InviteCode,
@@ -1304,28 +1198,21 @@ put_into_invitation_tree(Parent, User, InviteCode) ->
     end.
 
 
--spec invitation_tree(StartFrom::string()|{root}, Depth::integer()|all) ->
-          [#invitation_tree{}].
-
-invitation_tree(_, -1) ->
-    [];
-invitation_tree(none, _) ->
-    [];
+-spec invitation_tree(StartFrom::string()|{root}, Depth::integer()|all) -> [#invitation_tree{}].
+invitation_tree(_, -1) -> [];
+invitation_tree(none, _) -> [];
 invitation_tree(UserId, Depth) ->
     case nsm_db:get(invitation_tree, UserId) of
         {ok, #invitation_tree{} = ITreeU} ->
             FirstChild = ITreeU#invitation_tree.first_child,
             SiblingId = ITreeU#invitation_tree.next_sibling,
             Depth1 = case Depth of
-                         all ->
-                             Depth;
-                         _ ->
-                             Depth - 1
+                         all -> Depth;
+                         _ -> Depth - 1
                      end,
             [ITreeU#invitation_tree{children=invitation_tree(FirstChild, Depth1)}|
                                        invitation_tree(SiblingId, Depth)];
-        {error, _} ->
-            []
+        {error, _} -> []
     end.
 
 %% @doc delete link to child from children list
@@ -1338,8 +1225,7 @@ invitation_tree_delete_child_link(RootUser, User) ->
                     nsm_db:put(Root1#invitation_tree{first_child = none});
                 {ok, #invitation_tree{next_sibling = Next}} ->
                     nsm_db:put(Root1#invitation_tree{first_child = Next});
-                _ ->
-                    ok
+                _ -> ok
             end;
 
         [#invitation_tree{children = Children}] ->
@@ -1351,11 +1237,9 @@ invitation_tree_delete_child_link(RootUser, User) ->
                     NextSibling =  Exactly#invitation_tree.next_sibling,
                     nsm_db:put(Before#invitation_tree{next_sibling = NextSibling,
                                                          children = []});
-                _ ->
-                    ok
+                _ -> ok
             end;
-        _ ->
-            ok
+        _ -> ok
     end.
 
 

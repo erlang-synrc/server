@@ -42,7 +42,7 @@
          feed_add_entry/5, feed_add_entry/7, feed_add_direct_message/6,
          entries_in_feed/1, entries_in_feed/2, entries_in_feed/3,
          entry_by_id/1, comment_by_id/1, comments_by_entry/1, feed_direct_messages/3,
-         add_comment/7,
+         add_comment/7, dir/0, purchases/1,
          user_by_verification_code/1, update_user_name/3,
          add_to_group/3, remove_from_group/2, list_membership/1, list_group_users/1, list_membership_count/1,
          user_by_email/1, user_by_facebook_id/1, user_by_username/1, change_group_name/2,
@@ -68,6 +68,14 @@ start() ->
 %    alog:info("Zealot DB started."),
     DBA = ?DBA,
     DBA:start().
+
+dir() ->
+    DBA = ?DBA,
+    DBA:dir().
+
+purchases(UserId) ->
+    DBA = ?DBA,
+    DBA:purchases(UserId).
 
 -spec stop() -> 'stopped' | {'error',_}.
 stop() ->
