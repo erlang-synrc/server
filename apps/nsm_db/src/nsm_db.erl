@@ -36,7 +36,7 @@
 
 -export([start/0, stop/0, initialize/0, delete/0,
          init_db/0, put/1, count/1, get/2, get/3, feed_create/0, create_team/1,
-         all/1, next_id/1, next_id/2, delete/1, delete/2,
+         all/1, all_by_index/3, next_id/1, next_id/2, delete/1, delete/2,
          delete_browser_counter_older_than/1,browser_counter_by_game/1,
          unused_invites/0, get_word/1, acl_add_entry/3, acl_entries/1,
          feed_add_entry/5, feed_add_entry/7, feed_add_direct_message/6,
@@ -459,6 +459,9 @@ count(RecordName) -> DBA=?DBA,DBA:count(RecordName).
 
 -spec all(atom()) -> [tuple()].
 all(RecordName) -> DBA=?DBA,DBA:all(RecordName).
+
+-spec all_by_index(atom(), string(), binary()) -> [tuple()].
+all_by_index(RecordName, Index, IndexValue) -> DBA=?DBA,DBA:all_by_index(RecordName, Index, IndexValue).
 
 % id generator
 

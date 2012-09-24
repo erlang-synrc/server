@@ -14,6 +14,10 @@
          list_subscription/2,
          list_subscription/3,
          get_subscription_count/1,
+         subscr_user/2,
+         unsubscr_user/2,
+         list_subscr/1,
+         list_subscr_me/1,
          search_user/1,
          get_user/1,
          update_after_login/1,
@@ -221,6 +225,36 @@ get_user(UId) ->
 
 get_all_users() ->
     nsm_db:all(user).
+
+
+subscr_user(Who, Whom) ->
+    case is_user_blocked(Who, Whom) of
+        false ->
+            Record = #subs{who = Who, whom = Whom},
+            ok = nsm_db:put(Record),
+            subscribe_user_mq(user, Who, Whom);
+        true -> do_nothing
+    end.
+
+unsubscr_user(Who, Whom) ->
+    case is_user_subscribed(Who, Whom) of
+        true ->
+            ok = nsm_db:delete(subs, {Who, Whom}),
+            remove_subscription_mq(user, Who, Whom);
+        false ->
+            do_nothing
+    end.
+
+list_subscr(#user{username = UId}) ->
+    list_subscr(UId);
+list_subscr(UId) when is_list(UId) ->
+    nsm_db:all_by_index(subs, <<"subs_who_bin">>, list_to_binary(UId)).
+
+list_subscr_me(#user{username = UId}) ->
+    list_subscr_me(UId);
+list_subscr_me(UId) when is_list(UId) ->
+    nsm_db:all_by_index(subs, <<"subs_whom_bin">>, list_to_binary(UId)).
+
 
 subscribe_user(MeId, FrId) ->
     case is_user_blocked(MeId, FrId) of

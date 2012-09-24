@@ -52,12 +52,16 @@
         {id,
          aclver}).
 
--record(subscription,
+-record(subs,
+        {who,
+         whom}).
+
+-record(subscription, %% Obsoleted by #subs{}
         {who,
          whom,
          whom_name}).
 
--record(subscription_rev,
+-record(subscription_rev, %% Obsoleted by #subs{}
         {whom,
          who,
          who_name}).

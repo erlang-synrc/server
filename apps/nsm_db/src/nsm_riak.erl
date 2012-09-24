@@ -20,7 +20,7 @@
 -include_lib("alog/include/alog.hrl").
 
 -export([start/0, stop/0, initialize/0, delete/0, init_db/0, dir/0,
-         put/1, count/1, get/2, select/2, multi_select/2, all/1, next_id/1, next_id/2, delete/1, delete/2,
+         put/1, count/1, get/2, select/2, multi_select/2, all/1, all_by_index/3, next_id/1, next_id/2, delete/1, delete/2,
          delete_browser_counter_older_than/1,browser_counter_by_game/1, unused_invites/0,
          riak_client/0, get_word/1, add_to_group/3, remove_from_group/2, list_membership_count/1,
          list_group_users/1, list_membership/1, move_group_members/3, get_group_members/1,
@@ -38,6 +38,12 @@
          get_purchases_by_user/3, get_purchases_by_user/4, put_into_invitation_tree/3, invitation_tree/2,
          invitation_tree_delete_child_link/2, add_purchase_to_user/2]).
 
+
+-define(BUCKET_INDEX, "bucket_bin").
+%% Meta Id
+-define(MD_INDEX, <<"index">>).
+
+
 delete() -> ok.
 start() -> ok.
 stop() -> stopped.
@@ -50,8 +56,10 @@ initialize() ->
 
 init_db() ->
     ?INFO("~w:init_db/0: started", [?MODULE]),
+    C = riak_client(),
     ok = nsm_affiliates:init_db(),
     ok = nsm_gifts_db:init_db(),
+    ok = C:set_bucket(t_to_b(subs), [{backend, leveldb_backend}]),
     ?INFO("~w:init_db/0: done", [?MODULE]),
     ok.
 
@@ -99,60 +107,85 @@ riak_clean(Table) ->
     [ nsm_db:delete(Table,erlang:binary_to_list(Key)) || Key <- Keys].
 
 % Convert Erlang records to Riak objects
+make_object(T, {transaction, _}=Class) -> %% Special case for transactions
+    make_obj(T, Class);
+make_object(T, Class) ->
+    Obj1 = make_obj(T, Class),
+    Bucket = r_to_b(T),
+    Indices = [{?BUCKET_INDEX, Bucket} | make_indices(T)],
+    Meta = dict:store(?MD_INDEX, Indices, dict:new()),
+    Obj2 = riak_object:update_metadata(Obj1, Meta),
+    Obj2.
 
-make_object(T, account) -> [Key] = io_lib:format("~p", [T#account.id]), riak_object:new(<<"account">>, list_to_binary(Key), T);
-make_object(T, feed) -> riak_object:new(<<"feed">>, list_to_binary(integer_to_list(T#feed.id)), T);
-make_object(T, user) -> riak_object:new(<<"user">>, list_to_binary(T#user.username), T);
-make_object(T, game_table) -> riak_object:new(<<"game_table">>, list_to_binary(T#game_table.id), T);
-make_object(T, player_scoring) -> riak_object:new(<<"player_scoring">>, list_to_binary(T#player_scoring.id), T);
-make_object(T, scoring_record) -> riak_object:new(<<"scoring_record">>, list_to_binary(integer_to_list(T#scoring_record.id)), T);
-make_object(T, save_game_table) -> riak_object:new(<<"save_game_table">>, list_to_binary(integer_to_list(T#save_game_table.id)), T);
-make_object(T, browser_counter) -> riak_object:new(<<"browser_counter">>, T#browser_counter.id, T);
-make_object(T, feature) -> riak_object:new(<<"feature">>, list_to_binary(T#feature.name), T);
-make_object(T, config) -> riak_object:new(<<"config">>, list_to_binary(T#config.key), T);
-make_object(T = {user_by_email, _User, Email}, user_by_email) -> riak_object:new(<<"user_by_email">>, list_to_binary(Email), T);
-make_object(T = {user_by_verification_code, _User, Code}, user_by_verification_code) -> riak_object:new(<<"user_by_verification_code">>, list_to_binary(Code), T);
-make_object(T = {user_by_facebook_id, _User, FB}, user_by_facebook_id) -> riak_object:new(<<"user_by_facebook_id">>, list_to_binary(FB), T);
-make_object(T, forget_password) -> riak_object:new(<<"forget_password">>, list_to_binary(T#forget_password.token), T);
-make_object(T, entry) -> [Key] = io_lib:format("~p", [T#entry.id]), riak_object:new(<<"entry">>, list_to_binary(Key), T);
-make_object(T, comment) -> [Key] = io_lib:format("~p", [T#comment.id]), riak_object:new(<<"comment">>, list_to_binary(Key), T);
-make_object(T = {_,Key,_}, id_seq) -> riak_object:new(<<"id_seq">>, list_to_binary(Key), T);
-make_object(T, group) -> riak_object:new(<<"group">>, list_to_binary(T#group.username), T);
-make_object(T, tournament) -> riak_object:new(<<"tournament">>, list_to_binary(integer_to_list(T#tournament.id)), T);
-make_object(T, team) -> riak_object:new(<<"team">>, list_to_binary(integer_to_list(T#team.id)), T);
-make_object(T, play_record) -> riak_object:new(<<"play_record">>, list_to_binary(integer_to_list(T#play_record.id)), T);
-make_object(T, acl) -> [Key] = io_lib:format("~p", [T#acl.id]), riak_object:new(<<"acl">>, list_to_binary(Key), T);
-make_object(T, acl_entry) -> [Key] = io_lib:format("~p", [T#acl_entry.id]), riak_object:new(<<"acl_entry">>, list_to_binary(Key), T);
-make_object(T, group_member) -> riak_object:new(<<"group_member">>, list_to_binary(T#group_member.who), T);
-make_object(T, group_member_rev) -> riak_object:new(<<"group_member_rev">>, list_to_binary(T#group_member_rev.group), T);
-make_object(T, subscription) -> riak_object:new(<<"subscription">>, list_to_binary(T#subscription.who), T);
-make_object(T, subscription_rev) -> riak_object:new(<<"subscription_rev">>, list_to_binary(T#subscription_rev.whom), T);
-make_object(T, user_ignores) -> riak_object:new(<<"user_ignores">>, list_to_binary(T#user_ignores.who), T);
-make_object(T, user_ignores_rev) -> riak_object:new(<<"user_ignores_rev">>, list_to_binary(T#user_ignores_rev.whom), T);
-make_object(T, ut_word) -> riak_object:new(<<"ut_word">>, list_to_binary(T#ut_word.english), T);
-make_object(T, ut_translation) -> {Lang, English} = T#ut_translation.source, riak_object:new(<<"ut_translation">>, list_to_binary(Lang ++ "_" ++ English), T);
-make_object(T, membership_package) -> riak_object:new(<<"membership_package">>, list_to_binary(T#membership_package.id), T);
-make_object(T, membership_purchase) -> riak_object:new(<<"membership_purchase">>, list_to_binary(T#membership_purchase.id), T);
-make_object(T, user_purchase) -> riak_object:new(<<"user_purchase">>, list_to_binary(T#user_purchase.user), T);
-make_object(T, pointing_rule) -> [Key] = io_lib:format("~p", [T#pointing_rule.id]), riak_object:new(<<"pointing_rule">>, list_to_binary(Key), T);
-make_object(T, transaction) -> riak_object:new(<<"transaction">>, list_to_binary(T#transaction.id), T);
-make_object({_, T}, {transaction, _AccountId} = B) -> [Bucket] = io_lib:format("~p", [B]), riak_object:new(list_to_binary(Bucket), list_to_binary(T#transaction.id), T);
-make_object(T = {feed_blocked_users, UserId, _BlockedUsers} = T, feed_blocked_users) -> riak_object:new(<<"feed_blocked_users">>, list_to_binary(UserId), T);
-make_object(T, uploads) -> [Key] = io_lib:format("~p", [T#uploads.key]), riak_object:new(<<"uploads">>, list_to_binary(Key), T);
-make_object(T, invite_code) -> riak_object:new(<<"invite_code">>, list_to_binary(T#invite_code.code), T);
-make_object(T = {invite_code_by_issuer, User, _Code}, invite_code_by_issuer) -> riak_object:new(<<"invite_code_by_issuer">>, list_to_binary(User), T);
-make_object(T = {invite_code_by_user, User, _Code}, invite_code_by_user) -> riak_object:new(<<"invite_code_by_user">>, list_to_binary(User), T);
-make_object(T, entry_likes) -> riak_object:new(<<"entry_likes">>, list_to_binary(T#entry_likes.entry_id), T);
-make_object(T, user_likes) -> riak_object:new(<<"user_likes">>, list_to_binary(T#user_likes.user_id), T);
-make_object(T, one_like) -> riak_object:new(<<"one_like">>, list_to_binary(integer_to_list(T#one_like.id)), T);
-make_object(T, user_etries_count) -> riak_object:new(<<"user_etries_count">>, list_to_binary(T#user_etries_count.user_id), T);
-make_object(T, invitation_tree) ->
+%% Record to bucket id
+r_to_b(R) -> t_to_b(element(1,R)).
+%% Table id to bucket id
+t_to_b(T) -> 
+    %% list_to_binary(atom_to_list(T)). FIXME: This should be after we eleminate {transaction,_} tables
+    [StringBucket] = io_lib:format("~p",[T]),
+    erlang:list_to_binary(StringBucket).
+
+%% Create indicies for the record
+make_indices(#subs{who=Who, whom=Whom}) -> [{<<"subs_who_bin">>, list_to_binary(Who)},
+                                            {<<"subs_whom_bin">>, list_to_binary(Whom)}];
+make_indices(_Record) -> [].
+
+
+
+make_obj(T, subs) -> [Key] = io_lib:format("~p", [{T#subs.who, T#subs.whom}]), riak_object:new(r_to_b(T), list_to_binary(Key), T);
+make_obj(T, account) -> [Key] = io_lib:format("~p", [T#account.id]), riak_object:new(<<"account">>, list_to_binary(Key), T);
+make_obj(T, feed) -> riak_object:new(<<"feed">>, list_to_binary(integer_to_list(T#feed.id)), T);
+make_obj(T, user) -> riak_object:new(<<"user">>, list_to_binary(T#user.username), T);
+make_obj(T, game_table) -> riak_object:new(<<"game_table">>, list_to_binary(T#game_table.id), T);
+make_obj(T, player_scoring) -> riak_object:new(<<"player_scoring">>, list_to_binary(T#player_scoring.id), T);
+make_obj(T, scoring_record) -> riak_object:new(<<"scoring_record">>, list_to_binary(integer_to_list(T#scoring_record.id)), T);
+make_obj(T, save_game_table) -> riak_object:new(<<"save_game_table">>, list_to_binary(integer_to_list(T#save_game_table.id)), T);
+make_obj(T, browser_counter) -> riak_object:new(<<"browser_counter">>, T#browser_counter.id, T);
+make_obj(T, feature) -> riak_object:new(<<"feature">>, list_to_binary(T#feature.name), T);
+make_obj(T, config) -> riak_object:new(<<"config">>, list_to_binary(T#config.key), T);
+make_obj(T = {user_by_email, _User, Email}, user_by_email) -> riak_object:new(<<"user_by_email">>, list_to_binary(Email), T);
+make_obj(T = {user_by_verification_code, _User, Code}, user_by_verification_code) -> riak_object:new(<<"user_by_verification_code">>, list_to_binary(Code), T);
+make_obj(T = {user_by_facebook_id, _User, FB}, user_by_facebook_id) -> riak_object:new(<<"user_by_facebook_id">>, list_to_binary(FB), T);
+make_obj(T, forget_password) -> riak_object:new(<<"forget_password">>, list_to_binary(T#forget_password.token), T);
+make_obj(T, entry) -> [Key] = io_lib:format("~p", [T#entry.id]), riak_object:new(<<"entry">>, list_to_binary(Key), T);
+make_obj(T, comment) -> [Key] = io_lib:format("~p", [T#comment.id]), riak_object:new(<<"comment">>, list_to_binary(Key), T);
+make_obj(T = {_,Key,_}, id_seq) -> riak_object:new(<<"id_seq">>, list_to_binary(Key), T);
+make_obj(T, group) -> riak_object:new(<<"group">>, list_to_binary(T#group.username), T);
+make_obj(T, tournament) -> riak_object:new(<<"tournament">>, list_to_binary(integer_to_list(T#tournament.id)), T);
+make_obj(T, team) -> riak_object:new(<<"team">>, list_to_binary(integer_to_list(T#team.id)), T);
+make_obj(T, play_record) -> riak_object:new(<<"play_record">>, list_to_binary(integer_to_list(T#play_record.id)), T);
+make_obj(T, acl) -> [Key] = io_lib:format("~p", [T#acl.id]), riak_object:new(<<"acl">>, list_to_binary(Key), T);
+make_obj(T, acl_entry) -> [Key] = io_lib:format("~p", [T#acl_entry.id]), riak_object:new(<<"acl_entry">>, list_to_binary(Key), T);
+make_obj(T, group_member) -> riak_object:new(<<"group_member">>, list_to_binary(T#group_member.who), T);
+make_obj(T, group_member_rev) -> riak_object:new(<<"group_member_rev">>, list_to_binary(T#group_member_rev.group), T);
+make_obj(T, subscription) -> riak_object:new(<<"subscription">>, list_to_binary(T#subscription.who), T);
+make_obj(T, subscription_rev) -> riak_object:new(<<"subscription_rev">>, list_to_binary(T#subscription_rev.whom), T);
+make_obj(T, user_ignores) -> riak_object:new(<<"user_ignores">>, list_to_binary(T#user_ignores.who), T);
+make_obj(T, user_ignores_rev) -> riak_object:new(<<"user_ignores_rev">>, list_to_binary(T#user_ignores_rev.whom), T);
+make_obj(T, ut_word) -> riak_object:new(<<"ut_word">>, list_to_binary(T#ut_word.english), T);
+make_obj(T, ut_translation) -> {Lang, English} = T#ut_translation.source, riak_object:new(<<"ut_translation">>, list_to_binary(Lang ++ "_" ++ English), T);
+make_obj(T, membership_package) -> riak_object:new(<<"membership_package">>, list_to_binary(T#membership_package.id), T);
+make_obj(T, membership_purchase) -> riak_object:new(<<"membership_purchase">>, list_to_binary(T#membership_purchase.id), T);
+make_obj(T, user_purchase) -> riak_object:new(<<"user_purchase">>, list_to_binary(T#user_purchase.user), T);
+make_obj(T, pointing_rule) -> [Key] = io_lib:format("~p", [T#pointing_rule.id]), riak_object:new(<<"pointing_rule">>, list_to_binary(Key), T);
+make_obj(T, transaction) -> riak_object:new(<<"transaction">>, list_to_binary(T#transaction.id), T);
+make_obj({_, T}, {transaction, _AccountId} = B) -> [Bucket] = io_lib:format("~p", [B]), riak_object:new(list_to_binary(Bucket), list_to_binary(T#transaction.id), T);
+make_obj(T = {feed_blocked_users, UserId, _BlockedUsers} = T, feed_blocked_users) -> riak_object:new(<<"feed_blocked_users">>, list_to_binary(UserId), T);
+make_obj(T, uploads) -> [Key] = io_lib:format("~p", [T#uploads.key]), riak_object:new(<<"uploads">>, list_to_binary(Key), T);
+make_obj(T, invite_code) -> riak_object:new(<<"invite_code">>, list_to_binary(T#invite_code.code), T);
+make_obj(T = {invite_code_by_issuer, User, _Code}, invite_code_by_issuer) -> riak_object:new(<<"invite_code_by_issuer">>, list_to_binary(User), T);
+make_obj(T = {invite_code_by_user, User, _Code}, invite_code_by_user) -> riak_object:new(<<"invite_code_by_user">>, list_to_binary(User), T);
+make_obj(T, entry_likes) -> riak_object:new(<<"entry_likes">>, list_to_binary(T#entry_likes.entry_id), T);
+make_obj(T, user_likes) -> riak_object:new(<<"user_likes">>, list_to_binary(T#user_likes.user_id), T);
+make_obj(T, one_like) -> riak_object:new(<<"one_like">>, list_to_binary(integer_to_list(T#one_like.id)), T);
+make_obj(T, user_etries_count) -> riak_object:new(<<"user_etries_count">>, list_to_binary(T#user_etries_count.user_id), T);
+make_obj(T, invitation_tree) ->
     Key = case T#invitation_tree.user of
         ?INVITATION_TREE_ROOT -> [K] = io_lib:format("~p", [T#invitation_tree.user]), K;
         String -> String
     end,
     riak_object:new(<<"invitation_tree">>, list_to_binary(Key), T);
-make_object(T, Unsupported) -> riak_object:new(<<"unsuported">>, term_to_binary(Unsupported), T).
+make_obj(T, Unsupported) -> riak_object:new(<<"unsuported">>, term_to_binary(Unsupported), T).
 
 
 riak_client() -> [{_,_,{_,C}}] = ets:lookup(config, "riak_client"), C.
@@ -228,19 +261,24 @@ post_write_hooks(Class,R,C) ->
 % get
 
 -spec get(atom(), term()) -> {ok, tuple()} | {error, not_found | duplicated}.
-get(RecordName, Key) when is_atom(Key) ->
-    riak_get(format_recordname(RecordName), erlang:list_to_binary(erlang:atom_to_list(Key)));
-get(RecordName, Key) when is_integer(Key) ->
-    riak_get(format_recordname(RecordName), erlang:list_to_binary(erlang:integer_to_list(Key)));
-get(RecordName, Key) when is_tuple(Key) ->
-	[StrKey] = io_lib:format("~p",[Key]),
-	riak_get(format_recordname(RecordName), erlang:list_to_binary(StrKey));
-get(RecordName, Key) ->
-    riak_get(format_recordname(RecordName), erlang:list_to_binary(Key)).
+%% get(RecordName, Key) when is_atom(Key) ->
+%%     riak_get(format_recordname(RecordName), erlang:list_to_binary(erlang:atom_to_list(Key)));
+%% get(RecordName, Key) when is_integer(Key) ->
+%%     riak_get(format_recordname(RecordName), erlang:list_to_binary(erlang:integer_to_list(Key)));
+%% get(RecordName, Key) when is_tuple(Key) ->
+%% 	[StrKey] = io_lib:format("~p",[Key]),
+%% 	riak_get(format_recordname(RecordName), erlang:list_to_binary(StrKey));
+%% get(RecordName, Key) ->
+%%     riak_get(format_recordname(RecordName), erlang:list_to_binary(Key)).
 
-format_recordname(RecordName) ->
-    [StringBucket] = io_lib:format("~p",[RecordName]),
-    erlang:list_to_binary(StringBucket).
+get(Tab, Key) ->
+    Bucket = t_to_b(Tab),
+    IntKey = key_to_bin(Key),
+    riak_get(Bucket, IntKey).
+
+%% format_recordname(RecordName) ->
+%%     [StringBucket] = io_lib:format("~p",[RecordName]),
+%%     erlang:list_to_binary(StringBucket).
 
 riak_get(Bucket,Key) -> %% TODO: add state monad here for conflict resolution when not last_win strategy used
     C = riak_client(),
@@ -269,16 +307,20 @@ delete(Keys) ->
 -spec delete(atom(), term()) -> ok.
 delete(Tab, Key) ->
     C = riak_client(),
-    [StringBucket] = io_lib:format("~p",[Tab]),
-    if is_integer(Key) ->
-           C:delete(erlang:list_to_binary(StringBucket),erlang:list_to_binary(integer_to_list(Key)));
-       is_list(Key) ->
-           C:delete(erlang:list_to_binary(StringBucket),erlang:list_to_binary(Key));
-       true ->
-           [ListKey] = io_lib:format("~p", [Key]),
-           C:delete(erlang:list_to_binary(StringBucket),erlang:list_to_binary(ListKey))
-    end,
+    Bucket = t_to_b(Tab),
+    IntKey = key_to_bin(Key),
+    C:delete(Bucket, IntKey),
     ok.
+
+
+key_to_bin(Key) ->
+    if is_integer(Key) -> erlang:list_to_binary(integer_to_list(Key));
+       is_list(Key) -> erlang:list_to_binary(Key);
+       is_tuple(Key) -> [ListKey] = io_lib:format("~p", [Key]), erlang:list_to_binary(ListKey);
+       is_atom(Key) -> erlang:list_to_binary(erlang:atom_to_list(Key));
+       is_binary(Key) -> Key;
+       true ->  [ListKey] = io_lib:format("~p", [Key]), erlang:list_to_binary(ListKey)
+    end.
 
 % search
 
@@ -323,6 +365,18 @@ all(RecordName) ->
     {ok,Keys} = Riak:list_keys(RecordBin),
     Results = [ get_record_from_table({RecordBin, Key, Riak}) || Key <- Keys ],
     [ Object || Object <- Results, Object =/= failure ].
+
+all_by_index(Tab, IndexId, IndexVal) ->
+    Riak = riak_client(),
+    Bucket = t_to_b(Tab),
+    {ok, Keys} = Riak:get_index(Bucket, {eq, IndexId, IndexVal}),
+    F = fun(Key, Acc) ->
+                case Riak:get(Bucket, Key, []) of
+                    {ok, O} -> [riak_object:get_value(O) | Acc];
+                    {error, notfound} -> Acc
+                end
+        end,
+    lists:foldl(F, [], Keys).
 
 get_record_from_table({RecordBin, Key, Riak}) ->
     case Riak:get(RecordBin, Key) of
