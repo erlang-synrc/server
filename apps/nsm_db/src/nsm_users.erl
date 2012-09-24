@@ -39,8 +39,10 @@
          update_user/1,
          login_posthook/1,
          init_mq/2, subscribe_user_mq/3, remove_subscription_mq/3,
+         init_mq_for_group/1,
          %% for use from nsm_db_update
-         bind_user_exchange/3, unbind_user_exchange/3
+         bind_user_exchange/3, unbind_user_exchange/3,
+         bind_group_exchange/3, unbind_group_exchange/3, rk_group_feed/1
          ]).
 
 
@@ -267,7 +269,7 @@ list_subscription_users(#user{username = UId}) -> list_subscription_users(UId);
 list_subscription_users(Uid) ->
     [ {Who,WhoName} || #subscription{whom = Who, whom_name = WhoName} <- list_subscription(Uid) ].
 
-update_after_login(User) ->
+update_after_login(User) -> %RPC to cleanup
     Update =
         case user_status(User) of
             {error, status_info_not_found} ->
@@ -440,7 +442,7 @@ init_mq(User, Groups) ->
     %% Then if user will open pages or run comet processes on different servers
     %% we just will create queue to consume from this exchange without any
     %% additional db requests.
-    ?INFO("~w init mq. nsm_groups: ~p", [User, Groups]),
+    ?INFO("~p init mq. nsm_groups: ~p", [User, Groups]),
 
     UserExchange = ?USER_EXCHANGE(User),
     %% we need fanout exchange to give all information to all users queues
@@ -465,6 +467,16 @@ build_user_relations(User, Groups) ->
     %% feed.FeedOwnerType.FeedOwnerId.ElementType.ElementId.Action
     %% feed.system.ElementType.Action
     [rk_user_feed(User),
+     %% API
+     rk( [db, user, User, put] ),
+     rk( [wrong, user, User, create_group]), % temp
+     rk( [wrong, user, User, update_group]), % temp
+     rk( [subscription, user, User, add_to_group]),
+     rk( [subscription, user, User, remove_from_group]),
+     rk( [subscription, user, User, invite_to_group]),
+     rk( [subscription, user, User, reject_invite_to_group]),
+     rk( [subscription, user, User, leave_group]),
+     rk( [login, user, User, update_after_login]),
      %% system message format: feed.system.ElementType.Action
      rk( [feed, system, '*', '*']) |
      [rk_group_feed(G) || G <- Groups]].
@@ -481,6 +493,40 @@ unbind_user_exchange(Channel, User, RoutingKey) ->
     {unbind, RoutingKey, ok} =
         {unbind, RoutingKey,
          nsm_mq_channel:unbind_exchange(Channel, ?USER_EXCHANGE(User),
+                                        ?NOTIFICATIONS_EX, RoutingKey)}.
+%% same stuff for groups
+init_mq_for_group(Group) ->
+    GroupExchange = ?GROUP_EXCHANGE(Group),
+    ExchangeOptions = [{type, <<"fanout">>},
+                       durable,
+                       {auto_delete, false}],   
+    {ok, Channel} = nsm_mq:open([]),
+    ok = nsm_mq_channel:create_exchange(Channel, GroupExchange, ExchangeOptions),
+    Relations = build_group_relations(Group),
+    [bind_group_exchange(Channel, Group, RK) || RK <- Relations],
+    nsm_mq_channel:close(Channel),
+    ok.
+
+build_group_relations(Group) ->
+    [
+        rk( [db, group, Group, put] ),
+        rk( [db, group, Group, remove_group] ),
+        rk( [feed, delete, Group] ),
+        rk( [feed, group, Group, '*', '*', '*'] )
+    ].
+
+bind_group_exchange(Channel, Group, RoutingKey) ->
+    %% add routing key tagging to quick find errors
+    {bind, RoutingKey, ok} =
+        {bind, RoutingKey,
+         nsm_mq_channel:bind_exchange(Channel, ?GROUP_EXCHANGE(Group),
+                                      ?NOTIFICATIONS_EX, RoutingKey)}.
+
+unbind_group_exchange(Channel, Group, RoutingKey) ->
+    %% add routing key tagging to quick find errors
+    {unbind, RoutingKey, ok} =
+        {unbind, RoutingKey,
+         nsm_mq_channel:unbind_exchange(Channel, ?GROUP_EXCHANGE(Group),
                                         ?NOTIFICATIONS_EX, RoutingKey)}.
 
 rk(List) ->

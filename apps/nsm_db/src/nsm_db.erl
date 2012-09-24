@@ -303,11 +303,12 @@ add_sample_users() ->
     nsm_db:delete(subscription_rev, Me#user.username)
       end || Me <- UserList],
 
+    ?INFO("creating groups"),
 
     nsm_users:init_mq("ahmettez", ["kakaranet", "yeniler"]),
 
-    GId1  = nsm_groups:create_group("ahmettez", "kakaranet", "Kakaranet", "Kakaranet'e Hoşgeldiniz", public),
-    GId2  = nsm_groups:create_group("ahmettez", "yeniler", "Yeniler", "So, you must be new here.", public),
+    GId1  = nsm_groups:create_group_directly_to_db("ahmettez", "kakaranet", "Kakaranet", "Kakaranet'e Hoşgeldiniz", public),
+    GId2  = nsm_groups:create_group_directly_to_db("ahmettez", "yeniler", "Yeniler", "So, you must be new here.", public),
 
     %create(UID, Name, Desc, Date, Players, Quota, Awards, Type, Game) ->
     T1 = nsm_tournaments:create("maxim","TAVLA", "Tavla Turnuvalar",  {2012,4,28},10,  10, undefined,pointing,game_tavla),
@@ -327,10 +328,10 @@ add_sample_users() ->
           nsm_users:init_mq(Me#user.username, [GId1, GId2]),
           subscribe_user_to_list(Me#user.username, UserList),
           case Me#user.username of
-              "alice" -> ok; % alice already in groups, as admin
+              "ahmettez" -> ok; % ahmettez already in groups, as admin
               _ ->
-                  nsm_groups:add_to_group(Me#user.username, GId1, member),
-                  nsm_groups:add_to_group(Me#user.username, GId2, member)
+                  nsm_groups:add_to_group_directly_to_db(Me#user.username, GId1, member),
+                  nsm_groups:add_to_group_directly_to_db(Me#user.username, GId2, member)
           end,
           nsm_tournaments:join(Me#user.username, T1),
           nsm_tournaments:join(Me#user.username, T3),

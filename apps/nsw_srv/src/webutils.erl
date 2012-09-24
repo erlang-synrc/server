@@ -832,7 +832,7 @@ get_ribbon_menu() ->
         }
     end,
     NewDirectMessages=false,    %PUBLIC BETA we need this!
-    BlockedUsers = rpc:call(?APPSERVER_NODE, users, get_blocked_users, [wf:user()]),
+    BlockedUsers = rpc:call(?APPSERVER_NODE, nsm_users, get_blocked_users, [wf:user()]),
     BlockUnblock = case CheckedUser of
         undefined -> [];
         _ -> case lists:member(CheckedUser, BlockedUsers) of
