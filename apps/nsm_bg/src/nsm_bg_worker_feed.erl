@@ -222,7 +222,9 @@ handle_notice(["db", "user", Owner, "put"] = Route, Message, #state{owner = Owne
     nsm_db:put(Message),
     {noreply, State};
 
-% groups
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% groups
+
 handle_notice(["wrong", "user", UId, "create_group"] = Route, Message, #state{owner = Owner, type =Type} = State) ->
     ?INFO("queue_action(~p): create_group: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),
     {GId, Name, Desc, Publicity} = Message,
@@ -306,22 +308,6 @@ handle_notice(["wrong", "user", UId, "update_group"] = Route, Message, #state{ow
     end,
     {noreply, State};
 
-handle_notice(["subscription", "user", UId, "add_to_group"] = Route, Message, #state{owner = Owner, type =Type} = State) ->
-    ?INFO("queue_action(~p): add_to_group: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),
-    {GId, UType} = Message,
-    ?INFO("add ~p to group ~p", [UId, GId]),
-    nsm_users:subscribe_user_mq(group, UId, GId),
-    nsm_db:add_to_group(UId, GId, UType),
-    {noreply, State};
-
-handle_notice(["subscription", "user", UId, "remove_from_group"] = Route, Message, #state{owner = Owner, type =Type} = State) ->
-    ?INFO("queue_action(~p): remove_from_group: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),    
-    {GId} = Message,
-    ?INFO("remove ~p from group ~p", [UId, GId]),
-    nsm_users:remove_subscription_mq(group, UId, GId),
-    nsm_db:remove_from_group(UId, GId),
-    {noreply, State};
-
 handle_notice(["db", "group", GId, "remove_group"] = Route, Message, #state{owner = Owner, type =Type} = State) ->
     ?INFO("queue_action(~p): remove_group: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),
     nsx_util_notification:notify([feed, delete, GId], empty),
@@ -355,6 +341,24 @@ handle_notice(["db", "group", GId, "remove_group"] = Route, Message, #state{owne
 
     {noreply, State};
 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% user-group subscription
+
+handle_notice(["subscription", "user", UId, "add_to_group"] = Route, Message, #state{owner = Owner, type =Type} = State) ->
+    ?INFO("queue_action(~p): add_to_group: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),
+    {GId, UType} = Message,
+    ?INFO("add ~p to group ~p", [UId, GId]),
+    nsm_users:subscribe_user_mq(group, UId, GId),
+    nsm_db:add_to_group(UId, GId, UType),
+    {noreply, State};
+
+handle_notice(["subscription", "user", UId, "remove_from_group"] = Route, Message, #state{owner = Owner, type =Type} = State) ->
+    ?INFO("queue_action(~p): remove_from_group: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),    
+    {GId} = Message,
+    ?INFO("remove ~p from group ~p", [UId, GId]),
+    nsm_users:remove_subscription_mq(group, UId, GId),
+    nsm_db:remove_from_group(UId, GId),
+    {noreply, State};
 
 handle_notice(["subscription", "user", UId, "invite_to_group"] = Route, Message, #state{owner = Owner, type =Type} = State) ->
     ?INFO("queue_action(~p): invite_to_group: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),
@@ -422,6 +426,9 @@ handle_notice(["subscription", "user", UId, "leave_group"] = Route, Message, #st
     end,
     {noreply, State};
 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% login
+
 handle_notice(["login", "user", UId, "update_after_login"] = Route, Message, #state{owner = Owner, type =Type} = State) ->
     ?INFO("queue_action(~p): remove_from_group: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),    
     Update =
@@ -442,6 +449,48 @@ handle_notice(["login", "user", UId, "update_after_login"] = Route, Message, #st
             ok
     end,
     {noreply, State};
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% affiliates
+
+handle_notice(["likes", "user", UId, "add_like"] = Route, Message, #state{owner = Owner, type =Type} = State) ->
+    ?INFO("queue_action(~p): create_contract: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),
+    {Fid, Eid} = Message,
+    feed:add_like(Fid, Eid, UId),
+    {noreply, State};
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% affiliates
+
+handle_notice(["affiliates", "user", UId, "create_contract"] = Route, Message, #state{owner = Owner, type =Type} = State) ->
+    ?INFO("queue_action(~p): create_contract: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),    
+    {noreply, State};
+
+handle_notice(["affiliates", "user", UId, "create_affiliate"] = Route, Message, #state{owner = Owner, type =Type} = State) ->
+    ?INFO("queue_action(~p): create_affiliate: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),   
+    nsm_affiliates:create_affiliate(UId),
+    {noreply, State};
+
+handle_notice(["affiliates", "user", UId, "create_contract_type"] = Route, Message, #state{owner = Owner, type =Type} = State) ->
+    ?INFO("queue_action(~p): create_contract_type: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),    
+    {noreply, State};
+
+handle_notice(["affiliates", "user", UId, "disable_contract_type"] = Route, Message, #state{owner = Owner, type =Type} = State) ->
+    ?INFO("queue_action(~p): disable_contract_type: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),    
+    {noreply, State};
+
+handle_notice(["affiliates", "user", UId, "delete_affiliate"] = Route, Message, #state{owner = Owner, type =Type} = State) ->
+    ?INFO("queue_action(~p): delete_affiliate: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),    
+    {noreply, State};
+
+handle_notice(["affiliates", "user", UId, "enable_to_look_details"] = Route, Message, #state{owner = Owner, type =Type} = State) ->
+    ?INFO("queue_action(~p): enable_to_look_details: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),    
+    {noreply, State};
+
+handle_notice(["affiliates", "user", UId, "disable_to_look_details"] = Route, Message, #state{owner = Owner, type =Type} = State) ->
+    ?INFO("queue_action(~p): disable_to_look_details: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),    
+    {noreply, State};
+
 
 % unexpected
 handle_notice(Route, Message, #state{owner = User} = State) ->

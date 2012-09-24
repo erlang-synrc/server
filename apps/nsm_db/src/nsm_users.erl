@@ -511,6 +511,16 @@ build_user_relations(User, Groups) ->
      rk( [subscription, user, User, reject_invite_to_group]),
      rk( [subscription, user, User, leave_group]),
      rk( [login, user, User, update_after_login]),
+     rk( [likes, user, User, add_like]),
+
+     rk( [affiliates, user, User, create_contract]),
+     rk( [affiliates, user, User, create_affiliate]),
+     rk( [affiliates, user, User, create_contract_type]),
+     rk( [affiliates, user, User, disable_contract_type]),
+     rk( [affiliates, user, User, delete_affiliate]),
+     rk( [affiliates, user, User, enable_to_look_details]),
+     rk( [affiliates, user, User, disable_to_look_details]),
+
      %% system message format: feed.system.ElementType.Action
      rk( [feed, system, '*', '*']) |
      [rk_group_feed(G) || G <- Groups]].
