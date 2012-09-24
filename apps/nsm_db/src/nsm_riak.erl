@@ -146,18 +146,14 @@ make_object(T, entry_likes) -> riak_object:new(<<"entry_likes">>, list_to_binary
 make_object(T, user_likes) -> riak_object:new(<<"user_likes">>, list_to_binary(T#user_likes.user_id), T);
 make_object(T, one_like) -> riak_object:new(<<"one_like">>, list_to_binary(integer_to_list(T#one_like.id)), T);
 make_object(T, user_etries_count) -> riak_object:new(<<"user_etries_count">>, list_to_binary(T#user_etries_count.user_id), T);
-make_object(T, invitation_tree) -> [K] = io_lib:format("~p", [T#invitation_tree.user]), riak_object:new(<<"invitation_tree">>, list_to_binary(K), T);
+make_object(T, invitation_tree) ->
+    Key = case T#invitation_tree.user of
+        ?INVITATION_TREE_ROOT -> [K] = io_lib:format("~p", [T#invitation_tree.user]), K;
+        String -> String
+    end,
+    riak_object:new(<<"invitation_tree">>, list_to_binary(Key), T);
 make_object(T, Unsupported) -> riak_object:new(<<"unsuported">>, term_to_binary(Unsupported), T).
 
-%make_object(T, invitation_tree) ->
-%    Key = case T#invitation_tree.user of
-%        ?INVITATION_TREE_ROOT ->
-%            [K] = io_lib:format("~p", [T#invitation_tree.user]),
-%            K;
-%        String ->
-%            String
-%    end,
-%    riak_object:new(<<"invitation_tree">>, list_to_binary(Key), T);
 
 riak_client() -> [{_,_,{_,C}}] = ets:lookup(config, "riak_client"), C.
 
