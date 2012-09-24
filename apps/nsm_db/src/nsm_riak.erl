@@ -61,8 +61,8 @@ dir() ->
     [binary_to_list(X)||X<-Buckets].
 
 clean() ->
-    riak_clean(affiliates_contracts), riak_clean(affiliates_rels),
-    riak_clean(gifts_counters), riak_clean(gifts_config),
+    riak_clean(affiliates_contracts), riak_clean(affiliates_rels), riak_clean(affiliates_counters),
+    riak_clean(gifts_counters), riak_clean(gifts_config), riak_clean(gifts),
     riak_clean(play_record), riak_clean(player_scoring), riak_clean(scoring_record), riak_clean(pointing_rule),
     riak_clean(tournament), riak_clean(team),
     riak_clean(membership_package), riak_clean(user_purchase), riak_clean(membership_purchase),

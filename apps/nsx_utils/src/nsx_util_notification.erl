@@ -12,8 +12,8 @@
 %%
 
 -include_lib("nsm_mq/include/nsm_mq.hrl").
--include_lib("nsm_srv/include/user.hrl").
--include_lib("nsm_srv/include/membership_packages.hrl").
+-include_lib("nsm_db/include/user.hrl").
+-include_lib("nsm_db/include/membership_packages.hrl").
 -include_lib("alog/include/alog.hrl").
 -include("notification.hrl").
 -include("setup.hrl").
