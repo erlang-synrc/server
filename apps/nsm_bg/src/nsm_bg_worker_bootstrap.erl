@@ -66,6 +66,11 @@ handle_notice(["group", "init"], Group, State) ->
     start_local_if_not_started(user, Group),
     {noreply, State};
 
+handle_notice(["system", "init"], Name, State) ->
+    ?INFO("internal_config(~p): system 'feed' initialization message received: ~p", [self(), Name]),
+    start_local_if_not_started(system, Name),
+    {noreply, State};
+
 handle_notice(Route, Message, State) ->
     ?INFO("internal_config(~p): notification received: ", [self(), Route, Message]),
     {noreply, State}.
@@ -95,7 +100,8 @@ get_opts(_State) ->
     [{routes, [
                 %% user and group init event, will start needed workers
                [user, init],
-               [group, init]
+               [group, init],
+               [system, init]
               ]},
      {grpoc_name, [bootstrap, worker, node(), utils:uuid_ex()]},
      {queue, ?BOOTSTRAP_WORKER_QUEUE},
@@ -119,12 +125,15 @@ start_workers() ->
          timer:sleep(15+random:uniform(20)),
          ?INFO(" start user: ~p",[U#user.username]),
          start_worker(U)
-     end || U <- Users].
+     end || U <- Users],
+    start_worker(system).
 
 start_worker(#user{username = U}) ->
     start_global_if_not_started(user, U);
 start_worker(#group{username = G}) ->
-    start_global_if_not_started(group, G).
+    start_global_if_not_started(group, G);
+start_worker(system) ->
+    start_global_if_not_started(system, "system").
 
 
 start_local_if_not_started(Type, Name, FeedId) ->

@@ -445,8 +445,8 @@ event(update_group) ->
     end,
     case rpc:call(?APPSERVER_NODE, nsm_users, get_user, [{username, NewOwner}]) of
         {ok, _} ->
-            nsx_util_notification:notify(["wrong", "user", wf:user(), "update_group"], 
-                {GId, NewUId, NewName, NewDesc, NewOwner, NewPublicity}),          
+            nsx_util_notification:notify(["db", "group", GId, "update_group"], 
+                {wf:user(), NewUId, NewName, NewDesc, NewOwner, NewPublicity}),          
             wf:update(group_info_name, wf:q(group_name)),
             wf:update(group_info_publicity, wf:q(group_publicity)),
             wf:update(group_info_owner, wf:q(group_owner)),
@@ -481,7 +481,7 @@ event({leave_group, Group}) when is_record(Group, group) ->
 
 event({do_leave, GId}) ->
     User = wf:user(),
-    nsx_util_notification:notify(["subscription", "user", wf:user(), "leave_group"], {GId}),
+    nsx_util_notification:notify(["subscription", "user", User, "leave_group"], {GId}),
     wf:wire(simple_lightbox, #hide{}),
     wf:redirect("");
 
