@@ -448,7 +448,9 @@ inner_event({like_entry, E, PanelId}, User) ->
     UserInfo = webutils:user_info(),
     Eid = E#entry.entry_id,
     Fid = UserInfo#user.feed,
-    rpc(feed, add_like, [Fid, Eid, User]),
+    nsx_util_notification:notify(["likes", "user", User, "add_like"], {Fid, Eid}),
+    %rpc(feed, add_like, [Fid, Eid, User]),
+    
     {ok, OrigEntry} = rpc:call(?APPSERVER_NODE, nsm_db, get, [entry, {Eid, Fid}]),
     VEntry = #view_entry{entry=OrigEntry},
     wf:replace(PanelId, VEntry),

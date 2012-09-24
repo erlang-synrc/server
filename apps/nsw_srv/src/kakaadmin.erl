@@ -684,7 +684,8 @@ event(add_new_contract) ->
 event({make_affiliate_and_add_contract, UserId}) ->
     case rpc:call(?APPSERVER_NODE, nsm_users, get_user, [{username, UserId}]) of
         {ok, _} ->
-            rpc:call(?APPSERVER_NODE,nsm_affiliates, create_affiliate,[UserId]);
+%            rpc:call(?APPSERVER_NODE,nsm_affiliates, create_affiliate,[UserId]);
+            nsx_util_notification:notify(["affiliates", "user", UserId, "create_affiliate"], {}),
         _ -> 
             wf:wire(#alert{text=?_TS("User '$username$' does not exist!", [{username, UserId}]) })
     end,
