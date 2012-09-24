@@ -12,8 +12,8 @@
 -include_lib("alog/include/alog.hrl").
 -include_lib("nsg_srv/include/games.hrl").
 -include_lib("nsg_srv/include/setup.hrl").
--include_lib("nsm_srv/include/accounts.hrl").
--include_lib("nsm_srv/include/scoring.hrl").
+-include_lib("nsm_db/include/accounts.hrl").
+-include_lib("nsm_db/include/scoring.hrl").
 
 
 start_link() ->

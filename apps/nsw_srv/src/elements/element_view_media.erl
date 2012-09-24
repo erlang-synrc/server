@@ -2,7 +2,7 @@
 -module (element_view_media).
 -compile(export_all).
 -include_lib("nitrogen_core/include/wf.hrl").
--include_lib("nsm_srv/include/feed.hrl").
+-include_lib("nsm_db/include/feed.hrl").
 -include_lib("alog/include/alog.hrl").
 -include("records.hrl").
 -include("gettext.hrl").

@@ -13,8 +13,8 @@
 %% Include files
 %% --------------------------------------------------------------------
 -include_lib("alog/include/alog.hrl").
--include_lib("nsm_srv/include/membership_packages.hrl").
--include_lib("nsm_srv/include/config.hrl").
+-include_lib("nsm_db/include/membership_packages.hrl").
+-include_lib("nsm_db/include/config.hrl").
 %% --------------------------------------------------------------------
 %% External exports
 %% --------------------------------------------------------------------

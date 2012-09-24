@@ -12,8 +12,8 @@
 %% Include files
 %% --------------------------------------------------------------------
 -include_lib("alog/include/alog.hrl").
--include_lib("nsm_srv/include/feed.hrl").
--include_lib("nsm_srv/include/user.hrl").
+-include_lib("nsm_db/include/feed.hrl").
+-include_lib("nsm_db/include/user.hrl").
 -include("nsm_bg.hrl").
 %% --------------------------------------------------------------------
 %% External exports

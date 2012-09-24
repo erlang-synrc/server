@@ -15,7 +15,7 @@
 
 %% if MQ_TEST macro is defined - use this module as database backend
 %-ifndef(TEST).
-%-include_lib("nsm_srv/include/config.hrl").
+%-include_lib("nsm_db/include/config.hrl").
 %-else.
 -define(DBA, ?MODULE).
 %-endif.
