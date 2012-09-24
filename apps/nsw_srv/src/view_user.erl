@@ -127,7 +127,7 @@ user_info() ->
         #panel{style="margin-left:17px;", body=[
             DirectMessageItem,
             SubUnsubItem,
-            case rpc:call(?APPSERVER_NODE,acl,check_access,[wf:user(), {feature, admin}]) of
+            case rpc:call(?APPSERVER_NODE,nsm_acl,check_access,[wf:user(), {feature, admin}]) of
 	            allow -> 
                     [
                         #br{},

@@ -98,7 +98,7 @@ account_menu() ->
 									      {?_U("/profile/stats"), ?_T("Stats")},
 									      {?_U("/profile/invite"), ?_T("Invite Buddy")}
 									     ]
-			++ case rpc:call(?APPSERVER_NODE,acl,check_access,[User, {feature, admin}]) of
+			++ case rpc:call(?APPSERVER_NODE,nsm_acl,check_access,[User, {feature, admin}]) of
 				allow -> [{?_U("/kakaadmin"), ?_T("Admin")}];
 				_ -> []
 			   end ]},
@@ -799,7 +799,7 @@ get_tournaments() ->
 get_misc_links() ->
     [
         #link{text=?_T("My accont"), url="/account"},
-        case rpc:call(?APPSERVER_NODE,acl,check_access,[wf:user_info(), {feature, admin}]) of
+        case rpc:call(?APPSERVER_NODE,nsm_acl,check_access,[wf:user_info(), {feature, admin}]) of
             allow ->
                 [#br{}, #link{text="Admin panel", url="/kakaadmin"}];
             _ ->

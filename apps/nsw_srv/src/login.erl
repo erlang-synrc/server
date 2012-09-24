@@ -372,7 +372,7 @@ event(close_splash) ->
     wf:wire(splash_lightbox, #hide{});
 
 event(show_forget) ->
-    case rpc:call(?APPSERVER_NODE,acl,check_access,[{ip, wf:session(ip)}, {feature, forget_password}]) of
+    case rpc:call(?APPSERVER_NODE,nsm_acl,check_access,[{ip, wf:session(ip)}, {feature, forget_password}]) of
         deny ->
             wf:redirect("./access_denied");
         _ ->
