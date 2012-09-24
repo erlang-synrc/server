@@ -503,8 +503,6 @@ build_user_relations(User, Groups) ->
     [rk_user_feed(User),
      %% API
      rk( [db, user, User, put] ),
-     rk( [wrong, user, User, create_group]), % temp
-     rk( [wrong, user, User, update_group]), % temp
      rk( [subscription, user, User, add_to_group]),
      rk( [subscription, user, User, remove_from_group]),
      rk( [subscription, user, User, invite_to_group]),
@@ -513,10 +511,7 @@ build_user_relations(User, Groups) ->
      rk( [login, user, User, update_after_login]),
      rk( [likes, user, User, add_like]),
 
-     rk( [affiliates, user, User, create_contract]),
      rk( [affiliates, user, User, create_affiliate]),
-     rk( [affiliates, user, User, create_contract_type]),
-     rk( [affiliates, user, User, disable_contract_type]),
      rk( [affiliates, user, User, delete_affiliate]),
      rk( [affiliates, user, User, enable_to_look_details]),
      rk( [affiliates, user, User, disable_to_look_details]),
@@ -554,6 +549,7 @@ init_mq_for_group(Group) ->
 build_group_relations(Group) ->
     [
         rk( [db, group, Group, put] ),
+        rk( [db, group, Group, update_group] ),
         rk( [db, group, Group, remove_group] ),
         rk( [feed, delete, Group] ),
         rk( [feed, group, Group, '*', '*', '*'] )

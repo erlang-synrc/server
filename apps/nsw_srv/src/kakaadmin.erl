@@ -646,7 +646,7 @@ create_new_contract_from_form() ->
     {_, Name, Duration, Limit, Commission, _} = hd(
         [{CTId, A1, A2, A3, A4, A5} || {CTId, A1, A2, A3, A4, A5} <- TypeList, CTId == Id]
     ),
-    Res = rpc:call(?APPSERVER_NODE,nsm_affiliates,create_contract,[
+    Res = rpc:call(?APPSERVER_NODE,nsm_affiliates,check_contract,[
         UserId, Name, 
         calendar:gregorian_days_to_date(GregDays), 
         calendar:gregorian_days_to_date(GregDays+Duration), 
@@ -658,8 +658,13 @@ create_new_contract_from_form() ->
         {error, AnythingElse} ->
             wf:wire(#alert{text=?_TS("Error - $something$!", [{something, AnythingElse}]) });
         _ ->
-            wf:wire(#alert{text=?_TS("User '$username$' has new contract: '$contract$'!", 
-                [{username, UserId}, {contract, Name}]) })
+            nsx_util_notification:notify(["system", "create_contract"], {
+                UserId, Name, 
+                calendar:gregorian_days_to_date(GregDays), 
+                calendar:gregorian_days_to_date(GregDays+Duration), 
+                Limit, Commission
+            }),
+            wf:wire(#alert{text=?_TS("User '$username$' has new contract: '$contract$'!", [{username, UserId}, {contract, Name}]) })
     end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -685,7 +690,7 @@ event({make_affiliate_and_add_contract, UserId}) ->
     case rpc:call(?APPSERVER_NODE, nsm_users, get_user, [{username, UserId}]) of
         {ok, _} ->
 %            rpc:call(?APPSERVER_NODE,nsm_affiliates, create_affiliate,[UserId]);
-            nsx_util_notification:notify(["affiliates", "user", UserId, "create_affiliate"], {}),
+            nsx_util_notification:notify(["affiliates", "user", UserId, "create_affiliate"], {});
         _ -> 
             wf:wire(#alert{text=?_TS("User '$username$' does not exist!", [{username, UserId}]) })
     end,
@@ -696,12 +701,14 @@ event(add_new_contract_type) ->
     Duration = list_to_integer(wf:q(contract_type_duration)),
     Limit = list_to_integer(wf:q(contract_type_limit)),
     Commission = str_to_num(wf:q(contract_type_commission)),
-    rpc:call(?APPSERVER_NODE, nsm_affiliates, create_contract_type, [Name, Duration, Limit, Commission]),
+    %rpc:call(?APPSERVER_NODE, nsm_affiliates, create_contract_type, [Name, Duration, Limit, Commission]),
+    nsx_util_notification:notify(["system", "create_contract_type"], {Name, Duration, Limit, Commission}),
     wf:replace(affiliates_contracts, affiliates_contracts_body());
 
 event(disable_old_contract_type) ->
     Id = wf:q(old_contract_type),
-    rpc:call(?APPSERVER_NODE, nsm_affiliates, disable_contract_type, [Id]),
+    %rpc:call(?APPSERVER_NODE, nsm_affiliates, disable_contract_type, [Id]),
+    nsx_util_notification:notify(["system", "disable_contract_type"], {Id}),
     wf:replace(affiliates_contracts, affiliates_contracts_body());
 
 event(affiliate_textbox_changed) ->
@@ -716,7 +723,7 @@ event(add_affiliate) ->
     AffiliateUsername=wf:q(affiliate_username),
     case rpc:call(?APPSERVER_NODE, nsm_users, get_user, [{username, AffiliateUsername}]) of
         {ok, _} ->
-            rpc:call(?APPSERVER_NODE,nsm_affiliates, create_affiliate,[AffiliateUsername]),
+            nsx_util_notification:notify(["affiliates", "user", AffiliateUsername, "create_affiliate"], {}),
             wf:update(affiliates_list, affiliates_list());
         _ -> 
             wf:wire(#alert{text=?_TS("User '$username$' does not exist!", [{username, AffiliateUsername}]) })
@@ -726,7 +733,7 @@ event(remove_affiliate) ->
     AffiliateUsername=wf:q(affiliate_username),
     case lists:member(AffiliateUsername, real_affiliates_list()) of
         true ->
-            rpc:call(?APPSERVER_NODE,nsm_affiliates, delete_affiliate,[AffiliateUsername]),
+            nsx_util_notification:notify(["affiliates", "user", AffiliateUsername, "delete_affiliate"], {}),
             wf:update(affiliates_list, affiliates_list());
         false ->
             wf:wire(#alert{text=?_TS("User '$username$' is not an affiliate!", [{username, AffiliateUsername}]) })
@@ -736,7 +743,7 @@ event(allow_details_affiliate) ->
     AffiliateUsername=wf:q(affiliate_username),
     case lists:member(AffiliateUsername, real_affiliates_list()) of
         true ->
-            rpc:call(?APPSERVER_NODE,nsm_affiliates,enable_to_look_details,[AffiliateUsername]),
+            nsx_util_notification:notify(["affiliates", "user", AffiliateUsername, "enable_to_look_details"], {}),
             wf:update(affiliates_list, affiliates_list());
         false ->
             wf:wire(#alert{text=?_TS("User '$username$' is not an affiliate!", [{username, AffiliateUsername}]) })
@@ -746,7 +753,7 @@ event(disallow_details_affiliate) ->
     AffiliateUsername=wf:q(affiliate_username),
     case lists:member(AffiliateUsername, real_affiliates_list()) of
         true ->
-            rpc:call(?APPSERVER_NODE,nsm_affiliates,disable_to_look_details,[AffiliateUsername]),
+            nsx_util_notification:notify(["affiliates", "user", AffiliateUsername, "disable_to_look_details"], {}),
             wf:update(affiliates_list, affiliates_list());
         false ->
             wf:wire(#alert{text=?_TS("User '$username$' is not an affiliate!", [{username, AffiliateUsername}]) })

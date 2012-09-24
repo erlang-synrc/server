@@ -95,7 +95,7 @@ content() ->
             #h1{text=?_T("Affiliate contracts")}
         ]},
         #panel{id=page_content, body=[
-            paged_content(affiliates_of)
+            paged_content(wf:state(affiliates_of))
         ]}
     ].
 

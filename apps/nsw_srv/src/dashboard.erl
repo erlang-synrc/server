@@ -449,7 +449,6 @@ inner_event({like_entry, E, PanelId}, User) ->
     Eid = E#entry.entry_id,
     Fid = UserInfo#user.feed,
     nsx_util_notification:notify(["likes", "user", User, "add_like"], {Fid, Eid}),
-    %rpc(feed, add_like, [Fid, Eid, User]),
     
     {ok, OrigEntry} = rpc:call(?APPSERVER_NODE, nsm_db, get, [entry, {Eid, Fid}]),
     VEntry = #view_entry{entry=OrigEntry},

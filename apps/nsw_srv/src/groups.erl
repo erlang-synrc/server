@@ -388,7 +388,7 @@ event(create_new_group) ->
                 {ok, _} ->
                     wf:wire(#alert{text=?_TS("User '$username$' exist!", [{username, GId}]) });
                 {error, _} ->
-                    nsx_util_notification:notify(["wrong", "user", wf:user(), "create_group"], {GId, GName, GDesc, GPublicity}),
+                    nsx_util_notification:notify(["system", "create_group"], {wf:user(), GId, GName, GDesc, GPublicity}),
                     wf:redirect("")
             end
     end;

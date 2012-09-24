@@ -54,6 +54,8 @@
          affiliates/1,
          get_purchases_details/1,
          get_purchases_details/2,
+         check_contract/6,
+         check_contract/7,
          create_contract/6,
          create_contract/7,
          get_contracts/1,
@@ -621,6 +623,27 @@ create_contract(Handler, UserId, Name, {_,_,_}=StartDate, {_,_,_}=FinishDate,
         {error, ExContractId} ->
             {error, {contracts_conflict, ExContractId}}
     end.
+
+%%akalenuk: I need this to deparate check from real data writing. Though this piece is poorly written and may need reengineering
+check_contract(UserId, Name, StartDate, FinishDate, PurchaseLimit, CommissionRate) ->
+    Handler = start_client(),
+    Res = check_contract(Handler, UserId, Name, StartDate, FinishDate, PurchaseLimit, CommissionRate),
+    stop_client(Handler),
+    Res.
+
+check_contract(Handler, UserId, Name, {_,_,_}=StartDate, {_,_,_}=FinishDate, PurchaseLimit, CommissionPercent)
+  when
+  StartDate =< FinishDate,
+  PurchaseLimit == all orelse
+      (is_integer(PurchaseLimit) andalso PurchaseLimit > 0),
+  CommissionPercent >= 0 ->
+    case check_contracts_in_period(Handler, StartDate, FinishDate, UserId) of
+        ok ->
+            ok;
+        {error, ExContractId} ->
+            {error, {contracts_conflict, ExContractId}}
+    end.
+%%
 
 
 %% @spec get_contracts(UserId) -> List
