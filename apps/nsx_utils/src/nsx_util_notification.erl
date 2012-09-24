@@ -133,6 +133,7 @@ notify_user_block(Who, Whom) ->
 notify_user_unblock(Who, Whom) ->
     notify([user_action, unblock, Who, Whom], {}).
 
+
 %% Low level notification API
 
 notify(EventPath, Data) ->

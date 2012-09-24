@@ -28,7 +28,7 @@
          clean/0, acl_entries/1, acl_add_entry/3, update_user_name/3,
          user_by_verification_code/1, user_by_email/1, user_by_facebook_id/1, user_by_username/1,
          feed_add_entry/5, feed_add_entry/7, feed_add_direct_message/6,
-         entry_by_id/1, comment_by_id/1, comments_by_entry/1, feed_direct_messages/5,
+         entry_by_id/1, comment_by_id/1, comments_by_entry/1, feed_direct_messages/5, read_comments/1,
          feed_add_comment/7, entries_in_feed/3, purchases/1,
          subscribe_user/2, remove_subscription/2, list_subscriptions/1, list_subscription_me/1, is_user_subscribed/2,
          block_user/2, unblock_user/2, list_blocks/1, list_blocked_me/1, is_user_blocked/2,
@@ -458,7 +458,9 @@ add_to_group(MeId, FrId,Type) ->
         {ok,#group_member_rev{who=RevSubscriptions}} ->
             [ Sub || Sub <- RevSubscriptions, Sub#group_member_rev.who=/=MeId ]
         end],
-    nsm_db:put(#group_member_rev{who=RevList, group=FrId, type=list}).
+    
+    nsx_util_notification:notify(["db", "group", FrId, "put"], #group_member_rev{who=RevList, group=FrId, type=list}).
+%    nsm_db:put(#group_member_rev{who=RevList, group=FrId, type=list}).
 
 remove_from_group(MeId, FrId) ->
     List = list_membership(MeId),
@@ -466,7 +468,8 @@ remove_from_group(MeId, FrId) ->
     nsm_db:put(#group_member{who = MeId, group=NewList, type=list}),
     RevList = list_group_users(FrId),
     NewRevList = [ Rec || Rec<-RevList, not(Rec#group_member_rev.who==MeId andalso Rec#group_member_rev.group==FrId) ],
-    nsm_db:put(#group_member_rev{who = NewRevList, group = FrId, type=list}).
+    nsx_util_notification:notify(["db", "group", FrId, "put"], #group_member_rev{who = NewRevList, group = FrId, type=list}).
+%    nsm_db:put(#group_member_rev{who = NewRevList, group = FrId, type=list}).
 
 list_membership(#user{username = UId}) -> list_membership(UId);
 list_membership(UId) when is_list(UId) ->

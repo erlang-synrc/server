@@ -443,21 +443,15 @@ event(update_group) ->
         {Publicity,Publicity} -> undefined;
         {Publicity,_} -> Publicity
     end,
-    case rpc:call(?APPSERVER_NODE, users, get_user, [{username, NewOwner}]) of
+    case rpc:call(?APPSERVER_NODE, nsm_users, get_user, [{username, NewOwner}]) of
         {ok, _} ->
-            Rpc = rpc:call(?APPSERVER_NODE,nsm_groups,update_group,[GId, wf:user(), NewUId, NewName, NewDesc, NewOwner, NewPublicity]),
-            case {Rpc,NewUId} of
-                {ok, _} -> 
-                    wf:update(group_info_name, wf:q(group_name)),
-                    wf:update(group_info_publicity, wf:q(group_publicity)),
-                    wf:update(group_info_owner, wf:q(group_owner)),
-                    wf:update(group_info_description, wf:q(group_desc)),
-                    wf:wire(simple_lightbox, #hide{});
-                {{error,Reason},_} ->
-                    wf:wire(#alert{text=?_TS("Error: '$reason$'!", [{reason, Reason}]) });
-                _ ->
-                    wf:wire(#alert{text=?_T("Error for unknown reason!") })
-            end;
+            nsx_util_notification:notify(["wrong", "user", wf:user(), "update_group"], 
+                {GId, NewUId, NewName, NewDesc, NewOwner, NewPublicity}),          
+            wf:update(group_info_name, wf:q(group_name)),
+            wf:update(group_info_publicity, wf:q(group_publicity)),
+            wf:update(group_info_owner, wf:q(group_owner)),
+            wf:update(group_info_description, wf:q(group_desc)),
+            wf:wire(simple_lightbox, #hide{});
         {error, _} ->
             wf:wire(#alert{text=?_TS("User '$username$' does not exist!", [{username, NewOwner}]) })
     end;
@@ -487,9 +481,7 @@ event({leave_group, Group}) when is_record(Group, group) ->
 
 event({do_leave, GId}) ->
     User = wf:user(),
-    Rpc = rpc:call(?APPSERVER_NODE,nsm_groups,leave_group,[GId,User]),
-    io:format("Do_leave result = ~p~n", [Rpc]),
-    % case Rpc
+    nsx_util_notification:notify(["subscription", "user", wf:user(), "leave_group"], {GId}),
     wf:wire(simple_lightbox, #hide{}),
     wf:redirect("");
 

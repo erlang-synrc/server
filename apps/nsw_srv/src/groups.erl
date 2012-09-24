@@ -26,8 +26,6 @@ main_authorized() ->
     if
         Tooltip /= undefined ->
             tooltip_content(Tooltip);
-        NewGroup == "new" ->
-            create_new_group();
         true ->
             webutils:add_raw("
                 <script src=\"/nitrogen/js/jquery.validate.min.js\" type=\"text/javascript\"></script>
@@ -99,18 +97,6 @@ get_page_from_path(PI) ->
         _ -> default
     end.
 
-create_new_group() ->
-    Name = wf:q("gname"),
-    Desc = wf:q("gdesc"),
-    Type = wf:q("gtype"),
-    case rpc:call(?APPSERVER_NODE,nsm_groups, safe_create_group, [wf:user(), Name, Desc, list_to_atom(Type)]) of
-        {error, already_exists} -> "{\"status\":\"failed\", \"error_description\":\""++
-            io_lib:format("Group '~s' already exists",[Name])++"\"}"
-        ;Gid                    ->
-            ?PRINT({"create_new_group", Name, Desc, Type, Gid}),
-            "{\"status\":\"ok\"}"
-    end.
-
 body() ->
     #template{file=code:priv_dir(nsw_srv)++"/templates/inner_page2.html"}.
 
@@ -160,32 +146,37 @@ content(PageNumber) ->
 
 inner_content(PageNumber) ->
     GroupsView = get_group_rows(PageNumber), %PHASE1 get_group_rows returns some tuple, not the list now
-    {_, _, _, _, _, _, _, _, _, _, GroupsViewList} = GroupsView,
+    case is_list(GroupsView) of
+        true ->
+            #span{text=GroupsView};
+        false ->
+            {_, _, _, _, _, _, _, _, _, _, GroupsViewList} = GroupsView,
 
-    %PHASE1 this isn't right, but will do for now
-    %PHASE1 if length(GroupsViewList) == ?GROUPPERPAGE/2 we can still have our next page bloked, 
-    %       if our current is the last one and full!
-    NextButton = if
-        length(GroupsViewList) < ?GROUPPERPAGE
-             -> #listitem{body=#link{text=">", url="javascript:void(0)", class="inactive"}};
-        true -> #listitem{body=#link{text=">", postback={page, PageNumber + 1}}}
-    end,
-    PrevButton = case PageNumber of
-        I when is_integer(I),I>1 -> #listitem{body=#link{text="<", postback={page, PageNumber - 1}}};
-        _                        -> #listitem{body=#link{text="<", url="javascript:void(0)", class="inactive"}}
-    end,
-    [
-        GroupsView,
-        #panel{class="paging-2", body=[
-        #panel{class="center", body=[
-            #list{body=[
-                    PrevButton,
-                    #listitem{body=#link{class="inactive", url="javascript:void(0)", text=io_lib:format("~b",[PageNumber])}},
-                    NextButton
+            %PHASE1 this isn't right, but will do for now
+            %PHASE1 if length(GroupsViewList) == ?GROUPPERPAGE/2 we can still have our next page bloked, 
+            %       if our current is the last one and full!
+            NextButton = if
+                length(GroupsViewList) < ?GROUPPERPAGE
+                     -> #listitem{body=#link{text=">", url="javascript:void(0)", class="inactive"}};
+                true -> #listitem{body=#link{text=">", postback={page, PageNumber + 1}}}
+            end,
+            PrevButton = case PageNumber of
+                I when is_integer(I),I>1 -> #listitem{body=#link{text="<", postback={page, PageNumber - 1}}};
+                _                        -> #listitem{body=#link{text="<", url="javascript:void(0)", class="inactive"}}
+            end,
+            [
+                GroupsView,
+                #panel{class="paging-2", body=[
+                #panel{class="center", body=[
+                    #list{body=[
+                            PrevButton,
+                            #listitem{body=#link{class="inactive", url="javascript:void(0)", text=io_lib:format("~b",[PageNumber])}},
+                            NextButton
+                        ]}
+                    ]}
                 ]}
-            ]}
-        ]}
-    ].
+            ]
+    end.
 
 searched_content(PageNumber, Content) ->
     GroupsView = [group_row(X) || X <- split_subs(Content, [])],
@@ -397,7 +388,7 @@ event(create_new_group) ->
                 {ok, _} ->
                     wf:wire(#alert{text=?_TS("User '$username$' exist!", [{username, GId}]) });
                 {error, _} ->
-                    rpc:call(?APPSERVER_NODE,nsm_groups, create_group, [wf:user(), GId, GName, GDesc, GPublicity]),
+                    nsx_util_notification:notify(["wrong", "user", wf:user(), "create_group"], {GId, GName, GDesc, GPublicity}),
                     wf:redirect("")
             end
     end;
@@ -430,11 +421,11 @@ inner_event({search_group, Page}, _) ->
     wf:update(groups_content, Searched);
 
 inner_event({subscribe, User1, GName, SUId}, _User) ->
-    rpc:call(?APPSERVER_NODE,nsm_groups, add_to_group, [User1, GName, user]),
+    nsx_util_notification:notify(["subscription", "user", User1, "add_to_group"], {GName, user}),
     wf:update(SUId, #link{url="javascript:void(0)", text=?_T("Unsubscribe"), postback={unsubscribe, User1, GName, SUId}});
 
 inner_event({unsubscribe, User1, GName, SUId}, _User) ->
-    rpc:call(?APPSERVER_NODE,nsm_groups, remove_from_group, [User1, GName, user]),
+    nsx_util_notification:notify(["subscription", "user", User1, "remove_from_group"], {GName}),
     wf:update(SUId, #link{url="javascript:void(0)", text=?_T("Subscribe"), postback={subscribe, User1, GName, SUId}});
 
 
@@ -444,7 +435,7 @@ inner_event({delete, GName}, User) ->
     case Group#group.creator =:= User of
         false -> ok
         ;_    ->
-            rpc:call(?APPSERVER_NODE,nsm_groups, remove_group, [GName]),
+            nsx_util_notification:notify([db, group, GName, remove_group], []),
             wf:wire("reload_current_content();")
     end;
 

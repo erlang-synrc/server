@@ -114,3 +114,6 @@
 %% User exchange name
 -define(USER_EXCHANGE(UserId),
         list_to_binary("user_exchange."++UserId++".fanout")).
+%% Group exchange name
+-define(GROUP_EXCHANGE(GroupId),
+        list_to_binary("group_exchange."++GroupId++".fanout")).
