@@ -265,7 +265,7 @@ handle_call(#unsubscribe_player_rels{players = Players}, _From,
 handle_call(#match_me{game_type = Game}, _From, State) when is_binary(Game) ->
 %    ?INFO("match me", []),
     GameModule = api_utils:gametype_to_gamemodule(api_utils:gametype_to_atom(Game)),
-    RequestRef = match_maker:match_me(GameModule),
+    RequestRef = match_maker:match_me(GameModule), %% FIXME : not exists
     {reply, RequestRef, State#state{match_request = RequestRef}};
 
 handle_call(#join_game{game = GameId}, _From, #state{user = User} = State) ->

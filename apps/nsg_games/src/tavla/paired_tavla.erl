@@ -3,12 +3,12 @@
 -behaviour(gen_server).
 
 -export([do_rematch/2, signal/2, publish/2, notify_tables/2, submit/2,
-         to_session/3, get_requirements/2, subscribe/2, subscribe/3, unsubscribe/2,
-         start_link/5, stop/1, get_topic/1, get_player_state/2, get_table_info/1,
+         to_session/3, get_requirements/2, %%subscribe/2, subscribe/3, unsubscribe/2,
+         start_link/5, stop/1, get_topic/1, get_player_state/2, %%get_table_info/1,
          update_gamestate/2, can_observe/2, unreg/2, im_ready/1]).
 
 -include_lib("nsg_srv/include/social_actions.hrl").
--include_lib("nsg_srv/include/logging.hrl").
+%%-include_lib("nsg_srv/include/logging.hrl").
 -include_lib("nsg_srv/include/requests.hrl").
 -include_lib("nsg_srv/include/setup.hrl").
 -include_lib("nsg_srv/include/basic_types.hrl").
@@ -22,10 +22,10 @@
 -export([init/1, handle_call/3, handle_cast/2,
          handle_info/2, terminate/2, code_change/3]).
 
--record(subscriber, {
-          pid,
-          id,
-          ref}).
+%% -record(subscriber, {
+%%           pid,
+%%           id,
+%%           ref}).
 
 -record(player, {
           id     :: 'PlayerId'(),
@@ -39,7 +39,7 @@
           tables_pids,
           manager :: pid(),
           main_table :: list('PlayerId'()),
-          subs = ets:new(subs, [ordered_set, {keypos, #subscriber.pid}]), %% subscribed players/viewers
+%%          subs = ets:new(subs, [ordered_set, {keypos, #subscriber.pid}]), %% subscribed players/viewers
           players :: list(#player{}),           %% list of connected players, not undefined iff rules_module =/= chat
           reg_players :: list('PlayerId'()),    %% list of registered players, connected or not
           robots = [] :: list('PlayerId'()),
@@ -55,27 +55,29 @@
           ready_counter :: integer()
          }).
 
--define(DISCONNECT_TIMEOUT, (60*1000)). % 1 Min
 
-publish(Srv, Msg) -> Self = self(), gen_server:cast(Srv, {publish, Self, Msg}).
-notify_tables(Srv, Msg) -> Self = self(), gen_server:cast(Srv, {notify_tables, Self, Msg}).
+
 submit(Srv, Msg) -> gen_server:call(Srv, {submit, Msg}).
 signal(Srv, Msg) -> gen_server:cast(Srv, {signal, Msg}).
 to_session(Srv, Session, Msg) -> gen_server:cast(Srv, {to_session, Session, Msg}).
 unreg(Srv, Key) -> gen_server:call(Srv, {unreg, Key}).
-subscribe(Srv, Pid, PlayerId) -> gen_server:cast(Srv, {subscribe, Pid, PlayerId}).
-subscribe(Srv, Pid) -> gen_server:cast(Srv, {subscribe, Pid, null}).
-unsubscribe(Srv, Pid) -> gen_server:cast(Srv, {unsubscribe, Pid}).
+%%subscribe(Srv, Pid, PlayerId) -> gen_server:cast(Srv, {subscribe, Pid, PlayerId}).
+%%subscribe(Srv, Pid) -> gen_server:cast(Srv, {subscribe, Pid, null}).
+%%unsubscribe(Srv, Pid) -> gen_server:cast(Srv, {unsubscribe, Pid}).
 do_rematch(Srv, Pid) -> gen_server:call(Srv, {do_rematch, Pid}).
 get_topic(Srv) -> gen_server:call(Srv, get_topic).
 get_player_state(Srv, UId) -> gen_server:call(Srv, {get_player_state, UId}).
-get_table_info(Srv) -> gen_server:call(Srv, get_table_info).
+%%get_table_info(Srv) -> gen_server:call(Srv, get_table_info).
 update_gamestate(Srv, NewGameState) -> gen_server:cast(Srv, {update_gamestate, NewGameState}).
 can_observe(Srv, Id) -> gen_server:call(Srv, {can_observe, Id}).
 stop(Srv) -> gen_server:cast(Srv, stop).
 start_link(GameId, GameFSM, Params, Pids, Manager) -> gen_server:start_link(?MODULE, [GameId, GameFSM, Params, Pids, Manager], []).
 get_requirements(GameFSM,Mode) -> [{max_users,10},{min_users,4}].
+%% 2nd level relay API
+publish(Srv, Msg) -> Self = self(), gen_server:cast(Srv, {publish, Self, Msg}).
+notify_tables(Srv, Msg) -> Self = self(), gen_server:cast(Srv, {notify_tables, Self, Msg}).
 im_ready(Srv) -> Self = self(), gen_server:cast(Srv, {im_ready, Self}).
+
 
 init([Topic, {lobby, GameFSM}, Params0, PlayerIds, Manager]) ->
 
@@ -182,17 +184,17 @@ handle_call({get_player_state, UId}, _From, State) ->
     Res = Game:get_player_state(FSM, UId),
     {reply, Res, State};
 
-handle_call(get_table_info, _From, State) ->
-    List = ets:tab2list(State#state.subs),
-    Viewers = lists:map(fun(#subscriber{id = PlayerId}) ->
-                                PlayerId
-                        end, List),
-    Players = [ PlayerId || #player{id = PlayerId} <- State#state.players ],
-    GameStatus = list_to_binary(atom_to_list(State#state.gamestate)),
-    GameName = paired_tavla, %api_utils:gamemodule_to_gametype(State#state.rules_module),
-    Res = #'TableInfo'{viewers = Viewers, players = Players, chat = [],
-                       game = GameName, game_status = GameStatus},
-    {reply, Res, State};
+%% handle_call(get_table_info, _From, State) ->
+%%     List = ets:tab2list(State#state.subs),
+%%     Viewers = lists:map(fun(#subscriber{id = PlayerId}) ->
+%%                                 PlayerId
+%%                         end, List),
+%%     Players = [ PlayerId || #player{id = PlayerId} <- State#state.players ],
+%%     GameStatus = list_to_binary(atom_to_list(State#state.gamestate)),
+%%     GameName = paired_tavla, %api_utils:gamemodule_to_gametype(State#state.rules_module),
+%%     Res = #'TableInfo'{viewers = Viewers, players = Players, chat = [],
+%%                        game = GameName, game_status = GameStatus},
+%%     {reply, Res, State};
 
 handle_call({can_observe, Id}, _From, State) ->
     Res = can_observe0(Id, State),
@@ -265,30 +267,30 @@ handle_info(rematch_timer_ringing, State) ->
     State#state.rules_pid ! no_more_rematch,
     {noreply, State#state{rematch_timer = expired}};
 
-handle_info({'DOWN', _, process, Pid, Reason}, State = #state{rules_pid = Pid}) ->
-    ?INFO("relay is down. Reason: ~p", [Reason]),
-    publish0(#game_crashed{game = State#state.topic}, self(), State),
-    {stop, {error, game_crashed}, State};
-
-handle_info({'DOWN', _, process, Pid, _}, State) ->
-    ?INFO("relay session died (wait for user reconnection), Pid: ~p", [Pid]),
-    try 
-    gproc:unreg({p,g,self()}),
-    State#state.manager ! {remove_game, State#state.rules_module},
-    ?INFO("game manager notified ~p ! ~p",[State#state.manager,{remove_game, State#state.rules_module}])
-    catch _:_ -> noting
-    end,
-    {ok, _}=timer:send_after(?DISCONNECT_TIMEOUT, {disconnect, Pid}),
-    {noreply, State};
-
-handle_info({unreg, _Key}, State) ->
-    try 
-    gproc:unreg({p,g,self()}),
-    State#state.manager ! {remove_game, State#state.rules_module},
-    ?INFO("game manager notified ~p ! ~p",[State#state.manager,{remove_game, State#state.rules_module}])
-    catch _:_ -> noting
-    end,
-    {noreply, State};
+%% handle_info({'DOWN', _, process, Pid, Reason}, State = #state{rules_pid = Pid}) ->
+%%     ?INFO("relay is down. Reason: ~p", [Reason]),
+%%     publish0(#game_crashed{game = State#state.topic}, self(), State),
+%%     {stop, {error, game_crashed}, State};
+%% 
+%% handle_info({'DOWN', _, process, Pid, _}, State) ->
+%%     ?INFO("relay session died (wait for user reconnection), Pid: ~p", [Pid]),
+%%     try 
+%%     gproc:unreg({p,g,self()}),
+%%     State#state.manager ! {remove_game, State#state.rules_module},
+%%     ?INFO("game manager notified ~p ! ~p",[State#state.manager,{remove_game, State#state.rules_module}])
+%%     catch _:_ -> noting
+%%     end,
+%%     {ok, _}=timer:send_after(?DISCONNECT_TIMEOUT, {disconnect, Pid}),
+%%     {noreply, State};
+%% 
+%% handle_info({unreg, _Key}, State) ->
+%%     try 
+%%     gproc:unreg({p,g,self()}),
+%%     State#state.manager ! {remove_game, State#state.rules_module},
+%%     ?INFO("game manager notified ~p ! ~p",[State#state.manager,{remove_game, State#state.rules_module}])
+%%     catch _:_ -> noting
+%%     end,
+%%     {noreply, State};
 
 handle_info(die, State) ->
     {stop, normal, State};

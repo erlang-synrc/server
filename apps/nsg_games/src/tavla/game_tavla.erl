@@ -5,7 +5,7 @@
 -export([start_link/2, start/3, start/4]).
 -export([signal/2, make_move/3, get_requirements/0, get_settings/1]).
 -export([setup_board/1, get_timeout/2,roll/1, get_player_stats/1]).
--export([state_wait/3,
+-export([%%state_wait/3,
 		 state_start_rolls/3,
 		 state_move/3,
 		 state_rolls/3,
@@ -180,7 +180,7 @@ init([Relay, Pids, GameId, Settings]) ->
     Scores = [ #'TavlaPlayerScore'{ player_id = P#'TavlaPlayer'.player_id, score = 0} || P <- Players],
     Results = #'TavlaGameResults'{ players = Scores},
     DP = proplists:get_value(double_points, get_settings(Settings), 1),
-    GameMode = proplists:get_value(game_mode, get_settings(Settings), 1),
+    %GameMode = proplists:get_value(game_mode, get_settings(Settings), 1),
     Mode = proplists:get_value(game_mode, get_settings(Settings)),
     PR = proplists:get_value(pointing_rules, get_settings(Settings)),
     PlayersWithInfo = [game_session:get_player_info(Pid) || Pid <- Pids],
@@ -210,7 +210,7 @@ init([Relay, Pids, GameId, Settings]) ->
                                     turn_timeout = get_timeout(turn, Speed),
                                     challenge_timeout = get_timeout(challenge, Speed),
                                     ready_timeout = get_timeout(ready, Speed),
-                                    game_mode = GameMode,
+                                    game_mode = Mode,
                                     robot_delay = RobotDelay,
                                     rounds = Rounds, 
                                     game_info = GameInfo,
@@ -221,28 +221,28 @@ init([Relay, Pids, GameId, Settings]) ->
                                     observer_flag = ObserverFlag
                                     }}.
 
-state_wait({#tavla_ready{}, Pid}, _, #state{wait_list = List} = State) ->
-    Relay = State#state.relay,
-    TableId = State#state.table_id,
-    NList =
-        case lists:member(Pid, List) of
-            true ->
-                PI = lists:keyfind(Pid, #'TavlaPlayer'.pid, State#state.players),
-                publish_event(Relay, #tavla_player_ready{table_id = TableId, player = PI#'TavlaPlayer'.player_id}),
-                lists:delete(Pid, List);
-            false ->
-                ?INFO("not a member: ~p", [self()]),
-                {ok, List}
-        end,
-    case NList of
-        [] ->
-            Relay = State#state.relay,
-            publish_event(Relay, #tavla_game_started{table_id = TableId}),
-            Pids = [P#'TavlaPlayer'.pid || P <- State#state.players],
-            {reply, ok, state_start_rolls, State#state{wait_list = Pids}};
-        _ ->
-            {reply, ok, state_wait, State#state{wait_list = NList}}
-    end.
+%% state_wait({#tavla_ready{}, Pid}, _, #state{wait_list = List} = State) ->
+%%     Relay = State#state.relay,
+%%     TableId = State#state.table_id,
+%%     NList =
+%%         case lists:member(Pid, List) of
+%%             true ->
+%%                 PI = lists:keyfind(Pid, #'TavlaPlayer'.pid, State#state.players),
+%%                 publish_event(Relay, #tavla_player_ready{table_id = TableId, player = PI#'TavlaPlayer'.player_id}),
+%%                 lists:delete(Pid, List);
+%%             false ->
+%%                 ?INFO("not a member: ~p", [self()]),
+%%                 {ok, List}
+%%         end,
+%%     case NList of
+%%         [] ->
+%%             Relay = State#state.relay,
+%%             publish_event(Relay, #tavla_game_started{table_id = TableId}),
+%%             Pids = [P#'TavlaPlayer'.pid || P <- State#state.players],
+%%             {reply, ok, state_start_rolls, State#state{wait_list = Pids}};
+%%         _ ->
+%%             {reply, ok, state_wait, State#state{wait_list = NList}}
+%%     end.
 
 vido_answer(From,To,A,_Pid,State) ->
     Relay = State#state.relay,
@@ -354,7 +354,7 @@ check_game_ended(P1Collected, P2Collected, P1, P2, Relay, Player,State) ->
     end.
 
 state_move({#tavla_vido_answer{from=From,to=To,answer=A}, Pid}, _, State) ->
-    vido_answer(From,To,A,Pid,State),
+    vido_answer(From,To,A,Pid,State), %%FIXME: The State will be rewrited by the next line
     {reply, ok, state_move, State};
 
 state_move({#tavla_surrender{}, Pid}, _, State) ->
@@ -456,8 +456,7 @@ state_ready_next_round({#tavla_ready{}, _Pid}, _, State) ->
        1 -> start_game(State#state{ready = 0}), 
             Pids = [P#'TavlaPlayer'.pid || P <- State#state.players],
             {reply, ok, state_start_rolls, State#state{ready = 0, b_rolls = [], c_rolls = [], wait_list = Pids}};
-       0 -> {reply, ok, state_ready_next_round, State#state{ready = State#state.ready + 1}};
-       _ -> error
+       0 -> {reply, ok, state_ready_next_round, State#state{ready = State#state.ready + 1}}
     end.
 
 state_finished({#tavla_game_ended{}, _Pid}, _, State ) ->
@@ -553,7 +552,7 @@ handle_sync_event({signal, {pause_game, Pid}}, _From, StateName, State) ->
     Relay = State#state.relay,
     TableId = State#state.table_id,
     case {is_player(Pid, State), StateName} of
-        {_, X} when X == state_paused; X == state_dead; X == state_finished ->
+        {_, X} when X == state_paused; X == state_finished ->
             {reply, {error, pause_not_possible}, StateName, State};
         {true, _} ->
             UID = (get_player(Pid, State))#'TavlaPlayer'.player_id,
