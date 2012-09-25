@@ -25,7 +25,7 @@ generate_token0() ->
 
 token() ->
     U = wf:user(),
-    {ok,T} = rpc:call(?GAMESRVR_NODE,auth_server,store_token,[generate_token0(),U]),
+    T = rpc:call(?GAMESRVR_NODE,auth_server,store_token,[generate_token0(),U]),
     GameType = case wf:q('__submodule__') of
                     "batak" -> "flashvars.gameType = \"batak\";~n";
                     "king"  -> "flashvars.gameType = \"king\";~n";
