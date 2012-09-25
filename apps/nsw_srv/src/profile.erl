@@ -382,18 +382,18 @@ section_body(tournament) ->
     User = undef_to_empty_str(User0),
 
     CityList = webutils:city_list(),
-    City = webutils:list_to_options(CityList, User#user.location),
+    _City = webutils:list_to_options(CityList, User#user.location),
 
     EduOptions = [{"school",	?_T("Elementary School")},
 		  {"highschool",?_T("High School")},
                   {"bsc",	?_T("B.Sc.")},
                   {"msc",	?_T("M.Sc.")},
                   {"phd",	?_T("Phd")}],
-    Edu = webutils:list_to_options(EduOptions, User#user.education),
+    _Edu = webutils:list_to_options(EduOptions, User#user.education),
 
     GenderOption = [{"male",	?_T("Male")},
 		    {"female",	?_T("Female")}],
-    Gender = webutils:list_to_options(GenderOption, User#user.sex),
+    _Gender = webutils:list_to_options(GenderOption, User#user.sex),
 
     {Year0, Month0, Day0} =
         case User#user.age of
@@ -465,7 +465,7 @@ section_body(tournament) ->
 	    ]}
     ],
 
-    AvatarP = avatar_update_box(User),
+    _AvatarP = avatar_update_box(User),
 
     ColR = [  ],
     [
@@ -616,7 +616,7 @@ event(Event) ->
 u_event({is_facebook, Flag}) ->
     ?INFO("is_facebook: ~p",[Flag]);
 
-u_event({is_facebook, Flag, A}) ->
+u_event({is_facebook, _, A}) ->
     ?INFO("is_facebook p: ~p",[A]);
 
 u_event({show_contract_details, ContractId, PanelId}) ->
