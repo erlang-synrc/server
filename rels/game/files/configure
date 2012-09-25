@@ -2,6 +2,7 @@
 
 H=`hostname -f`
 GAMEPORT=7999
+GAMEHOST=$H
 WEBSERVER="web"
 APPSERVER="app@$H"
 GAMESERVER="game"
@@ -22,13 +23,10 @@ do
 	    APPSERVER=$2;shift 2;;
 	-game-port)
 	    GAMEPORT=$2;shift 2;;
+	-game-host)
+	    GAMEHOST=$2;shift 2;;
 	-web)
 	    WEBSERVER=$2;shift 2;;
-	-couch)
-	    COUCHSERVER=$2;
-	    ./config -file app.config nsg_srv couch_srv_node -list $COUCHSERVER
-	    ./config -file app.config nsg_srv couch_srv_port -integer 5984;
-	    shift 2;;
 	-mnesia-init)
 	    MNESIAINIT="true";shift;;
 	-mq-host)
@@ -56,6 +54,7 @@ fi
 ./config -file app.config nsg_srv app_srv_node -atom $APPSERVER
 ./config -file app.config nsg_srv game_srv_node -atom $GAMESERVER@$H
 ./config -file app.config nsg_srv web_srv_node -atom $WEBSERVER@$H
+./config -file app.config nsm_conn ip -list $GAMEHOST
 
 ./config -file app.config nsm_mq amqp_host -list $MQ_HOST
 ./config -file app.config nsm_mq amqp_port -integer $MQ_PORT
