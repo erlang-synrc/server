@@ -91,6 +91,7 @@ init([]) ->
 
     application:load(webmachine),
     {ok, BindAddress} = application:get_env(webmachine, bind_address),
+    {ok, ParsedBindAddress} = inet_parse:address(BindAddress),
     {ok, Port} = application:get_env(webmachine, port),
 
     Restart = permanent,
@@ -115,7 +116,7 @@ init([]) ->
 
     ?INFO("Starting Cowboy Server on ~s:~p~n", [BindAddress, Port]),
 
-    cowboy:start_listener(http, 100, cowboy_tcp_transport, [{port, Port}],
+    cowboy:start_listener(http, 100, cowboy_tcp_transport, [{port, Port},{ip,ParsedBindAddress}],
                                      cowboy_http_protocol, HttpOpts),
 
     {ok, { {one_for_one, 5, 10}, [DChild]} }.

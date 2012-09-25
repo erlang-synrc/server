@@ -69,8 +69,10 @@ port() ->
 
 init([Port]) ->
     process_flag(trap_exit, true),
-    Opts = ?TCP_OPTS,
-    case gen_tcp:listen(Port, Opts) of
+    {ok,Addr}=inet_parse:address(conn_opt:get_listen_ip()),
+    Opts = ?TCP_OPTS ++ [{ip,Addr}],
+    ?INFO("Tpc Options: ~p",[Opts]),
+    case gen_tcp:listen(Port, Opts ) of
         {ok, LSocket} ->
             gen_server:cast(?MODULE, {create_acceptor}),
             {ok, #state{port = Port, listener = LSocket}};
