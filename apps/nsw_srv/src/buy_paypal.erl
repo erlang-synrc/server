@@ -230,12 +230,11 @@ process_registered_payment(Purchase, Params) ->
             ?INFO("PAYPAL: payment info checked: Params: ~p", [Params]),
             {NewState, Info} = get_internal_status(Params),
             %% store external id
-            ok = rpc:call(?APPSERVER_NODE, nsm_membership_packages,
-                set_purchase_external_id, [PurchaseId, TxnId]),
+            %ok = rpc:call(?APPSERVER_NODE, nsm_membership_packages, set_purchase_external_id, [PurchaseId, TxnId]),
+            nsx_util_notification:notify(["purchase", "user", wf:user(), "set_purchase_external_id"], {PurchaseId, TxnId}), 
             %% change purchase state
-            ok = rpc:call(?APPSERVER_NODE, nsm_membership_packages,
-                          set_purchase_state, [PurchaseId, NewState, Info]);
-
+            %ok = rpc:call(?APPSERVER_NODE, nsm_membership_packages, set_purchase_state, [PurchaseId, NewState, Info]);
+            nsx_util_notification:notify(["purchase", "user", wf:user(), "set_purchase_state"], {PurchaseId, NewState, Info});
         true ->
             ?ERROR("PAYPAL: check payment failed. Purchase: ~p, Params: ~p", [Purchase, Params]),
             {error, check_failed}
@@ -383,8 +382,8 @@ event({paypal_clicked, PurchaseId}) ->
           [PurchaseId, Package#membership_package.id]),
 
     %% purchase will have state 'added'
-    {ok, PurchaseId} = rpc:call(?APPSERVER_NODE, nsm_membership_packages,
-                                add_purchase, [MP]),
+%    {ok, PurchaseId} = rpc:call(?APPSERVER_NODE, nsm_membership_packages, add_purchase, [MP]),
+    nsx_util_notification:notify(["purchase", "user", wf:user(), "add_purchase"], {MP}), 
     buy:submit_form(paypal_form);
 
 event(Event) ->

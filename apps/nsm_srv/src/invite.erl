@@ -32,7 +32,8 @@ generate_code(User, Mail) when is_list(User);
                        create_date = erlang:now(),
                        recipient = Mail,
                        issuer = User},
-    nsm_db:put(Rec),
+    %nsm_db:put(Rec),
+    nsx_util_notification:notify(["system", "put"], Rec),
     {ok, Code}.
 
 check_code(Code) ->

@@ -185,7 +185,8 @@ event({unsubscribe,_,_,_}=Event) ->
     friends:event(Event);
 
 event({make_affiliate, User}) ->
-    rpc:call(?APPSERVER_NODE,nsm_affiliates,create_affiliate,[User]),
+    nsx_util_notification:notify(["affiliates", "user", User, "create_affiliate"], {}),
+    %rpc:call(?APPSERVER_NODE,nsm_affiliates,create_affiliate,[User]),
     wf:redirect("");
 
 event(Other) ->
