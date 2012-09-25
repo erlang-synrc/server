@@ -99,28 +99,34 @@ login_facebook_panel_content()->
 
 
 login_register_panel_content() ->
-    wf:wire(element_register:js_text_focus_script(".wfid_register_panel input")),
-    wf:wire("objs('change_password').focus();"),
-    [   #register{id="register_panel"},
-        "<!-- Google Code for order Conversion Page -->
-        <script type='text/javascript'>
-        /* <![CDATA[ */
-        var google_conversion_id = 1008605414;
-        var google_conversion_language = 'tr';
-        var google_conversion_format = '2';
-        var google_conversion_color = 'ffffff';
-        var google_conversion_label = 'zEe1CPKo1AMQ5rH44AM';
-        var google_conversion_value = 0;
-        /* ]]> */
-        </script>
-        <script type='text/javascript' src='http://www.googleadservices.com/pagead/conversion.js'>
-        </script>
-        <noscript>
-        <div style='display:inline;'>
-        <img height='1' width='1' style='border-style:none;' alt='' src='http://www.googleadservices.com/pagead/conversion/1008605414/?value=0&amp;label=zEe1CPKo1AMQ5rH44AM&amp;guid=ON&amp;script=0'/>
-        </div>
-        </noscript>"
-    ].
+    case wf:user() of
+        undefined ->
+            wf:wire(element_register:js_text_focus_script(".wfid_register_panel input")),
+            wf:wire("objs('change_password').focus();"),
+            [   #register{id="register_panel"},
+                "<!-- Google Code for order Conversion Page -->
+                <script type='text/javascript'>
+                /* <![CDATA[ */
+                var google_conversion_id = 1008605414;
+                var google_conversion_language = 'tr';
+                var google_conversion_format = '2';
+                var google_conversion_color = 'ffffff';
+                var google_conversion_label = 'zEe1CPKo1AMQ5rH44AM';
+                var google_conversion_value = 0;
+                /* ]]> */
+                </script>
+                <script type='text/javascript' src='http://www.googleadservices.com/pagead/conversion.js'>
+                </script>
+                <noscript>
+                <div style='display:inline;'>
+                <img height='1' width='1' style='border-style:none;' alt='' src='http://www.googleadservices.com/pagead/conversion/1008605414/?value=0&amp;label=zEe1CPKo1AMQ5rH44AM&amp;guid=ON&amp;script=0'/>
+                </div>
+                </noscript>"
+            ];
+        _ ->
+            wf:redirect_from_login(?_U("/matchmaker/okey")),
+            []
+    end.
 
 
 login_register_success_panel_content(Mail) ->
@@ -256,10 +262,11 @@ login_form() ->
         #panel{class = "center fb-login-panel", id = fb_login_panel,
             body =
             [#link{postback = login_facebook,
-                body =
-                [#image{image = "/images/login/login_fb.png",
-                    style = "width:154px;height:22px",
-                    alt = "Login with facebook"}]}]}].
+                body = case site_utils:detect_language() of
+                    "en" -> #image{image = "/images/login/login_fb.png", style = "width:154px;height:22px", alt = "Login with facebook"};
+                    "tr" -> #image{image = "/images/login/giris_fb.png", alt = "Facebook ile giriş yap"}
+                end
+            }]}].
 
 
 splash_lightbox() ->

@@ -1,7 +1,7 @@
 #!/bin/bash
 
-LOCAL_IP=${1:-"192.168.1.16"}
-APP=${2:-"kakaapp@srv3.kakaranet.com"}
+LOCAL_IP=${1:-"192.168.0.18"}
+APP=${2:-"app@akalenuk.biglaptop.com"}
 
 cd rels/app/node/etc
 ./configure -dba nsm_riak -app $APP -game game -web web -mq-user guest -mq-pass guest 

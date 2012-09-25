@@ -15,6 +15,7 @@
 -include("gettext.hrl").
 
 -define(TABLE_UPDATE_INTERVAL, 5000).
+-define(TABLE_UPDATE_QUANTUM, 100).
 
 route() -> ["game_name"].
 
@@ -125,7 +126,7 @@ main_authorized() ->
 	"</ul></div></div>",
     ui_paginate(),
 
-    wf:comet(fun() -> comet_update() end),  %PUBLIC BETA this leaks
+    wf:comet(fun() -> comet_update() end),
     % guiders
     case webutils:guiders_ok("matchmaker_guiders_shown") of
         true ->
@@ -222,7 +223,7 @@ matchmaker_show_create(Tag) ->
         _ -> ""
       end,
       "</span>",
-      #link{text=?_T("Clear selection"), postback=clear_selection, class="matchmaker_clear_selection"}
+      #link{text=?_T("Clear Options"), postback=clear_selection, class="matchmaker_clear_selection"}
      ]}
     ]}.
 
@@ -1039,21 +1040,34 @@ comet_update(State) ->
 	undefined -> % user logged of
 	    wf:redirect_to_login("/");
 	_UId ->
-	    timer:sleep(?TABLE_UPDATE_INTERVAL),
-            garbage_collect(self()),
-	    Tables = get_tables(),
-	    %% used to reduce traffic and send updates only when they needed
-	    NewState = erlang:md5(term_to_binary(Tables)),
-	    case NewState of
-		State ->
-		    nothing_changed;
-		_ ->
+	    timer:sleep(?TABLE_UPDATE_QUANTUM),
+
+        TimeLeft = wf:session(time_left_to_update),
+        if 
+            TimeLeft == undefined ->
+                NewState = State,
+                wf:session(time_left_to_update, ?TABLE_UPDATE_INTERVAL);
+            TimeLeft =< 0 ->
+                garbage_collect(self()),
+	            Tables = get_tables(),
+	            %% used to reduce traffic and send updates only when they needed
+	            NewState = erlang:md5(term_to_binary(Tables)),
+	            case NewState of
+		        State ->
+		            nothing_changed;
+		        _ ->
 %                    [ garbage_collect(Pid) || Pid <- processes() ],
-		    wf:update(tables, show_table(Tables)),
-		    ui_paginate(),
-		    wf:flush()
-	    end,
-	    user_counter:wf_update_me(),
+		            wf:update(tables, show_table(Tables)),
+		            ui_paginate(),
+		            wf:flush()
+	            end,
+	            user_counter:wf_update_me(),
+                wf:session(time_left_to_update, ?TABLE_UPDATE_INTERVAL);
+            true ->
+                NewState = State,  
+                wf:session(time_left_to_update, TimeLeft - ?TABLE_UPDATE_QUANTUM)
+        end,
+
 	    comet_update(NewState)
     end.
 
@@ -1563,8 +1577,9 @@ process_setting({Key, Value} = Setting) ->
     wf:session({q_game_type(),wf:user()}, NewSettings),
     check_required(NewSettings),
     io:fwrite("Update setting: ~p~n~n", [NewSettings]),
-    wf:update(tables, ui_get_tables()),
-    ui_paginate(),
+    wf:session(time_left_to_update, ?TABLE_UPDATE_QUANTUM),
+    %wf:update(tables, ui_get_tables()),
+    %ui_paginate(),
     ok.
 
 % text from atoms. I want in to be here, though it is not used, for not to get these things scattered all over the code
