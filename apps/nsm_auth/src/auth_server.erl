@@ -116,7 +116,7 @@ init([]) ->
 
 handle_call({store_token, Token, UserId}, _From, #state{tokens = E} = State) ->
     store_token(E, Token, UserId),
-    {reply, ok, State};
+    {reply, Token, State};
 
 handle_call({get_user_info, Token}, _From, #state{tokens = E} = State) ->
     ?INFO("checking token: ~p", [Token]),
