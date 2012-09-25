@@ -33,6 +33,9 @@ token() ->
                  {ok,true} -> "";
                  {ok,false} -> wf:f("flashvars.debugMode = \"true\";\n")
             end,
+
+    ?INFO("Starting CLient: ~p",[{?SERVER_HOST,?SERVER_PORT}]),
+
     [
         io_lib:fwrite("var flashvars = {};~n", []),
         Debug,

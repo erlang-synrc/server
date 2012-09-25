@@ -12,6 +12,7 @@ GAMESERVER="game"
 WEBSERVER="web"
 SERVERPORT=7999
 SERVERHOST=""
+GAMESERVERHOST="127.0.0.1"
 APPSERVER="app@$H"
 JSPACK=min
 CSSPACK=min
@@ -33,6 +34,8 @@ do
 	    SERVERHOST=$2;shift 2;;
 	-srv-port)
 	    SERVERPORT=$2;shift 2;;
+	-srv-host)
+	    GAMESERVERHOST=$2;shift 2;;
 	-game)
 	    GAMESERVER=$2;shift 2;;
 	-web)
@@ -73,7 +76,7 @@ cat vm.args.template | sed "s#WEBSERVER_NODE#$WEBSERVER@$H#g" > vm.args
 ./config -file app.config nsw_srv game_srv_node -atom $GAMESERVER@$H
 ./config -file app.config nsw_srv web_srv_node -atom $WEBSERVER@$H
 ./config -file app.config nsw_srv game_srv_port -integer $SERVERPORT
-./config -file app.config nsw_srv game_srv_host -list $SERVERHOST
+./config -file app.config nsw_srv game_srv_host -list $GAMESERVERHOST
 ./config -file app.config nsw_srv fb_id -list "$FBAPPID"
 ./config -file app.config nsw_srv fb_secret -list "$FBAPPSECRET"
 ./config -file app.config nsw_srv jspack -list "$JSPACK"
