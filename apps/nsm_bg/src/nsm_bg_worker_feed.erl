@@ -232,6 +232,18 @@ handle_notice(["db", "user", Owner, "put"] = Route,
     nsm_db:put(Message),
     {noreply, State};
 
+handle_notice(["system", "put"] = Route, 
+    Message, #state{owner = Owner, type =Type} = State) ->
+    ?INFO("queue_action(~p): system put: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),
+    nsm_db:put(Message),
+    {noreply, State};
+
+handle_notice(["system", "delete"] = Route, 
+    Message, #state{owner = Owner, type =Type} = State) ->
+    ?INFO("queue_action(~p): system delete: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),
+    {Where, What} = Message,
+    nsm_db:delete(Where, What),
+    {noreply, State};
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% groups
 
@@ -311,8 +323,8 @@ handle_notice(["db", "group", GroupId, "update_group"] = Route,
             case Owner of
                 undefined -> ok;
                 _ ->
-                    ok = nsm_db:add_to_group(UId, GroupId, member),
-                    ok = nsm_db:add_to_group(Owner, GroupId, admin)
+                    ok = add_to_group(UId, GroupId, member),
+                    ok = add_to_group(Owner, GroupId, admin)
             end,
             ok;
         _ ->
@@ -363,7 +375,7 @@ handle_notice(["subscription", "user", UId, "add_to_group"] = Route,
     {GId, UType} = Message,
     ?INFO("add ~p to group ~p", [UId, GId]),
     nsm_users:subscribe_user_mq(group, UId, GId),
-    nsm_db:add_to_group(UId, GId, UType),
+    add_to_group(UId, GId, UType),
     {noreply, State};
 
 handle_notice(["subscription", "user", UId, "remove_from_group"] = Route,
@@ -372,7 +384,7 @@ handle_notice(["subscription", "user", UId, "remove_from_group"] = Route,
     {GId} = Message,
     ?INFO("remove ~p from group ~p", [UId, GId]),
     nsm_users:remove_subscription_mq(group, UId, GId),
-    nsm_db:remove_from_group(UId, GId),
+    remove_from_group(UId, GId),
     {noreply, State};
 
 handle_notice(["subscription", "user", UId, "invite_to_group"] = Route,
@@ -429,7 +441,7 @@ handle_notice(["subscription", "user", UId, "leave_group"] = Route,
                     case Sorted of
                         [ #group_member_rev{who=Who} | _ ] ->
                             NewOwner = Who,
-                            ok = nsm_db:add_to_group(NewOwner, GId, admin),
+                            ok = add_to_group(NewOwner, GId, admin),
                             ok = nsm_db:put(Group#group{owner = NewOwner}),
                             nsx_util_notification:notify(["subscription", "user", UId, "remove_from_group"], {GId});
                         [] ->
@@ -533,7 +545,50 @@ handle_notice(["affiliates", "user", UId, "disable_to_look_details"] = Route,
     {noreply, State};
 
 
-% unexpected
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% membership_packages
+
+handle_notice(["system", "add_package"] = Route,
+    Message, #state{owner = Owner, type =Type} = State) ->
+    ?INFO("queue_action(~p): add_package: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),
+    {MP} = Message,
+    case nsm_membership_packages:add_package(MP) of
+        {ok, _} ->
+            ok;
+        {error, Reason} ->
+            ?ERROR("Unable to add membership package: ~p, Reason ~p", [MP, Reason])
+    end,
+    {noreply, State};
+
+handle_notice(["purchase", "user", _, "set_purchase_state"] = Route,
+    Message, #state{owner = Owner, type =Type} = State) ->
+    ?INFO("queue_action(~p): set_purchase_state: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),  
+    {MPId, NewState, Info} = Message,
+    nsm_membership_packages:set_purchase_state(MPId, NewState, Info),
+    {noreply, State};
+
+handle_notice(["purchase", "user", _, "add_purchase"] = Route,
+    Message, #state{owner = Owner, type =Type} = State) ->
+    ?INFO("queue_action(~p): add_purchase: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),    
+    {MP} = Message,
+    nsm_membership_packages:add_purchase(MP),
+    {noreply, State};
+
+handle_notice(["purchase", "user", _, "set_purchase_external_id"] = Route,
+    Message, #state{owner = Owner, type =Type} = State) ->
+    ?INFO("queue_action(~p): set_purchase_external_id: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),
+    {PurchaseId, TxnId} = Message,
+    nsm_membership_packages:set_purchase_external_id(PurchaseId, TxnId),
+    {noreply, State};
+
+handle_notice(["purchase", "user", _, "set_purchase_info"] = Route,
+    Message, #state{owner = Owner, type =Type} = State) ->
+    ?INFO("queue_action(~p): set_purchase_info: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),
+    {OrderId, Info} = Message,
+    nsm_membership_packages:set_purchase_info(OrderId, Info),
+    {noreply, State};
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% unexpected
 handle_notice(Route, Message, #state{owner = User} = State) ->
     ?DBG("feed(~p): unexpected notification received: User=~p, "
               "Route=~p, Message=~p", [self(), User, Route, Message]),
@@ -571,10 +626,15 @@ get_opts(#state{type = group, owner = Owner}) ->
 get_opts(#state{type = system, owner = Owner}) ->
     Name = ?FEED_WORKER_NAME(group, Owner),
     QueueName = nsm_mq_lib:list_to_key(Name),
-    [{routes, [[system, create_group],
-               [system, create_contract],
-               [system, create_contract_type],
-               [system, disable_contract_type]
+    [{routes, [[system, put],
+                [system, delete],
+                [system, create_group],
+                % affiliates
+                [system, create_contract],
+                [system, create_contract_type],
+                [system, disable_contract_type],
+                % membership pachages
+                [system, add_package]
                 ]},
      {gproc_name, Name},
      {consume_options, [exclusive]},
@@ -610,4 +670,44 @@ add_comment(#state{feed = Feed, direct = Direct}, From, EntryId, ParentComment,
     [feed:entry_add_comment(FId, From, EntryId, ParentComment,
                             CommentId, Content, Medias)
        || FId <- [Feed, Direct]].
+
+
+add_to_group(MeId, FrId, Type) ->     
+    MeShow = case nsm_db:get(user, MeId) of
+        {ok, #user{name=MeName,surname=MeSur}} ->
+            io_lib:format("~s ~s", [MeName,MeSur]);
+        _ ->
+            MeId
+    end,
+    FrShow = case nsm_db:get(group, FrId) of
+        {ok, #group{name=FrName}} -> FrName;
+        _ -> FrId
+    end,
+    List = [#group_member{who=MeId, group=FrId, group_name=FrShow, type=Type} |
+        case nsm_db:get(group_member, MeId) of
+        {error,notfound} ->
+            nsm_db:delete(group_member, MeId),
+            [];
+        {ok,#group_member{group=Subscriptions}} ->
+            [ Sub || Sub <- Subscriptions, Sub#group_member.group=/=FrId ]
+        end],
+    nsm_db:put(#group_member{who=MeId, group=List, type=list}),
+    RevList = [#group_member_rev{ group= FrId, who=MeId, who_name=MeShow, type= Type} |
+        case nsm_db:get(group_member_rev, FrId) of
+        {error,notfound} ->
+            nsm_db:delete(group_member_rev, FrId),
+            [];
+        {ok,#group_member_rev{who=RevSubscriptions}} ->
+            [ Sub || Sub <- RevSubscriptions, Sub#group_member_rev.who=/=MeId ]
+        end],
+    
+    nsx_util_notification:notify(["db", "group", FrId, "put"], #group_member_rev{who=RevList, group=FrId, type=list}).
+
+remove_from_group(MeId, FrId) ->
+    List = nsm_db:list_membership(MeId),
+    NewList = [ Rec || Rec<-List, not(Rec#group_member.who == MeId andalso Rec#group_member.group == FrId) ],
+    nsm_db:put(#group_member{who = MeId, group=NewList, type=list}),
+    RevList = nsm_db:list_group_users(FrId),
+    NewRevList = [ Rec || Rec<-RevList, not(Rec#group_member_rev.who==MeId andalso Rec#group_member_rev.group==FrId) ],
+    nsx_util_notification:notify(["db", "group", FrId, "put"], #group_member_rev{who = NewRevList, group = FrId, type=list}).
 

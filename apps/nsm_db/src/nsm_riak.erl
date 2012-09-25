@@ -22,7 +22,7 @@
 -export([start/0, stop/0, initialize/0, delete/0, init_db/0, dir/0,
          put/1, count/1, get/2, select/2, multi_select/2, all/1, all_by_index/3, next_id/1, next_id/2, delete/1, delete/2,
          delete_browser_counter_older_than/1,browser_counter_by_game/1, unused_invites/0,
-         riak_client/0, get_word/1, add_to_group/3, remove_from_group/2, list_membership_count/1,
+         riak_client/0, get_word/1, list_membership_count/1,
          list_group_users/1, list_membership/1, move_group_members/3, get_group_members/1,
          get_group_members_count/1, change_group_name/2, riak_clean/1,
          clean/0, acl_entries/1, acl_add_entry/3, update_user_name/3,
@@ -488,47 +488,6 @@ invite_code_by_user(User) ->
 
 % groups
 
-add_to_group(MeId, FrId,Type) ->
-    MeShow = case nsm_db:get(user, MeId) of
-        {ok, #user{name=MeName,surname=MeSur}} ->
-            io_lib:format("~s ~s", [MeName,MeSur]);
-        _ ->
-            MeId
-    end,
-    FrShow = case nsm_db:get(group, FrId) of
-        {ok, #group{name=FrName}} -> FrName;
-        _ -> FrId
-    end,
-    List = [#group_member{who=MeId, group=FrId, group_name=FrShow, type=Type} |
-        case nsm_db:get(group_member, MeId) of
-        {error,notfound} ->
-            nsm_db:delete(group_member, MeId),
-            [];
-        {ok,#group_member{group=Subscriptions}} ->
-            [ Sub || Sub <- Subscriptions, Sub#group_member.group=/=FrId ]
-        end],
-    nsm_db:put(#group_member{who=MeId, group=List, type=list}),
-    RevList = [#group_member_rev{ group= FrId, who=MeId, who_name=MeShow, type= Type} |
-        case nsm_db:get(group_member_rev, FrId) of
-        {error,notfound} ->
-            nsm_db:delete(group_member_rev, FrId),
-            [];
-        {ok,#group_member_rev{who=RevSubscriptions}} ->
-            [ Sub || Sub <- RevSubscriptions, Sub#group_member_rev.who=/=MeId ]
-        end],
-    
-    nsx_util_notification:notify(["db", "group", FrId, "put"], #group_member_rev{who=RevList, group=FrId, type=list}).
-%    nsm_db:put(#group_member_rev{who=RevList, group=FrId, type=list}).
-
-remove_from_group(MeId, FrId) ->
-    List = list_membership(MeId),
-    NewList = [ Rec || Rec<-List, not(Rec#group_member.who == MeId andalso Rec#group_member.group == FrId) ],
-    nsm_db:put(#group_member{who = MeId, group=NewList, type=list}),
-    RevList = list_group_users(FrId),
-    NewRevList = [ Rec || Rec<-RevList, not(Rec#group_member_rev.who==MeId andalso Rec#group_member_rev.group==FrId) ],
-    nsx_util_notification:notify(["db", "group", FrId, "put"], #group_member_rev{who = NewRevList, group = FrId, type=list}).
-%    nsm_db:put(#group_member_rev{who = NewRevList, group = FrId, type=list}).
-
 list_membership(#user{username = UId}) -> list_membership(UId);
 list_membership(UId) when is_list(UId) ->
     case nsm_db:get(group_member, UId) of
@@ -924,7 +883,7 @@ add_purchase_to_user(UserId,Purchase) ->
              end
     end,
 
-    nsm_db:put(#user_purchase{ user = UserId, top = EntryId}), % update teaam top with current
+    nsm_db:put(#user_purchase{ user = UserId, top = EntryId}), % update team top with current
 
     Entry  = #membership_purchase{id = EntryId,
                                   user_id = UserId,

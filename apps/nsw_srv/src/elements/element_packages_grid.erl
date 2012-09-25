@@ -101,15 +101,14 @@ api_event(savePackage, Anchor, [Data]) ->
         %% new record
         RawId when is_integer(RawId) andalso RawId < 0  ->
             MP = create_record(Data),
-            case rpc:call(?APPSERVER_NODE, nsm_membership_packages,
-                          add_package, [MP]) of
-                {ok, Id} ->
-                    %% update id of last inserted record
-                    wf:wire(wf:f("obj('~s').grid.updateId('~p')",
-                                 [Anchor, Id]));
-                {error, Reason} ->
-                    ?ERROR("unable to add package: ~p, Reason ~p", [MP, Reason])
-            end;
+            PrevId = nsm_db:get(id_seq, "membership_package"),  % this is bad
+            Id = case PrevId of
+                {error,notfound} -> 0;
+            	{ok,{id_seq, _, DBId}} -> DBId
+            end,
+            nsx_util_notification:notify(["system", "add_package"], {MP}),
+            wf:wire(wf:f("obj('~s').grid.updateId('~p')", [Anchor, Id]));   
+
         %% for already defined packages only available_for_sale property
         %% can be changed
         Id ->

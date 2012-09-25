@@ -69,8 +69,7 @@ event({buy_clicked, PurchaseId}) ->
           [PurchaseId, Package#membership_package.id]),
 
     %% purchase will have state 'started'
-    {ok, PurchaseId} = rpc:call(?APPSERVER_NODE, nsm_membership_packages,
-        add_purchase, [MP]),
+    nsx_util_notification:notify(["purchase", "user", wf:user(), "add_purchase"], {MP}), 
     OrderForm = order_form(PurchaseId),
 
     wf:update(form_holder, OrderForm);
