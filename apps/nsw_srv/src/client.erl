@@ -18,9 +18,14 @@ main() ->
 
 main_authorized() -> #template { file=code:priv_dir(nsw_srv)++"/templates/dummy_kakaranet.html" }.
 
+generate_token0() ->
+    T0 = crypto:rand_bytes(100),
+    T = base64:encode(T0),
+    T.
+
 token() ->
     U = wf:user(),
-    T = rpc:call(?APPSERVER_NODE,zealot_auth,generate_token,[U]),
+    {ok,T} = rpc:call(?GAMESRVR_NODE,auth_server,store_token,[generate_token0(),U]),
     GameType = case wf:q('__submodule__') of
                     "batak" -> "flashvars.gameType = \"batak\";~n";
                     "king"  -> "flashvars.gameType = \"king\";~n";
