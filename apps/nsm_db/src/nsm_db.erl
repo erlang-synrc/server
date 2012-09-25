@@ -44,7 +44,7 @@
          entry_by_id/1, comment_by_id/1, comments_by_entry/1, feed_direct_messages/3,
          add_comment/7, dir/0, purchases/1,
          user_by_verification_code/1, update_user_name/3,
-         add_to_group/3, remove_from_group/2, list_membership/1, list_group_users/1, list_membership_count/1,
+         list_membership/1, list_group_users/1, list_membership_count/1,
          user_by_email/1, user_by_facebook_id/1, user_by_username/1, change_group_name/2,
          membership/2, move_group_members/3, get_group_members_count/1, get_group_members/1,
          get_save_tables/1, save_game_table_by_id/1, invite_code_by_issuer/1,
@@ -503,8 +503,6 @@ save_game_table_by_id(Id) -> DBA=?DBA,DBA:save_game_table_by_id(Id).
 
 % groups
 
-add_to_group(UId, GId, Type) -> DBA=?DBA,DBA:add_to_group(UId, GId, Type).
-remove_from_group(UId, GId) -> DBA=?DBA,DBA:remove_from_group(UId, GId).
 list_membership(U) -> DBA=?DBA,DBA:list_membership(U).
 list_membership_count(U) -> DBA=?DBA,DBA:list_membership_count(U).
 list_group_users(U) -> DBA=?DBA,DBA:list_group_users(U).

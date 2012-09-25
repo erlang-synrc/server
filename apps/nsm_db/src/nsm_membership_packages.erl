@@ -63,13 +63,10 @@ add_purchase(#membership_purchase{} = MP) ->
 
 -spec add_purchase(#membership_purchase{}, purchase_state(), StateInfo::any()) -> {ok, PurchaseId::string()}.
 add_purchase(#membership_purchase{} = MP, State0, Info) ->
-    ?INFO("111111111"),
     case nsm_db:get(membership_purchase, MP#membership_purchase.id) of
         {ok, _} -> {error, already_bought_that_one};
         {error, notfound} ->
             %% fill needed fields
-
-    ?INFO("2222222222222222"),
             Start = now(),
             State = default_if_undefined(State0, undefined, ?MP_STATE_ADDED),
             %% FIXME: uniform info field if needed
@@ -93,7 +90,7 @@ add_purchase(#membership_purchase{} = MP, State0, Info) ->
             %% notify about purchase added
 %            nsx_util_notification:notify_purchase(Purchase),
 
-    ?INFO("33333333333333 ~p ~p",[Purchase#membership_purchase.user_id, Purchase]),
+            ?INFO("Purchase added ~p ~p",[Purchase#membership_purchase.user_id, Purchase]),
 
             nsm_riak:add_purchase_to_user(Purchase#membership_purchase.user_id, Purchase)
     end.

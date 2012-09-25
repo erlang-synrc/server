@@ -58,14 +58,12 @@ process_result(success) ->
 
     case ((Site =:= "www.mikro-odeme.com") orelse true) of
          true ->  case rpc:call(?APPSERVER_NODE, nsm_membership_packages, get_purchase, [PurchaseId]) of
-                  {ok, Purchase} ->
-                          rpc:call(?APPSERVER_NODE, nsm_membership_packages,
-                                    set_purchase_state, [element(2,Purchase), done, mobile]),
+                {ok, Purchase} ->
+                    nsx_util_notification:notify(["purchase", "user", wf:user(), "set_purchase_state"], {element(2,Purchase), done, mobile}),                           
+                    wf:redirect("/profile/account");
 
-                            wf:redirect("/profile/account");
-
-                   _ -> "Purchase Not Found"
-         end;
+                _ -> "Purchase Not Found"
+            end;
          false -> "Non Authorized Access"
     end;
 
@@ -115,8 +113,7 @@ event({buy_clicked, PurchaseId}) ->
         info = mobile
     },
 
-    {ok, PurchaseId} = rpc:call(?APPSERVER_NODE, nsm_membership_packages,
-                                add_purchase, [MP]),
+    nsx_util_notification:notify(["purchase", "user", wf:user(), "add_purchase"], {MP}),
 
     wf:redirect("http://www.mikro-odeme.com/sale-api/tr/step1.aspx?partner=17121&product=" ++ 
         wf:to_list(Product)++ "&mpay=" ++ PurchaseId);

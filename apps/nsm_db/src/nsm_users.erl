@@ -516,6 +516,11 @@ build_user_relations(User, Groups) ->
      rk( [affiliates, user, User, enable_to_look_details]),
      rk( [affiliates, user, User, disable_to_look_details]),
 
+     rk( [purchase, user, User, set_purchase_external_id]),
+     rk( [purchase, user, User, set_purchase_state]),
+     rk( [purchase, user, User, set_purchase_info]),
+     rk( [purchase, user, User, add_purchase]),
+
      %% system message format: feed.system.ElementType.Action
      rk( [feed, system, '*', '*']) |
      [rk_group_feed(G) || G <- Groups]].

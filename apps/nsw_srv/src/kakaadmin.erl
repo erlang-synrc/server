@@ -701,13 +701,11 @@ event(add_new_contract_type) ->
     Duration = list_to_integer(wf:q(contract_type_duration)),
     Limit = list_to_integer(wf:q(contract_type_limit)),
     Commission = str_to_num(wf:q(contract_type_commission)),
-    %rpc:call(?APPSERVER_NODE, nsm_affiliates, create_contract_type, [Name, Duration, Limit, Commission]),
     nsx_util_notification:notify(["system", "create_contract_type"], {Name, Duration, Limit, Commission}),
     wf:replace(affiliates_contracts, affiliates_contracts_body());
 
 event(disable_old_contract_type) ->
     Id = wf:q(old_contract_type),
-    %rpc:call(?APPSERVER_NODE, nsm_affiliates, disable_contract_type, [Id]),
     nsx_util_notification:notify(["system", "disable_contract_type"], {Id}),
     wf:replace(affiliates_contracts, affiliates_contracts_body());
 
@@ -782,7 +780,7 @@ u_event(delete_old_invites) ->
 
             case {CUser, Expired > 0} of
                 {undefined, true} ->
-                    rpc:call(?APPSERVER_NODE, nsm_db, delete, [invite_code, Code]),
+                    nsx_util_notification:notify(["system", "delete"], {invite_code, Code}),
                     {Counter + 1, Acc};
                 _ ->
                     {Counter, [I|Acc]}
@@ -880,8 +878,7 @@ u_event(config_save_new) ->
 		    end,
 	    case Value of
 		{ok, NewValue} ->
-		    rpc:call(?APPSERVER_NODE,nsm_db,put,[#config{key = Key,value=NewValue}]),
-%		    kakaconfig:set(Key, NewValue),
+            nsx_util_notification:notify(["system", "put"], #config{key = Key,value=NewValue}),
 		    wf:flash(?_TS("Value of $key$ set to $value$",[{key,wf:f("~w",[Key])},{value,NewValue}])); %% "
 		{msg, Msg} ->
 		    wf:flash(Msg)
