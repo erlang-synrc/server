@@ -796,6 +796,9 @@ msgstr "Oyun Sayfası"
 msgid "Game Points"
 msgstr "Oyun Puanları"
 #
+msgid "Game Rules"
+msgstr "Oyun Kuralları"
+#
 msgid "Game Settings"
 msgstr "Oyun Ayarları"
 #
@@ -1187,6 +1190,12 @@ msgstr "Konum:"
 #
 msgid "Login"
 msgstr "Giriş"
+#
+msgid "login"
+msgstr "giriş"
+#
+msgid "Login with facebook"
+msgstr "Facebook ile giriş"
 #
 msgid "Logout"
 msgstr "Çıkış"
@@ -1804,6 +1813,12 @@ msgstr "Paylaş"
 #
 msgid "Sign Up"
 msgstr "Üye Ol"
+#
+msgid "sign up"
+msgstr "kayıt ol"
+#
+msgid "sign up with Facebook"
+msgstr "Facebook ile kaydol"
 #
 msgid "Signup"
 msgstr "Üye Ol"
@@ -4123,8 +4138,32 @@ msgstr "Tables"
 msgid "Sorry, all tables are full, you can create one youself!"
 msgstr "Sorry, all tables are full, you can create one youself!"
 #
-msgid "Clear selection"
-msgstr "Clear selection"
+msgid "Clear Options"
+msgstr "Seçimleri Temizle"
 #
 msgid "Our player $username$, has created "
 msgstr "Our player $username$, has created "
+#
+msgid "Kakaush"
+msgstr "Kakuş"
+#
+msgid "Kakuş"
+msgstr "Kakuş"
+#
+msgid "Other players"
+msgstr "Other players"
+#
+msgid "Scores"
+msgstr "Scores"
+#
+msgid "We haven't implemented it yet."
+msgstr "We haven't implemented it yet."
+#
+msgid "When"
+msgstr "When"
+#
+msgid "You haven't played any games yet."
+msgstr "You haven't played any games yet."
+#
+msgid "Clear selection"
+msgstr "Clear selection"
