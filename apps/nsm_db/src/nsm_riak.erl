@@ -42,7 +42,7 @@
 -define(BUCKET_INDEX, "bucket_bin").
 %% Meta Id
 -define(MD_INDEX, <<"index">>).
-
+-define(COUNTERS_BUCKET, <<"id_seq">>).
 
 delete() -> ok.
 start() -> ok.
@@ -107,18 +107,17 @@ riak_clean(Table) ->
     [ nsm_db:delete(Table,erlang:binary_to_list(Key)) || Key <- Keys].
 
 % Convert Erlang records to Riak objects
-make_object(T, {transaction, _}=Class) -> %% Special case for transactions
-    make_obj(T, Class);
 make_object(T, Class) ->
     Obj1 = make_obj(T, Class),
     Bucket = r_to_b(T),
-    Indices = [{?BUCKET_INDEX, Bucket} | make_indices(T)],
+    Indices = [{?BUCKET_INDEX, Bucket} | make_indices(T)], %% Usefull only for level_db buckets
     Meta = dict:store(?MD_INDEX, Indices, dict:new()),
     Obj2 = riak_object:update_metadata(Obj1, Meta),
     Obj2.
 
 %% Record to bucket id
 r_to_b(R) -> t_to_b(element(1,R)).
+
 %% Table id to bucket id
 t_to_b(T) -> 
     %% list_to_binary(atom_to_list(T)). FIXME: This should be after we eleminate {transaction,_} tables
@@ -261,24 +260,10 @@ post_write_hooks(Class,R,C) ->
 % get
 
 -spec get(atom(), term()) -> {ok, tuple()} | {error, not_found | duplicated}.
-%% get(RecordName, Key) when is_atom(Key) ->
-%%     riak_get(format_recordname(RecordName), erlang:list_to_binary(erlang:atom_to_list(Key)));
-%% get(RecordName, Key) when is_integer(Key) ->
-%%     riak_get(format_recordname(RecordName), erlang:list_to_binary(erlang:integer_to_list(Key)));
-%% get(RecordName, Key) when is_tuple(Key) ->
-%% 	[StrKey] = io_lib:format("~p",[Key]),
-%% 	riak_get(format_recordname(RecordName), erlang:list_to_binary(StrKey));
-%% get(RecordName, Key) ->
-%%     riak_get(format_recordname(RecordName), erlang:list_to_binary(Key)).
-
 get(Tab, Key) ->
     Bucket = t_to_b(Tab),
     IntKey = key_to_bin(Key),
     riak_get(Bucket, IntKey).
-
-%% format_recordname(RecordName) ->
-%%     [StringBucket] = io_lib:format("~p",[RecordName]),
-%%     erlang:list_to_binary(StringBucket).
 
 riak_get(Bucket,Key) -> %% TODO: add state monad here for conflict resolution when not last_win strategy used
     C = riak_client(),
@@ -390,15 +375,38 @@ get_record_from_table({RecordBin, Key, Riak}) ->
 next_id(RecordName) ->
     next_id(RecordName, 1).
 
--spec next_id(list(), integer()) -> pos_integer().
-next_id(RecordName, Incr) ->
-    case nsm_db:get(id_seq, RecordName) of
-	{error,notfound} -> R = 0;
-	{ok,{id_seq, _, Id}} -> R = Id + Incr
-    end,
-    Rec = #id_seq{thing = RecordName, id = R},
-    nsm_db:put(Rec),
-    R.
+%% -spec next_id(list(), integer()) -> pos_integer().
+%% next_id(RecordName, Incr) ->
+%%     case nsm_db:get(id_seq, RecordName) of
+%% 	{error,notfound} -> R = 0;
+%% 	{ok,{id_seq, _, Id}} -> R = Id + Incr
+%%     end,
+%%     Rec = #id_seq{thing = RecordName, id = R},
+%%     nsm_db:put(Rec),
+%%     R.
+
+-spec next_id(term(), integer()) -> pos_integer().
+%% Safe implementation of counters
+next_id(CounterId, Incr) ->
+    Riak = riak_client(),
+    CounterBin = key_to_bin(CounterId),
+    {Object, Value, Options} =
+        case Riak:get(?COUNTERS_BUCKET, CounterBin, []) of
+            {ok, CurObj} ->
+                R = #id_seq{id = CurVal} = riak_object:get_value(CurObj),
+                NewVal = CurVal + Incr,
+                Obj = riak_object:update_value(CurObj, R#id_seq{id = NewVal}),
+                {Obj, NewVal, [if_not_modified]};
+            {error, notfound} ->
+                Obj = riak_object:new(?COUNTERS_BUCKET, CounterBin, #id_seq{thing = CounterId, id = Incr}),
+                {Obj, Incr, [if_none_match]}
+        end,
+    case Riak:put(Object, Options) of
+        ok ->
+            Value;
+        {error, _} -> %% FIXME: Right reason(s) should be specified here
+            next_id(CounterId, Incr)
+    end.
 
 % browser counters
 
