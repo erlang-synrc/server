@@ -461,32 +461,44 @@ handle_notice(["subscription", "user", UId, "leave_group"] = Route,
 
 handle_notice(["subscription", "user", UId, "subscribe_user"] = Route,
     Message, #state{owner = Owner, type =Type} = State) ->
-    ?INFO(" queue_action(~p): leave_group: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),
+    ?INFO(" queue_action(~p): subscribe_user: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),
+    {Whom} = Message,
+    nsm_users:subscr_user(UId, Whom),
     {noreply, State};
 
 handle_notice(["subscription", "user", UId, "remove_subscribe"] = Route,
     Message, #state{owner = Owner, type =Type} = State) ->
-    ?INFO(" queue_action(~p): leave_group: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),
+    ?INFO(" queue_action(~p): remove_subscribe: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),
+    {Whom} = Message,
+    nsm_users:unsubscr_user(UId, Whom),
     {noreply, State};
 
 handle_notice(["subscription", "user", UId, "set_user_game_status"] = Route,
     Message, #state{owner = Owner, type =Type} = State) ->
-    ?INFO(" queue_action(~p): leave_group: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),
+    ?INFO(" queue_action(~p): set_user_game_status: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),
+    {Status} = Message,
+    nsm_users:set_user_game_status(UId, Status),
     {noreply, State};
 
 handle_notice(["subscription", "user", UId, "update_user"] = Route,
     Message, #state{owner = Owner, type =Type} = State) ->
-    ?INFO(" queue_action(~p): leave_group: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),
+    ?INFO(" queue_action(~p): update_user: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),
+    {NewUser} = Message,
+    nsm_users:update_user(NewUser),
     {noreply, State};
 
 handle_notice(["subscription", "user", UId, "block_user"] = Route,
     Message, #state{owner = Owner, type =Type} = State) ->
-    ?INFO(" queue_action(~p): leave_group: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),
+    ?INFO(" queue_action(~p): block_user: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),
+    {Whom} = Message,
+    nsm_users:block_user(UId, Whom),
     {noreply, State};
 
 handle_notice(["subscription", "user", UId, "unblock_user"] = Route,
     Message, #state{owner = Owner, type =Type} = State) ->
-    ?INFO(" queue_action(~p): leave_group: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),
+    ?INFO(" queue_action(~p): unblock_user: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),
+    {Whom} = Message,
+    nsm_users:unblock_user(UId, Whom),
     {noreply, State};
 
 

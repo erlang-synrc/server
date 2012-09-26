@@ -48,15 +48,13 @@
          user_by_email/1, user_by_facebook_id/1, user_by_username/1, change_group_name/2,
          membership/2, move_group_members/3, get_group_members_count/1, get_group_members/1,
          get_save_tables/1, save_game_table_by_id/1, invite_code_by_issuer/1, add_invite_to_issuer/2,
-         subscribe_user/2, list_subscriptions/1, remove_subscription/2, list_subscription_me/1,
-         is_user_subscribed/2,
          block_user/2, unblock_user/2, list_blocks/1, list_blocked_me/1, is_user_blocked/2,
          add_translations/0,
          select/2, multi_select/2, version/0,
          invite_code_by_user/1, get_translation/1, add_purchases/0,
          tournament_waiting_queue/1, join_tournament/2, tournament_pop_waiting_player/1,
          play_record_add_entry/4,user_tournaments/1, make_rich/1,
-         groups_184_update/0, subscriptions_update/0, fast_timeouts/0, make_admin/1]).
+         subscriptions_to_subs/0, groups_184_update/0, subscriptions_update/0, fast_timeouts/0, make_admin/1]).
 
 -export([get_purchases_by_user/3, get_purchases_by_user/4,
          put_into_invitation_tree/3, invitation_tree/2]).
@@ -303,10 +301,12 @@ add_sample_users() ->
                            register_date={1345,14070,852889}
                      }],
 
-    [ begin
-    nsm_db:delete(subscription, Me#user.username),
-    nsm_db:delete(subscription_rev, Me#user.username)
-      end || Me <- UserList],
+    ?INFO("making all users each other friends"),
+
+    [[case Me == Her of
+        true -> ok;
+        false -> nsm_users:subscr_user(Me#user.username, Her#user.username)
+    end || Her <- UserList] || Me <- UserList],
 
     ?INFO("creating groups"),
 
@@ -331,7 +331,7 @@ add_sample_users() ->
     ?INFO("adding users to groups"),
     [ begin
           nsm_users:init_mq(Me#user.username, [GId1, GId2]),
-          subscribe_user_to_list(Me#user.username, UserList),
+          %subscribe_user_to_list(Me#user.username, UserList),
           case Me#user.username of
               "ahmettez" -> ok; % ahmettez already in groups, as admin
               _ ->
@@ -359,17 +359,6 @@ add_sample_packages() ->
 version() ->
     ?INFO("version: ~p", [?VERSION]).
 
-subscribe_user_to_list(Me, List) ->
-    [ begin nsm_users:subscribe_user(Me, User) end || #user{username=User} <- List, User =/= Me],
-    ok.
-
-% subscriptions
-
-subscribe_user(Me,Fr) -> DBA=?DBA,DBA:subscribe_user(Me,Fr).
-list_subscriptions(Me) -> DBA=?DBA,DBA:list_subscriptions(Me).
-remove_subscription(Me,Fr) -> DBA=?DBA,DBA:remove_subscription(Me,Fr).
-list_subscription_me(Me) -> DBA=?DBA,DBA:list_subscription_me(Me).
-is_user_subscribed(Who,Whom) -> DBA=?DBA,DBA:is_user_subscribed(Who,Whom).
 
 % blocking
 
@@ -608,6 +597,9 @@ subscriptions_update() -> % public beta
 
     end, Subscriptions).
 
+subscriptions_to_subs() ->
+    [[nsm_db:put(#subs{who=Who, whom=Whom}) || #subscription{who=Who, whom=Whom} <- Subs] 
+    || #subscription{who=_, whom=Subs} <- nsm_db:all(subscription)].
 
 %% mebership purchases
 

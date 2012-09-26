@@ -651,7 +651,7 @@ get_friends(User) ->
     ],
     [
         "<span id='guidersfriends'>",
-        get_metalist(User, ?_T("FRIENDS"), nsm_users, list_subscription_users, Msg, Nav),
+        get_metalist(User, ?_T("FRIENDS"), nsm_users, list_subscr_for_metalist, Msg, Nav),
         "</span>"
     ].
 
@@ -675,7 +675,7 @@ get_metalist(Id, Title, Module, List, EmptyMsg, Nav) ->
                                 true ->
                                     RealName = Name ++ [" "] ++ LastName
                             end;
-                        _Else -> RealName = ?_T("Unknown User")
+                        Name_Surname -> RealName = Name_Surname
                     end,
                     #listitem{body=[
                         #image{image=get_user_avatar(Who), style="width:32px,height:33px"},
@@ -1049,8 +1049,8 @@ statistics_block(Info) ->
     try % this fails if user reloads page fast enough after deleting an entry
         EntriesCount = rpc:call(?APPSERVER_NODE, feed, get_entries_count, [Info#user.username]),
         CommentsCount = rpc:call(?APPSERVER_NODE, feed, get_comments_count, [Info#user.username]),
-        Subscriptions = rpc:call(?APPSERVER_NODE, nsm_db, list_subscriptions, [Info#user.username]),
-        Subscribers = rpc:call(?APPSERVER_NODE, nsm_db, list_subscription_me, [Info#user.username]),
+        Subscriptions = rpc:call(?APPSERVER_NODE, nsm_users, list_subscr, [Info#user.username]),
+        Subscribers = rpc:call(?APPSERVER_NODE, nsm_users, list_subscr_me, [Info#user.username]),
         LikesCount = rpc:call(?APPSERVER_NODE, feed, get_user_likes_count, [Info#user.username]),
 
         #panel{class="box statistics-box-text", body=[

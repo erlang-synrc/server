@@ -7,18 +7,15 @@
 -include_lib("nsm_db/include/common.hrl").
 -include_lib("alog/include/alog.hrl").
 
--export([subscribe_user/2,
-         remove_subscribe/2,
-         list_subscription_users/1,
-         list_subscription/1,
-         list_subscription_me/1,
-         list_subscription/2,
-         list_subscription/3,
-         get_subscription_count/1,
+-export([
          subscr_user/2,
          unsubscr_user/2,
          list_subscr/1,
+         list_subscr/3,
          list_subscr_me/1,
+         list_subscr_for_metalist/1,
+         is_user_subscr/2,
+
          search_user/1,
          get_user/1,
          update_after_login/1,
@@ -39,7 +36,6 @@
          unblock_user/2,
          get_blocked_users/1,
          get_blocked_users_feed_id/1,
-         is_user_subscribed/2,
          is_user_blocked/2,
          update_user/1,
 
@@ -173,8 +169,8 @@ register(#user{username=U, email=Email, facebook_id=FBId} = RegisterData0) ->
             %% init message queues infrastructure
             init_mq(U, ["kakaranet", "yeniler"]),
 
-			nsm_groups:add_to_group(U, "kakaranet", member),
-			nsm_groups:add_to_group(U, "yeniler", member),
+            nsx_util_notification:notify(["subscription", "user", U, "add_to_group"], {"kakaranet", member}),
+            nsx_util_notification:notify(["subscription", "user", U, "add_to_group"], {"yeniler", member}),
 
             login_posthook(U),
 
@@ -201,10 +197,10 @@ delete_user(UserName) ->
 	   G2R = [ {UId, GId} || #group_member{who = UId, group = GId} <- G],
 	   [ nsm_nsm_groups:remove_from_group(UId, GId) || {UId, GId} <- G2R],
 	   %% remove from subcribtions
-	   S = list_subscription(User),
+	   S = list_subscr(User),
 	   F2U = [ {MeId, FrId} || #subscription{who = MeId, whom = FrId} <- S ],
-	   [ remove_subscribe(MeId, FrId) || {MeId, FrId} <- F2U ],
-	   [ remove_subscribe(FrId, MeId) || {MeId, FrId} <- F2U ],
+	   [ unsubscr_user(MeId, FrId) || {MeId, FrId} <- F2U ],
+	   [ unsubscr_user(FrId, MeId) || {MeId, FrId} <- F2U ],
 	   %% remove save_game_table
 	   nsm_db:delete(save_game_table, UserName),
 	   nsm_db:delete(user_counter, UserName),
@@ -233,6 +229,7 @@ get_all_users() ->
     nsm_db:all(user).
 
 
+
 subscr_user(Who, Whom) ->
     case is_user_blocked(Who, Whom) of
         false ->
@@ -243,7 +240,7 @@ subscr_user(Who, Whom) ->
     end.
 
 unsubscr_user(Who, Whom) ->
-    case is_user_subscribed(Who, Whom) of
+    case is_user_subscr(Who, Whom) of
         true ->
             ok = nsm_db:delete(subs, {Who, Whom}),
             remove_subscription_mq(user, Who, Whom);
@@ -254,60 +251,37 @@ unsubscr_user(Who, Whom) ->
 list_subscr(#user{username = UId}) ->
     list_subscr(UId);
 list_subscr(UId) when is_list(UId) ->
-    nsm_db:all_by_index(subs, <<"subs_who_bin">>, list_to_binary(UId)).
+    lists:sort( nsm_db:all_by_index(subs, <<"subs_who_bin">>, list_to_binary(UId)) ).
+list_subscr(UId, PageNumber, PageAmount) when is_list(UId) -> 
+    Offset = case (PageNumber-1)*PageAmount of
+        I when is_integer(I), I>0 -> I+1;
+        _ -> 1
+	 end,
+	lists:sublist(list_subscr(UId), Offset, PageAmount).
+list_subscr_for_metalist(UId) ->
+    [
+        begin
+            {ok, UserInfo} = get_user(UserId),
+            RealName = if
+                UserInfo#user.surname == undefined, UserInfo#user.name == undefined -> UserId;
+                UserInfo#user.surname == undefined -> UserInfo#user.name;
+                UserInfo#user.name == undefined -> UserInfo#user.surname;
+                true -> UserInfo#user.name ++ " " ++ UserInfo#user.surname
+            end,
+            {UserId, RealName}
+        end
+    || {subs, _, UserId} <- list_subscr(UId)].
 
 list_subscr_me(#user{username = UId}) ->
     list_subscr_me(UId);
 list_subscr_me(UId) when is_list(UId) ->
-    nsm_db:all_by_index(subs, <<"subs_whom_bin">>, list_to_binary(UId)).
+    lists:sort( nsm_db:all_by_index(subs, <<"subs_whom_bin">>, list_to_binary(UId)) ).
+
+is_user_subscr(Who, Whom) ->
+    lists:member({subs, Who, Whom}, list_subscr(Who)).
 
 
-subscribe_user(MeId, FrId) ->
-    case is_user_blocked(MeId, FrId) of
-        false ->
-            nsm_db:subscribe_user(MeId, FrId),
-            nsx_util_notification:notify_user_subscribe(MeId, FrId),
-            subscribe_user_mq(user, MeId, FrId);
-        true ->
-            do_nothing
-    end.
 
-remove_subscribe(MeId, FrId) ->
-    case is_user_subscribed(MeId, FrId) of
-        true ->
-            nsm_db:remove_subscription(MeId, FrId),
-            nsx_util_notification:notify_user_unsubscribe(MeId, FrId),
-            remove_subscription_mq(user, MeId, FrId);
-        false ->
-            do_nothing
-    end.
-
-list_subscription(#user{username = UId}) ->
-    list_subscription(UId);
-list_subscription(UId) when is_list(UId) -> nsm_db:list_subscriptions(UId).
-list_subscription_me(UId) -> nsm_db:list_subscription_me(UId).
-
-list_subscription(_UId, _Limit) -> ok.
-
-list_subscription(#user{username = UId}, PageNumber, PageAmount) -> list_subscription(UId, PageNumber, PageAmount);
-list_subscription(UId, PageNumber, PageAmount) when is_list(UId) ->
-	All = nsm_db:list_subscriptions(UId),
-	Offset = case (PageNumber-1)*PageAmount of
-				 I when is_integer(I), I>0 -> I+1
-				 ;_                        -> 1
-			 end,
-
-	lists:sublist(All, Offset, PageAmount).
-
-%PHASE1 to fix paging bug. Actually this shoud come together with list_subscription, but for now it is ok to get this thing separated
-get_subscription_count(UId) ->
-	All = nsm_db:list_subscriptions(UId),
-    length(All).
-
-
-list_subscription_users(#user{username = UId}) -> list_subscription_users(UId);
-list_subscription_users(Uid) ->
-    [ {Who,WhoName} || #subscription{whom = Who, whom_name = WhoName} <- list_subscription(Uid) ].
 
 update_after_login(User) -> %RPC to cleanup
     Update =
@@ -403,7 +377,7 @@ set_user_game_status(User, Status) -> nsm_db:put(#user_game_status{user=User, st
 
 block_user(Who, Whom) ->
     ?INFO("~w:block_user/2 Who=~9999p Whom=~9999p", [?MODULE, Who, Whom]),
-    remove_subscription_mq_if_subscribed(Who, Whom),
+    unsubscr_user(Who, Whom),
     nsm_db:block_user(Who, Whom),
     nsx_util_notification:notify_user_block(Who, Whom).
 
@@ -411,14 +385,6 @@ unblock_user(Who, Whom) ->
     ?INFO("~w:unblock_user/2 Who=~9999p Whom=~9999p", [?MODULE, Who, Whom]),
     nsm_db:unblock_user(Who, Whom),
     nsx_util_notification:notify_user_unblock(Who, Whom).
-
-remove_subscription_mq_if_subscribed(Who, Whom) ->
-    case is_user_subscribed(Who, Whom) of
-        true ->
-            remove_subscribe(Who, Whom);
-        false ->
-            do_nothing
-    end.
 
 get_blocked_users(UserId) ->
     nsm_db:list_blocks(UserId).
@@ -428,8 +394,6 @@ get_blocked_users_feed_id(UserId) ->
     Users = nsm_db:select(user, fun(#user{username=U})-> lists:member(U, UsersId) end),
     {UsersId, [Fid || #user{feed=Fid} <- Users]}.
 
-is_user_subscribed(Who, Whom) ->
-    nsm_db:is_user_subscribed(Who,Whom).
 
 is_user_blocked(Who, Whom) ->
     nsm_db:is_user_blocked(Who,Whom).

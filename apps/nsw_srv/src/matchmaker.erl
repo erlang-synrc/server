@@ -76,7 +76,7 @@ body() ->
 	    end,
 	    UId = webutils:user_info(username), 
 	    wf:state(user_in_groups, rpc:call(?APPSERVER_NODE,nsm_groups,list_group_per_user,[UId])),
-	    wf:state(users_subscribe, rpc:call(?APPSERVER_NODE,nsm_users,list_subscription,[UId])), 
+	    wf:state(users_subscribe, rpc:call(?APPSERVER_NODE,nsm_users,list_subscr,[UId])), 
 	    main_authorized();
 	{redirect, login} ->
 	    wf:redirect_to_login("/");
@@ -907,7 +907,7 @@ tab_friend_setting() ->
     end,
     Users = wf:state(users_subscribe),
     View = [ #listitem{body=construct_id(#link{text=Name, postback={tag,{users, Name}}})}
-	     || #subscription{whom = Name} <- Users ],
+	     || #subs{whom = Name} <- Users ],
     #panel{class="create-game-friends-box",
 	   body=[#textbox{id=friends_filter_name,
 			  actions=js_options_filter(friends_list),
