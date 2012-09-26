@@ -383,9 +383,9 @@ all_in_home(Board,Color,PlayerColor) ->
 %                              ?INFO("AIH: ~p",[{A,Acc}]),
                               case A of
                                    {null,_No} -> Acc;
-                                   {{C,_Count},No} -> NotInHome = case PlayerColor of
-                                                           1 -> No < 19;
-                                                           2 -> No > 6 end,
+                                   {{C,_Count},No} -> NotInHome = ((No < 19) or (No > 24)), % NotInHome = case PlayerColor of
+                                                               % 1 -> No < 19;
+                                                               % 2 -> No > 6 end,
                                        case {C, NotInHome} of
                                             {PlayerColor,true} -> Acc + 1;
                                             _ -> Acc
