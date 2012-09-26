@@ -166,8 +166,8 @@ section_body(profile) ->
 				       ]}
     ];
 section_body(gifts) ->
-	"<div class='for_blocking'>
-        <h1><a href=\"#\" class=\"link\">Tüm Hediyeler</a>Hediyeler</h1>
+%	"<div class='for_blocking'>
+        "<h1><a href=\"#\" class=\"link\">Tüm Hediyeler</a>Hediyeler</h1>
 	    <div class=\"inform-block\">
 		    <dl>
 			    <dt>Hediye Puanınız:</dt>
@@ -254,7 +254,8 @@ section_body(user_tournaments) ->
     end,
 
     [
-        #panel{class="for_blocking", style="overflow:hidden;", body=[
+        #panel{%class="for_blocking", 
+               style="overflow:hidden;", body=[
             "<h1>", #link{class=link, text=?_T("Tournaments")},"</h1>",
             #panel{class="inform-block", body=[
                 "<dl>
@@ -469,7 +470,7 @@ section_body(tournament) ->
 
     ColR = [  ],
     [
-    "<div class='for_blocking'>",
+%    "<div class='for_blocking'>",
      #h1{text=?_T("Create Tournament")},
      #panel{id=create_tour_info},
      #panel{class="profile-info", body=[#panel{class="col-l",body=["<form>", ColL, "</form>"]},

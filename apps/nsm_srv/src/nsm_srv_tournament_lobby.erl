@@ -76,8 +76,10 @@ messages_callback(Envelope, Server) ->
 	gen_server:cast(Server, {messages_callback, Envelope}).
 
 active_users(TID) ->
-	Server = tid_to_atom(TID),
-	gen_server:call(Server, active_users).
+	Server = tid_to_atom(TID), 
+        
+	%gen_server:call(Server, active_users).
+        [].
 
 chat_history(TID) ->
 	Server = tid_to_atom(TID),
@@ -90,20 +92,21 @@ chat_history(TID) ->
 
 %% TID - tournament id
 init([TID]) ->
-    {H,M,S} = time(),
-    Tour = tournaments:get(TID),
-    {TH,TM,TS} = Tour#tournament.start_time,
+%    {H,M,S} = time(),
+%    Tour = nsm_tournaments:get(TID),
+     Tour = #tournament{},
+%    {TH,TM,TS} = Tour#tournament.start_time,
     Server = self(),
 
     %% start heartbeat timer
-    timer:apply_interval(?HEARTBEAT_INTERVAL, ?MODULE, heartbeat, [Server]),
-    timer:apply_after(timer:hms(H,M+1,S) - timer:hms(H,M,S), ?MODULE, check_tournament_time, [Server]),
+%    timer:apply_interval(?HEARTBEAT_INTERVAL, ?MODULE, heartbeat, [Server]),
+%    timer:apply_after(timer:hms(H,M+1,S) - timer:hms(H,M,S), ?MODULE, check_tournament_time, [Server]),
 
     %% subscribe to heartbeat replies
-    nsx_util_notification:subscribe_tournament_lobby(TID, {?MODULE, messages_callback}, Server),
+%    nsx_util_notification:subscribe_tournament_lobby(TID, {?MODULE, messages_callback}, Server),
 
     %% make heartbeat request
-    ?MODULE:heartbeat(Server),
+%    ?MODULE:heartbeat(Server),
     ?INFO("~w: started", [Server]),
 
     {ok, #state{tournament_id = TID,
@@ -161,14 +164,14 @@ start_tournament(TID, ListUsers) ->
 
 %    nsm_db:put(Tour#tournament{teams = Teams}),
 
-    nsx_util_notification:notify_tournament_start_game(TID,ListUsers,{"DATA"}),
+%    nsx_util_notification:notify_tournament_start_game(TID,ListUsers,{"DATA"}),
     ok.
 
 handle_cast(start_tournament, State) ->
     Tour = State#state.tournament,
     List = dict:to_list(State#state.active_users),
     ListUsers = [ "kunthar","maxim","alice","kate"], %User#user.username || {_,User} <- List],
-    start_tournament(Tour#tournament.id,ListUsers),
+%    start_tournament(Tour#tournament.id,ListUsers),
     {noreply, State};
 
 handle_cast(heartbeat, State) ->
