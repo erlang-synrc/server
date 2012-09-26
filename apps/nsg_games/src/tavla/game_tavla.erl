@@ -37,7 +37,7 @@
           wait_list             :: list(pid()),
           stats			:: pid(),
           relay                 :: pid(),
-          vido                  :: integer(),
+          vido = 1              :: integer(),
           game_mode = undefined :: atom(),
           table_id = 1          :: integer(),
           tables_num = 1        :: integer(),

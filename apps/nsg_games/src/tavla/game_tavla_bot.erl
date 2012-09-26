@@ -503,27 +503,14 @@ first_available_move(RealBoard,XY,Color,TableId,PlayerColor) ->
                                 case No + H + 1 >= 25 of
                                      true  -> ?INFO("found finish move: ~p",[No]),
                                               {List ++ [{No,27}],T,1,follow_board(B,No,27,PlayerColor)};
-                                     false -> 
-
-                                case No + H + 1 < 25 of
-                                     true  -> case lists:nth(No+H+1,B) of
-                                                   null      -> ?INFO("found race to empty: ~p",[No]),
-                                                                {List ++ [{No,No+H}], T,1,follow_board(B,No,No+H,PlayerColor)};
-                                                   {Color,_} -> ?INFO("found race over own: ~p",[No]),
-                                                                {List ++ [{No,No+H}], T,1,follow_board(B,No,No+H,PlayerColor)};
-                                                   {OppositePlayerColor,1}     -> ?INFO("found race kick: ~p",[No]),
-                                                                {List ++ [{No,No+H}], T,1,follow_board(B,No,No+H,PlayerColor)};
-                                                           _ -> Acc2
-                                              end;
                                      false -> Acc2
-                                end
 
                                 end;
                            _ -> Acc2
                       end;
                  _ -> Acc2
              end end
-        end, {[], XY, 0, RelativeBoard}, lists:zip(RelativeBoard,lists:seq(0,27))),
+        end, {[], XY, 0, RelativeBoard}, lists:sublist(lists:zip(RelativeBoard,lists:seq(0,27)),2,24)     ),
     ?INFO("moves found: ~p",[{List,Dices}]),
 
     BackRealBoard = case Color of
