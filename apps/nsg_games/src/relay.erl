@@ -13,7 +13,7 @@
 -include_lib("stdlib/include/qlc.hrl").
 
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
--export([do_rematch/2, signal/2, publish/2, submit/2, republish/2, notify_table/2, game/1, to_session/3,
+-export([do_rematch/2, signal/2, publish/2, submit/2, republish/2, resubmit/3, notify_table/2, game/1, to_session/3,
          subscribe/2, subscribe/3, unsubscribe/2, get_requirements/2, start_link/5, stop/1, get_topic/1,
          get_player_state/2, get_table_info/1, update_gamestate/2, can_observe/2, unreg/2, im_ready/1]).
 
@@ -42,9 +42,10 @@
 -define(DISCONNECT_TIMEOUT, (60*1000)). % 1 Min
 
 publish(Srv, Msg) -> gen_server:cast(Srv, {publish, Msg}).
-republish(Srv, Msg) -> gen_server:cast(Srv, {republish, Msg}).
+republish(Srv, Msg) -> gen_server:cast(Srv, {republish, Msg}). %% Used by parent relay
 notify_table(Srv, Msg) -> gen_server:cast(Srv, {notify_table, Msg}).
 submit(Srv, Msg) -> gen_server:call(Srv, {submit, Msg}).
+resubmit(Srv, From, Msg) -> gen_server:cast(Srv, {resubmit, From, Msg}). %% Used by parent relay
 signal(Srv, Msg) -> gen_server:cast(Srv, {signal, Msg}).
 to_session(Srv, Session, Msg) -> gen_server:cast(Srv, {to_session, Session, Msg}).
 unreg(Srv, Key) -> gen_server:call(Srv, {unreg, Key}).
@@ -143,10 +144,25 @@ init([Topic, {lobby, GameFSM}, Params0, PlayerIds, Manager]) ->
 handle_call({submit, _Msg}, _From, #state{rules_module = chat} = State) ->
     {reply, {error, chat_has_no_game_fsm_module__cant_submit}, State};
 
-handle_call({submit, Msg}, {From, _}, #state{rules_pid = Pid, rules_module = GameFSM} = State) ->
-    ?INFO("SUBMIT: ~p",[{Pid,From,Msg}]),
-    Res = GameFSM:make_move(Pid, From, Msg),
-    {reply, Res, State};
+handle_call({submit, Msg}, {FromPid, _}=From, #state{parent_relay = {PMod, PPid},
+                                                     players = Players} = State) ->
+    ?INFO("SUBMIT: ~p",[{FromPid,Msg}]),
+    case lists:keyfind(FromPid, #player.pid, Players) of
+        #player{id = PlayerId} ->
+            if PPid == self() ->
+                   resubmit0(Msg, From, State);
+               true ->
+                   PMod:submit(PPid, Msg, From, PlayerId)
+            end,
+            {noreply, State};
+        false ->
+            {reply, {error, unknown_sender}, State}
+    end;
+
+%% handle_call({submit, Msg}, {FromPid, _}=From, #state{rules_pid = Pid, rules_module = GameFSM} = State) ->
+%%     ?INFO("SUBMIT: ~p",[{Pid,FromPid,Msg}]),
+%%     Res = GameFSM:make_move(Pid, FromPid, Msg),
+%%     {reply, Res, State};
 
 handle_call({do_rematch, _}, _From, State = #state{gamestate = lobby}) ->
     {reply, {error, cannot_rematch_in_lobby}, State};
@@ -223,8 +239,16 @@ handle_cast({publish, Msg}, State) ->
     publish0(Msg, State),
     {noreply, State};
 
+handle_cast({republish, #game_event{game = undefined} = Msg0}, State) ->
+    Msg = Msg0#game_event{game = State#state.topic},
+    handle_cast({republish, Msg}, State);
+
 handle_cast({republish, Msg}, State) ->
     republish0(Msg, State),
+    {noreply, State};
+
+handle_cast({resubmit, From, Msg}, State) ->
+    resubmit0(Msg, From, State),
     {noreply, State};
 
 handle_cast({notify_table, start}, State) ->
@@ -389,42 +413,26 @@ unsubscribe1(Pid, #state{gamestate = Gamestate,
             State
     end.
 
-publish0(Msg, #state{subs = Subs,
-                     parent_relay = ParentRelay
-                    }) ->
-    F = fun(#subscriber{pid = Pid}, Acc) ->
-                gen_server:cast(Pid, Msg),
-                Acc + 1
-        end,
-    process_flag(priority, high),
-    _C = ets:foldr(F, 0, Subs),
+resubmit0(Msg, {FromPid, _}=From, #state{rules_pid = Pid, rules_module = GameFSM}) ->
+    Res = GameFSM:make_move(Pid, FromPid, Msg),
+    gen_server:reply(From, Res),
+    ok.
 
+publish0(Msg, #state{parent_relay = ParentRelay} = State) ->
     Self = self(),
     case ParentRelay of
-        {_, Self} -> do_nothing;
+        {_, Self} -> republish0(Msg, State);
         {ParentModule, ParentPid} -> ParentModule:publish(ParentPid, Msg)
     end,
-    process_flag(priority, normal),
     ok.
 
 republish0(Msg, #state{subs = Subs}) ->
+%%    [gen_server:cast(Pid, Msg)|| #subscriber{pid = Pid} <- Subs].
     F = fun(#subscriber{pid = Pid}, Acc) ->
                 gen_server:cast(Pid, Msg),
                 Acc + 1
         end,
-    process_flag(priority, high),
     _C = ets:foldr(F, 0, Subs),
-    process_flag(priority, normal),
-    ok.
-
-notify_tables(Msg, #state{parent_relay = ParentRelay
-                         }) ->
-    Self = self(),
-    case ParentRelay of
-        {_, Self} -> do_nothing;
-        {ParentModule, ParentPid} ->
-            ParentModule:notify_tables(ParentPid, Msg)
-    end,
     ok.
 
 no_of_subscribers(State) ->
