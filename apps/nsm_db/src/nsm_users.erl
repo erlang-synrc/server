@@ -535,6 +535,13 @@ build_user_relations(User, Groups) ->
      rk( [login, user, User, update_after_login]),
      rk( [likes, user, User, add_like]),
 
+     rk( [subscription, user, User, subscribe_user]),
+     rk( [subscription, user, User, remove_subscribe]),
+     rk( [subscription, user, User, set_user_game_status]),
+     rk( [subscription, user, User, update_user]),
+     rk( [subscription, user, User, block_user]),
+     rk( [subscription, user, User, unblock_user]),
+
      rk( [affiliates, user, User, create_affiliate]),
      rk( [affiliates, user, User, delete_affiliate]),
      rk( [affiliates, user, User, enable_to_look_details]),
