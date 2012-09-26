@@ -11,7 +11,7 @@ start(_StartType, _StartArgs) ->
 %    nsm_db:start(),
 %    nsm_db:initialize(),
     A = nsm_srv_sup:start_link(),
-%    [ nsm_srv_tournament_lobby_sup:start_lobby(Tour#tournament.id) || Tour <- tournaments:all() ],
+%    [ nsm_srv_tournament_lobby_sup:start_lobby(Tour#tournament.id) || Tour <- nsm_tournaments:all() ],
     A.
 
 stop(_State) ->
