@@ -277,7 +277,7 @@ tavla_roll(Pid,State) ->
 tavla_move(Moves, Player, _Pid, #state{game_mode = Mode, table_id = TabId} = State) ->
     TableId = State#state.table_id,
     Relay = State#state.relay,
-%    ?INFO("tavla_move{} received from client ~p",[{Moves,Player}]),
+    ?INFO("tavla_move{} received from client ~p",[{Moves,Player}]),
     TP1 = lists:nth(1,State#state.players),
     TP2 = lists:nth(2,State#state.players),
     P1 = TP1#'TavlaPlayer'.player_id,
@@ -317,6 +317,7 @@ check_can_roll(Mode, TableId) ->
     Mode==paired andalso TableId=/=1 andalso ?PAIRED_TAVLA_ASYNC == false.
 
 check_game_ended(P1Collected, P2Collected, P1, P2, Relay, Player,State) ->
+    ?INFO("GAME_TAVLA check_game_ending P1Collected: ~p P2Collected: ~p", [P1Collected, P2Collected]),
     TableId = State#state.table_id,
     Vido = State#state.vido,
     {Message,Results} = case P1Collected of
@@ -383,8 +384,9 @@ tavla_surrender_answer(From,To,A, _Pid, State) ->
     Relay = State#state.relay,
     TableId = State#state.table_id,
     Vido = State#state.vido,
+    publish_event(Relay, #tavla_ack{table_id = TableId, type=surrender,from=From,to=To,answer=A}),
     case A of
-       false -> publish_event(Relay, #tavla_ack{table_id = TableId, type=surrender,from=From,to=To,answer=A}),
+       false -> %%publish_event(Relay, #tavla_ack{table_id = TableId, type=surrender,from=From,to=To,answer=A}),
                {reply, ok, state_rolls, State};
        true ->  Results = #'TavlaGameResults'{
                    players = [#'TavlaPlayerScore'{player_id = From, score = 2 * Vido, winner = <<"true">>}, 
@@ -457,9 +459,12 @@ state_ready_next_round({#tavla_ready{}, _Pid}, _, State) ->
             Pids = [P#'TavlaPlayer'.pid || P <- State#state.players],
             {reply, ok, state_start_rolls, State#state{ready = 0, b_rolls = [], c_rolls = [], wait_list = Pids}};
        0 -> {reply, ok, state_ready_next_round, State#state{ready = State#state.ready + 1}}
-    end.
+    end;
 
-state_finished({#tavla_game_ended{}, _Pid}, _, State ) ->
+state_ready_next_round({_Action, _Pid}, _, State) ->
+    {reply, ok, state_ready_next_round, State}.
+
+state_finished({#tavla_game_ended{}, _Pid}, _, State) ->
     {reply, ok, state_finished, State};
 
 state_finished({#tavla_ready{}, _Pid}, _, State) ->
