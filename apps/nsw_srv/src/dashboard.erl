@@ -387,8 +387,9 @@ inner_event({add_entry, _}, User) ->
 
             post_entry(DashboardOwner, Desc, Medias),
 
-            rpc:call(?APPSERVER_NODE, feed, count_entry_in_statistics, [wf:user()]),
-    
+            %rpc:call(?APPSERVER_NODE, feed, count_entry_in_statistics, [wf:user()]),
+            nsx_util_notification:notify(["feed", "user", wf:user(), "count_entry_in_statistics"], {}),  
+
             wf:session(autocomplete_list_values, []),
             wf:update(text_length, ""),
             wf:wire("upd_scrollers(); remove_all_tos();"),
@@ -415,7 +416,8 @@ inner_event({comment_entry, EntryTrueId, _CommentsPanelId, SourceElementId, _Vie
                 Other -> lists:reverse(Other)
             end,
             wf:state(MSI, []),
-            rpc:call(?APPSERVER_NODE, feed, count_comment_in_statistics, [wf:user()]),
+            %rpc:call(?APPSERVER_NODE, feed, count_comment_in_statistics, [wf:user()]),
+            nsx_util_notification:notify(["feed", "user", wf:user(), "count_comment_in_statistics"], {}),  
             nsx_util_notification:notify([feed, OwnerType, DashboardOwner, comment, utils:uuid_ex(), add],
                 [User, EntryTrueId, undefined, Value, Medias])
     end;

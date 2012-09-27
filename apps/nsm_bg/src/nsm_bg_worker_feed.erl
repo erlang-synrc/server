@@ -207,10 +207,11 @@ handle_notice(["feed", _Type, _EntryOwner, "comment", CommentId, "add"] = Route,
     {noreply, State};
 
 
-% score statistics
-handle_notice(["feed", "user", UId, "scores", _Null, "add"] = _Route,
-              Message,
-              #state{owner = Owner} = State) ->
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% statistics
+
+handle_notice(["feed", "user", UId, "scores", _Null, "add"] = Route,
+    Message, #state{owner = Owner, type =Type} = State) ->
+    ?INFO("queue_action(~p): score statistics put: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),
     case UId == Owner of 
         true ->
             scoring:add_score(UId, hd(Message), perm);
@@ -219,7 +220,41 @@ handle_notice(["feed", "user", UId, "scores", _Null, "add"] = _Route,
     end,
     {noreply, State};
 
-% nsm calls
+handle_notice(["feed", "user", UId, "count_entry_in_statistics"] = Route, 
+    Message, #state{owner = Owner, type =Type} = State) ->
+    ?INFO("queue_action(~p): count_entry_in_statistics: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),
+    case nsm_db:get(user_etries_count, UId) of
+        {ok, UEC} -> 
+            nsm_db:put(UEC#user_etries_count{
+                entries = UEC#user_etries_count.entries+1
+            });
+        {error, notfound} ->
+            nsm_db:put(#user_etries_count{
+                user_id = UId,
+                entries = 1
+            })
+    end,
+    {noreply, State};
+
+handle_notice(["feed", "user", UId, "count_comment_in_statistics"] = Route, 
+    Message, #state{owner = Owner, type =Type} = State) ->
+    ?INFO("queue_action(~p): count_comment_in_statistics: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),
+    case nsm_db:get(user_etries_count, UId) of
+        {ok, UEC} -> 
+            nsm_db:put(UEC#user_etries_count{
+                comments = UEC#user_etries_count.comments+1
+            });
+        {error, notfound} ->
+            nsm_db:put(#user_etries_count{
+                user_id = UId,
+                comments = 1
+            })
+    end,
+    {noreply, State};
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% nsm calls
+
 handle_notice(["db", "group", Owner, "put"] = Route, 
     Message, #state{owner = Owner, type =Type} = State) ->
     ?INFO("queue_action(~p): group put: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),
@@ -480,25 +515,69 @@ handle_notice(["subscription", "user", UId, "set_user_game_status"] = Route,
     nsm_users:set_user_game_status(UId, Status),
     {noreply, State};
 
-handle_notice(["subscription", "user", UId, "update_user"] = Route,
+handle_notice(["subscription", "user", NewUser, "update_user"] = Route,
     Message, #state{owner = Owner, type =Type} = State) ->
     ?INFO(" queue_action(~p): update_user: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),
     {NewUser} = Message,
     nsm_users:update_user(NewUser),
     {noreply, State};
 
-handle_notice(["subscription", "user", UId, "block_user"] = Route,
+handle_notice(["subscription", "user", Who, "block_user"] = Route,
     Message, #state{owner = Owner, type =Type} = State) ->
     ?INFO(" queue_action(~p): block_user: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),
     {Whom} = Message,
-    nsm_users:block_user(UId, Whom),
+    nsm_users:unsubscr_user(Who, Whom),
+    case nsm_db:get(user_ignores, Who) of
+        {error, notfound} ->
+            nsm_db:put(#user_ignores{who = Who, whom = [Whom]});
+        {ok, #user_ignores{whom = List}} ->
+            case lists:member(Whom, List) of
+                false ->
+                    NewList = [Whom | List],
+                    nsm_db:put(#user_ignores{who = Who, whom = NewList});
+                true ->
+                    do_nothing
+            end
+    end,
+    case nsm_db:get(user_ignores_rev, Whom) of
+        {error,notfound} ->
+            nsx_util_notification:notify(["db", "user", Whom, "put"], #user_ignores_rev{whom=Whom, who=[Who]});
+            %nsm_db:put(#user_ignores_rev{whom=Whom, who=[Who]});
+        {ok,#user_ignores_rev{who=RevList}} ->
+            case lists:member(Who, RevList) of
+                false ->
+                    NewRevList = [Who | RevList],
+                    %nsm_db:put(#user_ignores_rev{whom=Whom, who=NewRevList});
+                    nsx_util_notification:notify(["db", "user", Whom, "put"], #user_ignores_rev{whom=Whom, who=NewRevList});
+                true ->
+                    do_nothing
+            end
+    end,
+    nsx_util_notification:notify_user_block(Who, Whom),
     {noreply, State};
 
-handle_notice(["subscription", "user", UId, "unblock_user"] = Route,
+handle_notice(["subscription", "user", Who, "unblock_user"] = Route,
     Message, #state{owner = Owner, type =Type} = State) ->
     ?INFO(" queue_action(~p): unblock_user: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),
     {Whom} = Message,
-    nsm_users:unblock_user(UId, Whom),
+    List = nsm_db:list_blocks(Who),
+    case lists:member(Whom, List) of
+        true ->
+            NewList = [ UID || UID <- List, UID =/= Whom ],
+            nsm_db:put(#user_ignores{who = Who, whom = NewList});
+        false ->
+            do_nothing
+    end,
+    List2 = nsm_db:list_blocked_me(Whom),
+    case lists:member(Who, List2) of
+        true ->
+            NewRevList = [ UID || UID <- List2, UID =/= Who ],
+            %nsm_db:put(#user_ignores_rev{whom = Whom, who = NewRevList});
+            nsx_util_notification:notify(["db", "user", Whom, "put"], #user_ignores_rev{whom = Whom, who = NewRevList});
+        false ->
+            do_nothing
+    end,
+    nsx_util_notification:notify_user_unblock(Who, Whom),
     {noreply, State};
 
 
@@ -540,7 +619,7 @@ handle_notice(["invite", "user", UId, "add_invite_to_issuer"] = Route,
 
 handle_notice(["likes", "user", UId, "add_like"] = Route,
     Message, #state{owner = Owner, type =Type} = State) ->
-    ?INFO("queue_action(~p): create_contract: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),
+    ?INFO("queue_action(~p): add_like: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),
     {Fid, Eid} = Message,
     feed:add_like(Fid, Eid, UId),
     {noreply, State};

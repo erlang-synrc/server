@@ -499,6 +499,9 @@ build_user_relations(User, Groups) ->
      rk( [login, user, User, update_after_login]),
      rk( [likes, user, User, add_like]),
 
+     rk( [feed, user, User, count_entry_in_statistics] ),
+     rk( [feed, user, User, count_comment_in_statistics] ),
+
      rk( [subscription, user, User, subscribe_user]),
      rk( [subscription, user, User, remove_subscribe]),
      rk( [subscription, user, User, set_user_game_status]),
