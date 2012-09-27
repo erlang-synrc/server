@@ -4,6 +4,7 @@
 -include("config.hrl").
 -include("accounts.hrl").
 -include_lib("nsm_mq/include/nsm_mq.hrl").
+-include_lib("nsm_db/include/common.hrl").
 -include_lib("alog/include/alog.hrl").
 
 -export([subscribe_user/2,
@@ -41,6 +42,11 @@
          is_user_subscribed/2,
          is_user_blocked/2,
          update_user/1,
+
+         buy_gift/2,
+         can_buy_gift/2,
+         list_gifts_of/1,
+
          login_posthook/1,
          init_mq/2, subscribe_user_mq/3, remove_subscription_mq/3,
          init_mq_for_group/1,
@@ -414,7 +420,6 @@ remove_subscription_mq_if_subscribed(Who, Whom) ->
             do_nothing
     end.
 
-
 get_blocked_users(UserId) ->
     nsm_db:list_blocks(UserId).
 
@@ -439,6 +444,25 @@ update_user(#user{username=UId,name=Name,surname=Surname} = NewUser) ->
         true -> ok;
         false -> nsm_db:update_user_name(UId,Name,Surname)
     end.
+
+
+% gifts
+can_buy_gift(UId, GiftId) ->
+    {ok, Kakush} = nsm_accounts:balance(UId, ?CURRENCY_KAKUSH),
+    {ok, {ThisGift, _}} = nsm_gifts_db:get_gift(GiftId),
+    KakushPrice = ThisGift#gift.kakush_point,
+    Kakush >= KakushPrice.
+
+buy_gift(UId, GiftId) ->
+    {ok, {ThisGift, _}} = nsm_gifts_db:get_gift(GiftId),
+    KakushPrice = ThisGift#gift.kakush_point,
+    GiftName = ThisGift#gift.gift_name,
+    nsm_accounts:transaction(UId, ?CURRENCY_KAKUSH, -KakushPrice, "Buying gift: "++GiftName++" for "++integer_to_list(KakushPrice)++" kakush."),
+    nsm_db:put(#user_bought_gifts{username=UId, timestamp=now(), gift_id=GiftId}).
+
+list_gifts_of(UId) ->
+    nsm_db:all_by_index(user_bought_gifts, <<"user_bought_gifts_username_bin">>, list_to_binary(UId)).
+
 
 %% This function will be called from nsm_auth, after successfull login.
 login_posthook(User) ->

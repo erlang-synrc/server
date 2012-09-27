@@ -129,11 +129,11 @@ product_list_paged(Page) ->
                     ]},
 					"<div class='img'>",
                     #link{body=#image{image=OneGift#gift.image_small_url, style="width:144px; height:118px;"}, 
-                        postback={show_details, OneGift#gift.description_long, OneGift#gift.image_big_url}},
+                        postback={show_details, OneGift#gift.description_long, OneGift#gift.image_big_url, OneGift#gift.id}},
                     "</div>
 				    <strong class='prod-name' style='padding-bottom:15px; margin-top:-15px;'>",
                     #link{text=decode_letters(OneGift#gift.gift_name), 
-                        postback={show_details, OneGift#gift.description_long, OneGift#gift.image_big_url}},
+                        postback={show_details, OneGift#gift.description_long, OneGift#gift.image_big_url, OneGift#gift.id}},
                     "</strong>",
 				"</div>",
             "</li>"]
@@ -150,7 +150,7 @@ html_tooltip() ->
 	"<img src=\"/images/ico-19.png\" alt=\"\" class=\"corner png\">
     </div>"].
 
-event({show_details, Description, ImageUrl}) ->
+event({show_details, Description, ImageUrl, Id}) ->
     Body = [
         #panel{class=holder, body=[
             "<center>",
@@ -162,7 +162,7 @@ event({show_details, Description, ImageUrl}) ->
                     body="", style="width:272px;"
                 },
                 #tablecell{
-                    body=#cool_button{text="Hediyeyi Al", postback=buy_gift, style="display:block;"}
+                    body=#cool_button{text="Hediyeyi Al", postback={buy_gift, Id}, style="display:block;"}
                 }
             ]},
             #grid_clear{}
@@ -174,8 +174,19 @@ event({show_details, Description, ImageUrl}) ->
 event(hide_details) ->
     wf:wire(simple_lightbox, #hide{});
 
-event(buy_gift) ->
-    wf:wire(#alert{text=?_T("We haven't implemented it yet.")});
+event({buy_gift, Id}) ->
+    case wf:user() of
+        undefined -> wf:redirect_to_login("/");
+        _ ->
+            case rpc:call(?APPSERVER_NODE, nsm_users, can_buy_gift, [wf:user(), Id]) of
+                true ->
+                    rpc:call(?APPSERVER_NODE, nsm_users, buy_gift, [wf:user(), Id]),
+                    wf:wire(#alert{text=?_T("Check it in your profile!")}),
+                    wf:redirect("/gifts");
+                false ->
+                    wf:wire(#alert{text=?_T("Sorry, you don't have enough kakush to buy it yet.")})
+            end
+    end;
 
 event({page, Page}) ->
     wf:update(product_list, product_list_paged(Page));

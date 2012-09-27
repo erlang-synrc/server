@@ -71,6 +71,8 @@ init_db() ->
     C = riak_client(),
     ok = nsm_affiliates:init_db(),
     ok = nsm_gifts_db:init_db(),
+    ok = C:set_bucket(t_to_b(subs), [{backend, leveldb_backend}]),
+    ok = C:set_bucket(t_to_b(user_bought_gifts), [{backend, leveldb_backend}]),
     ?INFO("~w:init_db/0: done", [?MODULE]),
     ok.
 
@@ -138,11 +140,14 @@ t_to_b(T) ->
 %% Create indicies for the record
 make_indices(#subs{who=Who, whom=Whom}) -> [{<<"subs_who_bin">>, list_to_binary(Who)},
                                             {<<"subs_whom_bin">>, list_to_binary(Whom)}];
+
+make_indices(#user_bought_gifts{username=UId}) -> [{<<"user_bought_gifts_username_bin">>, list_to_binary(UId)}];
+
 make_indices(_Record) -> [].
 
 
-
 make_obj(T, subs) -> [Key] = io_lib:format("~p", [{T#subs.who, T#subs.whom}]), riak_object:new(r_to_b(T), list_to_binary(Key), T);
+make_obj(T, user_bought_gifts) -> [Key] = io_lib:format("~p", [{T#user_bought_gifts.username, T#user_bought_gifts.timestamp}]), riak_object:new(r_to_b(T), list_to_binary(Key), T);
 make_obj(T, account) -> [Key] = io_lib:format("~p", [T#account.id]), riak_object:new(<<"account">>, list_to_binary(Key), T);
 make_obj(T, feed) -> riak_object:new(<<"feed">>, list_to_binary(integer_to_list(T#feed.id)), T);
 make_obj(T, user) -> riak_object:new(<<"user">>, list_to_binary(T#user.username), T);
