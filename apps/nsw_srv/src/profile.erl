@@ -7,6 +7,7 @@
 -include_lib("nsm_db/include/accounts.hrl").
 -include_lib("nsm_db/include/scoring.hrl").
 -include_lib("nsm_db/include/membership_packages.hrl").
+-include_lib("nsm_db/include/common.hrl").
 -include_lib("elements/records.hrl").
 
 -include("common.hrl").
@@ -166,49 +167,49 @@ section_body(profile) ->
 				       ]}
     ];
 section_body(gifts) ->
-%	"<div class='for_blocking'>
-        "<h1><a href=\"#\" class=\"link\">Tüm Hediyeler</a>Hediyeler</h1>
-	    <div class=\"inform-block\">
-		    <dl>
-			    <dt>Hediye Puanınız:</dt>
-			    <dd>38.540</dd>
-		    </dl>
-	    </div>
-	    <h2 class=\"ttl\"><span>Puanlarımla Alabileceğim Hediyeler</span></h2>
-	    <ul class=\"prod-list\">
-		    <li>
-			    <div class=\"box\">
-				    <h2 class=\"head\">Puan: 35.000</h2>
-				    <div class=\"img\"><a href=\"#\"><img src=\"/images/img-41.jpg\" alt=\"\" width=\"118\" height=\"140\"></a></div>
-			    </div>
-			    <strong class=\"prod-name\"><a href=\"#\">Samsung Galaxy Gio S5660<br>2 Gb Hafıza Kartı...</a></strong>
-			    <a href=\"#\" class=\"btn\">Hediyeyi Al</a>
-		    </li><li>
-			    <div class=\"box\">
-				    <h2 class=\"head\">Puan: 25.000</h2>
-				    <div class=\"img\"><a href=\"#\"><img src=\"/images/img-45.jpg\" alt=\"\" width=\"148\" height=\"120\"></a></div>
-			    </div>
-			    <strong class=\"prod-name\"><a href=\"#\">Fujifilm AV150 14.0MP<br>2.7\"LCD Dijital Fotoğraf...</a></strong>
-			    <a href=\"#\" class=\"btn\">Hediyeyi Al</a>
-		    </li>
-	    </ul>
-	    <h2 class=\"ttl\"><span>Daha Önce Aldığım Hediyeler</span></h2>
-	    <ul class=\"prod-list\">
-		    <li>
-			    <div class=\"box\">
-				    <div class=\"img\"><a href=\"#\"><img src=\"/images/img-49.jpg\" alt=\"\" width=\"112\" height=\"144\"></a></div>
-			    </div>
-			    <strong class=\"prod-name\"><a href=\"#\">Pierre Cardin Erkek Kol Saati</a></strong>
-		    </li>
-	    </ul>
-    </div>
-    <script>
-        $('div.for_blocking').block({
-            message: '<h1>" ++ ?_T("This feature is not yet available in beta.") ++
-                "</h1><h2>" ++ ?_T("You will see this part very soon.") ++ "</h2>',
-            css: { border: '3px solid #a00' }
-        });
-    </script>";
+    TL = #span{text=" TL", style="font-size:8pt;"},
+    AllGifts = lists:reverse(lists:sort(rpc:call(?APPSERVER_NODE, nsm_users, list_gifts_of, [wf:user()]))),
+    [
+        #h1{text=?_T("Gifts")},
+        #panel{ class="affiliates-box", body=[
+            case AllGifts of
+                [] -> #label{text=?_T("No gifts yet.")};
+                _ ->
+                    #table {rows=[
+                        #tablerow { cells=[
+                            #tableheader { text=?_T("Name"), style="padding:4px 10px;" },
+                            #tableheader { text=?_T("Time"), style="padding:4px 10px;" },
+                            #tableheader { text=?_T("Price"), style="padding:4px 10px;" },
+                            #tableheader { text=?_T("Kakush"), style="padding:4px 10px;" },
+                            #tableheader { text=?_T("Real Price"), style="padding:4px 10px;" }
+                        ]}
+                    ] ++ [
+                        begin
+                            SDate = site_utils:feed_time_tuple(calendar:now_to_local_time(BoughtTime)),
+                            {ok, {ThisGift, _}} = rpc:call(?APPSERVER_NODE, nsm_gifts_db, get_gift, [GiftId]),
+                            SName = ThisGift#gift.gift_name,
+                            SPrice = integer_to_list(ThisGift#gift.kakush_currency),
+                            SKakush = integer_to_list(ThisGift#gift.kakush_point),
+                            SRealPrice = [affiliates:kurus_to_string(ThisGift#gift.our_price), TL],
+                            #tablerow { cells=[
+                                #tablecell { body = SName, 
+                                    style="padding:4px 10px;" },
+                                #tablecell { body = SDate, 
+                                    style="padding:4px 10px; font-size:10pt;" },
+                                #tablecell { body = SPrice, 
+                                    style="padding:4px 10px; text-align:center;" },
+                                #tablecell { body = SKakush, 
+                                    style="padding:4px 10px; text-align:center;" },
+                                #tablecell { body = SRealPrice, 
+                                    style="padding:4px 10px; text-align:center;" }
+                            ]}
+                        end
+                    || #user_bought_gifts{timestamp = BoughtTime, gift_id = GiftId} <- AllGifts]}
+            end        
+        ]}
+    ];
+
+
 section_body(user_tournaments) ->
     User = wf:user(),
     Tournaments = rpc:call(?APPSERVER_NODE, nsm_tournaments, user_tournaments, [User]),
@@ -293,46 +294,58 @@ section_body(account) ->
 
     [
         #h1{text=?_T("Account")},
-	#panel{class="inform-block", body = [
+        #panel{class="inform-block", body = [
             "<dl>
             <dt>"++ ?_T("Remaining Quota") ++":</dt>
             <dd>"++wf:to_list(Quota)++"</dd>
             </dl>",
             case wf:session(is_facebook) of
-                 true -> "";
-                 _ ->  #link{class=btn, url=?_U("/price-table"), text=?_T("Üyelİk Yenİle")}
+                true -> "";
+                _ ->  #link{class=btn, url=?_U("/price-table"), text=?_T("Üyelİk Yenİle")}
             end
         ]},
 
-	#panel{class="profile-info", body =
-            #form{body=[
-                "<fieldset>",
-                "<h2 class=\"ttl\"><span>"++?_T("Account information")++"</span></h2>",
-                #panel{class=row, body = [
-                    #label{text = ?_T("Address")},
-                    #panel{class=text, body = #textbox{}} ]},
-                #panel{class=row, body = [
-                    #label{text = ?_T("City")},
-                    #panel{class=text, body = #textbox{}} ]},
-                #panel{class=row, body = [
-                    #label{text = ?_T("District")},
-                    #panel{class=text, body = #textbox{}} ]},
-                #panel{class=row, body = [
-                    #label{text = ?_T("Postal code")},
-                    #panel{class=text, body = #textbox{}} ]},
-                #panel{class="row", body=[
-                    #panel{class="btn-holder", body=[
-			#panel{class="ar", body=[
-                            #button{class="btn-reset", text=?_T("Cancel")},
-                            #button{class="btn-submit", text=?_T("Save")}
-			]}
-                    ]}
-                ]},
+	    #panel{class="profile-info", body = [
+            #panel{class="col-l",body=[
+                #form{body=[
+                    "<fieldset>",
+                    "<h2 class=\"ttl\"><span>"++?_T("Account information")++"</span></h2>",
+                    #panel{class=row, body = [
+                        #label{text = ?_T("Address")},
+                        #panel{class=text, body = #textbox{}} ]},
+                    #panel{class=row, body = [
+                        #label{text = ?_T("City")},
+                        #panel{class=text, body = #textbox{}} ]},
+                    #panel{class=row, body = [
+                        #label{text = ?_T("District")},
+                        #panel{class=text, body = #textbox{}} ]},
+                    #panel{class=row, body = [
+                        #label{text = ?_T("Postal code")},
+                        #panel{class=text, body = #textbox{}} ]},
+                    #panel{class="row", body=[
+                        #panel{class="btn-holder", body=[
+                            #panel{class="ar", body=[
+                                #button{class="btn-reset", text=?_T("Cancel")},
+                                #button{class="btn-submit", text=?_T("Save")}
+                            ]}
+                        ]}
+                    ]},
 
-                order_history(Orders),
-                "</fieldset>"
+                    order_history(Orders),
+                    "</fieldset>"
                 ]}
-        }
+            ]},
+            #panel{class="col-r",body=[
+                #panel{class=cell,body=[
+                    #h3{text=?_T("Convert kakush to quota")},
+                    #panel{class=row, body=[
+                        #label{text=?_T("Amount"), style="width:100px;"},
+                        #panel{class=text, style="width:132px;", body = #textbox{id=kakush_to_quota, style="width:132px;"}},
+                        #link{class="button", text=?_T("Convert"), style="margin:10px;", postback=convert_kakush_to_quota}
+                    ]}
+                ]}
+            ]}
+        ]}
     ];
 
 section_body(invite) ->
@@ -787,6 +800,28 @@ u_event({more_orders, PurchaseId}) ->
         [_|Orders] ->
             wf:insert_bottom(orders_list, [order_list_item(MP) || MP <- Orders]),
             wf:update(more_button_holder,  orders_more_button(Orders))
+    end;
+
+u_event(convert_kakush_to_quota) ->
+    SKakush = wf:q(kakush_to_quota),
+    try
+        Kakush = list_to_integer(SKakush),
+        {ok, HasKakush} = rpc:call(?APPSERVER_NODE, nsm_accounts, balance, [wf:user(), ?CURRENCY_KAKUSH]),
+        if 
+            Kakush > HasKakush ->
+                wf:wire(#alert{text=?_T("Sorry, you don't have that much kakush.")});
+            Kakush =< 0 ->
+                wf:wire(#alert{text=?_T("No.")});
+            true ->
+                rpc:call(?APPSERVER_NODE, nsm_accounts, transaction, [wf:user(), ?CURRENCY_KAKUSH, -Kakush, "Buying "++SKakush++" quota: give kakush"]),
+                rpc:call(?APPSERVER_NODE, nsm_accounts, transaction, [wf:user(), ?CURRENCY_QUOTA, Kakush, "Buying "++SKakush++" quota: get quota"]),
+                wf:wire(#alert{text=?_T("You bought" ++ " " ++ SKakush ++ " " ++ "quota" ++ ".")}),
+                wf:redirect("/profile/account")
+        end
+    catch
+        _:Error ->
+            ?ERROR(Error),
+            wf:wire(#alert{text=?_T("Please, write only digits.")})
     end;
 
 u_event(Any) ->

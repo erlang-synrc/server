@@ -114,6 +114,13 @@
 -record(user_ignores, {who, whom}).
 -record(user_ignores_rev, {whom, who}).
 
+-record(user_bought_gifts, {
+        username,
+        timestamp,
+        gift_id
+    }).
+
+
 %% Message queues stuff related to user
 %% User exchange name
 -define(USER_EXCHANGE(UserId),
