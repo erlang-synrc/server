@@ -79,7 +79,11 @@
 %% @end
 
 get_gifts() ->
-    case fetch_data_net(?PRODUCTS_URL, ?CATEGORIES_URL, ?STOCK_URL) of
+    Res = case is_production() of
+              true -> fetch_data_net(?PRODUCTS_URL, ?CATEGORIES_URL, ?STOCK_URL);
+              false -> fetch_data_files(?PRODUCTS_FILE, ?CATEGORIES_FILE, ?STOCK_FILE)
+          end,
+    case Res of
         {ok, {ProductsData, CategoriesData, StockData}} ->
             try List =
                     process_data(ProductsData,
@@ -430,3 +434,8 @@ preprocess_data(Data) ->
             Data
     end.
 
+is_production() ->
+    case nsm_db:get(config, "debug/production", false) of
+        {ok, true} -> true;
+        _ -> false
+    end.
