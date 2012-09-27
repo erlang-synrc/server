@@ -200,7 +200,7 @@ tavla_client_loop(State) -> % incapsulate tavla protocol
             From = proplists:get_value(from, Params),
             To = proplists:get_value(to, Params),
             NewBoard = follow_board(State#state.board,From,To,PlayerColor),
-            tavla_client_loop(State#state{started=true,board = NewBoard});
+            tavla_client_loop(State#state{started=true,board = NewBoard,moves = State#state.moves + 1});
 
             _ -> tavla_client_loop(State) end;
         #game_event{event = <<"tavla_vido_request">>, args = Params} ->
@@ -477,6 +477,12 @@ first_available_move(RealBoard,XY,Color,TableId) ->
     [#'TavlaAtomicMove'{table_id = TableId,from=rel(From,Color),to=rel(To,Color)} || {From,To} <- List]  ++
     case {length(Dices) > 0,Found} of {true,1} -> first_available_move(reverse_board(Board,Color),Dices,Color,TableId); _ -> []  end.
 
+make_end_series(Color,TableId,Board) ->
+    lists:foldl(fun (A,Acc) -> ?INFO("~p / ~p~n",[A,Acc]), {Cell,No} = A, case Cell of null -> Acc; 
+                                  {Color,Count} -> Acc ++
+    [ #'TavlaAtomicMove'{table_id = TableId,from=No,to=27} || X <- lists:seq(1,Count)]; _ -> Acc end
+                                 end, [], lists:sublist(lists:zip(Board,lists:seq(0,27)),1,27)  ).
+
 % actions
 
 do_rematch(State) ->
@@ -522,7 +528,12 @@ do_move(State, Dices,TableId,PlayerColor) ->
     S = State#state.conn,
     GameId = State#state.gid,
     Id = State#state.uid,
-    Decision = make_decision(State#state.board, Dices, PlayerColor,TableId),
+    
+    Decision = case State#state.moves > 5 of 
+                    false -> make_decision(State#state.board, Dices, PlayerColor,TableId);
+                    true -> make_end_series(PlayerColor,TableId,State#state.board)
+               end,
+%    Decision = make_decision(State#state.board, Dices, PlayerColor,TableId),
     ?INFO("DO_MOVE: ~p",[Decision]),
     case A = call_rpc(S, #game_action{
                         game = GameId,
