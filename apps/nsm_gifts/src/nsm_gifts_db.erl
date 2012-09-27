@@ -14,13 +14,14 @@
 -include_lib("alog/include/alog.hrl").
 -include("db.hrl").
 -include("common.hrl").
--include_lib("nsm_db/include/config.hrl").
+
+-record(config,{key,value}).
 
 %%
 %% Exported Functions
 %%
 -export([
-         init_db/0
+         init_db/0, init_indexes/0
         ]).
 
 -export([
@@ -91,11 +92,14 @@
 %% @doc Initialize the data storage
 %% @end
 
+init_indexes() ->
+    C = start_riak_client(),
+    ok = C:set_bucket(?GIFTS_BUCKET, [{backend, leveldb_backend}]),
+    ok = C:set_bucket(?CATEGORIES_BUCKET, [{backend, leveldb_backend}]).
+
 init_db() ->
     ?INFO("~w:init_db/0: started", [?MODULE]),
     C = start_riak_client(),
-    ok = C:set_bucket(?GIFTS_BUCKET, [{backend, leveldb_backend}]),
-    ok = C:set_bucket(?CATEGORIES_BUCKET, [{backend, leveldb_backend}]),
     ok = init_counter(C, ?GIFTS_COUNTER, 1, []),
     ok = init_counter(C, ?CATEGORIES_COUNTER, 1, []),
     ok = init_conf(C, ?CONF_FACTOR_A, 1.15, []),

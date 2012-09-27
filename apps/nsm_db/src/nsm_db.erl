@@ -34,7 +34,7 @@
 -include_lib("stdlib/include/qlc.hrl").
 -include_lib("alog/include/alog.hrl").
 
--export([start/0, stop/0, initialize/0, delete/0,
+-export([start/0, stop/0, initialize/0, delete/0, init_indexes/0,
          init_db/0, put/1, count/1, get/2, get/3, feed_create/0, create_team/1,
          all/1, all_by_index/3, next_id/1, next_id/2, delete/1, delete/2,
          delete_browser_counter_older_than/1,browser_counter_by_game/1,
@@ -82,6 +82,7 @@ stop() ->
     DBA = ?DBA,
     DBA:stop().
 
+
 -spec initialize() -> ok.
 initialize() ->
     DBA = ?DBA,
@@ -91,6 +92,10 @@ initialize() ->
 delete() ->
     DBA = ?DBA,
     DBA:delete().
+
+init_indexes() ->
+    DBA = ?DBA,
+    DBA:init_indexes().
 
 -spec init_db() -> ok.
 init_db() ->
@@ -341,7 +346,7 @@ add_sample_users() ->
     nsm_acl:define_access({user, "maxim"},    {feature, admin}, allow),
     nsm_acl:define_access({user_type, admin}, {feature, admin}, allow),
 
-    {ok, G} = nsm_gifts_plugin_enilginc:get_gifts_test(),
+    {ok, G} = nsm_gifts_vendor:get_gifts(1),
     nsm_gifts_tools:dumb_store(G),
 
     %% init feed workers infrastructure

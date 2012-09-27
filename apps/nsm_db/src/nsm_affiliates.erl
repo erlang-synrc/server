@@ -88,12 +88,6 @@
 -type db_handler() :: any().
 
 
--define(RELS_BUCKET, <<"affiliates_rels">>).
--define(CONTRACTS_BUCKET, <<"affiliates_contracts">>).
--define(PURCHASES_BUCKET, <<"affiliates_purchases">>).
--define(CTYPES_BUCKET, <<"affiliates_contract_types">>).
--define(PERMS_BUCKET, <<"affiliates_look_pems">>).
--define(COUNTERS_BUCKET, <<"affiliates_counters">>).
 
 -define(OWNER_INDEX, "owner_bin").
 -define(CONTRACT_INDEX, "contract_bin").
@@ -117,11 +111,6 @@
 init_db() ->
     ?INFO("~w:init_db/0: started", [?MODULE]),
     C = start_riak_client(),
-    ok = C:set_bucket(?RELS_BUCKET, [{backend, leveldb_backend}]),
-    ok = C:set_bucket(?CONTRACTS_BUCKET, [{backend, leveldb_backend}]),
-    ok = C:set_bucket(?PURCHASES_BUCKET, [{backend, leveldb_backend}]),
-    ok = C:set_bucket(?CTYPES_BUCKET, [{backend, leveldb_backend}]),
-    ok = C:set_bucket(?COUNTERS_BUCKET, [{backend, leveldb_backend}]),
     ok = init_counter(C, ?CONTRACTS_COUNTER, 1, []),
     ok = init_counter(C, ?CONTRACT_TYPES_COUNTER, 1, []),
     stop_riak_client(C),
@@ -910,7 +899,7 @@ init_counter(Cl, CounterId, InitVal, Options) ->
            Object = create_counter_object(CounterId, InitVal),
            Cl:put(Object, []);
        true ->
-           case Cl:get(?COUNTERS_BUCKET, CounterId, []) of
+           case Cl:get(?COUNTERS_BUCKET_AFF, CounterId, []) of
                {ok, _Object} ->
                    ok;
                {error, notfound} ->
@@ -923,8 +912,8 @@ init_counter(Cl, CounterId, InitVal, Options) ->
 %% @private
 
 create_counter_object(CounterId, Val) ->
-    Obj1 = riak_object:new(?COUNTERS_BUCKET, CounterId, Val),
-    Index = [{?BUCKET_INDEX, ?COUNTERS_BUCKET}],
+    Obj1 = riak_object:new(?COUNTERS_BUCKET_AFF, CounterId, Val),
+    Index = [{?BUCKET_INDEX, ?COUNTERS_BUCKET_AFF}],
     Meta = dict:store(?MD_INDEX, Index, dict:new()),
     Obj2 = riak_object:update_metadata(Obj1, Meta),
     Obj2.
@@ -948,7 +937,7 @@ contract_id(Handler) ->
     lists:concat([timestamp(), "_", NextId]).
 
 next_id(Cl, CounterId) ->
-    {ok, Object} = Cl:get(?COUNTERS_BUCKET, CounterId, []),
+    {ok, Object} = Cl:get(?COUNTERS_BUCKET_AFF, CounterId, []),
     CurValue = riak_object:get_value(Object),
     Object2 = riak_object:update_value(Object, CurValue+1),
     case Cl:put(Object2, [if_not_modified]) of

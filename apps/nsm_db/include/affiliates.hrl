@@ -1,3 +1,12 @@
+
+-define(RELS_BUCKET, <<"affiliates_rels">>).
+-define(CONTRACTS_BUCKET, <<"affiliates_contracts">>).
+-define(PURCHASES_BUCKET, <<"affiliates_purchases">>).
+-define(CTYPES_BUCKET, <<"affiliates_contract_types">>).
+-define(PERMS_BUCKET, <<"affiliates_look_pems">>).
+-define(COUNTERS_BUCKET_AFF, <<"affiliates_counters">>).
+
+
 -record(affiliates_rels,
         {
          user      :: any(),        % User Id.

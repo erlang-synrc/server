@@ -1001,6 +1001,13 @@ u_event(config_save_new) ->
 		    end,
 	    case Value of
 		{ok, NewValue} ->
+
+                     case Key of
+                          "gifts" ++ _ -> {ok, G} = nsm_gifts_vendor:get_gifts(1),
+                                     nsm_gifts_tools:dumb_store(G);
+                          _ -> skip
+                     end,
+
             nsx_util_notification:notify(["system", "put"], #config{key = Key,value=NewValue}),
 		    wf:flash(?_TS("Value of $key$ set to $value$",[{key,wf:f("~w",[Key])},{value,NewValue}])); %% "
 		{msg, Msg} ->
