@@ -209,22 +209,30 @@ matchmaker_show_create(Tag) ->
         _ -> "row"
     end,
     #panel{class=criteria, body=[
-     "<span id='guiderscriteria'>",
-    case Tag of
-     create -> #h2{text=q_game_type() ++ " " ++ ?_T("Selected Option")};
-     _ -> #h2{text=q_game_type() ++ " " ++?_T("Selected Option")}
-    end,
-     "</span>",
-     #panel{class=area, body=[
-      #list{id=criteria_field, class=ThisClass, body=""},
-      "<span id='guiderstab1createbutton' style='float:right; text-align:center;'>",
-      case Tag of
-        create -> el_create_game_button();
-        _ -> ""
-      end,
-      "</span>",
-      #link{text=?_T("Clear Options"), postback=clear_selection, class="matchmaker_clear_selection"}
-     ]}
+        #singlerow{cells=[
+            #tablecell{body=[
+                "<span id='guiderscriteria'><nobr>",
+                case Tag of
+                    create -> #h2{text=q_game_type() ++ " " ++ ?_T("Selected Option")};
+                    _ -> #h2{text=q_game_type() ++ " " ++?_T("Selected Option")}
+                end,
+                "</nobr></span>",
+                #br{},
+                #link{text=?_T("Game Rules"), class="matchmaker_game_rules", postback=show_game_rules, style="margin-left:0px;"}
+            ]},
+            #tablecell{body=[
+                #panel{class=area, body=[
+                    #list{id=criteria_field, class=ThisClass, body=""},
+                    "<span id='guiderstab1createbutton' style='float:right; text-align:center;'>",
+                    case Tag of
+                        create -> el_create_game_button();
+                        _ -> ""
+                    end,
+                    "</span>",
+                    #link{text=?_T("Clear Options"), postback=clear_selection, class="matchmaker_clear_selection"}
+                ]}
+            ]}
+        ]}
     ]}.
 
 ui_paginate() ->
@@ -862,8 +870,10 @@ settings_box(_Tag) ->
 	 ]},
      "<span id='guiderstab1hide' style='float: right; margin-top:-50px;'>",
      "</span>",
-     #link{class=ThisClass, postback={show,join_game}, text=?_T("Hide"),
-           actions=ac_hide_main_container()}
+     case wf:state(buttons) of
+        green -> #link{class=ThisClass, postback={show,join_game}, text=?_T("Hide"), actions=ac_hide_main_container()};
+        _ -> ""
+     end
     ].
 
 view_table_box() ->
@@ -1200,7 +1210,7 @@ u_event(show_game_rules) ->
     case q_game_type() of
         "okey" ->
             Body = [
-                #panel{class=holder, style="max-height:600px; overflow-y:scroll;", body=[
+                #panel{class=holder, style="max-height:600px; ", body=[
                     #h1{text="OKEY OYUNLARI HAKKINDA", style="font-size:26px; margin-bottom:14px;"},
                     #h1{text="OYUNU OYNAMA", style="font-size:20px; margin-bottom:10px;"},
          

@@ -92,7 +92,12 @@ product_list_paged(Page) ->
                            1 -> #listitem{body=#link{text="<", postback={nothing}, class="inactive"}};
                            _ -> #listitem{body=#link{text="<", postback={page, Page - 1}}}
                         end,
-                        #listitem{body=#link{text=integer_to_list(Page), postback={nothing}, class="inactive"}},
+                        [case N of
+                            Page -> #listitem{body=#link{text=integer_to_list(N), postback={nothing}, class="inactive", 
+                                style="color:#444444; font-weight:bold;"}};
+                            _ -> #listitem{body=#link{text=integer_to_list(N), postback={page, N}}}
+                        end
+                        || N <- lists:seq(1, (length(AllGiftsData) - 1) div ?GIFTSPERPAGE + 1)],
                         case Page * ?GIFTSPERPAGE >= length(AllGiftsData) of                 
                             true -> #listitem{body=#link{text=">", postback={nothing}, class="inactive"}};
                             false -> #listitem{body=#link{text=">", postback={page, Page + 1}}}
