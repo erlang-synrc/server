@@ -529,11 +529,11 @@ do_move(State, Dices,TableId,PlayerColor) ->
     GameId = State#state.gid,
     Id = State#state.uid,
     
-    Decision = case State#state.moves > 5 of 
-                    false -> make_decision(State#state.board, Dices, PlayerColor,TableId);
-                    true -> make_end_series(PlayerColor,TableId,State#state.board)
-               end,
-%    Decision = make_decision(State#state.board, Dices, PlayerColor,TableId),
+%    Decision = case State#state.moves > 5 of 
+%                    false -> make_decision(State#state.board, Dices, PlayerColor,TableId);
+%                    true -> make_end_series(PlayerColor,TableId,State#state.board)
+%               end,
+    Decision = make_decision(State#state.board, Dices, PlayerColor,TableId),
     ?INFO("DO_MOVE: ~p",[Decision]),
     case A = call_rpc(S, #game_action{
                         game = GameId,
