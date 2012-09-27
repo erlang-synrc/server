@@ -272,7 +272,7 @@ handle_cast({submit, _Sender, #game_action{action = Action, args = Args}, From, 
             end || {TabId,  P1Id, P2Id} <- TablesUsers],
            if RoundsCounter == 1 ->
                   ?INFO("PAIRED_TAVLA All rounds completed. Finishing.", []),
-                  publish0(#game_event{event = avla_series_ended}, State),
+                  publish0(#game_event{event = tavla_series_ended}, State),
                   {noreply, State#state{tstate = ?STATE_FINISHED}};
               true ->
                   NewRoundsCounter = RoundsCounter - 1,
