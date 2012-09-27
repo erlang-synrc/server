@@ -2,11 +2,9 @@
 -author('Maxim Sokhatsky <maxim@synrc.com>').
 -behaviour(gen_server).
 
--export([start/3, start_link/3, robot_init/1, init_state/2, join_game/1, get_session/1,
-         send_message/2, call_rpc/2, do_skip/2, do_rematch/1, first_move_table/0,
-%%         make_first_move/3,
-         follow_board/3 ]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
+-export([start/3, start_link/3, robot_init/1, init_state/2, join_game/1, get_session/1,
+         send_message/2, call_rpc/2, do_skip/2, do_rematch/1, first_move_table/0, follow_board/3 ]).
 
 -include_lib("nsg_srv/include/conf.hrl").
 -include_lib("alog/include/alog.hrl").
@@ -377,30 +375,23 @@ follow_board(Board,From,To,PlayerColor) -> % track the moves to keep board consi
     end || {{{_KC,_KA},Cell},No} <- lists:zip(BoardWithKicks,lists:seq(0,27))],
     NewBoard.
 
-all_in_home(Board,Color,PlayerColor) ->
-    case Color of
-         PlayerColor -> Lates = lists:foldr(fun (A,Acc) -> 
-%                              ?INFO("AIH: ~p",[{A,Acc}]),
+all_in_home(Board,Color) ->
+    Lates = lists:foldr(fun (A,Acc) -> 
                               case A of
                                    {null,_No} -> Acc;
-                                   {{C,_Count},No} -> NotInHome = ((No < 19) or (No == 26)), % NotInHome = case PlayerColor of
-                                                               % 1 -> No < 19;
-                                                               % 2 -> No > 6 end,
+                                   {{C,_Count},No} -> NotInHome = (((No > 0)and(No < 19)) or (No == 26)),
                                        case {C, NotInHome} of
-                                            {PlayerColor,true} -> Acc + 1;
+                                            {Color,true} -> Acc + 1;
                                             _ -> Acc
                                        end
                               end
                           end,0,lists:zip(Board,lists:seq(0,27))),
-%              ?INFO("AIF foldr end: ~p",[Lates]),
-              Lates =:= 0;
-         _ -> false
-    end.
+    Lates =:= 0.
 
-make_decision(Board,Dices2,Color,TableId,PlayerColor) -> % produces tavla moves
+make_decision(Board,Dices2,Color,TableId) -> % produces tavla moves
     [X,Y] = Dices2,
     Dices = case X =:= Y of true -> [X,X,X,X]; false -> Dices2 end,
-    Decision = first_available_move(Board,Dices,Color,TableId,PlayerColor),
+    Decision = first_available_move(Board,Dices,Color,TableId),
     ?INFO("Decision: ~p",[Decision]),
     Decision.
 
@@ -435,8 +426,8 @@ first_move_table() -> [{{6,6},[{13,7},{13,7},{24,18},{24,18}]}, % based on
 %         2 -> [ #'TavlaAtomicMove'{table_id = TableId,from=From,to=To} || {From,To} <- Moves]
 %    end.
 
-tactical_criteria(Board,Color,PlayerColor) -> 
-   case all_in_home(Board,Color,PlayerColor) of
+tactical_criteria(Board,Color) -> 
+   case all_in_home(Board,Color) of
         true  -> finish;
         false -> case lists:nth(27,Board) of
                       {Color,Count} -> kicks;
@@ -447,86 +438,44 @@ tactical_criteria(Board,Color,PlayerColor) ->
 rel(X,C) -> case C of 2 -> case X of 0->27;27->0;26->25;25->26;_->25-X end; 
                       1 -> X end.
 
-first_available_move(RealBoard,XY,Color,TableId,PlayerColor) ->
-    Color = PlayerColor,
-    ?INFO("First Available Move calculation for ~p",[case PlayerColor of 1 -> "WHITE"; 2 -> "BLACK" end]),
-    [BE|Rest] = RealBoard,
-    % [BE|Rest1|BK,WK,WE]
-    [WE,WK,BK|Rest1] = lists:reverse(Rest),
+reverse_board(Board,PlayerColor) ->
+    case PlayerColor of
+         1 -> Board;
+         2 -> [BE|Rest] = Board, [WE,WK,BK|Rest1] = lists:reverse(Rest), [WE] ++ Rest1 ++ [WK,BK,BE]
+    end.
 
-    RelativeBoard = case PlayerColor of
-         1 -> RealBoard;
-         2 -> [WE] ++ Rest1 ++ [WK,BK,BE]
-    end,
+first_available_move(RealBoard,XY,Color,TableId) ->
+    RelativeBoard = reverse_board(RealBoard,Color),
+    OppositePlayerColor = case Color of 1 -> 2; 2 -> 1 end,
 
-    OppositePlayerColor = case PlayerColor of 1 -> 2; 2 -> 1 end,
-    WalkFun = fun lists:foldl/3, %case PlayerColor of 1 -> fun lists:foldl/3; 2 -> fun lists:foldl/3 end,
-    {List,Dices,Found,NewBoard} =
-        WalkFun(fun (A,Acc2) ->
-             {List,D,_F,B} = Acc2,
-             Tactic = tactical_criteria(B,Color,PlayerColor),
-             case D of [] -> Acc2; _ ->
-             {Cell,No}=A,
-             [H|T] = D,
-             ?INFO("checking pos: ~p",[{Cell,No,H,Tactic}]),
-             case Cell of
-                 null -> case Tactic of
-                              kicks when No =:= H -> ?INFO("found kick to empty: ~p",[H]),
-                                       {List ++ [{26,H}], T,1,follow_board(B,26,H,PlayerColor)};
-                                  _ -> Acc2
-                         end;
-                 {OppositePlayerColor,1} when Tactic =:= kicks andalso H =:= No -> 
-                            ?INFO("found kick kick: ~p",[H]),
-                            {List ++ [{26,H}], T,1,follow_board(B,26,H,PlayerColor)};
-                 {Color,_Count} -> 
-                      case Tactic of
-                           kicks when H =:= No ->
-                                ?INFO("found kick over own: ~p",[H]),
-                                {List ++ [{26,H}], T,1,follow_board(B,26,H,PlayerColor)};
-                           race ->
+    {List,Dices,Found,Board} = lists:foldl(fun (A,Acc2) ->
+         {L,D,F,B} = Acc2,
+         Tactic = tactical_criteria(B,Color),
+         case D of [] -> Acc2; _ ->
+              [H|T] = D,
+              {Cell,No}=A,
+              ?INFO("checking pos: ~p",[{Cell,No,H,Tactic}]),
+              case {Cell,Tactic} of
 
-                                case No + H + 1 < 25 of
-                                     true  -> case lists:nth(No+H+1,B) of
-                                                   null      -> ?INFO("found race to empty: ~p",[No]),
-                                                                {List ++ [{No,No+H}], T,1,follow_board(B,No,No+H,PlayerColor)};
-                                                   {Color,_} -> ?INFO("found race over own: ~p",[No]),
-                                                                {List ++ [{No,No+H}], T,1,follow_board(B,No,No+H,PlayerColor)};
-                                                   {OppositePlayerColor,1}     -> ?INFO("found race kick: ~p",[No]),
-                                                                {List ++ [{No,No+H}], T,1,follow_board(B,No,No+H,PlayerColor)};
-                                                           _ -> Acc2
-                                              end;
-                                     false -> Acc2
-                                end;
-
-                           finish ->
-
-                                case No + H + 1 >= 25 of
-                                     true  -> ?INFO("found finish move: ~p",[No]),
-                                              {List ++ [{No,27}],T,1,follow_board(B,No,27,PlayerColor)};
-                                     false -> Acc2
-
-                                end;
-                           _ -> Acc2
-                      end;
-                 _ -> Acc2
+     {null,_} when No =/= H -> Acc2;
+     {null,kicks} when No =:= H -> ?INFO("found kick to empty: ~p",[{26,H}]), {L++[{26,H}],T,1,follow_board(B,26,H,Color)};
+     {{OppositePlayerColor,1},kicks} when H =:= No -> ?INFO("found kick kick: ~p",[{26,H}]), {L++[{26,H}],T,1,follow_board(B,26,H,Color)};
+     {{Color,Count},kicks} when H =:= No -> ?INFO("found kick over own: ~p",[{26,H}]), {L++[{26,H}],T,1,follow_board(B,26,H,Color)};
+     {{Color,Count},finish} when H + No >= 25 -> ?INFO("found finish move: ~p",[{No,27}]), {L++[{No,27}],T,1,follow_board(B,No,27,Color)};
+     {{Color,Count},kicks} when H =/= No -> Acc2;
+     {{Color,Count},race} when H + No >= 25 -> Acc2;
+     {{Color,Count},_} when H + No < 25 -> case lists:nth(No+H+1,B) of
+                       null -> ?INFO("found race to empty: ~p",[{No,No+H}]), {L++[{No,No+H}],T,1,follow_board(B,No,No+H,Color)}; 
+                       {Color,_} -> ?INFO("found race over own: ~p",[{No,No+H}]), {L++[{No,No+H}],T,1,follow_board(B,No,No+H,Color)};
+                       {OppositePlayerColor,1} -> ?INFO("found race kick: ~p",[{No,No+H}]), {L++[{No,No+H}],T,1,follow_board(B,No,No+H,Color)};
+                           _ -> Acc2 end;
+        _ -> Acc2
              end end
         end, {[], XY, 0, RelativeBoard}, lists:sublist(lists:zip(RelativeBoard,lists:seq(0,27)),2,24)     ),
     ?INFO("moves found: ~p",[{List,Dices}]),
 
-    BackRealBoard = case Color of
-         1 -> NewBoard;
-         2 -> [BE2|Rest2] = NewBoard,
-              %[BE|Rest1|BK,WK,WE]
-              [WE2,WK2,BK2|Rest3] = lists:reverse(Rest2),
-              [WE2] ++ Rest3 ++ [WK2,BK2,BE2]
-    end,
-
-    [#'TavlaAtomicMove'{table_id = TableId,from=rel(From,Color),to=rel(To,Color)} || {From,To} <- List]
-    ++
-    case {length(Dices) > 0,Found} of
-         {true,1} -> first_available_move(BackRealBoard,Dices,Color,TableId,PlayerColor);
-         _ -> []
-    end.
+    [#'TavlaAtomicMove'{table_id = TableId,from=rel(From,Color),to=rel(To,Color)} || {From,To} <- List]  ++
+    case {length(Dices) > 0,Found} of {true,1} -> first_available_move(reverse_board(Board,Color),Dices,Color,TableId); _ -> []  end.
 
 % actions
 
@@ -573,7 +522,7 @@ do_move(State, Dices,TableId,PlayerColor) ->
     S = State#state.conn,
     GameId = State#state.gid,
     Id = State#state.uid,
-    Decision = make_decision(State#state.board, Dices, PlayerColor,TableId,PlayerColor),
+    Decision = make_decision(State#state.board, Dices, PlayerColor,TableId),
     ?INFO("DO_MOVE: ~p",[Decision]),
     case A = call_rpc(S, #game_action{
                         game = GameId,
