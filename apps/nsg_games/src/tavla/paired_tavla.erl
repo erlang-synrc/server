@@ -78,7 +78,8 @@
           dices_mode :: main_table | tournament_master, %% Who responsible for dices values generation
           cur_move_color :: undefined | 1 | 2,
           moves_counter :: integer(),        %% How many tables should make move before next dices roll
-          confirm_wl :: list('PlayerId'())
+          confirm_wl :: list('PlayerId'()),
+          rounds_counter :: integer()        %% How many rounds left to play
          }).
 
 
@@ -178,7 +179,8 @@ init([Topic, {lobby, GameFSM}, Params0, PlayerIds, Manager]) ->
                    tables_users = TabSpread,
                    tables_pids = Tables,
                    tables_num = TablesNum,
-                   ready_counter = TablesNum
+                   ready_counter = TablesNum,
+                   rounds_counter = Rounds
                   },
     {ok, State}.
 
@@ -250,15 +252,33 @@ handle_cast(start_rematch_timer, State) ->
 %%     Session ! Msg,
 %%     {noreply, State};
 
-handle_cast({submit, _Sender, #game_action{action = tavla_ready, args = Args}, From, Player},
+handle_cast({submit, _Sender, #game_action{action = Action, args = Args}, From, Player},
              #state{confirm_wl = WL,
-                    players = Players} = State) ->
-    ?INFO("PAIRED_TAVLA Next round confirmation received. Table: ~p Player: ~p.", [proplists:get_value(table_id, Args), Player]),
+                    tables_pids = Tables,
+                    tables_users = TablesUsers,
+                    rounds_counter = RoundsCounter} = State) when
+  Action == tavla_ready;
+  Action == <<"tavla_ready">> ->
+    ?INFO("PAIRED_TAVLA Next round confirmation received. Table: ~p Player: ~p. Waiting for:~p",
+           [proplists:get_value(table_id, Args), Player, WL -- [Player]]),
     gen_server:reply(From, ok), %% Eat the action
     if WL == [Player] -> %% All players confirm next round
            ?INFO("PAIRED_TAVLA All next round confirmation received.", []),
-           %% TODO: Pass Ready action to players tables
-           init_state_first_move_determination(State);
+           [begin
+                {_, TabPid} = lists:keyfind(TabId, 1, Tables),
+                ReadyAction = #game_action{action = tavla_ready, args = [{table_id, TabId}]},
+                relay:cast_resubmit(TabPid, P1Id, ReadyAction),
+                relay:cast_resubmit(TabPid, P2Id, ReadyAction)
+            end || {TabId,  P1Id, P2Id} <- TablesUsers],
+           if RoundsCounter == 1 ->
+                  ?INFO("PAIRED_TAVLA All rounds completed. Finishing.", []),
+                  publish0(#game_event{event = avla_series_ended}, State),
+                  {noreply, State#state{tstate = ?STATE_FINISHED}};
+              true ->
+                  NewRoundsCounter = RoundsCounter - 1,
+                  ?INFO("PAIRED_TAVLA Initiating next round. Rounds left: ~p.", [NewRoundsCounter]),
+                  init_state_first_move_determination(State#state{rounds_counter = NewRoundsCounter})
+           end;
        true ->
            {noreply, State#state{confirm_wl = WL -- [Player]}}
     end;
@@ -503,9 +523,9 @@ init_next_move(#state{dices_mode = DicesMode,
     end.
 
 
-init_state_first_move_determination(#state{players = Players,
+init_state_first_move_determination(#state{tables_users = TablesUsers,
                                            tables_num = TablesNum} = State) ->
-    PlayersList = [P#player.id || P <- Players],
+    PlayersList = lists:flatmap(fun({_, P1, P2}) -> [P1, P2] end, TablesUsers),
     ?INFO("PAIRED_TAVLA Waiting for main table first roll.", []),
     {noreply, State#state{tstate = ?STATE_FIRST_MOVE_DETERMINATION,
                           round_tables_counter = TablesNum,

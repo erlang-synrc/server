@@ -453,11 +453,20 @@ state_rolls({#tavla_vido_answer{from=From,to=To,answer=A}, Pid}, _, State) ->
 state_rolls({#tavla_roll{}, Pid}, _,  #state{wait_list = _List} = State ) ->
     tavla_roll(Pid,State).
 
-state_ready_next_round({#tavla_ready{}, _Pid}, _, State) ->
+state_ready_next_round({#tavla_ready{}, _Pid}, _, #state{game_mode = Mode,
+                                                         table_id = TableId} = State) ->
+    ?INFO("GAME_TAVLA Table: ~p Tavla_ready received. State ready: ~p",[TableId, State#state.ready]),
     case State#state.ready of
-       1 -> start_game(State#state{ready = 0}), 
-            Pids = [P#'TavlaPlayer'.pid || P <- State#state.players],
-            {reply, ok, state_start_rolls, State#state{ready = 0, b_rolls = [], c_rolls = [], wait_list = Pids}};
+       1 -> start_game(State#state{ready = 0}),
+            case check_can_roll(Mode, TableId) of
+                true ->
+                    ?INFO("GAME_TAVLA Table: ~p Starting new round in passive mode",[TableId]),
+                    {reply, ok, state_move, State#state{ready = 0, vido = 1}};
+                false ->
+                    ?INFO("GAME_TAVLA Table: ~p Starting new round in active mode (main table)",[TableId]),
+                    Pids = [P#'TavlaPlayer'.pid || P <- State#state.players],
+                    {reply, ok, state_start_rolls, State#state{ready = 0, b_rolls = [], c_rolls = [], wait_list = Pids}}
+            end;
        0 -> {reply, ok, state_ready_next_round, State#state{ready = State#state.ready + 1}}
     end;
 
