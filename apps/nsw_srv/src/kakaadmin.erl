@@ -3,6 +3,7 @@
 -compile(export_all).
 -include_lib("nitrogen_core/include/wf.hrl").
 -include_lib("nsm_db/include/user.hrl").
+-include_lib("nsm_gifts/include/common.hrl").
 -include_lib("nsm_db/include/config.hrl").
 -include_lib("nsm_db/include/invite.hrl").
 
@@ -12,6 +13,7 @@
 -include("common.hrl").
 
 -define(USER_LIST_PAGE_SIZE, 10).
+-define(GIFT_LIST_PAGE_SIZE, 15).
 
 main() ->
     case wf:user() of
@@ -62,7 +64,7 @@ body_authorized() ->
 	     {tournaments,	?_U("/kakaadmin/tournaments"),	?_T("Tournaments")},
 	     {system,		?_U("/kakaadmin/system"),		?_T("System Parameters")},
 	     {stats,		?_U("/kakaadmin/stats"),		?_T("Statistics")},
-	     {others,		?_U("/kakaadmin/others"),		?_T("Others")},
+	     {others,		?_U("/kakaadmin/others"),		?_T("Financial")},
 	     {reports,		?_U("/kakaadmin/reports"),		?_T("Reports")},
 	     {affiliates,		?_U("/kakaadmin/affiliates"),   ?_T("Affiliates")}
 	    ],
@@ -131,7 +133,7 @@ menu() ->
      #p{class="admin_menu_item", body=#link{text=?_T("Tournaments"), postback={show, turnaments}}},
      #p{class="admin_menu_item", body=#link{text=?_T("System parameters"), postback={show, config_list}}},
      #p{class="admin_menu_item", body=#link{text=?_T("Statistics"), postback={show, stats}}},
-     #p{class="admin_menu_item", body=#link{text=?_T("Others"), postback={show, other}}},
+     #p{class="admin_menu_item", body=#link{text=?_T("Financial"), postback={show, other}}},
      #p{class="admin_menu_item", body=#link{text=?_T("Reports"), postback={show, raports}}}].
 
 
@@ -160,26 +162,46 @@ config_new() ->
 config_list() ->
     get_tree_box([]). %% root
 get_tree_box(Branch) ->
-    Childs = get_tree(Branch),
-    [ begin
-	  Id = wf:temp_id(),
-	  Show_link = #link{actions=#event{type=click, target=Id, actions=#show{}}},
-	  EditPostback = {edit_config, Id, Branch++[ChildElem]},
-	  DefaultPostback = case (Type =/= val) of %% load child if there's any
-				true -> {load_config, Id, Branch++[ChildElem]}; %% get child
-				false -> EditPostback %% edit value
-			    end,
-	  EditLink = case (Type =/= tree) of %% user can edit only val and both
-			 true -> Show_link#link{text="(edit)",postback=EditPostback};
-			 false -> ""
-		     end,
-	  #panel{ style="margin-left:5px;",
-		  body=[
-			Show_link#link{text=ChildElem, postback=DefaultPostback},
-			"&nbsp;",#link{text="(hide)", actions=#event{type=click, target=Id, actions=#hide{}}},
-			"&nbsp;",EditLink,#panel{id=Id}
-		       ]}
-      end || {ChildElem, Type} <- Childs]. %% Type can be val|tree|both
+%    Childs = get_tree(Branch),
+    Items1 = rpc:call(?APPSERVER_NODE,nsm_db,all,[config]),
+    Items = [ begin V = case is_list(Value) of true -> Value; 
+                                        _ -> [A] = io_lib:format("~p",[Value]),A 
+                        end, 
+                    [Key,V] 
+              end || #config{key=Key,value=Value} <- Items1],
+
+    #table{class="nice_table",
+           header=[#tablerow{class="nice_table_header",
+                           cells=[#tableheader{class="first-row", text=?_T("Key")},
+                                  #tableheader{text=?_T("Value")} ]}],
+           rows=[
+                 #bind{transform=fun tf_mark_odd/2,
+                       data=Items, map=[ config_list_key@text,
+                                         config_list_value@text ],
+                       body=[#tablerow{id=table_row,
+				       cells=[#tablecell{id=config_list_key, class="first-row"},
+                                              #tablecell{id=config_list_value}]} ]}
+                 ]}.
+
+%    [ begin
+%	  Id = wf:temp_id(),
+%	  Show_link = #link{actions=#event{type=click, target=Id, actions=#show{}}},
+%	  EditPostback = {edit_config, Id, Branch++[ChildElem]},
+%	  DefaultPostback = case (Type =/= val) of %% load child if there's any
+%				true -> {load_config, Id, Branch++[ChildElem]}; %% get child
+%				false -> EditPostback %% edit value
+%			    end,
+%	  EditLink = case (Type =/= tree) of %% user can edit only val and both
+%			 true -> Show_link#link{text="(edit)",postback=EditPostback};
+%			 false -> ""
+%		     end,
+%	  #panel{ style="margin-left:5px;",
+%		  body=[
+%			Show_link#link{text=ChildElem, postback=DefaultPostback},
+%			"&nbsp;",#link{text="(hide)", actions=#event{type=click, target=Id, actions=#hide{}}},
+%			"&nbsp;",EditLink,#panel{id=Id}
+%		       ]}
+%      end || {ChildElem, Type} <- Childs]. %% Type can be val|tree|both
 
 -spec get_tree(list()) -> [{list(),val}|{list(),tree}].
 %% Get child elements in brach Branch. Elements are marked as val or tree (or both).
@@ -434,14 +456,16 @@ users_list_get_data(UsersList) ->
             {_, _}   -> [MarkEmpty(Name)," ",MarkEmpty(Surname)]
         end,
 
-        [ #link{url=site_utils:user_link(Username), text=Username},
+        X = [ #link{url=site_utils:user_link(Username), text=Username},
             MarkEmpty(Email),
             NameSurname,
             MarkEmpty(RegisterDate),
             LastLogin,
             atom_to_list(Status),
             InvitationPerson,
-            InvitationCode ]
+            InvitationCode ],
+%        ?INFO("~p~n",[X]),
+        X
     end  || R <- UsersList ].
 
 tf_mark_odd(DataRow, Acc) when Acc == []; Acc==odd ->
@@ -469,6 +493,22 @@ pager(CurrentPage, NumberOfTerms) ->
 	"</div></div>"].
 
 
+pager_gifts(CurrentPage, NumberOfTerms) ->
+    NumberOfFullPages = (NumberOfTerms div ?GIFT_LIST_PAGE_SIZE),
+    NunberOfPartPages = case (NumberOfTerms rem ?GIFT_LIST_PAGE_SIZE) of 0 -> 0; _ -> 1 end,
+    NumberOfPages = NumberOfFullPages + NunberOfPartPages,
+
+       ["<div class='paging paging-2'><div class=\"center\">",
+	#list{body=#listitem{body=#link{class="prevPage", text="<",
+			     postback={gift_list, prev, CurrentPage, NumberOfTerms}}}},
+	#list{class="pageNumbers",body=
+	 [ #listitem{body=#link{body=wf:to_list(X), postback={gift_list, X, NumberOfTerms},
+		     class=case CurrentPage of X -> "active"; _ -> "" end}}
+				|| X <- lists:seq(1, NumberOfPages) ]},
+	#list{body=#listitem{body=#link{class="nextPage", text=">",
+			     postback={gift_list, next, CurrentPage, NumberOfTerms}}}},
+	"</div></div>"].
+
 %%%%%%%%%%%%%% END USERS LIST %%%%%%%%%%%%%%%
 
 other_submenu() ->
@@ -479,9 +519,63 @@ other_submenu() ->
 packages_list() ->
 	#packages_grid{}.
 
-
 gifts_list() ->
-	"Gifts list".
+    FirstCursor = cursor:new(rpc:call(?APPSERVER_NODE, nsm_db, all, [gifts]), 2),
+    {ok, Result, Cursor} = cursor:page_next(?GIFT_LIST_PAGE_SIZE, FirstCursor),
+    wf:state(gift_list_cursor, Cursor),
+    view_gift_list(Result, 1, cursor:size(Cursor)).
+
+view_gift_list(UsersList0, CurrentPage, NumberOfTerms) ->
+    UsersList = gifts_list_get_data(UsersList0),
+    #panel{body=[
+        #panel{class="admin-user-list round-block",
+            body=[#h3{text=?_T("Gifts List")}, gifts_list_table_view(UsersList)]},
+        pager_gifts(CurrentPage, NumberOfTerms)
+    ]}.
+
+gifts_list_get_data(Items) ->
+    [ begin [unicode:characters_to_binary(Name),
+                     integer_to_list(Real),
+                     integer_to_list(Retailer),
+                     integer_to_list(Our),
+                     integer_to_list(Kp),
+                     integer_to_list(KK)]
+              end || #gift{gift_name=Name,
+                           description_short=Desc,
+                           real_price=Real,
+                           retailer_price=Retailer,
+                           our_price=Our,
+                           kakush_point=Kp,
+                           kakush_currency=KK} <- Items ].
+
+gifts_list_table_view(Items) ->
+    #table{class="nice_table",
+           header=[#tablerow{class="nice_table_header",
+                           cells=[#tableheader{class="first-row", text=?_T("Name")},
+%                                  #tableheader{text=?_T("Description")},
+                                  #tableheader{text=?_T("Real Price")},
+                                  #tableheader{text=?_T("Retailer Price")},
+                                  #tableheader{text=?_T("Our Price")},
+                                  #tableheader{text=?_T("Kakush Points")},
+                                  #tableheader{text=?_T("Kakush Currency")}   ]}],
+           rows=[
+                 #bind{transform=fun tf_mark_odd/2,
+                       data=Items, map=[ gift_list_name@text,
+%                                         gift_list_desc@text,
+                                         gift_list_real@text,
+                                         gift_list_retail@text,
+                                         gift_list_our@text,
+                                         gift_list_points@text,
+                                         gift_list_currency@text ],
+                       body=[#tablerow{id=table_row,
+                                              cells=[#tablecell{id=gift_list_name, class="first-row"},
+%                                              #tablecell{id=gift_list_desc},
+                                              #tablecell{id=gift_list_real},
+                                              #tablecell{id=gift_list_retail},
+                                              #tablecell{id=gift_list_our},
+                                              #tablecell{id=gift_list_points},
+                                              #tablecell{id=gift_list_currency}    ]}    ]}    ]}.
+
 
 payments_list() ->
 	#purchases_grid{}.
@@ -818,6 +912,34 @@ u_event({user_list, N, MaxPage}) ->
     wf:state(user_list_cursor, NewCursor),
     wf:update(view_box, view_user_list(Result, N, MaxPage));
 
+u_event({gift_list, Direction, PageN, N}) ->
+    Cursor = wf:state(gift_list_cursor),
+    NewPageNumber =
+	case Direction of
+	    next -> PageN +1;
+	    prev -> PageN -1
+	end,
+
+    IsOutOfRange = max(1, min(N, NewPageNumber)) =/= NewPageNumber,
+
+    case IsOutOfRange of
+	true -> ignore;
+	false ->
+	    {ok, Result, NewCursor} =
+	    case Direction of
+		next -> cursor:page_next(?GIFT_LIST_PAGE_SIZE, Cursor);
+		prev -> cursor:page_prev(?GIFT_LIST_PAGE_SIZE, Cursor)
+	    end,
+	    wf:state(gift_list_cursor, NewCursor),
+	    wf:update(view_box, view_gift_list(Result, NewPageNumber, N))
+    end;
+
+u_event({gift_list, N, MaxPage}) ->
+    Cursor = wf:state(gift_list_cursor),
+    {ok, Result, NewCursor} = cursor:get_page(N, ?GIFT_LIST_PAGE_SIZE, Cursor),
+    wf:state(gift_list_cursor, NewCursor),
+    wf:update(view_box, view_gift_list(Result, N, MaxPage));
+
 u_event({show, Page}) ->
 	wf:wire("objs('.admin-submenu .link').removeClass('active');"
 				"objs('me').addClass('active');"),
@@ -857,8 +979,9 @@ u_event(logout) ->
     wf:redirect_to_login(?_U("/login"));
 
 u_event(config_save_new) ->
-    case str_to_key(wf:q(config_var_name)) of
-	{ok, Key} ->
+    case wf:q(config_var_name) of
+	Key ->
+            ?INFO("~p~n",[Key]),
 	    StrVal = wf:q(config_var_value),
 	    Value = try case wf:q(config_var_type) of
 			    "string" ->

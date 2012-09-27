@@ -62,7 +62,7 @@
 -define(GIFTS_BUCKET, <<"gifts">>).
 -define(COUNTERS_BUCKET, <<"gifts_counters">>).
 -define(CATEGORIES_BUCKET, <<"gifts_categories">>).
--define(CONFIG_BUCKET, <<"gifts_config">>).
+-define(CONFIG_BUCKET, <<"config">>).
 
 %% Counters
 -define(GIFTS_COUNTER, <<"gift_id">>).
