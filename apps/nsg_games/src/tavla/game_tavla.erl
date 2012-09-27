@@ -479,6 +479,9 @@ state_finished({#tavla_game_ended{}, _Pid}, _, State) ->
 state_finished({#tavla_ready{}, _Pid}, _, State) ->
     {reply,ok,state_finished, State}.
 
+state_start_rolls({#tavla_skip{}, Pid}, _,  #state{wait_list = List} = State ) ->
+    {reply,ok,state_start_rolls, State};
+
 state_start_rolls({#tavla_roll{}, Pid}, _,  #state{wait_list = List} = State ) ->
     BRolls = State#state.b_rolls,
     TableId = State#state.table_id,
