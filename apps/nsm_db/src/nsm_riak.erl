@@ -64,6 +64,8 @@ init_indexes() ->
     ok = C:set_bucket(?CTYPES_BUCKET, [{backend, leveldb_backend}]),
     ok = C:set_bucket(?COUNTERS_BUCKET_ID_SEQ, [{backend, leveldb_backend}]),
     ok = C:set_bucket(?COUNTERS_BUCKET_AFF, [{backend, leveldb_backend}]),
+    ok = C:set_bucket(t_to_b(subs), [{backend, leveldb_backend}]),
+    ok = C:set_bucket(t_to_b(user_bought_gifts), [{backend, leveldb_backend}]),
     ok = nsm_gifts_db:init_indexes().
 
 init_db() ->
@@ -71,8 +73,6 @@ init_db() ->
     C = riak_client(),
     ok = nsm_affiliates:init_db(),
     ok = nsm_gifts_db:init_db(),
-    ok = C:set_bucket(t_to_b(subs), [{backend, leveldb_backend}]),
-    ok = C:set_bucket(t_to_b(user_bought_gifts), [{backend, leveldb_backend}]),
     ?INFO("~w:init_db/0: done", [?MODULE]),
     ok.
 
