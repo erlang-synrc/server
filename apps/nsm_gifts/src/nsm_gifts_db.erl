@@ -14,6 +14,7 @@
 -include_lib("alog/include/alog.hrl").
 -include("db.hrl").
 -include("common.hrl").
+-include_lib("nsm_db/include/config.hrl").
 
 %%
 %% Exported Functions
@@ -77,7 +78,10 @@
 -define(MD_INDEX, <<"index">>).
 
 %% Conf parameters
--define(CONF_FACTORS, factor).
+-define(CONF_FACTOR_A, "gifts/factor_a").
+-define(CONF_FACTOR_B, "gifts/factor_b").
+-define(CONF_FACTOR_C, "gifts/factor_c").
+-define(CONF_FACTOR_D, "gifts/factor_d").
 
 %%
 %% API Functions
@@ -94,7 +98,10 @@ init_db() ->
     ok = C:set_bucket(?CATEGORIES_BUCKET, [{backend, leveldb_backend}]),
     ok = init_counter(C, ?GIFTS_COUNTER, 1, []),
     ok = init_counter(C, ?CATEGORIES_COUNTER, 1, []),
-    ok = init_conf(C, ?CONF_FACTORS, {1.15, 4, 100, 0.2}, []),
+    ok = init_conf(C, ?CONF_FACTOR_A, 1.15, []),
+    ok = init_conf(C, ?CONF_FACTOR_B, 4, []),
+    ok = init_conf(C, ?CONF_FACTOR_C, 100, []),
+    ok = init_conf(C, ?CONF_FACTOR_D, 0.2, []),
     stop_riak_client(C),
     ?INFO("~w:init_db/0: done", [?MODULE]),
     ok.
@@ -138,7 +145,10 @@ set_factors(A, B, C, D) ->
     Res.
 
 set_factors(Handler, A, B, C, D) ->
-    ok = set_conf_val(Handler, ?CONF_FACTORS, {A, B, C, D}).
+    ok = set_conf_val(Handler, ?CONF_FACTOR_A, A),
+    ok = set_conf_val(Handler, ?CONF_FACTOR_B, B),
+    ok = set_conf_val(Handler, ?CONF_FACTOR_C, C),
+    ok = set_conf_val(Handler, ?CONF_FACTOR_D, D).
 
 
 %% @spec get_factors() -> {A, B, C, D}
@@ -155,7 +165,10 @@ get_factors() ->
     Res.
 
 get_factors(Handler) ->
-    {ok, {A, B, C, D}} = get_conf_val(Handler, ?CONF_FACTORS),
+    {ok, A} = get_conf_val(Handler, ?CONF_FACTOR_A),
+    {ok, B} = get_conf_val(Handler, ?CONF_FACTOR_B),
+    {ok, C} = get_conf_val(Handler, ?CONF_FACTOR_C),
+    {ok, D} = get_conf_val(Handler, ?CONF_FACTOR_D),
     {A, B, C, D}.
 
 
@@ -659,20 +672,29 @@ next_id(Cl, CounterId) ->
 
 
 %% @private
-get_conf_val(Cl, Key) ->
-    case Cl:get(?CONFIG_BUCKET, term_to_binary(Key), []) of
-        {ok, Object} ->
-            Value = riak_object:get_value(Object),
-            {ok, Value};
+get_conf_val(_Cl, Key) ->
+    case nsm_db:get(config, Key) of
+        {ok, {_, _, Val}} ->
+            {ok, Val};
         {error, notfound} ->
             {error, notfound}
     end.
 
+%%     case Cl:get(?CONFIG_BUCKET, term_to_binary(Key), []) of
+%%         {ok, Object} ->
+%%             Value = riak_object:get_value(Object),
+%%             {ok, Value};
+%%         {error, notfound} ->
+%%             {error, notfound}
+%%     end.
+
 
 %% @private
-set_conf_val(Cl, Key, Value) ->
-    Object = riak_object:new(?CONFIG_BUCKET, term_to_binary(Key), Value),
-    Cl:put(Object, []).
+set_conf_val(_Cl, Key, Value) ->
+    Rec = #config{key=Key, value=Value},
+    nsm_db:put(Rec).
+%%     Object = riak_object:new(?CONFIG_BUCKET, term_to_binary(Key), Value),
+%%     Cl:put(Object, []).
 
 %% @private
 -spec get_gifts_keys_by_cat(any(), integer()) -> list(binary()).
