@@ -33,7 +33,7 @@
          feed_add_comment/7, entries_in_feed/3, purchases/1,
          subscribe_user/2, remove_subscription/2, list_subscriptions/1, list_subscription_me/1, is_user_subscribed/2,
          block_user/2, unblock_user/2, list_blocks/1, list_blocked_me/1, is_user_blocked/2,
-         membership/2, get_save_tables/1, save_game_table_by_id/1, invite_code_by_issuer/1, invite_code_by_user/1,
+         membership/2, get_save_tables/1, save_game_table_by_id/1, invite_code_by_issuer/1, invite_code_by_user/1, add_invite_to_issuer/2,
          get_translation/1, tournament_waiting_queue/1,join_tournament/2,tournament_pop_waiting_player/1,
          play_record_add_entry/4,user_tournaments/1,riak_read_tournament_waiting_queue/3,
          get_purchases_by_user/3, get_purchases_by_user/4, put_into_invitation_tree/3, invitation_tree/2,
@@ -250,15 +250,15 @@ post_write_hooks(Class,R,C) ->
             case R#invite_code.created_user of
                 undefined -> nothing;
                 User -> C:put(make_object({invite_code_by_user, User, R#invite_code.code}, invite_code_by_user))
-            end,
-
-            case R#invite_code.issuer of
-                undefined ->
-                    nothing;
-                Issuer ->
-                    add_invite_to_issuer(Issuer,R)
-                    %C:put(make_object({invite_code_by_issuer, Issuer, R#invite_code.code}, invite_code_by_issuer))
             end;
+
+%            case R#invite_code.issuer of
+%                undefined ->
+%                    nothing;
+%                Issuer ->
+%                    add_invite_to_issuer(Issuer,R)
+                    %C:put(make_object({invite_code_by_issuer, Issuer, R#invite_code.code}, invite_code_by_issuer))
+%            end;
 
 %        membership_purchase ->
 %            User = R#membership_purchase.user_id,

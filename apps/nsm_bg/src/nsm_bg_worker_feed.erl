@@ -482,7 +482,16 @@ handle_notice(["login", "user", UId, "update_after_login"] = Route,
     {noreply, State};
 
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% affiliates
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% invites
+
+handle_notice(["invite", "user", UId, "add_invite_to_issuer"] = Route,
+    Message, #state{owner = Owner, type =Type} = State) ->
+    ?INFO("queue_action(~p): add_invite_to_issuer: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),
+    {O} = Message,
+    nsm_db:add_invite_to_issuer(UId, O),
+    {noreply, State};
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% likes
 
 handle_notice(["likes", "user", UId, "add_like"] = Route,
     Message, #state{owner = Owner, type =Type} = State) ->
