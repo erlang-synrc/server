@@ -153,7 +153,7 @@ broadcast(new_table, #game_table{owner=UId} = Table) ->
     multi_broadcast(UsersList, Message);
 
 broadcast(User, Entry) ->
-    Users = [Friend || #subscription_rev{who = Friend} <- nsm_users:list_subscription_me(User)],
+    Users = [Friend || #subs{who = Friend} <- nsm_users:list_subscr_me(User)],
     multi_broadcast(Users, Entry).
 
 multi_broadcast(Users, #entry{entry_id=EId} = Entry) ->
@@ -320,17 +320,15 @@ get_user_likes(UserId, {Page, PageAmount}) ->
         {error, notfound} -> []
     end.
 
+% we have same in nsm_user? Why?
 is_subscribed_user(UserUidWho, UserUidWhom) ->
-    length(nsm_db:select(subscription,
-        fun({subscription, Who, Whom}) when Who=:=UserUidWho,Whom=:=UserUidWhom->true;(_)->false end)) =:= 1.
+    nsm_users:is_user_subscr(UserUidWho, UserUidWhom).
 
 user_subscription_count(UserUid) ->
-    length(nsm_db:select(subscription,
-        fun({subscription, Who, _}) when Who=:=UserUid->true;(_)->false end)).
+    length(nsm_users:list_subscr(UserUid)).
 
 user_friends_count(UserUid) ->
-    length(nsm_db:select(subscription,
-        fun({subscription, _, Whom}) when Whom=:=UserUid->true;(_)->false end)).
+    length(nsm_users:list_subscr_me(UserUid)).
 
 get_comments_entries(UserUid, _, _Page, _PageAmount) ->
     Pids = [Eid || #comment{entry_id=Eid} <- nsm_db:select(comment,

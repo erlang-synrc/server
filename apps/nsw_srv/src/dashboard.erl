@@ -564,7 +564,7 @@ is_direct_message_page() ->
 
 %% when more button presed
 on_more_entries({EntryId, _FeedId}, _Count) ->
-    get_entries(EntryId).
+    erlang:element(1, get_entries(EntryId)).
 
 autocomplete_enter_event(SearchTerm, _Tag) ->
     AlreadySelected = wf:session_default(autocomplete_list_values, []),
