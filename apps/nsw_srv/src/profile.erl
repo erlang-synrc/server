@@ -713,7 +713,7 @@ u_event(profile_save) ->
       #user{} = NewUser ->
 	  ?PRINT({NewUser}),
 	  wf:session(user_info, NewUser),
-	  ok = rpc:call(?APPSERVER_NODE,nsm_users,update_user,[NewUser]),
+      nsx_util_notification:notify(["subscription", "user", NewUser#user.username, "update_user"], {NewUser}),
 	  flash(info, profile_info, ?_T("Saved!"))
     catch
       {error, Error} ->

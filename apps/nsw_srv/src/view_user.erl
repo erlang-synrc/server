@@ -70,7 +70,7 @@ user_info() ->
     SubUnsubItem = case wf:user() of
         undefined -> [];
         User ->
-            case rpc:call(?APPSERVER_NODE,nsm_users, is_user_subscribed, [User, Who]) of
+            case rpc:call(?APPSERVER_NODE,nsm_users, is_user_subscr, [User, Who]) of
                 true   -> #listitem{id=SUId, body=#link{url="javascript:void(0)",
                                 text=?_T("Unsubscribe"), title=?_T("You can stop seeing this users posts in your feed"), 
                                     actions=#event { type=click, postback={unsubscribe, User, Who, SUId} } }};
@@ -117,8 +117,8 @@ user_info() ->
                 #listitem{body=[?_T("Gender")++": ",#span{text=UserSex}]},
                 #listitem{body=["<br />"]},
 
-                #listitem{body=[?_T("Subscriptions")++": ",#span{text=integer_to_list(length(rpc:call(?APPSERVER_NODE, nsm_db, list_subscriptions, [Info#user.username]))) }]},
-                #listitem{body=[?_T("Subscribers")++": ",#span{text=integer_to_list(length(rpc:call(?APPSERVER_NODE, nsm_db, list_subscription_me, [Info#user.username]))) }]},
+                #listitem{body=[?_T("Subscriptions")++": ",#span{text=integer_to_list(length(rpc:call(?APPSERVER_NODE, nsm_users, list_subscr, [Info#user.username]))) }]},
+                #listitem{body=[?_T("Subscribers")++": ",#span{text=integer_to_list(length(rpc:call(?APPSERVER_NODE, nsm_users, list_subscr_me, [Info#user.username]))) }]},
                 #listitem{body=[?_T("Entries")++": ",#span{text=integer_to_list(EntriesCount) }]},
                 #listitem{body=[?_T("Comments")++": ",#span{text=integer_to_list(CommentsCount) }]},
                 #listitem{body=[?_T("Likes")++": ",#span{text=integer_to_list(LikesCount) }]}
@@ -186,7 +186,6 @@ event({unsubscribe,_,_,_}=Event) ->
 
 event({make_affiliate, User}) ->
     nsx_util_notification:notify(["affiliates", "user", User, "create_affiliate"], {}),
-    %rpc:call(?APPSERVER_NODE,nsm_affiliates,create_affiliate,[User]),
     wf:redirect("");
 
 event(Other) ->

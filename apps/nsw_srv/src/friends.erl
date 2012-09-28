@@ -43,7 +43,7 @@ body() ->
     #template{file=code:priv_dir(nsw_srv)++"/templates/view-user.html"}.
 
 content()     -> content(1).
-content(Page) -> content(Page, ?_T("FRIENDS"), wf:user(), {nsm_users, list_subscription}).
+content(Page) -> content(Page, ?_T("FRIENDS"), wf:user(), {nsm_users, list_subscr}).
 content(Page, Title, UId, ModFun) ->
     wf:wire(wf:f("objs('search_textbox')"
              ".bind('keyup keydown change', function()"
@@ -89,7 +89,7 @@ user_info() ->
     end.
 
 getPageContent(Page) ->
-    getPageContent(Page, wf:user(), {nsm_users, list_subscription}).
+    getPageContent(Page, wf:user(), {nsm_users, list_subscr}).
 
 getPageContent(Page, UId, ModFun) when is_number(Page) ->
     [
@@ -148,7 +148,7 @@ get_users_view(UsersView, true, PageNumber) ->
 
 get_subscribed_users()     -> get_subscribed_users(1).
 get_subscribed_users(Page) -> 
-    get_subscribed_users(Page, wf:user(), {nsm_users, list_subscription}).
+    get_subscribed_users(Page, wf:user(), {nsm_users, list_subscr}).
 
 get_subscribed_users(Page,UId, {Mod,Fun}) when is_number(Page) ->
     AltUser = wf:q('of'),
@@ -175,7 +175,7 @@ get_subscribed_users(Query,UId, {Mod,Fun}) when is_list(Query) ->
     end.
 
 
-friends_view(#subscription{who = Who, whom = WhoName}) -> friends_view(Who, WhoName);
+friends_view(#subs{who = Who, whom = WhoName}) -> friends_view(Who, WhoName);
 friends_view(#user{username = Who, name = Name, surname = Surname})     -> friends_view(Who, io_lib:format("~s ~s", [Name, Surname]));
 friends_view({Who,WhoName}) -> friends_view(Who,WhoName);
 friends_view(Who) -> friends_view(Who, Who).
@@ -243,7 +243,7 @@ friends_view(Who_, WhoName_) ->
     SubUnsubItem = case wf:user() of
         undefined -> [];
         User ->
-            case rpc:call(?APPSERVER_NODE,nsm_users, is_user_subscribed, [User, WhoName]) of
+            case rpc:call(?APPSERVER_NODE,nsm_users, is_user_subscr, [User, WhoName]) of
                 true   -> #listitem{id=SUId, body=#link{url="javascript:void(0)",
                                 text=?_T("Unsubscribe"), title=?_T("You can stop seeing this users posts in your feed"),
                                     actions=#event { type=click, postback={unsubscribe, User, WhoName, SUId} } }};
@@ -295,7 +295,7 @@ split_subs(L, A)  ->
 
 friends_row(FL) -> #panel{body=[ show_friend(X) || X <- FL]}.
 
-show_friend(#subscription{whom = Who}) ->
+show_friend(#subs{whom = Who}) ->
     #panel{style="float:left;padding-left:5px",
         body=[
             #image{image=webutils:get_user_avatar(Who, "big")}
@@ -309,7 +309,7 @@ big() ->
 subscribe() ->
     UId = wf:user(),
     SubList =
-        case rpc:call(?APPSERVER_NODE,nsm_users, list_subscription, [UId]) of
+        case rpc:call(?APPSERVER_NODE,nsm_users, list_subscr, [UId]) of
             [] ->
                 ?_T("You are not subscribed to anyone");
             Sub ->
@@ -335,7 +335,7 @@ create_user_lists() ->
 view_subscribe(SubList) ->
     Source = [ [#link{text=Who,
                       url=site_utils:user_link(Who)}, #br{}]
-               || #subscription{whom = Who} <- SubList ],
+               || #subs{whom = Who} <- SubList ],
     lists:flatten(Source).
 
 event(Event) ->
@@ -350,7 +350,7 @@ inner_event(view_sub, _) ->
 
 inner_event({subscription, FrId}, _) ->
     UId = wf:user(),
-    ok = rpc:call(?APPSERVER_NODE, nsm_users, subscribe_user, [UId, FrId]),
+    nsx_util_notification:notify(["subscription", "user", UId, "subscribe_user"], {FrId}),
     wf:update(main_area, subscribe()),
     Msg = io_lib:fwrite(?_T("You have subscribed to '~s'."), [FrId]),
     wf:flash(Msg);
@@ -374,7 +374,7 @@ inner_event({page, N}, _) ->
 
 
 inner_event({unsubscribe, _, Who, SUId}, User1) ->
-    rpc:call(?APPSERVER_NODE, nsm_users, remove_subscribe, [User1, Who]),
+    nsx_util_notification:notify(["subscription", "user", User1, "remove_subscribe"], {Who}),
     wf:update(SUId,
        #link{url="javascript:void(0)", text=?_T("Subscribe"), title=?_T("You can start seeing this users posts in your feed"),
             actions=#event{type=click, postback={subscribe, User1, Who, SUId}}}),
@@ -383,7 +383,7 @@ inner_event({unsubscribe, _, Who, SUId}, User1) ->
 
 
 inner_event({subscribe, _, Who, SUId}, User1)   ->
-    rpc:call(?APPSERVER_NODE, nsm_users, subscribe_user, [User1, Who]),
+    nsx_util_notification:notify(["subscription", "user", User1, "subscribe_user"], {Who}),
     wf:update(SUId,
         #link{url="javascript:void(0)", text=?_T("Unsubscribe"), title=?_T("You can stop seeing this users posts in your feed"),
             actions= #event{type=click, postback={unsubscribe, User1, Who, SUId}}}),

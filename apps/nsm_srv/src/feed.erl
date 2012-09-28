@@ -18,9 +18,7 @@
          get_user_likes/1,
          get_user_likes/2,
          get_user_likes_count/1,
-         count_entry_in_statistics/1,
          get_entries_count/1,
-         count_comment_in_statistics/1,
          get_comments_count/1,
          remove_entry/2,
          edit_entry/3,
@@ -122,31 +120,6 @@ add_like(Fid, Eid, Uid) ->
     end.
 
 % statistics
-count_entry_in_statistics(Uid) ->
-    case nsm_db:get(user_etries_count, Uid) of
-        {ok, UEC} -> 
-            nsm_db:put(UEC#user_etries_count{
-                entries = UEC#user_etries_count.entries+1
-            });
-        {error, notfound} ->
-            nsm_db:put(#user_etries_count{
-                user_id = Uid,
-                entries = 1
-            })
-    end.
-            
-count_comment_in_statistics(Uid) ->
-    case nsm_db:get(user_etries_count, Uid) of
-        {ok, UEC} -> 
-            nsm_db:put(UEC#user_etries_count{
-                comments = UEC#user_etries_count.comments+1
-            });
-        {error, notfound} ->
-            nsm_db:put(#user_etries_count{
-                user_id = Uid,
-                comments = 1
-            })
-    end.
 
 get_entries_count(Uid) ->
     case nsm_db:get(user_etries_count, Uid) of

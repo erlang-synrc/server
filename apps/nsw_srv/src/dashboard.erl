@@ -347,7 +347,7 @@ inner_event(show_add_attachment, _) ->
         wf:insert_bottom(attachment_box, Body)
     end;
 
-inner_event({add_entry, FId}, User) ->
+inner_event({add_entry, _}, User) ->
     ?INFO("Login User: ~p",[User]),
     UserDashboard = wf:state(feed_owner),
     DashboardOwner = case UserDashboard of
@@ -387,8 +387,9 @@ inner_event({add_entry, FId}, User) ->
 
             post_entry(DashboardOwner, Desc, Medias),
 
-            rpc:call(?APPSERVER_NODE, feed, count_entry_in_statistics, [wf:user()]),
-    
+            %rpc:call(?APPSERVER_NODE, feed, count_entry_in_statistics, [wf:user()]),
+            nsx_util_notification:notify(["feed", "user", wf:user(), "count_entry_in_statistics"], {}),  
+
             wf:session(autocomplete_list_values, []),
             wf:update(text_length, ""),
             wf:wire("upd_scrollers(); remove_all_tos();"),
@@ -415,7 +416,8 @@ inner_event({comment_entry, EntryTrueId, _CommentsPanelId, SourceElementId, _Vie
                 Other -> lists:reverse(Other)
             end,
             wf:state(MSI, []),
-            rpc:call(?APPSERVER_NODE, feed, count_comment_in_statistics, [wf:user()]),
+            %rpc:call(?APPSERVER_NODE, feed, count_comment_in_statistics, [wf:user()]),
+            nsx_util_notification:notify(["feed", "user", wf:user(), "count_comment_in_statistics"], {}),  
             nsx_util_notification:notify([feed, OwnerType, DashboardOwner, comment, utils:uuid_ex(), add],
                 [User, EntryTrueId, undefined, Value, Medias])
     end;
@@ -441,7 +443,7 @@ inner_event({hide_entry, EId, PanelId}, _) ->
 inner_event({hide_entry, _EId, PanelId, true}, _) ->
     wf:wire(#hide {target=PanelId, effect=blind, speed=500});
 
-inner_event({show_all_likers, LeftPart, Id}, User) ->
+inner_event({show_all_likers, LeftPart, Id}, _) ->
     wf:update(Id, LeftPart);
 
 inner_event({like_entry, E, PanelId}, User) ->
@@ -468,37 +470,40 @@ inner_event({comment_entry, _EId, _PanelId}, _) ->
     ?PRINT({comment,event,button});
 
 inner_event({unsubscribe, UserUid}, User) ->
-    rpc(nsm_users, remove_subscribe, [User, UserUid]),
+    nsx_util_notification:notify(["subscription", "user", User, "remove_subscribe"], {UserUid}),
     wf:wire("location.reload(true);");
 
 inner_event({subscribe, UserUid}, User) ->
-    rpc(nsm_users, subscribe_user, [User, UserUid]),
+    nsx_util_notification:notify(["subscription", "user", User, "subscribe_user"], {UserUid}),
     wf:wire("location.reload(true);");
 
 inner_event({set_user_status, Status}, User) ->
-    rpc(nsm_users, set_user_game_status, [User, Status]);
+    nsx_util_notification:notify(["subscription", "user", User, "set_user_game_status"], {Status});
 
 inner_event({set_user_status}, User) ->
-    rpc(nsm_users, set_user_game_status, [User, wf:q(user_status)]);
+    nsx_util_notification:notify(["subscription", "user", User, "set_user_game_status"], {wf:q(user_status)});
 
 inner_event({direct_message_to, CheckedUser}, _) ->
     autocomplete_select_event({struct, [{<<"id">>, CheckedUser},{<<"value">>, CheckedUser}]} , CheckedUser),
     wf:wire("set_focus_to_search()");
 
 inner_event({block, CheckedUser}, User) ->
-    rpc(nsm_users, block_user, [User, CheckedUser]),
+    %rpc(nsm_users, block_user, [User, CheckedUser]),
+    nsx_util_notification:notify(["subscription", "user", User, "block_user"], {CheckedUser}),
     wf:update(blockunblock, #link{text=?_T("Unblock this user"), url="javascript:void(0)", postback={unblock, CheckedUser}}),
     wf:update(feed, user_blocked_message(CheckedUser));
 
 inner_event({unblock, CheckedUser}, User) ->
-    rpc(nsm_users, unblock_user, [User, CheckedUser]),
-    FId = webutils:user_info(feed),
+    %rpc(nsm_users, unblock_user, [User, CheckedUser]),
+    nsx_util_notification:notify(["subscription", "user", User, "unblock_user"], {CheckedUser}),
+    %FId = webutils:user_info(feed), %?
     Feeds = view_feed(undefined),
     wf:update(blockunblock, #link{text=?_T("Block this user"), url="javascript:void(0)", postback={block, CheckedUser}}),
     wf:update(feed, Feeds);
 
 inner_event({unblock_load, CheckedUser, Offset}, User) ->
-    rpc(nsm_users, unblock_user, [User, CheckedUser]),
+    %rpc(nsm_users, unblock_user, [User, CheckedUser]),
+    nsx_util_notification:notify(["subscription", "user", User, "unblock_user"], {CheckedUser}),
     Feeds = view_feed(Offset),
     wf:update(blockunblock, #link{text=?_T("Block this user"), url="javascript:void(0)", postback={block, CheckedUser}}),
     wf:update(feed, Feeds);
@@ -563,13 +568,13 @@ on_more_entries({EntryId, _FeedId}, _Count) ->
 
 autocomplete_enter_event(SearchTerm, _Tag) ->
     AlreadySelected = wf:session_default(autocomplete_list_values, []),
-    DataU = case rpc(nsm_users, list_subscription, [wf:user ()]) of
+    DataU = case rpc(nsm_users, list_subscr, [wf:user ()]) of
             [] -> [];
             Sub ->
             [begin
                 Value = encode_term({Who, user}),
                 {struct, [{id, list_to_binary(Who)}, {label, list_to_binary(Who)} , {value,  Value}]}
-            end || #subscription{whom = Who} <- Sub,
+            end || #subs{whom = Who} <- Sub,
                 lists:member(list_to_binary(string:to_lower(Who)), AlreadySelected)=:=false ]
         end,
     DataG = case rpc(nsm_groups, list_group_per_user_with_count, [wf:user(),wf:user()]) of
