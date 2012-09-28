@@ -188,7 +188,7 @@ make_obj({_, T}, {transaction, _AccountId} = B) -> [Bucket] = io_lib:format("~p"
 make_obj(T = {feed_blocked_users, UserId, _BlockedUsers} = T, feed_blocked_users) -> riak_object:new(<<"feed_blocked_users">>, list_to_binary(UserId), T);
 make_obj(T, uploads) -> [Key] = io_lib:format("~p", [T#uploads.key]), riak_object:new(<<"uploads">>, list_to_binary(Key), T);
 make_obj(T, invite_code) -> riak_object:new(<<"invite_code">>, list_to_binary(T#invite_code.code), T);
-make_obj(T = {invite_code_by_issuer, User, Top}, invite_code_by_issuer) -> riak_object:new(<<"invite_code_by_issuer">>, list_to_binary(User), T);
+make_obj(T={_,User,_}, invite_code_by_user) -> riak_object:new(<<"invite_code_by_user">>, list_to_binary(User), T);
 make_obj(T, invite_by_issuer) -> riak_object:new(<<"invite_by_user">>, list_to_binary(T#invite_by_issuer.user), T);
 make_obj(T, entry_likes) -> riak_object:new(<<"entry_likes">>, list_to_binary(T#entry_likes.entry_id), T);
 make_obj(T, user_likes) -> riak_object:new(<<"user_likes">>, list_to_binary(T#user_likes.user_id), T);
