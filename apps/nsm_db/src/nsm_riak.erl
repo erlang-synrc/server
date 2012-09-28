@@ -33,7 +33,7 @@
          feed_add_comment/7, entries_in_feed/3, purchases/1,
          subscribe_user/2, remove_subscription/2, list_subscriptions/1, list_subscription_me/1, is_user_subscribed/2,
          block_user/2, unblock_user/2, list_blocks/1, list_blocked_me/1, is_user_blocked/2,
-         membership/2, get_save_tables/1, save_game_table_by_id/1, invite_code_by_issuer/1, invite_code_by_user/1,
+         membership/2, get_save_tables/1, save_game_table_by_id/1, invite_code_by_issuer/1, invite_code_by_user/1, add_invite_to_issuer/2,
          get_translation/1, tournament_waiting_queue/1,join_tournament/2,tournament_pop_waiting_player/1,
          play_record_add_entry/4,user_tournaments/1,riak_read_tournament_waiting_queue/3,
          get_purchases_by_user/3, get_purchases_by_user/4, put_into_invitation_tree/3, invitation_tree/2,
@@ -189,7 +189,7 @@ make_obj(T = {feed_blocked_users, UserId, _BlockedUsers} = T, feed_blocked_users
 make_obj(T, uploads) -> [Key] = io_lib:format("~p", [T#uploads.key]), riak_object:new(<<"uploads">>, list_to_binary(Key), T);
 make_obj(T, invite_code) -> riak_object:new(<<"invite_code">>, list_to_binary(T#invite_code.code), T);
 make_obj(T={_,User,_}, invite_code_by_user) -> riak_object:new(<<"invite_code_by_user">>, list_to_binary(User), T);
-make_obj(T, invite_by_issuer) -> riak_object:new(<<"invite_by_user">>, list_to_binary(T#invite_by_issuer.user), T);
+make_obj(T, invite_by_issuer) -> riak_object:new(<<"invite_by_issuer">>, list_to_binary(T#invite_by_issuer.user), T);
 make_obj(T, entry_likes) -> riak_object:new(<<"entry_likes">>, list_to_binary(T#entry_likes.entry_id), T);
 make_obj(T, user_likes) -> riak_object:new(<<"user_likes">>, list_to_binary(T#user_likes.user_id), T);
 make_obj(T, one_like) -> riak_object:new(<<"one_like">>, list_to_binary(integer_to_list(T#one_like.id)), T);
@@ -250,15 +250,15 @@ post_write_hooks(Class,R,C) ->
             case R#invite_code.created_user of
                 undefined -> nothing;
                 User -> C:put(make_object({invite_code_by_user, User, R#invite_code.code}, invite_code_by_user))
-            end,
-
-            case R#invite_code.issuer of
-                undefined ->
-                    nothing;
-                Issuer ->
-                    add_invite_to_issuer(Issuer,R)
-                    %C:put(make_object({invite_code_by_issuer, Issuer, R#invite_code.code}, invite_code_by_issuer))
             end;
+
+%            case R#invite_code.issuer of
+%                undefined ->
+%                    nothing;
+%                Issuer ->
+%                    add_invite_to_issuer(Issuer,R)
+                    %C:put(make_object({invite_code_by_issuer, Issuer, R#invite_code.code}, invite_code_by_issuer))
+%            end;
 
 %        membership_purchase ->
 %            User = R#membership_purchase.user_id,
@@ -943,7 +943,7 @@ add_invite_to_issuer(UserId,O) ->
     Prev = undefined,
     case Team#invite_by_issuer.top of
         undefined -> Next = undefined;
-        X -> case nsm_db:get(membership_purchase, X) of
+        X -> case nsm_db:get(invite_code, X) of
                  {ok, TopEntry} ->
                      Next = TopEntry#invite_code.code,
                      EditedEntry = #invite_code{
@@ -952,7 +952,7 @@ add_invite_to_issuer(UserId,O) ->
                            issuer = TopEntry#invite_code.issuer,
                            recipient = TopEntry#invite_code.recipient,
                            created_user = TopEntry#invite_code.created_user,
-                           next = TopEntry#membership_purchase.next,
+                           next = TopEntry#invite_code.next,
                            prev = EntryId},
                     nsm_db:put(EditedEntry); % update prev entry
                  {error,notfound} -> Next = undefined

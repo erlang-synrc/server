@@ -545,6 +545,8 @@ build_user_relations(User, Groups) ->
      rk( [purchase, user, User, set_purchase_info]),
      rk( [purchase, user, User, add_purchase]),
 
+     rk( [invite, user, User, add_invite_to_issuer]),
+
      %% system message format: feed.system.ElementType.Action
      rk( [feed, system, '*', '*']) |
      [rk_group_feed(G) || G <- Groups]].
