@@ -374,6 +374,10 @@ section_body(invite) ->
     #h1{text=?_T("Sent invites")},
         #list{class="history-list", id=orders_list, body = [
             begin
+                Recipient = case RecipientOrUndefined of
+                    undefined -> ?_T("anyone");
+                    _ -> RecipientOrUndefined
+                end,
                 SDate = site_utils:feed_time_tuple(calendar:now_to_local_time(CreateDate)),
                 case CreatedUser of
                     undefined ->
@@ -393,7 +397,7 @@ section_body(invite) ->
                 end
             end
 
-        || #invite_code{code=Code, create_date=CreateDate, recipient=Recipient, created_user=CreatedUser} <- SentInvites]}
+        || #invite_code{code=Code, create_date=CreateDate, recipient=RecipientOrUndefined, created_user=CreatedUser} <- SentInvites]}
 	];
 section_body(tournament) ->
 
