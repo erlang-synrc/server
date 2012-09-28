@@ -5,7 +5,13 @@
          create_date,
          issuer :: username_type() | '_', %% Dialyzer and record MatchSpec warnings http://j.mp/vZ8670
          recipient,
+         next,
+         prev,
          created_user :: username_type() | '_'}).
+
+-record(invite_by_issuer,
+        {user,
+         top}).
 
 -record(invitation_tree,
         {user,                 % user id

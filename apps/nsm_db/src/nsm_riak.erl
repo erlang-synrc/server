@@ -188,7 +188,7 @@ make_obj({_, T}, {transaction, _AccountId} = B) -> [Bucket] = io_lib:format("~p"
 make_obj(T = {feed_blocked_users, UserId, _BlockedUsers} = T, feed_blocked_users) -> riak_object:new(<<"feed_blocked_users">>, list_to_binary(UserId), T);
 make_obj(T, uploads) -> [Key] = io_lib:format("~p", [T#uploads.key]), riak_object:new(<<"uploads">>, list_to_binary(Key), T);
 make_obj(T, invite_code) -> riak_object:new(<<"invite_code">>, list_to_binary(T#invite_code.code), T);
-make_obj(T = {invite_code_by_issuer, User, _Code}, invite_code_by_issuer) -> riak_object:new(<<"invite_code_by_issuer">>, list_to_binary(User), T);
+make_obj(T = {invite_code_by_issuer, User, Top}, invite_code_by_issuer) -> riak_object:new(<<"invite_code_by_issuer">>, list_to_binary(User), T);
 make_obj(T = {invite_code_by_user, User, _Code}, invite_code_by_user) -> riak_object:new(<<"invite_code_by_user">>, list_to_binary(User), T);
 make_obj(T, entry_likes) -> riak_object:new(<<"entry_likes">>, list_to_binary(T#entry_likes.entry_id), T);
 make_obj(T, user_likes) -> riak_object:new(<<"user_likes">>, list_to_binary(T#user_likes.user_id), T);
@@ -256,7 +256,8 @@ post_write_hooks(Class,R,C) ->
                 undefined ->
                     nothing;
                 Issuer ->
-                    C:put(make_object({invite_code_by_issuer, Issuer, R#invite_code.code}, invite_code_by_issuer))
+                    add_invite_to_issuer(Issuer,R)
+                    %C:put(make_object({invite_code_by_issuer, Issuer, R#invite_code.code}, invite_code_by_issuer))
             end;
 
 %        membership_purchase ->
@@ -476,18 +477,18 @@ user_by_username(Name) ->
 	Else -> Else
     end.
 
-invite_code_by_issuer(User) ->
-    case nsm_db:get(invite_code_by_issuer, User) of
-        {ok, {invite_code_by_user, _, Code}} ->
-            case nsm_db:get(invite_code, Code) of
-                {ok, #invite_code{} = C} ->
-                    [C];
-                _ ->
-                    []
-            end;
-        _ ->
-            []
-    end.
+%invite_code_by_issuer(User) ->
+%    case nsm_db:get(invite_code_by_issuer, User) of
+%        {ok, {invite_code_by_user, _, Code}} ->
+%            case nsm_db:get(invite_code, Code) of
+%                {ok, #invite_code{} = C} ->
+%                    [C];
+%                _ ->
+%                    []
+%            end;
+%        _ ->
+%            []
+%    end.
 
 invite_code_by_user(User) ->
     case nsm_db:get(invite_code_by_user, User) of
@@ -916,6 +917,60 @@ add_purchase_to_user(UserId,Purchase) ->
     case nsm_db:put(Entry) of ok -> {ok, EntryId};
                            Error -> ?INFO("Cant write purchase"), {failure,Error} end.
 
+invite_code_by_issuer(UserId) -> invite_code_by_issuer(UserId, undefined, 1000).
+
+invite_code_by_issuer(UserId, undefined, PageAmount) ->
+    case nsm_db:get(invite_by_issuer, UserId) of
+        {ok, O} when O#invite_by_issuer.top =/= undefined -> 
+                                invite_code_by_issuer(UserId, O#invite_by_issuer.top, PageAmount);
+        {error, notfound} -> []
+    end;
+invite_code_by_issuer(UserId, StartFrom, Limit) ->
+    case nsm_db:get(invite_code,StartFrom) of
+        {ok, #invite_code{next = N}=P} -> [ P | riak_traversal(invite_code, #invite_code.next, N, Limit)];
+        X -> []
+    end.
+
+add_invite_to_issuer(UserId,O) ->
+    {ok,Team} = case nsm_db:get(invite_by_issuer, UserId) of
+                     {ok,T} -> ?INFO("user inviters root found"), {ok,T};
+                     _ -> ?INFO("user invites root not found"),
+                          Head = #invite_by_issuer{ user = UserId, top = undefined},
+                          {nsm_db:put(Head),Head}
+                end,
+
+    EntryId = O#invite_code.code, 
+    Prev = undefined,
+    case Team#invite_by_issuer.top of
+        undefined -> Next = undefined;
+        X -> case nsm_db:get(membership_purchase, X) of
+                 {ok, TopEntry} ->
+                     Next = TopEntry#invite_code.code,
+                     EditedEntry = #invite_code{
+                           code = TopEntry#invite_code.code,
+                           create_date = TopEntry#invite_code.create_date,
+                           issuer = TopEntry#invite_code.issuer,
+                           recipient = TopEntry#invite_code.recipient,
+                           created_user = TopEntry#invite_code.created_user,
+                           next = TopEntry#membership_purchase.next,
+                           prev = EntryId},
+                    nsm_db:put(EditedEntry); % update prev entry
+                 {error,notfound} -> Next = undefined
+             end
+    end,
+
+    nsm_db:put(#invite_by_issuer{ user = UserId, top = EntryId}), % update team top with current
+
+    Entry  = #invite_code{ code = EntryId,
+                           create_date = O#invite_code.create_date,
+                           issuer = O#invite_code.issuer,
+                           recipient = O#invite_code.recipient,
+                           created_user = O#invite_code.created_user,
+                     next = Next,
+                     prev = Prev},
+
+    case nsm_db:put(Entry) of ok -> {ok, EntryId};
+                           Error -> ?INFO("Cant write invite_by_issuer"), {failure,Error} end.
 
 acl_add_entry(Resource, Accessor, Action) ->
     Acl = case nsm_db:get(acl, Resource) of
@@ -1143,7 +1198,8 @@ get_purchases_by_user(UserId, Start, Count, States) ->
 
 purchases_in_basket(UserId, undefined, PageAmount) ->
     case nsm_db:get(user_purchase, UserId) of
-        {ok, O} -> purchases_in_basket(UserId, O#user_purchase.top, PageAmount);
+        {ok, O} when O#user_purchase.top =/= undefined -> 
+                                     purchases_in_basket(UserId, O#user_purchase.top, PageAmount);
         {error, notfound} -> []
     end;
 purchases_in_basket(UserId, StartFrom, Limit) ->
