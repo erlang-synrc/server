@@ -52,12 +52,16 @@
         {id,
          aclver}).
 
--record(subscription,
+-record(subs,
+        {who,
+         whom}).
+
+-record(subscription, %% Obsoleted by #subs{}
         {who,
          whom,
          whom_name}).
 
--record(subscription_rev,
+-record(subscription_rev, %% Obsoleted by #subs{}
         {whom,
          who,
          who_name}).
@@ -109,6 +113,13 @@
 
 -record(user_ignores, {who, whom}).
 -record(user_ignores_rev, {whom, who}).
+
+-record(user_bought_gifts, {
+        username,
+        timestamp,
+        gift_id
+    }).
+
 
 %% Message queues stuff related to user
 %% User exchange name

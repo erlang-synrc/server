@@ -528,7 +528,7 @@ get_user_age(#user{age = UAge}) ->
 -spec filter_table(iolist(), record(game_table)) -> true | false.
 filter_table(User0, #game_table{owner = Owner} = GameTable) ->
     {ok, User} = nsm_users:get_user(User0),
-    AllSub = nsm_users:list_subscription(User0),
+    AllSub = nsm_users:list_subscr(User0),
     case Owner of
         User0 ->
             true;
@@ -600,7 +600,7 @@ check({only_invite, #game_table{invited_users = TUsers}, #user{username = UserNa
         _ -> lists:member(UserName, TUsers)
     end;
 check({sub, #game_table{owner = Owner}, AllSub, _User}) ->
-    Names = lists:map(fun(#subscription{whom=Whom}) ->
+    Names = lists:map(fun(#subs{whom=Whom}) ->
                               Whom
                       end, AllSub),
     lists:member(Owner, Names).
