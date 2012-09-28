@@ -11,11 +11,11 @@
          send_invite_email/5
 	]).
 
--include_lib("user.hrl").
--include_lib("invite.hrl").
+-include_lib("nsm_db/include/user.hrl").
+-include_lib("nsm_db/include/invite.hrl").
+-include_lib("alog/include/alog.hrl").
 
 -include("config.hrl").
--include_lib("alog/include/alog.hrl").
 
 %% use rpc call to web node to get gettext support
 -define(TXT2(Key, Lang), rpc:call(?WEBSERVER_NODE, gettext, key2str, [Key, Lang])).
