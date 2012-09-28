@@ -167,46 +167,26 @@ section_body(profile) ->
 				       ]}
     ];
 section_body(gifts) ->
-    TL = #span{text=" TL", style="font-size:8pt;"},
     AllGifts = lists:reverse(lists:sort(rpc:call(?APPSERVER_NODE, nsm_users, list_gifts_of, [wf:user()]))),
     [
         #h1{text=?_T("Gifts")},
-        #panel{ class="affiliates-box", body=[
-            case AllGifts of
-                [] -> #label{text=?_T("No gifts yet.")};
-                _ ->
-                    #table {rows=[
-                        #tablerow { cells=[
-                            #tableheader { text=?_T("Name"), style="padding:4px 10px;" },
-                            #tableheader { text=?_T("Time"), style="padding:4px 10px;" },
-                            #tableheader { text=?_T("Price"), style="padding:4px 10px;" },
-                            #tableheader { text=?_T("Kakush"), style="padding:4px 10px;" },
-                            #tableheader { text=?_T("Real Price"), style="padding:4px 10px;" }
-                        ]}
-                    ] ++ [
-                        begin
-                            SDate = site_utils:feed_time_tuple(calendar:now_to_local_time(BoughtTime)),
-                            {ok, {ThisGift, _}} = rpc:call(?APPSERVER_NODE, nsm_gifts_db, get_gift, [GiftId]),
-                            SName = ThisGift#gift.gift_name,
-                            SPrice = integer_to_list(ThisGift#gift.kakush_currency),
-                            SKakush = integer_to_list(ThisGift#gift.kakush_point),
-                            SRealPrice = [affiliates:kurus_to_string(ThisGift#gift.our_price), TL],
-                            #tablerow { cells=[
-                                #tablecell { body = SName, 
-                                    style="padding:4px 10px;" },
-                                #tablecell { body = SDate, 
-                                    style="padding:4px 10px; font-size:10pt;" },
-                                #tablecell { body = SPrice, 
-                                    style="padding:4px 10px; text-align:center;" },
-                                #tablecell { body = SKakush, 
-                                    style="padding:4px 10px; text-align:center;" },
-                                #tablecell { body = SRealPrice, 
-                                    style="padding:4px 10px; text-align:center;" }
-                            ]}
-                        end
-                    || #user_bought_gifts{timestamp = BoughtTime, gift_id = GiftId} <- AllGifts]}
-            end        
-        ]}
+        #list{class="history-list", id=orders_list, body = [
+            begin
+                SDate = site_utils:feed_time_tuple(calendar:now_to_local_time(BoughtTime)),
+                {ok, {ThisGift, _}} = rpc:call(?APPSERVER_NODE, nsm_gifts_db, get_gift, [GiftId]),
+                SName = ThisGift#gift.gift_name,
+                SKakush = integer_to_list(ThisGift#gift.kakush_point),
+                SPrice = integer_to_list(ThisGift#gift.kakush_currency),
+                #listitem{body = [
+                    #span{body=[
+                        "<b>" ++ SName ++ " </b><font style='color:#777;'>(" ++ SDate ++ ")</font> " ++ ?_T("worth") ++ " " ++
+                        SPrice ++ " <font size=-1>TL</font> " ++ ?_T("for") ++ " " ++ SKakush ++ " " ++ ?_T("kakush")
+                    ]},
+                    #link{class=btn, postback={deliver},  text=?_T("Deliver")}
+                ]}
+            end
+
+        || #user_bought_gifts{timestamp = BoughtTime, gift_id = GiftId} <- AllGifts]}
     ];
 
 
@@ -383,7 +363,6 @@ section_body(invite) ->
 		#panel{class="row", body=[
 		#panel{class="btn-holder", body=[
 			#panel{class="ar", body=[
-				#button{class="btn-reset", text=?_T("Cancel"), postback=invite_cancel},
 				#button{class="btn-submit", text=?_T("Send"), postback=invite_send}
 			]}
 		]}]}
@@ -774,14 +753,15 @@ u_event(invite_send) ->
 		    captcha:generate(invite),
 		    wf:update(invite_captcha, captcha:format(invite)),
 		    wf:set(invite_captcha_result, ""),
+		    wf:set(invite_generate_url, ""),
+		    wf:set(mail_invite, ""),
+		    wf:set(name_invite, ""),
+		    wf:set(text_invite, ""),
 		    flash(info, invite_info, ?_T("Invite sent!"))
 	    end;
 	false ->
 	    flash(error, invite_info, ?_T("Bad captcha!"))
     end;
-
-u_event(invite_cancel) ->
-    u_event(not_done_yet);
 
 u_event({service, _}) ->
     u_event(not_done_yet);
