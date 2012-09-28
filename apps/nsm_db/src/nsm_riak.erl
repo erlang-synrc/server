@@ -189,7 +189,7 @@ make_obj(T = {feed_blocked_users, UserId, _BlockedUsers} = T, feed_blocked_users
 make_obj(T, uploads) -> [Key] = io_lib:format("~p", [T#uploads.key]), riak_object:new(<<"uploads">>, list_to_binary(Key), T);
 make_obj(T, invite_code) -> riak_object:new(<<"invite_code">>, list_to_binary(T#invite_code.code), T);
 make_obj(T={_,User,_}, invite_code_by_user) -> riak_object:new(<<"invite_code_by_user">>, list_to_binary(User), T);
-make_obj(T, invite_by_issuer) -> riak_object:new(<<"invite_by_user">>, list_to_binary(T#invite_by_issuer.user), T);
+make_obj(T, invite_by_issuer) -> riak_object:new(<<"invite_by_issuer">>, list_to_binary(T#invite_by_issuer.user), T);
 make_obj(T, entry_likes) -> riak_object:new(<<"entry_likes">>, list_to_binary(T#entry_likes.entry_id), T);
 make_obj(T, user_likes) -> riak_object:new(<<"user_likes">>, list_to_binary(T#user_likes.user_id), T);
 make_obj(T, one_like) -> riak_object:new(<<"one_like">>, list_to_binary(integer_to_list(T#one_like.id)), T);
@@ -943,7 +943,7 @@ add_invite_to_issuer(UserId,O) ->
     Prev = undefined,
     case Team#invite_by_issuer.top of
         undefined -> Next = undefined;
-        X -> case nsm_db:get(membership_purchase, X) of
+        X -> case nsm_db:get(invite_code, X) of
                  {ok, TopEntry} ->
                      Next = TopEntry#invite_code.code,
                      EditedEntry = #invite_code{
@@ -952,7 +952,7 @@ add_invite_to_issuer(UserId,O) ->
                            issuer = TopEntry#invite_code.issuer,
                            recipient = TopEntry#invite_code.recipient,
                            created_user = TopEntry#invite_code.created_user,
-                           next = TopEntry#membership_purchase.next,
+                           next = TopEntry#invite_code.next,
                            prev = EntryId},
                     nsm_db:put(EditedEntry); % update prev entry
                  {error,notfound} -> Next = undefined

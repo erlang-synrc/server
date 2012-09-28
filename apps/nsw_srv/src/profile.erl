@@ -8,6 +8,7 @@
 -include_lib("nsm_db/include/scoring.hrl").
 -include_lib("nsm_db/include/membership_packages.hrl").
 -include_lib("nsm_db/include/common.hrl").
+-include_lib("nsm_db/include/invite.hrl").
 -include_lib("elements/records.hrl").
 
 -include("common.hrl").
@@ -331,6 +332,7 @@ section_body(account) ->
 section_body(invite) ->
     captcha:generate(invite),
     RSpan = " <span class=\"req\">*</span>",
+    SentInvites = rpc:call(?APPSERVER_NODE, nsm_db, invite_code_by_issuer, [wf:user()]),
     [#h1{text=?_T("Invite")},
      #panel{id=invite_info},
      #panel{class="invite-form", body=[
@@ -367,7 +369,31 @@ section_body(invite) ->
 			]}
 		]}]}
 	]},
-	"</form>"]}
+	"</form>"]},
+
+    #h1{text=?_T("Sent invites")},
+        #list{class="history-list", id=orders_list, body = [
+            begin
+                SDate = site_utils:feed_time_tuple(calendar:now_to_local_time(CreateDate)),
+                case CreatedUser of
+                    undefined ->
+                        #listitem{body = [
+                            #span{body=[
+                                "<b>" ++ Code ++ " </b><font style='color:#777;'>(" ++ SDate ++ ")</font> " ++ ?_T("Invited") ++ " " ++ Recipient                        
+                            ]},
+                            #link{class=btn, postback={invite_resend, Recipient},  text=?_T("Resend")}
+                        ]};
+                    _ ->
+                        #listitem{body = [
+                            #span{body=[
+                                "<b>" ++ Code ++ " </b><font style='color:#777;'>(" ++ SDate ++ ")</font> " ++ ?_T("Invited") ++ " " ++ 
+                                Recipient ++ " " ++ ?_T("became") ++ CreatedUser ++ " " ++ ?_T("on Kakaranet")
+                            ]}
+                        ]}
+                end
+            end
+
+        || #invite_code{code=Code, create_date=CreateDate, recipient=Recipient, created_user=CreatedUser} <- SentInvites]}
 	];
 section_body(tournament) ->
 
@@ -761,6 +787,19 @@ u_event(invite_send) ->
 	    end;
 	false ->
 	    flash(error, invite_info, ?_T("Bad captcha!"))
+    end;
+
+u_event({invite_resend, Mail}) ->
+    UserName = ?_T("Gamer"),  % this is wrong
+    Text = "",
+    User = webutils:user_info(),
+    case rpc:call(?APPSERVER_NODE,invite,send_invite_email,[User, Mail, UserName, Text]) of
+	{error, wrong_email} ->
+	    flash(error, invite_info, ?_T("Wrong e-mail"));
+	{error, wrong_username} ->
+	    flash(error, invite_info, ?_T("Wrong username."));
+	{ok, _} ->
+	    flash(info, invite_info, ?_T("Invite sent! (this still need some tuning)"))
     end;
 
 u_event({service, _}) ->
