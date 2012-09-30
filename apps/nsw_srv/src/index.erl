@@ -1,4 +1,3 @@
-%% -*- mode: nitrogen -*-
 -module (index).
 -compile(export_all).
 

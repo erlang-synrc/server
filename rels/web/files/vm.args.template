@@ -1,29 +1,11 @@
-## Cookie for distributed erlang
 -name WEBSERVER_NODE
 -setcookie nitrogen
 -boot start_sasl
 -mnesia dir data
 -sasl errlog_type all
 -gproc gproc_dist all
-
-## Heartbeat management; auto-restarts VM if it dies or becomes unresponsive
-## (Disabled by default..use with caution!)
-##-heart
-
-## Enable kernel poll and a few async threads
 +K true
 +A 5
-
-## Increase number of concurrent ports/sockets
 -env ERL_MAX_PORTS 20000
-
-## Tweak GC to run more often
 -env ERL_FULLSWEEP_AFTER 0
-
-## Include .beam files for site.
--pa ./site/ebin
-
-## Include .beam files for dependencies.
--pa ../../../deps/*/ebin
-
 -sync sync_mode nitrogen
