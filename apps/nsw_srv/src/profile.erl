@@ -270,6 +270,21 @@ section_body(account) ->
 
     ?INFO("wf:session: ~p",[wf:session(is_facebook)]),
 
+    ClickEvent = #event{type=click, actions=#script{script="
+	function buy() {
+	 var obj = {
+	 method: 'pay',
+	 action: 'buy_item',
+	 order_info: {'item_id': '1a'},
+	 };
+	 FB.ui(obj, js_callback);
+	};
+	var js_callback = function(data) {
+	};
+	buy();
+	"
+    }},
+
     Orders = rpc:call(?APPSERVER_NODE, nsm_db, get_purchases_by_user,
         [Username, ?ORDERS_PER_PAGE, [?MP_STATE_DONE]]),
 
@@ -279,9 +294,12 @@ section_body(account) ->
             "<dl>
             <dt>"++ ?_T("Remaining Quota") ++":</dt>
             <dd>"++wf:to_list(Quota)++"</dd>
-            </dl>",
+            </dl>" ++ 
+            "<script src=\"http://connect.facebook.net/en_US/all.js\"></script>"++
+            "<script>FB.init({appId: \"176025532423202\", status: true, cookie: true});</script>"
+            ,
             case wf:session(is_facebook) of
-                true -> "";
+               true -> #link{class=btn, text=?_T("Üyelİk Yenİle"), actions=ClickEvent};
                 _ ->  #link{class=btn, url=?_U("/price-table"), text=?_T("Üyelİk Yenİle")}
             end
         ]},
