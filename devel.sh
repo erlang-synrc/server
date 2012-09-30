@@ -1,5 +1,6 @@
 #!/bin/bash
-## Start this skript after releases created.
+
+## Start this script after release created.
 ## Then start sync in web node with sync:go().
 ## Enjoy.
 
