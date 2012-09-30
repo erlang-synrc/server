@@ -108,6 +108,10 @@ install additional lib before you go:
 
 For Ubuntu users please install prebuilt binaries from official site.
 
+    $ sudo rabbitmqctl add_user guest guest
+    $ sudo rabbitmqctl add_vhost "/"
+    $ sudo rabbitmqctl set_permissions -p "/" guest '.*' '.*' '.*'
+
 Fast local start
 ----------------
 

@@ -472,8 +472,10 @@ init_mq(User, Groups) ->
                        durable,
                        {auto_delete, false}],
     {ok, Channel} = nsm_mq:open([]),
+    ?INFO("Cration Exchange: ~p,",[{Channel,UserExchange,ExchangeOptions}]),
     ok = nsm_mq_channel:create_exchange(Channel, UserExchange,
                                         ExchangeOptions),
+                                          ?INFO("Creatied OK"),
     %% build routing keys for user's relations
     Relations = build_user_relations(User, Groups),
 
