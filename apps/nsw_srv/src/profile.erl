@@ -33,17 +33,6 @@ body() ->
     end.
 
 main_authorized() ->
-    #panel{id=fb-root},
-    #panel{id=fb-ui-return-data},
-    "<script src=\"http://connect.facebook.net/en_US/all.js\"></script>
-    <script>
-	FB.init({
-	    appId : '154227314626053',
-	    status : true,
-	    logging : true,
-	    cookie : true
-	});
-    </script>",
     Col = #panel{class=col, body=section_body(get_current_section())},
     PreLinks = [
 	     {profile,	?_U("/profile"), 	?_T("Profile")},
@@ -280,9 +269,10 @@ section_body(account) ->
 %    wf:wire(Id, Script),
 
     ?INFO("wf:session: ~p",[wf:session(is_facebook)]),
-
+    
     ClickEvent = #event{type=click, actions=#script{script="var callback=function(data){alert(data);};
 	function buy() {
+	 FB.init({ appId : '154227314626053', status : true, logging : true, cookie : true});
 	 var obj = {
 	 method: 'pay',
 	 action: 'buy_item',
@@ -308,7 +298,6 @@ section_body(account) ->
             ,
             case wf:session(is_facebook) of
                true -> #link{class=btn, text=?_T("Üyelİk Yenİle"), actions=ClickEvent};
-               %#link{class=btn, text=?_T("FFB"), url="https://www.facebook.com/dialog/pay?app_id=154227314626053&redirect_uri=http%3A%2F%2Fsrv5.kakaranet.com%3A8000%2Fbuy%2Ffacebook&action=buy_item"};
                 _ ->  #link{class=btn, url=?_U("/price-table"), text=?_T("Üyelİk Yenİle")}
             end
         ]},
@@ -354,7 +343,7 @@ section_body(account) ->
                 ]}
             ]}
         ]},
-        ""
+        "<script src=\"http://connect.facebook.net/en_US/all.js\"></script>"
     ];
 
 section_body(invite) ->
