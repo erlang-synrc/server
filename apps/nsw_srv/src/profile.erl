@@ -296,7 +296,7 @@ section_body(account) ->
             <dd>"++wf:to_list(Quota)++"</dd>
             </dl>" ++ 
             "<script src=\"http://connect.facebook.net/en_US/all.js\"></script>"++
-            "<script>FB.init({appId: \"176025532423202\", status: true, cookie: true});</script>"
+            "<script>FB.init({appId: \"154227314626053\", status: true, cookie: true});</script>"
             ,
             case wf:session(is_facebook) of
                true -> #link{class=btn, text=?_T("Üyelİk Yenİle"), actions=ClickEvent};
