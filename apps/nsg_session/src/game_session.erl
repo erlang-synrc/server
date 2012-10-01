@@ -151,12 +151,10 @@ handle_call(#social_action_msg{type=Type, initiator=P1, recipient=P2} = _Msg,
             {reply, ok, State};
         ?SOCIAL_ACTION_BLOCK ->
             Subject = binary_to_list(P2),
-            %rpc:call(?APPSERVER_NODE, nsm_users, block_user, [UserId, Subject]),
             nsx_util_notification:notify(["subscription", "user", UserId, "block_user"], {Subject}),
             {reply, ok, State};
         ?SOCIAL_ACTION_UNBLOCK ->
             Subject = binary_to_list(P2),
-            %rpc:call(?APPSERVER_NODE, nsm_users, unblock_user, [UserId, Subject]),
             nsx_util_notification:notify(["subscription", "user", UserId, "unblock_user"], {Subject}),
             {reply, ok, State};
         ?SOCIAL_ACTION_LOVE ->

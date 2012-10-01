@@ -280,6 +280,7 @@ handle_notice(["system", "delete"] = Route,
     nsm_db:delete(Where, What),
     {noreply, State};
 
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% groups
 
 handle_notice(["system", "create_group"] = Route, 
@@ -542,12 +543,10 @@ handle_notice(["subscription", "user", Who, "block_user"] = Route,
     case nsm_db:get(user_ignores_rev, Whom) of
         {error,notfound} ->
             nsx_util_notification:notify(["db", "user", Whom, "put"], #user_ignores_rev{whom=Whom, who=[Who]});
-            %nsm_db:put(#user_ignores_rev{whom=Whom, who=[Who]});
         {ok,#user_ignores_rev{who=RevList}} ->
             case lists:member(Who, RevList) of
                 false ->
                     NewRevList = [Who | RevList],
-                    %nsm_db:put(#user_ignores_rev{whom=Whom, who=NewRevList});
                     nsx_util_notification:notify(["db", "user", Whom, "put"], #user_ignores_rev{whom=Whom, who=NewRevList});
                 true ->
                     do_nothing
@@ -572,7 +571,6 @@ handle_notice(["subscription", "user", Who, "unblock_user"] = Route,
     case lists:member(Who, List2) of
         true ->
             NewRevList = [ UID || UID <- List2, UID =/= Who ],
-            %nsm_db:put(#user_ignores_rev{whom = Whom, who = NewRevList});
             nsx_util_notification:notify(["db", "user", Whom, "put"], #user_ignores_rev{whom = Whom, who = NewRevList});
         false ->
             do_nothing
@@ -614,6 +612,27 @@ handle_notice(["invite", "user", UId, "add_invite_to_issuer"] = Route,
     {O} = Message,
     nsm_db:add_invite_to_issuer(UId, O),
     {noreply, State};
+
+handle_notice(["system", "use_invite"] = Route,
+    Message, #state{owner = Owner, type =Type} = State) ->
+    ?INFO("queue_action(~p): use_invite: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),
+    {Code, UId} = Message,
+    invite:use_code(Code, UId),
+    {noreply, State};
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% tournaments
+
+handle_notice(["tournaments", "user", UId, "create_and_join"] = Route,
+    Message, #state{owner = Owner, type =Type} = State) ->
+    ?INFO("queue_action(~p): create_and_join: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),
+    {TourName, TourDesc, {Y,M,D}, MaxPlayers, Quota, Award, TourType, GameType} = Message,
+    case tournaments:create(UId, TourName, TourDesc, {Y,M,D}, MaxPlayers, Quota, Award, TourType, GameType) of
+        {error,X} -> ?ERROR("Error creating tournament: ~p", X);
+        TId -> tournaments:join(UId, TId)
+    end,
+    {noreply, State};
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% likes
 
@@ -721,6 +740,9 @@ handle_notice(["purchase", "user", _, "set_purchase_info"] = Route,
     {noreply, State};
 
 
+%% for copypasting :-)   --    nsx_util_notification:notify(["", "", , ""], {}),
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% unexpected
 handle_notice(Route, Message, #state{owner = User} = State) ->
     ?DBG("feed(~p): unexpected notification received: User=~p, "
@@ -767,7 +789,9 @@ get_opts(#state{type = system, owner = Owner}) ->
                 [system, create_contract_type],
                 [system, disable_contract_type],
                 % membership pachages
-                [system, add_package]
+                [system, add_package],
+                % invites
+                [system, use_invite]
                 ]},
      {gproc_name, Name},
      {consume_options, [exclusive]},
