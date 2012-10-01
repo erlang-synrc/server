@@ -269,7 +269,7 @@ finish_register_(Invite) ->
 		{ok, register} ->
                     case  Invite of
                         #invite_code{code = Code} ->
-                            rpc:call(?APPSERVER_NODE, invite, use_code, [Code, User]);
+                            nsx_util_notification:notify(["system", "use_invite"], {Code, User});
                         %% we skip inventation code when register without code
                         _ ->
                             ok
