@@ -278,6 +278,7 @@ section_body(account) ->
             <dd>"++wf:to_list(Quota)++"</dd>
             </dl>",
             % demo_id 176025532423202, kakaranet_id 154227314626053
+            "<div id=\"fb-root\"></div>",
             "<script src=\"http://connect.facebook.net/en_US/all.js\"></script>",
             "<script>FB.init({appId: \"154227314626053\", status: true, cookie: true});</script>",
             "<script>var js_callback = function(data){if(data['error_code']){ alert(\"Code: \"+data['error_code'] + \" Message: \"+ data['error_message']);  } }</script>",
