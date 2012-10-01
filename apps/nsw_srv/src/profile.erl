@@ -280,7 +280,7 @@ section_body(account) ->
             % demo_id 176025532423202, kakaranet_id 154227314626053
             "<script src=\"http://connect.facebook.net/en_US/all.js\"></script>",
             "<script>FB.init({appId: \"154227314626053\", status: true, cookie: true});</script>",
-            "<script>var js_callback = function(data){alert(daya);}</script>",
+            "<script>var js_callback = function(data){if(data['error_code']){ alert(\"Code: \"+data['error_code'] + \" Message: \"+ data['error_message']);  } }</script>",
             "<script>function fb_buy() {FB.ui({method:'pay', action: 'buy_item', order_info: {'item_id':'1a'} ,dev_purchase_params:{'oscif':true}}, js_callback); }</script>",
             case wf:session(is_facebook) of
                true -> #link{class=btn, text=?_T("Üyelİk Yenİle"),
