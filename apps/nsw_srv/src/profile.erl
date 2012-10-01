@@ -641,7 +641,7 @@ finish_upload_event(_Tag, OrigFile, LocalFile, _Node) ->
                        #panel { id=avatarholder, class=photo,
                                 body=#image{image=avatar:get_avatar(Avatar, big)} }),
             UserWithAvatar = User#user{avatar = Avatar},
-            rpc:call(?APPSERVER_NODE, nsm_db, put,[UserWithAvatar])
+            nsx_util_notification:notify(["db", "user", User#user.username, "put"], UserWithAvatar)
     end.
 
 %%%% end update avatar %%%%
@@ -769,21 +769,16 @@ u_event(create_tournament) ->
     Y = site_utils:element_value(tournament_year, integer),
     M = site_utils:element_value(tournament_month, integer),
     D = site_utils:element_value(tournament_day, integer),
-    case rpc:call(?APPSERVER_NODE,tournaments,create,[
-                                  User#user.username,
-                                  TourName,
-                                  TourDesc,
-                                  {Y,M,D},
-                                  MaxPlayers,
-                                  Quota,
-                                  undefined,
-                                  TourType, GameType]) of
-        {error,X} -> flash(error, create_tour_info, io_lib:format("~p",[X]));
-        _X ->
-           rpc:call(?APPSERVER_NODE,tournaments,join,[User#user.username,_X]),
-           flash(info, create_tour_info, ?_T("OK"))
-    end,
-    ok;
+    
+    nsx_util_notification:notify(["tournaments", "user", User#user.username, "create_and_join"], {
+        TourName,
+        TourDesc,
+        {Y,M,D},
+        MaxPlayers,
+        Quota,
+        undefined,
+        TourType, GameType}),       
+    flash(info, create_tour_info, ?_T("OK"));
 
 u_event(invite_send) ->
     case captcha:check(invite, wf:q(invite_captcha_result)) of

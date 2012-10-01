@@ -24,7 +24,7 @@ verify_account(Code) ->
             {error, bad_verification_code};
         {ok, User0} ->
             UpdateUser = User0#user{status = ok},
-            rpc:call(?APPSERVER_NODE,nsm_db,put,[UpdateUser]),
+            nsx_util_notification:notify(["system", "put"], UpdateUser),
             wf:session(user_info, UpdateUser),
             {ok, account_activated}
     end.

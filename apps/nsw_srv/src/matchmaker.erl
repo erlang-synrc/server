@@ -1155,7 +1155,6 @@ u_event(create_game) ->
     UId = wf:user(),
     Settings = wf:session({q_game_type(),wf:user()}),
     wf:session({q_game_type(),UId},Settings),
-%    rpc:call(?APPSERVER_NODE,table_manager,save_table,[UId, Settings]),
     URL = ?_U(lists:concat(["/matchmaker/", q_game_type()])),
     wf:redirect(URL),
 

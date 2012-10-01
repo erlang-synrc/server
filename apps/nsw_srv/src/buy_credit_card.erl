@@ -357,12 +357,7 @@ process_failure(OrderId, IntCode, Reason) when
     end,
     nsx_util_notification:notify(["purchase", "user", wf:user(), "set_purchase_state"], 
         {OrderId, ?MP_STATE_FAILED, [[{code, IntCode}, {reason, Reason}]]}),
-    %ok = rpc:call(?APPSERVER_NODE, nsm_membership_packages,
-    %    set_purchase_state, [OrderId, ?MP_STATE_FAILED,
-    %        [[{code, IntCode}, {reason, Reason}]]
-    %]),
     BlockedUser = User#user{status = banned},
-    %rpc:call(?APPSERVER_NODE, nsm_db, put, [BlockedUser]),
     nsx_util_notification:notify(["db", "user", wf:user(), "put"], {BlockedUser}),
     wf:logout(),
 
@@ -373,10 +368,6 @@ process_failure(OrderId, IntCode, Reason) when
 process_failure(OrderId, IntCode, Reason) ->
     nsx_util_notification:notify(["purchase", "user", wf:user(), "set_purchase_state"], 
         {OrderId, ?MP_STATE_FAILED, [[{code, IntCode}, {reason, Reason}]]}).
-    %ok = rpc:call(?APPSERVER_NODE, nsm_membership_packages,
-    %    set_purchase_state, [OrderId, ?MP_STATE_FAILED,
-    %        [[{code, IntCode}, {reason, Reason}]]
-    %]).
 
 error_handler(OrderId, Code, Reason) ->
     process_failure(OrderId, Code, Reason),

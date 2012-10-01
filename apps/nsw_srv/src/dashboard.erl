@@ -387,15 +387,14 @@ inner_event({add_entry, _}, User) ->
 
             post_entry(DashboardOwner, Desc, Medias),
 
-            %rpc:call(?APPSERVER_NODE, feed, count_entry_in_statistics, [wf:user()]),
             nsx_util_notification:notify(["feed", "user", wf:user(), "count_entry_in_statistics"], {}),  
 
             wf:session(autocomplete_list_values, []),
             wf:update(text_length, ""),
             wf:wire("upd_scrollers(); remove_all_tos();"),
-            %PHASE1 qTip all (including new entries) as their buttons don't have ids
+            % qTip all (including new entries) as their buttons don't have ids
             wf:wire("qtip_all_links();"),
-            wf:wire(#attr{target=add_entry_textbox, attr="value", value=""})    % cleaning input field?
+            wf:wire(#attr{target=add_entry_textbox, attr="value", value=""})
     end;
 
 inner_event({comment_entry, EntryTrueId, _CommentsPanelId, SourceElementId, _ViewAtt, MSI}, User) ->
@@ -416,7 +415,6 @@ inner_event({comment_entry, EntryTrueId, _CommentsPanelId, SourceElementId, _Vie
                 Other -> lists:reverse(Other)
             end,
             wf:state(MSI, []),
-            %rpc:call(?APPSERVER_NODE, feed, count_comment_in_statistics, [wf:user()]),
             nsx_util_notification:notify(["feed", "user", wf:user(), "count_comment_in_statistics"], {}),  
             nsx_util_notification:notify([feed, OwnerType, DashboardOwner, comment, utils:uuid_ex(), add],
                 [User, EntryTrueId, undefined, Value, Medias])
@@ -488,21 +486,17 @@ inner_event({direct_message_to, CheckedUser}, _) ->
     wf:wire("set_focus_to_search()");
 
 inner_event({block, CheckedUser}, User) ->
-    %rpc(nsm_users, block_user, [User, CheckedUser]),
     nsx_util_notification:notify(["subscription", "user", User, "block_user"], {CheckedUser}),
     wf:update(blockunblock, #link{text=?_T("Unblock this user"), url="javascript:void(0)", postback={unblock, CheckedUser}}),
     wf:update(feed, user_blocked_message(CheckedUser));
 
 inner_event({unblock, CheckedUser}, User) ->
-    %rpc(nsm_users, unblock_user, [User, CheckedUser]),
     nsx_util_notification:notify(["subscription", "user", User, "unblock_user"], {CheckedUser}),
-    %FId = webutils:user_info(feed), %?
     Feeds = view_feed(undefined),
     wf:update(blockunblock, #link{text=?_T("Block this user"), url="javascript:void(0)", postback={block, CheckedUser}}),
     wf:update(feed, Feeds);
 
 inner_event({unblock_load, CheckedUser, Offset}, User) ->
-    %rpc(nsm_users, unblock_user, [User, CheckedUser]),
     nsx_util_notification:notify(["subscription", "user", User, "unblock_user"], {CheckedUser}),
     Feeds = view_feed(Offset),
     wf:update(blockunblock, #link{text=?_T("Block this user"), url="javascript:void(0)", postback={block, CheckedUser}}),
