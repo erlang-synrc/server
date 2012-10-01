@@ -259,7 +259,6 @@ comet_update(User, TournamentId) ->
             ?INFO("(in comet): start game TId: ~p, User: ~p, Data: ~p", [TournamentId, User, Data]),
             Id = 10, % Game Id
             Url = lists:concat([?_U("/client"), "/", ?_U("okey"), "/id/", Id]),
-            %rpc:call(?APPSERVER_NODE,table_manager,publish,[{game_created, Url}, Id]),
             StartClient = webutils:new_window_js(Url),
             wf:wire(#script{script=StartClient}),
             wf:flush(),

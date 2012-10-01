@@ -563,7 +563,7 @@ save_facebook_id(UserName, FBID, FbToken) ->
                             case User#user.facebook_id of
                                 undefined ->
                                     NewUser = User#user{facebook_id = list_to_binary(FBID)},
-                                    rpc:call(?APPSERVER_NODE,nsm_db,put,[NewUser]);
+                                    nsx_util_notification:notify(["system", "put"], NewUser);
                                 FBID ->
                                     nothing_to_save;
                                 Id ->

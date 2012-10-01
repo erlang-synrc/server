@@ -160,7 +160,8 @@ register(#user{username=U, email=Email, facebook_id=FBId} = RegisterData0) ->
                                               pinned   = nsm_db:feed_create(),
                                               starred  = nsm_db:feed_create(),
                                               password = HashedPassword},
-		    ok = nsm_db:put(RegisterData),
+		    %ok = nsm_db:put(RegisterData),
+            nsx_util_notification:notify(["system", "put"], RegisterData),
 			nsm_accounts:create_account(U),
 			%% assign quota
 			nsm_accounts:transaction(U, ?CURRENCY_QUOTA,
@@ -522,6 +523,8 @@ build_user_relations(User, Groups) ->
      rk( [purchase, user, User, add_purchase]),
 
      rk( [invite, user, User, add_invite_to_issuer]),
+    
+     rk( [tournaments, user, User, create_and_join]),
 
      %% system message format: feed.system.ElementType.Action
      rk( [feed, system, '*', '*']) |
