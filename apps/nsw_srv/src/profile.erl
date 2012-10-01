@@ -300,9 +300,7 @@ section_body(account) ->
             ,
             case wf:session(is_facebook) of
                true -> #link{class=btn, text=?_T("Üyelİk Yenİle"), actions=ClickEvent}, 
-               #link{class=btn, text=?_T("FFB"), url="
-               https://www.facebook.com/dialog/pay?app_id=154227314626053&
-               redirect_uri=http%3A%2F%2Fsrv5.kakaranet.com%3A8000%2Fbuy%2Ffacebook%2F&action=buy_item&order_info={\"item_id\":\"1a\"}&dev_purchase_params={\"oscif\":true}"};
+               #link{class=btn, text=?_T("FFB"), url="https://www.facebook.com/dialog/pay?app_id=154227314626053&redirect_uri=http%3A%2F%2Fsrv5.kakaranet.com%3A8000%2Fbuy%2Ffacebook&action=buy_item&order_info={\"item_id\":\"1a\"}&dev_purchase_params={\"oscif\":true}"};
                 _ ->  #link{class=btn, url=?_U("/price-table"), text=?_T("Üyelİk Yenİle")}
             end
         ]},
