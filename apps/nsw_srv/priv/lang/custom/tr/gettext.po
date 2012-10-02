@@ -4167,3 +4167,90 @@ msgstr "You haven't played any games yet."
 #
 msgid "Clear selection"
 msgstr "Clear selection"
+#
+msgid "Amount"
+msgstr "Amount"
+#
+msgid "Check it in your profile!"
+msgstr "Check it in your profile!"
+#
+msgid "Convert"
+msgstr "Convert"
+#
+msgid "Convert kakush to quota"
+msgstr "Convert kakush to quota"
+#
+msgid "Deliver"
+msgstr "Deliver"
+#
+msgid "Financial"
+msgstr "Financial"
+#
+msgid "Gamer"
+msgstr "Gamer"
+#
+msgid "Gifts List"
+msgstr "Gifts List"
+#
+msgid "Invite sent! (this still need some tuning)"
+msgstr "Invite sent! (this still need some tuning)"
+#
+msgid "Invited"
+msgstr "Invited"
+#
+msgid "Kakush Currency"
+msgstr "Kakush Currency"
+#
+msgid "Kakush Points"
+msgstr "Kakush Points"
+#
+msgid "Key"
+msgstr "Key"
+#
+msgid "No."
+msgstr "No."
+#
+msgid "Our Price"
+msgstr "Our Price"
+#
+msgid "Please, write only digits."
+msgstr "Please, write only digits."
+#
+msgid "Real Price"
+msgstr "Real Price"
+#
+msgid "Resend"
+msgstr "Resend"
+#
+msgid "Retailer Price"
+msgstr "Retailer Price"
+#
+msgid "Sent invites"
+msgstr "Sent invites"
+#
+msgid "Sorry"
+msgstr "Sorry"
+#
+msgid "Sorry, you don't have enough kakush to buy it yet."
+msgstr "Sorry, you don't have enough kakush to buy it yet."
+#
+msgid "Sorry, you don't have that much kakush."
+msgstr "Sorry, you don't have that much kakush."
+#
+msgid "Value"
+msgstr "Value"
+#
+msgid "anyone"
+msgstr "anyone"
+#
+msgid "became"
+msgstr "became"
+#
+msgid "kakush"
+msgstr "kakush"
+#
+msgid "on Kakaranet"
+msgstr "on Kakaranet"
+#
+msgid "worth"
+msgstr "worth"

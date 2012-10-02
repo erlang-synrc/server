@@ -715,70 +715,90 @@ show_table(Tables) ->
     MaxUsers = case q_game_type() of "tavla" -> 2; "okey" -> 4 end,
     case Tables of
         [] ->
-            #panel{style="text-align: center",
-                   body=#h4{text=?_T("You can create a game or join a game")} };
+            #panel{style="text-align: center", body=#h4{text=?_T("You can create a game or join a game")} };
         _ ->
-            #table{class="view_table_table article-table", style="width:100%",
-                   rows=[
-                       begin
-                           RowId = wf:temp_id(),
-                           RemoveActions = #event{type=click,
-                                                  actions=#hide{target=RowId}},
-			       Info =
-				   case InfoPostback of
-				       {info, _} ->
-					   #link{id=showInfo,
-						    postback=InfoPostback,
-						    text=?_T("Info")};
-				       _ -> []
-				   end,
-			       JoinOrCrate =
-				   case Action of
-				       {join, Act} ->
-                           case length(Users) of
+            #table{class="view_table_table article-table", style="width:100%", rows=[
+                begin
+                    {info, {_, TId}} = InfoPostback,
+                    {ok, WholeTable} = view_table:get_table(TId),
+                    TMode = matchmaker:game_mode_to_text(WholeTable#game_table.game_mode),
+                    TSpeed = matchmaker:game_speed_to_text(WholeTable#game_table.game_speed),
+                    TRoundsOrNot = case WholeTable#game_table.rounds of
+                        undefined -> "";
+                        1 -> "";
+                        M -> ", "++integer_to_list(M) ++ " " ++ ?_T("rounds")
+                    end,
+                    TDoubleOrNot = case WholeTable#game_table.double_points of
+                        1 -> "";
+                        N -> ", x"++integer_to_list(N)
+                    end,
+                    RowId = wf:temp_id(),
+                    RemoveActions = #event{type=click, actions=#hide{target=RowId}},
+                    Info = case InfoPostback of
+                        {info, _} ->
+                            #link{id=showInfo,
+                                postback=InfoPostback,
+                                text=?_T("Info")
+                            };
+                        _ -> []
+                    end,
+                    JoinOrCrate = case Action of
+                        {join, Act} ->
+                            case length(Users) of
                                 MaxUsers -> "";
                                 _ ->
-					               #link{id=joinTable,
-						                 actions=Act,
-						                 show_if=ViewPerPoint,
-						                 text=?_T("Join"),
-                                         class="join-button"}
-                           end;
-				       {create, Act} ->
-					   #link{id=joinTable,
-						     actions=Act,
-						     text=?_T("Create")};
-				       _ -> []
-				   end,
-                               DeleteTable = #link{id=deleteTable,
-                                                     postback=DeleteAction,
-                                                     show_if=UserOwner,
-                                                     actions=RemoveActions,
-                                                     text=?_T("Remove")},
-			       Buttons = #list{style="float:right;",
-                            body=[#listitem{body=X} || X <- 
-                                [#image{image="/images/free.png"} || _N <- lists:seq(1,MaxUsers-length(Users))] ++ 
-                                [Info, JoinOrCrate, DeleteTable]]},
-			       #tablerow{id=RowId,
-					 cells=[#tablecell{class=cell1,
-							   text=TableNameLabel,
-                               body=[ " [ " ++ list_users_links(Users, OwnerLabel) ++ " ]"],
-							   id=tableNameLabel},
-%						#tablecell{class=cell2,
-%							   text=OwnerLabel,
-%							   id=ownerLabel},
-						#tablecell{class=cell3,
-                               body = Buttons}]}
-			   end
-                           || [TableNameLabel,
-                               OwnerLabel,
-                               InfoPostback,
-                               Action,
-                               ViewPerPoint,
-                               UserOwner,
-                               Users,
-                               DeleteAction] <- Tables ]
-		  }
+                                    #link{id=joinTable,
+                                        actions=Act,
+                                        show_if=ViewPerPoint,
+                                        text=?_T("Join"),
+                                        class="join-button"
+                                    }
+                            end;
+                        {create, Act} ->
+                            #link{id=joinTable,
+                                actions=Act,
+                                text=?_T("Create")
+                            };
+                        _ -> []
+                    end,
+                    DeleteTable = #link{id=deleteTable,
+                        postback=DeleteAction,
+                        show_if=UserOwner,
+                        actions=RemoveActions,
+                        text=?_T("Remove")
+                    },
+
+                    Buttons = #list{style="float:right;", body=[
+                        #listitem{body=X} || X <- 
+                            [#image{image="/images/free.png"} || _N <- lists:seq(1,MaxUsers-length(Users))] ++ 
+                            [Info, JoinOrCrate, DeleteTable]
+                    ]},
+                    #tablerow{id=RowId, cells=[
+                        #tablecell{ class=cell1,
+                            body=[
+                                "\""++TableNameLabel++"\"" ++ " (" ++ list_users_links(Users, OwnerLabel) ++ ") " ++
+                                TMode ++ ", " ++ TSpeed ++ TRoundsOrNot ++ TDoubleOrNot
+                            ],
+                            id=tableNameLabel
+                        },
+                        #tablecell{ class=cell3,
+                            body = Buttons
+                        }
+                    ]}
+                end
+                || [TableNameLabel,
+                    OwnerLabel,
+                    InfoPostback,
+                    Action,
+                    ViewPerPoint,
+                    UserOwner,
+                    Users,
+                    DeleteAction] <- lists:usort(fun (A, B) -> 
+                            {_, {_, An}} = lists:nth(3, A),
+                            {_, {_, Bn}} = lists:nth(3, B),
+                            An =< Bn
+                        end, Tables)
+            ]}
     end.
 
 check_required(Setting) ->
@@ -1592,6 +1612,8 @@ process_setting({Key, Value} = Setting) ->
     ok.
 
 % text from atoms. I want in to be here, though it is not used, for not to get these things scattered all over the code
+game_mode_to_text(Type) when is_atom(Type) ->
+    game_mode_to_text(atom_to_list(Type));
 game_mode_to_text(Type) ->
    case Type of
         "standard" -> ?_T("Standard");
@@ -1602,6 +1624,8 @@ game_mode_to_text(Type) ->
         "kakaratavla" -> ?_T("Kakara Tavla")
     end.
 
+game_speed_to_text(Speed) when is_atom(Speed) ->
+    game_speed_to_text(atom_to_list(Speed));
 game_speed_to_text(Speed) ->
     case Speed of 
         "fast" -> ?_T("Fast");
