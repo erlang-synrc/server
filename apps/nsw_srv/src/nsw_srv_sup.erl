@@ -116,8 +116,8 @@ init([]) ->
 
     ?INFO("Starting Cowboy Server on ~s:~p~n", [BindAddress, Port]),
 
-    cowboy:start_listener(http, 100, cowboy_tcp_transport, [{port, Port},{ip,ParsedBindAddress}],
-                                     cowboy_http_protocol, HttpOpts),
+    cowboy:start_listener(http, 100, cowboy_tcp_transport, [{port, Port}, {ip, ParsedBindAddress}], cowboy_http_protocol, HttpOpts),
+    cowboy:start_listener(https, 100, cowboy_ssl_transport,[{port, 8001}, {ip, ParsedBindAddress}, {certfile,"/mnt/glusterfs/server.crt"}, {keyfile,"/mnt/glusterfs/server.key"}], cowboy_http_protocol, HttpOpts),
 
     {ok, { {one_for_one, 5, 10}, [DChild]} }.
 

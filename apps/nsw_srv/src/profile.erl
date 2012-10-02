@@ -261,28 +261,12 @@ section_body(user_tournaments) ->
 section_body(account) ->
     Username = wf:user(),
     {ok, Quota}  = rpc:call(?APPSERVER_NODE, nsm_accounts, balance, [Username, ?CURRENCY_QUOTA]),
-
 %    Id = wf:temp_id(),
 %    ApiSave = #api{anchor = Id, tag = Id, name = savePackage, delegate = ?MODULE},
 %    wf:wire(ApiSave),
 %    Script = wf:f(" { ~s } ",[callback(ApiSave,"self == top")]),
 %    wf:wire(Id, Script),
-
     ?INFO("wf:session: ~p",[wf:session(is_facebook)]),
-    
-    ClickEvent = #event{type=click, actions=#script{script="var callback=function(data){alert(data);};
-	function buy() {
-	 FB.init({ appId : '154227314626053', status : true, logging : true, cookie : true});
-	 var obj = {
-	 method: 'pay',
-	 action: 'buy_item',
-	 order_info: {'item_id': '1a'},
-	 };
-	 FB.ui(obj, js_callback);
-	};
-	buy();"
-    }},
-
     Orders = rpc:call(?APPSERVER_NODE, nsm_db, get_purchases_by_user,
         [Username, ?ORDERS_PER_PAGE, [?MP_STATE_DONE]]),
 
@@ -292,12 +276,16 @@ section_body(account) ->
             "<dl>
             <dt>"++ ?_T("Remaining Quota") ++":</dt>
             <dd>"++wf:to_list(Quota)++"</dd>
-            </dl>" ++ 
-            "<script src=\"http://connect.facebook.net/en_US/all.js\"></script>"++
-            "<script>FB.init({appId: \"154227314626053\", status: false, cookie: true});</script>"
-            ,
+            </dl>",
+            % demo_id 176025532423202, kakaranet_id 154227314626053
+            "<div id=\"fb-root\"></div>",
+            "<script src=\"http://connect.facebook.net/en_US/all.js\"></script>",
+            "<script>FB.init({appId: \"154227314626053\", status: true, cookie: true});</script>",
+            "<script>var js_callback = function(data){if(data['error_code']){ alert(\"Code: \"+data['error_code'] + \" Message: \"+ data['error_message']);  } }</script>",
+            "<script>function fb_buy() {FB.ui({method:'pay', action: 'buy_item', order_info: {'item_id':'1a'} ,dev_purchase_params:{'oscif':true}}, js_callback); }</script>",
             case wf:session(is_facebook) of
-               true -> #link{class=btn, text=?_T("Üyelİk Yenİle"), actions=ClickEvent};
+               true -> #link{class=btn, text=?_T("Üyelİk Yenİle"),
+               actions=#event{type=click, actions=#script{script="fb_buy();"}}};
                 _ ->  #link{class=btn, url=?_U("/price-table"), text=?_T("Üyelİk Yenİle")}
             end
         ]},
@@ -342,8 +330,7 @@ section_body(account) ->
                     ]}
                 ]}
             ]}
-        ]},
-        "<script src=\"http://connect.facebook.net/en_US/all.js\"></script>"
+        ]}
     ];
 
 section_body(invite) ->
