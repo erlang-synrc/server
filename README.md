@@ -44,6 +44,8 @@ Building Project
 
 ### ERLANG
 
+    $ sudo apt-get install build-essential libncurses5-dev openssl libssl-dev
+
 Kakaranet project builds essentially with rebar and reltool.
 You should use Erlang not less than R14. You should kerl erlang with
 following ~/.kerlrc
@@ -53,12 +55,12 @@ following ~/.kerlrc
 
 And the kerl procedure is following:
 
-    $ curl -O https://raw.github.com/spawngrid/kerl/master/kerl; chmod a+x kerl
-    $ ./kerl build R14B04 r14
-    $ ./kerl install r14 ~/erl-r14/
-    $ . ~/erl-r14/activate
+    $ git clone git://github.com/spawngrid/kerl.git & cd kerl
+    $ ./kerl build R15B02 r15b02
+    $ ./kerl install r15b02 ~/apps/erlang-r15b02
+    $ . ~/apps/erlang-r15b02/activate
 
-Create this dir and subdirs for later usage:
+Make sure ts is in /etc/profile also. Create this dir and subdirs for later usage:
 
     $ mkdir -p /mnt/glusterfs/
     $ mkdir -p /mnt/glusterfs/apps
