@@ -9,6 +9,7 @@
 ]).
 
 start_link() ->
+    application:start(sasl),
     ok = lager:start(), %% console, file, error_logger handler
     ok = alog:start(),
     reset_loggers(),

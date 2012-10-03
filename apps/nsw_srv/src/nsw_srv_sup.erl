@@ -87,6 +87,7 @@ stress_test(NumberOfRooms) ->
 init([]) ->
     application:start(nprocreg),
     application:start(cowboy),
+    application:start(nsm_db),
     application:start(mimetypes),
 
     application:load(webmachine),
@@ -103,10 +104,10 @@ init([]) ->
     gettext:change_gettext_dir(code:priv_dir(nsw_srv)),
     gettext:recreate_db(),
 
-    case nsm_db:get(config, "debug/production", false) of
-         {ok, true} -> ok;
-         _ -> create_tables(100)
-    end,
+%    case nsm_db:get(config, "debug/production", false) of
+%         {ok, true} -> ok;
+%         _ -> create_tables(100)
+%    end,
 
     rpc:call(?APPSERVER_NODE,nsm_bg,init_workers,[]),
 
@@ -117,7 +118,8 @@ init([]) ->
     ?INFO("Starting Cowboy Server on ~s:~p~n", [BindAddress, Port]),
 
     cowboy:start_listener(http, 100, cowboy_tcp_transport, [{port, Port}, {ip, ParsedBindAddress}], cowboy_http_protocol, HttpOpts),
-    cowboy:start_listener(https, 100, cowboy_ssl_transport, [{ip, ParsedBindAddress} | nsx_opt:get_env(nsw_srv, ssl, [{port, 443}])], cowboy_http_protocol, HttpOpts),
+    cowboy:start_listener(https, 100, cowboy_ssl_transport,[{port, 8001}, {ip, ParsedBindAddress}, {certfile,"/mnt/glusterfs/server.crt"}, {keyfile,"/mnt/glusterfs/server.key"}], cowboy_http_protocol, HttpOpts),
+
     {ok, { {one_for_one, 5, 10}, [DChild]} }.
 
 mime() ->

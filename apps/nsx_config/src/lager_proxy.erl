@@ -29,7 +29,7 @@ log(ALoggerPrio, {FormatString, Args, _Level, Tag, Module, Line, Pid, _TimeStamp
    case Tag of
 	'$error_logger' -> ignore;
 	_ ->
-	    lager:log(Level, Module, Function, Line, Pid, Time, Format, Args)
+	    lager:log(Level, Module, Function, Line, Pid, Time, Format, Args, 100000)
    end,
    ok.
 

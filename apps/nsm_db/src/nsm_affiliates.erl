@@ -109,12 +109,12 @@
 %% @end
 
 init_db() ->
-    ?INFO("~w:init_db/0: started", [?MODULE]),
+%    ?INFO("~w:init_db/0: started", [?MODULE]),
     C = start_riak_client(),
     ok = init_counter(C, ?CONTRACTS_COUNTER, 1, []),
     ok = init_counter(C, ?CONTRACT_TYPES_COUNTER, 1, []),
     stop_riak_client(C),
-    ?INFO("~w:init_db/0: done", [?MODULE]),
+%    ?INFO("~w:init_db/0: done", [?MODULE]),
     ok.
 
 

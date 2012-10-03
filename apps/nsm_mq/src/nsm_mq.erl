@@ -73,7 +73,7 @@ start_link() ->
 %% --------------------------------------------------------------------
 init([]) ->
     process_flag(trap_exit, true),
-    ?INFO("applictions nsm_mq starting..."),
+%    ?INFO("applictions nsm_mq starting..."),
 
     Host     = nsm_mq_lib:get_env(amqp_host, "localhost"),
     Port     = nsm_mq_lib:get_env(amqp_port, 5672),
@@ -81,8 +81,8 @@ init([]) ->
     PassStr  = nsm_mq_lib:get_env(amqp_pass, "guest"),
     VHostStr = nsm_mq_lib:get_env(amqp_vhost, "/"),
 
-    ?INFO("parameters: Host=~s, Port=~p, User=~s, Pass=~s, VHost=~s",
-          [Host, Port, UserStr, PassStr, VHostStr]),
+%    ?INFO("parameters: Host=~s, Port=~p, User=~s, Pass=~s, VHost=~s",
+%          [Host, Port, UserStr, PassStr, VHostStr]),
 
     User  = list_to_binary(UserStr),
     Pass  = list_to_binary(PassStr),

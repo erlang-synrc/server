@@ -97,7 +97,7 @@ init_indexes() ->
 
 -spec init_db() -> ok.
 init_db() ->
-    ?INFO("~w:init_db/0 Started", [?MODULE]),
+%    ?INFO("~w:init_db/0 Started", [?MODULE]),
     case nsm_db:get(user,"alice") of
        {error,_} ->
             DBA = ?DBA,
@@ -116,7 +116,7 @@ init_db() ->
     end.
 
 add_affiliates() ->
-    ?INFO("~w:add_affiliates/0 Started", [?MODULE]),
+%    ?INFO("~w:add_affiliates/0 Started", [?MODULE]),
     Cl=nsm_affiliates:start_client(),
     nsm_affiliates:create_affiliate(Cl, "kunthar"),
     nsm_affiliates:create_affiliate(Cl, "tour1"),
@@ -131,11 +131,11 @@ add_affiliates() ->
 %    nsm_affiliates:reg_follower(Cl, "tour6", "tour1", 1),
 %    nsm_affiliates:reg_follower(Cl, "tour7", "tour1", 3),
     nsm_affiliates:stop_client(Cl),
-    ?INFO("~w:add_affiliates/0 Finished", [?MODULE]),
+%    ?INFO("~w:add_affiliates/0 Finished", [?MODULE]),
     ok.
 
 add_contracts() ->
-    ?INFO("~w:add_contracts/0 Started", [?MODULE]),
+%    ?INFO("~w:add_contracts/0 Started", [?MODULE]),
     {CurDate, _} = calendar:now_to_local_time(now()),
     CurDateDays = calendar:date_to_gregorian_days(CurDate),
     StartDate = calendar:gregorian_days_to_date(CurDateDays - 15),
@@ -143,24 +143,24 @@ add_contracts() ->
     ok = nsm_affiliates:create_contract("tour1", "Test contract",
                                          StartDate, FinishDate,
                                          2, 10.2),
-    ?INFO("~w:add_contracts/0 Finished", [?MODULE]),
+%    ?INFO("~w:add_contracts/0 Finished", [?MODULE]),
     ok.
 
 add_purchases() ->
-    ?INFO("~w:add_purchases/0 Started", [?MODULE]),
+%    ?INFO("~w:add_purchases/0 Started", [?MODULE]),
     {ok, Pkg1} = nsm_membership_packages:get_package(1),
     {ok, Pkg2} = nsm_membership_packages:get_package(2),
     {ok, Pkg3} = nsm_membership_packages:get_package(3),
     {ok, Pkg4} = nsm_membership_packages:get_package(4),
     PList = [{"kunthar", Pkg1},{"maxim", Pkg2},{"maxim",Pkg4}, {"kate", Pkg3} ],
     [ok = add_purchase(U, P) || {U, P} <- PList],
-    ?INFO("~w:add_purchases/0 Finished", [?MODULE]),
+%    ?INFO("~w:add_purchases/0 Finished", [?MODULE]),
     ok.
 
 add_purchase(UserId, Package) ->
     {ok, MPId} = nsm_membership_packages:add_purchase(
                          #membership_purchase{user_id=UserId, membership_package=Package }),
-    ?INFO("Purchase Added: ~p",[MPId]),
+%    ?INFO("Purchase Added: ~p",[MPId]),
     nsm_membership_packages:set_purchase_state(MPId, ?MP_STATE_DONE, undefined).
 
 
@@ -391,7 +391,7 @@ add_configs() ->
 
 -spec put(tuple() | [tuple()]) -> ok.
 put(Record) ->
-    ?INFO("db:put ~p",[Record]),
+%    ?INFO("db:put ~p",[Record]),
     DBA=?DBA,
     DBA:put(Record).
 
@@ -402,7 +402,7 @@ get(RecordName, Key) ->
     DBA=?DBA,
     case C = DBA:get(RecordName, Key) of
     {ok,_R} ->
-        ?INFO("db:get ~p,", [{RecordName, Key}]),
+%        ?INFO("db:get ~p,", [{RecordName, Key}]),
         C;
     A -> A
     end.
@@ -411,10 +411,10 @@ get(RecordName, Key, Default) ->
     DBA=?DBA,
     case DBA:get(RecordName, Key) of
 	{ok,{RecordName,Key,Value}} ->
-	    ?INFO("db:get config value ~p,", [{RecordName, Key, Value}]),
+%	    ?INFO("db:get config value ~p,", [{RecordName, Key, Value}]),
 	    {ok,Value};
 	{error, _B} ->
-	    ?INFO("db:get new config value ~p,", [{RecordName, Key, Default}]),
+%	    ?INFO("db:get new config value ~p,", [{RecordName, Key, Default}]),
 	    DBA:put({RecordName,Key,Default}),
 	    {ok,Default}
     end.

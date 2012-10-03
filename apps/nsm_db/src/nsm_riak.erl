@@ -53,7 +53,9 @@ initialize() ->
     C = riak:client_connect(?RIAKSERVER),
     ets:new(config, [named_table,{keypos,#config.key}]),
     ets:insert(config, #config{ key = "riak_client", value = C}),
+    timer:sleep(10),
     ok.
+
 
 init_indexes() ->
     C = riak_client(),
@@ -69,11 +71,11 @@ init_indexes() ->
     ok = nsm_gifts_db:init_indexes().
 
 init_db() ->
-    ?INFO("~w:init_db/0: started", [?MODULE]),
+%    ?INFO("~w:init_db/0: started", [?MODULE]),
     C = riak_client(),
     ok = nsm_affiliates:init_db(),
     ok = nsm_gifts_db:init_db(),
-    ?INFO("~w:init_db/0: done", [?MODULE]),
+%    ?INFO("~w:init_db/0: done", [?MODULE]),
     ok.
 
 dir() ->

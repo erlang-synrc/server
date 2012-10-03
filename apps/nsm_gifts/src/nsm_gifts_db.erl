@@ -98,7 +98,7 @@ init_indexes() ->
     ok = C:set_bucket(?CATEGORIES_BUCKET, [{backend, leveldb_backend}]).
 
 init_db() ->
-    ?INFO("~w:init_db/0: started", [?MODULE]),
+%    ?INFO("~w:init_db/0: started", [?MODULE]),
     C = start_riak_client(),
     ok = init_counter(C, ?GIFTS_COUNTER, 1, []),
     ok = init_counter(C, ?CATEGORIES_COUNTER, 1, []),
@@ -107,7 +107,7 @@ init_db() ->
     ok = init_conf(C, ?CONF_FACTOR_C, 100, []),
     ok = init_conf(C, ?CONF_FACTOR_D, 0.2, []),
     stop_riak_client(C),
-    ?INFO("~w:init_db/0: done", [?MODULE]),
+%    ?INFO("~w:init_db/0: done", [?MODULE]),
     ok.
 
 -spec start_client() -> db_handler().

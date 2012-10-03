@@ -18,12 +18,13 @@ wait_vnodes() ->
 
 start(_StartType, _StartArgs) ->
     application:start(nsx_utils),
-    application:start(nsx_config),
     application:start(sasl),
+%    application:start(lager),
+    application:start(nsx_config),
     application:start(nsm_mq),
     nsm_db:start(),
     nsm_db:initialize(),
-    ?INFO("Waiting for Riak to Initialize...."),
+%    ?INFO("Waiting for Riak to Initialize...."),
     wait_vnodes(),
     nsm_db:init_indexes(),
     case db_opt:get_pass_init_db() of 
