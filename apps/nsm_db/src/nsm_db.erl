@@ -32,7 +32,7 @@
 -include("accounts.hrl").
 -include("membership_packages.hrl").
 -include_lib("stdlib/include/qlc.hrl").
--include_lib("alog/include/alog.hrl").
+-include_lib("nsx_config/include/log.hrl").
 
 -export([start/0, stop/0, initialize/0, delete/0, init_indexes/0,
          init_db/0, put/1, count/1, get/2, get/3, feed_create/0, create_team/1,

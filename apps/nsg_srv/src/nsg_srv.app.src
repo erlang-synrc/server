@@ -3,10 +3,7 @@
   {description, "Game Server"},
   {vsn, "1"},
   {registered, []},
-  {applications, [
-                  kernel,
-                  stdlib
-                 ]},
+  {applications, [kernel, gproc, stdlib, nsx_idgen,nsx_utils,nsx_config,nsm_auth,nsg_session,nsg_games,nsm_conn  ]},
   {mod, { nsg_srv_app, []}},
   {env, [
     {mnesia_initial,default},

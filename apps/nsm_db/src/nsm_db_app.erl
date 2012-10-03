@@ -1,5 +1,5 @@
 -module(nsm_db_app).
--include_lib("alog/include/alog.hrl").
+-include_lib("nsx_config/include/log.hrl").
 -behaviour(application).
 -export([start/2, stop/1]).
 
@@ -17,14 +17,9 @@ wait_vnodes() ->
     end.
 
 start(_StartType, _StartArgs) ->
-    application:start(nsx_utils),
-    application:start(sasl),
-%    application:start(lager),
-    application:start(nsx_config),
-    application:start(nsm_mq),
     nsm_db:start(),
     nsm_db:initialize(),
-%    ?INFO("Waiting for Riak to Initialize...."),
+    ?INFO("Waiting for Riak to Initialize...."),
     wait_vnodes(),
     nsm_db:init_indexes(),
     case db_opt:get_pass_init_db() of 

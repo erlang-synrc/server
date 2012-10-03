@@ -5,8 +5,7 @@
   {registered, []},
   {applications, [
                   kernel,
-                  stdlib,
-                  inets
+                  stdlib
                  ]},
   {mod, { nsg_games_app, []}},
   {env, []}

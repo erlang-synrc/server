@@ -1,7 +1,7 @@
 -module (element_inplace_textbox1).
 -compile(export_all).
 -include_lib("nitrogen_core/include/wf.hrl").
--include_lib("alog/include/alog.hrl").
+-include_lib("nsx_config/include/log.hrl").
 -include("records.hrl").
 -include("gettext.hrl").
 

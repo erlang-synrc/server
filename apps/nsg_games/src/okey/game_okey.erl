@@ -20,7 +20,7 @@
 -include_lib("nsx_config/include/config.hrl").
 -include_lib("nsg_srv/include/types.hrl").
 -include_lib("nsm_db/include/accounts.hrl").
--include_lib("alog/include/alog.hrl").
+-include_lib("nsx_config/include/log.hrl").
 -include_lib("eunit/include/eunit.hrl").
 
 -export([state_wait/3, state_take/3, state_discard/3, state_challenge/3, state_finished/3, state_dead/3]).

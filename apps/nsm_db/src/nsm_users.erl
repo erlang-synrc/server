@@ -5,7 +5,7 @@
 -include("accounts.hrl").
 -include_lib("nsm_mq/include/nsm_mq.hrl").
 -include_lib("nsm_db/include/common.hrl").
--include_lib("alog/include/alog.hrl").
+-include_lib("nsx_config/include/log.hrl").
 
 -export([
          subscr_user/2,

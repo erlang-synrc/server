@@ -15,7 +15,7 @@
 -include_lib("nsg_srv/include/kamf.hrl").
 -include_lib("nsg_srv/include/games.hrl").
 -include_lib("amf/include/amf.hrl").
--include_lib("alog/include/alog.hrl").
+-include_lib("nsx_config/include/log.hrl").
 
 -export([policy_file_text/0]).
 -export([start_link/0]).

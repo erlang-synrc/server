@@ -5,11 +5,10 @@
          init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3,
          assign_points/2, is_feel_lucky/2, game_info_to_ti/1, charge_quota/1]).
 
--include_lib("eunit/include/eunit.hrl").
 -include_lib("nsg_srv/include/basic_types.hrl").
 -include_lib("nsg_srv/include/game_okey.hrl").
 -include_lib("nsg_srv/include/game_tavla.hrl").
--include_lib("alog/include/alog.hrl").
+-include_lib("nsx_config/include/log.hrl").
 -include_lib("nsg_srv/include/games.hrl").
 -include_lib("nsg_srv/include/setup.hrl").
 -include_lib("nsm_db/include/accounts.hrl").

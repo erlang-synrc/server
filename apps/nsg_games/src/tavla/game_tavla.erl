@@ -23,7 +23,7 @@
 -include_lib("nsg_srv/include/setup.hrl").
 -include_lib("nsg_srv/include/game_tavla.hrl").
 -include_lib("nsg_srv/include/types.hrl").
--include_lib("alog/include/alog.hrl").
+-include_lib("nsx_config/include/log.hrl").
 -include_lib("eunit/include/eunit.hrl").
 -include_lib("nsg_srv/include/settings.hrl").
 

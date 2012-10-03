@@ -18,7 +18,7 @@
 
 -include_lib("nsx_config/include/config.hrl").
 -include_lib("stdlib/include/qlc.hrl").
--include_lib("alog/include/alog.hrl").
+-include_lib("nsx_config/include/log.hrl").
 
 -export([start/0, stop/0, initialize/0, delete/0, init_db/0, dir/0, init_indexes/0,
          put/1, count/1, get/2, select/2, multi_select/2, all/1, all_by_index/3, next_id/1, next_id/2, delete/1, delete/2,

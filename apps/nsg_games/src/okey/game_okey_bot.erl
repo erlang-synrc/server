@@ -10,7 +10,7 @@
 -include_lib("nsg_srv/include/conf.hrl").
 -include_lib("nsg_srv/include/requests.hrl").
 -include_lib("nsg_srv/include/game_okey.hrl").
--include_lib("alog/include/alog.hrl").
+-include_lib("nsx_config/include/log.hrl").
 
 -record(state, {
         is_robot = true :: boolean(),

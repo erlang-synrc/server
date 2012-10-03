@@ -2,7 +2,7 @@
 
 -include("user.hrl").
 -include("scoring.hrl").
--include_lib("alog/include/alog.hrl").
+-include_lib("nsx_config/include/log.hrl").
 
 -export([add_score/3,score_entries/1, score_test/0]).
 

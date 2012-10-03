@@ -16,6 +16,5 @@ init([]) ->
     SupFlags = {RestartStrategy, MaxRestarts, MaxSecondsBetweenRestarts},
     Restart = permanent,
     Shutdown = 2000,
-    Alog = {ns_logger, {ns_logger, start_link, []}, Restart, Shutdown, worker, [ns_logger]},
-    {ok, { SupFlags, [Alog]} }.
+    {ok, { SupFlags, []} }.
 

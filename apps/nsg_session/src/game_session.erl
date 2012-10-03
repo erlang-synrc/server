@@ -8,7 +8,7 @@
 -include_lib("nsg_srv/include/requests.hrl").
 -include_lib("nsg_srv/include/settings.hrl").
 -include_lib("nsg_srv/include/setup.hrl").
--include_lib("alog/include/alog.hrl").
+-include_lib("nsx_config/include/log.hrl").
 
 -export([start_link/1]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).

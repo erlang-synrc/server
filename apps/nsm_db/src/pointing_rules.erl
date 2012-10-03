@@ -11,7 +11,7 @@
 %% Include files
 %%
 -include("accounts.hrl").
--include_lib("alog/include/alog.hrl").
+-include_lib("nsx_config/include/log.hrl").
 
 %%
 %% Exported Functions

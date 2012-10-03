@@ -11,7 +11,7 @@
 -include_lib("nsg_srv/include/setup.hrl").
 -include_lib("nsg_srv/include/conf.hrl").
 -include_lib("nsg_srv/include/settings.hrl").
--include_lib("alog/include/alog.hrl").
+-include_lib("nsx_config/include/log.hrl").
 -include_lib("nsg_srv/include/authtoken.hrl").
 -include_lib("nsg_srv/include/requests.hrl").
 

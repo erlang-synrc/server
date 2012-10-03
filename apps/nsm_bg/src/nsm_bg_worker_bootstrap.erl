@@ -14,7 +14,7 @@
 %% --------------------------------------------------------------------
 %% Include files
 %% --------------------------------------------------------------------
--include_lib("alog/include/alog.hrl").
+-include_lib("nsx_config/include/log.hrl").
 -include_lib("nsm_db/include/user.hrl").
 -include("nsm_bg.hrl").
 %% --------------------------------------------------------------------

@@ -1,6 +1,6 @@
 -module(mail).
 -include_lib("config.hrl").
--include_lib("alog/include/alog.hrl").
+-include_lib("nsx_config/include/log.hrl").
 
 -type smtp_options() :: with_ssl | {server, string()} | {port, integer()} |
           {user, string()} | {password, string()}.

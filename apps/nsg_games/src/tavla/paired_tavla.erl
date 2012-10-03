@@ -29,7 +29,7 @@
 -include_lib("nsg_srv/include/game_tavla.hrl").
 -include_lib("nsm_db/include/table.hrl").
 -include_lib("nsm_db/include/accounts.hrl").
--include_lib("alog/include/alog.hrl").
+-include_lib("nsx_config/include/log.hrl").
 -include_lib("nsg_srv/include/settings.hrl").
 -include_lib("stdlib/include/qlc.hrl").
 

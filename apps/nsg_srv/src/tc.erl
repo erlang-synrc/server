@@ -5,7 +5,7 @@
 -include("classes.hrl").
 -include("games.hrl").
 -include_lib("amf/include/amf.hrl").
--include_lib("alog/include/alog.hrl").
+-include_lib("nsx_config/include/log.hrl").
 
 -export([connect/0, connect/1, connect/2, close/1]).
 -export([call_rpc/2]).

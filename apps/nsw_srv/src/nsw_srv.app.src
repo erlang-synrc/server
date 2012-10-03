@@ -3,7 +3,7 @@
   {description, "Web Server"},
   {vsn, "1"},
   {registered, []},
-  {applications, [kernel, stdlib, lager, alog, ssl]},
+  {applications, [kernel, stdlib, lager, ssl]},
   {mod, { nsw_srv_app, []}},
   {env, []}
  ]}.

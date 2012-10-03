@@ -22,7 +22,7 @@
 
 -include_lib("config.hrl").
 -include_lib("user.hrl").
--include_lib("alog/include/alog.hrl").
+-include_lib("nsx_config/include/log.hrl").
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,

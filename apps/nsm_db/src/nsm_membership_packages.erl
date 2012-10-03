@@ -2,7 +2,7 @@
 -author('Vladimir Baranov <baranoff.vladimir@gmail.com>').
 
 -include("membership_packages.hrl").
--include_lib("alog/include/alog.hrl").
+-include_lib("nsx_config/include/log.hrl").
 -include("accounts.hrl").
 -include_lib("eunit/include/eunit.hrl").
 

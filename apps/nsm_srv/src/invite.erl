@@ -13,7 +13,7 @@
 
 -include_lib("nsm_db/include/user.hrl").
 -include_lib("nsm_db/include/invite.hrl").
--include_lib("alog/include/alog.hrl").
+-include_lib("nsx_config/include/log.hrl").
 
 -include("config.hrl").
 

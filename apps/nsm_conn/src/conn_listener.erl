@@ -15,7 +15,7 @@
 
 -export([port/0]).
 
--include_lib("alog/include/alog.hrl").
+-include_lib("nsx_config/include/log.hrl").
 -include_lib("nsg_srv/include/conf.hrl").
 
 %% gen_server callbacks

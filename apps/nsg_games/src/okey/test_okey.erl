@@ -1,7 +1,7 @@
 -module(test_okey).
 
 -include_lib("eunit/include/eunit.hrl").
--include_lib("alog/include/alog.hrl").
+-include_lib("nsx_config/include/log.hrl").
 -include_lib("nsg_srv/include/settings.hrl").
 -include_lib("nsg_srv/include/conf.hrl").
 -include_lib("nsg_srv/include/kamf.hrl").

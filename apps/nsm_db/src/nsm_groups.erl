@@ -2,7 +2,7 @@
 
 -include("user.hrl").
 -include("feed.hrl").
--include_lib("alog/include/alog.hrl").  % need this to run the test
+-include_lib("nsx_config/include/log.hrl").  % need this to run the test
 
 -export([
          create_group_directly_to_db/5,

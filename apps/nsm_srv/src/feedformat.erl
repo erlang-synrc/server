@@ -6,7 +6,7 @@
 
 -export([format/1]).
 
--include_lib("alog/include/alog.hrl").
+-include_lib("nsx_config/include/log.hrl").
 
 %PUBLIC BETA we have to turn &amp; into & and %27 to '
 replace(String, Dirt, Icecream) ->

@@ -2,9 +2,8 @@
 
 -include_lib("nsm_db/include/uri_translator.hrl").
 -include_lib("nitrogen_core/include/wf.hrl").
--include_lib("eunit/include/eunit.hrl").
+-include_lib("nsx_config/include/log.hrl").
 -include("setup.hrl").
--include_lib("alog/include/alog.hrl").
 
 %% API
 -export([languages/0, language/1, translate/1, translate/2, translate/3]).
@@ -118,40 +117,6 @@ is_supported(Lang) ->
 	true ->
 	    ok
     end.
-
-translate_test() ->
-    ?assertEqual("/", translate("/")),
-    ?assertEqual("/matchmaker/okey?csid=218765", translate("/matchmaker/okey?csid=218765")),
-    ?assertEqual("/matchmaker/okey/?csid=218765", translate("/matchmaker/okey/?csid=218765")),
-    ?assertEqual("/matchmaker/?csid=218765", translate("/matchmaker/?csid=218765")),
-    ?assertEqual("/matchmaker?csid=218765", translate("/matchmaker?csid=218765")),
-    ?assertEqual("/matchmake/oke?csid=218765", translate("/matchmake/oke?csid=218765")),
-    ?assertEqual("/matchmake/oke/?csid=218765", translate("/matchmake/oke/?csid=218765")),
-    ?assertEqual("/matchmake/?csid=218765", translate("/matchmake/?csid=218765")),
-    ?assertEqual("/matchmake?csid=218765", translate("/matchmake?csid=218765")),
-
-    ?assertEqual("./matchmaker/okey?csid=218765", translate("./matchmaker/okey?csid=218765")),
-    ?assertEqual("./matchmaker/okey/?csid=218765", translate("./matchmaker/okey/?csid=218765")),
-    ?assertEqual("./matchmaker/?csid=218765", translate("./matchmaker/?csid=218765")),
-    ?assertEqual("./matchmaker?csid=218765", translate("./matchmaker?csid=218765")),
-    ?assertEqual("./matchmake/oke?csid=218765", translate("./matchmake/oke?csid=218765")),
-    ?assertEqual("./matchmake/oke/?csid=218765", translate("./matchmake/oke/?csid=218765")),
-    ?assertEqual("./matchmake/?csid=218765", translate("./matchmake/?csid=218765")),
-    ?assertEqual("./matchmake?csid=218765", translate("./matchmake?csid=218765")),
-
-    ?assertEqual("/matchmaker/okey", translate("/matchmaker/okey")),
-    ?assertEqual("/matchmaker/", translate("/matchmaker/")),
-    ?assertEqual("/matchmaker/?test", translate("/matchmaker/?test")),
-    ?assertEqual("/matchmake/oke", translate("/matchmake/oke")),
-    ?assertEqual("/matchmake/", translate("/matchmake/")),
-    ?assertEqual("/matchmake/?test", translate("/matchmake/?test")),
-    ?assertEqual("/?test", translate("/?test")),
-
-    ?assertEqual("../?test", translate("../?test")),
-
-    ?assertEqual("/oyun-kuran/okey/?csid=218765", translate("/matchmaker/okey/?csid=218765", "en", "tr")),
-    ?assertEqual("/oyun-kuran/okey/csid/218765", translate("/matchmaker/okey/csid/218765", "en", "tr")),
-    ok.
 
 
 -spec tokenize(string()) -> [string()].

@@ -2,7 +2,7 @@
 
 -include("classes.hrl").
 -include("logging.hrl").
--include_lib("alog/include/alog.hrl").
+-include_lib("nsx_config/include/log.hrl").
 
 -export([to_known_record/2]).
 

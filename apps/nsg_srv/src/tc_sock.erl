@@ -11,7 +11,7 @@
 -include("conf.hrl").
 -include("kamf.hrl").
 -include("classes.hrl").
--include_lib("alog/include/alog.hrl").
+-include_lib("nsx_config/include/log.hrl").
 
 -behaviour(gen_server).
 

@@ -14,7 +14,7 @@
 -include_lib("nsm_mq/include/nsm_mq.hrl").
 -include_lib("nsm_db/include/user.hrl").
 -include_lib("nsm_db/include/tournaments.hrl").
--include_lib("alog/include/alog.hrl").
+-include_lib("nsx_config/include/log.hrl").
 -include("config.hrl").
 %% --------------------------------------------------------------------
 %% External exports

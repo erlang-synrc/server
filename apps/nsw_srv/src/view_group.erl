@@ -7,7 +7,7 @@
 -include("gettext.hrl").
 -include("setup.hrl").
 -include("elements/records.hrl").
--include_lib("alog/include/alog.hrl").
+-include_lib("nsx_config/include/log.hrl").
 
 main() ->
     case wf:user() /= undefined of

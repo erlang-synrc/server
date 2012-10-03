@@ -46,7 +46,7 @@
 -include("user.hrl").
 -include("config.hrl").
 
--include_lib("alog/include/alog.hrl").
+-include_lib("nsx_config/include/log.hrl").
 
 -define(ROOT, "site/static").
 

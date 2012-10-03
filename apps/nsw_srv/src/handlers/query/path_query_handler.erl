@@ -12,7 +12,7 @@
 -module (path_query_handler).
 -behaviour (query_handler).
 -include_lib ("nitrogen_core/include/wf.hrl").
--include_lib("alog/include/alog.hrl").
+-include_lib("nsx_config/include/log.hrl").
 -include_lib("eunit/include/eunit.hrl").
 
 -export ([

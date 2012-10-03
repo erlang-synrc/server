@@ -48,7 +48,7 @@
          terminate/2, code_change/3]).
 
 -include_lib("eunit/include/eunit.hrl").
--include_lib("alog/include/alog.hrl").
+-include_lib("nsx_config/include/log.hrl").
 -include_lib("stdlib/include/qlc.hrl").
 -include("accounts.hrl").
 

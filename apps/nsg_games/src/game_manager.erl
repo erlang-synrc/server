@@ -4,7 +4,7 @@
 -include_lib("nsg_srv/include/requests.hrl").
 -include_lib("nsm_db/include/table.hrl").
 -include_lib("stdlib/include/qlc.hrl").
--include_lib("alog/include/alog.hrl").
+-include_lib("nsx_config/include/log.hrl").
 
 -export([start/0, stop/1, create_table/2, create_table/3, add_game/1, counter/1, get_requirements/2,
          get_relay/1, subscribe/3, subscribe/2, unsubscribe/2,game_requirements/1]).

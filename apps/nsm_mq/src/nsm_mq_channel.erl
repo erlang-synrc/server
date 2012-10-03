@@ -13,7 +13,7 @@
 %% --------------------------------------------------------------------
 -include("nsm_mq.hrl").
 -include_lib("amqp_client/include/amqp_client.hrl").
--include_lib("alog/include/alog.hrl").
+-include_lib("nsx_config/include/log.hrl").
 
 %% --------------------------------------------------------------------
 %% External exports

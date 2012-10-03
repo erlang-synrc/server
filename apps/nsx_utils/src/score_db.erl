@@ -7,7 +7,7 @@
 -export([save_game/1]).
 -export([reset_okey_stats/0]).
 
--include_lib("alog/include/alog.hrl").
+-include_lib("nsx_config/include/log.hrl").
 
 %% TODO: move score db to riak
 
