@@ -349,8 +349,7 @@ ui_checkboxes(Section) ->
         "<span id='guidersitem4'>",
         "<span id='guiderstab1paired'>",
         "</span>",
-        construct_id(#checkbox{class="chk", postback={tag,{paired_game,true}},
-            text=?_T("Paired"), value=?_T("Paired")}),
+%        construct_id(#checkbox{class="chk", postback={tag,{paired_game,true}}, text=?_T("Paired"), value=?_T("Paired")}),
         case q_game_type() of
             okey ->
         #panel{id=gosterge_placeholder, body=
@@ -416,7 +415,7 @@ matchmaker_show_tables() ->
                  },
                  "<span id='guidersdetailedsettings'>",
 		         #link{body=?_T("Detailed Settings"), postback={show, join_game_detailed},
-			       actions=ac_hide_main_container(), class="cancel"},
+			       actions=ac_hide_main_container(), class="cancel", style="position:relative; bottom:-30px;"},
                  "</span>"
 		       ]}
 		  ],
@@ -712,7 +711,10 @@ list_users_links(Users, Owner) ->
 show_table(Tables) ->
     %% update i'm feeling lucky
     wf:update(play_button_panel, el_inside_play()),
-    MaxUsers = case q_game_type() of "tavla" -> 2; "okey" -> 4 end,
+    MaxUsers = case q_game_type() of 
+        "tavla" -> 2; 
+        "okey" -> 4 
+    end,
     case Tables of
         [] ->
             #panel{style="text-align: center", body=#h4{text=?_T("You can create a game or join a game")} };
@@ -776,8 +778,8 @@ show_table(Tables) ->
                     #tablerow{id=RowId, cells=[
                         #tablecell{ class=cell1,
                             body=[
-                                "\""++TableNameLabel++"\"" ++ " (" ++ list_users_links(Users, OwnerLabel) ++ ") " ++
-                                TMode ++ ", " ++ TSpeed ++ TRoundsOrNot ++ TDoubleOrNot
+                                TMode ++ ", " ++ TSpeed ++ TRoundsOrNot ++ TDoubleOrNot ++ 
+                                " (" ++ list_users_links(Users, OwnerLabel) ++ ") "
                             ],
                             id=tableNameLabel
                         },
@@ -786,13 +788,14 @@ show_table(Tables) ->
                         }
                     ]}
                 end
-                || [TableNameLabel,
+                || [_TableNameLabel,
                     OwnerLabel,
                     InfoPostback,
                     Action,
                     ViewPerPoint,
                     UserOwner,
                     Users,
+%                    DeleteAction] <- Tables
                     DeleteAction] <- lists:usort(fun (A, B) -> 
                             {_, {_, An}} = lists:nth(3, A),
                             {_, {_, Bn}} = lists:nth(3, B),

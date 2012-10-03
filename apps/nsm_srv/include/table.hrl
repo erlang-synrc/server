@@ -31,7 +31,10 @@
                      pointing_rules :: any() | '_', %% #pointing_rule{}
                      pointing_rules_ex :: [] | '_', %% [#pointing_rule{}] - list of additional pointing rules,
                                                     %% for example IFeelLucky for okey game
-                     game_process_monitor :: reference() | '_'}).
+                     game_process_monitor :: reference() | '_',
+                
+                     tournament_type = simple :: simple | paired | tournament
+    }).
 
 -record(save_game_table, {uid :: username_type() | '_', %% Dialyzer and record MatchSpec warnings http://j.mp/vZ8670
                           id :: id_type() | '_',

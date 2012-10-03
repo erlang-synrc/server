@@ -342,16 +342,21 @@ start_pre_comet_process(Id, Skip) ->
                             GameMode = proplists:get_value(game_mode, Settings, standard),
                             GameSpeed = proplists:get_value(speed, Settings, normal),
                             FeelLucky = proplists:get_value(feel_lucky, Settings, false),
+                            TourType = case GameMode of 
+                                paired -> paired;
+                                _ -> simple
+                            end,
                             GProcTable = Table#game_table{game_process = self(),
                                                           id = TableId,
-                                                          age_limit = crypto:rand_uniform(20,30),
+                                                          age_limit = [crypto:rand_uniform(20,30), crypto:rand_uniform(31,40)],
                                                           game_mode = GameMode,
                                                           game_speed = GameSpeed,
                                                           feel_lucky = FeelLucky,
                                                           owner = wf:user(),
                                                           creator = Tab1#game_table.creator,
                                                           rounds = Rounds,
-                                                          name = TableName
+                                                          name = TableName,
+                                                          tournament_type = TourType
                                                          },
 
                             wf:state(table, GProcTable),
