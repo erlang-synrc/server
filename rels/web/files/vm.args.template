@@ -9,3 +9,4 @@
 -env ERL_MAX_PORTS 20000
 -env ERL_FULLSWEEP_AFTER 0
 -sync sync_mode nitrogen
+-init_debug

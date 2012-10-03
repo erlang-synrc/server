@@ -85,10 +85,11 @@ stress_test(NumberOfRooms) ->
 
 
 init([]) ->
-    application:start(nprocreg),
-    application:start(cowboy),
-    application:start(nsm_db),
-    application:start(mimetypes),
+%    application:start(nprocreg),
+%    application:start(cowboy),
+%    application:start(gproc),
+%    application:start(nsm_db),
+%    application:start(mimetypes),
 
     application:load(webmachine),
     {ok, BindAddress} = application:get_env(webmachine, bind_address),
@@ -100,16 +101,10 @@ init([]) ->
     Type = worker,
     DChild = {user_counter, {user_counter, start_link, []}, Restart, Shutdown, Type, [user_counter]},
 
-    gettext_server:start(),
-    gettext:change_gettext_dir(code:priv_dir(nsw_srv)),
-    gettext:recreate_db(),
-
-    case nsm_db:get(config, "debug/production", false) of
+    case rpc:call(?APPSERVER_NODE,nsm_db,get,[config, "debug/production", false]) of
          {ok, true} -> ok;
          _ -> create_tables(100)
     end,
-
-%    rpc:call(?APPSERVER_NODE,nsm_bg,init_workers,[]),
 
     Dispatch = [{'_', [ {'_',nitrogen_cowboy,[]},
                         {['...'],cowboy_http_static,[{directory,{priv_dir,nsw_srv,[]},{mimetypes,mime()}}]} ] }], 
@@ -119,6 +114,10 @@ init([]) ->
 
     cowboy:start_listener(http, 100, cowboy_tcp_transport, [{port, Port}, {ip, ParsedBindAddress}], cowboy_http_protocol, HttpOpts),
     cowboy:start_listener(https, 100, cowboy_ssl_transport,[{port, 8001}, {ip, ParsedBindAddress}, {certfile,"/mnt/glusterfs/server.crt"}, {keyfile,"/mnt/glusterfs/server.key"}], cowboy_http_protocol, HttpOpts),
+
+    gettext_server:start(),
+    gettext:change_gettext_dir(code:priv_dir(nsw_srv)),
+    gettext:recreate_db(),
 
     {ok, { {one_for_one, 5, 10}, [DChild]} }.
 
