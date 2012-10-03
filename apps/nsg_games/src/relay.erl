@@ -105,7 +105,7 @@ init([Topic, {lobby, GameFSM}, Params0, PlayerIds, Manager]) ->
     GProcVal = #game_table{game_type = GameFSM, 
                            game_process = self(),
                            id = Topic,
-                           age_limit = crypto:rand_uniform(20,30),
+                           age_limit = [crypto:rand_uniform(20,30), crypto:rand_uniform(31,40)],
                            game_mode = GameMode,
                            game_speed = GameSpeed,
                            feel_lucky = FeelLucky,
@@ -115,10 +115,10 @@ init([Topic, {lobby, GameFSM}, Params0, PlayerIds, Manager]) ->
                            pointing_rules   = P,
                            pointing_rules_ex = PE,
                            users = [ case User of robot -> robot; _ -> erlang:binary_to_list(User) end || User <- PlayerIds],
-                           name = TableName ++ " gaming " ++ erlang:integer_to_list(Topic) ++ " "
+                           name = TableName
                },
 
-    ?INFO("GProc Registration: ~p",[GProcVal]),
+    ?INFO(" +++ relay.erl GProc Registration: ~p",[GProcVal]),
 
     gproc:reg({p,g,self()},GProcVal),
 
