@@ -85,11 +85,16 @@ stress_test(NumberOfRooms) ->
 
 
 init([]) ->
-%    application:start(nprocreg),
-%    application:start(cowboy),
-%    application:start(gproc),
-%    application:start(nsm_db),
-%    application:start(mimetypes),
+    net_kernel:connect(?APPSERVER_NODE),
+    net_kernel:connect(?GAMESRVR_NODE),
+
+    rpc:call(?APPSERVER_NODE,nsm_srv_app,stop_gproc,[]),
+    rpc:call(?GAMESRVR_NODE,nsg_srv_app,stop_gproc,[]),
+    application:stop(gproc),
+
+    rpc:call(?APPSERVER_NODE,nsm_srv_app,start_gproc,[]),
+    rpc:call(?GAMESRVR_NODE,nsg_srv_app,start_gproc,[]),
+    application:start(gproc),
 
     application:load(webmachine),
     {ok, BindAddress} = application:get_env(webmachine, bind_address),
@@ -101,10 +106,6 @@ init([]) ->
     Type = worker,
     DChild = {user_counter, {user_counter, start_link, []}, Restart, Shutdown, Type, [user_counter]},
 
-    case rpc:call(?APPSERVER_NODE,nsm_db,get,[config, "debug/production", false]) of
-         {ok, true} -> ok;
-         _ -> create_tables(100)
-    end,
 
     Dispatch = [{'_', [ {'_',nitrogen_cowboy,[]},
                         {['...'],cowboy_http_static,[{directory,{priv_dir,nsw_srv,[]},{mimetypes,mime()}}]} ] }], 
@@ -118,6 +119,11 @@ init([]) ->
     gettext_server:start(),
     gettext:change_gettext_dir(code:priv_dir(nsw_srv)),
     gettext:recreate_db(),
+
+    case rpc:call(?APPSERVER_NODE,nsm_db,get,[config, "debug/production", false]) of
+         {ok, true} -> ok;
+         _ -> create_tables(100)
+    end,
 
     {ok, { {one_for_one, 5, 10}, [DChild]} }.
 

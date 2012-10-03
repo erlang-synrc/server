@@ -2,7 +2,13 @@
 -module(nsm_srv_app).
 -behaviour(application).
 -include("tournaments.hrl").
--export([start/2, stop/1]).
+-export([start/2, stop/1, start_gproc/0, stop_gproc/0]).
+
+start_gproc() ->
+    application:start(gproc).
+
+stop_gproc() ->
+    application:stop(gproc).
 
 start(_StartType, _StartArgs) ->
     nsm_bg:init_workers(),

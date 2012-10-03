@@ -1,6 +1,8 @@
 -module(nsg_srv_sup).
 -behaviour(supervisor).
 
+-include("setup.hrl").
+
 -export([start_link/0]).
 -export([init/1]).
 
@@ -10,6 +12,7 @@ start_link() ->
     supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 
 init([]) ->
+    net_kernel:connect(?APPSERVER_NODE),
     RestartStrategy = one_for_one,
     MaxRestarts = 5,
     MaxSecondsBetweenRestarts = 10,
