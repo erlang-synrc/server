@@ -145,7 +145,7 @@ accept_loop(LSocket, Owner) ->
 %% @end
 %%--------------------------------------------------------------------
 handle_info({ok, Socket}, #state{} = State) ->
-    ?INFO("CONNECTION ACCEPTED", []),
+%    ?INFO("CONNECTION ACCEPTED", []),
     {ok, Pid} = nsm_conn_app:start_client(),
     ok = gen_tcp:controlling_process(Socket, Pid),
     gen_server:call(Pid, {set_socket, Socket}),
