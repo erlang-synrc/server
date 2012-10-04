@@ -57,8 +57,8 @@ And the kerl procedure is following:
 
     $ git clone git://github.com/spawngrid/kerl.git & cd kerl
     $ ./kerl build R15B02 r15b02
-    $ ./kerl install r15b02 ~/apps/erlang-r15b02
-    $ . ~/apps/erlang-r15b02/activate
+    $ ./kerl install r15b02 ~/apps/erlang-R15B02
+    $ . ~/apps/erlang-R15B02/activate
 
 Make sure ts is in /etc/profile also. Create this dir and subdirs for later usage:
 
