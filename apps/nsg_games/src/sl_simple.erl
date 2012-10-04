@@ -23,7 +23,7 @@
 %% --------------------------------------------------------------------
 %% Include files
 %% --------------------------------------------------------------------
--include_lib("alog/include/alog.hrl").
+-include_lib("nsx_config/include/log.hrl").
 -include_lib("nsg_srv/include/basic_types.hrl").
 -include_lib("nsg_srv/include/requests.hrl").
 
