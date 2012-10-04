@@ -711,10 +711,6 @@ list_users_links(Users, Owner) ->
 show_table(Tables) ->
     %% update i'm feeling lucky
     wf:update(play_button_panel, el_inside_play()),
-    MaxUsers = case q_game_type() of 
-        "tavla" -> 2; 
-        "okey" -> 4 
-    end,
     case Tables of
         [] ->
             #panel{style="text-align: center", body=#h4{text=?_T("You can create a game or join a game")} };
@@ -723,7 +719,22 @@ show_table(Tables) ->
                 begin
                     {info, {_, TId}} = InfoPostback,
                     {ok, WholeTable} = view_table:get_table(TId),
-                    TMode = matchmaker:game_mode_to_text(WholeTable#game_table.game_mode),
+                    MaxUsers = case q_game_type() of 
+                        "tavla" -> case WholeTable#game_table.tournament_type of
+                            paired -> 10;
+                            paired_lobby -> 10;
+                            _ -> 2
+                        end;
+                        "okey" -> 4 
+                    end,
+                    RealUsers = case q_game_type() of 
+                        "tavla" -> case WholeTable#game_table.tournament_type of
+                            paired -> WholeTable#game_table.users;
+                            _ -> Users
+                        end;
+                        "okey" -> Users 
+                    end,
+                    TMode = matchmaker:game_mode_to_text(WholeTable#game_table.game_mode) ++ " {"++atom_to_list(WholeTable#game_table.tournament_type)++"} " ++ integer_to_list(TId),
                     TSpeed = matchmaker:game_speed_to_text(WholeTable#game_table.game_speed),
                     TRoundsOrNot = case WholeTable#game_table.rounds of
                         undefined -> "";
@@ -746,7 +757,7 @@ show_table(Tables) ->
                     end,
                     JoinOrCrate = case Action of
                         {join, Act} ->
-                            case length(Users) of
+                            case length(RealUsers) of
                                 MaxUsers -> "";
                                 _ ->
                                     #link{id=joinTable,
@@ -772,19 +783,21 @@ show_table(Tables) ->
 
                     Buttons = #list{style="float:right;", body=[
                         #listitem{body=X} || X <- 
-                            [#image{image="/images/free.png"} || _N <- lists:seq(1,MaxUsers-length(Users))] ++ 
+                            [#image{image="/images/free.png"} || _N <- lists:seq(1,MaxUsers-length(RealUsers))] ++ 
                             [Info, JoinOrCrate, DeleteTable]
                     ]},
                     #tablerow{id=RowId, cells=[
                         #tablecell{ class=cell1,
                             body=[
                                 TMode ++ ", " ++ TSpeed ++ TRoundsOrNot ++ TDoubleOrNot ++ 
-                                " (" ++ list_users_links(Users, OwnerLabel) ++ ") "
+                                " (" ++ list_users_links(RealUsers, OwnerLabel) ++ ") "
                             ],
                             id=tableNameLabel
                         },
                         #tablecell{ class=cell3,
-                            body = Buttons
+                            body = [
+                                "<nobr>", Buttons, "</nobr>"
+                            ]
                         }
                     ]}
                 end

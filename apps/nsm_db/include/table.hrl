@@ -33,7 +33,7 @@
                                                     %% for example IFeelLucky for okey game
                      game_process_monitor :: reference() | '_',
                 
-                     tournament_type = simple :: simple | paired | tournament
+                     tournament_type = simple :: simple | paired | paired_lobby | tournament
     }).
 
 -record(save_game_table, {uid :: username_type() | '_', %% Dialyzer and record MatchSpec warnings http://j.mp/vZ8670

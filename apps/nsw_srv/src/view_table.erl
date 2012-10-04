@@ -343,7 +343,7 @@ start_pre_comet_process(Id, Skip) ->
                             GameSpeed = proplists:get_value(speed, Settings, normal),
                             FeelLucky = proplists:get_value(feel_lucky, Settings, false),
                             TourType = case GameMode of 
-                                paired -> paired;
+                                paired -> paired_lobby;
                                 _ -> simple
                             end,
                             GProcTable = Table#game_table{game_process = self(),
