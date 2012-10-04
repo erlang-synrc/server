@@ -43,7 +43,7 @@
           game_info = []            :: [{atom(), any()}],
 
           stats                            :: pid(),
-          relay                            :: pid(),
+          relay                            :: {atom(), pid()},
           relay_monitor                    :: reference(),
 
           set_state                        :: #'OkeySetState'{},
@@ -128,7 +128,7 @@ start(Relay, Pids, GameId, Params) ->
     gen_fsm:start(?MODULE, [Relay, Pids, GameId, Params], []).
 
 
-init([Relay, Pids, GameId, Settings0]) ->
+init([Relay, PidsWithPlayersInfo, GameId, Settings0]) ->
     Settings1 = get_settings(Settings0),
 
     Mode = proplists:get_value(game_mode, Settings1),
@@ -139,13 +139,14 @@ init([Relay, Pids, GameId, Settings0]) ->
 
     Rounds = case Mode of countdown -> undefined; _ -> proplists:get_value(rounds, Settings1) end,
     PR = proplists:get_value(pointing_rules, Settings1, TestPR),
-    [PRLucky] = proplists:get_value(pointing_rules_ex, Settings1, TestLuckyPR),
+    [PRLucky] = proplists:get_value(pointing_rules_ex, Settings1, [TestLuckyPR]),
     Sets = 1,
 
     Settings2 = lists:keystore(rounds, 1, Settings1, {rounds, Rounds}),
     Settings = lists:keystore(sets, 1, Settings2, {sets, Sets}),
     UserOpts = proplists:get_value(users_options, Settings, []),
-    PlayersWithInfo = [game_session:get_player_info(Pid) || Pid <- Pids],
+    {_, PlayersWithInfo} = lists:unzip(PidsWithPlayersInfo),
+%%    PlayersWithInfo = [game_session:get_player_info(Pid) || Pid <- Pids],
     DP = proplists:get_value(double_points, Settings, 1),
     SlangFlag = proplists:get_value(slang, Settings, false),
     ObserverFlag = proplists:get_value(deny_observers, Settings, false),
@@ -189,20 +190,21 @@ init([Relay, Pids, GameId, Settings0]) ->
                     slang_flag = SlangFlag,
                     observer_flag = ObserverFlag
                    },
-    ?INFO("init game relay: ~p, pids: ~p, gameid: ~p", [Relay, Pids, GameId]),
-    State = init_game(Relay, Pids, GameId, State0),
+    ?INFO("init game relay: ~p, players: ~p, gameid: ~p", [Relay, PlayersWithInfo, GameId]),
+    State = init_game(Relay, PidsWithPlayersInfo, GameId, State0),
     Gosterge = State#state.gosterge,
     GameSubmode = game_okey:get_scoring_mode(Mode, Gosterge),
     game_okey_scoring:set_chanak_points(StatsPid,game_okey_scoring:new_chanak(GameSubmode)),
     {ok, state_created, State}.
 
-init_game(Relay, Pids, GameId, State) ->
-    Ref = erlang:monitor(process, Relay),
+init_game({_, RPid} = Relay, PInfos, GameId, State) ->
+    Ref = erlang:monitor(process, RPid),
     {Gosterge, Hands, Pile0} = hand_out_pieces(),
-    PInfos = lists:map(fun(Pid0) ->
-                               game_session:get_player_info(Pid0)
-                       end, Pids),
-    Comb = lists:zip3(Pids, Hands, PInfos),
+%%     PInfos = lists:map(fun(Pid0) ->
+%%                                game_session:get_player_info(Pid0)
+%%                        end, Pids),
+%%    Comb = lists:zip3(Pids, Hands, PInfos),
+    Comb = [{Pid, Hand, PInfo} || {Hand, {Pid, PInfo}} <- lists:zip(Hands, PInfos)],
     Players0 = lists:map(fun({Pid, Hand, PI}) ->
                                  SP = case game_stats:get_skill(PI#'PlayerInfo'.id) of
                                           {ok, S} -> S;
@@ -222,6 +224,7 @@ init_game(Relay, Pids, GameId, State) ->
 
     Players = queue:from_list(Players1),
 
+    {Pids,_} = lists:unzip(PInfos),
     ?INFO("init wait_list: ~p", [Pids]),
     State#state{initial = Players, players = Players,
                 gosterge = Gosterge, pile0 = Pile,
@@ -490,10 +493,10 @@ handle_sync_event(get_settings=Event, _From, StateName, #state{} = State) ->
     ?INFO("OKEY GAME SYNCEVENT: ~p",[{Event,_From,StateName}]),
     Res = State#state.settings,
     {reply, Res, StateName, State}; %settings
-handle_sync_event({signal, state_created}=Event, _From, state_created, #state{} = State) ->
+handle_sync_event({signal, state_created}=Event, _From, state_created, #state{relay={RMod, RPid}} = State) ->
     ?INFO("OKEY GAME SYNCEVENT: ~p",[{Event,_From,state_created}]),
     publish_okey_game_info(State),
-    relay:update_gamestate(State#state.relay, playing),
+    RMod:update_gamestate(RPid, playing),
     %% charge quota from players
     start_game(State),
     { reply, ok, state_discard,
@@ -501,9 +504,8 @@ handle_sync_event({signal, state_created}=Event, _From, state_created, #state{} 
                   time_mark = timeout_at(State#state.turn_timeout)},
       State#state.turn_timeout };
 
-handle_sync_event({signal, {pause_game, Pid}}, _From, StateName, State) ->
+handle_sync_event({signal, {pause_game, Pid}}, _From, StateName, #state{relay={RMod, RPid}}=State) ->
     Timeout = calc_timeout(StateName, State),
-    Relay = State#state.relay,
     case {is_player(Pid, State), StateName} of
         {_, X} when X == state_paused; X == state_dead; X == state_finished ->
             {reply, {error, pause_not_possible}, StateName, State, Timeout};
@@ -511,7 +513,7 @@ handle_sync_event({signal, {pause_game, Pid}}, _From, StateName, State) ->
             UID = (get_player(Pid, State))#okey_player.player_id,
             Event = #game_paused{game = State#state.game_id, who = UID,
                                  action = <<"pause">>, retries = 0},
-            relay:publish(Relay, Event),
+            RMod:publish(RPid, Event),
             {reply, 0, state_paused,
              State#state{time_mark = undefined,
                          paused_who = UID,
@@ -522,8 +524,7 @@ handle_sync_event({signal, {pause_game, Pid}}, _From, StateName, State) ->
             {reply, {error, you_are_not_a_player}, StateName, State, Timeout}
     end;
 
-handle_sync_event({signal, {resume_game, Pid}}, _From, StateName, State) ->
-    Relay = State#state.relay,
+handle_sync_event({signal, {resume_game, Pid}}, _From, StateName, #state{relay={RMod, RPid}} = State) ->
     case {StateName, is_player(Pid, State)} of
         {state_paused, true} ->
             ResumedState = State#state.paused_statename,
@@ -531,7 +532,7 @@ handle_sync_event({signal, {resume_game, Pid}}, _From, StateName, State) ->
             UID = (get_player(Pid, State))#okey_player.player_id,
             Event = #game_paused{game = State#state.game_id, who = UID,
                                  action = <<"resume">>, retries = 0},
-            relay:publish(Relay, Event),
+            RMod:publish(RPid, Event),
             { reply, 0, ResumedState,
               State#state{time_mark = mnow() + ResumedTimeout,
                           paused_statename = undefined,
@@ -555,6 +556,7 @@ handle_sync_event({signal, {replace_player, UId, _, _, _} = Msg},
 
 handle_sync_event({signal, {replace_player, UId, NUId, NUserInfo, NPid}}, _, StateName, State) ->
     ?INFO("RobotDelay 2 = ~p", [State#state.robot_delay]),
+    ?INFO("Replace player: UId:~p NUId: ~p ", [UId, NUId]),
     P = get_player(UId, State),
     Cur = get_current(State),
     StatsPid = State#state.stats,
@@ -616,11 +618,10 @@ handle_sync_event({signal, {next_set, Data}}, From, StateName, State) ->
     handle_sync_event({signal, {next_round, Data}}, From,
                       StateName, State2);
 
-handle_sync_event({signal, {next_round, RoundData}}, _From, _StateName, State0) ->
+handle_sync_event({signal, {next_round, RoundData}}, _From, _StateName, #state{relay={RMod,RPid}}=State0) ->
     #'OkeySetState'{round_cur = CurRound, set_cur = CurSet} = RoundData,
     ?INFO("setting up next round. Current round: ~p, Current set: ~p", [CurRound, CurSet]),
     PlayersList0 = queue:to_list(State0#state.players),
-    Relay = State0#state.relay,
     {Gosterge, Hands, Pile0} = hand_out_pieces(),
     PlayersList1 = lists:map(fun({#okey_player{} = Player, Hand}) ->
                                      Player#okey_player{hand = Hand,
@@ -639,23 +640,24 @@ handle_sync_event({signal, {next_round, RoundData}}, _From, _StateName, State0) 
                          pile0 = Pile, gosterge = Gosterge,
                          challengers = [], who_revealed = undefined,
                          time_mark = undefined},
-    relay:update_gamestate(Relay, playing),
+    RMod:update_gamestate(RPid, playing),
     State1 = State#state{set_state = RoundData, time_mark = timeout_at(State#state.turn_timeout)},
     start_game(State1),
     {reply, ok, state_discard, State1, State1#state.turn_timeout};
 
-handle_sync_event({signal, {player_left, _Pid}}, _From, StateName, State)
+handle_sync_event({signal, {player_left, _Pid}}, _From, StateName, #state{relay={RMod,RPid}}=State)
   when StateName == state_finished ->
-    relay:update_gamestate(State#state.relay, state_dead),
+    RMod:update_gamestate(RPid, state_dead),
     {reply, ok, state_dead, State};
 
-handle_sync_event({signal, {player_left, Pid}}, _From, StateName, State) when StateName == state_take;
-                                                                              StateName == state_discard;
-                                                                              StateName == state_challenge ->
+handle_sync_event({signal, {player_left, Pid}}, _From, StateName, #state{relay={RMod,RPid}}=State) when
+  StateName == state_take;
+  StateName == state_discard;
+  StateName == state_challenge ->
     #state{stats = Scoring} = State,
     #okey_player{player_id = Id} = lists:keyfind(Pid, #okey_player.pid, queue:to_list(State#state.players)),
     game_okey_scoring:add_event(Scoring, Id, disconnected),
-    relay:update_gamestate(State#state.relay, state_dead),
+    RMod:update_gamestate(RPid, state_dead),
     {reply, ok, state_dead, State};
 
 handle_sync_event({signal, {player_left, _Pid}}, _From, _StateName, State) ->
@@ -843,13 +845,13 @@ basic_game_results(State, Results) ->
                     results = Results
                    }.
 
-publish_okey_series_ended(State, Scoring) ->
+publish_okey_series_ended(#state{relay={RMod,RPid}}=State, Scoring) ->
     Standings = game_okey_scoring:standings(Scoring),
     A = #okey_series_ended{standings = Standings},
     publish_ge(State#state.relay, A),
     game_stats:assign_points(#'OkeyGameResults'{series_results = Standings}, State#state.game_info),
-    relay:update_gamestate(State#state.relay, state_finished),
-    State#state.relay ! {unreg, State#state.relay},
+    RMod:update_gamestate(RPid, state_finished),
+    RPid ! {unreg, RPid}, %% XXX WTF?
     ?INFO("SERVER SERIES ENDED: ~p", [A]),
     ok.
 
@@ -1229,19 +1231,19 @@ publish_ge(Relay, MsgList) when is_list(MsgList) ->
     lists:map(fun(Msg) ->
                       publish_ge(Relay, Msg)
               end, MsgList);
-publish_ge(Relay, Msg) when is_tuple(Msg) ->
+publish_ge({RMod, RPid}, Msg) when is_tuple(Msg) ->
     Event = api_utils:name(Msg),
     Args = api_utils:members(Msg),
-    relay:publish(Relay, #game_event{event = Event, args = Args}).
+    RMod:publish(RPid, #game_event{event = Event, args = Args}).
 
 message_session(Relay, Pid, MsgList) when is_list(MsgList) ->
     lists:map(fun(Msg) ->
                       message_session(Relay, Pid, Msg)
               end, MsgList);
-message_session(Relay, Pid, Msg) when is_tuple(Msg) ->
+message_session({RMod, RPid}, Pid, Msg) when is_tuple(Msg) ->
     Event = api_utils:name(Msg),
     Args = api_utils:members(Msg),
-    relay:to_session(Relay, Pid, #game_event{event = Event, args = Args}).
+    RMod:to_session(RPid, Pid, #game_event{event = Event, args = Args}).
 
 mnow() ->
     {A, B, C} = erlang:now(),

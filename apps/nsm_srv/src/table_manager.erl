@@ -50,12 +50,11 @@
 -include_lib("eunit/include/eunit.hrl").
 -include_lib("nsx_config/include/log.hrl").
 -include_lib("stdlib/include/qlc.hrl").
--include("accounts.hrl").
+-include_lib("nsm_db/include/table.hrl").
 
 -define(SERVER, ?MODULE).
 
 -include("common.hrl").
--include("table.hrl").
 -include("user.hrl").
 -include("feed.hrl").
 -include("accounts.hrl").
@@ -234,8 +233,8 @@ handle_call({create_table, User, S}, _From, State) ->
                             ?INFO("EMPTY"),
 %                            ets:insert(Tables, Table),
                             publish({create_table, User}, TableId),
-                            [ apply(Module, Function, [new_table, Table | Args])
-                                || {Module, Function, Args} <- Callbacks ],
+                             [ apply(Module, Function, [new_table, Table | Args])
+                                 || {Module, Function, Args} <- Callbacks ],
                             {reply, {ok, Table}, State}
 %                            {reply, {ok, TableId}, State}
                     end

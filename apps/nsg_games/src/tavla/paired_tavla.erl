@@ -2,20 +2,16 @@
 -author('Serge Polkovnikov <serge.polkovnikov@gmail.com>').
 -behaviour(gen_server).
 
--export([
-         %%do_rematch/2,
+-export([reg/2,
          signal/2,
          publish/2,
          notify_tables/2,
          submit/4,
-         %%to_session/3,
          get_requirements/2,
-         %%subscribe/2, subscribe/3, unsubscribe/2,
          start_link/5,
          stop/1,
          get_topic/1,
          get_player_state/2,
-         %%get_table_info/1, update_gamestate/2,
          can_observe/2,
          unreg/2,
          im_ready/1
@@ -43,10 +39,7 @@
 -define(STATE_NEXT_ROUND_CONFIRMATION, state_next_round_confirmation).
 -define(STATE_FINISHED, state_finished).
 
-%% -record(subscriber, {
-%%           pid,
-%%           id,
-%%           ref}).
+-define(TAB_MOD, relay).
 
 -record(player, {
           id     :: 'PlayerId'(),
@@ -83,22 +76,15 @@
          }).
 
 
-
+reg(Srv, User) -> gen_server:call(Srv, {reg, User}, 10000).
 signal(Srv, Msg) -> gen_server:cast(Srv, {signal, Msg}).
-%%to_session(Srv, Session, Msg) -> gen_server:cast(Srv, {to_session, Session, Msg}).
 unreg(Srv, Key) -> gen_server:call(Srv, {unreg, Key}).
-%%subscribe(Srv, Pid, PlayerId) -> gen_server:cast(Srv, {subscribe, Pid, PlayerId}).
-%%subscribe(Srv, Pid) -> gen_server:cast(Srv, {subscribe, Pid, null}).
-%%unsubscribe(Srv, Pid) -> gen_server:cast(Srv, {unsubscribe, Pid}).
-%%do_rematch(Srv, Pid) -> gen_server:call(Srv, {do_rematch, Pid}).
 get_topic(Srv) -> gen_server:call(Srv, get_topic).
 get_player_state(Srv, UId) -> gen_server:call(Srv, {get_player_state, UId}).
-%%get_table_info(Srv) -> gen_server:call(Srv, get_table_info).
-%%update_gamestate(Srv, NewGameState) -> gen_server:cast(Srv, {update_gamestate, NewGameState}).
 can_observe(Srv, Id) -> gen_server:call(Srv, {can_observe, Id}).
 stop(Srv) -> gen_server:cast(Srv, stop).
 start_link(GameId, GameFSM, Params, Pids, Manager) -> gen_server:start_link(?MODULE, [GameId, GameFSM, Params, Pids, Manager], []).
-get_requirements(GameFSM,Mode) -> [{max_users,10},{min_users,4}].
+get_requirements(_GameFSM, _Mode) -> [{max_users,10},{min_users,4}].
 %% 2nd level relay API
 publish(Srv, Msg) -> Self = self(), gen_server:cast(Srv, {publish, Self, Msg}).
 notify_tables(Srv, Msg) -> Self = self(), gen_server:cast(Srv, {notify_tables, Self, Msg}).
@@ -131,6 +117,7 @@ init([Topic, {lobby, GameFSM}, Params0, PlayerIds, Manager]) ->
 
     GProcVal = #game_table{game_type = GameFSM,
                            game_process = self(),
+                           game_module = ?MODULE,
                            id = Topic,
                            age_limit = [crypto:rand_uniform(20,30), crypto:rand_uniform(31,40)],
                            game_mode = GameMode,
@@ -186,17 +173,6 @@ init([Topic, {lobby, GameFSM}, Params0, PlayerIds, Manager]) ->
     {ok, State}.
 
 
-
-%% handle_call({submit, _Msg}, _From, #state{rules_module = chat} = State) ->
-%%     {reply, {error, chat_has_no_game_fsm_module__cant_submit}, State};
-%% 
-%% handle_call({submit, Msg}, {From, _}, #state{rules_pid = Pid, rules_module = GameFSM} = State) ->
-%%     Res = GameFSM:make_move(Pid, From, Msg),
-%%     {reply, Res, State};
-
-%% handle_call({do_rematch, _}, _From, State = #state{gamestate = lobby}) ->
-%%     {reply, {error, cannot_rematch_in_lobby}, State};
-
 handle_call(get_topic, _From, State) ->
     {reply, State#state.topic, State};
 
@@ -204,54 +180,42 @@ handle_call({update_reg, Key, Value}, _From, State) ->
     gproc:set_value({p,g,Key},Value),
     {reply, ok, State};
 
-%% handle_call({get_player_state, UId}, _From, State) ->
-%%     FSM = State#state.rules_pid,
-%%     Game = State#state.rules_module,
-%%     Res = Game:get_player_state(FSM, UId),
-%%     {reply, Res, State};
-
-%% handle_call(get_table_info, _From, State) ->
-%%     List = ets:tab2list(State#state.subs),
-%%     Viewers = lists:map(fun(#subscriber{id = PlayerId}) ->
-%%                                 PlayerId
-%%                         end, List),
-%%     Players = [ PlayerId || #player{id = PlayerId} <- State#state.players ],
-%%     GameStatus = list_to_binary(atom_to_list(State#state.gamestate)),
-%%     GameName = paired_tavla, %api_utils:gamemodule_to_gametype(State#state.rules_module),
-%%     Res = #'TableInfo'{viewers = Viewers, players = Players, chat = [],
-%%                        game = GameName, game_status = GameStatus},
-%%     {reply, Res, State};
 
 handle_call({can_observe, Id}, _From, State) ->
     Res = can_observe0(Id, State),
     {reply, Res, State};
 
+handle_call({reg, User}, _From, #state{topic = Topic,
+                                       tables_pids = TablesPids,
+                                       tables_users = Tables
+                                      }=State) ->
+    UserId = User#'PlayerInfo'.id,
+    ?INFO("PAIRED_TAVLA <~p> Registration claim from user ~p.", [Topic, UserId]),
+
+    {First,Second} = case User#'PlayerInfo'.robot of
+      true ->  {lists:keyfind(robot, 2, Tables),
+                lists:keyfind(robot, 3, Tables)};
+      false -> {lists:keyfind(User#'PlayerInfo'.id, 2, Tables),
+                lists:keyfind(User#'PlayerInfo'.id, 3, Tables)}
+     end,
+
+     {Res,Pos} = case First of false -> {Second,3}; _ -> {First,2} end,
+     {TabId,_,_} = Res,
+     {TabId,TabPid} = lists:keyfind(TabId,1,TablesPids),
+     NewTableArray  = Tables -- [Res],
+     TablesUsers = NewTableArray ++ [setelement(Pos,Res,User#'PlayerInfo'.id)],
+    ?INFO("PAIRED_TAVLA <~p> User ~p registered.", [Topic, UserId]),
+    {reply, {ok, {UserId, {?TAB_MOD, TabPid}}}, State#state{tables_users = TablesUsers}};
+
+
 handle_call(Event, From, State) ->
     {stop, {unknown_call, Event, From}, State}.
+
+
 
 handle_cast(start_rematch_timer, State) ->
     {ok, Ref} = timer:send_after(?REMATCH_TIMEOUT, rematch_timer_ringing),
     {noreply, State#state{rematch_timer = {running, Ref}}};
-
-%% handle_cast({update_gamestate, NewGameState}, State) ->
-%%     ?INFO("update_gamestate: ~p", [NewGameState]),
-%%     NewGameState == finished andalso
-%%         gen_server:cast(self(), start_rematch_timer),
-%%     {noreply, State#state{gamestate = NewGameState}};
-
-%% handle_cast({signal, Msg}, State) ->
-%%     #state{rules_pid = Pid, rules_module = GameFSM} = State,
-%%     ?INFO("the signal: ~p", [Msg]),
-%%     GameFSM:signal(Pid, Msg),
-%%     {noreply, State};
-
-%% handle_cast({to_session, Pid, #game_event{game = undefined} = Msg0}, State) ->
-%%     Msg = Msg0#game_event{game = State#state.topic},
-%%     handle_cast({to_session, Pid, Msg}, State);
-
-%% handle_cast({to_session, Session, Msg}, State) ->
-%%     Session ! Msg,
-%%     {noreply, State};
 
 handle_cast({submit, _Sender, #game_action{action = Action, args = Args}, From, Player},
              #state{confirm_wl = WL,
@@ -327,11 +291,12 @@ handle_cast({publish, _Sender, #game_event{event = tavla_rolls, args = Args} = M
             #state{tstate = ?STATE_FIRST_MOVE_DETERMINATION,
                    tables_pids = Tables,
                    round_tables_counter = RoundTablesCounter} = State) ->
-    case length(proplists:get_value(dices, Args)) == 2 of
+    Dices = proplists:get_value(dices, Args),
+    case length(Dices) == 2 of
         true ->
             FirstMoveColor = proplists:get_value(color, Args),
-            ?INFO("PAIRED_TAVLA First dices rolled. First move color: ~p", [FirstMoveColor]),
-            %% Dices of main table passed to all tables like as original
+            ?INFO("PAIRED_TAVLA First dices rolled: ~p. First move color: ~p", [Dices, FirstMoveColor]),
+            %% Pass dices of the main table to other tables like as original
             [begin
                  NewArgs = replace_table_id(Args, TabId),
                  publish0(Msg#game_event{args = NewArgs}, State)
@@ -341,7 +306,7 @@ handle_cast({publish, _Sender, #game_event{event = tavla_rolls, args = Args} = M
                                   moves_counter = RoundTablesCounter
                                  }};
         false ->
-            ?INFO("PAIRED_TAVLA A dace rolled: ~p", [proplists:get_value(dices, Args)]),
+            ?INFO("PAIRED_TAVLA A dace rolled: ~p", [Dices]),
             publish0(Msg, State),
             {noreply, State}
     end;
@@ -363,18 +328,6 @@ handle_cast({publish, _Sender, #game_event{event = tavla_rolls, args = Args} = M
                           moves_counter = RoundTablesCounter
                          }};
 
-%% handle_cast({publish, _Sender, #game_event{event = tavla_moves, args = Args} = Msg},
-%%             #state{tstate = ?STATE_MOVES,
-%%                    moves_counter = MovesCounter} = State) ->
-%%     ?INFO("PAIRED_TAVLA Table ~p made his move. Tables left:~p", [proplists:get_value(table_id, Args), MovesCounter - 1]),
-%%     publish0(Msg, State),
-%%     if MovesCounter == 1 -> %% Last table moves
-%%            ?INFO("PAIRED_TAVLA All tables made their moves. Waiting for dices roll.", []),
-%%            init_next_move(State);
-%%        true ->
-%%            {noreply, State#state{moves_counter = MovesCounter - 1}}
-%%     end;
-
 handle_cast({publish, _Sender, #game_event{event = tavla_next_turn, args = Args} = Msg},
             #state{tstate = ?STATE_MOVES,
                    moves_counter = MovesCounter} = State) ->
@@ -395,14 +348,6 @@ handle_cast({notify_tables, Sender, Msg}, State) ->
     notify_tables0(Msg, Sender, State),
     {noreply, State};
 
-%% handle_cast({game_created, RPid}, State) ->
-%%     ?INFO("room ready, starting game ~p~n", [{self(),RPid}]),
-%%     GameFSM = State#state.rules_module,
-%%     erlang:monitor(process, RPid),
-%%     State2 = State#state{rules_pid = RPid, gamestate = started},
-%%     GameFSM:signal(RPid, state_created),
-%%     {noreply, State2};
-
 handle_cast({im_ready, _ChPid}, #state{tstate = ?STATE_WAIT_TABLES,
                                        ready_counter = Counter} = State) ->
     ?INFO("I'm ready, starting game ~p~n", [{self(),_ChPid}]),
@@ -421,63 +366,16 @@ handle_cast(stop, State) ->
 handle_cast(_Event, State) ->
     {noreply, State}.
 
-%% handle_info(rematch_timer_ringing, State) ->
-%%     State#state.rules_pid ! no_more_rematch,
-%%     {noreply, State#state{rematch_timer = expired}};
 
 %% handle_info({'DOWN', _, process, Pid, Reason}, State = #state{rules_pid = Pid}) ->
 %%     ?INFO("relay is down. Reason: ~p", [Reason]),
 %%     publish0(#game_crashed{game = State#state.topic}, self(), State),
 %%     {stop, {error, game_crashed}, State};
 %% 
-%% handle_info({'DOWN', _, process, Pid, _}, State) ->
-%%     ?INFO("relay session died (wait for user reconnection), Pid: ~p", [Pid]),
-%%     try 
-%%     gproc:unreg({p,g,self()}),
-%%     State#state.manager ! {remove_game, State#state.rules_module},
-%%     ?INFO("game manager notified ~p ! ~p",[State#state.manager,{remove_game, State#state.rules_module}])
-%%     catch _:_ -> noting
-%%     end,
-%%     {ok, _}=timer:send_after(?DISCONNECT_TIMEOUT, {disconnect, Pid}),
-%%     {noreply, State};
-%% 
-%% handle_info({unreg, _Key}, State) ->
-%%     try 
-%%     gproc:unreg({p,g,self()}),
-%%     State#state.manager ! {remove_game, State#state.rules_module},
-%%     ?INFO("game manager notified ~p ! ~p",[State#state.manager,{remove_game, State#state.rules_module}])
-%%     catch _:_ -> noting
-%%     end,
-%%     {noreply, State};
 
 handle_info(die, State) ->
     {stop, normal, State};
 
-handle_info({get_second_level_relay, {Pid, Ref}, User}, #state{tables_pids = TablesPids,
-                                                                 tables_users = Tables
-                                                                }=State) ->
-
-    ?INFO("~w:handle_info(get_second_level_relay) UserId = ~p", [?MODULE, User]),
-    ?INFO("~w:handle_info(get_second_level_relay) Tables = ~p", [?MODULE, Tables]),
-
-    {First,Second} = case User#'PlayerInfo'.robot of
-      true ->  {lists:keyfind(robot, 2, Tables),
-                lists:keyfind(robot, 3, Tables)};
-      false -> {lists:keyfind(User#'PlayerInfo'.id, 2, Tables),
-                lists:keyfind(User#'PlayerInfo'.id, 3, Tables)}
-     end,
-
-     {Res,Pos} = case First of false -> {Second,3}; _ -> {First,2} end,
-     {TabId,_,_} = Res,
-     {TabId,TabPid} = lists:keyfind(TabId,1,TablesPids),
-     NewTableArray  = Tables -- [Res],
-     ?INFO("New Tables Array: ~p",[ {NewTableArray,Res} ]),
-     TablesUsers = NewTableArray ++ [setelement(Pos,Res,User#'PlayerInfo'.id)],
-     ?INFO("Tables Users: ~p",[ TablesUsers ]),
-     ?INFO("Free Slot Found: ~p : ~p",[TabId,TabPid]),
-     Pid ! { self(), {Ref, {ok, TabPid}} },
-
-    {noreply, State#state{tables_users = TablesUsers}};
 
 handle_info(Info, State) ->
     {stop, {unknown_info, Info}, State}.

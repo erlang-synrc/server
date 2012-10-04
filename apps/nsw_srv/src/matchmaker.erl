@@ -176,32 +176,26 @@ matchmaker_submenu() ->
 
 
 el_inside_play() ->
-   %%    GameId = ensure_lucky_game(Game),
-%%     UId = wf:user(),
-%%     Settings = wf:session({q_game_type(),wf:user()}),
-%%     Game = proplists:get_value(game, Settings),
-%%     LTs = get_lucky_tables2(UId, Game),
-%%     Table =
-%%         case connect_to_lucky(LTs) of
-%%             {ok, T} ->
-%%                 T;
-%%             error ->
-%%                 Params
-%%                 T = create_lucky_table(),
-%%                 
-%%         end,
-
-    RealTableId = "1000001",
-    URL = lists:concat([?_U("/client"),"/",q_game_type(),"/id/", RealTableId]), 
-    LuckyAction = #event{type=click, actions=webutils:new_window_js(URL)},
-    B = #span{style="font-weight:bold"},
-    [
-        "<span id='guidersplayblock'>",
-        #link{postback=lucky_play_button, text=?_T("PLAY"), actions=LuckyAction},
-        B#span{class="ttl", text=?_T("I Am Feeling Lucky")},
-        B#span{text=?_T("You have no chance to get any gift points. Fast game only.")},
-        "</span>"
-    ].
+     Settings = wf:session({q_game_type(), wf:user()}),
+     Game = proplists:get_value(game, Settings),
+      LuckyAction =
+         case get_lucky_table(Game) of
+             [#game_table{id = GaId}] ->
+                 IdStr = integer_to_list(GaId),
+                 wf:session(IdStr, IdStr),
+                 URL = lists:concat([?_U("/client"),"/","tavla","/id/", GaId]),
+                 #event{type=click, actions=webutils:new_window_js(URL)};
+             [] ->
+                 []
+         end,
+     B = #span{style="font-weight:bold"},
+     [
+      "<span id='guidersplayblock'>",
+      #link{postback=lucky_play_button, text=?_T("PLAY"), actions=LuckyAction},
+      B#span{class="ttl", text=?_T("I Am Feeling Lucky")},
+      B#span{text=?_T("You have no chance to get any gift points. Fast game only.")},
+      "</span>"
+     ].
 
 matchmaker_show_create(Tag) ->
     ThisClass = case wf:state(buttons) of
@@ -679,28 +673,20 @@ convert_to_map(Data,_Setting,UId,GameFSM) ->
 
 
 
-get_lucky_tables2(_UId, Game) ->
+get_lucky_table(Game) ->
     Lucky = true,
-
-    Check = fun(Param,Value) ->
-                   case Param of
-                        undefined -> true;
-                        _Else -> Param == Value
-                   end end,
-
+    Check = fun(undefined, _Value) -> true;
+               (Param, Value) ->  Param == Value
+            end,
     Cursor = fun() ->
-                qlc:cursor(qlc:q([V || {{_,_,_K},_,V=#game_table{game_type=G,
-                                                   users=U,
-                                                   feel_lucky = L}} <- gproc:table(props),
-                           lists:member(robot, U),
-                           Check(Game, G),
-                           Check(Lucky, L)])
-                )
-    end,
-
-    Tables = qlc:next_answers(Cursor(), 10),
-
-    ?INFO("~w:get_lucky_tables2 Tables = ~w", [?MODULE, Tables]),
+                     qlc:cursor(qlc:q([V || {{_,_,_K},_,V=#game_table{game_type=G,
+                                                                      feel_lucky = L}}
+                                                <- gproc:table(props),
+                                            Check(Game, G),
+                                            Check(Lucky, L)]))
+             end,
+    Tables = qlc:next_answers(Cursor(), 1),
+    ?INFO("~w:get_lucky_table Table = ~p", [?MODULE, Tables]),
     Tables.
 
 
@@ -1205,9 +1191,7 @@ u_event(create_game) ->
 
 %% XXX: 
 u_event(lucky_play_button) ->
-    wf:session("108","1000001"),
-    wf:session("1000001","1000001"),
-    wf:redirect(?_U(lists:concat(["/matchmaker/"++q_game_type()])));
+     wf:redirect(?_U(lists:concat(["/matchmaker/"++q_game_type()])));
 
 u_event({info, {Target, TId}}) ->
     {ok, TableSettings} = case Target of

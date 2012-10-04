@@ -42,7 +42,7 @@
 
 
 -include("feed.hrl").
--include("table.hrl").
+-include_lib("nsm_db/include/table.hrl").
 -include("user.hrl").
 -include("config.hrl").
 

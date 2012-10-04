@@ -12,6 +12,12 @@ start_link() ->
 
 create_tables(Num) ->
     Users = ["maxim","kate","alice","sustel","ahmettez","shyronnie","kunthar"], % TODO: chose randomly
+    {ok, _, _} = rpc:call(?GAMESRVR_NODE, game_manager, create_game,
+                          [fl_lucky, [{game_type, game_tavla}]]),
+
+    {ok, _, _} = rpc:call(?GAMESRVR_NODE, game_manager, create_game,
+                          [fl_lucky, [{game_type, game_okey}]]),
+
     TavlaTwoPlayers = [rpc:call(?GAMESRVR_NODE,game_manager,create_table,
              [game_tavla,[{table_name,"maxim and alice"},
                           {speed,normal},
@@ -58,8 +64,8 @@ create_tables(Num) ->
                           {owner,"maxim"}],[<<"maxim">>,robot, robot, robot]])|| _ <-lists:seq(1,Num)],
     [{ok,TP1,_}|_] = TavlaPairedPlayers,
     [{ok,TP2,_}|_] = lists:reverse(TavlaPairedPlayers),
-    ?INFO("Paired Tavla rooms: ~p",[{TP1,TP2}])
-    .
+    ?INFO("Paired Tavla rooms: ~p",[{TP1,TP2}]),
+    ok.
 
 stress_test(NumberOfRooms) ->
     OkeyPlayers = [begin
@@ -105,7 +111,6 @@ init([]) ->
     Shutdown = 2000,
     Type = worker,
     DChild = {user_counter, {user_counter, start_link, []}, Restart, Shutdown, Type, [user_counter]},
-
 
     Dispatch = [{'_', [ {'_',nitrogen_cowboy,[]},
                         {['...'],cowboy_http_static,[{directory,{priv_dir,nsw_srv,[]},{mimetypes,mime()}}]} ] }], 

@@ -28,6 +28,7 @@
                      double_points = 1 :: integer(),
                      game_state,
                      game_process :: pid() | '_',
+                     game_module :: atom(),
                      pointing_rules :: any() | '_', %% #pointing_rule{}
                      pointing_rules_ex :: [] | '_', %% [#pointing_rule{}] - list of additional pointing rules,
                                                     %% for example IFeelLucky for okey game

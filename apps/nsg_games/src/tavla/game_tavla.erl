@@ -65,13 +65,13 @@
           paused_statename                 :: atom()
          }).
 
-start_link(Relay, Pids) ->
-    gen_fsm:start_link(?MODULE, [Relay, Pids], []).
+start_link(Relay, PidsWithPlayersInfo) ->
+    gen_fsm:start_link(?MODULE, [Relay, PidsWithPlayersInfo], []).
 
-start(Relay, Pids, GameId) ->
-    start(Relay, Pids, GameId, []).
-start(Relay, Pids, GameId, Params) ->
-    gen_fsm:start(?MODULE, [Relay, Pids, GameId, Params], []).
+start(Relay, PidsWithPlayersInfo, GameId) ->
+    start(Relay, PidsWithPlayersInfo, GameId, []).
+start(Relay, PidsWithPlayersInfo, GameId, Params) ->
+    gen_fsm:start(?MODULE, [Relay, PidsWithPlayersInfo, GameId, Params], []).
 
 signal(Server, Msg) ->
     gen_fsm:sync_send_all_state_event(Server, {signal, Msg}).
@@ -153,17 +153,20 @@ get_player_stats(_PlayerId) ->
 
 % INIT
 
-init([Relay, Pids, GameId, Settings]) ->
+init([Relay, PidsWithPlayersInfo, GameId, Settings]) ->
 
 %    ?INFO("Settings: ~p Pids: ~p",[Settings,Pids]),
 %    ?INFO("Get Settings: ~p",[get_settings(Settings)]),
 
-    ?INFO("Starting Tavla Game ~p with Players: ~p",[GameId,Pids]),
-    Players = lists:map(fun(Pid) -> 
-                             PI = game_session:get_player_info(Pid),
-%                             ?INFO("Session PI: ~p",[PI]),
-                             #'TavlaPlayer'{pid = Pid, player_id = PI#'PlayerInfo'.id, player_info = PI,collected=0 }
-                        end, Pids),
+    ?INFO("Starting Tavla Game ~p with Players: ~p",[GameId,PidsWithPlayersInfo]),
+%%     Players = lists:map(fun(Pid) -> 
+%%                              PI = game_session:get_player_info(Pid),
+%% %                             ?INFO("Session PI: ~p",[PI]),
+%%                              #'TavlaPlayer'{pid = Pid, player_id = PI#'PlayerInfo'.id, player_info = PI,collected=0 }
+%%                         end, Pids),
+    Players = [#'TavlaPlayer'{pid = Pid, player_id = UserId, player_info = PI, collected=0}
+                             || {Pid, #'PlayerInfo'{id = UserId} = PI} <- PidsWithPlayersInfo],
+    {Pids, PlayersWithInfo} = lists:unzip(PidsWithPlayersInfo),
     TName = proplists:get_value(table_name, get_settings(Settings)),
     Rounds  = proplists:get_value(rounds, get_settings(Settings)),
     ColoredPlayers = lists:zipwith(fun(TavlaPlayer,Color) ->
@@ -183,7 +186,7 @@ init([Relay, Pids, GameId, Settings]) ->
     %GameMode = proplists:get_value(game_mode, get_settings(Settings), 1),
     Mode = proplists:get_value(game_mode, get_settings(Settings)),
     PR = proplists:get_value(pointing_rules, get_settings(Settings)),
-    PlayersWithInfo = [game_session:get_player_info(Pid) || Pid <- Pids],
+%%    PlayersWithInfo = [game_session:get_player_info(Pid) || Pid <- Pids],
 %    [PRLucky] = proplists:get_value(pointing_rules_ex, get_settings(Settings)),
     UserOpts = [],%proplists:get_value(users_options, get_settings(Settings), []),
 
@@ -274,16 +277,14 @@ tavla_roll(Pid,State) ->
     {reply, ok, state_move, State}.
 
 
-tavla_move(Moves, Player, _Pid, #state{game_mode = Mode, table_id = TabId} = State) ->
-    TableId = State#state.table_id,
-    Relay = State#state.relay,
+tavla_move(Moves, Player, _Pid, #state{game_mode = Mode, table_id = TabId, relay = Relay} = State) ->
     ?INFO("tavla_move{} received from client ~p",[{Moves,Player}]),
     TP1 = lists:nth(1,State#state.players),
     TP2 = lists:nth(2,State#state.players),
     P1 = TP1#'TavlaPlayer'.player_id,
     P2 = TP2#'TavlaPlayer'.player_id,
     Incs = lists:map(fun(A) ->
-        publish_event(Relay, #tavla_moves{table_id = TableId, player = Player,
+        publish_event(Relay, #tavla_moves{table_id = TabId, player = Player,
                                          from = A#'TavlaAtomicMove'.from, 
                                          to = A#'TavlaAtomicMove'.to}),
         {Player, case A#'TavlaAtomicMove'.to of
@@ -298,7 +299,7 @@ tavla_move(Moves, Player, _Pid, #state{game_mode = Mode, table_id = TabId} = Sta
     NewState = State#state{players=[TP1#'TavlaPlayer'{collected=P1Collected},
                                     TP2#'TavlaPlayer'{collected=P2Collected}]},
     case check_game_ended(P1Collected, P2Collected, P1, P2, Relay, Player,State) of
-        no -> 
+        no ->
             case check_can_roll(Mode,TabId) of
                 true ->
                    {reply, ok, state_move, NewState};
@@ -565,9 +566,8 @@ handle_sync_event({signal, do_rematch}, _From, _StateName, State) ->
     start_game(NewState),
     {reply, ok, state_start_rolls, NewState};
 
-handle_sync_event({signal, {pause_game, Pid}}, _From, StateName, State) ->
-    Relay = State#state.relay,
-    TableId = State#state.table_id,
+handle_sync_event({signal, {pause_game, Pid}}, _From, StateName, 
+                  #state{relay = {RMod, RPid}, table_id = TableId} = State) ->
     case {is_player(Pid, State), StateName} of
         {_, X} when X == state_paused; X == state_finished ->
             {reply, {error, pause_not_possible}, StateName, State};
@@ -575,9 +575,9 @@ handle_sync_event({signal, {pause_game, Pid}}, _From, StateName, State) ->
             UID = (get_player(Pid, State))#'TavlaPlayer'.player_id,
             Event = #game_paused{table_id = TableId, game = State#state.game_id, who = UID,
                                  action = <<"pause">>, retries = 0},
-			?INFO("~w:handle_sync_event/4 Publishing the pause "
-					  "event from user: ~p",[?MODULE, UID]),
-            relay:publish(Relay, Event),
+            ?INFO("~w:handle_sync_event/4 Publishing the pause "
+                      "event from user: ~p",[?MODULE, UID]),
+            RMod:publish(RPid, Event),
             {reply, 0, state_paused,
              State#state{paused_statename = StateName}
             };
@@ -585,19 +585,17 @@ handle_sync_event({signal, {pause_game, Pid}}, _From, StateName, State) ->
             {reply, {error, you_are_not_a_player}, StateName, State}
     end;
 
-handle_sync_event({signal, {resume_game, Pid}}, _From, StateName, State) ->
-    Relay = State#state.relay,
-    TableId = State#state.table_id,
+handle_sync_event({signal, {resume_game, Pid}}, _From, StateName, 
+                  #state{relay = {RMod, RPid}, table_id = TableId} = State) ->
     case {StateName, is_player(Pid, State)} of
         {state_paused, true} ->
             ResumedState = State#state.paused_statename,
             UID = (get_player(Pid, State))#'TavlaPlayer'.player_id,
             Event = #game_paused{table_id = TableId, game = State#state.game_id, who = UID,
                                  action = <<"resume">>, retries = 0},
-			
-			?INFO("~w:handle_sync_event/4 Publishing the resume event"
-					  " from user: ~p", [?MODULE, UID]),
-            relay:publish(Relay, Event),
+            ?INFO("~w:handle_sync_event/4 Publishing the resume event"
+                      " from user: ~p", [?MODULE, UID]),
+            RMod:publish(RPid, Event),
             { reply, 0, ResumedState,
               State#state{paused_statename = undefined}};
         {state_paused, false} ->
@@ -765,10 +763,10 @@ publish_event(Relay, MsgList) when is_list(MsgList) ->
     lists:map(fun(Msg) ->
                       publish_event(Relay, Msg)
               end, MsgList);
-publish_event(Relay, Msg) when is_tuple(Msg) ->
+publish_event({RMod, RPid}, Msg) when is_tuple(Msg) ->
     Event = api_utils:name(Msg),
     Args = api_utils:members(Msg),
-    relay:publish(Relay, #game_event{event = Event, args = Args}).
+    RMod:publish(RPid, #game_event{event = Event, args = Args}).
 
 is_player(Pid, State) ->
     false /= get_player(Pid, State).

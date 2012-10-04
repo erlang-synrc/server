@@ -7,11 +7,18 @@
 -include_lib("nsx_config/include/log.hrl").
 
 -export([start/0, stop/1, create_table/2, create_table/3, add_game/1, counter/1, get_requirements/2,
-         get_relay/1, subscribe/3, subscribe/2, unsubscribe/2,game_requirements/1]).
+         get_relay/1, get_relay_mod_pid/1, subscribe/3, subscribe/2, unsubscribe/2,game_requirements/1]).
+
+-export([create_game/2]).
 
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 
 -record(state, { game_tavla = 0, game_okey = 0 }).
+
+create_game(GameFSM, Params) ->
+    GameId = id_generator:get_id(),
+    {ok, Pid} = gen_server:call(?MODULE, {create_game, GameFSM, Params, GameId}),
+    {ok, GameId, Pid}.
 
 create_table(GameFSM, PlayerIds) -> create_table(GameFSM, [], PlayerIds).
 create_table(GameFSM, Params, PlayerIds) ->
@@ -20,8 +27,10 @@ create_table(GameFSM, Params, PlayerIds) ->
     {ok, GameId, Pid}.
 
 get_tables(GameId) -> qlc:e(qlc:q([Val || {{_,_,_Key},_,Val=#game_table{id = Id}} <- gproc:table(props), GameId == Id ])).
-get_relay_pid(GameId) -> case get_tables(GameId) of [] -> undefined; 
-    X -> GameTable = lists:nth(1,X), P = GameTable#game_table.game_process, ?INFO("GameRelay: ~p",[P]), P end.
+get_relay_pid(GameId) -> case get_tables(GameId) of [] -> undefined;
+    [#game_table{game_process = P} | _] -> ?INFO("GameRelay: ~p",[P]), P end.
+get_relay_mod_pid(GameId) -> case get_tables(GameId) of [] -> undefined;
+    [#game_table{game_process = P, game_module = M} | _] ->  ?INFO("GameRelay: ~p",[{M,P}]), {M,P} end.
 subscribe(Pid, GameId, PlayerId) -> gen_server:call(?MODULE, {subscribe, Pid, GameId, PlayerId}).
 subscribe(Pid, GameId) -> gen_server:call(?MODULE, {subscribe, Pid, GameId}).
 get_relay(GameId) -> gen_server:call(?MODULE, {get_relay, GameId}).
@@ -41,6 +50,10 @@ handle_call({game_counter, FSM}, _From, State) ->
 
 handle_call({create_table, GameFSM, Params, Topic, PlayerIds}, _From, State) ->
     {Res, State1} = create_game_monitor(Topic, {lobby, GameFSM}, Params, PlayerIds, State),
+    {reply, Res, State1};
+
+handle_call({create_game, GameFSM, Params, Topic}, _From, State) ->
+    {Res, State1} = create_game_monitor2(Topic, GameFSM, Params, State),
     {reply, Res, State1};
 
 handle_call({create_chat, Topic, Players}, _From, State) ->
@@ -117,3 +130,13 @@ create_game_monitor(Topic, {lobby,GameFSM}, Params, Players, State) ->
             {{error, Reason}, State}
     end.
 
+create_game_monitor2(Topic, GameFSM, Params, State) ->
+    ?INFO("Create Root Game Process (Game Monitor2): ~p Params: ~p",[GameFSM, Params]),
+    RelayInit = GameFSM:start_link(Topic, Params),
+    case RelayInit of 
+        {ok, Srv} ->
+            Ref = erlang:monitor(process, Srv),
+            {{ok, Srv}, State};
+        {error, Reason} ->
+            {{error, Reason}, State}
+    end.
