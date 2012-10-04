@@ -45,7 +45,8 @@
          tables,           %% The register of tournament tables
          seats,            %% Stores relation between players and tables seats
          player_id_counter :: pos_integer(),
-         table_id_counter  :: pos_integer()
+         table_id_counter  :: pos_integer(),
+         mode              :: normal | exclusive
         }).
 
 -record(player,
@@ -74,6 +75,9 @@
 
 -define(STATE_PROCESSING, state_processing).
 -define(TAB_MOD, sl_simple).
+
+-define(MODE_EXCLUSIVE, exclusive).
+-define(MODE_NORMAL, normal).
 
 %% ====================================================================
 %% External functions
@@ -112,6 +116,7 @@ client_sync_send(Pid, Message, Timeout) ->
 %% --------------------------------------------------------------------
 init([GameId, Params, _Manager]) ->
     GameType = proplists:get_value(game_type, Params),
+    Mode = proplists:get_value(mode, Params),
     TableParams = table_parameters(GameType, ?MODULE, self()),
     GProcVal = #game_table{game_type = GameType,
                            game_process = self(),
@@ -139,7 +144,8 @@ init([GameId, Params, _Manager]) ->
                                    tables = tables_init(),
                                    seats = seats_init(),
                                    player_id_counter = 1,
-                                   table_id_counter = 1
+                                   table_id_counter = 1,
+                                   mode = Mode
                                   }}.
 
 %% --------------------------------------------------------------------
@@ -281,41 +287,49 @@ handle_child_event(_Event, StateName, StateData) ->
     {next_state, StateName, StateData}.
 
 
-
 handle_sync_client_event({reg, User}, From, ?STATE_PROCESSING,
-                          #state{game_id = GameId, seats = Seats, players=Players} = StateData) ->
+                          #state{game_id = GameId, mode = Mode,
+                                 seats = Seats, players=Players} = StateData) ->
     #'PlayerInfo'{id = UserId, robot = IsBot} = User,
-    ?INFO("FL_LUCKY <~p> Register clime received from user: ~p.", [GameId, UserId]),
-    %% Find reg numbers(player id) assigned to the user
-    IgnoredPlayers = [Id || #player{id = Id} <- midict:geti(UserId, user_id, Players)],
-    case find_free_seat_without_players(Seats, IgnoredPlayers) of
-        #seat{table = TabId, seat_num = SeatNum} ->
-            ?INFO("FL_LUCKY <~p> Found a table with free seats. TabId: ~p SeatNum: ~p.", [GameId, TabId, SeatNum]),
-            reg_player_normaly(UserId, IsBot, TabId, SeatNum, From, StateData);
-        not_found ->
-            ?INFO("FL_LUCKY <~p> There are no table with free seats.", [GameId]),
-            if IsBot ->
-                   ?INFO("FL_LUCKY <~p> User ~p is a bot. Rejecting registration.", [GameId, UserId]),
-                   reject_registration(StateData);
-               true ->
-                   case find_bot_seat_without_players(Seats, IgnoredPlayers) of
-                       #seat{table = TabId, seat_num = SeatNum, player_id = OldPlayerId} ->
-                           ?INFO("FL_LUCKY <~p> Found a seat with a bot. Replacing by the user. UserId:~p TabId: ~p SeatNum: ~p.",
+    ?INFO("FL_LUCKY <~p> Exclusive mode. Register clime received from user: ~p.", [GameId, UserId]),
+    case {IsBot, Mode} of
+        {true, _} ->
+            case find_free_seat(Seats) of
+                #seat{table = TabId, seat_num = SeatNum} ->
+                    ?INFO("FL_LUCKY <~p> Found a table with free seats. TabId: ~p SeatNum: ~p.", [GameId, TabId, SeatNum]),
+                    reg_player_normaly(UserId, IsBot, TabId, SeatNum, From, StateData);
+                not_found ->
+                    ?INFO("FL_LUCKY <~p> User ~p is a bot. No free seats. Rejecting registration.", [GameId, UserId]),
+                    reject_registration(no_free_seats, StateData)
+            end;
+        {false, ?MODE_EXCLUSIVE} ->
+            ?INFO("FL_LUCKY <~p>Creating new table for user: ~p.",
+                  [GameId, UserId]),
+            reg_player_at_new_table(UserId, IsBot, From, StateData);
+        {false, ?MODE_NORMAL} ->
+            IgnoredPlayers = [Id || #player{id = Id} <- midict:geti(UserId, user_id, Players)],
+            case find_free_seat_without_players(Seats, IgnoredPlayers) of
+                #seat{table = TabId, seat_num = SeatNum} ->
+                    ?INFO("FL_LUCKY <~p> Found a table with free seats. TabId: ~p SeatNum: ~p.", [GameId, TabId, SeatNum]),
+                    reg_player_normaly(UserId, IsBot, TabId, SeatNum, From, StateData);
+                not_found ->
+                    ?INFO("FL_LUCKY <~p> There are no table with free seats.", [GameId]),
+                    case find_bot_seat_without_players(Seats, IgnoredPlayers) of
+                        #seat{table = TabId, seat_num = SeatNum, player_id = OldPlayerId} ->
+                            ?INFO("FL_LUCKY <~p> Found a seat with a bot. Replacing by the user. UserId:~p TabId: ~p SeatNum: ~p.",
                                   [GameId, UserId, TabId, SeatNum]),
-                           reg_player_with_replace(UserId, IsBot, TabId, SeatNum, OldPlayerId, From, StateData);
-                       not_found ->
-                           ?INFO("FL_LUCKY <~p> There are no seats with bots. Creating new table for user: ~p.",
+                            reg_player_with_replace(UserId, IsBot, TabId, SeatNum, OldPlayerId, From, StateData);
+                        not_found ->
+                            ?INFO("FL_LUCKY <~p> There are no seats with bots. Creating new table for user: ~p.",
                                   [GameId, UserId]),
-                           reg_player_at_new_table(UserId, IsBot, From, StateData)
-                   end
-           end
+                            reg_player_at_new_table(UserId, IsBot, From, StateData)
+                    end
+            end
     end;
 
 handle_sync_client_event(_Event, _From, StateName, StateData) ->
    Reply = {error, unexpected_request},
    {reply, Reply, StateName, StateData}.
-
-
 
 reg_player_normaly(UserId, IsBot, TabId, SeatNum, From,
                    #state{game_id = GameId,
@@ -384,8 +398,8 @@ reg_player_at_new_table(UserId, IsBot, From,
                                                     player_id_counter = PlayerId + 1,
                                                     table_id_counter = TableId + 1}}.
 
-reject_registration(StateData) ->
-    {reply, {error, no_free_places}, ?STATE_PROCESSING, StateData}.
+reject_registration(Reason, StateData) ->
+    {reply, {error, Reason}, ?STATE_PROCESSING, StateData}.
 
 unreg_player_and_eliminate_table(PlayerId, TabId, #state{players = Players,
                                                          tables = Tables,
@@ -469,6 +483,12 @@ get_table_by_mon_ref(MonRef, Tables) ->
 
 seats_init() ->
     midict:new().
+
+find_free_seat(Seats) ->
+    case midict:geti(true, free, Seats) of
+        [] -> not_found;
+        [FreeSeat | _] -> FreeSeat
+    end.
 
 find_free_seat_without_players(Seats, PlayersList) ->
     case midict:geti(true, free, Seats) of
