@@ -185,7 +185,7 @@ init([Relay, PidsWithPlayersInfo, GameId, Settings]) ->
     DP = proplists:get_value(double_points, get_settings(Settings), 1),
     %GameMode = proplists:get_value(game_mode, get_settings(Settings), 1),
     Mode = proplists:get_value(game_mode, get_settings(Settings)),
-    PR = proplists:get_value(pointing_rules, get_settings(Settings)),
+%%    PR = proplists:get_value(pointing_rules, get_settings(Settings)),
 %%    PlayersWithInfo = [game_session:get_player_info(Pid) || Pid <- Pids],
 %    [PRLucky] = proplists:get_value(pointing_rules_ex, get_settings(Settings)),
     UserOpts = [],%proplists:get_value(users_options, get_settings(Settings), []),
@@ -194,6 +194,7 @@ init([Relay, PidsWithPlayersInfo, GameId, Settings]) ->
                             kakush_other = 2, game_points = 15, quota = 20},
     TestLuckyPR = #pointing_rule{game = tavla, game_type = feellucky, kakush_winner = 0,
                                  kakush_other = 0, game_points = 0, quota = 1},
+    PR = proplists:get_value(pointing_rules, get_settings(Settings), TestPR),
 
     GameInfo = [{id, GameId},
                 {double_points, DP},
@@ -224,28 +225,6 @@ init([Relay, PidsWithPlayersInfo, GameId, Settings]) ->
                                     observer_flag = ObserverFlag
                                     }}.
 
-%% state_wait({#tavla_ready{}, Pid}, _, #state{wait_list = List} = State) ->
-%%     Relay = State#state.relay,
-%%     TableId = State#state.table_id,
-%%     NList =
-%%         case lists:member(Pid, List) of
-%%             true ->
-%%                 PI = lists:keyfind(Pid, #'TavlaPlayer'.pid, State#state.players),
-%%                 publish_event(Relay, #tavla_player_ready{table_id = TableId, player = PI#'TavlaPlayer'.player_id}),
-%%                 lists:delete(Pid, List);
-%%             false ->
-%%                 ?INFO("not a member: ~p", [self()]),
-%%                 {ok, List}
-%%         end,
-%%     case NList of
-%%         [] ->
-%%             Relay = State#state.relay,
-%%             publish_event(Relay, #tavla_game_started{table_id = TableId}),
-%%             Pids = [P#'TavlaPlayer'.pid || P <- State#state.players],
-%%             {reply, ok, state_start_rolls, State#state{wait_list = Pids}};
-%%         _ ->
-%%             {reply, ok, state_wait, State#state{wait_list = NList}}
-%%     end.
 
 vido_answer(From,To,A,_Pid,State) ->
     Relay = State#state.relay,

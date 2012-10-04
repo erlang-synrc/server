@@ -10,13 +10,16 @@
 start_link() ->
     supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 
-create_tables(Num) ->
-    Users = ["maxim","kate","alice","sustel","ahmettez","shyronnie","kunthar"], % TODO: chose randomly
+create_lucky_tables() ->
     {ok, _, _} = rpc:call(?GAMESRVR_NODE, game_manager, create_game,
-                          [fl_lucky, [{game_type, game_tavla}]]),
+                          [fl_lucky, [{game_type, game_tavla},
+                                      {mode, exclusive}]]),
 
     {ok, _, _} = rpc:call(?GAMESRVR_NODE, game_manager, create_game,
-                          [fl_lucky, [{game_type, game_okey}]]),
+                          [fl_lucky, [{game_type, game_okey},
+                                      {mode, normal}]]).
+create_tables(Num) ->
+    Users = ["maxim","kate","alice","sustel","ahmettez","shyronnie","kunthar"], % TODO: chose randomly
 
     TavlaTwoPlayers = [rpc:call(?GAMESRVR_NODE,game_manager,create_table,
              [game_tavla,[{table_name,"maxim and alice"},
@@ -126,7 +129,7 @@ init([]) ->
 
     case rpc:call(?APPSERVER_NODE,nsm_db,get,[config, "debug/production", false]) of
          {ok, true} -> ok;
-         _ -> create_tables(100)
+         _ -> create_lucky_tables()
     end,
 
     {ok, { {one_for_one, 5, 10}, [DChild]} }.
