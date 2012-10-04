@@ -635,7 +635,7 @@ get_tables2(Setting,UId,GameFSM,Convert) ->
 
 %    ?INFO("~w:get_tables2 QLC = ~w", [?MODULE, QLC]), 
 
-    FilteredQLC = lists:filter(
+    FilteredQLC1 = lists:filter(
         fun(OneTable) ->
             TableUsers = OneTable#game_table.users,
             AllFilterOk = (FilterAllUsers==[]) or 
@@ -645,7 +645,15 @@ get_tables2(Setting,UId,GameFSM,Convert) ->
             AllFilterOk and AnyFilterOk
         end, QLC),
 
-    case Convert of convert -> convert_to_map(FilteredQLC,Setting,UId,GameFSM); _ -> FilteredQLC end.
+    FilteredQLC2 = lists:usort(fun (A, B) -> 
+            A#game_table.id =< B#game_table.id
+        end, FilteredQLC1),
+
+    FilteredQLC3 = lists:sort(fun (A, B) ->
+            A#game_table.timestamp =< B#game_table.timestamp
+        end, FilteredQLC2),
+
+    case Convert of convert -> convert_to_map(FilteredQLC3,Setting,UId,GameFSM); _ -> FilteredQLC3 end.
 
 convert_to_map(Data,_Setting,UId,GameFSM) ->
     [ begin Url = lists:concat([?_U("/view-table/"),GameFSM,"/id/", TId]),
@@ -808,12 +816,7 @@ show_table(Tables) ->
                     ViewPerPoint,
                     UserOwner,
                     Users,
-%                    DeleteAction] <- Tables
-                    DeleteAction] <- lists:usort(fun (A, B) -> 
-                            {_, {_, An}} = lists:nth(3, A),
-                            {_, {_, Bn}} = lists:nth(3, B),
-                            An =< Bn
-                        end, Tables)
+                    DeleteAction] <- Tables
             ]}
     end.
 
