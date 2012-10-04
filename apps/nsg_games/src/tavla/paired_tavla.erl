@@ -108,7 +108,7 @@ submit(Srv, Msg, From, Player) -> Self = self(), gen_server:cast(Srv, {submit, S
 
 init([Topic, {lobby, GameFSM}, Params0, PlayerIds, Manager]) ->
 
-    ?INFO("init paired tavla lobby ~p",[{GameFSM,Params0,PlayerIds,Manager}]),
+    ?INFO(" +++ init paired tavla lobby ~p",[{GameFSM,Params0,PlayerIds,Manager}]),
 
     Settings = Params0,
 
