@@ -4,6 +4,6 @@
   {vsn, "1"},
   {registered, []},
   {mod, {nsm_gifts_app,[]}},
-  {applications, [kernel, stdlib, inets]},
+  {applications, [kernel, stdlib, inets,nsm_db]},
   {env, []}
  ]}.
