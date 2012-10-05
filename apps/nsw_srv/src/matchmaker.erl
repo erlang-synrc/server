@@ -191,7 +191,7 @@ el_inside_play() ->
      B = #span{style="font-weight:bold"},
      [
       "<span id='guidersplayblock'>",
-      #link{postback=lucky_play_button, text=?_T("PLAY"), actions=LuckyAction},
+      #link{text=?_T("PLAY"), actions=LuckyAction},
       B#span{class="ttl", text=?_T("I Am Feeling Lucky")},
       B#span{text=?_T("You have no chance to get any gift points. Fast game only.")},
       "</span>"
@@ -1188,10 +1188,6 @@ u_event(create_game) ->
         atom_to_list(proplists:get_value(game_mode,Settings))),
     webutils:post_user_system_message(Desc);
 
-
-%% XXX: 
-u_event(lucky_play_button) ->
-     wf:redirect(?_U(lists:concat(["/matchmaker/"++q_game_type()])));
 
 u_event({info, {Target, TId}}) ->
     {ok, TableSettings} = case Target of
