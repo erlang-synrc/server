@@ -3981,6 +3981,7 @@ footer .lang img {
 .lightbox_background {
     background: black url("../images/lightbox_bg.png");
     opacity: 0.9;
+	position:relative;
     z-index: 1001;
 }
 
