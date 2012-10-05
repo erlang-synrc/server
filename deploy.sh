@@ -11,3 +11,8 @@ cp prod/$NODE/game.vm.args rels/game/node/etc/vm.args
 cp prod/$NODE/web.vm.args rels/web/node/etc/vm.args
 
 cp prod/$NODE/webmachine.config rels/web/node/etc/webmachine.config
+
+FILES=rels/web/node/lib/nsw_srv-1/priv/static/files
+rm -rf $FILES
+ln -s /mnt/glusterfs/kakafiles $FILES
+
