@@ -17,6 +17,14 @@ body() ->
 content() -> 
     [
         info_gifts:menu(),
+        case site_utils:detect_language() of
+            "en" -> en();
+            "tr" -> tr()
+        end
+    ].
+
+tr() ->
+    [
         #panel{class="info-page-header-panel", body=[
             #image{image="/images/more_info/info_membership_bg.png", class="info-page-bg"},
             #panel{style="left:285px; top:120px; font-size:40px;",body=?_T("Neden Üyelik Paketi")},
@@ -61,6 +69,66 @@ content() ->
             #panel{style="left:235px; top:1432px; font-size:17px;",body=?_T("<b>Çok kafa yorduk</b>, <b>çok uğraştık</b> ve bu çabamız <b>artarak</b> sürecek.")},
             #panel{style="left:282px; top:1453px; font-size:17px;",body=?_T("Siz <b>Arkadaş – Oyundaş</b> üyelerimizin desteği ile...")},
             #panel{style="left:327px; top:1681px; font-size:72px; color:#FC6404;",body=?_T("İyi keyifler.")}
+        ]}
+    ].
+
+en() ->
+    [
+        #panel{class="info-page-header-panel", body=[
+            #image{image="/images/more_info/info_membership_bg.png", class="info-page-bg"},
+            #panel{style="left:285px; top:120px; font-size:40px;",body=?_T("Hmm, but why should I purchase")},
+            #panel{style="left:285px; top:158px; font-size:60px;",body=?_T("a membership pack?")},
+            #panel{style="left:285px; top:222px; font-size:30px; color:#FC6404;",body=?_T("What are you playing the game for?")}
+        ]},
+        #panel{class="info-page-content-panel", body=[
+            #panel{style="left:436px; top:300px; font-size:18px;",body=?_T("I want to <b>have fun</b> and spend some time.")},
+            #panel{style="left:460px; top:324px; font-size:18px;",body=?_T("I enjoy playing against <b>competition</b>.")},
+            #panel{style="left:498px; top:348px; font-size:18px;",body=?_T("I <b>REALLY ENJOY</b> playing.")},
+
+            #panel{style="left:446px; top:372px; font-size:18px;",body=?_T("I want to hang out and <b>meet new people</b>.")},
+            #panel{style="left:380px; top:396px; font-size:18px;",body=?_T("I need a new enviroment where I can better <b>express myself</b>.")},
+            #panel{style="left:520px; top:420px; font-size:18px;",body=?_T("I want to <b>conversate</b>.")},
+
+            #panel{style="left:408px; top:444px; font-size:18px; text-indent:-11px;",body=?_T("I want my time and efforts to <b>have a return</b> in some way.")},
+            #panel{style="left:421px; top:468px; font-size:18px; text-indent:-11px;",body=?_T("I'm bored of just clicking around when playing games.")},
+            #panel{style="left:480px; top:492px; font-size:18px; text-indent:-11px;",body=?_T("I want to <b>explore</b> new achievments.")},
+
+            #panel{style="left:388px; top:555px; font-size:40px; color:#FC6404;",body=?_T("I'm looking for much more!")}
+        ]},
+        #panel{class="info-page-content-panel", body=[
+            #panel{style="left:100px; top:688px; font-size:18px;",body=?_T("I'm tired of people who hide behind the invisible walls of the internet")},
+            #panel{style="left:236px; top:712px; font-size:18px;",body=?_T("and mess with anyone as they like.")},
+            #panel{style="left:254px; top:736px; font-size:18px;",body=?_T("I don't want unfinished games.")},
+
+            #panel{style="left:176px; top:760px; font-size:18px;",body=?_T("I don't want to be harrased and do nothing about it.")},
+            #panel{style="left:92px; top:784px; font-size:18px;",body=?_T("I don't want to pay for features like <b>uploading my own profile</b> or entering")},
+            #panel{style="left:170px; top:808px; font-size:18px;",body=?_T("<b>all available rooms</b> or even to <b>choose my own name</b>…")},
+
+            #panel{style="left:140px; top:832px; font-size:18px;",body=?_T("I want to see that I get a <b>response for what I expect</b> and also.")},
+            #panel{style="left:316px; top:856px; font-size:18px;",body=?_T("<b>for my comfort</b>.")},
+            #panel{style="left:252px; top:880px; font-size:18px;",body=?_T("I'm not a chicken to be plucked!")},
+
+            #panel{style="left:348px; top:985px; font-size:50px; color:#FC6404;
+                            transform:rotate(5deg);
+                            -ms-transform:rotate(5deg);
+                            -moz-transform:rotate(5deg);
+                            -webkit-transform:rotate(5deg);
+                            -o-transform:rotate(5deg);",body=?_T("if that's what you think,")},
+            #panel{style="left:310px; top:1041px; font-size:36px;
+                            transform:rotate(5deg);
+                            -ms-transform:rotate(5deg);
+                            -moz-transform:rotate(5deg);
+                            -webkit-transform:rotate(5deg);
+                            -o-transform:rotate(5deg);",body=?_T("you should register to KAKARANET!")}
+        ]},
+        #panel{class="info-page-content-panel", body=[
+            #panel{style="left:100px; top:1212px; font-size:18px; text-align:center;",body=?_T("We have designed everything so our <b>players can enjoy</b> their envi-<br>roment, <b>make new friends</b> and basically <b>have a nice time</b>.")},
+            #panel{style="left:97px; top:1290px; font-size:18px; text-align:center;",body=?_T("We have implemented technologies, <b>not yet existing in our country</b>.")},
+            #panel{style="left:100px; top:1313px; font-size:18px; text-align:center;",body=?_T("Kakaranet users will benefit from the <b>customized user preferences</b><br>that <b>do not exist anywhere else</b>.")}
+        ]},
+        #panel{class="info-page-content-panel", body=[
+            #panel{style="left:155px; top:1432px; font-size:18px; text-align:center;",body=?_T("<b>We worked hard</b>, and we are still <b>working really hard</b>.<br>With <b>your help</b>, our efforts will increasingly continue to <b>improve this community</b>!")},
+            #panel{style="left:180px; top:1681px; font-size:64px; color:#FC6404;",body=?_T("Welcome, and enjoy!")}
         ]}
     ].
 

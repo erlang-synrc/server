@@ -276,6 +276,7 @@ handle_call(#join_game{game = GameId}, _From, #state{user = User} = State) ->
         #participation{} ->
             {reply, {error, already_joined}, State};
         false ->
+            ?INFO("Requesting main relay info...",[]),
             case game_manager:get_relay_mod_pid(GameId) of
                 {FLMod, FLPid} ->
                     ?INFO("Found the game: ~p. Trying to register...",[{FLMod, FLPid}]),

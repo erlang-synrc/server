@@ -121,7 +121,7 @@ get_requirements(GameFSM,M) -> (game_monitor_module(GameFSM, M)):get_requirement
 create_game_monitor(Topic, {lobby,GameFSM}, Params, Players, State) ->
     GameMode = proplists:get_value(game_mode, Params, standard),
     ?INFO("Create Root Game Process (Game Monitor): ~p Mode: ~p",[GameFSM, GameMode]),
-    RelayInit = (game_monitor_module(GameFSM,GameMode)):start_link(Topic, {lobby,GameFSM}, Params, Players, self()),
+    RelayInit = (game_monitor_module(GameFSM,GameMode)):start(Topic, {lobby,GameFSM}, Params, Players, self()),
     case RelayInit of 
         {ok, Srv} ->
             Ref = erlang:monitor(process, Srv),
@@ -132,7 +132,7 @@ create_game_monitor(Topic, {lobby,GameFSM}, Params, Players, State) ->
 
 create_game_monitor2(Topic, GameFSM, Params, State) ->
     ?INFO("Create Root Game Process (Game Monitor2): ~p Params: ~p",[GameFSM, Params]),
-    RelayInit = GameFSM:start_link(Topic, Params),
+    RelayInit = GameFSM:start(Topic, Params),
     case RelayInit of 
         {ok, Srv} ->
             Ref = erlang:monitor(process, Srv),

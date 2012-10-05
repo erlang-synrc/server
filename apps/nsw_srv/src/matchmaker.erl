@@ -1232,7 +1232,7 @@ u_event(show_game_rules) ->
     case q_game_type() of
         "okey" ->
             Body = [
-                #panel{class=holder, style="max-height:600px; ", body=[
+                #panel{class=holder, style="max-height:600px; overflow-y:scroll;", body=[
                     #h1{text="OKEY OYUNLARI HAKKINDA", style="font-size:26px; margin-bottom:14px;"},
                     #h1{text="OYUNU OYNAMA", style="font-size:20px; margin-bottom:10px;"},
          
