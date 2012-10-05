@@ -4,7 +4,7 @@
   {vsn, "1"},
   {registered, []},
   {mod, {nsm_srv_app,[]}},
-  {applications, [kernel, stdlib, ssl, nsx_utils, nsm_bg, nsm_auth]},
+  {applications, [kernel, stdlib, ssl, nsx_utils, nsm_bg]},
   {env, [
     {smtp_user, "noreply@kakaranet.com"},
     {smtp_pass, "unknown"},
