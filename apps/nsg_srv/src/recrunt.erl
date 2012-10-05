@@ -8,6 +8,8 @@
 
 -export([fields/1]).
 
+-record(unknown_data,{}).
+
 fields(T) when is_tuple(T) ->
     fields(element(1, T));
 
@@ -250,6 +252,5 @@ fields(tavla_board) ->
 fields(tavla_accept_timeout) ->
     record_info(fields, tavla_accept_timeout);
 
--record(unknown_data,{}).
 
 fields(_) -> record_info(fields,unknown_data).
