@@ -5,7 +5,7 @@
   {registered, []},
   {applications, [
                   kernel,
-                  stdlib,
+                  stdlib, nsx_idgen,
                   crypto
                  ]},
   {mod, { nsm_auth_app, []}},
