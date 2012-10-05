@@ -250,4 +250,6 @@ fields(tavla_board) ->
 fields(tavla_accept_timeout) ->
     record_info(fields, tavla_accept_timeout);
 
+-record(unknown_data,{}).
+
 fields(_) -> record_info(fields,unknown_data).
