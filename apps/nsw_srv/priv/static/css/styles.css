@@ -3981,7 +3981,7 @@ footer .lang img {
 .lightbox_background {
     background: black url("../images/lightbox_bg.png");
     opacity: 0.9;
-    z-index: 9001;
+    z-index: 1001;
 }
 
 /* popup-1 */
@@ -3993,6 +3993,7 @@ footer .lang img {
 	-webkit-border-radius:3px;
 	border-radius:3px;
 	background:#fff;
+    z-index: 1002;
 }
 .popup-1 .head {
 	display:block;
@@ -4041,6 +4042,7 @@ footer .lang img {
 .popup-2 {
 	position:relative;
 	width:730px;
+    z-index: 1002;
 }
 
 .login .popup-2 {
@@ -4172,7 +4174,11 @@ footer .lang img {
 	-webkit-box-shadow:0 1px 2px #d3d3d3;
 	box-shadow:0 1px 2px #d3d3d3;
 }
-.popup-3 {width:680px;}
+.popup-3 {
+    width:680px;
+	position:relative;
+    z-index: 1002;
+}
 .popup-3 .frame {padding:0;}
 .popup-3 .head {
 	display:block;
