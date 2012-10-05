@@ -135,6 +135,7 @@ init([GameId, Params, _Manager]) ->
                            name = "I'm Feeling Lucky " ++ game_type_to_str(GameType) ++
                                       " " ++erlang:integer_to_list(GameId) ++ " "
                           },
+    ?INFO("Lucky game started. GameId: ~p GameType:~p Pid:~p",[GameId, GameType, self()]),
     ?INFO("GProc Registration: ~p",[GProcVal]),
     gproc:reg({p,g,self()},GProcVal),
 
@@ -234,7 +235,8 @@ handle_info(_Info, StateName, StateData) ->
 %% Purpose: Shutdown the fsm
 %% Returns: any
 %% --------------------------------------------------------------------
-terminate(_Reason, _StateName, _StatData) ->
+terminate(_Reason, #state{game_id=GameId}=_StateName, _StatData) ->
+    ?INFO("FL_LUCKY <~p> Shutting down. Reason: ~p", [GameId, _Reason]),
     ok.
 
 %% --------------------------------------------------------------------

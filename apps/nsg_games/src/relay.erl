@@ -15,7 +15,7 @@
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 -export([do_rematch/2, signal/2, publish/2, submit/2, republish/2, resubmit/3, cast_resubmit/3,
          notify_table/2, game/1, to_session/3, reg/2,
-         subscribe/2, subscribe/3, subscribe/4, unsubscribe/2, get_requirements/2, start_link/5, stop/1, get_topic/1,
+         subscribe/2, subscribe/3, subscribe/4, unsubscribe/2, get_requirements/2, start/5, start_link/5, stop/1, get_topic/1,
          get_player_state/2, get_table_info/1, update_gamestate/2, can_observe/2, unreg/2, im_ready/1]).
 
 -record(subscriber, { pid, id, ref}).
@@ -62,7 +62,8 @@ get_player_state(Srv, UId) -> gen_server:call(Srv, {get_player_state, UId}).
 get_table_info(Srv) -> gen_server:call(Srv, get_table_info).
 update_gamestate(Srv, NewGameState) -> gen_server:cast(Srv, {update_gamestate, NewGameState}).
 can_observe(Srv, Id) -> gen_server:call(Srv, {can_observe, Id}).
-start_link(GameId, GameFSM, Params, Pids, Manager) -> gen_server:start(?MODULE, [GameId, GameFSM, Params, Pids, Manager], []).
+start_link(GameId, GameFSM, Params, Pids, Manager) -> gen_server:start_link(?MODULE, [GameId, GameFSM, Params, Pids, Manager], []).
+start(GameId, GameFSM, Params, Pids, Manager) -> gen_server:start(?MODULE, [GameId, GameFSM, Params, Pids, Manager], []).
 stop(Srv) -> gen_server:cast(Srv, stop).
 im_ready(Srv) -> gen_server:cast(Srv, room_ready).
 
