@@ -137,7 +137,7 @@ init([Relay, PidsWithPlayersInfo, GameId, Settings0]) ->
     TestLuckyPR = #pointing_rule{game = okey, game_type = feellucky, kakush_winner = 0,
                                  kakush_other = 0, game_points = 0, quota = 1},
 
-    Rounds = case Mode of countdown -> undefined; _ -> proplists:get_value(rounds, Settings1) end,
+    Rounds = case Mode of countdown -> inifinity; _ -> proplists:get_value(rounds, Settings1) end,
     PR = proplists:get_value(pointing_rules, Settings1, TestPR),
     [PRLucky] = proplists:get_value(pointing_rules_ex, Settings1, [TestLuckyPR]),
     Sets = 1,
@@ -1297,7 +1297,7 @@ create_okey_game_info(#state{set_state = SS,
                     game_type = State#state.scoring_mode,
                     finish_with_gosterge = proplists:get_value(gosterge_finish, State#state.settings),
                     rounds = case SS#'OkeySetState'.round_max of
-                                 undefined ->
+                                 infinity ->
                                      -1;
                                  RM ->
                                      RM
