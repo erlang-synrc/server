@@ -138,7 +138,7 @@ handle_call({update_me, BinID,Game}, _From, #state{cache_table = CT} = State) ->
 
 handle_call({user_count,undefined}, _From, #state{cache_table = CT} = State) ->
     Count = ets:info(CT, size),
-    ?INFO("user_count: undefined, Res: ~9999p~n", [Count]),
+    ?INFO("user_count: undefined, Res: ~p", [Count]),
     {reply, Count, State};
 
 handle_call({user_count, Game}, _From, #state{cache_table=CT} = State) ->
