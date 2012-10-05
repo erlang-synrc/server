@@ -205,11 +205,20 @@ Get it from github:
 
     http://github.com/cjohansen/juicer
 
-Get it using gem:
+Get it using gem. You'd might want to start with libxml2:
+
+    $ apt-get install libxslt-dev libxml2-dev
+
+And then the gem itself:
+
+    $ apt-get install ruby1.9.1-dev
+
+And the juicer
 
     $ gem install juicer
     $ juicer install yui_compressor
     $ juicer install jslint  # currently not used, but for future
+
 
 Deploying to MASTER {SRV1,SRV2,SRV3}
 ------------------------------------

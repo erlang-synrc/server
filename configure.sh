@@ -1,7 +1,8 @@
 #!/bin/bash
 
 LOCAL_IP=${1:-"127.0.0.1"}
-APP=${2:-"app@synrc.com"}
+APP=${2:-"app@akalenuk.biglaptop.com"}
+
 
 cd rels/app/node/etc
 ./configure -dba nsm_riak -app $APP -game game -web web -mq-user guest -mq-pass guest 
