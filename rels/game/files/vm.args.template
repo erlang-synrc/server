@@ -1,13 +1,7 @@
 -name GAMESERVER_NODE
--boot start_sasl
--sasl errlog_type all
--mnesia dir data
--gproc gproc_dist all
 -setcookie nitrogen
 #-heart
 +K true
 +A 5
 -env ERL_MAX_PORTS 20000
 -env ERL_FULLSWEEP_AFTER 0
--sync sync_mode nitrogen
--init_debug
