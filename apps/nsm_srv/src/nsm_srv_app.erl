@@ -12,6 +12,7 @@ stop_gproc() ->
 
 start(_StartType, _StartArgs) ->
     nsm_bg:init_workers(),
+    zealot_auth:start_link(),
     A = nsm_srv_sup:start_link(),
 %    [ nsm_srv_tournament_lobby_sup:start_lobby(Tour#tournament.id) || Tour <- nsm_tournaments:all() ],
     A.

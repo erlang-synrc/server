@@ -18,9 +18,9 @@ init([]) ->
     Shutdown = 2000,
     Type = worker,
 
-    Auth = {zealot_auth, {zealot_auth, start_link, []}, Restart, Shutdown, Type, [zealot_auth]},
+%    Auth = {zealot_auth, {zealot_auth, start_link, []}, Restart, Shutdown, Type, [zealot_auth]},
     TableManager = {table_manager, {table_manager, start_link, []}, Restart, Shutdown, Type, [table_manager]},
     TopMan = {topman, {topman, start, []}, Restart, Shutdown, Type, [topman, pushsub]},
     LobbySup = {nsm_srv_tournament_lobby_sup, {nsm_srv_tournament_lobby_sup, start_link, []}, Restart, Shutdown, supervisor, [nsm_srv_tournament_lobby_sup]},
 
-    {ok, {SupFlags, [Auth, TableManager, TopMan]}}.
+    {ok, {SupFlags, [TableManager, TopMan]}}.
