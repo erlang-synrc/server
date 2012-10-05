@@ -1,7 +1,7 @@
 #!/bin/bash
 
-LOCAL_IP=${1:-"127.0.0.1"}
-APP=${2:-"app@akalenuk.biglaptop.com"}
+LOCAL_IP=${1:-"`hostname -i`"}
+APP=${2:-"app@`hostname -f`"}
 
 
 cd rels/app/node/etc

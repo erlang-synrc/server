@@ -23,4 +23,4 @@ init([]) ->
     TopMan = {topman, {topman, start, []}, Restart, Shutdown, Type, [topman, pushsub]},
     LobbySup = {nsm_srv_tournament_lobby_sup, {nsm_srv_tournament_lobby_sup, start_link, []}, Restart, Shutdown, supervisor, [nsm_srv_tournament_lobby_sup]},
 
-    {ok, {SupFlags, [TableManager, TopMan, Auth]}}.
+    {ok, {SupFlags, [TableManager, TopMan]}}.

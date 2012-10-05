@@ -225,30 +225,30 @@ build_user_info(#user{username = UserName,
                       surname = Surname,
                       age = Age,
                       sex = Sex} = User) ->
-    Skill = case rpc:call(?GAMESERVER_NODE, score_db, get_skill, [UserName]) of
-		{badrpc, SkError} ->
-		    alog:error("Error in RPC: ~w", [SkError]),
-		    "undefined";
-		{error, not_found} -> "undefined";
-		{error, notfound} -> "undefined";
-                {ok, S} -> S
-            end,
+%    Skill = case rpc:call(?GAMESERVER_NODE, score_db, get_skill, [UserName]) of
+%		{badrpc, SkError} ->
+%		    alog:error("Error in RPC: ~w", [SkError]),
+%		    "undefined";
+%		{error, not_found} -> "undefined";
+%		{error, notfound} -> "undefined";
+%                {ok, S} -> S
+%            end,
 
-    Score = case rpc:call(?GAMESERVER_NODE,score_db,get_game_points,[okey,UserName] ) of
-		{badrpc, SError} ->
-		    alog:error("Error in RPC: ~w", [SError]),
-		    "undefined";
-		{error, not_found} -> "undefined";
-		{error, notfound} -> "undefined";
-                {ok, SC} -> proplists:get_value(game_points, SC)
-            end,
-
+%    Score = case rpc:call(?GAMESERVER_NODE,score_db,get_game_points,[okey,UserName] ) of
+%		{badrpc, SError} ->
+%		    alog:error("Error in RPC: ~w", [SError]),
+%		    "undefined";
+%		{error, not_found} -> "undefined";
+%		{error, notfound} -> "undefined";
+%                {ok, SC} -> proplists:get_value(game_points, SC)
+%            end,
+%
     #user_info{username = UserName,
                name = Name,
                surname = Surname,
                age = Age,
                avatar_url = rpc:call(?WEBSERVER_NODE,avatar,get_avatar,[User, small]),
                sex = Sex,
-               skill = Skill,
-               score = Score}.
+               skill = 0,
+               score = 0}.
 
