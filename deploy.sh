@@ -9,3 +9,5 @@ cp prod/$NODE/web.config rels/web/node/etc/app.config
 cp prod/$NODE/app.vm.args rels/app/node/etc/vm.args
 cp prod/$NODE/game.vm.args rels/game/node/etc/vm.args
 cp prod/$NODE/web.vm.args rels/web/node/etc/vm.args
+
+cp prod/$NODE/webmachine.config rels/web/node/etc/webmachine.config
