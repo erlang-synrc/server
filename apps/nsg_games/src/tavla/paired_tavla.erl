@@ -8,6 +8,7 @@
          notify_tables/2,
          submit/4,
          get_requirements/2,
+         start/5,
          start_link/5,
          stop/1,
          get_topic/1,
@@ -83,6 +84,7 @@ get_topic(Srv) -> gen_server:call(Srv, get_topic).
 get_player_state(Srv, UId) -> gen_server:call(Srv, {get_player_state, UId}).
 can_observe(Srv, Id) -> gen_server:call(Srv, {can_observe, Id}).
 stop(Srv) -> gen_server:cast(Srv, stop).
+start(GameId, GameFSM, Params, Pids, Manager) -> gen_server:start(?MODULE, [GameId, GameFSM, Params, Pids, Manager], []).
 start_link(GameId, GameFSM, Params, Pids, Manager) -> gen_server:start_link(?MODULE, [GameId, GameFSM, Params, Pids, Manager], []).
 get_requirements(_GameFSM, _Mode) -> [{max_users,10},{min_users,4}].
 %% 2nd level relay API
