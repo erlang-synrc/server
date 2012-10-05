@@ -26,6 +26,10 @@ start(_StartType, _StartArgs) ->
          false -> nsm_db:init_db();
          true -> pass
     end,
+    case nsx_opt:get_env(nsm_db,sync_nodes,false) of
+         true -> [ ?INFO("Joined: ~p ~p~n", [N, riak_core:join(N)]) || N <- nsx_opt:get_env(nsm_db, nodes, []) -- [node()] ];
+         false -> skip
+    end,
     nsm_db_sup:start_link().
 
 stop(_State) ->
