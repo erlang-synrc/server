@@ -474,8 +474,8 @@ lightbox_panel_template(LightboxId, PanelBody, CloseActions) ->
     #panel{class = Class, 
         style = "position:relative; z-index:12 ! important;",   % chrome fix
         body = [
-            #panel{class = in, body = #panel{class = frame, body = PanelBody}},
-		    #link{class = "btn-close", text = "close", actions = CloseActions}
+            #panel{class = in, body = #panel{class = frame, body = PanelBody}, style = "position:relative; z-index:12 ! important;"},
+		    #link{class = "btn-close", text = "close", actions = CloseActions, style = "position:relative; z-index:12 ! important;"}
         ]
     }.
 
