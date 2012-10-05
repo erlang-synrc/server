@@ -472,10 +472,10 @@ lightbox_panel_template(LightboxId, PanelBody, undefined) ->
 lightbox_panel_template(LightboxId, PanelBody, CloseActions) ->
     Class = case LightboxId of splash_lightbox -> "popup-2"; _ -> "popup-2 popup-3" end,
     #panel{class = Class, 
-        style = "position:relative; z-index:12 ! important;",   % chrome fix
+        style = "position:relative; z-index:1002 ! important;",   % chrome fix
         body = [
-            #panel{class = in, body = #panel{class = frame, body = PanelBody}, style = "position:relative; z-index:12 ! important;"},
-		    #link{class = "btn-close", text = "close", actions = CloseActions, style = "position:relative; z-index:12 ! important;"}
+            #panel{class = in, body = #panel{class = frame, body = PanelBody}, style = "position:relative; z-index:1002 ! important;"},
+		    #link{class = "btn-close", text = "close", actions = CloseActions, style = "position:relative; z-index:1002 ! important;"}
         ]
     }.
 
