@@ -248,5 +248,6 @@ fields(tavla_ack) ->
 fields(tavla_board) ->
     record_info(fields, tavla_board);
 fields(tavla_accept_timeout) ->
-    record_info(fields, tavla_accept_timeout).
+    record_info(fields, tavla_accept_timeout);
 
+fields(_) -> record_info(fields,unknown_data).
