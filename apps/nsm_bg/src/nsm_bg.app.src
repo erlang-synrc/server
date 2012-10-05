@@ -5,6 +5,7 @@
   {registered, []},
   {applications, [
                   kernel,
+                  gproc,
                   stdlib,
                   nsm_db,
                   nsm_mq

@@ -5,6 +5,7 @@
   {registered, []},
   {applications, [
                   kernel,
+                  gproc,
                   stdlib
                  ]},
   {mod, { nsg_games_app, []}},
