@@ -16,7 +16,7 @@ GAMESERVERHOST=127.0.0.1
 APPSERVER=app@$H
 JSPACK=min
 CSSPACK=min
-
+SYNC=false
 MQ_HOST=localhost
 MQ_PORT=5672
 MQ_USER=kakauser
@@ -62,8 +62,10 @@ do
 	    FBAPPSECRET=$2;shift 2;;
 	-jspack)
 	    JSPACK=$2;shift 2;;
-    -csspack)
+        -csspack)
 	    CSSPACK=$2;shift 2;;
+        -sync)
+	    SYNC=$2;shift 2;;
 	*) break;;
     esac
 done
@@ -87,6 +89,7 @@ cat vm.args.template | sed "s#WEBSERVER_NODE#$WEBSERVER@$H#g" > vm.args
 ./config -file app.config nsm_mq amqp_pass -list "\"$MQ_PASS\""
 ./config -file app.config nsm_mq amqp_vhost -list "\"$MQ_VHOST\""
 ./config -file app.config nsx_utils app_srv_node -atom $APPSERVER
+./config -file app.config nsm_db sync_nodes -atom $SYNC
 ./config -file app.config nsm_db nodes -list [app@$H,game@$H,web@$H]
 
 if [ -z "${WEBADRESS+xxx}" ]; then
