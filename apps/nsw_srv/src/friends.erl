@@ -25,7 +25,7 @@ main_authorized() ->
         MrX ->
             UserName = MrX
     end,
-    case catch rpc:call(?APPSERVER_NODE,nsm_users,get_user,[UserName]) of
+    case catch nsm_users:get_user(UserName) of
         {ok, UserInfo} ->
             wf:state(user, UserInfo),
             wf:state(feed_owner, {user, UserName}),
@@ -158,7 +158,7 @@ get_subscribed_users(Page,UId, {Mod,Fun}) when is_number(Page) ->
         MrX ->
             UserId = MrX
     end,
-    case rpc:call(?APPSERVER_NODE, Mod, Fun, [UserId, Page, ?FRIENDSPERPAGE]) of
+    case Mod:Fun(UserId, Page, ?FRIENDSPERPAGE) of
         [] ->
             #label{text=?_T("Nothing on this page"), style="margin-left:2em;"};
         Sub ->
@@ -166,7 +166,7 @@ get_subscribed_users(Page,UId, {Mod,Fun}) when is_number(Page) ->
             [friends_view(X) || X <- Sub]
     end;
 get_subscribed_users(Query,UId, {Mod,Fun}) when is_list(Query) ->
-    case rpc:call(?APPSERVER_NODE, Mod, Fun, [UId, Query]) of
+    case Mod:Fun(UId, Query) of
         [] ->
             ?_T("Can't find anything matching your request");
         Sub ->
@@ -184,7 +184,7 @@ user_short_description(WhoName) ->
     case WhoName of
         undefined -> [];
         UserName ->
-            {ok, UInfo} = rpc:call(?APPSERVER_NODE,nsm_users, get_user, [{username, UserName}]),
+            {ok, UInfo} = nsm_users:get_user({username, UserName}),
             #user{name=UName, surname=ULastName, age=UAge, sex=USex, location=ULoc, education=UEdu} = UInfo,
             if
                 ULastName == undefined, UName == undefined ->
@@ -243,7 +243,7 @@ friends_view(Who_, WhoName_) ->
     SubUnsubItem = case wf:user() of
         undefined -> [];
         User ->
-            case rpc:call(?APPSERVER_NODE,nsm_users, is_user_subscr, [User, WhoName]) of
+            case nsm_users:is_user_subscr(User, WhoName) of
                 true   -> #listitem{id=SUId, body=#link{url="javascript:void(0)",
                                 text=?_T("Unsubscribe"), title=?_T("You can stop seeing this users posts in your feed"),
                                     actions=#event { type=click, postback={unsubscribe, User, WhoName, SUId} } }};
@@ -309,7 +309,7 @@ big() ->
 subscribe() ->
     UId = wf:user(),
     SubList =
-        case rpc:call(?APPSERVER_NODE,nsm_users, list_subscr, [UId]) of
+        case nsm_users:list_subscr(UId) of
             [] ->
                 ?_T("You are not subscribed to anyone");
             Sub ->
@@ -357,7 +357,7 @@ inner_event({subscription, FrId}, _) ->
 
 inner_event(search_friend, _) ->
     SearchStr = wf:q("search_textbox"),
-    SearchedUsers = case rpc:call(?APPSERVER_NODE,nsm_users, search_user, [SearchStr]) of
+    SearchedUsers = case nsm_users:search_user(SearchStr) of
         [] ->
             #panel{body=?_T("We could not find any users matching the search") ++ " \"" ++ SearchStr ++ "\""};
         Sub ->

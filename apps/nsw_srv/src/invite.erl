@@ -81,7 +81,7 @@ get_invite() ->
 	undefined ->
             undefined;
 	_ ->
-	    case rpc:call(?APPSERVER_NODE,invite,check_code,[InviteCode]) of
+	    case nsm_invite:check_code(InviteCode) of
 		{ok, InviteRec} -> {ok, InviteRec};
 		error -> error
 	    end
@@ -89,9 +89,7 @@ get_invite() ->
 
 
 send_invite(Email) ->
-    case rpc:call(?APPSERVER_NODE, invite, send_invite_email,
-                  [_User = #user{}, Email, _Username = ?_T("User"),
-                   _OptionalText = ""]) of
+    case nsm_invite:send_invite_email(_User = #user{}, Email, _Username = ?_T("User"),  _OptionalText = "") of
         {ok, _Code} ->
            {ok, sent};
         {error, wrong_username} ->

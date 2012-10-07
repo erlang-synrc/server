@@ -1,4 +1,4 @@
--module(invite).
+-module(nsm_invite).
 
 -export([generate_code/1,
          generate_code/2,

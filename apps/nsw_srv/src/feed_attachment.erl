@@ -25,8 +25,8 @@ process_uploaded_file(UserId, FeedId, OrigFile, LocalFile) ->
         true ->
             {ok, Type} = mime_type:identify(LocalFile),
             Size = filelib:file_size(LocalFile),
-            {ok, Limit}    = rpc:call(?APPSERVER_NODE, nsm_db, get, [config, "storage/upload_limit",     30 * 1024 * 1024]),
-            {ok, NumLimit} = rpc:call(?APPSERVER_NODE, nsm_db, get, [config, "storage/upload_num_limit", 15]),
+            {ok, Limit}    = nsm_db:get(config, "storage/upload_limit",     30 * 1024 * 1024),
+            {ok, NumLimit} = nsm_db:get(config, "storage/upload_num_limit", 15),
             NumUploads = get_num_uploads(UserId),
 
             Res = if
@@ -137,7 +137,7 @@ check_type_file(File) ->
                "image/x-djvu"              %% djvu
                ],
 
-    {ok, SupportedFileType} = rpc:call(?APPSERVER_NODE,nsm_db,get,[config,"webs/upload/supported_type", Default]),
+    {ok, SupportedFileType} = nsm_db:get(config,"webs/upload/supported_type", Default),
     %?PRINT({"FEED ATTACHMENT: SUPPORTED FILES:", SupportedFileType}),
     lists:member(FileType, SupportedFileType).
 
@@ -254,7 +254,7 @@ get_num_uploads(UserId) ->
     get_num_uploads(UserId, now_date()).
 
 get_num_uploads(UserId, Date) ->
-    case rpc:call(?APPSERVER_NODE,nsm_db,get,[uploads, {UserId, Date}]) of
+    case nsm_db:get(uploads, {UserId, Date}) of
 	{error, _E} -> 0;
 	{ok, #uploads{counter = Counter}} -> Counter
     end.
@@ -265,7 +265,7 @@ increment_num_uploads(UserId) ->
 increment_num_uploads(UserId, Date) ->
     Counter = get_num_uploads(UserId),
     nsx_util_notification:notify(["db", "user", UserId, "put"], #uploads{key={UserId, Date}, counter=Counter + 1}).
-%    rpc:call(?APPSERVER_NODE,nsm_db,put,[#uploads{key={UserId, Date}, counter=Counter + 1}]).
+%    rpc:call(?APSERVER_NODE,nsm_db,put,[#uploads{key={UserId, Date}, counter=Counter + 1}]).
 
 
 now_date() ->

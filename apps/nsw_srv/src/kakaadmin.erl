@@ -48,8 +48,8 @@ title() -> webutils:title(?MODULE).
 
 body() ->
     UserName = wf:user(),
-    {ok, User} = rpc:call(?APPSERVER_NODE,nsm_users,get_user,[UserName]),
-    case rpc:call(?APPSERVER_NODE,nsm_acl,check_access,[User, {feature, admin}]) of
+    {ok, User} = nsm_users:get_user(UserName),
+    case nsm_acl:check_access(User, {feature, admin}) of
 	allow -> body_authorized();
 	_ -> ?_T("You don't have access to do that.")
     end.
@@ -163,7 +163,7 @@ config_list() ->
     get_tree_box([]). %% root
 get_tree_box(Branch) ->
 %    Childs = get_tree(Branch),
-    Items1 = rpc:call(?APPSERVER_NODE,nsm_db,all,[config]),
+    Items1 = nsm_db:all(config),
     Items = [ begin V = case is_list(Value) of true -> Value; 
                                         _ -> [A] = io_lib:format("~p",[Value]),A 
                         end, 
@@ -206,7 +206,7 @@ get_tree_box(Branch) ->
 -spec get_tree(list()) -> [{list(),val}|{list(),tree}].
 %% Get child elements in brach Branch. Elements are marked as val or tree (or both).
 get_tree(Branch) ->
-    FullTree = rpc:call(?APPSERVER_NODE,nsm_db,all,[config]),
+    FullTree = nsm_db:all(config),
     Tree = get_tree(FullTree, Branch, []),
     FiltredTree = filter_tree(Tree, []),
     lists:keysort(1, FiltredTree).
@@ -254,7 +254,7 @@ config_edit_box(Key) ->
 	    _ ->
 		KS = wf:f("~w", [Key]),
 		NotSet = make_ref(),
-		{ok, Val} = rpc:call(?APPSERVER_NODE,nsm_db,get,[config, Key, NotSet]),
+		{ok, Val} = nsm_db:get(config, Key, NotSet),
 		case Val of
 		    NotSet ->
 			{KS, "", string};
@@ -302,7 +302,7 @@ users_submenu() ->
 
 
 invite() ->
-    Data = invite:convert_data(rpc:call(?APPSERVER_NODE,invite,get_all_code,[])),
+    Data = invite:convert_data(nsm_invite:get_all_code()),
 
     Pager =
 	#panel{class="paging paging-2", body=#panel{class="center", body=[
@@ -375,7 +375,7 @@ ui_paginate() ->
 %%%%%%%%%%%%%%% Users list  %%%%%%%%%%%%%%
 
 users_list() ->
-    FirstCursor = cursor:new(rpc:call(?APPSERVER_NODE, nsm_db, all, [user]), 2),
+    FirstCursor = cursor:new(nsm_db:all(user), 2),
     {ok, Result, Cursor} = cursor:page_next(?USER_LIST_PAGE_SIZE, FirstCursor),
     wf:state(user_list_cursor, Cursor),
     view_user_list(Result, 1, cursor:size(Cursor)).
@@ -431,7 +431,7 @@ users_list_get_data(UsersList) ->
             register_date = RegisterDate} = WebRecord,
 
         {InvitationCode, InvitationPerson} =
-        case rpc:call(?APPSERVER_NODE, invite, get_code_per_created_user, [Username]) of
+        case nsm_invite:get_code_per_created_user(Username) of
             []->
                 {"-", "-"};
             [#invite_code{code = Code, issuer = Issuer}] ->
@@ -439,7 +439,7 @@ users_list_get_data(UsersList) ->
         end,
 
         LastLogin =
-        case rpc:call(?APPSERVER_NODE,nsm_users,user_status,[Username]) of
+        case nsm_users:user_status(Username) of
             {error, _} ->
                 "-";
             {ok, #user_status{last_login = L0}} ->
@@ -520,7 +520,7 @@ packages_list() ->
 	#packages_grid{}.
 
 gifts_list() ->
-    FirstCursor = cursor:new(rpc:call(?APPSERVER_NODE, nsm_db, all, [gifts]), 2),
+    FirstCursor = cursor:new(nsm_db:all(gifts), 2),
     {ok, Result, Cursor} = cursor:page_next(?GIFT_LIST_PAGE_SIZE, FirstCursor),
     wf:state(gift_list_cursor, Cursor),
     view_gift_list(Result, 1, cursor:size(Cursor)).
@@ -611,10 +611,10 @@ something_to_list(N) ->
     hd(io_lib:format("~.2f",[N])).
 
 real_affiliates_list() ->
-    rpc:call(?APPSERVER_NODE,nsm_affiliates,affiliates,[]).
+    nsm_affiliates:affiliates().
 
 is_able_to_look_details(User) ->
-    rpc:call(?APPSERVER_NODE,nsm_affiliates,is_able_to_look_details,[User]).
+    nsm_affiliates:is_able_to_look_details(User).
 
 affiliates_list() ->
     AL = lists:sort(real_affiliates_list()),
@@ -655,7 +655,7 @@ affiliates_contracts_body() ->
     Day = webutils:create_option_with_number({1,31}, integer_to_list(element(3, LD)), undefined),
     Month = webutils:create_option_with_number({1,12}, integer_to_list(element(2, LD)), undefined),
     Year = webutils:create_option_with_number({2012,2112}, integer_to_list(element(1, LD)), undefined),
-    TypeList = rpc:call(?APPSERVER_NODE,nsm_affiliates,get_contract_types,[]),
+    TypeList = nsm_affiliates:get_contract_types(),
     [
         #panel{id=affiliates_contracts, style="font-size:14px;", body=[
             #h1{text=?_T("New contract"), style="font-size:16px;"},
@@ -736,16 +736,16 @@ create_new_contract_from_form() ->
     Month = list_to_integer(wf:q(contrant_new_month)),
     Year = list_to_integer(wf:q(contrant_new_year)),
     GregDays = calendar:date_to_gregorian_days(Year, Month, Day),    
-    TypeList = rpc:call(?APPSERVER_NODE,nsm_affiliates,get_contract_types,[]),
+    TypeList = nsm_affiliates:get_contract_types(),
     {_, Name, Duration, Limit, Commission, _} = hd(
         [{CTId, A1, A2, A3, A4, A5} || {CTId, A1, A2, A3, A4, A5} <- TypeList, CTId == Id]
     ),
-    Res = rpc:call(?APPSERVER_NODE,nsm_affiliates,check_contract,[
+    Res = nsm_affiliates:check_contract(
         UserId, Name, 
         calendar:gregorian_days_to_date(GregDays), 
         calendar:gregorian_days_to_date(GregDays+Duration), 
         Limit, Commission
-    ]),
+    ),
     case Res of 
         {error, {contracts_conflict, _}} ->
             wf:wire(#alert{text=?_TS("User '$username$' already has contract for this time!", [{username, UserId}]) });
@@ -767,9 +767,9 @@ create_new_contract_from_form() ->
 
 event(add_new_contract) ->
     UserId = wf:q(contract_new_user),
-    case rpc:call(?APPSERVER_NODE, nsm_users, get_user, [{username, UserId}]) of
+    case nsm_users:get_user({username, UserId}) of
         {ok, _} ->
-            case rpc:call(?APPSERVER_NODE, nsm_affiliates, is_existing_affiliate, [UserId]) of
+            case nsm_affiliates:is_existing_affiliate(UserId) of
                 true ->
                     create_new_contract_from_form();
                 false ->
@@ -781,9 +781,9 @@ event(add_new_contract) ->
     end;
 
 event({make_affiliate_and_add_contract, UserId}) ->
-    case rpc:call(?APPSERVER_NODE, nsm_users, get_user, [{username, UserId}]) of
+    case nsm_users:get_user({username, UserId}) of
         {ok, _} ->
-%            rpc:call(?APPSERVER_NODE,nsm_affiliates, create_affiliate,[UserId]);
+%            rpc:call(?apSERVER_NODE,nsm_affiliates, create_affiliate,[UserId]);
             nsx_util_notification:notify(["affiliates", "user", UserId, "create_affiliate"], {});
         _ -> 
             wf:wire(#alert{text=?_TS("User '$username$' does not exist!", [{username, UserId}]) })
@@ -813,7 +813,7 @@ event(affiliate_textbox_changed) ->
 
 event(add_affiliate) ->
     AffiliateUsername=wf:q(affiliate_username),
-    case rpc:call(?APPSERVER_NODE, nsm_users, get_user, [{username, AffiliateUsername}]) of
+    case nsm_users:get_user({username, AffiliateUsername}) of
         {ok, _} ->
             nsx_util_notification:notify(["affiliates", "user", AffiliateUsername, "create_affiliate"], {}),
             wf:update(affiliates_list, affiliates_list());
@@ -856,15 +856,15 @@ event(Event) ->
 		undefined ->
 			wf:redirect_to_login("/");
 		UserName ->
-			{ok, User} = rpc:call(?APPSERVER_NODE,nsm_users,get_user,[UserName]),
-			case rpc:call(?APPSERVER_NODE,nsm_acl,check_access, [User, {feature, admin}]) of
+			{ok, User} = nsm_users:get_user(UserName),
+			case nsm_acl:check_access(User, {feature, admin}) of
 				allow -> u_event(Event);
 				_ -> wf:redirect("/")
 			end
 	end.
 
 u_event(delete_old_invites) ->
-    Invites = rpc:call(?APPSERVER_NODE,invite,get_all_code,[]),
+    Invites = nsm_invite:get_all_code(),
     {Deleted, NotExpired} = lists:foldl(
         fun(#invite_code{created_user = CUser, create_date = CData0, code = Code} = I, {Counter, Acc}) ->
             CData = utils:now_to_seconds(CData0),
@@ -1021,7 +1021,7 @@ u_event(generate_invite) ->
     User = wf:user(),
     Count = wf:to_integer(wf:q(count_slider_value)),
     InvList = lists:map(fun(_) ->
-                                {ok, InviteCode} = rpc:call(?APPSERVER_NODE,invite,generate_code,[User]),
+                                {ok, InviteCode} = nsm_invite:generate_code(User),
                                 InviteCode
                         end, lists:seq(1, Count) ),
     Subject = ?_T("List of invitation URLs"),
@@ -1029,7 +1029,7 @@ u_event(generate_invite) ->
     Email = webutils:user_info(email),
     nsx_util_notification:notify_email(Subject, lists:flatten(Text), Email),
 
-    Data = invite:convert_data(rpc:call(?APPSERVER_NODE,invite,get_all_code,[])),
+    Data = invite:convert_data(nsm_invite:get_all_code()),
     NewBox = table_code_view(Data),
     flash(invites_flash, info, ?_TS("Generate $count$ code and send to address '$email$'.",
 		  [{count, Count}, {email, Email}])),

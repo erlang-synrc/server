@@ -13,6 +13,6 @@
     {game_srv_node, 'game@rigdzin.cc'},
     {web_srv_node, 'web@rigdzin.cc'},
     {riak_srv_node, kakastore@rigdzin.cc},
-    {dba, zealot_riak},
+    {dba, nsm_riak},
     {version, "1"}]}
  ]}.

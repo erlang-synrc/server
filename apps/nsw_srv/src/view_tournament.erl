@@ -33,7 +33,7 @@ main_authorized() ->
     %% user became ready automatically
     nsx_util_notification:notify_tournament_user_ready(TournamentId, UserInfo),
 
-    TournamentInfo = rpc:call(?APPSERVER_NODE, nsm_tournaments, get, [TournamentId]),
+    TournamentInfo = nsm_tournaments:get(TournamentId),
     wf:state(tournament, TournamentInfo),
 
     start_comet(),
@@ -56,7 +56,7 @@ body() ->
 
 chat() ->
     TID = wf:state(tournament_id),
-    case rpc:call(?APPSERVER_NODE, nsm_tournaments, chat_history, [TID]) of
+    case nsm_tournaments:chat_history(TID) of
         H when is_list(H) ->
             add_chat_history(H);
         _ ->
@@ -143,7 +143,7 @@ row_id(User) ->
 update_userlist() ->
     TID = wf:state(tournament_id),
 
-    ActiveUsers       = rpc:call(?APPSERVER_NODE, nsm_tournaments, active_users, [TID]),
+    ActiveUsers       = nsm_tournaments:active_users(TID),
     NotActiveUsers    = not_active_users(TID, ActiveUsers),
     wf:update(users_placeholder, users_tables(ActiveUsers, NotActiveUsers)),
     wf:flush().
@@ -283,7 +283,7 @@ comet_update(User, TournamentId) ->
 not_active_users(TID, ActiveUsers) ->
     CurrentUser = wf:user(),
     %% get play records for tournament
-    AllUsers = rpc:call(?APPSERVER_NODE, nsm_tournaments, joined_users, [TID]),
+    AllUsers = nsm_tournaments:joined_users(TID),
 
     AllUsersCount = length(AllUsers),
     wf:update(user_count, wf:to_list(AllUsersCount)),
@@ -297,7 +297,7 @@ not_active_users(TID, ActiveUsers) ->
 
     lists:foldl(
         fun(User, Acc) ->
-            case rpc:call(?APPSERVER_NODE, nsm_users, get_user, [User]) of
+            case nsm_users:get_user(User) of
                 {ok, U} ->
                     [U | Acc];
                 _ ->

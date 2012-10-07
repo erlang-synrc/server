@@ -180,7 +180,7 @@ group_link(Gid) when is_list(Gid) ->
 
 
 user_vcard(Username) when is_list(Username) ->
-    {ok, User} = rpc:call(?APPSERVER_NODE,nsm_users,get_user,[Username]),
+    {ok, User} = nsm_users:get_user(Username),
     Avatar = avatar:get_avatar(User, small),
     #link{body=[#image{image=Avatar}, #span{text=username_upper(Username)}],
 	  url=site_utils:user_link(Username)}.
@@ -232,7 +232,7 @@ check_date_correct({SYear,SMonth,SDay} = OrigDate) ->
 
 -spec how_old({integer(),integer(),integer()}) -> integer().
 how_old({Day,Month,Year}) ->
-    rpc:call(?APPSERVER_NODE,table_manager,get_user_age,[#user{age = {Year,Month,Day}}]).
+    table_manager:get_user_ag(#user{age = {Year,Month,Day}}).
 
 element_value(Element) ->
     case wf:q(Element) of
@@ -402,7 +402,7 @@ postback_to_js_string(Module, Postback) ->
 get_usort_user(Groups, Users) ->
     GroupsUsers =
         lists:foldl(fun(Group, Acc) ->
-                            UsersInGroup = rpc:call(?APPSERVER_NODE,nsm_groups,list_user_in_group,[Group]),
+                            UsersInGroup = nsm_groups:list_user_in_group(Group),
                             lists:umerge(lists:usort(UsersInGroup), Acc)
                     end, [], Groups),
     lists:umerge(lists:usort(Users), GroupsUsers).
@@ -415,7 +415,7 @@ table_per_user_point(User, Sets0, undefined) ->
     table_per_user_point(User, Sets0, 0);
 table_per_user_point(User, Sets, Rounds) when is_integer(Sets),
                                               is_integer(Rounds) ->
-    Point = rpc:call(?APPSERVER_NODE,nsm_users,get_user_point,[User]),
+    Point = nsm_users:get_user_point(User),
     case Point of
         X when X < (Sets*Rounds) -> false;
         X when X >= (Sets*Rounds) -> true

@@ -205,7 +205,7 @@ searched_content(PageNumber, Content) ->
 get_group_rows() -> get_group_rows(1).
 get_group_rows(Offset) ->
     UId = wf:user(),
-    case rpc:call(?APPSERVER_NODE,nsm_groups, list_group_per_user_with_count, [UId, UId, Offset, ?GROUPPERPAGE]) of
+    case nsm_groups:list_group_per_user_with_count(UId, UId, Offset, ?GROUPPERPAGE) of
         [] ->
             ?_T("You are not subscribed to anyone");
         Sub ->
@@ -224,13 +224,13 @@ group_row(GL) ->
     #list{class="group-list-mkh", body=show_group_ul(GL)}.
 
 show_group_ul(#group{username = GName, description= GDesc})          ->
-    GroupMembersCount = rpc:call(?APPSERVER_NODE,nsm_groups, get_members_count, [GName]),
-    Group = rpc:call(?APPSERVER_NODE,nsm_groups, get_group, [GName]),
-    UserGroups= [GP || #group_member{group=GP} <- rpc:call(?APPSERVER_NODE,nsm_groups, list_group_per_user, [wf:user()])],
+    GroupMembersCount = nsm_groups:get_members_count(GName),
+    Group = nsm_groups:get_group(GName),
+    UserGroups= [GP || #group_member{group=GP} <- nsm_groups:list_group_per_user(wf:user())],
     show_group_ul_view(GName, GDesc, GroupMembersCount, UserGroups, Group#group.creator =:= wf:user());
 show_group_ul({#group_member{group = GName}, GroupMembersCount}) ->
-    Group = rpc:call(?APPSERVER_NODE,nsm_groups, get_group, [GName]),
-    UserGroups= [GP || #group_member{group=GP} <- rpc:call(?APPSERVER_NODE,nsm_groups, list_group_per_user, [wf:user()])],
+    Group = nsm_groups:get_group(GName),
+    UserGroups= [GP || #group_member{group=GP} <- nsm_groups:list_group_per_user(wf:user())],
     show_group_ul_view(GName, Group#group.description, GroupMembersCount, UserGroups, Group#group.creator =:= wf:user()).
 
 show_group_ul_view(GName, GDesc, GroupMembersCount, UserGroups) -> show_group_ul_view(GName, GDesc, GroupMembersCount, UserGroups, false).
@@ -280,7 +280,7 @@ show_group_ul_view(GName, GDesc, GroupMembersCount, UserGroups, DeleteFlag) ->
 
 
 view_user_groups(UId) ->
-    case rpc:call(?APPSERVER_NODE,nsm_groups, list_group_per_user, [UId]) of
+    case nsm_groups:list_group_per_user(UId) of
         [] ->
             ?_T("You are currently not in any group");
         Groups ->
@@ -296,14 +296,14 @@ get_popular_group_container() ->
         #h3{text=?_T("Popular groups")},
         #list{class="list-photo list-photo-in", body=[
             [begin 
-                GroupBody = rpc:call(?APPSERVER_NODE,nsm_groups, get_group, [Group]),
+                GroupBody = nsm_groups:get_group(Group),
                 GroupName = GroupBody#group.name,
                 #listitem{body=
                     [#link{url=site_utils:group_link(Group), body=io_lib:format("~s", [GroupName])},
                      #span{style="padding-left:4px;", text = io_lib:format("(~b)", [Number])}
                     ]}
              end
-             ||{Group, Number}<-rpc:call(?APPSERVER_NODE,nsm_groups, get_popular_groups, [wf:user(), 2])]
+             ||{Group, Number}<-nsm_groups:get_popular_groups(wf:user(), 2)]
         ]}
 %PHASE1        io_lib:format("<span class=\"links\"><a href=\"/groups\">~s</a> / <a href=\"/groups\">~s</a></span>",
 %            [?_T("Browse"), ?_T("Edit groups list")])
@@ -311,7 +311,7 @@ get_popular_group_container() ->
 
 
 active_members() ->
-    ActiveUsers = rpc:call(?APPSERVER_NODE,nsm_groups, get_active_members, [12]),
+    ActiveUsers = nsm_groups:get_active_members(12),
     #panel{class="cell-space", body=[
         #h3{text=?_T("Active members")},
         #list{class="soc-users", body=[
@@ -378,13 +378,13 @@ event(create_new_group) ->
         _ -> private
     end,    
     ?INFO("New group: ~p ~p ~p ~p",[GId, GName, GDesc, GPublicity]),
-    AllGroups = [G#group.username || G <- rpc:call(?APPSERVER_NODE,nsm_groups, get_all_groups, [])],
+    AllGroups = [G#group.username || G <- nsm_groups:get_all_groups()],
     case lists:member(GId, AllGroups) of
         true ->
             wf:wire(simple_lightbox, #hide{}),
             wf:wire(#alert{text=?_T("Group with this shortname already exists! Maybe, you should check it out.")});
         false ->
-            case rpc:call(?APPSERVER_NODE, nsm_users, get_user, [{username, GId}]) of
+            case nsm_users:get_user({username, GId}) of
                 {ok, _} ->
                     wf:wire(#alert{text=?_TS("User '$username$' exist!", [{username, GId}]) });
                 {error, _} ->
@@ -413,7 +413,7 @@ inner_event({page, N}, _) ->
 
 inner_event({search_group, Page}, _) ->
     SearchStr = wf:q("search_textbox"),
-    Searched = case rpc:call(?APPSERVER_NODE,nsm_groups, find_group, [SearchStr, Page, ?GROUPPERPAGE]) of
+    Searched = case nsm_groups:find_group(SearchStr, Page, ?GROUPPERPAGE) of
         [] -> #panel{body=?_T("We could not find any groups matching the search") ++ " \"" ++ SearchStr ++ "\""};
         L  -> searched_content(Page, L)
     end,
@@ -431,7 +431,7 @@ inner_event({unsubscribe, User1, GName, SUId}, _User) ->
 
 inner_event({delete, GName}, User) ->
     ?PRINT({"DELETE OWN GROUP", GName, User}),
-    Group = rpc:call(?APPSERVER_NODE,nsm_groups, get_group, [GName]),
+    Group = nsm_groups:get_group(GName),
     case Group#group.creator =:= User of
         false -> ok
         ;_    ->

@@ -72,6 +72,7 @@ login_fb(Credentials) ->
 %% Description: Initiates the server
 %%--------------------------------------------------------------------
 init([]) ->
+    ?INFO("Zealot AUTH started"),
     {ok, #state{}}.
 
 %%--------------------------------------------------------------------

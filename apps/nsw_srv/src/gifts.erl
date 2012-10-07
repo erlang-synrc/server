@@ -76,7 +76,7 @@ body() ->
     ].
 
 product_list_paged(Page) ->
-    AllGiftsData = rpc:call(?APPSERVER_NODE, nsm_gifts_db, get_all_gifts, []),
+    AllGiftsData = nsm_gifts_db:get_all_gifts(),
     OnlyGiftsData = lists:sublist( 
         lists:sort(
             fun(A, B) -> A#gift.kakush_point =< B#gift.kakush_point end,
@@ -178,9 +178,9 @@ event({buy_gift, Id}) ->
     case wf:user() of
         undefined -> wf:redirect_to_login("/");
         _ ->
-            case rpc:call(?APPSERVER_NODE, nsm_users, can_buy_gift, [wf:user(), Id]) of
+            case nsm_users:can_buy_gift(wf:user(), Id) of
                 true ->
-                    rpc:call(?APPSERVER_NODE, nsm_users, buy_gift, [wf:user(), Id]),
+                    nsm_users:buy_gift(wf:user(), Id),
                     wf:wire(#alert{text=?_T("Check it in your profile!")}),
                     wf:redirect("/gifts");
                 false ->

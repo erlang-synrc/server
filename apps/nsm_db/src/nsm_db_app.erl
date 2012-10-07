@@ -30,6 +30,9 @@ start(_StartType, _StartArgs) ->
          true -> [ ?INFO("Joined: ~p ~p~n", [N, riak_core:join(N)]) || N <- nsx_opt:get_env(nsm_db, nodes, []) -- [node()] ];
          false -> skip
     end,
+    zealot_auth:start_link(),
+    table_manager:start_link(),
+    topman:start(),
     nsm_db_sup:start_link().
 
 stop(_State) ->

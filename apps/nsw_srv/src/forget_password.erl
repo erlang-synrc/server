@@ -11,7 +11,7 @@
 main() ->
     Request = wf_context:request_bridge(),
     Ip = Request:peer_ip(),
-    case rpc:call(?APPSERVER_NODE,nsm_acl,check_access,[{ip, Ip}, {feature, forget_password}]) of
+    case nsm_acl:check_access({ip, Ip}, {feature, forget_password}) of
         deny ->
             wf:redirect(?_U("/access-denied"));
         _ ->

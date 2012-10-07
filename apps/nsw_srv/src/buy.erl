@@ -41,8 +41,7 @@ shared_body() ->
                 Package = package(),
                 Package == undefined andalso throw(package_undefined);
             PId ->
-                {ok, Package} = rpc:call(?APPSERVER_NODE, nsm_membership_packages,
-                    get_package, [PId]),
+                {ok, Package} = nsm_membership_packages:get_package(PId),
                 %% save package in state
                 package(Package)
         end,

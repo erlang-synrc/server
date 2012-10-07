@@ -26,7 +26,7 @@ main_authorized() ->
         MrX ->
             UserName = MrX
     end,
-    case catch rpc:call(?APPSERVER_NODE,nsm_users,get_user,[UserName]) of
+    case catch nsm_users:get_user(UserName) of
         {ok, UserInfo} ->
             wf:state(user, UserInfo),
             wf:state(affiliates_of, UserName),
@@ -40,8 +40,8 @@ main_authorized() ->
 
 body() ->
     UserName = wf:user(),
-    {ok, User} = rpc:call(?APPSERVER_NODE,nsm_users,get_user,[UserName]),
-    case rpc:call(?APPSERVER_NODE,nsm_acl,check_access,[User, {feature, admin}]) of
+    {ok, User} = nsm_users:get_user(UserName),
+    case nsm_acl:check_access(User, {feature, admin}) of
 	    allow -> body_authorized();
 	    _ -> ?_T("You don't have access to do that.")
     end.
@@ -51,10 +51,10 @@ body_authorized() ->
 
 % data 
 get_contracts_data_from_bd(UserID) ->
-    rpc:call(?APPSERVER_NODE,nsm_affiliates, get_contracts, [UserID]).
+    nsm_affiliates:get_contracts(UserID).
 
 get_contract_details_from_bd(ContractId) ->
-    rpc:call(?APPSERVER_NODE,nsm_affiliates, get_purchases_details, [ContractId]).
+    nsm_affiliates:get_purchases_details(ContractId).
 
 total_ammount(ContractId) ->
     Data = get_contract_details_from_bd(ContractId),    

@@ -17,7 +17,7 @@ main() ->
     FeedOwner = wf:state(feed_owner),
     case FeedOwner of
         undefined ->
-            {ok, UserInfo} = rpc:call(?APPSERVER_NODE, nsm_users, get_user, [wf:user()]),
+            {ok, UserInfo} = nsm_users:get_user(wf:user()),
             FeedId = UserInfo#user.feed;
         {UserOrGroup, Info} ->
             case UserOrGroup of
@@ -31,10 +31,10 @@ main() ->
     RealEntryId = ling:replace(EntryId, "_", "-"), 
     Media = case CommentId of
 		0 -> 
-             {ok, Entry} = rpc:call(?APPSERVER_NODE, nsm_db, get, [entry, {RealEntryId, FeedId}]),
+             {ok, Entry} = nsm_db:get(entry, {RealEntryId, FeedId}),
 		     [Media0|_] = [M || M <- Entry#entry.media, M#media.id =:= MediaId],
 		     Media0;
-		_ -> {ok, Comment} = rpc:call(?APPSERVER_NODE,nsm_db,comment_by_id,[{CommentId, FeedId}]),   %PUBLIC BETA we don't have these for now
+		_ -> {ok, Comment} = nsm_db:comment_by_id({CommentId, FeedId}),   %PUBLIC BETA we don't have these for now
 		     [Media1] = [M || M <- Comment#comment.media, M#media.id =:= MediaId],
 		     Media1
 	    end,

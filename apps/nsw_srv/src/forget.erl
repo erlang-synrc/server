@@ -21,7 +21,7 @@ init_forget(User) ->
                               uid = UId,
                               create = Time},
 
-%    ok = rpc:call(?APPSERVER_NODE,nsm_db,put,[Record]),
+%    ok = rpc:call(?APSERVER_NODE,nsm_db,put,[Record]),
     nsx_util_notification:notify(["db", "user", UId, "put"], Record),
     nsx_util_notification:notify_email(Subject, Content, Mail).
 
@@ -30,7 +30,7 @@ init_forget(User) ->
 check_token(Token) ->
     Time = calendar:datetime_to_gregorian_seconds(erlang:localtime()),
 
-    case rpc:call(?APPSERVER_NODE, nsm_db, get, [forget_password, Token]) of
+    case nsm_db:get(forget_password, Token) of
         {error, notfound} ->
             {error, bad_token};
         {ok, Data} ->

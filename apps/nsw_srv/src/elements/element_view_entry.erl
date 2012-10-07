@@ -40,10 +40,10 @@ render_element(#view_entry{entry=E, anchor=Anchor, id=Id} = VE) ->
 
 render_normal_element(#view_entry{entry=E, anchor=Anchor}) ->
     %% Get comment
-    Comments = rpc:call(?APPSERVER_NODE,comment,select_by_entry_id,[E#entry.id]),
+    Comments = comment:select_by_entry_id(E#entry.id),
 
     %% Get avatar
-    {ok, User} = rpc:call(?APPSERVER_NODE, nsm_users, get_user,[E#entry.from]),
+    {ok, User} = nsm_users:get_user(E#entry.from),
     Avatar = #image{image = avatar:get_avatar(User, small), style="width:48px;height:48px"},
 
     %% Get attachments
@@ -183,7 +183,7 @@ entry_element_usual(E, Comments, Avatar, {MediaThumb, MediaLists0}, _TargetMedia
             MediaLists0
     end,
 
-    {LikesStr, LikeBtnShow} = case rpc:call(?APPSERVER_NODE, feed, get_entries_likes, [E#entry.entry_id]) of
+    {LikesStr, LikeBtnShow} = case feed:get_entries_likes(E#entry.entry_id) of
         []     -> {"", true};
         [#one_like{user_id=Uid}|[]] ->
             {

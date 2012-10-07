@@ -2,7 +2,7 @@
 
 -compile(export_all).
 
--include("feed.hrl").
+-include_lib("nsm_db/include/feed.hrl").
 
 -export([format/1]).
 

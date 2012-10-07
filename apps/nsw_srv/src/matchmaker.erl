@@ -75,8 +75,8 @@ body() ->
 		    ui_update_buttons()
 	    end,
 	    UId = webutils:user_info(username), 
-	    wf:state(user_in_groups, rpc:call(?APPSERVER_NODE,nsm_groups,list_group_per_user,[UId])),
-	    wf:state(users_subscribe, rpc:call(?APPSERVER_NODE,nsm_users,list_subscr,[UId])), 
+	    wf:state(user_in_groups, nsm_groups:list_group_per_user(UId)),
+	    wf:state(users_subscribe, nsm_users:list_subscr(UId)), 
 	    main_authorized();
 	{redirect, login} ->
 	    wf:redirect_to_login("/");
@@ -503,7 +503,7 @@ get_tables2(Setting,UId,GameFSM,Convert) ->
     FilterAnyUser = case GetPropList(group, Setting) of
         undefined -> [];
         GroupId -> 
-            [GMR#group_member_rev.who || GMR <- rpc:call(?APPSERVER_NODE,nsm_groups,list_group_membership,[GroupId])]
+            [GMR#group_member_rev.who || GMR <- nsm_groups:list_group_membership(GroupId)]
     end,
 
     MaxUsers = case GameFSM of "tavla" -> 2; "okey" -> 4 end,
@@ -1192,13 +1192,10 @@ u_event(create_game) ->
 u_event({info, {Target, TId}}) ->
     {ok, TableSettings} = case Target of
         table ->
-
-%            {ok, Table} = rpc:call(?APPSERVER_NODE,table_manager,get_table,[TId]),
             {ok, Table} = view_table:get_table(TId),
             ?INFO("INFO: ~p",[{TId,Table}]),
             {ok,Table};
-           % {ok, rpc:call(?APPSERVER_NODE,table_manager,game_table_to_settings,[Table])};
-        save_table -> rpc:call(?APPSERVER_NODE,table_manager,get_save_table_setting,[TId])
+        save_table -> table_manager:get_save_table_setting(TId)
     end,
     Info = webutils:table_info(TableSettings),
     wf:update(info_table, #dialog{body=Info});
@@ -1207,11 +1204,11 @@ u_event({delete_table, TId, ProcId}) ->
     ?INFO("delete table: ~p",[{delete_table, TId, ProcId}]),
     case ProcId of undefined -> ok; _ -> ProcId ! {unreg, {p,g,ProcId}} end,
     ?INFO(" *** delete"),
-    rpc:call(?APPSERVER_NODE,table_manager,delete_table,[TId]);
+    table_manager:delete_table(TId);
 
 u_event({delete_saved_table, TId}) ->
     ?INFO(" *** delete saved"),
-    rpc:call(?APPSERVER_NODE,table_manager,delete_save_table,[TId]);
+    table_manager:delete_save_table(TId);
 
 u_event({tab_selected, ID}) ->
     ?INFO("u_event"),

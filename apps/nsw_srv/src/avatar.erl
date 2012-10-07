@@ -10,7 +10,7 @@
 
 -spec get_avatar_by_username(string(), atom()) -> string().
 get_avatar_by_username(UserName, Size) ->
-    case rpc:call(?APPSERVER_NODE,nsm_users,get_user,[{username, UserName}]) of
+    case nsm_users:get_user({username, UserName}) of
 	{ok, User} ->
 	    get_avatar(User, Size);
 	_ -> get_avatar(no_avatar, Size)

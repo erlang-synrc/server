@@ -48,7 +48,7 @@ get_description(#game_table{owner=Username,name=Tablename,game_type=Gametype,id=
     LocalTime = calendar:now_to_local_time(E#entry.created_time),
     Time = site_utils:local_time_to_text(LocalTime),
     T = E#entry.description,
-    Info = webutils:table_info(rpc:call(?APPSERVER_NODE, table_manager, game_table_to_settings, [T#game_table{users=[]}])),
+    Info = webutils:table_info(table_manager:game_table_to_settings(T#game_table{users=[]})),
 
     Url = lists:concat([?_U("/view-table"), "?id=", T#game_table.id]),
     Script = webutils:new_window_js(Url),
@@ -60,7 +60,7 @@ get_description(#game_table{owner=Username,name=Tablename,game_type=Gametype,id=
             {tablename, Tablename},
             {gametype, Gametype}])
         },
-    {ok, TableActive} = rpc:call(?APPSERVER_NODE, table_manager, is_active, [TId]),
+    {ok, TableActive} = table_manager:is_active(TId),
     ViewJoin = case TableActive of
         true -> site_utils:table_per_user_point(wf:user(), Sets, Rounds);
         false -> false
@@ -102,7 +102,7 @@ render_element_old(#view_system_entry{type={system, new_table}, entry=E}) ->
 
 
 
-    Info = webutils:table_info(rpc:call(?APPSERVER_NODE, table_manager, game_table_to_settings, [T#game_table{users=[]}])),
+    Info = webutils:table_info(table_manager:game_table_to_settings(T#game_table{users=[]})),
 
     Url = lists:concat([?_U("/view-table"), "?id=", T#game_table.id]),
     Script = webutils:new_window_js(Url),
@@ -116,7 +116,7 @@ render_element_old(#view_system_entry{type={system, new_table}, entry=E}) ->
             {tablename, Tablename},
             {gametype, Gametype}])
         },
-    {ok, TableActive} = rpc:call(?APPSERVER_NODE, table_manager, is_active, [TId]),
+    {ok, TableActive} = table_manager:is_active(TId),
     ViewJoin = case TableActive of
         true -> site_utils:table_per_user_point(wf:user(), Sets, Rounds);
         false -> false

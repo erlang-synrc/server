@@ -68,7 +68,7 @@ package_info()->
 
 %% from template
 form()->
-    PurchaseId = rpc:call(?APPSERVER_NODE, nsm_membership_packages, purchase_id, []),
+    PurchaseId = nsm_membership_packages:purchase_id(),
     Package = buy:package(),
     TerminalId = ?CC_TERMINAL_ID,
     OrderId  = PurchaseId,
@@ -307,8 +307,7 @@ make_provision_request(OrderId, Amount) ->
 
 %% process case when all ok and purchase completed
 process_success(OrderId, Response) ->
-    case rpc:call(?APPSERVER_NODE, nsm_membership_packages,
-        get_purchase, [OrderId]) of
+    case nsm_membership_packages:get_purchase(OrderId) of
         {ok, P} ->
             OldInfo = P#membership_purchase.info,
             %% fill info with values from bank
@@ -343,7 +342,7 @@ process_failure(OrderId, IntCode, Reason) when
     IntCode == 63;   %% you are not authorized to do this
     IntCode == 75    %% password entry limit exceed
     ->
-    User = case rpc:call(?APPSERVER_NODE, nsm_membership_packages, get_purchase, [OrderId]) of
+    User = case nsm_membership_packages:get_purchase(OrderId) of
         {ok, Purchase} ->
             %% FIXME: add user blocking
             wf:logout(),
@@ -455,7 +454,7 @@ event({credit_card_clicked, PurchaseId}) ->
 
     %% purchase will have state 'started'
     nsx_util_notification:notify(["purchase", "user", wf:user(), "add_purchase"], {MP}), 
-    %{ok, PurchaseId} = rpc:call(?APPSERVER_NODE, nsm_membership_packages, add_purchase, [MP]),
+    %{ok, PurchaseId} = rpc:call(?apSERVER_NODE, nsm_membership_packages, add_purchase, [MP]),
 
     buy:submit_form(credit_card_form);
 

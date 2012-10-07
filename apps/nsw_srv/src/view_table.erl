@@ -64,7 +64,7 @@ main_authorized() ->
             case Tables of
                 [] ->   
 
-                           case rpc:call(?APPSERVER_NODE,table_manager,create_table,[User, Settings]) of
+                           case table_manager:create_table(User, Settings) of
                            {ok, Table} ->
                                 ?INFO("Table_manager CREATE: ~p",[Table]),
                                 wf:session({wf:to_integer(wf:q(id)),wf:user()},Table#game_table.id), 
@@ -199,7 +199,7 @@ table(Id, _Joined=false) ->
     ?INFO("table not joined yet"),
     UId = wf:user(),
     Table = wf:state(table),
-    {ok, User} = rpc:call(?APPSERVER_NODE,nsm_users,get_user,[UId]),
+    {ok, User} = nsm_users:get_user(UId),
 
     Options = case wf:q(lucky) of
                   "true" ->
@@ -210,7 +210,7 @@ table(Id, _Joined=false) ->
 
     table_ok(Id).
 
-%   case rpc:call(?APPSERVER_NODE,table_manager,join_table,[User, Id, Options]) of
+%   case table_manager:join_table(User, Id, Options) of
 %	ok ->
 %	    table_ok(Id);
 %	{error, Error} ->
@@ -369,13 +369,13 @@ start_pre_comet_process(Id, Skip) ->
                                     Tables = get_tables(Id),
 
                                     [ begin 
-                                            {ok,User1} = rpc:call(?APPSERVER_NODE,nsm_users,get_user,[wf:user()]),
+                                            {ok,User1} = nsm_users:get_user(wf:user()),
                                             ?INFO("join ~p to table ~p owner ~p",[wf:user(), Id, Table2#game_table.owner]), 
                                             Table2#game_table.game_process ! {join, User1, Table2}
                                       end || Table2 <- Tables],
     
                                     [ begin 
-                                      {ok,User1} = rpc:call(?APPSERVER_NODE,nsm_users,get_user,[Table3#game_table.owner]),
+                                      {ok,User1} = nsm_users:get_user(Table3#game_table.owner),
                                       ?INFO("join user ~p to table ~p owner ~p",[User1#user.username, Id,
                                                             GProcTable#game_table.owner]), 
                                       self() ! {join, User1, GProcTable}
@@ -625,7 +625,7 @@ kick_user(UserName) ->
                             wf:flush(),
       	                    stop;
                         Player ->
-			    case rpc:call(?APPSERVER_NODE,nsm_users,get_user,[UserName]) of
+			    case nsm_users:get_user(UserName) of
 				{ok, UserToLeave} ->
                                     Message = ?_TS("User ($user$) was kicked by ($owner$).",[{user, Player},{owner, CUser}]),
 	        		    Users = Table#game_table.users,
@@ -678,7 +678,7 @@ start_game() ->
                  CUser ->
                     io:fwrite("creating table: ~n", []),
                     UsersIdsAsBinaries = [ binarize_name(X) || X <- Table#game_table.users ],
-                    Params = rpc:call(?APPSERVER_NODE,table_manager,game_table_to_settings,[Table]),
+                    Params = table_manager:game_table_to_settings(Table),
                     io:fwrite("params: ~p~n", [Params]),
                     GSPId = rpc:call(?GAMESRVR_NODE,
                                         game_manager,

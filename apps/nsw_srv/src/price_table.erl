@@ -36,9 +36,7 @@ table()->
 
 -spec table(PaymentType::payment_type())->#table{}.
 table(PaymentType)->
-    Packages = rpc:call(?APPSERVER_NODE, nsm_membership_packages,
-        list_packages, [[{payment_type, PaymentType},
-            {available_for_sale, true}]]),
+    Packages = nsm_membership_packages:list_packages([{payment_type, PaymentType},{available_for_sale, true}]),
 
     % get packages and sort them by No
     PackagesSorted =

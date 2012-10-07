@@ -1,6 +1,6 @@
 -module(format_oembed).
 
--include("feed.hrl").
+-include_lib("nsm_db/include/feed.hrl").
 
 -compile(export_all).
 

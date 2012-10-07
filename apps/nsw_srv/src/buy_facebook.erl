@@ -60,7 +60,7 @@ process_result(success) ->
     end,
 
     case ((Site =:= "www.mikro-odeme.com") orelse true) of
-         true ->  case rpc:call(?APPSERVER_NODE, nsm_membership_packages, get_purchase, [PurchaseId]) of
+         true ->  case nsm_membership_packages:get_purchase(PurchaseId) of
                 {ok, Purchase} ->
                     nsx_util_notification:notify(["purchase", "user", wf:user(), "set_purchase_state"], {element(2,Purchase), done, mobile}),                           
                     wf:redirect("/profile/account");
@@ -74,7 +74,7 @@ process_result(failure) ->
     "Error".
 
 form()->
-    PurchaseId = rpc:call(?APPSERVER_NODE, nsm_membership_packages, purchase_id, []),
+    PurchaseId = nsm_membership_packages:purchase_id(),
     Package = buy:package(),
 
     ?INFO("Package/Purchase: ~p ~p",[PurchaseId,Package]),

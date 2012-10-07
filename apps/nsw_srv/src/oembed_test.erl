@@ -11,7 +11,7 @@
 %% API
 -export([]).
 
--include("feed.hrl").
+-include_lib("nsm_db/include/feed.hrl").
 -include_lib("eunit/include/eunit.hrl").
 
 -define(DP(Format, Args),

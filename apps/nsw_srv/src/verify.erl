@@ -18,7 +18,7 @@ main() ->
 
 -spec verify_account(string()) -> {error, atom()} | {ok, atom()}.
 verify_account(Code) ->
-    User = rpc:call(?APPSERVER_NODE,nsm_db,user_by_verification_code,[Code]),
+    User = nsm_db:user_by_verification_code(Code),
     case User of
         {error, _NotFound} ->
             {error, bad_verification_code};

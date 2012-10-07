@@ -7,8 +7,9 @@ get_smtp_host() -> g(nsm_db:get(config, "smtp/host",     "smtp.kakaranet.com")).
 get_smtp_port() -> g(nsm_db:get(config, "smtp/port",     587)).
 get_smtp_ssl()  -> g(nsm_db:get(config, "smtp/with_ssl", false)).
 
-get_game_srv() -> nsx_opt:get_env(nsm_srv,game_srv_node, 'game@rigdzin.cc').
-get_web_srv()  -> nsx_opt:get_env(nsm_srv,web_srv_node, 'web@rigdzin.cc').
+get_app_srv()  -> nsx_opt:get_env(nsm_db,app_srv_node, 'app@rigdzin.cc').
+get_game_srv() -> nsx_opt:get_env(nsm_db,game_srv_node, 'game@rigdzin.cc').
+get_web_srv()  -> nsx_opt:get_env(nsm_db,web_srv_node, 'web@rigdzin.cc').
 get_riak_srv() -> nsx_opt:get_env(nsm_srv,riak_srv_node, 'store@rigdzin.cc').
 get_version()  -> nsx_opt:get_env(nsm_srv,version, "1").
 get_dba()      -> nsx_opt:get_env(nsm_srv,dba, nsm_riak).

@@ -156,7 +156,7 @@ why_birthday() ->
 
 %% TODO: custom validation isn't working
 custom_validator(_Tag, User) ->
-    rpc:call(?APPSERVER_NODE,nsm_users,if_exist,[User]).
+    nsm_users:if_exist(User).
 
 
 
@@ -249,7 +249,7 @@ finish_register_(Invite) ->
     Password = wf:q(reg_passwd),
     CPassword = wf:q(reg_con_passwd),
 
-    case rpc:call(?APPSERVER_NODE,nsm_users,check_register_data,[RegData]) of
+    case nsm_users:check_register_data(RegData) of
 	ok -> ok;
 	{error, username_too_short} ->
 	    throw({msg, ?_T("Username is too short.")});
@@ -265,7 +265,7 @@ finish_register_(Invite) ->
 
     case Password of
 	CPassword when Password /= "" ->
-	    case rpc:call(?APPSERVER_NODE, zealot_auth, register, [RegData]) of
+	    case zealot_auth:register(RegData) of
 		{ok, register} ->
                     case  Invite of
                         #invite_code{code = Code} ->
@@ -372,7 +372,7 @@ event(register) ->
     InviteCodeRec = wf:state(invite),
     case InviteCodeRec of
         #invite_code{code = InviteCode} ->
-            CheckCode = rpc:call(?APPSERVER_NODE,invite,check_code,[InviteCode]),
+            CheckCode = invite:check_code(InviteCode),
             case CheckCode of
                 {ok, Invite} ->
                     ?PRINT("With CODE"),

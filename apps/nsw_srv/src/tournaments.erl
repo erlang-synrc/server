@@ -57,7 +57,7 @@ make_bottom_panel(List) ->
 
 
 all() ->
-    Tournaments = rpc:call(?APPSERVER_NODE,nsm_tournaments,all,[]),
+    Tournaments = nsm_tournaments:all(),
     {Left,Right} = lists:split(length(Tournaments) div 2, Tournaments),
     #panel{class="turnuvalar",body=[
         #panel{class="col-l",body=[
@@ -86,7 +86,7 @@ event(Any) ->
     webutils:event(Any).
 
 tournament_slides() ->
-    Tours = rpc:call(?APPSERVER_NODE,nsm_tournaments,all,[]),
+    Tours = nsm_tournaments:all(),
     [T1|Tail1] = Tours,
     [T2|Tail2] = Tail1,
     [T3|_] = Tail2,

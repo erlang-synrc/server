@@ -25,8 +25,7 @@ reflect() -> record_info(fields, packages_grid).
 render_element(_Record = #packages_grid{}) ->
     Id =  wf:temp_id(),
 
-    Data = rpc:call(?APPSERVER_NODE, nsm_membership_packages,
-                    list_packages, []),
+    Data = nsm_membership_packages:list_packages(),
 
 
     wf:wire(Id, #attr{target=Id, attr=id, value=Id}),
@@ -113,8 +112,7 @@ api_event(savePackage, Anchor, [Data]) ->
         %% can be changed
         Id ->
             AFS = proplists:get_value(available, Data, false),
-            case rpc:call(?APPSERVER_NODE, nsm_membership_packages,
-                          available_for_sale, [Id, AFS]) of
+            case nsm_membership_packages:available_for_sale(Id, AFS) of
                 ok ->
                     ok;
                 {error, Reason} ->

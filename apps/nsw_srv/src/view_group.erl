@@ -21,7 +21,7 @@ group_info(all) ->
         {GId, Info} ->
             Info;
         _ ->
-            Info = rpc:call(?APPSERVER_NODE,nsm_groups,get_group,[GId]),
+            Info = nsm_groups:get_group(GId),
             put(group_info, {GId, Info}),
             Info
     end;
@@ -58,7 +58,7 @@ group_info(access_level) ->
     case get(group_access_level) of
         {GId, User, AccessLevel} -> AccessLevel;
         _ ->
-            AccessLevel = rpc:call(?APPSERVER_NODE,nsm_groups,user_access,[GId,User]),
+            AccessLevel = nsm_groups:user_access(GId,User),
             put(group_access_level, {GId, User, AccessLevel}),
             AccessLevel
     end;
@@ -72,7 +72,7 @@ group_info(member) ->
             case get(group_member) of
                 {GId, User, Member} -> Member;
                 _ ->
-                    Member = rpc:call(?APPSERVER_NODE,nsm_groups,user_inside,[GId,User]),
+                    Member = nsm_groups:user_inside(GId,User),
                     put(group_member, {GId, User, Member}),
                     Member
             end
@@ -82,7 +82,7 @@ group_info(membership) ->
     case get(group_membership) of
         {GId, Membership} -> Membership;
         _ ->
-            Membership = rpc:call(?APPSERVER_NODE,nsm_groups,list_group_membership,[GId]),
+            Membership = nsm_groups:list_group_membership(GId),
             put(group_membership, {GId, Membership}),
             Membership
     end;
@@ -91,7 +91,7 @@ group_info(members) ->
     case get(group_members) of
         {GId, Members} -> Members;
         _ ->
-            Members = rpc:call(?APPSERVER_NODE,nsm_groups,list_user_in_group,[GId]),
+            Members = nsm_groups:list_user_in_group(GId),
             put(group_members, {GId, Members}),
             Members
     end.
@@ -218,7 +218,7 @@ feed_form() ->
 view_feed() ->
     FId = group_info(feed),
     UId = group_info(username),
-    Entries = rpc:call(?APPSERVER_NODE, nsm_db, entries_in_feed, [FId, ?FEED_PAGEAMOUNT]),
+    Entries = nsm_db:entries_in_feed(FId, ?FEED_PAGEAMOUNT),
     comet_feed:start(group, FId, UId, wf:session(user_info)),
     webutils:view_feed_entries(?MODULE, ?FEED_PAGEAMOUNT, Entries).
 
@@ -295,7 +295,7 @@ group_info() ->
                     #listitem{body=[?_T("Publicity")++": ",#span{id=group_info_publicity, text=Info#group.publicity}]},
                     #listitem{body=[?_T("Created")++": ",#span{text=Date}]},
                     #listitem{body=[?_T("Owner")++": ",#span{id=group_info_owner, text=Info#group.owner}]},
-                    #listitem{body=[?_T("Members")++": ",#span{text=integer_to_list(rpc:call(?APPSERVER_NODE,nsm_groups, get_members_count, [Info#group.username]))}]}
+                    #listitem{body=[?_T("Members")++": ",#span{text=integer_to_list(nsm_groups:get_members_count(Info#group.username))}]}
                 ]},
                 Membership,
                 group_edit_form(Info#group.owner),
@@ -408,7 +408,7 @@ event(hide_group) ->
 event({approve, Who}) ->
     GId = wf:q(id),
     User = wf:user(),
-    Rpc = rpc:call(?APPSERVER_NODE,nsm_groups,invite_user,[GId, User, Who]),
+    Rpc = nsm_groups:invite_user(GId, User, Who),
     io:format("Approve result=~p~n", [Rpc]),
     wf:replace(incoming_invites, incoming_invites()),
     wf:wire(simple_lightbox, #hide{});
@@ -416,7 +416,7 @@ event({approve, Who}) ->
 event({reject, Who}) ->
     GId = wf:q(id),
     User = wf:user(),
-    Rpc = rpc:call(?APPSERVER_NODE,nsm_groups,reject_invite,[GId, User, Who, "Sorry"]),
+    Rpc = nsm_groups:reject_invite(GId, User, Who, "Sorry"),
     io:format("Rpc = ~p~n", [Rpc]),
     wf:replace(incoming_invites, incoming_invites()),
     wf:wire(simple_lightbox, #hide{});
@@ -443,7 +443,7 @@ event(update_group) ->
         {Publicity,Publicity} -> undefined;
         {Publicity,_} -> Publicity
     end,
-    case rpc:call(?APPSERVER_NODE, nsm_users, get_user, [{username, NewOwner}]) of
+    case nsm_users:get_user({username, NewOwner}) of
         {ok, _} ->
             nsx_util_notification:notify(["db", "group", GId, "update_group"], 
                 {wf:user(), NewUId, NewName, NewDesc, NewOwner, NewPublicity}),          
@@ -459,7 +459,7 @@ event(update_group) ->
 event(join_group) ->
     GId = wf:q(id),
     User = wf:user(),
-    Rpc = rpc:call(?APPSERVER_NODE,nsm_groups,join_group,[GId,User]),
+    Rpc = nsm_groups:join_group(GId,User),
     io:format("Join_group result = ~p~n", [Rpc]),
     Replace = case Rpc of
         {ok, joined} -> joined();
@@ -490,7 +490,7 @@ event(Other) ->
 
 %% when more button presed
 on_more_entries({EntryId, FeedId}, Count) ->
-   rpc:call(?APPSERVER_NODE, nsm_db, entries_in_feed, [FeedId, EntryId, Count]).
+   nsm_db:entries_in_feed(FeedId, EntryId, Count).
 
 finish_upload_event(X1, X2, X3, X4) ->
     dashboard:finish_upload_event(X1, X2, X3, X4).
@@ -506,9 +506,6 @@ autocomplete_select_event(SI , _Tag) -> dashboard:autocomplete_select_event(SI, 
 
 inplace_textbox_event(Tag, Value, FeedEntry) ->
     dashboard:inplace_textbox_event(Tag, Value, FeedEntry).
-
-rpc(Mod, Fun, Args) ->
-    rpc:call(?APPSERVER_NODE, Mod, Fun, Args).
 
 %PUBLIC BETA this too. I should merge this two things: dashboard and view_group to one entity
 start_upload_event({entry_att, BoxId}) ->

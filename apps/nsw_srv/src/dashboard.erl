@@ -31,12 +31,14 @@ main_unsafe() ->
     end.
 
 main_authorized() ->
+     ?INFO("Dahsboard Authorized"),
     webutils:js_for_main_authorized_game_stats_menu(),
+     ?INFO("Webutils OK"),
     [
         #template { file=code:priv_dir(nsw_srv)++"/templates/bare.html"},
         % guiders part        
         case webutils:guiders_ok("dashboard_guiders_shown") of
-            true ->
+             true ->
                 guiders_script(),
                 "";
             false ->
@@ -48,6 +50,7 @@ main_authorized() ->
 title() -> webutils:title(?MODULE).
 
 body() ->
+     ?INFO("BODY"),
     try body_unsafe() of
 	V->V
     catch
@@ -68,6 +71,7 @@ feed_form() ->
     ].
 
 view_feed_mkh() ->
+    ?INFO("View Feed"),
     wf:session(autocomplete_list_values, []), %%%
     UserInfo = webutils:user_info(),
     ?PRINT(UserInfo),
@@ -102,6 +106,7 @@ view_feed_mkh() ->
     ].
 
 search_container(FId) ->
+    ?INFO("Search Container"),
     wf:wire(wf:f("MyFeedEvent='~s';",[wf_event:serialize_event_context({add_to_event, "MyFeed"}, undefined, undefined, dashboard)])),
     [
         #panel{class="form-001", body=[
@@ -142,6 +147,7 @@ search_container(FId) ->
     ].
 
 entry_form(FId) ->
+    ?INFO("Entry Form"),
     entry_form(FId, ?MODULE, {add_entry, FId}).
 
 
@@ -195,12 +201,13 @@ view_feed(StartFrom) ->
     webutils:view_feed_entries(?MODULE, ?FEED_PAGEAMOUNT, Entries).
 
 get_entries(StartFrom) ->
+    ?INFO("Entries"),
     UserInfo = wf:session(user_info),
 
     {UserFiler, _IsGroup, _AddFilter} = case {wf:q("user"), wf:q("group")} of
         {undefined, undefined} -> {undefined, false, undefined};
         {undefined, GroupName} ->
-            Group = rpc(nsm_groups, get_group,[GroupName]),
+            Group = nsm_groups:get_group(GroupName),
             {Group#group.feed, true, feed};
         {UUid, _}              -> {UUid, false, user}
     end,
@@ -213,26 +220,26 @@ get_entries(StartFrom) ->
             end,
             FeedId = UserInfo#user.direct,
             ?PRINT({direct, FeedId, StartFrom}),
-            {rpc(feed, get_direct_messages, [FeedId, StartFrom, ?FEED_PAGEAMOUNT]), FeedId} ;
+            {feed:get_direct_messages(FeedId, StartFrom, ?FEED_PAGEAMOUNT), FeedId} ;
 
         {undefined, undefined} ->
             FeedId = UserInfo#user.feed,
-            {rpc(feed, get_entries_in_feed, [FeedId, StartFrom, ?FEED_PAGEAMOUNT]), FeedId};
+            {feed:get_entries_in_feed(FeedId, StartFrom, ?FEED_PAGEAMOUNT), FeedId};
 
         {undefined, U} ->
             FeedId = UserInfo#user.feed,
-            case lists:member(U, rpc(nsm_users, get_blocked_users, [wf:user()])) of
+            case lists:member(U, nsm_users:get_blocked_users(wf:user())) of
                 true ->
                     wf:update(notification_area, #notice{type=message, title=?_T("You have blocked"),
                         body = user_blocked_message(U)}),
                     {[] , undefined};
                 _ ->
-                    {rpc(feed, get_entries_in_feed, [FeedId, StartFrom, ?FEED_PAGEAMOUNT]), FeedId}
+                    {feed:get_entries_in_feed(FeedId, StartFrom, ?FEED_PAGEAMOUNT), FeedId}
             end;
 
         _  ->
             FeedId = UserInfo#user.feed,
-            {rpc(feed, get_entries_in_feed, [FeedId, StartFrom, ?FEED_PAGEAMOUNT]), FeedId}
+            {feed:get_entries_in_feed(FeedId, StartFrom, ?FEED_PAGEAMOUNT), FeedId}
     end.
 
 
@@ -279,7 +286,7 @@ finish_upload_event({entry_att, BoxId}, OrigFile, LocalFile, _Node) ->
 %PHASE2 quick check to avoid further processing. Attachments doesn't work well with files with no extension.
 %PHASE2 Also way too long files make a lot of trouble
 
-    {ok, UploadLimit} = rpc:call(?APPSERVER_NODE, nsm_db, get, [config, "storage/upload_limit", 31457280]),
+    {ok, UploadLimit} = nsm_db:get(config, "storage/upload_limit", 31457280),
 
     case length(string:tokens(OrigFile, ".")) == 1 of
     true ->
@@ -450,7 +457,7 @@ inner_event({like_entry, E, PanelId}, User) ->
     Fid = UserInfo#user.feed,
     nsx_util_notification:notify(["likes", "user", User, "add_like"], {Fid, Eid}),
     
-    {ok, OrigEntry} = rpc:call(?APPSERVER_NODE, nsm_db, get, [entry, {Eid, Fid}]),
+    {ok, OrigEntry} = nsm_db:get(entry, {Eid, Fid}),
     VEntry = #view_entry{entry=OrigEntry},
     wf:replace(PanelId, VEntry),
     wf:wire("upd_scrollers()");
@@ -540,6 +547,7 @@ mkh_clear_list([H|T], A) -> mkh_clear_list(T, [H] ++ A).
 content() -> dashboard:view_feed_mkh().
 
 get_page_number() ->
+    ?INFO("Page Number"),
     case wf:q("p") of
         undefined -> 1;
         Ofs       ->
@@ -562,7 +570,7 @@ on_more_entries({EntryId, _FeedId}, _Count) ->
 
 autocomplete_enter_event(SearchTerm, _Tag) ->
     AlreadySelected = wf:session_default(autocomplete_list_values, []),
-    DataU = case rpc(nsm_users, list_subscr, [wf:user ()]) of
+    DataU = case nsm_users:list_subscr(wf:user ()) of
             [] -> [];
             Sub ->
             [begin
@@ -571,7 +579,7 @@ autocomplete_enter_event(SearchTerm, _Tag) ->
             end || #subs{whom = Who} <- Sub,
                 lists:member(list_to_binary(string:to_lower(Who)), AlreadySelected)=:=false ]
         end,
-    DataG = case rpc(nsm_groups, list_group_per_user_with_count, [wf:user(),wf:user()]) of
+    DataG = case nsm_groups:list_group_per_user_with_count(wf:user(),wf:user()) of
         [] -> [];
         Gs ->
             [begin
@@ -632,10 +640,6 @@ inplace_textbox_event(_, Value, {EntryId, _FeedId}) ->
     ?PRINT({wf:user(), Route, nsm_mq_lib:list_to_key(Route)}),
     nsx_util_notification:notify(Route, [Value]),
     Value.
-
-
-rpc(Mod, Fun, Args) ->
-    rpc:call(?APPSERVER_NODE, Mod, Fun, Args).
 
 attachment_error(Text) ->
     attachment_error(attachment_error, Text).

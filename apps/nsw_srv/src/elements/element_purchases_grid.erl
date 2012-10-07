@@ -77,8 +77,7 @@ api_event(saveData, Anchor, [Data]) ->
 
 api_event(loadData, Anchor, []) ->
 	?DBG("Got LOAD event: Anchor: ~p", [Anchor]),
-	Purchases = rpc:call(?APPSERVER_NODE, nsm_membership_packages,
-						 list_purchases, []),
+	Purchases = nsm_membership_packages:list_purchases(),
 	%%?DBG("Purchases: ~p", [Purchases]),
 
 	JSON = purchases_to_json(Purchases),

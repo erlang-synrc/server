@@ -44,9 +44,9 @@ main_authorized() ->
 %	     {tournament2,?_U("/create-tournament"), ?_T("// Tournament")},
 	     {user_tournaments,?_U("/profile/user-tournaments"), ?_T("Tournaments")}
 	    ],
-    Links = case rpc:call(?APPSERVER_NODE,nsm_affiliates, is_existing_affiliate, [wf:user()]) of 
+    Links = case nsm_affiliates:is_existing_affiliate(wf:user()) of 
         true ->
-            case rpc:call(?APPSERVER_NODE,nsm_affiliates, is_able_to_look_details, [wf:user()]) of
+            case nsm_affiliates:is_able_to_look_details(wf:user()) of
                 true -> PreLinks ++ [{affiliates,?_U("/profile/affiliates"), ?_T("Affiliates")}];
                 false -> PreLinks
             end;
@@ -168,13 +168,13 @@ section_body(profile) ->
 				       ]}
     ];
 section_body(gifts) ->
-    AllGifts = lists:reverse(lists:sort(rpc:call(?APPSERVER_NODE, nsm_users, list_gifts_of, [wf:user()]))),
+    AllGifts = lists:reverse(lists:sort(nsm_users:list_gifts_of(wf:user()))),
     [
         #h1{text=?_T("Gifts")},
         #list{class="history-list", id=orders_list, body = [
             begin
                 SDate = site_utils:feed_time_tuple(calendar:now_to_local_time(BoughtTime)),
-                {ok, {ThisGift, _}} = rpc:call(?APPSERVER_NODE, nsm_gifts_db, get_gift, [GiftId]),
+                {ok, {ThisGift, _}} = nsm_gifts_db:get_gift(GiftId),
                 SName = ThisGift#gift.gift_name,
                 SKakush = integer_to_list(ThisGift#gift.kakush_point),
                 SPrice = integer_to_list(ThisGift#gift.kakush_currency),
@@ -193,7 +193,7 @@ section_body(gifts) ->
 
 section_body(user_tournaments) ->
     User = wf:user(),
-    Tournaments = rpc:call(?APPSERVER_NODE, nsm_tournaments, user_tournaments, [User]),
+    Tournaments = nsm_tournaments:user_tournaments(User),
 
     ?INFO("TS: ~p", [Tournaments]),
 
@@ -260,15 +260,14 @@ section_body(user_tournaments) ->
 
 section_body(account) ->
     Username = wf:user(),
-    {ok, Quota}  = rpc:call(?APPSERVER_NODE, nsm_accounts, balance, [Username, ?CURRENCY_QUOTA]),
+    {ok, Quota}  = nsm_accounts:balance(Username, ?CURRENCY_QUOTA),
 %    Id = wf:temp_id(),
 %    ApiSave = #api{anchor = Id, tag = Id, name = savePackage, delegate = ?MODULE},
 %    wf:wire(ApiSave),
 %    Script = wf:f(" { ~s } ",[callback(ApiSave,"self == top")]),
 %    wf:wire(Id, Script),
     ?INFO("wf:session: ~p",[wf:session(is_facebook)]),
-    Orders = rpc:call(?APPSERVER_NODE, nsm_db, get_purchases_by_user,
-        [Username, ?ORDERS_PER_PAGE, [?MP_STATE_DONE]]),
+    Orders = nsm_db:get_purchases_by_user(Username, ?ORDERS_PER_PAGE, [?MP_STATE_DONE]),
 
     [
         #h1{text=?_T("Account")},
@@ -336,7 +335,7 @@ section_body(account) ->
 section_body(invite) ->
     captcha:generate(invite),
     RSpan = " <span class=\"req\">*</span>",
-    SentInvites = rpc:call(?APPSERVER_NODE, nsm_db, invite_code_by_issuer, [wf:user()]),
+    SentInvites = nsm_db:invite_code_by_issuer(wf:user()),
     [#h1{text=?_T("Invite")},
      #panel{id=invite_info},
      #panel{class="invite-form", body=[
@@ -537,7 +536,7 @@ section_body(affiliates) ->
     ]};
 
 section_body(_) ->
-    Scores = rpc:call(?APPSERVER_NODE, scoring, score_entries, [wf:user()]),
+    Scores = scoring:score_entries(wf:user()),
     STotalScore = integer_to_list(lists:sum([S#scoring_record.score_points || S <- Scores])),
     STotalKakaush = integer_to_list(lists:sum([S#scoring_record.score_kakaush || S <- Scores])),
     [
@@ -733,7 +732,7 @@ u_event(profile_cancel) ->
 
 u_event(generate_invite) ->
     User = webutils:user_info(),
-    {ok, InviteCode} = rpc:call(?APPSERVER_NODE,invite,generate_code,[User]),
+    {ok, InviteCode} = nsm_invite:generate_code(User),
     Url = site_utils:create_url_invite(InviteCode),
     wf:set(invite_generate_url, Url),
     u_event(not_done_yet);
@@ -773,7 +772,7 @@ u_event(invite_send) ->
 	    UserName = wf:q(name_invite),
 	    Text = wf:q(text_invite),
 	    User = webutils:user_info(),
-	    case rpc:call(?APPSERVER_NODE,invite,send_invite_email,[User, Mail, UserName, Text]) of
+	    case nsm_invite:send_invite_email(User, Mail, UserName, Text) of
 		{error, wrong_email} ->
 		    flash(error, invite_info, ?_T("Wrong e-mail"));
 		{error, wrong_username} ->
@@ -796,7 +795,7 @@ u_event({invite_resend, Mail}) ->
     UserName = ?_T("Gamer"),  % this is wrong
     Text = "",
     User = webutils:user_info(),
-    case rpc:call(?APPSERVER_NODE,invite,send_invite_email,[User, Mail, UserName, Text]) of
+    case nsm_invite:send_invite_email(User, Mail, UserName, Text) of
 	{error, wrong_email} ->
 	    flash(error, invite_info, ?_T("Wrong e-mail"));
 	{error, wrong_username} ->
@@ -813,8 +812,7 @@ u_event(not_done_yet) ->
 
 u_event({more_orders, PurchaseId}) ->
     Username = wf:user(),
-    Orders0 = rpc:call(?APPSERVER_NODE, nsm_db, get_purchases_by_user,
-        [Username, PurchaseId, ?ORDERS_PER_PAGE+1, [?MP_STATE_DONE]]),
+    Orders0 = nsm_db:get_purchases_by_user(Username, PurchaseId, ?ORDERS_PER_PAGE+1, [?MP_STATE_DONE]),
     %% first element already rendered as last element of the current list
     case Orders0 of
         [_] ->
@@ -828,15 +826,15 @@ u_event(convert_kakush_to_quota) ->
     SKakush = wf:q(kakush_to_quota),
     try
         Kakush = list_to_integer(SKakush),
-        {ok, HasKakush} = rpc:call(?APPSERVER_NODE, nsm_accounts, balance, [wf:user(), ?CURRENCY_KAKUSH]),
+        {ok, HasKakush} = nsm_accounts:balance(wf:user(), ?CURRENCY_KAKUSH),
         if 
             Kakush > HasKakush ->
                 wf:wire(#alert{text=?_T("Sorry, you don't have that much kakush.")});
             Kakush =< 0 ->
                 wf:wire(#alert{text=?_T("No.")});
             true ->
-                rpc:call(?APPSERVER_NODE, nsm_accounts, transaction, [wf:user(), ?CURRENCY_KAKUSH, -Kakush, "Buying "++SKakush++" quota: give kakush"]),
-                rpc:call(?APPSERVER_NODE, nsm_accounts, transaction, [wf:user(), ?CURRENCY_QUOTA, Kakush, "Buying "++SKakush++" quota: get quota"]),
+                nsm_accounts:transaction(wf:user(), ?CURRENCY_KAKUSH, -Kakush, "Buying "++SKakush++" quota: give kakush"),
+                nsm_accounts:transaction(wf:user(), ?CURRENCY_QUOTA, Kakush, "Buying "++SKakush++" quota: get quota"),
                 wf:wire(#alert{text=?_T("You bought" ++ " " ++ SKakush ++ " " ++ "quota" ++ ".")}),
                 wf:redirect("/profile/account")
         end
@@ -933,7 +931,7 @@ order_list_item(#membership_purchase{membership_package = Package} = MP) ->
     PackageId = Package#membership_package.id,
     %% get package by id from database to get actual avalilable_for_sale option state
     AvailableForSale =
-    case rpc:call(?APPSERVER_NODE, nsm_db, get, [membership_package, PackageId]) of
+    case nsm_db:get(membership_package, PackageId) of
         {ok, P} ->
             P#membership_package.available_for_sale;
         _ ->

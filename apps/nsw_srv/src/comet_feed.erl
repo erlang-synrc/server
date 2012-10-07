@@ -167,7 +167,7 @@ add_entry(EntryId, FeedId, From, Destinations, Desc, Medias) ->
                    raw_description = Desc,
                    media = Medias,
                    feed_id = FeedId},
-    Entry = case rpc:call(?APPSERVER_NODE, feedformat, format, [Entry0]) of
+    Entry = case feedformat:format(Entry0) of
         #entry{}= Formatted ->
             Formatted;
         _ ->
@@ -191,7 +191,7 @@ add_system_entry(EntryId, FeedId, From, Destinations, Desc, Medias) ->
                    media = Medias,
                    feed_id = FeedId,
                    type = {user, system}},
-    Entry = case rpc:call(?APPSERVER_NODE, feedformat, format, [Entry0]) of
+    Entry = case feedformat:format(Entry0) of
         #entry{}= Formatted ->
             Formatted;
         _ ->
@@ -203,7 +203,7 @@ add_system_entry(EntryId, FeedId, From, Destinations, Desc, Medias) ->
     wf:flush().
 
 edit_entry(EntryId, NewText) ->
-    Entry = rpc:call(?APPSERVER_NODE, feedformat, format, [#entry{description = NewText}]),
+    Entry = feedformat:format(#entry{description = NewText}),
     ElemeId = element_view_entry:entry_body_label_id(EntryId),
     wf:update(ElemeId, Entry#entry.description),
     wf:flush().

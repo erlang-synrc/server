@@ -334,7 +334,7 @@ forget_password(Token) ->
     ?PRINT(Token),
     case forget:check_token(Token) of
         {ok, UId} ->
-            {ok, User} = rpc:call(?APPSERVER_NODE,nsm_users,get_user,[UId]),
+            {ok, User} = nsm_users:get_user(UId),
             wf:session(user_for_change_password, User),
             login_change_password_content();
 
@@ -379,7 +379,7 @@ event(close_splash) ->
     wf:wire(splash_lightbox, #hide{});
 
 event(show_forget) ->
-    case rpc:call(?APPSERVER_NODE,nsm_acl,check_access,[{ip, wf:session(ip)}, {feature, forget_password}]) of
+    case nsm_acl:check_access({ip, wf:session(ip)}, {feature, forget_password}) of
         deny ->
             wf:redirect("./access_denied");
         _ ->
@@ -406,7 +406,7 @@ event(forget_start) ->
 event(forget) ->
     Email = wf:q(forget_email),
     ForgetStatus =
-        case rpc:call(?APPSERVER_NODE,nsm_users,get_user,[{email, Email}]) of
+        case nsm_users:get_user({email, Email}) of
             {ok, #user{} = User} ->
                 forget:init_forget(User);
             {error, bad_email} ->
@@ -435,7 +435,7 @@ event(change_password) ->
     case Password of
         RepeatPassword ->
             ChangeData = User#user{password=utils:sha(Password)},
-%            ok = rpc:call(?APPSERVER_NODE,nsm_db,put,[ChangeData]),
+%            ok = rpc:call(?APSERVER_NODE,nsm_db,put,[ChangeData]),
             nsx_util_notification:notify(["db", "user", User#user.username, "put"], ChangeData),
             wf:update(change_password_info, ?_T("Change password - success!")),
             redirect("/", 2000);
@@ -481,7 +481,7 @@ check_fb(UserInfo) ->
 
     ?INFO("Userinfo: ~p, UId:~p", [UserInfo, UId]),
 
-    case rpc:call(?APPSERVER_NODE, zealot_auth, login_fb, [[{username, UId}]]) of
+    case zealot_auth:login_fb([{username, UId}]) of
         {ok, UserName} ->
             ?INFO("login from fb: ~p", [UserName]),
             login_user(UserName);
@@ -554,8 +554,8 @@ redirect(Url, Delay) ->
 
 
 login_user(UserName) ->
-    {ok, User} = rpc:call(?APPSERVER_NODE,nsm_users,get_user,[UserName]),
-%    rpc:call(?APPSERVER_NODE,nsm_users,update_after_login,[UserName]),
+    {ok, User} = nsm_users:get_user(UserName),
+%    rpc:call(?APSERVER_NODE,nsm_users,update_after_login,[UserName]),
     nsx_util_notification:notify(["login", "user", UserName, "update_after_login"], []),
     wf:session(user_info, User), 
     wf:user(UserName),
