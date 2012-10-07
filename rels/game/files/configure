@@ -3,16 +3,16 @@
 H=`hostname -f`
 GAMEPORT=7999
 GAMEHOST=$H
-WEBSERVER="web"
-APPSERVER="app@$H"
-GAMESERVER="game"
+WEBSERVER=web
+APPSERVER=app@$H
+GAMESERVER=game
 MNESIAINIT=""
 
-MQ_HOST="localhost"
+MQ_HOST=localhost
 MQ_PORT=5672
-MQ_USER="kakauser"
-MQ_PASS="paynet123"
-MQ_VHOST="/"
+MQ_USER=kakauser
+MQ_PASS=paynet123
+MQ_VHOST=/
 
 while [ $# -gt 0 ]
 do
@@ -49,19 +49,17 @@ else
     ./config -file app.config nsg_srv mnesia_init -atom default
 fi
 
-
 ./config -file app.config nsg_srv game_srv_port -integer $GAMEPORT
 ./config -file app.config nsg_srv app_srv_node -atom $APPSERVER
 ./config -file app.config nsg_srv game_srv_node -atom $GAMESERVER@$H
 ./config -file app.config nsg_srv web_srv_node -atom $WEBSERVER@$H
-./config -file app.config nsm_conn ip -list $GAMEHOST
-
-./config -file app.config nsm_mq amqp_host -list $MQ_HOST
+./config -file app.config nsm_conn ip -list "\"$GAMEHOST\""
+./config -file app.config nsm_db nodes -list [app@$H,game@$H,web@$H]
+./config -file app.config nsm_mq amqp_host -list "\"$MQ_HOST\""
 ./config -file app.config nsm_mq amqp_port -integer $MQ_PORT
-./config -file app.config nsm_mq amqp_user -list $MQ_USER
-./config -file app.config nsm_mq amqp_pass -list $MQ_PASS
-./config -file app.config nsm_mq amqp_vhost -list $MQ_VHOST
-
+./config -file app.config nsm_mq amqp_user -list "\"$MQ_USER\""
+./config -file app.config nsm_mq amqp_pass -list "\"$MQ_PASS\""
+./config -file app.config nsm_mq amqp_vhost -list "\"$MQ_VHOST\""
 ./config -file app.config nsx_utils app_srv_node -atom $APPSERVER
 
 cat vm.args.template | sed "s#GAMESERVER_NODE#$GAMESERVER@$H#g" > vm.args

@@ -284,7 +284,7 @@ charge_user_account(MP) ->
         nsm_accounts:transaction(UserId, ?CURRENCY_QUOTA, Quota, PaymentTransactionInfo)
     catch
         _:E ->
-            ?ERROR("unable to charge user account. User=~p, OrderId=~p. Error: ~9999p",
+            ?ERROR("unable to charge user account. User=~p, OrderId=~p. Error: ~p",
                    [UserId, OrderId, E])
     end.
 

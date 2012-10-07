@@ -828,18 +828,18 @@ disable_contract_type(Handler, TypeId) ->
 %% an invitation confirmation
 
 invitation_hook(Issuer, UserId) ->
-    ?INFO("~w:invitation_hook/1 Started. Issure: ~9999p User:~9999p",
+    ?INFO("~w:invitation_hook/1 Started. Issure: ~p User:~p",
           [?MODULE, Issuer, UserId]),
     Cl = start_client(),
     case get_user_affiliate(Cl, Issuer) of
         {ok, OwnerId, Depth} ->
             ?INFO("~w:invitation_hook/1 Assigning a user to an affiliate. "
-                  "User:~9999p Affiliate:~9999p",
+                  "User:~p Affiliate:~p",
                   [?MODULE, UserId, OwnerId]),
             reg_follower(Cl, UserId, OwnerId, Depth+1);
         {error, not_in_affiliate} ->
             ?INFO("~w:invitation_hook/1 User did not assigned to any "
-                  "affiliate. User:~9999p",
+                  "affiliate. User:~p",
                   [?MODULE, UserId]),
             do_nothing
     end,
@@ -854,7 +854,7 @@ purchase_hook(#membership_purchase{user_id = UserId,
                                    state = done,
                                    end_time = Time1
                                   } = MP) ->
-    ?INFO("~w:purchase_hook/1 Started. User:~9999p PurchaseId:~9999p",
+    ?INFO("~w:purchase_hook/1 Started. User: ~p PurchaseId: ~p",
           [?MODULE, UserId, PurchaseId]),
     Handler = start_client(),
     case get_user_affiliate(Handler, UserId) of

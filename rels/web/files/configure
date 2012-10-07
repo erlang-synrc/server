@@ -8,20 +8,20 @@ HIPS=`for i in $HIP; do echo $i | grep -v "127.0."; done`
 
 IP=$HIPS
 WEBPORT=80
-GAMESERVER="game"
-WEBSERVER="web"
+GAMESERVER=game
+WEBSERVER=web
 SERVERPORT=7999
 SERVERHOST=""
-GAMESERVERHOST="127.0.0.1"
-APPSERVER="app@$H"
+GAMESERVERHOST=127.0.0.1
+APPSERVER=app@$H
 JSPACK=min
 CSSPACK=min
 
-MQ_HOST="localhost"
+MQ_HOST=localhost
 MQ_PORT=5672
-MQ_USER="kakauser"
-MQ_PASS="paynet123"
-MQ_VHOST="/"
+MQ_USER=kakauser
+MQ_PASS=paynet123
+MQ_VHOST=/
 
 while [ $# -gt 0 ]
 do
@@ -76,25 +76,23 @@ cat vm.args.template | sed "s#WEBSERVER_NODE#$WEBSERVER@$H#g" > vm.args
 ./config -file app.config nsw_srv game_srv_node -atom $GAMESERVER@$H
 ./config -file app.config nsw_srv web_srv_node -atom $WEBSERVER@$H
 ./config -file app.config nsw_srv game_srv_port -integer $SERVERPORT
-./config -file app.config nsw_srv game_srv_host -list $GAMESERVERHOST
-./config -file app.config nsw_srv fb_id -list "$FBAPPID"
-./config -file app.config nsw_srv fb_secret -list "$FBAPPSECRET"
-./config -file app.config nsw_srv jspack -list "$JSPACK"
-./config -file app.config nsw_srv csspack -list "$CSSPACK"
-
-./config -file app.config nsm_mq amqp_host -list $MQ_HOST
+./config -file app.config nsw_srv game_srv_host -list "\"$GAMESERVERHOST\""
+./config -file app.config nsw_srv fb_id -list "\"$FBAPPID\""
+./config -file app.config nsw_srv fb_secret -list "\"$FBAPPSECRET\""
+./config -file app.config nsw_srv jspack -list "\"$JSPACK\""
+./config -file app.config nsw_srv csspack -list "\"$CSSPACK\""
+./config -file app.config nsm_mq amqp_host -list "\"$MQ_HOST\""
 ./config -file app.config nsm_mq amqp_port -integer $MQ_PORT
-./config -file app.config nsm_mq amqp_user -list $MQ_USER
-./config -file app.config nsm_mq amqp_pass -list $MQ_PASS
-./config -file app.config nsm_mq amqp_vhost -list $MQ_VHOST
-
+./config -file app.config nsm_mq amqp_user -list "\"$MQ_USER\""
+./config -file app.config nsm_mq amqp_pass -list "\"$MQ_PASS\""
+./config -file app.config nsm_mq amqp_vhost -list "\"$MQ_VHOST\""
 ./config -file app.config nsx_utils app_srv_node -atom $APPSERVER
-
+./config -file app.config nsm_db nodes -list [app@$H,game@$H,web@$H]
 
 if [ -z "${WEBADRESS+xxx}" ]; then
-    ./config -file app.config nsw_srv http_address -list http://$SERVERHOST:$WEBPORT
+    ./config -file app.config nsw_srv http_address -list "\"http://$SERVERHOST:$WEBPORT\""
 else
-    ./config -file app.config nsw_srv http_address -list $WEBADRESS
+    ./config -file app.config nsw_srv http_address -list "\"$WEBADRESS\""
 fi
 
 echo "

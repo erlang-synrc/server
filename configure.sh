@@ -5,7 +5,7 @@ APP=${2:-"app@`hostname -f`"}
 
 
 cd rels/app/node/etc
-./configure -dba nsm_riak -app $APP -game game -web web -mq-user guest -mq-pass guest 
+./configure -dba nsm_riak -app $APP -game game -web web -mq-user guest -mq-pass guest
 cd ../../../game/node/etc
 ./configure -app $APP -game game -game-port 9000 -game-host $LOCAL_IP -web web -mnesia-init -mq-user guest -mq-pass guest
 cd ../../../web/node/etc

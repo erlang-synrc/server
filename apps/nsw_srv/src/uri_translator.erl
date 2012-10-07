@@ -25,7 +25,8 @@ languages() ->
 languages0() ->
     sets:to_list(
       sets:from_list( %% TODO: may be it's too bad for speed? Returning ["tr", "en"] can be just fine
-        [ L || #ut_word{lang = L} <- rpc:call(?APPSERVER_NODE,nsm_db,all,[ut_word])]
+%        [ L || #ut_word{lang = L} <- rpc:call(?APPSERVER_NODE,nsm_db,all,[ut_word])]
+        [ L || #ut_word{lang = L} <- nsm_db:all(ut_word)]
         )).
 
 -spec language(string()) -> undefined | string().
@@ -43,7 +44,8 @@ language2([Word|Tail]) ->
 	".."-> language2(Tail);
 	"/" -> language2(Tail);
 	""  -> language2(Tail);
-	_   -> case rpc:call(?APPSERVER_NODE,nsm_db,get_word,[Word]) of
+%	_   -> case rpc:call(?APPSERVER_NODE,nsm_db,get_word,[Word]) of
+	_   -> case nsm_db:get_word(Word) of
 		   {ok, #ut_word{lang = Lang}} -> Lang;
 		   {error, duplicated} -> "en";
 		   {error, _} ->
@@ -95,14 +97,16 @@ translate2(Uri, Lang, Direction) ->
     lists:flatten([TranslatedPath,Query]).
 
 translate_word(to_en, ForeignWord, SrcLang) ->
-    case rpc:call(?APPSERVER_NODE,nsm_db,get_translation,[{SrcLang,ForeignWord}]) of
+%    case rpc:call(?APPSERVER_NODE,nsm_db,get_translation,[{SrcLang,ForeignWord}]) of
+    case nsm_db:get_translation({SrcLang,ForeignWord}) of
 	{ok, #ut_translation{word = EnglishWord}} -> EnglishWord;
 	{error, _} ->
 %	    ?ERROR("unknown translation: ~p", [{ForeignWord, SrcLang}]),
 	    ForeignWord
     end;
 translate_word(from_en, EnglishWord, DstLang) ->
-    case rpc:call(?APPSERVER_NODE,nsm_db,get_translation,[{DstLang, EnglishWord}]) of
+%    case rpc:call(?APPSERVER_NODE,nsm_db,get_translation,[{DstLang, EnglishWord}]) of
+    case nsm_db:get_translation({DstLang, EnglishWord}) of
 	{ok, #ut_translation{word = ForeignWord}} -> ForeignWord;
 	{error, _} ->
 %	    ?ERROR("unknown translation: ~p", [{EnglishWord, DstLang}]),

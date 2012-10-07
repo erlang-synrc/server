@@ -2,16 +2,16 @@
 
 H=`hostname -f`
 DBA=nsm_riak
-APPSERVER="app@$H"
-GAMESERVER="game"
-WEBSERVER="web"
-MQ_HOST="localhost"
+APPSERVER=app@$H
+GAMESERVER=game
+WEBSERVER=web
+MQ_HOST=localhost
 MQ_PORT=5672
-MQ_USER="kakauser"
-MQ_PASS="paynet123"
-MQ_VHOST="/"
-HOPORT="8100"
-RIAKHTTP="8101"
+MQ_USER=kakauser
+MQ_PASS=paynet123
+MQ_VHOST=/
+HOPORT=8100
+RIAKHTTP=8101
 
 while [ $# -gt 0 ]
 do
@@ -46,18 +46,15 @@ done
 ./config -file app.config nsm_srv game_srv_node -atom $GAMESERVER@$H
 ./config -file app.config nsm_srv web_srv_node -atom $WEBSERVER@$H
 ./config -file app.config nsm_srv app_srv_node -atom $APPSERVER
-
 ./config -file app.config nsm_srv riak_srv_node -atom $APPSERVER
 ./config -file app.config nsm_srv dba -atom $DBA
 ./config -file app.config riak_core handoff_port -integer $HOPORT
 ./config -file app.config riak_core http -listener $RIAKHTTP
-
-./config -file app.config nsm_mq amqp_host -list $MQ_HOST
+./config -file app.config nsm_mq amqp_host -list "\"$MQ_HOST\""
 ./config -file app.config nsm_mq amqp_port -integer $MQ_PORT
-./config -file app.config nsm_mq amqp_user -list $MQ_USER
-./config -file app.config nsm_mq amqp_pass -list $MQ_PASS
-./config -file app.config nsm_mq amqp_vhost -list $MQ_VHOST
-
+./config -file app.config nsm_mq amqp_user -list "\"$MQ_USER\""
+./config -file app.config nsm_mq amqp_pass -list "\"$MQ_PASS\""
+./config -file app.config nsm_mq amqp_vhost -list "\"$MQ_VHOST\""
 ./config -file app.config nsx_utils app_srv_node -atom $APPSERVER
 
 cat vm.args.template | sed "s#APPSERVER_NODE#$APPSERVER#g" > vm.args

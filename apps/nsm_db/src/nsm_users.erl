@@ -377,13 +377,13 @@ set_user_game_status(User, Status) -> nsm_db:put(#user_game_status{user=User, st
 %                   then it goes to change db bg worker
 
 block_user(Who, Whom) ->
-    ?INFO("~w:block_user/2 Who=~9999p Whom=~9999p", [?MODULE, Who, Whom]),
+    ?INFO("~w:block_user/2 Who=~p Whom=~p", [?MODULE, Who, Whom]),
     unsubscr_user(Who, Whom),
     nsm_db:block_user(Who, Whom),
     nsx_util_notification:notify_user_block(Who, Whom).
 
 unblock_user(Who, Whom) ->
-    ?INFO("~w:unblock_user/2 Who=~9999p Whom=~9999p", [?MODULE, Who, Whom]),
+    ?INFO("~w:unblock_user/2 Who=~p Whom=~p", [?MODULE, Who, Whom]),
     nsm_db:unblock_user(Who, Whom),
     nsx_util_notification:notify_user_unblock(Who, Whom).
 

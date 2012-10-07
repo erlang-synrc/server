@@ -457,7 +457,7 @@ handle_info({delivery, ["user_action", Action, Who, Whom], _} = Notification,
                    user = User,
                    rpc = RPC
                   } = State) ->
-    ?INFO("~w:handle_info/2 Delivery: ~9999p", [?MODULE, Notification]),
+    ?INFO("~w:handle_info/2 Delivery: ~p", [?MODULE, Notification]),
     UserId = User#'PlayerInfo'.id,
     case list_to_binary(Who) of
         UserId ->
