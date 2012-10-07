@@ -7,11 +7,8 @@
   {mod, { nsg_srv_app, []}},
   {env, [
     {mnesia_initial,default},
-    {web_srv_node,'web@rigdzin.cc'},
     {couch_srv_node,'test.kakaranet.com'},
     {couch_srv_port, 5984},
-    {game_srv_node, 'game@rigdzin.cc'},
-    {app_srv_node, 'app@rigdzin.cc'},
     {game_srv_port, 799}
   ]}
  ]}.

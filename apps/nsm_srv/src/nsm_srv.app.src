@@ -10,9 +10,6 @@
     {smtp_pass, "unknown"},
     {smtp_host, "smtp.kakaranet.com"},
     {smtp_port, 587},
-    {game_srv_node, 'game@rigdzin.cc'},
-    {web_srv_node, 'web@rigdzin.cc'},
-    {riak_srv_node, kakastore@rigdzin.cc},
     {dba, nsm_riak},
     {version, "1"}]}
  ]}.
