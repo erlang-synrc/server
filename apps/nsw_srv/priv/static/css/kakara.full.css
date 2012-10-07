@@ -3982,7 +3982,7 @@ footer .lang img {
     background: black url(/images/lightbox_bg.png?jcb=1349433509);
     opacity: 0.9;
 	position:relative;
-    z-index:1001 ! important;
+    z-index: 1001;
 }
 
 /* popup-1 */
@@ -3994,7 +3994,7 @@ footer .lang img {
 	-webkit-border-radius:3px;
 	border-radius:3px;
 	background:#fff;
-    z-index:1002 ! important;
+    z-index: 1002;
 }
 .popup-1 .head {
 	display:block;
@@ -4043,7 +4043,7 @@ footer .lang img {
 .popup-2 {
 	position:relative;
 	width:730px;
-    z-index:1002 ! important;
+    z-index: 1002;
 }
 
 .login .popup-2 {
@@ -4178,7 +4178,7 @@ footer .lang img {
 .popup-3 {
     width:680px;
 	position:relative;
-    z-index:1002 ! important;
+    z-index: 1002;
 }
 .popup-3 .frame {padding:0;}
 .popup-3 .head {
