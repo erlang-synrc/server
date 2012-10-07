@@ -71,7 +71,11 @@ init_workers() ->
     try
         ok = init_mq(),
         %% FIXME: move workers start to another place?
-        {ok, _} = nsm_bg_workers_sup:start_worker(nsm_bg_worker_email, []),
+        case nsx_opt:get_env(nsm_bg,start_email,false) of
+             false -> skip;
+             true ->  nsm_bg_workers_sup:start_worker(nsm_bg_worker_email, [])
+        end,
+
         %% bootstrap worker, satarts another workers
         {ok, BPid} = nsm_bg_workers_sup:start_worker(nsm_bg_worker_bootstrap,
                                                      [{name, ?BOOTSTRAP_WORKER_NAME}]),

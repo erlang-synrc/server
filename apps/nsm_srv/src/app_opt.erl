@@ -13,16 +13,9 @@ get_riak_srv() -> nsx_opt:get_env(nsm_srv,riak_srv_node, 'store@rigdzin.cc').
 get_version()  -> nsx_opt:get_env(nsm_srv,version, "1").
 get_dba()      -> nsx_opt:get_env(nsm_srv,dba, zealot_mnesia).
 
-%% default quota assignment
 get_default_quota() -> g(nsm_db:get(config, "accounts/default_quota",  300)).
-%% quota limits
 get_quota_limit_soft() -> g(nsm_db:get(config, "accounts/quota_limit/soft",  -20)).
 get_quota_limit_hard() -> g(nsm_db:get(config, "accounts/quota_limit/hard",  -100)).
 
-%% local functions
-
-%% get value from result tuple
-g({ok, V}) ->
-	V;
-g(Other) ->
-	throw({unexpected_reply, Other}).
+g({ok, V}) -> V;
+g(Other) -> throw({unexpected_reply, Other}).

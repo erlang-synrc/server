@@ -653,7 +653,7 @@ convert_to_map(Data,_Setting,UId,GameFSM) ->
     [ begin Url = lists:concat([?_U("/view-table/"),GameFSM,"/id/", TId]),
             Script = webutils:new_window_js(Url),
             Action = #event{type=click, actions=#script{script=Script}},
-            ViewPerPoint = site_utils:table_per_user_point(UId, 0, Rounds),
+            ViewPerPoint = "",%site_utils:table_per_user_point(UId, 0, Rounds),
             UserOwner = UId == Owner,
             [ Name,
               Owner,
@@ -825,14 +825,14 @@ check_required(Setting) ->
     Sets = 0,
     case lists:usort(Check) of
  	[true] ->
-	    case site_utils:table_per_user_point(wf:user(), Sets, Rounds) of
-		true ->
+	    %case site_utils:table_per_user_point(wf:user(), Sets, Rounds) of
+	%	true ->
 		    wf:remove(point_info),
 		    wf:wire(create_button, #remove_class { class=disable });
-		false ->
-		    wf:flash(point_info, ?_T("You don't have enough points to play!")),
-		    wf:wire(create_button, #add_class { class=disable })
-	    end;
+	%	false ->
+	%	    wf:flash(point_info, ?_T("You don't have enough points to play!")),
+	%	    wf:wire(create_button, #add_class { class=disable })
+	%    end;
 	_ ->
 	    wf:remove(point_info),
 	    wf:wire(create_button, #add_class { class=disable })
