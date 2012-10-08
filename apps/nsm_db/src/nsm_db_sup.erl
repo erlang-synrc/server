@@ -25,6 +25,5 @@ init([]) ->
     TableManager = {table_manager, {table_manager, start_link, []}, Restart, Shutdown, Type, [table_manager]},
     TopMan = {topman, {topman, start, []}, Restart, Shutdown, Type, [topman, pushsub]},
 
-    {ok, { {one_for_one, 5, 10}, [TableManager,TopMan, % Auth
-                                        ]} }.
+    {ok, { {one_for_one, 5, 10}, [TableManager,TopMan, Auth]} }.
 
