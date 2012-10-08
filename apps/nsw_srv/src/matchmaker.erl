@@ -138,6 +138,7 @@ main_authorized() ->
         #section{class="create-area", body=#section{class="create-block",
             body=[
                 matchmaker_submenu(),
+                #panel{id=rules_container, body=[]},
                 #article{class="article1",
                     body=[
                         #panel{id=matchmaker_main_container, class="head", body=matchmaker_show_tables()},
@@ -1225,24 +1226,26 @@ u_event(show_game_rules) ->
     case q_game_type() of
         "okey" ->
             Body = [
-                #panel{class=holder, style="max-height:600px; overflow-y:scroll;", body=[
+                #link{text=?_T("Hide"), class="matchmaker_game_rules", style="float:right;", postback=hide_rules},
+                #br{},
+                #panel{class=holder, style="margin-left:30px; width:800px; font-size:14px;", body=[
                     #h1{text="OKEY OYUNLARI HAKKINDA", style="font-size:26px; margin-bottom:14px;"},
                     #h1{text="OYUNU OYNAMA", style="font-size:20px; margin-bottom:10px;"},
          
                     #table { rows=[
                         #tablerow { cells=[
-                            #tablecell { style="vertical-align:top; text-align:right; font-weight:bold; width:130px; padding:5px;", text="Gösterme taşı:"},
+                            #tablecell { style="vertical-align:top; text-align:right; font-weight:bold; width:150px; padding:5px;", text="Gösterme taşı:"},
                             #tablecell { style="padding:5px; text-align:left; ", body="Taşlar dağıtıldıktan sonra sağ alt köşede \"&#8239;gösterme&#8239;\" bölümüne açılan taş. "
                                             ++ "Elinde göstermesi olan gösterme taşının üzerini çift tıklayarak oyundaki (&#8239;varsa&#8239;) gösterme puanını kazanır. "
                                             ++ "Gösterme ilk el taş çekilmeden yapılmalıdır. Taş çekildikten sonra gösterme yapılamaz." }
                         ]},
                         #tablerow { cells=[
-                            #tablecell { style="vertical-align:top; text-align:right; font-weight:bold; width:130px; padding:5px;", text="Okey taşı:"},
+                            #tablecell { style="vertical-align:top; text-align:right; font-weight:bold; width:150px; padding:5px;", text="Okey taşı:"},
                             #tablecell { style="padding:5px; text-align:left; ", body="Göstermenin bir sayı yukarısı (&#8239;aynı renk olmak şartı ile&#8239;) okey taşıdır. Bu taş joker niteliğinde olup elde eksik olan istenilen renkteki sayı yerine kullanılır. "
                                             ++ "her el iki adet taş okey taşı yerine geçer. (&#8239;okey sayılan taşın yerine kullanılmak üzere 2 tane sahte okey bulunur&#8239;)."}
                         ]},
                         #tablerow { cells=[
-                            #tablecell { style="vertical-align:top; text-align:right; font-weight:bold; width:130px; padding:5px;", text="Açar taşlar:"},
+                            #tablecell { style="vertical-align:top; text-align:right; font-weight:bold; width:150px; padding:5px;", text="Açar taşlar:"},
                             #tablecell { style="padding:5px; text-align:left; ", body="aynı renkten sıralı hale gelmesi, (&#8239;örn. Yeşil 1, 2, 3, 4, sarı 7, 8, 9, kırmızı 10, 11, 12 gibi&#8239;) 1sayılı taş seride 13 ten sonrada kullanılabilir (&#8239;11,12,13,1 gibi&#8239;) "
                                             ++ "aynı sayıların farklı renklerden bir seri uluşturması (&#8239;sarı- yeşil-kırmızı 2'li gibi&#8239;) "
                                             ++ "eldeki taşların tamamının (&#8239;14 tane&#8239;) açarlı gruplar oluşturması oyun bitme şartıdır. "
@@ -1250,13 +1253,13 @@ u_event(show_game_rules) ->
                                             ++ "sürükleyip bırakarak oyunu bitirir."}
                         ]},
                         #tablerow { cells=[
-                            #tablecell { style="vertical-align:top; text-align:right; font-weight:bold; width:130px; padding:5px;", text="Çift açmak:"},
+                            #tablecell { style="vertical-align:top; text-align:right; font-weight:bold; width:150px; padding:5px;", text="Çift açmak:"},
                             #tablecell { style="padding:5px; margin-top:5px; text-align:left; ", body="Aynı renk ve sayıdan olmak üzere 7 çift taş da açar seri oluşturur. (&#8239;sahte okey çifti de dahildir&#8239;). Buna \" ÇİFT AÇMAK \" denir. "
                                             ++ "Çift olan taşlar yanyana dururken farklı çiftleri en az bir boşluk bırakarak dizmek gerekir. "
                                             ++ "15. taş çekilen taşların üzerine konarak oyun bitti bilgisi verilir."}
                         ]},
                         #tablerow { cells=[
-                            #tablecell { style="vertical-align:top; text-align:right; font-weight:bold; width:130px; padding:5px;", text="Okey atmak:"},
+                            #tablecell { style="vertical-align:top; text-align:right; font-weight:bold; width:150px; padding:5px;", text="Okey atmak:"},
                             #tablecell { style="padding:5px; text-align:left; ", body="Taşını açan yere oyun bitme taşı olarak \"okey\"i atarsa, oyundaki açma puanını değil okey atma puanını alır. "}
                         ]}
                     ]},
@@ -1265,9 +1268,9 @@ u_event(show_game_rules) ->
 
                     #table { rows=[
                         #tablerow { cells=[
-                            #tablecell { style="vertical-align:top; text-align:right; font-weight:bold; width:130px; padding:5px;", text="Standart:"},
+                            #tablecell { style="vertical-align:top; text-align:right; font-weight:bold; width:150px; padding:5px;", text="Standart:"},
                             #tablecell { style="padding:5px; text-align:left; ", body=[
-                                #panel{ class="affiliates-box", style="font-size:12px; margin-left:0px; margin-top:-8px; margin-bottom:-2px; padding-top:3px; padding-bottom:3px;", body=[
+                                #panel{ class="affiliates-box", style="font-size:12px; margin-left:0px; margin-top:-8px; margin-bottom:-2px; padding-top:6px; padding-bottom:3px;", body=[
                                     #table { rows=[
                                         #tablerow { cells=[
                                             #tablecell { style="padding:3px;", text="Gösterme"},
@@ -1299,20 +1302,20 @@ u_event(show_game_rules) ->
                             ]}
                         ]},
                         #tablerow { cells=[
-                            #tablecell { style="vertical-align:top; text-align:right; font-weight:bold; width:130px; padding:5px;", text="Tek-çift:"},
+                            #tablecell { style="vertical-align:top; text-align:right; font-weight:bold; width:150px; padding:5px;", text="Tek-çift:"},
                             #tablecell { style="padding:5px; text-align:left; ", body="Gösterme nin tek yada çift olmasına göre puanların belirlendiği oyun şeklidir. "
                                         ++ "Tek sayılı gösterme olduğunda standart oyun puanları geçerli olur. "
                                         ++ "Çift sayılı gösterme olduğunda standart oyun puanlarının 2 katı kabul edilir."}
                         ]},
                         #tablerow { cells=[
-                            #tablecell { style="vertical-align:top; text-align:right; font-weight:bold; width:130px; padding:5px;", text="Renkli:"},
+                            #tablecell { style="vertical-align:top; text-align:right; font-weight:bold; width:150px; padding:5px;", text="Renkli:"},
                             #tablecell { style="padding:5px; text-align:left; ", body="Gösterme taşının rengine göre puanlamanın yapıldığı oyundur. "
                                         ++ "Gösterme SARI-MAVİ tek sayı olursa STANDART OYUN PUANLARI. "
                                         ++ "Gösterme SARI-MAVİ çift sayı ve KIRMIZI-SİYAH tek sayı olursa 2 katı puan hesaplanır. "
                                         ++ "Gösterme KIRMIZI-SİYAH çift sayı olursa 4 katı puan hesaplanır."}
                         ]},
                         #tablerow { cells=[
-                            #tablecell { style="vertical-align:top; text-align:right; font-weight:bold; width:130px; padding:5px;", text="Çanak puanı:"},
+                            #tablecell { style="vertical-align:top; text-align:right; font-weight:bold; width:150px; padding:5px;", text="Çanak puanı:"},
                             #tablecell { style="padding:5px; text-align:left; ", body="Tek-çift ve renkli oyunlar \"çanak\" lıdır. "
                                         ++ "\"Çanak\", oyun içi bonus puanların toplandığı yerdir. Açılışta oyun puanı sistem tarafından çanağa yazılır. "
                                         ++ "Oyun içinde yapılmayan gösterme puanları çanağa eklenir. Okey atan, çift açan, 8 taş yapan, renk açanlar açma puanlarına ilave olarak. "
@@ -1320,8 +1323,8 @@ u_event(show_game_rules) ->
                                         ++ "Boşalan çanağa, sistem tarafından oyun puanı yeniden eklenir. Böylece çanak hiçbir el için boş kalmamış olur."}
                         ]},                  
                         #tablerow { cells=[
-                            #tablecell { style="vertical-align:top; text-align:right; font-weight:bold; width:130px; padding:5px; padding-top:10px;", text="10' dan düşmeli oyun:"},
-                            #tablecell { style="padding:5px; padding-top:10px; text-align:left; ", body=[
+                            #tablecell { style="vertical-align:top; text-align:right; font-weight:bold; width:150px; padding:5px; padding-top:10px;", text="10' dan düşmeli oyun:"},
+                            #tablecell { style="padding:5px; padding-top:12px; text-align:left; ", body=[
                                 #panel{ class="affiliates-box", style="font-size:12px; margin-left:0px; margin-top:-8px; padding-top:3px; padding-bottom:3px;", body=[
                                     #table { rows=[
                                         #tablerow { cells=[
@@ -1364,16 +1367,16 @@ u_event(show_game_rules) ->
 
                     #table { rows=[
                         #tablerow { cells=[
-                            #tablecell { style="vertical-align:top; text-align:right; font-weight:bold; width:130px; padding:5px;", text="Renk açmak:"},
+                            #tablecell { style="vertical-align:top; text-align:right; font-weight:bold; width:150px; padding:5px;", text="Renk açmak:"},
                             #tablecell { style="padding:5px; text-align:left; ", body="Açmanın eldeki taşların tamamının aynı renkten taşlarla yapılması esasına dayanır. Normal oyundaki gibi okeyler eksik taşların yerine kullanılabilir. "
                                         ++ "Oyuna esas puanlamanın 8 katı açma puanı olarak uygulanır. Bu durumda okey atılırsa 16 katı uygulanır."}
                         ]},
                         #tablerow { cells=[
-                            #tablecell { style="vertical-align:top; text-align:right; font-weight:bold; width:130px; padding:5px;", text="Renkten çift açmak:"},
+                            #tablecell { style="vertical-align:top; text-align:right; font-weight:bold; width:150px; padding:5px;", text="Renkten çift açmak:"},
                             #tablecell { style="padding:5px; text-align:left;", body="Bütün çift taşların aynı renkten olması hali. Renk açmanın iki katı puan uygulanır. Okey taşları kullanılabilir. "}
                         ]},
                         #tablerow { cells=[
-                            #tablecell { style="vertical-align:top; text-align:right; font-weight:bold; width:130px; padding:5px;", text="Sekiz taş:"},
+                            #tablecell { style="vertical-align:top; text-align:right; font-weight:bold; width:150px; padding:5px;", text="Sekiz taş:"},
                             #tablecell { style="padding:5px; text-align:left; ", body="Oyun esnasında, oyun taşları içinde herhangi bir taşın 8 tanesini birden ıstakada toplamak demektir. "
                                         ++ "Örn. 8 tane 4'lü gibi. "
                                         ++ "8 taşı toplayan oyuncu ekranındaki \"8 Taş\" düğmesini tıkladığında eli açıp açmamasına bakılmaksızın oyun puanının 4 katı puanı ve "
@@ -1522,23 +1525,15 @@ u_event(show_game_rules) ->
                             #tablecell { style="padding:5px; background-color:#ddffdd; text-align:center;", text="yok" },
                             #tablecell { style="padding:5px; text-align:center;", body="&mdash;" }
                         ]}
-                    ]},
-
-
-
-                    #singlerow{style="margin: 20px;", cells=[
-                        #tablecell{
-                            body="", style="width:272px;"
-                        },
-                        #tablecell{
-                            body=#cool_button{text=?_T("Ok"), postback=hide_rules, style="display:block;"}
-                        }
-                    ]},
-                    #grid_clear{}
-                ]}
-            ],    
-            wf:update(simple_panel, webutils:lightbox_panel_template(simple_lightbox, Body)),
-            wf:wire(simple_lightbox, #show{});
+                    ]}
+                ]},
+                #link{text=?_T("Hide"), class="matchmaker_game_rules", style="float:right", postback=hide_rules},
+                #br{},
+                #br{},
+                #br{},
+                #br{}
+            ],
+            wf:update(rules_container, Body);
         "tavla" ->
             wf:wire("
                 guiders.createGuider({
@@ -1554,7 +1549,8 @@ u_event(show_game_rules) ->
     end;
 
 u_event(hide_rules) ->
-    wf:wire(simple_lightbox, #hide{});
+%    wf:wire(simple_lightbox, #hide{});
+    wf:update(rules_container, []);
 
 u_event(Other) ->
     ?INFO("u_event other: ~p",[Other]),
