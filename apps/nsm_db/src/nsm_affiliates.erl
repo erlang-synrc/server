@@ -17,6 +17,7 @@
 
 -include("affiliates.hrl").
 -include("membership_packages.hrl").
+-include("feed.hrl").
 -include_lib("nsx_config/include/log.hrl").
 
 %%
@@ -99,6 +100,7 @@
 
 -define(MD_INDEX, <<"index">>).
 
+-define(COUNTERS_TAB, id_seq).
 %%
 %% API Functions
 %%
@@ -599,7 +601,7 @@ create_contract(Handler, UserId, Name, {_,_,_}=StartDate, {_,_,_}=FinishDate,
   CommissionPercent >= 0 ->
     case check_contracts_in_period(Handler, StartDate, FinishDate, UserId) of
         ok ->
-            ContractId = contract_id(Handler),
+            ContractId = contract_id(),
             Contract = #affiliates_contracts{id = ContractId,
                                              owner = UserId,
                                              name = Name,
@@ -778,7 +780,7 @@ create_contract_type(Name, Duration, PurchasesLimit, CommissionRate) ->
 %% @end
 
 create_contract_type(Handler, Name, Duration, PurchasesLimit, Commission) ->
-    TypeId = contract_type_id(Handler),
+    TypeId = contract_type_id(),
     Record = #affiliates_contract_types{id = TypeId,
                                         name = Name,
                                         duration = Duration,
@@ -893,59 +895,72 @@ do_purchase(UserId, PackageId) ->
 %% @spec init_counter(Cl, CounterId, InitVal, Options) -> ok | {error, Error}
 %% @end
 
-init_counter(Cl, CounterId, InitVal, Options) ->
+init_counter(_Cl, CounterId, InitVal, Options) ->
     Force = proplists:get_value(force, Options, false),
     if Force ->
-           Object = create_counter_object(CounterId, InitVal),
-           Cl:put(Object, []);
+           nsm_db:put(#id_seq{thing = CounterId, id = InitVal});
        true ->
-           case Cl:get(?COUNTERS_BUCKET_AFF, CounterId, []) of
-               {ok, _Object} ->
+           case nsm_db:get(?COUNTERS_TAB, CounterId) of
+               {ok, _} ->
                    ok;
                {error, notfound} ->
-                   Object = create_counter_object(CounterId, InitVal),
-                   Cl:put(Object, [])
+                   nsm_db:put(#id_seq{thing = CounterId, id = InitVal})
            end
     end.
 
+%% init_counter(Cl, CounterId, InitVal, Options) ->
+%%     Force = proplists:get_value(force, Options, false),
+%%     if Force ->
+%%            Object = create_counter_object(CounterId, InitVal),
+%%            Cl:put(Object, []);
+%%        true ->
+%%            case Cl:get(?COUNTERS_BUCKET_AFF, CounterId, []) of
+%%                {ok, _Object} ->
+%%                    ok;
+%%                {error, notfound} ->
+%%                    Object = create_counter_object(CounterId, InitVal),
+%%                    Cl:put(Object, [])
+%%            end
+%%     end.
+
 
 %% @private
+%% 
+%% create_counter_object(CounterId, Val) ->
+%%     Obj1 = riak_object:new(?COUNTERS_BUCKET_AFF, CounterId, Val),
+%%     Index = [{?BUCKET_INDEX, ?COUNTERS_BUCKET_AFF}],
+%%     Meta = dict:store(?MD_INDEX, Index, dict:new()),
+%%     Obj2 = riak_object:update_metadata(Obj1, Meta),
+%%     Obj2.
+%% 
 
-create_counter_object(CounterId, Val) ->
-    Obj1 = riak_object:new(?COUNTERS_BUCKET_AFF, CounterId, Val),
-    Index = [{?BUCKET_INDEX, ?COUNTERS_BUCKET_AFF}],
-    Meta = dict:store(?MD_INDEX, Index, dict:new()),
-    Obj2 = riak_object:update_metadata(Obj1, Meta),
-    Obj2.
 
-
-
--spec contract_type_id(db_handler()) -> contract_type_id().
+-spec contract_type_id() -> contract_type_id().
 %% @private
 %% @doc generate contract type id
 
-contract_type_id(Handler) ->
-    NextId = next_id(Handler, ?CONTRACT_TYPES_COUNTER),
+contract_type_id() ->
+    NextId = nsm_db:next_id(?CONTRACT_TYPES_COUNTER),
     lists:concat([timestamp(), "_", NextId]).
 
--spec contract_id(db_handler()) -> contract_id().
+-spec contract_id() -> contract_id().
 %% @private
 %% @doc generate contract id
 
-contract_id(Handler) ->
-    NextId = next_id(Handler, ?CONTRACTS_COUNTER),
+contract_id() ->
+    NextId = nsm_db:next_id(?CONTRACTS_COUNTER),
     lists:concat([timestamp(), "_", NextId]).
-
-next_id(Cl, CounterId) ->
-    {ok, Object} = Cl:get(?COUNTERS_BUCKET_AFF, CounterId, []),
-    CurValue = riak_object:get_value(Object),
-    Object2 = riak_object:update_value(Object, CurValue+1),
-    case Cl:put(Object2, [if_not_modified]) of
-        ok ->
-            CurValue;
-        {error, _} ->
-            next_id(Cl, CounterId)
-    end.
+%% 
+%% next_id(Cl, CounterId) ->
+%%     {ok, Object} = Cl:get(?COUNTERS_BUCKET_AFF, CounterId, []),
+%%     CurValue = riak_object:get_value(Object),
+%%     Object2 = riak_object:update_value(Object, CurValue+1),
+%%     case Cl:put(Object2, [if_not_modified]) of
+%%         ok ->
+%%             CurValue;
+%%         {error, _} ->
+%%             next_id(Cl, CounterId)
+%%     end.
 
 
 %% @private
