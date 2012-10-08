@@ -62,9 +62,7 @@
 
 %% Buckets
 -define(GIFTS_BUCKET, <<"gifts">>).
-%%-define(COUNTERS_BUCKET, <<"gifts_counters">>).
 -define(CATEGORIES_BUCKET, <<"gifts_categories">>).
-%%-define(CONFIG_BUCKET, <<"config">>).
 
 %% Counters
 -define(GIFTS_COUNTER, <<"gift_id">>).
@@ -100,8 +98,6 @@ init_indexes() ->
 init_db() ->
 %    ?INFO("~w:init_db/0: started", [?MODULE]),
     C = start_riak_client(),
-%%     ok = init_counter(C, ?GIFTS_COUNTER, 1, []),
-%%     ok = init_counter(C, ?CATEGORIES_COUNTER, 1, []),
     ok = init_conf(C, ?CONF_FACTOR_A, 1.15, []),
     ok = init_conf(C, ?CONF_FACTOR_B, 4, []),
     ok = init_conf(C, ?CONF_FACTOR_C, 100, []),
@@ -601,29 +597,6 @@ start_riak_client() ->
 stop_riak_client(_Cl) ->
     ok.
 
-
-
-%% -spec init_counter(any(), binary(), integer(), list()) -> ok.
-%% %% @private
-%% %% @spec init_counter(Cl, CounterId, InitVal, Options) -> ok
-%% %% @end
-%% 
-%% init_counter(Cl, CounterId, InitVal, Options) ->
-%%     Force = proplists:get_value(force, Options, false),
-%%     if Force ->
-%%            Object = create_counter_object(CounterId, InitVal),
-%%            ok = Cl:put(Object, []);
-%%        true ->
-%%            case Cl:get(?COUNTERS_BUCKET, CounterId, []) of
-%%                {ok, _Object} ->
-%%                    ok;
-%%                {error, notfound} ->
-%%                    Object = create_counter_object(CounterId, InitVal),
-%%                    ok = Cl:put(Object, [])
-%%            end
-%%     end.
-
-
 -spec init_conf(any(), binary(), term(), list()) -> ok.
 %% @private
 %% @spec init_conf(Cl, Key, InitVal, Options) -> ok
@@ -642,37 +615,12 @@ init_conf(Cl, Key, InitVal, Options) ->
            end
     end.
 
-%% 
-%% %% @private
-%% 
-%% create_counter_object(CounterId, Val) ->
-%%     Obj1 = riak_object:new(?COUNTERS_BUCKET, CounterId, Val),
-%%     Index = [{?BUCKET_INDEX, ?COUNTERS_BUCKET}],
-%%     Meta = dict:store(?MD_INDEX, Index, dict:new()),
-%%     Obj2 = riak_object:update_metadata(Obj1, Meta),
-%%     Obj2.
-
 
 category_id() ->
     nsm_db:next_id(?CATEGORIES_COUNTER).
 
 gift_id() ->
     nsm_db:next_id(?GIFTS_COUNTER).
-
-
-%% @private
-
-%% next_id(Cl, CounterId) ->
-%%     {ok, Object} = Cl:get(?COUNTERS_BUCKET, CounterId, []),
-%%     CurValue = riak_object:get_value(Object),
-%%     Object2 = riak_object:update_value(Object, CurValue + 1),
-%%     case Cl:put(Object2, [if_not_modified]) of
-%%         ok ->
-%%             CurValue;
-%%         {error, _} ->
-%%             next_id(Cl, CounterId)
-%%     end.
-
 
 
 %% @private
@@ -684,21 +632,11 @@ get_conf_val(_Cl, Key) ->
             {error, notfound}
     end.
 
-%%     case Cl:get(?CONFIG_BUCKET, term_to_binary(Key), []) of
-%%         {ok, Object} ->
-%%             Value = riak_object:get_value(Object),
-%%             {ok, Value};
-%%         {error, notfound} ->
-%%             {error, notfound}
-%%     end.
-
 
 %% @private
 set_conf_val(_Cl, Key, Value) ->
     Rec = #config{key=Key, value=Value},
     nsm_db:put(Rec).
-%%     Object = riak_object:new(?CONFIG_BUCKET, term_to_binary(Key), Value),
-%%     Cl:put(Object, []).
 
 %% @private
 -spec get_gifts_keys_by_cat(any(), integer()) -> list(binary()).
