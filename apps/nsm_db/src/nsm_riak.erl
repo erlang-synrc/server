@@ -164,7 +164,7 @@ make_obj(T = {user_by_facebook_id, _User, FB}, user_by_facebook_id) -> riak_obje
 make_obj(T, forget_password) -> riak_object:new(<<"forget_password">>, list_to_binary(T#forget_password.token), T);
 make_obj(T, entry) -> [Key] = io_lib:format("~p", [T#entry.id]), riak_object:new(<<"entry">>, list_to_binary(Key), T);
 make_obj(T, comment) -> [Key] = io_lib:format("~p", [T#comment.id]), riak_object:new(<<"comment">>, list_to_binary(Key), T);
-make_obj(T = {_,Key,_}, id_seq) -> riak_object:new(<<"id_seq">>, list_to_binary(Key), T);
+make_obj(T = {_,Key,_}, id_seq) -> riak_object:new(<<"id_seq">>, key_to_bin(Key), T);
 make_obj(T, group) -> riak_object:new(<<"group">>, list_to_binary(T#group.username), T);
 make_obj(T, tournament) -> riak_object:new(<<"tournament">>, list_to_binary(integer_to_list(T#tournament.id)), T);
 make_obj(T, team) -> riak_object:new(<<"team">>, list_to_binary(integer_to_list(T#team.id)), T);
