@@ -59,13 +59,11 @@ initialize() ->
 
 init_indexes() ->
     C = riak_client(),
-    ok = C:set_bucket(t_to_b(subs), [{backend, leveldb_backend}]),
     ok = C:set_bucket(?RELS_BUCKET, [{backend, leveldb_backend}]),
     ok = C:set_bucket(?CONTRACTS_BUCKET, [{backend, leveldb_backend}]),
     ok = C:set_bucket(?PURCHASES_BUCKET, [{backend, leveldb_backend}]),
     ok = C:set_bucket(?CTYPES_BUCKET, [{backend, leveldb_backend}]),
     ok = C:set_bucket(?COUNTERS_BUCKET_ID_SEQ, [{backend, leveldb_backend}]),
-    ok = C:set_bucket(?COUNTERS_BUCKET_AFF, [{backend, leveldb_backend}]),
     ok = C:set_bucket(t_to_b(subs), [{backend, leveldb_backend}]),
     ok = C:set_bucket(t_to_b(user_bought_gifts), [{backend, leveldb_backend}]),
     ok = nsm_gifts_db:init_indexes().
