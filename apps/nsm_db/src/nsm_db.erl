@@ -622,7 +622,8 @@ load_db(Path) ->
  
                     case E of {transaction,Id,T,Am,R,A,C,I} -> 
                      Tx = #transaction{id = Id, commit_time = T,  amount = Am, remitter =R, acceptor = A, currency =C, info = I},
-                     nsm_db:add_transaction_to_user(A,Tx);
+                     %nsm_db:add_transaction_to_user(A,Tx);
+                     put(Tx);
                      %nsx_util_notification:notify_transaction(R,Tx),
                      %nsx_util_notification:notify_transaction(A,Tx);
                      _ -> skip 
