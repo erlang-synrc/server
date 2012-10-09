@@ -30,6 +30,8 @@
 -include("table.hrl").
 -include("uri_translator.hrl").
 -include("accounts.hrl").
+-include("common.hrl").
+-include("affiliates.hrl").
 -include("membership_packages.hrl").
 -include_lib("stdlib/include/qlc.hrl").
 -include_lib("nsx_config/include/log.hrl").
@@ -652,3 +654,65 @@ create_team(Name) ->
     TID = nsm_db:next_id("team",1),
     ok = nsm_db:put(Team = #team{id=TID,name=Name}),
     TID.
+
+
+list_to_term(String) ->
+    {ok, T, _} = erl_scan:string(String++"."),
+    case erl_parse:parse_term(T) of
+        {ok, Term} ->
+            Term;
+        {error, Error} ->
+            Error
+    end.
+
+
+list_buckets() ->
+    [list_to_term(B) || B <- nsm_riak:dir()].
+
+save_db(Path) ->
+    Data = lists:append([all(B) || B <- list_buckets()]),
+    salode:save(Path, Data).
+
+load_db(Path) ->
+    nsm_riak:clean(),
+    AllEntries = salode:load(Path),
+    [{_,_,{_,Handler}}] = ets:lookup(config, "riak_client"),
+    [begin 
+        case element(1, E) of
+            affiliates_rels -> %%%%%%%%%%%%%%%%%%%% affiliates
+                nsm_affiliates:write_affiliate_rel_record(Handler, E);
+            affiliates_contracts -> 
+                nsm_affiliates:write_contract_record(Handler, E);
+            affiliates_purchases -> 
+                UserId = E#affiliates_purchases.user_id,
+                ContractId = E#affiliates_purchases.contract_id,
+                Index = [{"owner_bin", term_to_binary(UserId)}, {"contract_bin", term_to_binary(ContractId)}],
+                Object = nsm_affiliates:new_object(?PURCHASES_BUCKET, term_to_binary({ContractId, UserId}), E, Index),
+                ok = nsm_affiliates:write_object(Handler, Object, [if_none_match]);
+            affiliates_contract_types -> 
+                nsm_affiliates:write_contract_type_record(Handler, E);
+            gifts_categories -> %%%%%%%%%%%%%%%%%%%% gifts 
+                Id = E#gifts_category.id,
+                ParentId = E#gifts_category.parent,
+                Obj1 = riak_object:new(<<"gifts_categories">>, term_to_binary(Id), E),
+                Indices = [{"bucket_bin", <<"gifts_categories">>},
+                           {"catparent_bin", term_to_binary(ParentId)}],
+                Meta = dict:store(<<"index">>, Indices, dict:new()),
+                Obj2 = riak_object:update_metadata(Obj1, Meta),
+                ok = Handler:put(Obj2, []);
+            gift -> 
+                Id = E#gift.id, 
+                Cats = E#gift.categories,
+                Obj1 = riak_object:new(<<"gifts">>, term_to_binary(Id), E),
+                Indices = [{"bucket_bin", <<"gifts">>} |
+                         [{"categoty_bin", term_to_binary(CatId)} ||
+                          CatId <- lists:usort(Cats)]],
+                Meta = dict:store(<<"index">>, Indices, dict:new()),
+                Obj2 = riak_object:update_metadata(Obj1, Meta),
+                ok = Handler:put(Obj2, []);
+            _ -> %%%%%%%%%%%%%%%%%%%% all the rest
+                put(E) 
+        end
+    end || E <- AllEntries].
+
+
