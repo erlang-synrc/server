@@ -67,7 +67,11 @@
          disable_contract_type/1,
          disable_contract_type/2,
          invitation_hook/2,
-         purchase_hook/1
+         purchase_hook/1,
+
+         write_affiliate_rel_record/2,
+         write_contract_record/2,
+         write_contract_type_record/2
         ]).
 
 %% For test proposes
