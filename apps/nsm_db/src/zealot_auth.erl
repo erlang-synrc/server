@@ -248,8 +248,19 @@ build_user_info(#user{username = UserName,
                name = Name,
                surname = Surname,
                age = Age,
-               avatar_url = rpc:call(?WEBSERVER_NODE,avatar,get_avatar,[User, small]),
+               avatar_url = get_avatar(User, small),
                sex = Sex,
                skill = 0,
                score = 0}.
 
+get_avatar(Avatar, Size) ->
+    case Avatar of
+        #avatar{big = Big} when Size =:= big -> Big;
+        #avatar{small = Small} when Size =:= small -> Small;
+        #avatar{tiny = Tiny} when Size =:= tiny -> Tiny;
+        _ -> case Size of
+                 big -> "/images/no_avatar_big.jpg";
+                 small -> "/images/no_avatar_small.jpg";
+                 tiny -> "/images/no_avatar_tiny.jpg"
+             end
+    end.

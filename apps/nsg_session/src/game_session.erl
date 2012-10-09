@@ -64,7 +64,7 @@ init([RPC]) ->
 
 handle_call(#session_attach{token = Token}, _From, State = #state{user = undefined}) ->
     ?INFO("checking session token: ~p", [Token]),
-    case rpc:call(?GAMESERVER_NODE,auth_server,get_user_info,[Token]) of
+    case auth_server:get_user_info(Token) of
         false ->
             self() ! terminate,
             ?INFO("failed session attach: ~p", [Token]),
@@ -76,7 +76,7 @@ handle_call(#session_attach{token = Token}, _From, State = #state{user = undefin
 
 handle_call(#session_attach_debug{token = Token, id = Id}, _From, State = #state{user = undefined}) ->
     ?INFO("checking debug session token: ~p", [{Token,Id}]),
-    case {?IS_TEST, rpc:call(?GAMESERVER_NODE,auth_server,get_user_info,[Token, Id])} of
+    case {?IS_TEST, auth_server:get_user_info(Token, Id)} of
         {_Test, false} ->
             ?INFO("... ~p", [{_Test,false}]),
             self() ! terminate,
@@ -144,11 +144,11 @@ handle_call(#social_action_msg{type=Type, initiator=P1, recipient=P2} = _Msg,
     case Type of
         ?SOCIAL_ACTION_SUBSCRIBE ->
             Subject = binary_to_list(P2),
-            rpc:call(?APPSERVER_NODE, nsm_users, subscribe_user, [UserId, Subject]),
+            nsm_users:subscribe_user(UserId, Subject),
             {reply, ok, State};
         ?SOCIAL_ACTION_UNSUBSCRIBE ->
             Subject = binary_to_list(P2),
-            rpc:call(?APPSERVER_NODE, nsm_users, remove_subscribe, [UserId, Subject]),
+            nsm_users:remove_subscribe(UserId, Subject),
             {reply, ok, State};
         ?SOCIAL_ACTION_BLOCK ->
             Subject = binary_to_list(P2),
@@ -220,9 +220,7 @@ handle_call(#subscribe_player_rels{players = Players}, _From,
     F2 =
         fun(PlayerId) ->
                 PlayerIdStr = binary_to_list(PlayerId),
-                Type = case rpc:call(?APPSERVER_NODE,
-                                     nsm_users, is_user_subscr,
-                                     [UserIdStr, PlayerIdStr]) of
+                Type = case nsm_users:is_user_subscr(UserIdStr, PlayerIdStr) of
                            true -> ?SOCIAL_ACTION_SUBSCRIBE;
                            false -> ?SOCIAL_ACTION_UNSUBSCRIBE
                        end,
