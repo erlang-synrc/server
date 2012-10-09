@@ -112,8 +112,6 @@ init([]) ->
 
     ?INFO("Starting Cowboy Server on ~s:~p~n", [BindAddress, Port]),
 
-    cowboy:start_listener(http, 100, cowboy_tcp_transport, [{port, Port}, {ip, ParsedBindAddress}], cowboy_http_protocol, HttpOpts),
-    cowboy:start_listener(https, 100, cowboy_ssl_transport, nsx_opt:get_env(nsw_srv, ssl, []) ++ [{ip, ParsedBindAddress}], cowboy_http_protocol, HttpOpts),
 
     gettext_server:start(),
     gettext:change_gettext_dir(code:priv_dir(nsw_srv)),
@@ -123,6 +121,10 @@ init([]) ->
          {ok, true} -> ok;
          _ -> create_tables(100)
     end,
+
+    cowboy:start_listener(http, 10, cowboy_tcp_transport, [{port, Port}, {ip, ParsedBindAddress}], cowboy_http_protocol, HttpOpts),
+    cowboy:start_listener(https, 10, cowboy_ssl_transport, nsx_opt:get_env(nsw_srv, ssl, []) ++ [{ip, ParsedBindAddress}], cowboy_http_protocol, HttpOpts),
+
     LuckyChild = {nsw_srv_lucky_sup,
                   {nsw_srv_lucky_sup, start_link, []},
                   permanent, 2000, supervisor, [nsw_srv_lucky_sup]},
