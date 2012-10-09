@@ -253,6 +253,8 @@ build_user_info(#user{username = UserName,
                skill = 0,
                score = 0}.
 
+get_avatar(#user{avatar = Avatar}, Size) ->
+    get_avatar(Avatar, Size);
 get_avatar(Avatar, Size) ->
     case Avatar of
         #avatar{big = Big} when Size =:= big -> Big;
