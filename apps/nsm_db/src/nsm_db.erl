@@ -580,62 +580,60 @@ load_db(Path) ->
     add_seq_ids(),
     AllEntries = salode:load(Path),
     [{_,_,{_,Handler}}] = ets:lookup(config, "riak_client"),
-    [begin 
-        case is_tuple(E) of
-        true ->
-        case element(1, E) of
-            affiliates_rels -> %%%%%%%%%%%%%%%%%%%% affiliates
-                ?INFO("AR: ~p",[E]),
-                nsm_affiliates:write_affiliate_rel_record(Handler, E);
-            affiliates_contracts -> 
-                ?INFO("AC: ~p",[E]),
-                nsm_affiliates:write_contract_record(Handler, E);
-            affiliates_purchases -> 
-                ?INFO("AP: ~p",[E]),
-                UserId = E#affiliates_purchases.user_id,
-                ContractId = E#affiliates_purchases.contract_id,
-                Index = [{"owner_bin", term_to_binary(UserId)}, {"contract_bin", term_to_binary(ContractId)}],
-                Object = nsm_affiliates:new_object(?PURCHASES_BUCKET, term_to_binary({ContractId, UserId}), E, Index),
-                ok = nsm_affiliates:write_object(Handler, Object, [if_none_match]);
-            affiliates_contract_types -> 
-                ?INFO("AfCT: ~p",[E]),
-                nsm_affiliates:write_contract_type_record(Handler, E);
-            gifts_categories -> %%%%%%%%%%%%%%%%%%%% gifts 
-                ?INFO("GiftCat: ~p",[E]),
-                Id = E#gifts_category.id,
-                ParentId = E#gifts_category.parent,
-                Obj1 = riak_object:new(<<"gifts_categories">>, term_to_binary(Id), E),
-                Indices = [{"bucket_bin", <<"gifts_categories">>},
-                           {"catparent_bin", term_to_binary(ParentId)}],
-                Meta = dict:store(<<"index">>, Indices, dict:new()),
-                Obj2 = riak_object:update_metadata(Obj1, Meta),
-                ok = Handler:put(Obj2, []);
-            transaction -> 
-                ?INFO("Tx: ~p",[E]),
- 
-                    case E of {transaction,Id,T,Am,R,A,C,I} -> 
-                     Tx = #transaction{id = Id, commit_time = T,  amount = Am, remitter =R, acceptor = A, currency =C, info = I},
-                     %add_transaction_to_user(A,Tx);
-                     put(Tx);
-                     _ -> skip 
-                    end;
-            gift -> 
-                ?INFO("Gift: ~p",[E]),
-                Id = E#gift.id,
-                Cats = E#gift.categories,
-                Obj1 = riak_object:new(<<"gifts">>, term_to_binary(Id), E),
-                Indices = [{"bucket_bin", <<"gifts">>} |
-                         [{"categoty_bin", term_to_binary(CatId)} ||
-                          CatId <- lists:usort(Cats)]],
-                Meta = dict:store(<<"index">>, Indices, dict:new()),
-                Obj2 = riak_object:update_metadata(Obj1, Meta),
-                ok = Handler:put(Obj2, []);
-            _ -> %%%%%%%%%%%%%%%%%%%% all the rest
-                ?INFO("Reg: ~p",[E]),
-                put(E) 
-        end;
+    [case is_tuple(E) of
         false -> skip
-        end
+        true ->
+            case element(1, E) of
+                affiliates_rels -> %%%%%%%%%%%%%%%%%%%% affiliates
+                    ?INFO("AR: ~p",[E]),
+                    nsm_affiliates:write_affiliate_rel_record(Handler, E);
+                affiliates_contracts -> 
+                    ?INFO("AC: ~p",[E]),
+                    nsm_affiliates:write_contract_record(Handler, E);
+                affiliates_purchases -> 
+                    ?INFO("AP: ~p",[E]),
+                    UserId = E#affiliates_purchases.user_id,
+                    ContractId = E#affiliates_purchases.contract_id,
+                    Index = [{"owner_bin", term_to_binary(UserId)}, {"contract_bin", term_to_binary(ContractId)}],
+                    Object = nsm_affiliates:new_object(?PURCHASES_BUCKET, term_to_binary({ContractId, UserId}), E, Index),
+                    ok = nsm_affiliates:write_object(Handler, Object, [if_none_match]);
+                affiliates_contract_types -> 
+                    ?INFO("AfCT: ~p",[E]),
+                    nsm_affiliates:write_contract_type_record(Handler, E);
+                gifts_categories -> %%%%%%%%%%%%%%%%%%%% gifts 
+                    ?INFO("GiftCat: ~p",[E]),
+                    Id = E#gifts_category.id,
+                    ParentId = E#gifts_category.parent,
+                    Obj1 = riak_object:new(<<"gifts_categories">>, term_to_binary(Id), E),
+                    Indices = [{"bucket_bin", <<"gifts_categories">>},
+                               {"catparent_bin", term_to_binary(ParentId)}],
+                    Meta = dict:store(<<"index">>, Indices, dict:new()),
+                    Obj2 = riak_object:update_metadata(Obj1, Meta),
+                    ok = Handler:put(Obj2, []);
+                gift -> 
+                    ?INFO("Gift: ~p",[E]),
+                    Id = E#gift.id,
+                    Cats = E#gift.categories,
+                    Obj1 = riak_object:new(<<"gifts">>, term_to_binary(Id), E),
+                    Indices = [{"bucket_bin", <<"gifts">>} |
+                             [{"categoty_bin", term_to_binary(CatId)} ||
+                              CatId <- lists:usort(Cats)]],
+                    Meta = dict:store(<<"index">>, Indices, dict:new()),
+                    Obj2 = riak_object:update_metadata(Obj1, Meta),
+                    ok = Handler:put(Obj2, []);
+                transaction -> %%%%%%%%%%%%%%%%%%%% transaction
+                    ?INFO("Tx: ~p",[E]),
+     
+                        case E of {transaction,Id,T,Am,R,A,C,I} ->
+                         Tx = #transaction{id = Id, commit_time = T,  amount = Am, remitter =R, acceptor = A, currency =C, info = I},
+                         %add_transaction_to_user(A,Tx);
+                         put(Tx);
+                         _ -> skip 
+                        end;
+                _ -> %%%%%%%%%%%%%%%%%%%% all the rest
+                    ?INFO("Reg: ~p",[E]),
+                    put(E) 
+            end
     end || E <- AllEntries].
 
 
