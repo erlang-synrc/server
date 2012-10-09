@@ -876,8 +876,6 @@ add_transaction_to_user(UserId,Purchase) ->
              end
     end,
 
-    nsm_db:put(#user_transaction{ user = UserId, top = EntryId}), % update team top with current
-
     Entry  = #transaction{id = EntryId,
                            commit_time = Purchase#transaction.commit_time,
                            amount = Purchase#transaction.amount,
@@ -888,8 +886,8 @@ add_transaction_to_user(UserId,Purchase) ->
                            next = Next,
                            prev = Prev},
 
-    case nsm_db:put(Entry) of ok -> {ok, EntryId};
-                           Error -> ?INFO("Cant write transaction"), {failure,Error} end.
+    case nsm_db:put(Entry) of ok -> nsm_db:put(#user_transaction{ user = UserId, top = EntryId}), {ok, EntryId};
+                              Error -> ?INFO("Cant write transaction"), {failure,Error} end.
 
 add_purchase_to_user(UserId,Purchase) ->
     {ok,Team} = case nsm_db:get(user_purchase, UserId) of

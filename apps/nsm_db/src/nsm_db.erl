@@ -515,14 +515,9 @@ subscriptions_to_subs() ->
 
 %% mebership purchases
 
-add_transaction_to_user(User, Tx) ->
-    DBA=?DBA, DBA:add_transaction_to_user(User, Tx).
-
-get_purchases_by_user(User, Count, States) ->
-    DBA=?DBA, DBA:get_purchases_by_user(User, Count, States).
-
-get_purchases_by_user(User, StartFromPurchase, Count, States) ->
-    DBA=?DBA, DBA:get_purchases_by_user(User, StartFromPurchase, Count, States).
+add_transaction_to_user(User, Tx) -> DBA=?DBA, DBA:add_transaction_to_user(User, Tx).
+get_purchases_by_user(User, Count, States) -> DBA=?DBA, DBA:get_purchases_by_user(User, Count, States).
+get_purchases_by_user(User, StartFromPurchase, Count, States) -> DBA=?DBA, DBA:get_purchases_by_user(User, StartFromPurchase, Count, States).
 
 %% invitation tree
 
@@ -540,8 +535,7 @@ put_into_invitation_tree(Parent, User, InviteCode) -> DBA=?DBA, DBA:put_into_inv
 -spec invitation_tree(StartFrom::string()|{root}, Depth::integer()|all) ->
           [#invitation_tree{}].
 
-invitation_tree(StartFrom, Depth) ->
-    DBA=?DBA, DBA:invitation_tree(StartFrom, Depth).
+invitation_tree(StartFrom, Depth) -> DBA=?DBA, DBA:invitation_tree(StartFrom, Depth).
 
 fast_timeouts() ->
     nsm_db:put({config,"games/okey/robot_delay_normal",100}),
@@ -552,8 +546,7 @@ make_admin(User) ->
     {ok,U} = nsm_db:get(User),
     nsm_db:put(U#user{type = admin}).
 
-make_rich(User) ->
-    nsm_accounts:transaction(User, ?CURRENCY_QUOTA, db_opt:get_default_quota() * 100, #ti_default_assignment{}).
+make_rich(User) -> nsm_accounts:transaction(User, ?CURRENCY_QUOTA, db_opt:get_default_quota() * 100, #ti_default_assignment{}).
 
 feed_create() ->
     FId = nsm_db:next_id("feed", 1),
@@ -622,10 +615,8 @@ load_db(Path) ->
  
                     case E of {transaction,Id,T,Am,R,A,C,I} -> 
                      Tx = #transaction{id = Id, commit_time = T,  amount = Am, remitter =R, acceptor = A, currency =C, info = I},
-                     %nsm_db:add_transaction_to_user(A,Tx);
+                     %add_transaction_to_user(A,Tx);
                      put(Tx);
-                     %nsx_util_notification:notify_transaction(R,Tx),
-                     %nsx_util_notification:notify_transaction(A,Tx);
                      _ -> skip 
                     end;
             gift -> 
