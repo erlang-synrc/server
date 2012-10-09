@@ -119,7 +119,7 @@ init([]) ->
     gettext:change_gettext_dir(code:priv_dir(nsw_srv)),
     gettext:recreate_db(),
 
-    case rpc:call(?APPSERVER_NODE,nsm_db,get,[config, "debug/production", false]) of
+    case nsm_db:get(config, "debug/production", false) of
          {ok, true} -> ok;
          _ -> create_tables(100)
     end,
