@@ -119,7 +119,7 @@ init([]) ->
 
     case nsm_db:get(config, "debug/production", false) of
          {ok, true} -> ok;
-         _ -> create_tables(100)
+         _ -> create_tables(10)
     end,
 
     cowboy:start_listener(http, 10, cowboy_tcp_transport, [{port, Port}, {ip, ParsedBindAddress}], cowboy_http_protocol, HttpOpts),

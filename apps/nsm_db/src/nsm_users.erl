@@ -526,6 +526,8 @@ build_user_relations(User, Groups) ->
      rk( [purchase, user, User, set_purchase_info]),
      rk( [purchase, user, User, add_purchase]),
 
+     rk( [transaction, user, User, add_transaction]),
+
      rk( [invite, user, User, add_invite_to_issuer]),
     
      rk( [tournaments, user, User, create_and_join]),

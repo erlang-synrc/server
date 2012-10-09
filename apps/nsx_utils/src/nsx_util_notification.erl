@@ -34,6 +34,7 @@
          notify_email/3, notify_email/4,
 
          notify_purchase/1,
+         notify_transaction/2,
 
          notify_user_subscribe/2,
          notify_user_unsubscribe/2,
@@ -106,6 +107,9 @@ notify_email(Subject, TextContent, HTMLContent, To) ->
     notify([email, send], {Subject, TextContent, HTMLContent, To}).
 
 %% notify about purchase state change.
+
+notify_transaction(User, Transaction) ->
+    notify([transaction, user, User, add_transaction], Transaction).
 
 notify_purchase(PurchaseRecord) ->
     PurchaseId = PurchaseRecord#membership_purchase.id,
