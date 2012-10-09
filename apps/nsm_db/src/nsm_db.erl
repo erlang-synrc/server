@@ -63,6 +63,8 @@
 
 -export([add_configs/0]).
 
+-export([save_db/1, load_db/1]).
+
 -spec start() -> ok.
 start() ->
 %    alog:info("Zealot DB started."),
@@ -664,7 +666,6 @@ list_to_term(String) ->
         {error, Error} ->
             Error
     end.
-
 
 list_buckets() ->
     [list_to_term(B) || B <- nsm_riak:dir()].
