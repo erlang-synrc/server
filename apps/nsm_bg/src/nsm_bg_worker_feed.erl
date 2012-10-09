@@ -728,8 +728,8 @@ handle_notice(["purchase", "user", _, "add_purchase"] = Route,
 handle_notice(["transaction", "user", User, "add_transaction"] = Route,
     Message, #state{owner = Owner, type =Type} = State) ->
     ?INFO("queue_action(~p): add_transaction: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),    
-    {MP} = Message,
-    nsm_db:add_transaction_to_user(MP),
+    MP = Message,
+    nsm_db:add_transaction_to_user(User,MP),
     {noreply, State};
 
 handle_notice(["purchase", "user", _, "set_purchase_external_id"] = Route,

@@ -152,6 +152,8 @@ add_seq_ids() ->
     Init("player_scoring"),
     Init("scoring_record"),
     Init("tournament"),
+    Init("user_transaction"),
+    Init("transaction"),
     Init("team"),
     Init("play_record"),
     Init("membership_purchase"),
@@ -582,6 +584,7 @@ save_db(Path) ->
 
 load_db(Path) ->
     nsm_riak:clean(),
+    add_seq_ids(),
     AllEntries = salode:load(Path),
     [{_,_,{_,Handler}}] = ets:lookup(config, "riak_client"),
     [begin 
