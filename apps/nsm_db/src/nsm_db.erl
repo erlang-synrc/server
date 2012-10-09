@@ -42,9 +42,9 @@
          delete_browser_counter_older_than/1,browser_counter_by_game/1,
          unused_invites/0, get_word/1, acl_add_entry/3, acl_entries/1,
          feed_add_entry/5, feed_add_entry/7, feed_add_direct_message/6,
-         entries_in_feed/1, entries_in_feed/2, entries_in_feed/3,
+         entries_in_feed/1, entries_in_feed/2, entries_in_feed/3, add_transaction_to_user/2,
          entry_by_id/1, comment_by_id/1, comments_by_entry/1, feed_direct_messages/3,
-         add_comment/7, dir/0, purchases/1,
+         add_comment/7, dir/0, purchases/1, transactions/1,
          user_by_verification_code/1, update_user_name/3,
          list_membership/1, list_group_users/1, list_membership_count/1,
          user_by_email/1, user_by_facebook_id/1, user_by_username/1, change_group_name/2,
@@ -65,43 +65,16 @@
 
 -export([save_db/1, load_db/1]).
 
--spec start() -> ok.
-start() ->
-%    alog:info("Zealot DB started."),
-    DBA = ?DBA,
-    DBA:start().
+start() -> DBA = ?DBA, DBA:start().
+dir() -> DBA = ?DBA, DBA:dir().
+purchases(UserId) -> DBA = ?DBA, DBA:purchases(UserId).
+transactions(UserId) -> DBA = ?DBA, DBA:transactions(UserId).
+stop() -> DBA = ?DBA, DBA:stop().
+initialize() -> DBA = ?DBA, DBA:initialize().
+delete() -> DBA = ?DBA, DBA:delete().
+init_indexes() -> DBA = ?DBA, DBA:init_indexes().
 
-dir() ->
-    DBA = ?DBA,
-    DBA:dir().
-
-purchases(UserId) ->
-    DBA = ?DBA,
-    DBA:purchases(UserId).
-
--spec stop() -> 'stopped' | {'error',_}.
-stop() ->
-    DBA = ?DBA,
-    DBA:stop().
-
-
--spec initialize() -> ok.
-initialize() ->
-    DBA = ?DBA,
-    DBA:initialize().
-
--spec delete() -> ok.
-delete() ->
-    DBA = ?DBA,
-    DBA:delete().
-
-init_indexes() ->
-    DBA = ?DBA,
-    DBA:init_indexes().
-
--spec init_db() -> ok.
 init_db() ->
-%    ?INFO("~w:init_db/0 Started", [?MODULE]),
     case nsm_db:get(user,"alice") of
        {error,_} ->
             DBA = ?DBA,
@@ -286,23 +259,23 @@ add_sample_users() ->
                            education="Bc. S.",
                            register_date={1345,14070,852889}
                      },
-                     #user{username = "nata88", password="123456",
-                           name = "Natalie", surname = "Notreal", feed = feed_create(),
+                     #user{username = "serg", password="kaka1224",
+                           name = "Serg", surname = "Polkovnikov", feed = feed_create(),
                            team = create_team("tours"), direct = feed_create(),
                            status=ok,
-                           sex="female",
+                           sex="male",
                            location="İstanbul",
-                           age={1988,1,2},
+                           age={1976,1,8},
                            education="Ph. D.",
                            register_date={1345,14070,852889}
                      },
-                     #user{username = "shyronnie", password="123456",
+                     #user{username = "doxtop", password="password",
                            feed = feed_create(),
-                           name = "Ronnie",
+                           name = "Andrii Zadorozhnii",
                            team = create_team("tours"), direct = feed_create(),
                            status=ok,
-                           age={1988,1,2},
-                           register_date={1345,14070,852889}
+                           age={1981,9,29},
+                           register_date={1345,14071,852889}
                      }],
 
 
@@ -313,7 +286,6 @@ add_sample_users() ->
     GId1  = nsm_groups:create_group_directly_to_db("ahmettez", "kakaranet", "Kakaranet", "Kakaranet'e Hoşgeldiniz", public),
     GId2  = nsm_groups:create_group_directly_to_db("ahmettez", "yeniler", "Yeniler", "So, you must be new here.", public),
 
-    %create(UID, Name, Desc, Date, Players, Quota, Awards, Type, Game) ->
     T1 = nsm_tournaments:create("maxim","TAVLA", "Tavla Turnuvalar",  {2012,4,28},10,  10, undefined,pointing,game_tavla),
     T2 = nsm_tournaments:create("maxim","BATAK", "Batak Challenge",   {2012,4,28},100, 50, undefined,pointing,game_batak),
     T3 = nsm_tournaments:create("maxim","OKEY",  "OKEY Championship", {2012,4,28},1000,100,undefined,pointing,game_okey),
@@ -354,16 +326,10 @@ add_sample_users() ->
     {ok, G} = nsm_gifts_vendor:get_gifts(1),
     nsm_gifts_tools:dumb_store(G),
 
-    %% init feed workers infrastructure
-%    catch nsm_bg:start_all_feed_workers(),
     ok.
 
-add_sample_packages() ->
-	nsm_membership_packages:add_sample_data().
-
-version() ->
-    ?INFO("version: ~p", [?VERSION]).
-
+add_sample_packages() -> nsm_membership_packages:add_sample_data().
+version() -> ?INFO("version: ~p", [?VERSION]).
 
 % blocking
 
@@ -395,7 +361,7 @@ add_configs() ->
 
 -spec put(tuple() | [tuple()]) -> ok.
 put(Record) ->
-%    ?INFO("db:put ~p",[Record]),
+    ?INFO("db:put ~p",[Record]),
     DBA=?DBA,
     DBA:put(Record).
 
@@ -406,7 +372,7 @@ get(RecordName, Key) ->
     DBA=?DBA,
     case C = DBA:get(RecordName, Key) of
     {ok,_R} ->
-%        ?INFO("db:get ~p,", [{RecordName, Key}]),
+        ?INFO("db:get ~p,", [{RecordName, Key}]),
         C;
     A -> A
     end.
@@ -415,91 +381,54 @@ get(RecordName, Key, Default) ->
     DBA=?DBA,
     case DBA:get(RecordName, Key) of
 	{ok,{RecordName,Key,Value}} ->
-%	    ?INFO("db:get config value ~p,", [{RecordName, Key, Value}]),
+	    ?INFO("db:get config value ~p,", [{RecordName, Key, Value}]),
 	    {ok,Value};
 	{error, _B} ->
-%	    ?INFO("db:get new config value ~p,", [{RecordName, Key, Default}]),
+	    ?INFO("db:get new config value ~p,", [{RecordName, Key, Default}]),
 	    DBA:put({RecordName,Key,Default}),
 	    {ok,Default}
     end.
 
-get_word(Word) ->
-    get(ut_word,Word).
-
-get_translation({Lang,Word}) ->
-    DBA=?DBA,
-    DBA:get_translation({Lang,Word}).
+get_word(Word) -> get(ut_word,Word).
+get_translation({Lang,Word}) -> DBA=?DBA, DBA:get_translation({Lang,Word}).
 
 % delete
 
--spec delete(tuple() | [tuple()]) -> ok.
-delete(Keys) ->
-    DBA=?DBA,
-    DBA:delete(Keys).
-
--spec delete(atom(), term()) -> ok.
-delete(Tab, Key) ->
-    ?INFO("db:delete ~p:~p",[Tab, Key]),
-    DBA=?DBA,DBA:delete(Tab, Key).
+delete(Keys) -> DBA=?DBA, DBA:delete(Keys).
+delete(Tab, Key) -> ?INFO("db:delete ~p:~p",[Tab, Key]), DBA=?DBA,DBA:delete(Tab, Key).
 
 % select
 
--spec multi_select(atom(), [term()]) -> [tuple()].
 multi_select(RecordName, Keys) -> DBA=?DBA,DBA:multi_select(RecordName, Keys).
-
--spec select(atom(), term()) -> [tuple()].
-select(From, PredicateFunction) ->
-    ?INFO("db:select ~p, ~p",[From,PredicateFunction]),
-    DBA=?DBA,
-    DBA:select(From, PredicateFunction).
-
--spec count(atom()) -> non_neg_integer().
+select(From, PredicateFunction) -> ?INFO("db:select ~p, ~p",[From,PredicateFunction]), DBA=?DBA, DBA:select(From, PredicateFunction).
 count(RecordName) -> DBA=?DBA,DBA:count(RecordName).
-
--spec all(atom()) -> [tuple()].
 all(RecordName) -> DBA=?DBA,DBA:all(RecordName).
-
--spec all_by_index(atom(), string(), binary()) -> [tuple()].
 all_by_index(RecordName, Index, IndexValue) -> DBA=?DBA,DBA:all_by_index(RecordName, Index, IndexValue).
 
 % id generator
 
--spec next_id(list()) -> pos_integer().
 next_id(RecordName) -> DBA=?DBA,DBA:next_id(RecordName).
-
--spec next_id(list(), integer()) -> pos_integer().
 next_id(RecordName, Incr) -> DBA=?DBA,DBA:next_id(RecordName, Incr).
 
 % browser counter
 
--spec delete_browser_counter_older_than(pos_integer()) -> ok.
 delete_browser_counter_older_than(MinTS) -> DBA=?DBA,DBA:delete_browser_counter_older_than(MinTS).
-
--spec browser_counter_by_game(atom()) -> [#browser_counter{}].
 browser_counter_by_game(Game) -> DBA=?DBA,DBA:browser_counter_by_game(Game).
 
 % invites
 
 unused_invites() -> DBA=?DBA,DBA:unused_invites().
-
 user_by_verification_code(Code) -> DBA=?DBA,DBA:user_by_verification_code(Code).
-
 user_by_facebook_id(FBId) -> DBA=?DBA,DBA:user_by_facebook_id(FBId).
-
 user_by_email(Email) -> DBA=?DBA,DBA:user_by_email(Email).
-
 user_by_username(Name) -> DBA=?DBA,DBA:user_by_username(Name).
-
 add_invite_to_issuer(User, O) -> DBA=?DBA,DBA:add_invite_to_issuer(User, O).
-
 invite_code_by_issuer(User) -> DBA=?DBA,DBA:invite_code_by_issuer(User).
-
 invite_code_by_user(User) -> DBA=?DBA,DBA:invite_code_by_user(User).
 
 % game info
 
 get_save_tables(Id) -> DBA=?DBA,DBA:get_save_tables(Id).
-
 save_game_table_by_id(Id) -> DBA=?DBA,DBA:save_game_table_by_id(Id).
 
 % groups
@@ -512,47 +441,23 @@ move_group_members(Old, New, Name) -> DBA=?DBA,DBA:move_group_members(Old,New,Na
 get_group_members(GId) -> DBA=?DBA,DBA:get_group_members(GId).
 get_group_members_count(GId) -> DBA=?DBA,DBA:get_group_members_count(GId).
 change_group_name(GId,GName) -> DBA=?DBA,DBA:change_group_name(GId,GName).
-
 update_user_name(UId,Name,Surname) -> DBA=?DBA,DBA:update_user_name(UId,Name,Surname).
 
 % feeds
 
--spec feed_add_direct_message(term(), term(), term(), term(), term(), term()) -> {ok, #entry{}} | {error}.
-feed_add_direct_message(FId, User, To, EntryId, Desc, Medias) ->
-    DBA=?DBA,DBA:feed_add_direct_message(FId, User, To, EntryId, Desc, Medias).
-
--spec feed_add_entry(term(), term(), term(), term(), term()) -> {ok, #entry{}} | {error}.
+feed_add_direct_message(FId, User, To, EntryId, Desc, Medias) -> DBA=?DBA,DBA:feed_add_direct_message(FId, User, To, EntryId, Desc, Medias).
 feed_add_entry(FId, User, EntryId, Desc, Medias) -> DBA=?DBA,DBA:feed_add_entry(FId, User, EntryId, Desc, Medias).
 feed_add_entry(FId, User, To, EntryId, Desc, Medias, Type) -> DBA=?DBA,DBA:feed_add_entry(FId, User, To, EntryId, Desc, Medias, Type).
-
 acl_add_entry(AclId, Accessor, Action) -> DBA=?DBA,DBA:acl_add_entry(AclId, Accessor, Action).
 acl_entries(AclId) -> DBA=?DBA,DBA:acl_entries(AclId).
-
--spec entry_by_id(term()) -> {ok, #entry{}} | {error, not_found}.
 entry_by_id(EntryId) -> DBA=?DBA,DBA:entry_by_id(EntryId).
-
--spec comment_by_id(term()) -> {ok, #comment{}} | {error, not_found}.
 comment_by_id(CommentId) -> DBA=?DBA,DBA:comment_by_id(CommentId).
-
--spec comments_by_entry(EntryId::{string(), term()}) -> [#comment{}].
 comments_by_entry({_EId, _FId} = EntryId) -> DBA=?DBA,DBA:comments_by_entry(EntryId).
-
--spec entries_in_feed(term()) -> [#entry{}].
 entries_in_feed(FeedId) -> DBA=?DBA,DBA:entries_in_feed(FeedId, undefined, all).
-
--spec entries_in_feed(term(), integer()|all) -> [#entry{}].
 entries_in_feed(FeedId, Count) -> DBA=?DBA,DBA:entries_in_feed(FeedId, undefined, Count).
-
--spec entries_in_feed(term(), string(), integer()|all) -> [#entry{}].
 entries_in_feed(FeedId, StartFrom, Count) -> DBA=?DBA, DBA:entries_in_feed(FeedId, StartFrom, Count).
-
-
-add_comment(FId, User, EntryId, ParentComment, CommentId, Content, Medias) ->
-    DBA=?DBA, DBA:feed_add_comment(FId, User, EntryId, ParentComment, CommentId, Content, Medias).
-
-feed_direct_messages(FId, StartFrom, Count) ->
-    DBA=?DBA, DBA:entries_in_feed(FId, StartFrom, Count).
-
+add_comment(FId, User, EntryId, ParentComment, CommentId, Content, Medias) -> DBA=?DBA, DBA:feed_add_comment(FId, User, EntryId, ParentComment, CommentId, Content, Medias).
+feed_direct_messages(FId, StartFrom, Count) ->  DBA=?DBA, DBA:entries_in_feed(FId, StartFrom, Count).
 
 % tournaments
 
@@ -608,6 +513,9 @@ subscriptions_to_subs() ->
 
 %% mebership purchases
 
+add_transaction_to_user(User, Tx) ->
+    DBA=?DBA, DBA:add_transaction_to_user(User, Tx).
+
 get_purchases_by_user(User, Count, States) ->
     DBA=?DBA, DBA:get_purchases_by_user(User, Count, States).
 
@@ -618,11 +526,9 @@ get_purchases_by_user(User, StartFromPurchase, Count, States) ->
 
 %% @doc Put invite to tree. Parent is user who has invited User.
 
--spec put_into_invitation_tree(Parent::string()|{root}, User::string(),
-                             InviteCode::string()) -> ok.
+-spec put_into_invitation_tree(Parent::string()|{root}, User::string(), InviteCode::string()) -> ok.
 
-put_into_invitation_tree(Parent, User, InviteCode) ->
-    DBA=?DBA, DBA:put_into_invitation_tree(Parent, User, InviteCode).
+put_into_invitation_tree(Parent, User, InviteCode) -> DBA=?DBA, DBA:put_into_invitation_tree(Parent, User, InviteCode).
 
 
 %% @doc build invitaion tree. Depth is shows how many levels of children will be
@@ -679,20 +585,27 @@ load_db(Path) ->
     AllEntries = salode:load(Path),
     [{_,_,{_,Handler}}] = ets:lookup(config, "riak_client"),
     [begin 
+        case is_tuple(E) of
+        true ->
         case element(1, E) of
             affiliates_rels -> %%%%%%%%%%%%%%%%%%%% affiliates
+                ?INFO("AR: ~p",[E]),
                 nsm_affiliates:write_affiliate_rel_record(Handler, E);
             affiliates_contracts -> 
+                ?INFO("AC: ~p",[E]),
                 nsm_affiliates:write_contract_record(Handler, E);
             affiliates_purchases -> 
+                ?INFO("AP: ~p",[E]),
                 UserId = E#affiliates_purchases.user_id,
                 ContractId = E#affiliates_purchases.contract_id,
                 Index = [{"owner_bin", term_to_binary(UserId)}, {"contract_bin", term_to_binary(ContractId)}],
                 Object = nsm_affiliates:new_object(?PURCHASES_BUCKET, term_to_binary({ContractId, UserId}), E, Index),
                 ok = nsm_affiliates:write_object(Handler, Object, [if_none_match]);
             affiliates_contract_types -> 
+                ?INFO("AfCT: ~p",[E]),
                 nsm_affiliates:write_contract_type_record(Handler, E);
             gifts_categories -> %%%%%%%%%%%%%%%%%%%% gifts 
+                ?INFO("GiftCat: ~p",[E]),
                 Id = E#gifts_category.id,
                 ParentId = E#gifts_category.parent,
                 Obj1 = riak_object:new(<<"gifts_categories">>, term_to_binary(Id), E),
@@ -701,8 +614,18 @@ load_db(Path) ->
                 Meta = dict:store(<<"index">>, Indices, dict:new()),
                 Obj2 = riak_object:update_metadata(Obj1, Meta),
                 ok = Handler:put(Obj2, []);
+            transaction -> 
+                ?INFO("Tx: ~p",[E]),
+ 
+                    case E of {transaction,Id,T,Am,R,A,C,I} -> 
+                     Tx = #transaction{id = Id, commit_time = T,  amount = Am, remitter =R, acceptor = A, currency =C, info = I},
+                     nsm_db:add_transaction_to_user(R,Tx),
+                     nsm_db:add_transaction_to_user(A,Tx);
+                     _ -> skip 
+                    end;
             gift -> 
-                Id = E#gift.id, 
+                ?INFO("Gift: ~p",[E]),
+                Id = E#gift.id,
                 Cats = E#gift.categories,
                 Obj1 = riak_object:new(<<"gifts">>, term_to_binary(Id), E),
                 Indices = [{"bucket_bin", <<"gifts">>} |
@@ -712,7 +635,10 @@ load_db(Path) ->
                 Obj2 = riak_object:update_metadata(Obj1, Meta),
                 ok = Handler:put(Obj2, []);
             _ -> %%%%%%%%%%%%%%%%%%%% all the rest
+                ?INFO("Reg: ~p",[E]),
                 put(E) 
+        end;
+        false -> skip
         end
     end || E <- AllEntries].
 

@@ -176,13 +176,15 @@ commit_transaction(#transaction{remitter = R, acceptor = A,  currency = Currency
 								amount = Amount} = TX) ->
 	case change_accounts(R, A, Currency, Amount) of
 		ok ->
-			nsm_db:put(TX);
+                    nsm_db:add_transaction_to_user(R,TX),
+                    nsm_db:add_transaction_to_user(A,TX);
 		Error ->
             %% in case of game events it is possible to assign points to undefined
             %% accounts when robots play game. System account will not be changed
             case TX#transaction.info of
                 #ti_game_event{} ->
-                    nsm_db:put(TX);
+                    nsm_db:add_transaction_to_user(R,TX),
+                    nsm_db:add_transaction_to_user(A,TX);
                 _ ->
                     ?ERROR("commit transaction error: change accounts ~p", Error),
                     Error

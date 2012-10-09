@@ -75,6 +75,9 @@
 		 }).
 
 -type transaction_info() :: #ti_game_event{} | #ti_payment{} | #ti_admin_change{}|#ti_default_assignment{}.
+
+-record(user_transaction, {user,top}).
+
 -record(transaction,
 		{
 		 id                         :: transaction_id(),
@@ -83,7 +86,9 @@
 		 remitter                   :: account_id(), %% accout that gives money/points
 		 acceptor                   :: account_id(), %% account receive money/points
 		 currency                   :: currency(),   %% some of the points or money
-		 info                       :: transaction_info()
+		 info                       :: transaction_info(),
+                 next,
+                 prev
 		 }).
 
 %% Currencies

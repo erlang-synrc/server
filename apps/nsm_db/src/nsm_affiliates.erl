@@ -66,7 +66,6 @@
          create_contract_type/5,
          disable_contract_type/1,
          disable_contract_type/2,
-
          invitation_hook/2,
          purchase_hook/1
         ]).
@@ -76,6 +75,11 @@
          check_contracts_in_period/4,
          find_contract/3,
          find_contract_by_time/3,
+         write_affiliate_rel_record/2,
+         write_contract_type_record/2,
+         write_contract_record/2,
+         write_object/3,
+         new_object/4,
          is_date_in_range/3,
          do_purchase/2
         ]).

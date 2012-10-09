@@ -25,12 +25,12 @@
          delete_browser_counter_older_than/1,browser_counter_by_game/1, unused_invites/0,
          riak_client/0, get_word/1, list_membership_count/1,
          list_group_users/1, list_membership/1, move_group_members/3, get_group_members/1,
-         get_group_members_count/1, change_group_name/2, riak_clean/1,
+         get_group_members_count/1, change_group_name/2, riak_clean/1, add_transaction_to_user/2,
          clean/0, acl_entries/1, acl_add_entry/3, update_user_name/3,
          user_by_verification_code/1, user_by_email/1, user_by_facebook_id/1, user_by_username/1,
          feed_add_entry/5, feed_add_entry/7, feed_add_direct_message/6,
          entry_by_id/1, comment_by_id/1, comments_by_entry/1, feed_direct_messages/5, read_comments/1,
-         feed_add_comment/7, entries_in_feed/3, purchases/1,
+         feed_add_comment/7, entries_in_feed/3, purchases/1, transactions/1,
          subscribe_user/2, remove_subscription/2, list_subscriptions/1, list_subscription_me/1, is_user_subscribed/2,
          block_user/2, unblock_user/2, list_blocks/1, list_blocked_me/1, is_user_blocked/2,
          membership/2, get_save_tables/1, save_game_table_by_id/1, invite_code_by_issuer/1, invite_code_by_user/1, add_invite_to_issuer/2,
@@ -97,6 +97,7 @@ clean() ->
     riak_clean(feature),
     riak_clean(table),
     riak_clean(config),
+    riak_clean(user_transaction),
     riak_clean(save_game_table),
     riak_clean(save_table),
     riak_clean(game_table),
@@ -117,7 +118,7 @@ riak_clean(Table) ->
     C = riak_client(),
     [TableStr] = io_lib:format("~p",[Table]),
     {ok,Keys}=C:list_keys(erlang:list_to_binary(TableStr)),
-    [ nsm_db:delete(Table,erlang:binary_to_list(Key)) || Key <- Keys].
+    [ nsm_db:delete(Table,key_to_bin(Key)) || Key <- Keys].
 
 % Convert Erlang records to Riak objects
 make_object(T, Class) ->
@@ -184,11 +185,11 @@ make_obj(T, membership_purchase) -> riak_object:new(<<"membership_purchase">>, l
 make_obj(T, user_purchase) -> riak_object:new(<<"user_purchase">>, list_to_binary(T#user_purchase.user), T);
 make_obj(T, pointing_rule) -> [Key] = io_lib:format("~p", [T#pointing_rule.id]), riak_object:new(<<"pointing_rule">>, list_to_binary(Key), T);
 make_obj(T, transaction) -> riak_object:new(<<"transaction">>, list_to_binary(T#transaction.id), T);
-make_obj({_, T}, {transaction, _AccountId} = B) -> [Bucket] = io_lib:format("~p", [B]), riak_object:new(list_to_binary(Bucket), list_to_binary(T#transaction.id), T);
-make_obj(T = {feed_blocked_users, UserId, _BlockedUsers} = T, feed_blocked_users) -> riak_object:new(<<"feed_blocked_users">>, list_to_binary(UserId), T);
+make_obj(T, user_transaction) -> riak_object:new(<<"user_transaction">>, key_to_bin(T#user_transaction.user), T);
+make_obj(T = {feed_blocked_users, UserId, _BlockedUsers}, feed_blocked_users) -> riak_object:new(<<"feed_blocked_users">>, list_to_binary(UserId), T);
 make_obj(T, uploads) -> [Key] = io_lib:format("~p", [T#uploads.key]), riak_object:new(<<"uploads">>, list_to_binary(Key), T);
 make_obj(T, invite_code) -> riak_object:new(<<"invite_code">>, list_to_binary(T#invite_code.code), T);
-make_obj(T={_,User,_}, invite_code_by_user) -> riak_object:new(<<"invite_code_by_user">>, list_to_binary(User), T);
+make_obj(T = {_,User,_}, invite_code_by_user) -> riak_object:new(<<"invite_code_by_user">>, list_to_binary(User), T);
 make_obj(T, invite_by_issuer) -> riak_object:new(<<"invite_by_issuer">>, list_to_binary(T#invite_by_issuer.user), T);
 make_obj(T, entry_likes) -> riak_object:new(<<"entry_likes">>, list_to_binary(T#entry_likes.entry_id), T);
 make_obj(T, user_likes) -> riak_object:new(<<"user_likes">>, list_to_binary(T#user_likes.user_id), T);
@@ -223,23 +224,19 @@ post_write_hooks(Class,R,C) ->
     case Class of
         user -> case R#user.email of
                     undefined -> nothing;
-                    _ -> C:put(make_object({user_by_email, R#user.username, R#user.email},
-                                            user_by_email))
+                    _ -> C:put(make_object({user_by_email, R#user.username, R#user.email}, user_by_email))
                 end,
                 case R#user.verification_code of
                     undefined -> nothind;
-                    _ -> C:put(make_object({user_by_verification_code, R#user.username, R#user.verification_code},
-                                            user_by_verification_code))
+                    _ -> C:put(make_object({user_by_verification_code, R#user.username, R#user.verification_code}, user_by_verification_code))
                 end,
                 case R#user.facebook_id of
                     undefined -> nothing;
-                    _ -> C:put(make_object({user_by_facebook_id, R#user.username, R#user.facebook_id},
-                                            user_by_facebook_id))
+                    _ -> C:put(make_object({user_by_facebook_id, R#user.username, R#user.facebook_id}, user_by_facebook_id))
                 end;
 
         invite_code ->
-            #invite_code{created_user=User,
-                         issuer = Issuer} = R,
+            #invite_code{created_user=User, issuer = Issuer} = R,
 
             if Issuer =/= undefined,
                User =/= undefined ->
@@ -251,25 +248,6 @@ post_write_hooks(Class,R,C) ->
                 undefined -> nothing;
                 User -> C:put(make_object({invite_code_by_user, User, R#invite_code.code}, invite_code_by_user))
             end;
-
-%            case R#invite_code.issuer of
-%                undefined ->
-%                    nothing;
-%                Issuer ->
-%                    add_invite_to_issuer(Issuer,R)
-                    %C:put(make_object({invite_code_by_issuer, Issuer, R#invite_code.code}, invite_code_by_issuer))
-%            end;
-
-%        membership_purchase ->
-%            User = R#membership_purchase.user_id,
-%            add_purchase_to_user(User, R);
-%           add_purchase_by_user(User, R#membership_purchase.id); % remove vlad's buggy approach
-
-        transaction->
-            %% FIXME: move this actions to db workers
-            Acceptor = R#transaction.acceptor,
-            Remitter = R#transaction.remitter,
-            [nsm_db:put({{transaction, U}, R}) || U <- [Acceptor, Remitter]];
 
         _ -> continue
     end.
@@ -868,6 +846,51 @@ feed_add_comment(FId, User, EntryId, ParentComment, CommentId, Content, Medias) 
     nsm_db:put(Comment),
     {ok, Comment}.
 
+add_transaction_to_user(UserId,Purchase) ->
+    {ok,Team} = case nsm_db:get(user_transaction, UserId) of
+                     {ok,T} -> {ok,T};
+                     _ -> ?INFO("user_transaction not found"),
+                          Head = #user_transaction{ user = UserId, top = undefined},
+                          {nsm_db:put(Head),Head}
+                end,
+
+    EntryId = Purchase#transaction.id, %nsm_db:next_id("membership_purchase",1),
+    Prev = undefined,
+    case Team#user_transaction.top of
+        undefined -> Next = undefined;
+        X -> case nsm_db:get(transaction, X) of
+                 {ok, TopEntry} ->
+                     Next = TopEntry#transaction.id,
+                     EditedEntry = #transaction {
+                           commit_time = TopEntry#transaction.commit_time,
+                           amount = TopEntry#transaction.amount,
+                           remitter = TopEntry#transaction.remitter,
+                           acceptor = TopEntry#transaction.acceptor,
+                           currency = TopEntry#transaction.currency,
+                           info = TopEntry#transaction.info,
+                           id = TopEntry#transaction.id,
+                           next = TopEntry#transaction.next,
+                           prev = EntryId },
+                    nsm_db:put(EditedEntry); % update prev entry
+                 {error,notfound} -> Next = undefined
+             end
+    end,
+
+    nsm_db:put(#user_transaction{ user = UserId, top = EntryId}), % update team top with current
+
+    Entry  = #transaction{id = EntryId,
+                           commit_time = Purchase#transaction.commit_time,
+                           amount = Purchase#transaction.amount,
+                           remitter = Purchase#transaction.remitter,
+                           acceptor = Purchase#transaction.acceptor,
+                           currency = Purchase#transaction.currency,
+                           info = Purchase#transaction.info,
+                           next = Next,
+                           prev = Prev},
+
+    case nsm_db:put(Entry) of ok -> {ok, EntryId};
+                           Error -> ?INFO("Cant write transaction"), {failure,Error} end.
+
 add_purchase_to_user(UserId,Purchase) ->
     {ok,Team} = case nsm_db:get(user_purchase, UserId) of
                      {ok,T} -> ?INFO("user_purchase found"), {ok,T};
@@ -1205,6 +1228,19 @@ purchases_in_basket(UserId, undefined, PageAmount) ->
 purchases_in_basket(UserId, StartFrom, Limit) ->
     case nsm_db:get(membership_purchase,StartFrom) of
         {ok, #membership_purchase{next = N}=P} -> [ P | riak_traversal(membership_purchase, #membership_purchase.next, N, Limit)];
+        X -> []
+    end.
+
+transactions(UserId) -> tx_list(UserId, undefined, 10000).
+
+tx_list(UserId, undefined, PageAmount) ->
+    case nsm_db:get(user_transaction, UserId) of
+        {ok, O} when O#user_transaction.top =/= undefined -> tx_list(UserId, O#user_transaction.top, PageAmount);
+        {error, notfound} -> []
+    end;
+tx_list(UserId, StartFrom, Limit) ->
+    case nsm_db:get(transaction,StartFrom) of
+        {ok, #transaction{next = N}=P} -> [ P | riak_traversal(transaction, #transaction.next, N, Limit)];
         X -> []
     end.
 
