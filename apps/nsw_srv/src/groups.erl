@@ -145,16 +145,13 @@ content(PageNumber) ->
     ].
 
 inner_content(PageNumber) ->
-    GroupsView = get_group_rows(PageNumber), %PHASE1 get_group_rows returns some tuple, not the list now
+    {GroupsView, AllCount} = get_group_rows(PageNumber),
     case is_list(GroupsView) of
         true ->
             #span{text=GroupsView};
         false ->
             {_, _, _, _, _, _, _, _, _, _, GroupsViewList} = GroupsView,
 
-            %PHASE1 this isn't right, but will do for now
-            %PHASE1 if length(GroupsViewList) == ?GROUPPERPAGE/2 we can still have our next page bloked, 
-            %       if our current is the last one and full!
             NextButton = if
                 length(GroupsViewList) < ?GROUPPERPAGE
                      -> #listitem{body=#link{text=">", url="javascript:void(0)", class="inactive"}};
@@ -170,7 +167,15 @@ inner_content(PageNumber) ->
                 #panel{class="center", body=[
                     #list{body=[
                             PrevButton,
-                            #listitem{body=#link{class="inactive", url="javascript:void(0)", text=io_lib:format("~b",[PageNumber])}},
+                            [
+                                case N of 
+                                    PageNumber ->
+                                        #listitem{body=#link{class="inactive", url="javascript:void(0)", text=io_lib:format("~b",[N])}};
+                                    _ ->
+                                        #listitem{body=#link{postback={page, N}, text=io_lib:format("~b",[N])}}
+                                end
+                                || N <- lists:seq(1, AllCount div ?GROUPPERPAGE + 1)
+                            ],
                             NextButton
                         ]}
                     ]}
@@ -203,13 +208,19 @@ searched_content(PageNumber, Content) ->
     ].
 
 get_group_rows() -> get_group_rows(1).
-get_group_rows(Offset) ->
-    UId = wf:user(),
-    case nsm_groups:list_group_per_user_with_count(UId, UId, Offset, ?GROUPPERPAGE) of
-        [] ->
-            ?_T("You are not subscribed to anyone");
-        Sub ->
-            group_row(Sub)
+get_group_rows(Page) ->
+    Offset = (Page - 1) * ?GROUPPERPAGE + 1,
+    case wf:q("of") of
+        undefined ->
+            All = lists:sort(nsm_groups:get_all_groups()),
+            {group_row(lists:sublist(All, Offset, ?GROUPPERPAGE)), length(All)};
+        UId ->
+            case nsm_groups:list_group_per_user_with_count(UId, UId, Offset, ?GROUPPERPAGE) of
+                [] ->
+                    ?_T("You are not subscribed to anyone");
+                Sub ->
+                    {group_row(Sub), length(nsm_groups:list_group_per_user(UId, undefined))}
+            end
     end.
 
 split_subs([], A) -> A;
