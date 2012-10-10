@@ -165,14 +165,11 @@ get_factors() ->
     Res.
 
 get_factors(Handler) ->
-    {ok, A} = get_conf_val(Handler, ?CONF_FACTOR_A),
-    {ok, B} = get_conf_val(Handler, ?CONF_FACTOR_B),
-    {ok, C} = get_conf_val(Handler, ?CONF_FACTOR_C),
-    {ok, D} = get_conf_val(Handler, ?CONF_FACTOR_D),
+    {ok, A} = case get_conf_val(Handler, ?CONF_FACTOR_A)  of {ok,_A} -> {ok,_A}; _ -> {ok, 1.15} end,
+    {ok, B} = case get_conf_val(Handler, ?CONF_FACTOR_B)  of {ok,_B} -> {ok,_B}; _ -> {ok, 4} end,
+    {ok, C} = case get_conf_val(Handler, ?CONF_FACTOR_C)  of {ok,_C} -> {ok,_C}; _ -> {ok, 100} end,
+    {ok, D} = case get_conf_val(Handler, ?CONF_FACTOR_D)  of {ok,_D} -> {ok,_D}; _ -> {ok, 0.2} end,
     {A, B, C, D}.
-
-
-
 
 %% @spec create_category(Name, Description, ParentId) -> ok | {error, Reason}
 %% @doc
