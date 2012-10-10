@@ -163,23 +163,27 @@ inner_content(PageNumber) ->
             end,
             [
                 GroupsView,
-                #panel{class="paging-2", body=[
-                #panel{class="center", body=[
-                    #list{body=[
-                            PrevButton,
-                            [
-                                case N of 
-                                    PageNumber ->
-                                        #listitem{body=#link{class="inactive", url="javascript:void(0)", text=io_lib:format("~b",[N])}};
-                                    _ ->
-                                        #listitem{body=#link{postback={page, N}, text=io_lib:format("~b",[N])}}
-                                end
-                                || N <- lists:seq(1, AllCount div ?GROUPPERPAGE + 1)
-                            ],
-                            NextButton
+                case AllCount > ?GROUPPERPAGE of
+                    false -> [];
+                    true ->
+                        #panel{class="paging-2", body=[
+                        #panel{class="center", body=[
+                            #list{body=[
+                                    PrevButton,
+                                    [
+                                        case N of 
+                                            PageNumber ->
+                                                #listitem{body=#link{class="inactive", url="javascript:void(0)", text=io_lib:format("~b",[N])}};
+                                            _ ->
+                                                #listitem{body=#link{postback={page, N}, text=io_lib:format("~b",[N])}}
+                                        end
+                                        || N <- lists:seq(1, AllCount div ?GROUPPERPAGE + 1)
+                                    ],
+                                    NextButton
+                                ]}
+                            ]}
                         ]}
-                    ]}
-                ]}
+                end
             ]
     end.
 
@@ -461,9 +465,5 @@ top_adv() ->
             [?_T("This would of been great, wouldn't it! Go on, try it!")]),
         #link{
             url="javascript:void(0)", class="btn", postback=show_new_group_edit,
-%PHASE2
-%            actions=#event{type=click, actions=[
-%                #script{script="clear_form_values();$(\"#add_group_dialog\").dialog(\"open\");"}
-%            ]},
             text=?_T("Create a group")}
     ]}.

@@ -670,7 +670,9 @@ get_metalist(Id, Title, Module, List, EmptyMsg, Nav) ->
                 begin
                     case WhoName of
                         [Name, 32, LastName] ->
-                            if   %PUBLIC BETA "undefined" names should not be in the base in the first place
+                            if   
+                                LastName == "", Name == "" ->
+                                    RealName = Who;
                                 LastName == "undefined", Name == "undefined" ->
                                     RealName = Who;
                                 LastName == "undefined" ->
@@ -680,6 +682,7 @@ get_metalist(Id, Title, Module, List, EmptyMsg, Nav) ->
                                 true ->
                                     RealName = Name ++ [" "] ++ LastName
                             end;
+                        "" -> RealName = Who;
                         Name_Surname -> RealName = Name_Surname
                     end,
                     #listitem{body=[
