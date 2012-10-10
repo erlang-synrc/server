@@ -607,22 +607,6 @@ load_db(Path) ->
         false -> skip;
         true ->
             case element(1, E) of
-%%                 affiliates_rels -> %%%%%%%%%%%%%%%%%%%% affiliates
-%%                     ?INFO("AR: ~p",[E]),
-%%                     nsm_affiliates:write_affiliate_rel_record(Handler, E);
-%%                 affiliates_contracts -> 
-%%                     ?INFO("AC: ~p",[E]),
-%%                     nsm_affiliates:write_contract_record(Handler, E);
-%%                 affiliates_purchases -> 
-%%                     ?INFO("AP: ~p",[E]),
-%%                     UserId = E#affiliates_purchases.user_id,
-%%                     ContractId = E#affiliates_purchases.contract_id,
-%%                     Index = [{"owner_bin", term_to_binary(UserId)}, {"contract_bin", term_to_binary(ContractId)}],
-%%                     Object = nsm_affiliates:new_object(?PURCHASES_BUCKET, term_to_binary({ContractId, UserId}), E, Index),
-%%                     ok = nsm_affiliates:write_object(Handler, Object, [if_none_match]);
-%%                 affiliates_contract_types -> 
-%%                     ?INFO("AfCT: ~p",[E]),
-%%                     nsm_affiliates:write_contract_type_record(Handler, E);
                 gifts_categories -> %%%%%%%%%%%%%%%%%%%% gifts 
                     ?INFO("GiftCat: ~p",[E]),
                     Id = E#gifts_category.id,
