@@ -320,6 +320,7 @@ entry_element_usual(E, Comments, Avatar, {MediaThumb, MediaLists0}, _TargetMedia
     NewCommentBoxId = wf:temp_id(),
     NewCommentTBId  = comment_textbox_id(E#entry.entry_id),
     ViewC           = Comments == [],
+    LikeBtnId = wf:temp_id(),
     [
         #panel{class="post", id=TempId, actions=Events, body=[
             #panel{class="entry-avatar", body=[
@@ -343,7 +344,7 @@ entry_element_usual(E, Comments, Avatar, {MediaThumb, MediaLists0}, _TargetMedia
                                 ]
                             }
                         },
-                        #listitem{body=#link{text=?_T("Like"), class="clr-1", postback={like_entry, E, TempId}, show_if=LikeBtnShow}},
+                        #listitem{body=#link{text=?_T("Like"), class="clr-1", id=LikeBtnId, postback={like_entry, E, TempId, LikeBtnId}, show_if=LikeBtnShow}},
 
                         % user should not share from own feed
                         case (webutils:user_info())#user.feed == E#entry.feed_id of

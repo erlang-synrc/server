@@ -93,7 +93,7 @@ send_invite_email(User, Email, UserName, Text, Lang) ->
 	true ->
 	    case length(UserName)>0 of
 		true ->
-		    Code = invite:generate_code(User, Email),
+		    Code = generate_code(User, Email),
 		    ?INFO("Code: ~p",[Code]),
 		    {ok, InviteCode} = Code,
 		    Url = rpc:call(?WEBSERVER_NODE, site_utils, create_url_invite, [InviteCode]),
