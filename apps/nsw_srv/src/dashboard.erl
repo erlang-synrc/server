@@ -451,12 +451,16 @@ inner_event({hide_entry, _EId, PanelId, true}, _) ->
 inner_event({show_all_likers, LeftPart, Id}, _) ->
     wf:update(Id, LeftPart);
 
-inner_event({like_entry, E, PanelId}, User) ->
+inner_event({like_entry, E, PanelId, LikeBtnId}, User) ->
     UserInfo = webutils:user_info(),
     Eid = E#entry.entry_id,
     Fid = UserInfo#user.feed,
     nsx_util_notification:notify(["likes", "user", User, "add_like"], {Fid, Eid}),
     
+    ?INFO("LikeBtnId", [LikeBtnId]),
+
+    wf:replace(LikeBtnId, []),
+    timer:sleep(300),   % this is silly
     {ok, OrigEntry} = nsm_db:get(entry, {Eid, Fid}),
     VEntry = #view_entry{entry=OrigEntry},
     wf:replace(PanelId, VEntry),

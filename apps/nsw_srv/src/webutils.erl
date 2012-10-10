@@ -761,10 +761,16 @@ get_groups(User) ->
             #list{class="list-photo list-photo-in", body=[ Groups ]},
             case User#user.username == wf:user() of
                 true ->
-                    #span_b{class="links", body=[
-                        #link{text=?_T("List of all your groups"), url="/groups", id="groupslink",
-                              title=?_T("You can unsubscribe a group from this list")}
-                    ]};
+                    [
+                        #span_b{class="links", body=[
+                            #link{text=?_T("List of all your groups"), url="/groups/of/"++wf:user(), id="groupslink",
+                                  title=?_T("You can unsubscribe a group from this list")}
+                        ]},
+                        #span_b{class="links", body=[
+                            #link{text=?_T("List of all groups on kakaranet"), url="/groups", id="allgroupslink",
+                                  title=?_T("You can subscribe to any group from this list")}
+                        ]}
+                    ];
                 false->
                     ""  % here should be all users groups link
             end
