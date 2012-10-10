@@ -164,8 +164,9 @@ register(#user{username=U, email=Email, facebook_id=FBId} = RegisterData0) ->
             nsx_util_notification:notify(["system", "put"], RegisterData),
 			nsm_accounts:create_account(U),
 			%% assign quota
+            {ok, DefaultQuota} = nsm_db:get(config, "accounts/default_quota",  300),
 			nsm_accounts:transaction(U, ?CURRENCY_QUOTA,
-                                         app_opt:get_default_quota(),
+                                         DefaultQuota,
                                          #ti_default_assignment{}),
             %% init message queues infrastructure
             init_mq(U, ["kakaranet", "yeniler"]),

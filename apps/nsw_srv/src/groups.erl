@@ -221,7 +221,7 @@ get_group_rows(Page) ->
         UId ->
             case nsm_groups:list_group_per_user_with_count(UId, UId, Offset, ?GROUPPERPAGE) of
                 [] ->
-                    ?_T("You are not subscribed to anyone");
+                    {?_T("You are not subscribed to anyone"), 0};
                 Sub ->
                     {group_row(Sub), length(nsm_groups:list_group_per_user(UId, undefined))}
             end
