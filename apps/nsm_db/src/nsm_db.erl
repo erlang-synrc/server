@@ -581,7 +581,7 @@ load_db(Path) ->
     AllEntries = salode:load(Path),
     [{_,_,{_,Handler}}] = ets:lookup(config, "riak_client"),
     [case is_tuple(E) of
-        false -> skip
+        false -> skip;
         true ->
             case element(1, E) of
                 affiliates_rels -> %%%%%%%%%%%%%%%%%%%% affiliates
