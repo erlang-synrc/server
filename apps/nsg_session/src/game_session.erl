@@ -198,10 +198,7 @@ handle_call(#subscribe_player_rels{players = Players}, _From,
     %% Create subscription if we need
     NewRelsChannel =
         if RelsChannel == undefined ->
-               {ok, Channel} =
-                   rpc:call(?APPSERVER_NODE,
-                            nsx_util_notification, subscribe_for_user_actions,
-                            [UserIdStr, self()]),
+               {ok, Channel} = nsx_util_notification:subscribe_for_user_actions(UserIdStr, self()),
                Channel;
            true ->
                RelsChannel
@@ -248,9 +245,7 @@ handle_call(#unsubscribe_player_rels{players = Players}, _From,
 
     %% Remove subscription if we don't need it now
     NewRelsChannel =
-        if NewRelsPlayers == [] ->
-               rpc:call(?APPSERVER_NODE,
-                        nsm_mq_channel, close, [RelsChannel]),
+        if NewRelsPlayers == [] -> nsm_mq_channel:close(RelsChannel),
                undefined;
            true ->
                RelsChannel

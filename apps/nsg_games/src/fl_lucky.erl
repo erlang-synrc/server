@@ -609,6 +609,7 @@ table_parameters(game_okey, ParentMod, ParentPid) ->
                     {game, game_okey},
                     {game_mode, standard},
                     {speed, normal},
+                    {lucky, true},
                     {rounds, inifinity},
                     {pointing_rule, []}
                    ]}
@@ -622,6 +623,7 @@ table_parameters(game_tavla, ParentMod, ParentPid) ->
      {game_params, [
                     {game, game_tavla},
                     {game_mode, standard},
+                    {lucky, true},
                     {speed, normal},
                     {rounds, infinity}
                    ]}

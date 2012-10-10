@@ -129,7 +129,7 @@ handle_call({get_user_info, Token}, _From, #state{tokens = E} = State) ->
             ?INFO("token was registred, getting user info for ~p",[UserId]),
 	            proc_lib:spawn_link(fun() ->
                                         Reply =
-                                            case rpc:call(?APPSERVER_NODE, zealot_auth, get_user_info, [UserId]) of
+                                            case zealot_auth:get_user_info(UserId) of
                                                 {ok, UserData} ->
                                                     ?INFO("..user info retrieved", []),
                                                     #'PlayerInfo'{id = list_to_binary(UserData#user_info.username),

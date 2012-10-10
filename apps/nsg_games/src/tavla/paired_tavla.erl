@@ -108,7 +108,7 @@ init([Topic, {lobby, GameFSM}, Params0, PlayerIds, Manager]) ->
     Owner = proplists:get_value(owner, Settings, "maxim"), %% FIXME
 
     ?INFO("~w:init/1 Owner: ~p", [?MODULE, Owner]),
-    {Params,P,PE} = case rpc:call(?APPSERVER_NODE,pointing_rules,get_rules,[GameFSM, GameMode, Rounds]) of
+    {Params,P,PE} = case pointing_rules:get_rules(GameFSM, GameMode, Rounds) of
                         {ok, PR, PREx} -> {Params0 ++ [{pointing_rules, PR},{pointing_rules_ex, PREx}],PR,PREx};
                         _ -> {Params0,#pointing_rule{rounds=1, game = tavla,
                                                      kakush_winner = 1, kakush_other = 1, quota = 1},

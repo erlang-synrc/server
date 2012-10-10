@@ -115,38 +115,26 @@ get_settings0(Settings00) ->
 
 -spec get_timeout(atom(), iolist()) -> integer().
 get_timeout(turn, undefined) -> get_timeout(turn, fast);
-get_timeout(turn, fast) ->
-    {ok, Val} = rpc:call(?APPSERVER_NODE,nsm_db,get,[config,"games/tavla/turn_timeout_fast", 15000]), Val;
-get_timeout(turn, normal) ->
-    {ok, Val} = rpc:call(?APPSERVER_NODE,nsm_db,get,[config,"games/tavla/turn_timeout_normal", 30000]), Val;
-get_timeout(turn, slow) ->
-    {ok, Val} = rpc:call(?APPSERVER_NODE,nsm_db,get,[config,"games/tavla/turn_timeout_slow", 60000]), Val;
+get_timeout(turn, fast) -> {ok, Val}   = nsm_db:get(config,"games/tavla/turn_timeout_fast", 15000), Val;
+get_timeout(turn, normal) -> {ok, Val} = nsm_db:get(config,"games/tavla/turn_timeout_normal", 30000), Val;
+get_timeout(turn, slow) -> {ok, Val}   = nsm_db:get(config,"games/tavla/turn_timeout_slow", 60000), Val;
 
 get_timeout(challenge, undefined) -> get_timeout(challenge, fast);
-get_timeout(challenge, fast) ->
-    {ok, Val} = rpc:call(?APPSERVER_NODE,nsm_db,get,[config,"games/tavla/challenge_timeout_fast", 15000]), Val;
-get_timeout(challenge, normal) ->
-    {ok, Val} = rpc:call(?APPSERVER_NODE,nsm_db,get,[config,"games/tavla/challenge_timeout_normal", 30000]), Val;
-get_timeout(challenge, slow) ->
-    {ok, Val} = rpc:call(?APPSERVER_NODE,nsm_db,get,[config,"games/tavla/challenge_timeout_slow", 60000]), Val;
+get_timeout(challenge, fast) -> {ok, Val}   = nsm_db:get(config,"games/tavla/challenge_timeout_fast", 15000), Val;
+get_timeout(challenge, normal) -> {ok, Val} = nsm_db:get(config,"games/tavla/challenge_timeout_normal", 30000), Val;
+get_timeout(challenge, slow) -> {ok, Val}   = nsm_db:get(config,"games/tavla/challenge_timeout_slow", 60000), Val;
 
 get_timeout(ready, undefined) -> get_timeout(ready, fast);
-get_timeout(ready, fast) ->
-    {ok, Val} = rpc:call(?APPSERVER_NODE,nsm_db,get,[config,"games/tavla/ready_timeout_fast", 15000]), Val;
-get_timeout(ready, normal) ->
-    {ok, Val} = rpc:call(?APPSERVER_NODE,nsm_db,get,[config,"games/tavla/ready_timeout_normal", 25000]), Val;
-get_timeout(ready, slow) ->
-    {ok, Val} = rpc:call(?APPSERVER_NODE,nsm_db,get,[config,"games/tavla/ready_timeout_slow", 45000]), Val;
+get_timeout(ready, fast) -> {ok, Val}   = nsm_db:get(config,"games/tavla/ready_timeout_fast", 15000), Val;
+get_timeout(ready, normal) -> {ok, Val} = nsm_db:get(config,"games/tavla/ready_timeout_normal", 25000), Val;
+get_timeout(ready, slow) -> {ok, Val}   = nsm_db:get(config,"games/tavla/ready_timeout_slow", 45000), Val;
 
 get_timeout(robot_production, undefined) -> get_timeout(robot_production, fast);
 get_timeout(robot, Speed) ->
     get_timeout(robot_production, Speed);
-get_timeout(robot_production, fast) ->
-    {ok, Val} = rpc:call(?APPSERVER_NODE,nsm_db,get,[config,"games/tavla/robot_delay_fast", 6000]), Val;
-get_timeout(robot_production, normal) ->
-    {ok, Val} = rpc:call(?APPSERVER_NODE,nsm_db,get,[config,"games/tavla/robot_delay_normal", 9000]), Val;
-get_timeout(robot_production, slow) ->
-    {ok, Val} = rpc:call(?APPSERVER_NODE,nsm_db,get,[config,"games/tavla/robot_delay_slow", 15000]), Val.
+get_timeout(robot_production, fast) -> {ok, Val}   = nsm_db:get(config,"games/tavla/robot_delay_fast", 6000), Val;
+get_timeout(robot_production, normal) -> {ok, Val} = nsm_db:get(config,"games/tavla/robot_delay_normal", 9000), Val;
+get_timeout(robot_production, slow) -> {ok, Val}   = nsm_db:get(config,"games/tavla/robot_delay_slow", 15000), Val.
 
 get_player_stats(_PlayerId) ->
     #'PlayerTavlaStats'{}.
@@ -178,6 +166,7 @@ init([Relay, PidsWithPlayersInfo, GameId, Settings]) ->
     TablesNum = proplists:get_value(tables_num, Settings, 1),
     MulFactor = proplists:get_value(double_points, Settings, 1),
     SlangFlag = proplists:get_value(slang, Settings, false),
+    LuckyFlag = proplists:get_value(lucky, Settings, false),
     ObserverFlag = proplists:get_value(deny_observers, Settings, false),
     RobotDelay = get_timeout(robot, Speed),
     Scores = [ #'TavlaPlayerScore'{ player_id = P#'TavlaPlayer'.player_id, score = 0} || P <- Players],
@@ -193,12 +182,13 @@ init([Relay, PidsWithPlayersInfo, GameId, Settings]) ->
     TestPR = #pointing_rule{game = tavla, game_type = Mode, kakush_winner = 15,
                             kakush_other = 2, game_points = 15, quota = 20},
     TestLuckyPR = #pointing_rule{game = tavla, game_type = feellucky, kakush_winner = 0,
-                                 kakush_other = 0, game_points = 0, quota = 1},
+                                 kakush_other = 0, game_points = 0, quota = 0},
     PR = proplists:get_value(pointing_rules, get_settings(Settings), TestPR),
 
     GameInfo = [{id, GameId},
                 {double_points, DP},
                 {mode, Mode},
+                {lucky, LuckyFlag},
                 {pointing_rules, PR},
                 {initial_players, PlayersWithInfo},
                 {pointing_rules_lucky, TestLuckyPR},

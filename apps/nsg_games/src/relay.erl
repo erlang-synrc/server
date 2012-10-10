@@ -96,7 +96,7 @@ init([Topic, {lobby, GameFSM}, Params0, PlayerIds, Manager]) ->
     GameMode = proplists:get_value(game_mode, Settings, standard),
     GameSpeed = proplists:get_value(speed, Settings, normal),
     Owner = proplists:get_value(owner, Settings, "maxim"), %% FIXME
-    {Params,P,PE} = case rpc:call(?APPSERVER_NODE,pointing_rules,get_rules,[GameFSM, GameMode, Rounds]) of
+    {Params,P,PE} = case pointing_rules:get_rules(GameFSM, GameMode, Rounds) of
                         {ok, PR, PREx} -> {Params0 ++ [{pointing_rules, PR},{pointing_rules_ex, PREx}],PR,PREx};
                         _ -> {Params0,#pointing_rule{rounds=1, game = game(GameFSM),
                                                      kakush_winner = 1, kakush_other = 1, quota = 1},

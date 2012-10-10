@@ -58,9 +58,8 @@ code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
 
 is_feel_lucky(UId, GameInfo) ->
-    UsersOPts = proplists:get_value(users_options, GameInfo),
-    UO = nsx_opt:opt(UId, UsersOPts, []),
-    nsx_opt:opt(feellucky, UO, false).
+    ?INFO("Charge Quota Feel Lucky Check: User ~p GameInfo ~p",[UId,GameInfo]),
+    proplists:get_value(lucky, GameInfo,false).
 
 game_info_to_ti(GameInfo) ->
     #ti_game_event{game_name = okey,
@@ -77,7 +76,7 @@ charge_quota(GameInfo) ->
     Double    = proplists:get_value(double_points, GameInfo),
     TI = game_info_to_ti(GameInfo),
 
-    PR = rpc:call(?APPSERVER_NODE, pointing_rules, double_points, [PR0, Double]),
+    PR = pointing_rules:double_points(PR0, Double),
 
     [begin
          UId = binary_to_list(U#'PlayerInfo'.id),
@@ -89,8 +88,7 @@ charge_quota(GameInfo) ->
                           PR#pointing_rule.quota
                   end,
 
-        ok = rpc:call(?APPSERVER_NODE, nsm_accounts, transaction,
-                           [UId, ?CURRENCY_QUOTA, -Amount, TI#ti_game_event{type = game_start}])
+        ok = nsm_accounts:transaction(UId, ?CURRENCY_QUOTA, -Amount, TI#ti_game_event{type = game_start})
 
      end || U  <- Players].
 
@@ -113,7 +111,7 @@ assign_points(#'GameResults'{results = Results}, GameInfo) ->
     WithRobots = false, %[] /= [ robot || #'PlayerInfo'{robot = true} <- Players],
     TI = game_info_to_ti(GameInfo),
 
-    PR1 = rpc:call(?APPSERVER_NODE, pointing_rules, double_points, [PR0, Double]),
+    PR1 = pointing_rules:double_points(PR0, Double),
 
     PlayersIds = [case U#'PlayerInfo'.robot of false -> binary_to_list(U#'PlayerInfo'.id); _ -> "(robot)" end || U <- Players],
 
@@ -165,14 +163,10 @@ assign_points(#'GameResults'{results = Results}, GameInfo) ->
                 ok  % no statistics for robots
         end,
 
-        ok = rpc:call(?APPSERVER_NODE, nsm_accounts, transaction,
-                           [UId, ?CURRENCY_KAKUSH, Kakaush,
-                            TI#ti_game_event{type = game_end}]),
+        ok = nsm_accounts:transaction(UId, ?CURRENCY_KAKUSH, Kakaush, TI#ti_game_event{type = game_end}),
         if
             GamePoints /= 0 ->
-                ok = rpc:call(?APPSERVER_NODE, nsm_accounts, transaction,
-                           [UId, ?CURRENCY_GAME_POINTS, GamePoints,
-                            TI#ti_game_event{type = game_end}]);
+                ok = nsm_accounts:transaction(UId, ?CURRENCY_GAME_POINTS, GamePoints, TI#ti_game_event{type = game_end});
             true ->
                 ok
         end

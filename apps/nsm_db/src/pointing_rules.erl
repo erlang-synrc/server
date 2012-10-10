@@ -126,7 +126,7 @@ setup() ->
 
 	%% Feel lucky
 	nsm_db:put(#pointing_rule{id = {okey, feellucky}, game = okey, game_type = feellucky,
-								 kakush_winner = 0, kakush_other = 0, quota = 1, game_points = 0}),
+								 kakush_winner = 0, kakush_other = 0, quota = 0, game_points = 0}),
 
 	%% TAVLA
 

@@ -135,7 +135,7 @@ init([Relay, PidsWithPlayersInfo, GameId, Settings0]) ->
     TestPR = #pointing_rule{game = okey, game_type = Mode, kakush_winner = 15,
                             kakush_other = 2, game_points = 15, quota = 20},
     TestLuckyPR = #pointing_rule{game = okey, game_type = feellucky, kakush_winner = 0,
-                                 kakush_other = 0, game_points = 0, quota = 1},
+                                 kakush_other = 0, game_points = 0, quota = 0},
 
     Rounds = case Mode of countdown -> inifinity; _ -> proplists:get_value(rounds, Settings1) end,
     PR = proplists:get_value(pointing_rules, Settings1, TestPR),
@@ -149,11 +149,13 @@ init([Relay, PidsWithPlayersInfo, GameId, Settings0]) ->
 %%    PlayersWithInfo = [game_session:get_player_info(Pid) || Pid <- Pids],
     DP = proplists:get_value(double_points, Settings, 1),
     SlangFlag = proplists:get_value(slang, Settings, false),
+    LuckyFlag = proplists:get_value(lucky, Settings, false),
     ObserverFlag = proplists:get_value(deny_observers, Settings, false),
 
     GameInfo = [{id, GameId},
                 {double_points, DP},
                 {mode, Mode},
+                {lucky, LuckyFlag},
                 {pointing_rules, PR},
                 {initial_players, PlayersWithInfo},
                 {pointing_rules_lucky, PRLucky},
@@ -746,22 +748,22 @@ get_settings0(Settings00) ->
                       ],
     utils:apply_defauls(DefaultSettings, Settings0).
 
-get_timeout(turn, fast) -> {ok, Val} = rpc:call(?APPSERVER_NODE,nsm_db,get,[config,"games/okey/turn_timeout_fast", 15000]), Val;
-get_timeout(turn, normal) -> {ok, Val} = rpc:call(?APPSERVER_NODE,nsm_db,get,[config,"games/okey/turn_timeout_normal", 30000]), Val;
-get_timeout(turn, slow) -> {ok, Val} = rpc:call(?APPSERVER_NODE,nsm_db,get,[config,"games/okey/turn_timeout_slow", 60000]), Val;
+get_timeout(turn, fast) -> {ok, Val}   = nsm_db:get(config,"games/okey/turn_timeout_fast", 15000), Val;
+get_timeout(turn, normal) -> {ok, Val} = nsm_db:get(config,"games/okey/turn_timeout_normal", 30000), Val;
+get_timeout(turn, slow) -> {ok, Val}   = nsm_db:get(config,"games/okey/turn_timeout_slow", 60000), Val;
 
-get_timeout(challenge, fast) ->  {ok, Val} = rpc:call(?APPSERVER_NODE,nsm_db,get,[config,"games/okey/challenge_timeout_fast", 5000]), Val;
-get_timeout(challenge, normal) ->  {ok, Val} = rpc:call(?APPSERVER_NODE,nsm_db,get,[config,"games/okey/challenge_timeout_normal", 10000]), Val;
-get_timeout(challenge, slow) -> {ok, Val} = rpc:call(?APPSERVER_NODE,nsm_db,get,[config,"games/okey/challenge_timeout_slow", 20000]), Val;
+get_timeout(challenge, fast) ->  {ok, Val}   = nsm_db:get(config,"games/okey/challenge_timeout_fast", 5000), Val;
+get_timeout(challenge, normal) ->  {ok, Val} = nsm_db:get(config,"games/okey/challenge_timeout_normal", 10000), Val;
+get_timeout(challenge, slow) -> {ok, Val}    = nsm_db:get(config,"games/okey/challenge_timeout_slow", 20000), Val;
 
-get_timeout(ready, fast) -> {ok, Val} = rpc:call(?APPSERVER_NODE,nsm_db,get,[config,"games/okey/ready_timeout_fast", 15000]), Val;
-get_timeout(ready, normal) -> {ok, Val} = rpc:call(?APPSERVER_NODE,nsm_db,get,[config,"games/okey/ready_timeout_normal", 25000]), Val;
-get_timeout(ready, slow) -> {ok, Val} = rpc:call(?APPSERVER_NODE,nsm_db,get,[config,"games/okey/ready_timeout_slow", 45000]), Val;
+get_timeout(ready, fast) -> {ok, Val}   = nsm_db:get(config,"games/okey/ready_timeout_fast", 15000), Val;
+get_timeout(ready, normal) -> {ok, Val} = nsm_db:get(config,"games/okey/ready_timeout_normal", 25000), Val;
+get_timeout(ready, slow) -> {ok, Val}   = nsm_db:get(config,"games/okey/ready_timeout_slow", 45000), Val;
 
 get_timeout(robot, Speed) -> case ?IS_TEST of true -> 1; false -> get_timeout(robot_production, Speed) end;
-get_timeout(robot_production, fast) -> {ok, Val} = rpc:call(?APPSERVER_NODE,nsm_db,get,[config,"games/okey/robot_delay_fast", 6000]), Val;
-get_timeout(robot_production, normal) -> {ok, Val} = rpc:call(?APPSERVER_NODE,nsm_db,get,[config,"games/okey/robot_delay_normal", 9000]), Val;
-get_timeout(robot_production, slow) -> {ok, Val} = rpc:call(?APPSERVER_NODE,nsm_db,get,[config,"games/okey/robot_delay_slow", 15000]), Val.
+get_timeout(robot_production, fast) -> {ok, Val}   = nsm_db:get(config,"games/okey/robot_delay_fast", 6000), Val;
+get_timeout(robot_production, normal) -> {ok, Val} = nsm_db:get(config,"games/okey/robot_delay_normal", 9000), Val;
+get_timeout(robot_production, slow) -> {ok, Val}   = nsm_db:get(config,"games/okey/robot_delay_slow", 15000), Val.
 
 -spec i_saw_okey(atom(),pid(),#state{}) -> {atom(),atom(),atom()|tuple(atom(),atom()),#state{},integer()}.
 i_saw_okey(StateName, Pid, State) ->
@@ -999,7 +1001,7 @@ generate_pieces() ->
     R ++ R.
 
 hand_out_pieces() ->
-    case rpc:call(?APPSERVER_NODE,nsm_db,get,[config,"games/okey/debug_next_round_pieces", undefined]) of
+    case nsm_db:get(config,"games/okey/debug_next_round_pieces", undefined) of
         {ok, undefined} -> generate_hand();
         {ok, [Go | L]} -> generate_hand(Go, L)
     end.
