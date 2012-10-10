@@ -127,7 +127,8 @@ Then just do local build
 
     $ ./rebar get-deps
     $ ./rebar compile
-    $ ./local.sh 192.168.1.108 (your local public IP)
+    $ ./release.sh
+    $ ./single_configure.sh
     $ ./start.sh
 
 More deeply undestanding of local build
