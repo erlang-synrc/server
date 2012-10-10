@@ -623,11 +623,23 @@ load_db(Path) ->
                     ok = Handler:put(Obj2, []);
                 transaction -> %%%%%%%%%%%%%%%%%%%% transaction
                     ?INFO("Tx: ~p",[E]),
-     
                         case E of {transaction,Id,T,Am,R,A,C,I} ->
                          Tx = #transaction{id = Id, commit_time = T,  amount = Am, remitter =R, acceptor = A, currency =C, info = I},
                          %add_transaction_to_user(A,Tx);
                          put(Tx);
+                         _ -> skip 
+                        end;
+                membership_purchase ->
+                    ?INFO("Mp: ~p",[E]),
+                        case E of {membership_purchase,Id,T,User,S,Pkg,Time,Time2,L,Type} ->
+                         Mp = #membership_purchase{id = Id, external_id = T,
+                                                   user_id = User, state = S,
+                                                   membership_package = Pkg, next = undefined,
+                                                   prev = undefined, start_time = Time,
+                                                   end_time = Time2, state_log = L,
+                                                   info = Type},
+
+                         put(Mp);
                          _ -> skip 
                         end;
                 _ -> %%%%%%%%%%%%%%%%%%%% all the rest
