@@ -1,9 +1,9 @@
 
--define(RELS_BUCKET, <<"affiliates_rels">>).
--define(CONTRACTS_BUCKET, <<"affiliates_contracts">>).
--define(PURCHASES_BUCKET, <<"affiliates_purchases">>).
--define(CTYPES_BUCKET, <<"affiliates_contract_types">>).
--define(PERMS_BUCKET, <<"affiliates_look_pems">>).
+%%-define(RELS_BUCKET, <<"affiliates_rels">>).
+%%-define(CONTRACTS_BUCKET, <<"affiliates_contracts">>).
+%%-define(PURCHASES_BUCKET, <<"affiliates_purchases">>).
+%%-define(CTYPES_BUCKET, <<"affiliates_contract_types">>).
+%%-define(PERMS_BUCKET, <<"affiliates_look_pems">>).
 
 
 -record(affiliates_rels,
@@ -49,9 +49,10 @@
         {
          user_id        :: any(),
          contract_id    :: integer(),
+         owner_id       :: any(),
          purchases      :: list(),   %% [{PurchaseId, Time, PackageId, PackageNum, PaymentType, Price, Commission}]
          purchases_num  :: integer(),
-         purchases_sum  :: integer(),%% Tl
+         purchases_sum  :: integer(),%% Tl * 100
          commission_sum :: integer() %% Tl * 100
         }).
 

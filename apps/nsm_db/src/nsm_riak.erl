@@ -22,7 +22,8 @@
 
 -export([start/0, stop/0, initialize/0, delete/0, init_db/0, dir/0, init_indexes/0,
          put/1, count/1, get/2, select/2, multi_select/2, all/1, all_by_index/3, next_id/1, next_id/2, delete/1, delete/2,
-         delete_browser_counter_older_than/1,browser_counter_by_game/1, unused_invites/0,
+         put_if_none_match/1, update/2, get_for_update/2,
+         delete_by_index/3, delete_browser_counter_older_than/1,browser_counter_by_game/1, unused_invites/0,
          riak_client/0, get_word/1, list_membership_count/1,
          list_group_users/1, list_membership/1, move_group_members/3, get_group_members/1,
          get_group_members_count/1, change_group_name/2, riak_clean/1, add_transaction_to_user/2,
@@ -59,10 +60,10 @@ initialize() ->
 
 init_indexes() ->
     C = riak_client(),
-    ok = C:set_bucket(?RELS_BUCKET, [{backend, leveldb_backend}]),
-    ok = C:set_bucket(?CONTRACTS_BUCKET, [{backend, leveldb_backend}]),
-    ok = C:set_bucket(?PURCHASES_BUCKET, [{backend, leveldb_backend}]),
-    ok = C:set_bucket(?CTYPES_BUCKET, [{backend, leveldb_backend}]),
+    ok = C:set_bucket(t_to_b(affiliates_rels), [{backend, leveldb_backend}]),
+    ok = C:set_bucket(t_to_b(affiliates_contracts), [{backend, leveldb_backend}]),
+    ok = C:set_bucket(t_to_b(affiliates_purchases), [{backend, leveldb_backend}]),
+    ok = C:set_bucket(t_to_b(affiliates_contract_types), [{backend, leveldb_backend}]),
     ok = C:set_bucket(?COUNTERS_BUCKET_ID_SEQ, [{backend, leveldb_backend}]),
     ok = C:set_bucket(t_to_b(subs), [{backend, leveldb_backend}]),
     ok = C:set_bucket(t_to_b(user_bought_gifts), [{backend, leveldb_backend}]),
@@ -139,14 +140,25 @@ t_to_b(T) ->
     erlang:list_to_binary(StringBucket).
 
 %% Create indicies for the record
-make_indices(#subs{who=Who, whom=Whom}) -> [{<<"subs_who_bin">>, list_to_binary(Who)},
-                                            {<<"subs_whom_bin">>, list_to_binary(Whom)}];
-
-make_indices(#user_bought_gifts{username=UId}) -> [{<<"user_bought_gifts_username_bin">>, list_to_binary(UId)}];
+make_indices(#affiliates_contracts{owner = OwnerId}) -> [{<<"owner_bin">>, key_to_bin(OwnerId)}];
+make_indices(#affiliates_purchases{owner_id = OwnerId, contract_id = ContractId}) -> [{<<"owner_bin">>, key_to_bin(OwnerId)},
+                                                                                      {<<"contract_bin">>, key_to_bin(ContractId)}];
+make_indices(#affiliates_rels{user = OwnerId, affiliate = OwnerId}) -> [{<<"owner_bin">>, key_to_bin(OwnerId)},
+                                                                        {<<"affiliate_bin">>, key_to_bin(1)}];
+make_indices(#affiliates_rels{affiliate = OwnerId}) -> [{<<"owner_bin">>, key_to_bin(OwnerId)}];
+make_indices(#subs{who=Who, whom=Whom}) -> [{<<"subs_who_bin">>, key_to_bin(Who)},
+                                            {<<"subs_whom_bin">>, key_to_bin(Whom)}];
+make_indices(#user_bought_gifts{username=UId}) -> [{<<"user_bought_gifts_username_bin">>, key_to_bin(UId)}];
 
 make_indices(_Record) -> [].
 
 
+make_obj(T, affiliates_contract_types) -> riak_object:new(r_to_b(T), key_to_bin(T#affiliates_contract_types.id), T);
+make_obj(T, affiliates_contracts) -> riak_object:new(r_to_b(T), key_to_bin(T#affiliates_contracts.id), T);
+make_obj(T, affiliates_look_perms) -> riak_object:new(r_to_b(T), key_to_bin(T#affiliates_look_perms.user_id), T);
+make_obj(T, affiliates_purchases) -> #affiliates_purchases{contract_id = ContractId, user_id = UserId} = T,
+                                     riak_object:new(r_to_b(T), key_to_bin({ContractId, UserId}), T);
+make_obj(T, affiliates_rels) -> riak_object:new(r_to_b(T), key_to_bin(T#affiliates_rels.user), T);
 make_obj(T, subs) -> [Key] = io_lib:format("~p", [{T#subs.who, T#subs.whom}]), riak_object:new(r_to_b(T), list_to_binary(Key), T);
 make_obj(T, user_bought_gifts) -> [Key] = io_lib:format("~p", [{T#user_bought_gifts.username, T#user_bought_gifts.timestamp}]), riak_object:new(r_to_b(T), list_to_binary(Key), T);
 make_obj(T, account) -> [Key] = io_lib:format("~p", [T#account.id]), riak_object:new(<<"account">>, list_to_binary(Key), T);
@@ -220,6 +232,42 @@ riak_put(Record) ->
     post_write_hooks(Class, Record, Riak),
     Result.
 
+put_if_none_match(Record) ->
+    Class = element(1,Record),
+    Object = make_object(Record, Class),
+    Riak = riak_client(),
+    case Riak:put(Object, [if_none_match]) of
+        ok ->
+            post_write_hooks(Class, Record, Riak),
+            ok;
+        Error ->
+            Error
+    end.
+
+%% update(Record, Meta) -> ok | {error, Reason}
+update(Record, Object) ->
+    Class = element(1,Record),
+    %% Create pseudo new object and take its metadata to store in the updated object
+    NewObject = make_object(Record, Class),
+    NewKey = riak_object:key(NewObject),
+    case riak_object:key(Object) of
+        NewKey ->
+            MetaInfo = riak_object:get_update_metatdata(NewObject),
+            UpdObject2 = riak_object:update_value(Object, Record),
+            UpdObject3 = riak_object:update_metadata(UpdObject2, MetaInfo),
+            Riak = riak_client(),
+            case Riak:put(UpdObject3, [if_not_modified]) of
+                ok ->
+                    post_write_hooks(Class, Record, Riak),
+                    ok;
+                Error ->
+                    Error
+            end;
+        _ ->
+            {error, keys_not_equal}
+    end.
+
+
 post_write_hooks(Class,R,C) ->
     case Class of
         user -> case R#user.email of
@@ -268,6 +316,14 @@ riak_get(Bucket,Key) -> %% TODO: add state monad here for conflict resolution wh
         X -> X
     end.
 
+%% get_for_update(Tab, Key) -> {ok, Record, Meta} | {error, Reason}
+get_for_update(Tab, Key) ->
+    C = riak_client(),
+    case C:get(t_to_b(Tab), key_to_bin(Key), [{last_write_wins,true},{allow_mult,false}]) of
+        {ok, O} -> {ok, riak_object:get_value(O), O};
+        Error -> Error
+    end.
+
 % translations
 
 get_word(Word) ->
@@ -292,6 +348,13 @@ delete(Tab, Key) ->
     C:delete(Bucket, IntKey),
     ok.
 
+-spec delete_by_index(atom(), binary(), term()) -> ok.
+delete_by_index(Tab, IndexId, IndexVal) ->
+    Riak = riak_client(),
+    Bucket = t_to_b(Tab),
+    {ok, Keys} = Riak:get_index(Bucket, {eq, IndexId, key_to_bin(IndexVal)}),
+    [Riak:delete(Bucket, Key) || Key <- Keys],
+    ok.
 
 key_to_bin(Key) ->
     if is_integer(Key) -> erlang:list_to_binary(integer_to_list(Key));
@@ -346,10 +409,11 @@ all(RecordName) ->
     Results = [ get_record_from_table({RecordBin, Key, Riak}) || Key <- Keys ],
     [ Object || Object <- Results, Object =/= failure ].
 
+%% all_by_index(Tab, IndexId, IndexVal) -> RecordsList
 all_by_index(Tab, IndexId, IndexVal) ->
     Riak = riak_client(),
     Bucket = t_to_b(Tab),
-    {ok, Keys} = Riak:get_index(Bucket, {eq, IndexId, IndexVal}),
+    {ok, Keys} = Riak:get_index(Bucket, {eq, IndexId, key_to_bin(IndexVal)}),
     F = fun(Key, Acc) ->
                 case Riak:get(Bucket, Key, []) of
                     {ok, O} -> [riak_object:get_value(O) | Acc];

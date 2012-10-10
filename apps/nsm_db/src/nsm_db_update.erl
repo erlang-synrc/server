@@ -3,13 +3,15 @@
 -include("user.hrl").
 -include("feed.hrl").
 -include("nsm_bg.hrl").
+-include("affiliates.hrl").
 
 -export([transform_user/0,
          transform_group/0,
          delete_feeds/0,
          add_subscription_exchanges/0,
          fix_subscription_exchanges/0,
-         delete_worker_queues/0]).
+         delete_worker_queues/0,
+         clean_affiliates_buckets/0]).
 
 
 transform_user() ->
@@ -96,6 +98,22 @@ group_rk(Group) ->
      nsm_mq_lib:list_to_key([feed, group, Group, '*', '*', '*']).
 
 
+%% Clean old format records. 10 Oct 2012
+clean_affiliates_buckets() ->
+    Rels = nsm_db:all(affiliates_rels),
+    [nsm_db:delete(affiliates_rels, term_to_binary(UserId)) || #affiliates_rels{user = UserId} <- Rels],
 
+    Contracts = nsm_db:all(affiliates_contracts),
+    [nsm_db:delete(affiliates_contracts, term_to_binary(Id)) || #affiliates_contracts{id = Id} <- Contracts],
 
+    ContractTypes = nsm_db:all(affiliates_contract_types),
+    [nsm_db:delete(affiliates_contract_types, term_to_binary(Id)) || #affiliates_contract_types{id = Id} <- ContractTypes],
+
+    Purchases = nsm_db:all(affiliates_purchases),
+    [nsm_db:delete(affiliates_purchases, term_to_binary({ContractId, UserId})) ||
+       #affiliates_purchases{contract_id = ContractId, user_id = UserId} <- Purchases],
+
+    Perms = nsm_db:all(affiliates_look_perms),
+    [nsm_db:delete(affiliates_look_perms, term_to_binary(UserId)) || #affiliates_look_perms{user_id = UserId} <- Perms],
+    ok.
 

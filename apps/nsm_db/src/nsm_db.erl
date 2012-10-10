@@ -38,7 +38,8 @@
 
 -export([start/0, stop/0, initialize/0, delete/0, init_indexes/0,
          init_db/0, put/1, count/1, get/2, get/3, feed_create/0, create_team/1,
-         all/1, all_by_index/3, next_id/1, next_id/2, delete/1, delete/2,
+         all/1, all_by_index/3, next_id/1, next_id/2, delete/1, delete/2, delete_by_index/3,
+         put_if_none_match/1, update/2, get_for_update/2,
          delete_browser_counter_older_than/1,browser_counter_by_game/1,
          unused_invites/0, get_word/1, acl_add_entry/3, acl_entries/1,
          feed_add_entry/5, feed_add_entry/7, feed_add_direct_message/6,
@@ -86,41 +87,44 @@ init_db() ->
             add_translations(),
             pointing_rules:setup(),
             add_configs(),
-            add_affiliates(),
-            add_contracts(),
-            add_purchases();
+            case is_production() of
+                false ->
+                    add_affiliates(),
+                    add_contracts(),
+                    add_purchases();
+                true ->
+                    do_nothing
+            end;
        {ok,_} -> ignore
+    end.
+
+is_production() ->
+    case nsm_db:get(config, "debug/production", false) of
+        {ok, true} -> true;
+        _ -> false
     end.
 
 add_affiliates() ->
 %    ?INFO("~w:add_affiliates/0 Started", [?MODULE]),
-    Cl=nsm_affiliates:start_client(),
-    nsm_affiliates:create_affiliate(Cl, "kunthar"),
-    nsm_affiliates:create_affiliate(Cl, "tour1"),
-    nsm_affiliates:create_affiliate(Cl, "maxim"),
-    nsm_affiliates:reg_follower(Cl, "demo1", "kunthar", 1),
-    nsm_affiliates:reg_follower(Cl, "demo2", "kunthar", 1),
-    nsm_affiliates:reg_follower(Cl, "kate", "kunthar", 2),
-%    nsm_affiliates:reg_follower(Cl, "tour2", "tour1", 1),
-%    nsm_affiliates:reg_follower(Cl, "tour3", "tour1", 1),
-%    nsm_affiliates:reg_follower(Cl, "tour4", "tour1", 2),
-%    nsm_affiliates:reg_follower(Cl, "tour5", "tour1", 2),
-%    nsm_affiliates:reg_follower(Cl, "tour6", "tour1", 1),
-%    nsm_affiliates:reg_follower(Cl, "tour7", "tour1", 3),
-    nsm_affiliates:stop_client(Cl),
+    nsm_affiliates:create_affiliate("kunthar"),
+    nsm_affiliates:create_affiliate("alice"),
+    nsm_affiliates:create_affiliate("maxim"),
+    nsm_affiliates:reg_follower("demo1", "kunthar", 1),
+    nsm_affiliates:reg_follower("demo2", "kunthar", 1),
+    nsm_affiliates:reg_follower("kate", "kunthar", 2),
 %    ?INFO("~w:add_affiliates/0 Finished", [?MODULE]),
     ok.
 
 add_contracts() ->
-%    ?INFO("~w:add_contracts/0 Started", [?MODULE]),
+   ?INFO("~w:add_contracts/0 Started", [?MODULE]),
     {CurDate, _} = calendar:now_to_local_time(now()),
     CurDateDays = calendar:date_to_gregorian_days(CurDate),
     StartDate = calendar:gregorian_days_to_date(CurDateDays - 15),
     FinishDate = calendar:gregorian_days_to_date(CurDateDays + 15),
-%    ok = nsm_affiliates:create_contract("tour1", "Test contract", % THIS BROKES CONSISTENCY ON BOOT
-%                                         StartDate, FinishDate,
-%                                         2, 10.2),
-%    ?INFO("~w:add_contracts/0 Finished", [?MODULE]),
+    ok = nsm_affiliates:create_contract("kunthar", "Test contract", % THIS BROKES CONSISTENCY ON BOOT
+                                         StartDate, FinishDate,
+                                         2, 10.2),
+   ?INFO("~w:add_contracts/0 Finished", [?MODULE]),
     ok.
 
 add_purchases() ->
@@ -367,6 +371,19 @@ put(Record) ->
     DBA=?DBA,
     DBA:put(Record).
 
+
+put_if_none_match(Record) ->
+    ?INFO("db:put_if_none_match ~p",[Record]),
+    DBA=?DBA,
+    DBA:put_if_none_match(Record).
+
+% update
+
+update(Record, Meta) ->
+    ?INFO("db:update ~p",[Record]),
+    DBA=?DBA,
+    DBA:update(Record, Meta).
+
 % get
 
 -spec get(atom(), term()) -> {ok, tuple()} | {error, not_found | duplicated}.
@@ -378,6 +395,11 @@ get(RecordName, Key) ->
         C;
     A -> A
     end.
+
+get_for_update(RecordName, Key) ->
+    ?INFO("db:get_for_update ~p,", [{RecordName, Key}]),
+    DBA=?DBA,
+    DBA:get_for_update(RecordName, Key).
 
 get(RecordName, Key, Default) ->
     DBA=?DBA,
@@ -391,6 +413,7 @@ get(RecordName, Key, Default) ->
 	    {ok,Default}
     end.
 
+
 get_word(Word) -> get(ut_word,Word).
 get_translation({Lang,Word}) -> DBA=?DBA, DBA:get_translation({Lang,Word}).
 
@@ -398,7 +421,7 @@ get_translation({Lang,Word}) -> DBA=?DBA, DBA:get_translation({Lang,Word}).
 
 delete(Keys) -> DBA=?DBA, DBA:delete(Keys).
 delete(Tab, Key) -> ?INFO("db:delete ~p:~p",[Tab, Key]), DBA=?DBA,DBA:delete(Tab, Key).
-
+delete_by_index(Tab, IndexId, IndexVal) -> DBA=?DBA,DBA:delete(Tab, IndexId, IndexVal).
 % select
 
 multi_select(RecordName, Keys) -> DBA=?DBA,DBA:multi_select(RecordName, Keys).
@@ -584,22 +607,22 @@ load_db(Path) ->
         false -> skip;
         true ->
             case element(1, E) of
-                affiliates_rels -> %%%%%%%%%%%%%%%%%%%% affiliates
-                    ?INFO("AR: ~p",[E]),
-                    nsm_affiliates:write_affiliate_rel_record(Handler, E);
-                affiliates_contracts -> 
-                    ?INFO("AC: ~p",[E]),
-                    nsm_affiliates:write_contract_record(Handler, E);
-                affiliates_purchases -> 
-                    ?INFO("AP: ~p",[E]),
-                    UserId = E#affiliates_purchases.user_id,
-                    ContractId = E#affiliates_purchases.contract_id,
-                    Index = [{"owner_bin", term_to_binary(UserId)}, {"contract_bin", term_to_binary(ContractId)}],
-                    Object = nsm_affiliates:new_object(?PURCHASES_BUCKET, term_to_binary({ContractId, UserId}), E, Index),
-                    ok = nsm_affiliates:write_object(Handler, Object, [if_none_match]);
-                affiliates_contract_types -> 
-                    ?INFO("AfCT: ~p",[E]),
-                    nsm_affiliates:write_contract_type_record(Handler, E);
+%%                 affiliates_rels -> %%%%%%%%%%%%%%%%%%%% affiliates
+%%                     ?INFO("AR: ~p",[E]),
+%%                     nsm_affiliates:write_affiliate_rel_record(Handler, E);
+%%                 affiliates_contracts -> 
+%%                     ?INFO("AC: ~p",[E]),
+%%                     nsm_affiliates:write_contract_record(Handler, E);
+%%                 affiliates_purchases -> 
+%%                     ?INFO("AP: ~p",[E]),
+%%                     UserId = E#affiliates_purchases.user_id,
+%%                     ContractId = E#affiliates_purchases.contract_id,
+%%                     Index = [{"owner_bin", term_to_binary(UserId)}, {"contract_bin", term_to_binary(ContractId)}],
+%%                     Object = nsm_affiliates:new_object(?PURCHASES_BUCKET, term_to_binary({ContractId, UserId}), E, Index),
+%%                     ok = nsm_affiliates:write_object(Handler, Object, [if_none_match]);
+%%                 affiliates_contract_types -> 
+%%                     ?INFO("AfCT: ~p",[E]),
+%%                     nsm_affiliates:write_contract_type_record(Handler, E);
                 gifts_categories -> %%%%%%%%%%%%%%%%%%%% gifts 
                     ?INFO("GiftCat: ~p",[E]),
                     Id = E#gifts_category.id,
