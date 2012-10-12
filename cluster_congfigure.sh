@@ -12,6 +12,19 @@ cp prod/$NODE/web.vm.args rels/web/node/etc/vm.args
 
 cp prod/$NODE/webmachine.config rels/web/node/etc/webmachine.config
 
+cp prod/$NODE/app.snmp.agent.conf rels/app/node/etc/snmp/agent/agent.conf
+cp prod/$NODE/app.snmp.agent.conf rels/app/node/etc/snmp/agent/standard.conf
+cp prod/$NODE/app.snmp.agent.conf rels/app/node/etc/snmp/agent/usm.conf
+
+cp prod/$NODE/game.snmp.agent.conf rels/game/node/etc/snmp/agent/agent.conf
+cp prod/$NODE/game.snmp.agent.conf rels/game/node/etc/snmp/agent/standard.conf
+cp prod/$NODE/game.snmp.agent.conf rels/game/node/etc/snmp/agent/usm.conf
+
+cp prod/$NODE/web.snmp.agent.conf rels/web/node/etc/snmp/agent/agent.conf
+cp prod/$NODE/web.snmp.agent.conf rels/web/node/etc/snmp/agent/standard.conf
+cp prod/$NODE/web.snmp.agent.conf rels/web/node/etc/snmp/agent/usm.conf
+
+
 FILES=rels/web/node/lib/nsw_srv-1/priv/static/files
 rm -rf $FILES
 ln -s /mnt/glusterfs/kakafiles $FILES
