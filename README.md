@@ -81,7 +81,7 @@ and put its libraries (listed below) to /mnt/glusterfs/apps/riak_bin
  - riak_api
  - riak_kv
  - poolboy
- - like
+ - luke
  - erlang_js
  - webmachine
  - bitcask
