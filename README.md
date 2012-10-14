@@ -68,7 +68,33 @@ Make sure ts is in /etc/profile also. Create this dir and subdirs for later usag
 
 ### RIAK
 
-Install Riak version 1.2 from sources for Mac users:
+ Ubuntu users:
+
+For Ubuntu users please install riak from prebuilt binaries from Basho site.Then remove riak from autostart 
+and put its libraries (listed below) to /mnt/glusterfs/apps/riak_bin
+
+ - riak_core
+ - riak_sysmon
+ - riak_pipe
+ - riak_pb
+ - riak_control
+ - riak_api
+ - riak_kv
+ - poolboy
+ - like
+ - erlang_js
+ - webmachine
+ - bitcask
+ - folsom
+ - sext
+ - eleveldb
+ - protobuffs
+ - mochiweb
+ - ebloom
+
+ Mac Users:
+
+Install Riak version 1.2 from sources:
 
     $ cd /mnt/glusterfs/apps
     $ git clone https://github.com/basho/riak.git
@@ -80,11 +106,7 @@ Symlink required riak libraries to your erlang libs dir:
     $ ln -s /mnt/glusterfs/apps/riak/rel/riak/lib/ \
          {riak_sysmon,riak_pipe,riak_kv,riak_core,poolboy, \
           luke,erlang_js,riak_pb,riak_control,webmachine,bitcask, \
-          folsom,riak_api,sext,eleveldb,protobuffs}-* ~/erl-r14/lib/
-
-For Ubuntu users please install riak from prebuilt binaries from Basho site.
-Then remove riak from autostart and put its libraries (given in previous example)
-to /mnt/glusterfs/apps/riak_bin
+          folsom,riak_api,sext,eleveldb,protobuffs,ebloom,mochiweb}-* ~/erl-r14/lib/
 
 ### RABBIT-MQ
 
