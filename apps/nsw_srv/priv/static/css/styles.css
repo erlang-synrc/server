@@ -4040,10 +4040,8 @@ footer .lang img {
 }
 /* popup-2 */
 .popup-2 {
-/*	position:relative;
-	width:730px;*/
-    position:absolute;
-    z-index: 100000005 !important;
+	position:relative;
+	width:730px;
 }
 
 .login .popup-2 {
@@ -4058,6 +4056,9 @@ footer .lang img {
 	-webkit-border-radius:5px;
 	border-radius:5px;
 	background:url(../images/bg-popup.png);
+
+	position:relative;
+    z-index:1000001 ! important;
 }
 .popup-2 .frame {
 	background:#f8f8f8;
