@@ -149,6 +149,11 @@ process_delivery({_, _FeedId, FeedOwner, _},
         _ ->
             ok
     end;
+
+%% like
+process_delivery(_, ["likes", "user", User, "add_like"], {FeedId, EntryId}) ->
+    ?INFO(" +++ Like comet delivery!");
+
 process_delivery(Info, Route, Message) -> % just to avoid nevedomaya yebanaya huynya
     ?WARNING("Unexpected delivery: ~p ~p ~p", [Info, Route, Message]).
 

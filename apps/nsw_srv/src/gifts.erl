@@ -168,7 +168,7 @@ event({show_details, Description, ImageUrl, Id}) ->
             #grid_clear{}
         ]}
     ],    
-    wf:update(simple_panel, webutils:lightbox_panel_template(simple_lightbox, Body)),
+    wf:update(simple_panel, webutils:lightbox_panel_template(gift_lightbox, Body, hide_details)),
     wf:wire(simple_lightbox, #show{});
 
 event(hide_details) ->

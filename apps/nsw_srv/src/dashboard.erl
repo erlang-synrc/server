@@ -457,14 +457,12 @@ inner_event({like_entry, E, PanelId, LikeBtnId}, User) ->
     Fid = UserInfo#user.feed,
     nsx_util_notification:notify(["likes", "user", User, "add_like"], {Fid, Eid}),
     
-    ?INFO("LikeBtnId", [LikeBtnId]),
+    wf:replace(LikeBtnId, []);
 
-    wf:replace(LikeBtnId, []),
-    timer:sleep(300),   % this is silly
-    {ok, OrigEntry} = nsm_db:get(entry, {Eid, Fid}),
-    VEntry = #view_entry{entry=OrigEntry},
-    wf:replace(PanelId, VEntry),
-    wf:wire("upd_scrollers()");
+%    {ok, OrigEntry} = nsm_db:get(entry, {Eid, Fid}),
+%    VEntry = #view_entry{entry=OrigEntry},
+%    wf:replace(PanelId, VEntry),
+%    wf:wire("upd_scrollers()");
 
 inner_event({share_entry, Entry}, User) ->
    {Type, _Owner} = case wf:state(feed_owner) of

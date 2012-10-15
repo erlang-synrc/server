@@ -473,14 +473,23 @@ lightbox_panel_template(LightboxId, PanelBody, undefined) ->
     DefaultAction = site_utils:js_close_on_click(wf:to_list(LightboxId)),
     lightbox_panel_template(LightboxId, PanelBody, DefaultAction);
 lightbox_panel_template(LightboxId, PanelBody, CloseActions) ->
-%    Class = case LightboxId of splash_lightbox -> "popup-2"; _ -> "popup-2 popup-3" end,
-    Class = "popup-2",
-    #panel{class = Class, 
-        body = [
-            #panel{class = in, body = #panel{class = frame, body = PanelBody}},
-		    #link{class = "btn-close", text = "close", actions = CloseActions}
-        ]
-    }.
+    Class = case LightboxId of splash_lightbox -> "popup-2"; _ -> "popup-2 popup-3" end,
+    case LightboxId of 
+        gift_lightbox ->
+            #panel{class = Class, 
+                body = [
+                    #panel{class = in, style = "max-height:600px;", body = #panel{class = frame, style = "max-height:600px;", body = PanelBody}},
+		            #link{class = "btn-close", text = "close", postback = CloseActions} % ! this is not an action
+                ]
+            };
+        _ ->
+            #panel{class = Class, 
+                body = [
+                    #panel{class = in, body = #panel{class = frame, body = PanelBody}},
+		            #link{class = "btn-close", text = "close", actions = CloseActions}
+                ]
+            }
+    end.
 
 -spec table_info(proplist()) -> [record(p)].
 table_info(Table) ->
