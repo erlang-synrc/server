@@ -67,7 +67,10 @@ main_notauthorized() ->
 	    wf:wire("$('.btn-light').click(function(){"++S++";return false;});");
 	_User -> ""
     end,
-    #template { file=code:priv_dir(nsw_srv)++"/templates/"++site_utils:detect_language()++"/main.html"}.
+    [
+        #template { file=code:priv_dir(nsw_srv)++"/templates/"++site_utils:detect_language()++"/main.html"},
+        #lightbox{id=simple_lightbox, body=#panel{id=simple_panel, body=[]}, style="display: none;"}    % z-index fix test
+    ].
 
 event(show_register) -> 
     wf:redirect(?_U("/login/register"));
