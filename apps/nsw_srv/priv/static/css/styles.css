@@ -4062,9 +4062,9 @@ footer .lang img {
 	-moz-border-radius:3px;
 	-webkit-border-radius:3px;
 	border-radius:3px;
-	overflow:hidden;
 	padding:35px 10px 33px 30px;
 	position:relative;
+	overflow:auto;
 }
 .popup-2 .btn-close {
 	width:29px;
