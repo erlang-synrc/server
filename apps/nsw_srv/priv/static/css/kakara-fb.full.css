@@ -4040,8 +4040,10 @@ footer .lang img {
 }
 /* popup-2 */
 .popup-2 {
-	position:relative;
-	width:730px;
+/*	position:relative;
+	width:730px;*/
+    position:absolute;
+    z-index: 100000005 !important;
 }
 
 .login .popup-2 {
