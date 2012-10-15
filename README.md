@@ -112,6 +112,9 @@ Symlink required riak libraries to your erlang libs dir:
           luke,erlang_js,riak_pb,riak_control,webmachine,bitcask, \
           folsom,riak_api,sext,eleveldb,protobuffs,ebloom,mochiweb}-* ~/erl-r14/lib/
 
+ Required files for db to be initialized properly:
+Create folder /home/kakauser/tmp/kaka. And copy files from ~/kakauser/tmp/kaka on srv1.kakaranet.com or srv2.kakaranet.com to this folder.
+
 ### RABBIT-MQ
 
 For Mac users please build RabbitMQ from sources:
