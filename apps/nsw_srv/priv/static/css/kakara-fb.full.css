@@ -4056,9 +4056,6 @@ footer .lang img {
 	-webkit-border-radius:5px;
 	border-radius:5px;
 	background:url(/images/bg-popup.png?jcb=1349856288);
-
-	position:relative;
-    z-index:1000001 ! important;
 }
 .popup-2 .frame {
 	background:#f8f8f8;
