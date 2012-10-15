@@ -310,7 +310,7 @@ splash_lightbox() ->
     PanelBody = #panel{class = cols, body = [ColLeft, ColRight]},
     LightboxBody = webutils:lightbox_panel_template(splash_lightbox, PanelBody),
 
-    #lightbox{id = splash_lightbox, class = "splash-lightbox", style = "display: block;",
+    #lightbox{id = splash_lightbox, class = "splash-lightbox", style = "display: block; position: absolute;",
         body = LightboxBody}.
 
 
