@@ -473,7 +473,8 @@ lightbox_panel_template(LightboxId, PanelBody, undefined) ->
     DefaultAction = site_utils:js_close_on_click(wf:to_list(LightboxId)),
     lightbox_panel_template(LightboxId, PanelBody, DefaultAction);
 lightbox_panel_template(LightboxId, PanelBody, CloseActions) ->
-    Class = case LightboxId of splash_lightbox -> "popup-2"; _ -> "popup-2 popup-3" end,
+%    Class = case LightboxId of splash_lightbox -> "popup-2"; _ -> "popup-2 popup-3" end,
+    Class = "popup-2",
     #panel{class = Class, 
         body = [
             #panel{class = in, body = #panel{class = frame, body = PanelBody}},
