@@ -60,7 +60,11 @@ And the kerl procedure is following:
     $ ./kerl install r15b02 ~/apps/erlang-R15B02
     $ . ~/apps/erlang-R15B02/activate
 
-Make sure ts is in /etc/profile also. Create this dir and subdirs for later usage:
+Add folloowing lines to /etc/profile ({username} - your name):
+    PATH=$PATH:/home/{username}/apps/erlang-R15B02/bin
+    . /home/{username}/apps/erlang-R15B02/activate
+
+Create this dir and subdirs for later usage:
 
     $ mkdir -p /mnt/glusterfs/
     $ mkdir -p /mnt/glusterfs/apps

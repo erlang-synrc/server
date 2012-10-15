@@ -329,10 +329,12 @@ add_sample_users() ->
         false -> nsm_users:subscr_user(Me#user.username, Her#user.username)
     end || Her <- UserList] || Me <- UserList],
 
-    {ok, G} = nsm_gifts_vendor:get_gifts(1),
-    nsm_gifts_tools:dumb_store(G),
-
-    ok.
+    case nsm_gifts_vendor:get_gifts(1) of 
+	{ok, G} -> 
+	    nsm_gifts_tools:dumb_store(G), 
+	    ok;
+        {error, not_found} -> ok
+    end.
 
 add_sample_packages() -> nsm_membership_packages:add_sample_data().
 version() -> ?INFO("version: ~p", [?VERSION]).
