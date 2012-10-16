@@ -159,35 +159,23 @@ entry_element(E, Comments, Avatar, {MediaThumb, MediaLists0}, _TargetMedia, Anch
             entry_element_usual(E, Comments, Avatar, {MediaThumb, MediaLists0}, _TargetMedia, Anchor)
     end.
 
-entry_element_usual(E, Comments, Avatar, {MediaThumb, MediaLists0}, _TargetMedia, Anchor) ->
-    TempId = E#entry.entry_id,
+append_once(To, []) ->
+    To;
+append_once(To, From) ->
+    case lists:member(hd(From), To) of 
+        false -> append_once(To ++ [hd(From)], tl(From));
+        true -> append_once(To, tl(From))
+    end.
 
-    AttachmentBox = wf:temp_id(),
+like_string_and_button_bool(E, FeedOwner) ->
+    like_string_and_button_bool(E, FeedOwner, []).
 
-    LocalTime = calendar:now_to_local_time(E#entry.created_time),
-    Time = site_utils:feed_time_tuple(LocalTime),
-
-    Events = [
-        #event {type=mouseover,target=remove, actions=#show {}},
-        #event {type=mouseout,target=remove, actions=#hide {}}
-    ],
-    _ShowAttachment = MediaLists0 /= [],
-    MoreAttachment = length(MediaLists0) > 3,
-
-    _ShowMorePostback = wf_event:serialize_event_context({show_more_att, AttachmentBox, MediaLists0}, Anchor, undefined, ?MODULE),
-
-    _MediaLists = case MoreAttachment of
-        true ->
-            lists:sublist(MediaLists0, 3);
-        false ->
-            MediaLists0
-    end,
-
-    {LikesStr, LikeBtnShow} = case feed:get_entries_likes(E#entry.entry_id) of
+like_string_and_button_bool(E, FeedOwner, Plus) ->
+    case append_once(feed:get_entries_likes(E#entry.entry_id), Plus) of
         []     -> {"", true};
         [#one_like{user_id=Uid}|[]] ->
             {
-                #panel{class="like-box", body = case Uid == wf:user() of
+                #panel{class="like-box", body = case Uid == FeedOwner of
                     true ->
                         [
                             "<p>",
@@ -203,13 +191,13 @@ entry_element_usual(E, Comments, Avatar, {MediaThumb, MediaLists0}, _TargetMedia
                             "</p>"
                         ]
                 end},
-                Uid =/= wf:user()
+                Uid =/= FeedOwner
             };
         OL when is_list(OL) ->
             L = lists:reverse(OL),
             #one_like{user_id=LastUid} = lists:last(L),
-            LeftPart = kakaadmin:nitrojoin([    %TODO once again, this is a chaos, I have to add a module for this stuff
-                    case Uid == wf:user() of
+            LeftPart = kakaadmin:nitrojoin([
+                    case Uid == FeedOwner of
                         true ->
                             #link{text=?_T("You"), url=site_utils:user_link(Uid)};
                         false ->
@@ -235,7 +223,7 @@ entry_element_usual(E, Comments, Avatar, {MediaThumb, MediaLists0}, _TargetMedia
                         LeftPart
                 end,
                 " ", ?_T("and"), " ",
-                case LastUid == wf:user() of
+                case LastUid == FeedOwner of
                     true ->
                         #link{text=?_T("You"), url=site_utils:user_link(LastUid)};
                     false ->
@@ -245,10 +233,36 @@ entry_element_usual(E, Comments, Avatar, {MediaThumb, MediaLists0}, _TargetMedia
             ],
             {
                 #panel{class="like-box", body=["<p>", Lstr, "</p>"]}, 
-                lists:member(wf:user(), [Uid1 || #one_like{user_id=Uid1} <- L]) =:= false
+                lists:member(FeedOwner, [Uid1 || #one_like{user_id=Uid1} <- L]) =:= false
             };
         _  -> {"", true}
+    end.
+
+entry_element_usual(E, Comments, Avatar, {MediaThumb, MediaLists0}, _TargetMedia, Anchor) ->
+    TempId = E#entry.entry_id,
+
+    AttachmentBox = wf:temp_id(),
+
+    LocalTime = calendar:now_to_local_time(E#entry.created_time),
+    Time = site_utils:feed_time_tuple(LocalTime),
+
+    Events = [
+        #event {type=mouseover,target=remove, actions=#show {}},
+        #event {type=mouseout,target=remove, actions=#hide {}}
+    ],
+    _ShowAttachment = MediaLists0 /= [],
+    MoreAttachment = length(MediaLists0) > 3,
+
+    _ShowMorePostback = wf_event:serialize_event_context({show_more_att, AttachmentBox, MediaLists0}, Anchor, undefined, ?MODULE),
+
+    _MediaLists = case MoreAttachment of
+        true ->
+            lists:sublist(MediaLists0, 3);
+        false ->
+            MediaLists0
     end,
+
+    {LikeBox, LikeBtnShow} = like_string_and_button_bool(E, wf:user()),
 
     StO = "<strong class=\"entry-h1\"><a href=\"~s\">~s</a>",
     StC = "</strong>",
@@ -320,7 +334,8 @@ entry_element_usual(E, Comments, Avatar, {MediaThumb, MediaLists0}, _TargetMedia
     NewCommentBoxId = wf:temp_id(),
     NewCommentTBId  = comment_textbox_id(E#entry.entry_id),
     ViewC           = Comments == [],
-    LikeBtnId = wf:temp_id(),
+    LikeBtnId       = wf:temp_id(),
+    LikePanelId     = like_panel_id(E#entry.entry_id),
     [
         #panel{class="post", id=TempId, actions=Events, body=[
             #panel{class="entry-avatar", body=[
@@ -376,7 +391,7 @@ entry_element_usual(E, Comments, Avatar, {MediaThumb, MediaLists0}, _TargetMedia
                         }
                     ]}
                 ]},
-                LikesStr,
+                #panel{id=LikePanelId, body=[LikeBox]},
                 #panel{body=MediaThumb},
                 #grid_clear{},
                 comments_element(E#entry.entry_id, Comments, Anchor, Avatar, NewCommentBoxId, 
@@ -463,6 +478,8 @@ comment_textbox_id(EntryId) ->
     EntryId++"_comment_textbox".
 entry_body_id(EntryId)->
     EntryId++"_entry_body_id".
+like_panel_id(EntryId) ->
+    EntryId++"_like_panel".
 entry_body_label_id(EntryId)->
     element_inplace_textbox1:label_id(entry_body_id(EntryId)).
 

@@ -151,8 +151,12 @@ process_delivery({_, _FeedId, FeedOwner, _},
     end;
 
 %% like
-process_delivery(_, ["likes", "user", User, "add_like"], {FeedId, EntryId}) ->
-    ?INFO(" +++ Like comet delivery!");
+process_delivery({_, _, FeedOwner, _}, ["likes", "user", User, "add_like"], {FeedId, EntryId}) ->
+    LikePanelId = element_view_entry:like_panel_id(EntryId),
+    {ok, E} = nsm_db:entry_by_id({EntryId, FeedId}),
+    {LikeBox, _} = element_view_entry:like_string_and_button_bool(E, FeedOwner, [#one_like{user_id=User, entry_id=EntryId, feed_id=FeedId}]),
+    wf:update(LikePanelId, LikeBox),
+    wf:flush();
 
 process_delivery(Info, Route, Message) -> % just to avoid nevedomaya yebanaya huynya
     ?WARNING("Unexpected delivery: ~p ~p ~p", [Info, Route, Message]).
