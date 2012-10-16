@@ -13,16 +13,16 @@ cp prod/$NODE/web.vm.args rels/web/node/etc/vm.args
 cp prod/$NODE/webmachine.config rels/web/node/etc/webmachine.config
 
 cp prod/$NODE/app.snmp.agent.conf rels/app/node/etc/snmp/agent/agent.conf
-cp prod/$NODE/app.snmp.agent.conf rels/app/node/etc/snmp/agent/standard.conf
-cp prod/$NODE/app.snmp.agent.conf rels/app/node/etc/snmp/agent/usm.conf
+cp prod/$NODE/app.snmp.standard.conf rels/app/node/etc/snmp/agent/standard.conf
+cp prod/$NODE/app.snmp.usm.conf rels/app/node/etc/snmp/agent/usm.conf
 
 cp prod/$NODE/game.snmp.agent.conf rels/game/node/etc/snmp/agent/agent.conf
-cp prod/$NODE/game.snmp.agent.conf rels/game/node/etc/snmp/agent/standard.conf
-cp prod/$NODE/game.snmp.agent.conf rels/game/node/etc/snmp/agent/usm.conf
+cp prod/$NODE/game.snmp.standard.conf rels/game/node/etc/snmp/agent/standard.conf
+cp prod/$NODE/game.snmp.usm.conf rels/game/node/etc/snmp/agent/usm.conf
 
 cp prod/$NODE/web.snmp.agent.conf rels/web/node/etc/snmp/agent/agent.conf
-cp prod/$NODE/web.snmp.agent.conf rels/web/node/etc/snmp/agent/standard.conf
-cp prod/$NODE/web.snmp.agent.conf rels/web/node/etc/snmp/agent/usm.conf
+cp prod/$NODE/web.snmp.standard.conf rels/web/node/etc/snmp/agent/standard.conf
+cp prod/$NODE/web.snmp.usm.conf rels/web/node/etc/snmp/agent/usm.conf
 
 
 FILES=rels/web/node/lib/nsw_srv-1/priv/static/files
