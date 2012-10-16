@@ -89,8 +89,8 @@ start_cowboy(HttpOpts) ->
     {ok, BindAddress} = application:get_env(webmachine, bind_address),
     {ok, ParsedBindAddress} = inet_parse:address(BindAddress),
     {ok, Port} = application:get_env(webmachine, port),
-    cowboy:start_listener(http, 1000, cowboy_tcp_transport, [{port, Port}, {ip, ParsedBindAddress}], cowboy_http_protocol, HttpOpts),
-    cowboy:start_listener(https, 1000, cowboy_ssl_transport, nsx_opt:get_env(nsw_srv, ssl, []) ++ [{ip, ParsedBindAddress}], cowboy_http_protocol, HttpOpts),
+    cowboy:start_listener(http, 10, cowboy_tcp_transport, [{port, Port}, {ip, ParsedBindAddress}], cowboy_http_protocol, HttpOpts),
+    cowboy:start_listener(https, 10, cowboy_ssl_transport, nsx_opt:get_env(nsw_srv, ssl, []) ++ [{ip, ParsedBindAddress}], cowboy_http_protocol, HttpOpts),
     ?INFO("Starting Cowboy Server on ~s:~p~n", [BindAddress, Port]).
 
 init([]) ->
@@ -115,7 +115,7 @@ init([]) ->
 
     application:start(nitrogen),
 
-    spawn(nsw_srv_sup,start_cowboy,[HttpOpts]),
+    start_cowboy(HttpOpts),
 
     gettext_server:start(),
     gettext:change_gettext_dir(code:priv_dir(nsw_srv)),
