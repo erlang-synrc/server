@@ -49,7 +49,7 @@ lightboxes() ->
     wf:wire(page, #event{type=keydown, keycode=27, actions= [ #hide{target=X} || X <- Lightboxes ]}),
     [
         show_splash(),
-        #lightbox{id=simple_lightbox, body=#panel{id=simple_panel, body=[]}, style="display: none;"}
+        #lightbox{id=simple_lightbox, body=#panel{id=simple_panel, body=[]}, style="display: none; position: relative;"}
     ].
 
 
