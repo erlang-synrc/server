@@ -91,8 +91,7 @@ account_menu() ->
 		case R = nsm_users:get_user(wf:user()) of 
 		    {error,notfound} -> % wrong user_id
 			event(logout);
-		    _ -> ok
-		end,
+		    UserFound -> 
 		{ok, User} = R,
 		Submenus = #list{body=[#listitem{body=#link{url=Url,text=Text}} || {Url,Text}
 									  <- [{?_U("/profile"), ?_T("My Profile")},
@@ -118,8 +117,10 @@ account_menu() ->
                 #listitem{class=quota, body=[ #link{text=lists:concat([?_T("Quota"), " : ",Quota])}]},
                 #listitem{class=kakus, body=[ #link{text=lists:concat([?_T("Kakush")," : ",Kakush])}]},
                 #listitem{body=#link{text=?_T("Logout"), postback=logout}}
-            ]};
-	    _ ->
+            ]}
+           end;
+
+	    UserLoggedIn ->
 		[
         case site_utils:detect_language() of
             "en" -> #link{class=al, url=?_U("/login/facebook"), body=#image{image="/images/img-01.png"}};

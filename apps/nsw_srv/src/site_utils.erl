@@ -74,26 +74,26 @@ detect_language() ->
             L = [ %%FIX: add user's profile check
                   fun() -> wf:session(lang) end,
                   fun() -> wf:cookie("lang") end,
-                  fun() ->
-                          Request = wf_context:request_bridge(),
-                          Ip = Request:peer_ip(),
-                          case egeoip:lookup(Ip) of
-                              {ok, R} ->
-                                  Lang = egeoip:get(R, country_code),
-                                  case lists:member(Lang, uri_translator:languages()) of
-                                      true ->
-                                          Lang;
-                                      false ->
-                                          undefined
-                                  end;
-                              _ ->
-                                  undefined
-                          end
-                  end,
-                  fun() -> %% detecting language from url if nothing from above can tell you language to use
-                          RequestBridge = wf_context:request_bridge(),
-                          uri_translator:language(RequestBridge:path())
-                  end,
+%                  fun() ->
+%                          Request = wf_context:request_bridge(),
+%                          Ip = Request:peer_ip(),
+%                          case egeoip:lookup(Ip) of
+%                              {ok, R} ->
+%                                  Lang = egeoip:get(R, country_code),
+%                                  case lists:member(Lang, uri_translator:languages()) of
+%                                      true ->
+%                                          Lang;
+%                                      false ->
+%                                          undefined
+%                                  end;
+%                              _ ->
+%                                  undefined
+%                          end
+%                  end,
+%                  fun() -> %% detecting language from url if nothing from above can tell you language to use
+%                          RequestBridge = wf_context:request_bridge(),
+%                          uri_translator:language(RequestBridge:path())
+%                  end,
                   fun() -> "tr" end ],
             V = try_f(L),
             %% catch added for calls from handlers, when state can
