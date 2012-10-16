@@ -475,7 +475,7 @@ lightbox_panel_template(LightboxId, PanelBody, CloseActions) ->
     Class = case LightboxId of splash_lightbox -> "popup-2"; _ -> "popup-2 popup-3" end,
     case LightboxId of 
         gift_lightbox ->
-            #panel{class = Class, style = "position: absolute;",
+            #panel{class = Class, 
                 body = [
                     #panel{class = in, style = "max-height:600px;", body = #panel{class = frame, style = "max-height:600px;", body = PanelBody}},
 		            #link{class = "btn-close", text = "close", postback = CloseActions} % ! this is not an action
