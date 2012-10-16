@@ -89,6 +89,7 @@ start_cowboy(HttpOpts) ->
     {ok, BindAddress} = application:get_env(webmachine, bind_address),
     {ok, ParsedBindAddress} = inet_parse:address(BindAddress),
     {ok, Port} = application:get_env(webmachine, port),
+    application:start(cowboy),
     cowboy:start_listener(http, 10, cowboy_tcp_transport, [{port, Port}, {ip, ParsedBindAddress}], cowboy_http_protocol, HttpOpts),
     cowboy:start_listener(https, 10, cowboy_ssl_transport, nsx_opt:get_env(nsw_srv, ssl, []) ++ [{ip, ParsedBindAddress}], cowboy_http_protocol, HttpOpts),
     ?INFO("Starting Cowboy Server on ~s:~p~n", [BindAddress, Port]).
@@ -115,8 +116,6 @@ init([]) ->
 
     application:start(nitrogen),
 
-    start_cowboy(HttpOpts),
-
     gettext_server:start(),
     gettext:change_gettext_dir(code:priv_dir(nsw_srv)),
     gettext:recreate_db(),
@@ -126,6 +125,7 @@ init([]) ->
          _ -> create_tables(100)
     end,
 
+    start_cowboy(HttpOpts),
 
     LuckyChild = {nsw_srv_lucky_sup,
                   {nsw_srv_lucky_sup, start_link, []},
