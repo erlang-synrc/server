@@ -5,14 +5,7 @@
 -include("nsm_bg.hrl").
 -include("affiliates.hrl").
 
--export([transform_user/0,
-         transform_group/0,
-         delete_feeds/0,
-         add_subscription_exchanges/0,
-         fix_subscription_exchanges/0,
-         delete_worker_queues/0,
-         clean_affiliates_buckets/0]).
-
+-compile(export_all).
 
 transform_user() ->
     All = nsm_db:all(user),
