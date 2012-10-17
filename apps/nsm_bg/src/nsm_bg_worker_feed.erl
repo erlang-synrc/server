@@ -516,7 +516,7 @@ handle_notice(["subscription", "user", UId, "set_user_game_status"] = Route,
     nsm_users:set_user_game_status(UId, Status),
     {noreply, State};
 
-handle_notice(["subscription", "user", NewUser, "update_user"] = Route,
+handle_notice(["subscription", "user", UId, "update_user"] = Route,
     Message, #state{owner = Owner, type =Type} = State) ->
     ?INFO(" queue_action(~p): update_user: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),
     {NewUser} = Message,

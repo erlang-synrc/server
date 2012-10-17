@@ -216,7 +216,7 @@ get_group_rows(Page) ->
     Offset = (Page - 1) * ?GROUPPERPAGE + 1,
     case wf:q("of") of
         undefined ->
-            All = lists:sort(nsm_groups:get_all_groups()),
+            All = lists:sort(fun(#group{created=T1}, #group{created=T2}) -> T2 =< T1 end, nsm_groups:get_all_groups()),
             {group_row(lists:sublist(All, Offset, ?GROUPPERPAGE)), length(All)};
         UId ->
             case nsm_groups:list_group_per_user_with_count(UId, UId, Offset, ?GROUPPERPAGE) of
@@ -404,6 +404,7 @@ event(create_new_group) ->
                     wf:wire(#alert{text=?_TS("User '$username$' exist!", [{username, GId}]) });
                 {error, _} ->
                     nsx_util_notification:notify(["system", "create_group"], {wf:user(), GId, GName, GDesc, GPublicity}),
+                    wf:wire(#alert{text=?_T("New group created!")}),
                     wf:redirect("")
             end
     end;
