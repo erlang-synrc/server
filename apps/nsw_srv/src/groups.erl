@@ -21,8 +21,6 @@ main() ->
 
 main_authorized() ->
     Tooltip  = wf:q(tooltip),
-    NewGroup = wf:q(create),
-
     if
         Tooltip /= undefined ->
             tooltip_content(Tooltip);
@@ -249,20 +247,24 @@ show_group_ul({#group_member{group = GName}, GroupMembersCount}) ->
     show_group_ul_view(GName, Group#group.description, GroupMembersCount, UserGroups, Group#group.creator =:= wf:user()).
 
 show_group_ul_view(GName, GDesc, GroupMembersCount, UserGroups) -> show_group_ul_view(GName, GDesc, GroupMembersCount, UserGroups, false).
-show_group_ul_view(GName, GDesc, GroupMembersCount, UserGroups, DeleteFlag) ->
-    SUId = wf:temp_id(),
-    SubscribeUnsubscribeLink = case lists:member(GName, UserGroups) of
-        true -> #listitem{id=SUId, body=#link{url="javascript:void(0)", text=?_T("Unsubscribe"), postback={unsubscribe, wf:user(), GName, SUId}}}
-        ;_   -> #listitem{id=SUId, body=#link{url="javascript:void(0)", text=?_T("Subscribe"), postback={subscribe, wf:user(), GName, SUId}}}
+show_group_ul_view(GName, GDesc, GroupMembersCount, _UserGroups, _DeleteFlag) ->
+    RealGroupMembersCount = case GroupMembersCount of
+        {error, notfound} -> 1;
+        _ -> GroupMembersCount
     end,
+%PHASE1
+%    SUId = wf:temp_id(),
+%    SubscribeUnsubscribeLink = case lists:member(GName, UserGroups) of
+%        true -> #listitem{id=SUId, body=#link{url="javascript:void(0)", text=?_T("Unsubscribe"), postback={unsubscribe, wf:user(), GName, SUId}}}
+%        ;_   -> #listitem{id=SUId, body=#link{url="javascript:void(0)", text=?_T("Subscribe"), postback={subscribe, wf:user(), GName, SUId}}}
+%    end,
     #listitem{class="group-item", body=[
         #panel{class="img", body=#link{url=site_utils:group_link(GName),
             body=#image{image=webutils:get_group_avatar(GName, "big"), style="width:96px; height:96px"}}},
         #panel{class="descr", style="overflow:hidden;", body=[
             #link{url=site_utils:group_link(GName), body=#h3{text=GName}},
             io_lib:format("<p>~s</p>", [GDesc]),
-%PHASE1            io_lib:format("<strong class=\"more\"><a href=\"#\">~p ~s</a></strong>", [GroupMembersCount, ?_T("members")])
-            io_lib:format("<p><i>~p ~s</i></p>", [GroupMembersCount, ?_T("members")])
+            io_lib:format("<p><i>~p ~s</i></p>", [RealGroupMembersCount, ?_T("members")])
         ]}
 %PHASE1 no tooltip, as it works in a strange and unobvious way
 %        #panel{class="tooltip-1", body=[
@@ -394,18 +396,23 @@ event(create_new_group) ->
     end,    
     ?INFO("New group: ~p ~p ~p ~p",[GId, GName, GDesc, GPublicity]),
     AllGroups = [G#group.username || G <- nsm_groups:get_all_groups()],
-    case lists:member(GId, AllGroups) of
-        true ->
-            wf:wire(simple_lightbox, #hide{}),
-            wf:wire(#alert{text=?_T("Group with this shortname already exists! Maybe, you should check it out.")});
-        false ->
-            case nsm_users:get_user({username, GId}) of
-                {ok, _} ->
-                    wf:wire(#alert{text=?_TS("User '$username$' exist!", [{username, GId}]) });
-                {error, _} ->
-                    nsx_util_notification:notify(["system", "create_group"], {wf:user(), GId, GName, GDesc, GPublicity}),
-                    wf:wire(#alert{text=?_T("New group created!")}),
-                    wf:redirect("")
+    case GId of 
+        "" ->
+            wf:wire(#alert{text=?_T("Group should have some kind of shortname")});
+        _ ->
+            case lists:member(GId, AllGroups) of
+                true ->
+                    wf:wire(simple_lightbox, #hide{}),
+                    wf:wire(#alert{text=?_T("Group with this shortname already exists! Maybe, you should check it out.")});
+                false ->
+                    case nsm_users:get_user({username, GId}) of
+                        {ok, _} ->
+                            wf:wire(#alert{text=?_TS("User '$username$' exist!", [{username, GId}]) });
+                        {error, _} ->
+                            nsx_util_notification:notify(["system", "create_group"], {wf:user(), GId, GName, GDesc, GPublicity}),
+                            wf:wire(#alert{text=?_T("New group created!")}),
+                            wf:redirect("")
+                    end
             end
     end;
 % create new group block ends
