@@ -197,17 +197,16 @@ table(Id, _Joined=true) ->
 
 table(Id, _Joined=false) ->
     ?INFO("table not joined yet"),
-    UId = wf:user(),
-    Table = wf:state(table),
-    {ok, User} = nsm_users:get_user(UId),
+%    UId = wf:user(),
+%    Table = wf:state(table),
+%    {ok, User} = nsm_users:get_user(UId),
 
-    Options = case wf:q(lucky) of
-                  "true" ->
-                      [feellucky];
-                  _ ->
-                      []
-              end,
-
+%    Options = case wf:q(lucky) of
+%                  "true" ->
+%                      [feellucky];
+%                  _ ->
+%                      []
+%              end,
     table_ok(Id).
 
 %   case table_manager:join_table(User, Id, Options) of
@@ -491,7 +490,7 @@ qlc_id_creator(Id,Creator,Owner) ->
 get_table(Id) -> get_table_raw(Id, qlc_id(Id), wf:state(table)).
 get_table(Id, Creator,Owner) -> get_table_raw(Id, qlc_id_creator(Id,Creator,Owner), undefined).
 
-get_table_raw(Id, QLC,StateTab) ->
+get_table_raw(_Id, QLC,StateTab) ->
     Tables = case StateTab  of
        undefined -> QLC;
        _ -> [StateTab]
@@ -502,7 +501,7 @@ get_table_raw(Id, QLC,StateTab) ->
 		{ok,Table};
 	false -> 
                 case StateTab of
-		     undefined when length(Tables) > 0 -> [H|T]=Tables, {ok,H};
+		     undefined when length(Tables) > 0 -> [H|_T]=Tables, {ok,H};
 		     undefined -> {ok,[]};
 		     _Else -> ?INFO("Cached Table in Session ProcId: ~p",
                                    [{StateTab#game_table.game_process,
@@ -546,7 +545,7 @@ leave_table(User, Id) ->
                   %update_table_info(T),
     end
     end || T <- Tables ],
-    MyUser = get(user),
+%    MyUser = get(user),
     case wf:q(style) of
 	"fb" -> wf:redirect("/facebook/");
 	_    -> wf:wire("window.close();")
@@ -626,7 +625,7 @@ kick_user(UserName) ->
       	                    stop;
                         Player ->
 			    case nsm_users:get_user(UserName) of
-				{ok, UserToLeave} ->
+			    {ok, _UserToLeave} ->
                                     Message = ?_TS("User ($user$) was kicked by ($owner$).",[{user, Player},{owner, CUser}]),
 	        		    Users = Table#game_table.users,
                                     NewUsers = lists:delete(UserName,Users),
@@ -648,9 +647,9 @@ kick_user(UserName) ->
     end.
 
 redirect_to_flex(GameId, HumanReadableGameName) ->
-    NewTable = wf:state(table),
+%    NewTable = wf:state(table),
     Id = wf:state(table_id),
-    InGame = wf:session(integer_to_list(Id)),
+%    InGame = wf:session(integer_to_list(Id)),
     wf:session(integer_to_list(Id), integer_to_list(GameId)),
     ?INFO("GameId: ~p, Id: ~p",[GameId,Id]),
     Url = lists:concat([?_U("/client"), "/", ?_U(HumanReadableGameName), "/id/", Id]),
@@ -662,7 +661,7 @@ redirect_to_flex(GameId, HumanReadableGameName) ->
     exit(kill_comet).
 
 start_game() ->
-    Id = wf:state(table_id),
+%    Id = wf:state(table_id),
     Table = wf:state(table),
     io:fwrite("Table ID: ~p~n",[Table]),
     ?INFO("start game"),
@@ -686,7 +685,7 @@ start_game() ->
                                         [Table#game_table.game_type, Params, UsersIdsAsBinaries]),
                     ?INFO("GameManager Create Table Pid: ~p",[GSPId]),
                     case GSPId of
-                        {ok, GaId, GamePid} when is_integer(GaId) ->
+                        {ok, GaId, _GamePid} when is_integer(GaId) ->
                             chat_info(?_T("starting game...")),
                             wf:state(table, Table#game_table{gameid = GaId, game_state = started}),
 			    
@@ -714,7 +713,7 @@ update_table_info(ATable) ->
         unknown -> wf:update(lightboxmsg, #span{text=?_T("This table has been destroyed")}),
                    wf:wire(lightbox, #show{});
         Tables when is_list(ATable) ->
-                   [H|T] = lists:foreach(fun(A)-> A#game_table.owner == wf:user() end, Tables),
+                   [H|_T] = lists:foreach(fun(A)-> A#game_table.owner == wf:user() end, Tables),
                    H;
         Tab -> Tab
     end,
@@ -790,7 +789,7 @@ html_user_info(UserName, IsOwner, IsPlaceholder, OwnerName, GameType) ->
 % events
 
 event(chat) ->
-    Id = wf:state_default(table_id, undefined),
+%    Id = wf:state_default(table_id, undefined),
     User = webutils:user_info(),
     Msg = wf:q(message_text_box),
     case string:strip(Msg) of

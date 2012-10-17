@@ -112,11 +112,6 @@ init_db() ->
                                                                             {type, ordered_set}]),
 %    add_translations(),
 
-    %% like_entry ----------------------------------------------------------------------------------
-    ok = create_table(like_entry, record_info(fields, like_entry), [{storage, permanent}]),
-    ok = add_table_index(like_entry, entry_id),
-    ok = add_table_index(like_entry, feed_id),
-
 %    add_sample_users(),
     nsm_membership_packages:create_storage(),
 

@@ -89,7 +89,7 @@ account_menu() ->
 		case R = nsm_users:get_user(wf:user()) of 
 		    {error,notfound} -> % wrong user_id
 			event(logout);
-		    UserFound -> 
+		    _UserFound -> 
 		{ok, User} = R,
 		Submenus = #list{body=[#listitem{body=#link{url=Url,text=Text}} || {Url,Text}
 									  <- [{?_U("/profile"), ?_T("My Profile")},
@@ -118,7 +118,7 @@ account_menu() ->
             ]}
            end;
 
-	    UserLoggedIn ->
+	    _UserLoggedIn ->
 		[
         case site_utils:detect_language() of
             "en" -> #link{class=al, url=?_U("/login/facebook"), body=#image{image="/images/img-01.png"}};

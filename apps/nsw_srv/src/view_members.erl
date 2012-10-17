@@ -79,7 +79,7 @@ event({subscribe,_,_,_}=Event) ->
 event({unsubscribe,_,_,_}=Event) ->
     friends:event(Event);
 
-event({search_friend}=Event) ->
+event({search_friend}) ->
     %friends:event(Event);
     SearchStr = wf:q("search_textbox"),
     wf:update(friends_content, getPageContent(SearchStr));

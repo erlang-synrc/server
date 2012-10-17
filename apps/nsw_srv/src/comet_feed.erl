@@ -83,15 +83,15 @@ process_delivery({_Type, FeedId, Owner, CurrentUser},
 
 
 %%%% system messages
-process_delivery({_Type, FeedId, Owner, CurrentUser},
-                 ["feed", EntryType, EntryOwner, "entry", EntryId, "add_system"],
+process_delivery({_Type, FeedId, Owner, _},
+                 ["feed", _, _, "entry", EntryId, "add_system"],
                  [From, Destinations, Desc, Medias]) ->
     To = case From of
-             Owner ->
-                 Destinations;
-             _ ->
-                 [D || {_, group} = D <- Destinations]
-         end,
+        Owner ->
+            Destinations;
+        _ ->
+            [D || {_, group} = D <- Destinations]
+    end,
     add_system_entry(EntryId, FeedId, From, To, Desc, Medias);
 
 

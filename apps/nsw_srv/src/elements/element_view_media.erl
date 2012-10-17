@@ -59,7 +59,7 @@ render_element(ViewMedia = #view_media{media = Media,
     end.
 
 
-link_video(#view_media{media=Media}=_VM, ViewVideoPostbackInfo, _Fid, _Cid) ->
+link_video(#view_media{media=Media}=_VM, _ViewVideoPostbackInfo, _Fid, _Cid) ->
     WidthLR = split(binary_to_list(Media#media.html), "width=\""),
     WidthR = trim_to_first(hd(tl(WidthLR)), "\""),
     MediaHTMLWidth = hd(WidthLR) ++ "width=\"400" ++ WidthR,
