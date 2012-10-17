@@ -122,7 +122,10 @@ init([]) ->
 
     case nsm_db:get(config, "debug/production", false) of
          {ok, true} -> ok;
-         _ -> create_tables(100)
+         _ -> case nsx_opt:get_env(nsw_srv,create_tables,true) of 
+                   false -> ok;
+                   true -> create_tables(100)
+              end
     end,
 
     start_cowboy(HttpOpts),
