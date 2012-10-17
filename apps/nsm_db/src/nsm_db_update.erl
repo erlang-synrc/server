@@ -5,14 +5,7 @@
 -include("nsm_bg.hrl").
 -include("affiliates.hrl").
 
--export([transform_user/0,
-         transform_group/0,
-         delete_feeds/0,
-         add_subscription_exchanges/0,
-         fix_subscription_exchanges/0,
-         delete_worker_queues/0,
-         clean_affiliates_buckets/0]).
-
+-compile(export_all).
 
 transform_user() ->
     All = nsm_db:all(user),
@@ -117,3 +110,42 @@ clean_affiliates_buckets() ->
     [nsm_db:delete(affiliates_look_perms, term_to_binary(UserId)) || #affiliates_look_perms{user_id = UserId} <- Perms],
     ok.
 
+%% Clean multiple likes. 16 Oct 2012
+is_user_in_like_list(_, []) ->
+    false;
+is_user_in_like_list(User, LikeList) ->
+    case (hd(LikeList))#one_like.user_id of
+        User -> true;
+        _ -> is_user_in_like_list(User, tl(LikeList))
+    end.
+
+clean_like_list(Dirty) ->
+    clean_like_list(Dirty, []).
+clean_like_list([], Clean) ->
+    Clean;
+clean_like_list(Dirty, Clean) ->
+    case is_user_in_like_list((hd(Dirty))#one_like.user_id, Clean) of
+        true ->
+            clean_like_list(tl(Dirty), Clean);
+        false ->
+            clean_like_list(tl(Dirty), Clean ++ [hd(Dirty)])
+    end.
+
+relink_like_list([]) ->
+    [];
+relink_like_list([H|[]]) ->
+    [H#one_like{next = undefined}];
+relink_like_list([H|T]) ->
+    [H#one_like{next = (hd(T))#one_like.id}] ++ relink_like_list(T).
+    
+
+clean_multiple_likes() ->
+    EntryLikes = nsm_db:all(entry_likes),
+    [
+        begin
+            OneLikeList = feed:get_entries_likes(EntryLike#entry_likes.entry_id),
+            New = relink_like_list( clean_like_list(OneLikeList) ),
+            [nsm_db:put(NOL) || NOL <- New],
+            nsm_db:put(EntryLike#entry_likes{one_like_head = (hd(New))#one_like.id} )
+        end
+    || EntryLike <- EntryLikes].

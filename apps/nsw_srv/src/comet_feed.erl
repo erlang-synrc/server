@@ -83,15 +83,15 @@ process_delivery({_Type, FeedId, Owner, CurrentUser},
 
 
 %%%% system messages
-process_delivery({_Type, FeedId, Owner, CurrentUser},
-                 ["feed", EntryType, EntryOwner, "entry", EntryId, "add_system"],
+process_delivery({_Type, FeedId, Owner, _},
+                 ["feed", _, _, "entry", EntryId, "add_system"],
                  [From, Destinations, Desc, Medias]) ->
     To = case From of
-             Owner ->
-                 Destinations;
-             _ ->
-                 [D || {_, group} = D <- Destinations]
-         end,
+        Owner ->
+            Destinations;
+        _ ->
+            [D || {_, group} = D <- Destinations]
+    end,
     add_system_entry(EntryId, FeedId, From, To, Desc, Medias);
 
 
@@ -151,8 +151,12 @@ process_delivery({_, _FeedId, FeedOwner, _},
     end;
 
 %% like
-process_delivery(_, ["likes", "user", User, "add_like"], {FeedId, EntryId}) ->
-    ?INFO(" +++ Like comet delivery!");
+process_delivery({_, _, FeedOwner, _}, ["likes", "user", User, "add_like"], {FeedId, EntryId}) ->
+    LikePanelId = element_view_entry:like_panel_id(EntryId),
+    {ok, E} = nsm_db:entry_by_id({EntryId, FeedId}),
+    {LikeBox, _} = element_view_entry:like_string_and_button_bool(E, FeedOwner, [#one_like{user_id=User, entry_id=EntryId, feed_id=FeedId}]),
+    wf:update(LikePanelId, LikeBox),
+    wf:flush();
 
 process_delivery(Info, Route, Message) -> % just to avoid nevedomaya yebanaya huynya
     ?WARNING("Unexpected delivery: ~p ~p ~p", [Info, Route, Message]).

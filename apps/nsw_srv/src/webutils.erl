@@ -72,7 +72,6 @@ header_box() ->
     #template { file=code:priv_dir(nsw_srv)++"/templates/header.html"}.
 
 header_body() ->
-    ?INFO("S"),
     %% check if we in fb
 
     HiddenEl = check_is_facebook(),
@@ -81,7 +80,6 @@ header_body() ->
         HiddenEl,
         menu_links()
     ],
-    ?INFO("HEader Passed"),
     A.
 
 account_menu() ->
@@ -91,8 +89,7 @@ account_menu() ->
 		case R = nsm_users:get_user(wf:user()) of 
 		    {error,notfound} -> % wrong user_id
 			event(logout);
-		    _ -> ok
-		end,
+		    _UserFound -> 
 		{ok, User} = R,
 		Submenus = #list{body=[#listitem{body=#link{url=Url,text=Text}} || {Url,Text}
 									  <- [{?_U("/profile"), ?_T("My Profile")},
@@ -118,8 +115,10 @@ account_menu() ->
                 #listitem{class=quota, body=[ #link{text=lists:concat([?_T("Quota"), " : ",Quota])}]},
                 #listitem{class=kakus, body=[ #link{text=lists:concat([?_T("Kakush")," : ",Kakush])}]},
                 #listitem{body=#link{text=?_T("Logout"), postback=logout}}
-            ]};
-	    _ ->
+            ]}
+           end;
+
+	    _UserLoggedIn ->
 		[
         case site_utils:detect_language() of
             "en" -> #link{class=al, url=?_U("/login/facebook"), body=#image{image="/images/img-01.png"}};
@@ -494,9 +493,9 @@ lightbox_panel_template(LightboxId, PanelBody, CloseActions) ->
 -spec table_info(proplist()) -> [record(p)].
 table_info(Table) ->
     UId = wf:user(),
-    ?INFO("Users: ~p",[Table#game_table.users]),
+%    ?INFO("Users: ~p",[Table#game_table.users]),
     UsersList = site_utils:join([ site_utils:linkify_name(Name, normal) || Name <- Table#game_table.users ], #br{}),
-    ?INFO("UserList: ~p",[UsersList]),
+%    ?INFO("UserList: ~p",[UsersList]),
     InviteUsersList = [],
     ViewPerPoint = site_utils:table_per_user_point(UId, Table#game_table.sets, Table#game_table.rounds),
 
@@ -614,7 +613,7 @@ user_count(GameH) ->
             okey -> game_okey; _ -> GameH
         end
     ]),
-    ?INFO("User Count: ~p",[{GameH,GameCounts}]),
+%    ?INFO("User Count: ~p",[{GameH,GameCounts}]),
     integer_to_list(GameCounts).
 
 get_members(GId) ->

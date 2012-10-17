@@ -161,9 +161,9 @@ config_new() ->
 
 config_list() ->
     get_tree_box([]). %% root
-get_tree_box(Branch) ->
+get_tree_box(_Branch) ->
 %    Childs = get_tree(Branch),
-    Items1 = nsm_db:all(config),
+    Items1 = lists:sort(nsm_db:all(config)),
     Items = [ begin V = case is_list(Value) of true -> Value; 
                                         _ -> [A] = io_lib:format("~p",[Value]),A 
                         end, 
@@ -250,7 +250,7 @@ config_edit_box(Key) ->
     {KeyString, DefaulValue, DefaulType} =
 	case Key of
 	    "" -> % new value
-		{"", "", string};
+		{"", "", integer};
 	    _ ->
 		KS = wf:f("~w", [Key]),
 		NotSet = make_ref(),
@@ -269,13 +269,13 @@ config_edit_box(Key) ->
 		end
 	end,
     [
-     #panel{body=[#label{text=?_TS("Variable key in format: $format$:",[{format, "[kakaserver, okey, robot_move]"}])},
+     #panel{body=[#label{text=?_TS("Variable key in format: $format$:",[{format, "accounts/default_quota"}])},
 		  #textbox{text=KeyString, id=config_var_name}]},
      #panel{body=[#label{text=?_T("Varialbe type:")},
 		  #dropdown{id=config_var_type, options=[
+							 #option { text=?_T("integer"), value=integer },
 							 #option { text=?_T("string"), value=string },
 							 #option { text=?_T("atom"),   value=atom },
-							 #option { text=?_T("integer"), value=integer },
 							 #option { text=?_T("float"), value=float }
 							],
 			   value = DefaulType}]},
@@ -541,7 +541,6 @@ gifts_list_get_data(Items) ->
                      integer_to_list(Kp),
                      integer_to_list(KK)]
               end || #gift{gift_name=Name,
-                           description_short=Desc,
                            real_price=Real,
                            retailer_price=Retailer,
                            our_price=Our,
@@ -816,6 +815,7 @@ event(add_affiliate) ->
     case nsm_users:get_user({username, AffiliateUsername}) of
         {ok, _} ->
             nsx_util_notification:notify(["affiliates", "user", AffiliateUsername, "create_affiliate"], {}),
+            wf:wire(#alert{text=?_TS("User '$username$' is an affiliate now!", [{username, AffiliateUsername}]) }),
             wf:update(affiliates_list, affiliates_list());
         _ -> 
             wf:wire(#alert{text=?_TS("User '$username$' does not exist!", [{username, AffiliateUsername}]) })
@@ -826,6 +826,7 @@ event(remove_affiliate) ->
     case lists:member(AffiliateUsername, real_affiliates_list()) of
         true ->
             nsx_util_notification:notify(["affiliates", "user", AffiliateUsername, "delete_affiliate"], {}),
+            wf:wire(#alert{text=?_TS("User '$username$' is no longer an affiliate!", [{username, AffiliateUsername}]) }),
             wf:update(affiliates_list, affiliates_list());
         false ->
             wf:wire(#alert{text=?_TS("User '$username$' is not an affiliate!", [{username, AffiliateUsername}]) })
@@ -836,6 +837,7 @@ event(allow_details_affiliate) ->
     case lists:member(AffiliateUsername, real_affiliates_list()) of
         true ->
             nsx_util_notification:notify(["affiliates", "user", AffiliateUsername, "enable_to_look_details"], {}),
+            wf:wire(#alert{text=?_TS("User '$username$' can see own contracts now!", [{username, AffiliateUsername}]) }),
             wf:update(affiliates_list, affiliates_list());
         false ->
             wf:wire(#alert{text=?_TS("User '$username$' is not an affiliate!", [{username, AffiliateUsername}]) })
@@ -846,6 +848,7 @@ event(disallow_details_affiliate) ->
     case lists:member(AffiliateUsername, real_affiliates_list()) of
         true ->
             nsx_util_notification:notify(["affiliates", "user", AffiliateUsername, "disable_to_look_details"], {}),
+            wf:wire(#alert{text=?_TS("User '$username$' can no longer see own contracts now!", [{username, AffiliateUsername}]) }),
             wf:update(affiliates_list, affiliates_list());
         false ->
             wf:wire(#alert{text=?_TS("User '$username$' is not an affiliate!", [{username, AffiliateUsername}]) })
@@ -980,6 +983,8 @@ u_event(logout) ->
 
 u_event(config_save_new) ->
     case wf:q(config_var_name) of
+	{error, _} ->
+	    wf:flash(?_T("Error: Variable key is in wrong format."));
 	Key ->
             ?INFO("~p~n",[Key]),
 	    StrVal = wf:q(config_var_value),
@@ -1009,12 +1014,11 @@ u_event(config_save_new) ->
                      end,
 
             nsx_util_notification:notify(["system", "put"], #config{key = Key,value=NewValue}),
-		    wf:flash(?_TS("Value of $key$ set to $value$",[{key,wf:f("~w",[Key])},{value,NewValue}])); %% "
+%		    wf:flash(?_TS("Value of $key$ set to $value$",[{key,wf:f("~w",[Key])},{value,NewValue}])); %% "
+		    wf:flash(?_TS("Value of $key$ set to $value$",[{key,Key},{value,NewValue}])); %% "
 		{msg, Msg} ->
 		    wf:flash(Msg)
-	    end;
-	{error, _} ->
-	    wf:flash(?_T("Error: Variable key is in wrong format."))
+	    end
     end;
 
 u_event(generate_invite) ->

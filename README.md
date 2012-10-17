@@ -72,10 +72,10 @@ Create this dir and subdirs for later usage:
 
 ### RIAK
 
- Ubuntu users:
+Ubuntu users:
 
 For Ubuntu users please install riak from prebuilt binaries from Basho site.Then remove riak from autostart 
-and put its libraries (listed below) to /mnt/glusterfs/apps/riak_bin
+and put its libraries (listed below) to /mnt/glusterfs/apps/riak_bin.
 
  - riak_core
  - riak_sysmon
@@ -96,7 +96,7 @@ and put its libraries (listed below) to /mnt/glusterfs/apps/riak_bin
  - mochiweb
  - ebloom
 
- Mac Users:
+Mac Users:
 
 Install Riak version 1.2 from sources:
 
@@ -112,10 +112,13 @@ Symlink required riak libraries to your erlang libs dir:
           luke,erlang_js,riak_pb,riak_control,webmachine,bitcask, \
           folsom,riak_api,sext,eleveldb,protobuffs,ebloom,mochiweb}-* ~/erl-r14/lib/
 
- Required files for db to be initialized properly:
-Create folder /home/kakauser/tmp/kaka. And copy files from ~/kakauser/tmp/kaka on srv1.kakaranet.com or srv2.kakaranet.com to this folder.
+Required files for db to be initialized properly:
+Create folder /home/kakauser/tmp/kaka. And copy files from ~/kakauser/tmp/kaka 
+on srv1.kakaranet.com or srv2.kakaranet.com to this folder.
 
 ### RABBIT-MQ
+
+For Ubuntu users please install prebuilt binaries from official site.
 
 For Mac users please build RabbitMQ from sources:
 
@@ -136,8 +139,7 @@ install additional lib before you go:
     $ sudo make install TARGET_DIR=/usr/local/rabbitmq-server \
                         SBIN_DIR=/usr/local/bin MAN_DIR=/usr/local/man
 
-
-For Ubuntu users please install prebuilt binaries from official site.
+Configure installed RabbitMQ instance:
 
     $ sudo rabbitmqctl add_user guest guest
     $ sudo rabbitmqctl add_vhost "/"

@@ -423,7 +423,7 @@ get_translation({Lang,Word}) -> DBA=?DBA, DBA:get_translation({Lang,Word}).
 
 delete(Keys) -> DBA=?DBA, DBA:delete(Keys).
 delete(Tab, Key) -> ?INFO("db:delete ~p:~p",[Tab, Key]), DBA=?DBA,DBA:delete(Tab, Key).
-delete_by_index(Tab, IndexId, IndexVal) -> DBA=?DBA,DBA:delete(Tab, IndexId, IndexVal).
+delete_by_index(Tab, IndexId, IndexVal) -> DBA=?DBA,DBA:delete_by_index(Tab, IndexId, IndexVal).
 % select
 
 multi_select(RecordName, Keys) -> DBA=?DBA,DBA:multi_select(RecordName, Keys).

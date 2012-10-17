@@ -254,7 +254,6 @@ friends_view(Who_, WhoName_) ->
     end,
     ShortDescription = user_short_description(WhoName),
     #listitem{class="user-item", body=[
-%PUBLIC BETA We don't have this fully operational for now: url=io_lib:format("/dashboard/user/~s",[WhoName]),
        #link{class="entity", url=site_utils:user_link(WhoName), body=[
             #panel{class="img", body=#image{image=webutils:get_user_avatar(WhoName, "big"), style="width:96px;height:96px"}},
             #panel{class="user-name", body=WhoName}

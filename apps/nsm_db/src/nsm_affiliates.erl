@@ -76,7 +76,7 @@
 -define(RELS_TABLE, affiliates_rels).
 -define(CONTRACTS_TABLE, affiliates_contracts).
 -define(CTYPES_TABLE, affiliates_contract_types).
--define(PERMS_TABLE, affiliates_look_pems).
+-define(PERMS_TABLE, affiliates_look_perms).
 -define(PURCHASES_TABLE, affiliates_purchases).
 
 -define(CTYPES_BUCKET, <<"affiliates_contract_types">>).
@@ -181,7 +181,7 @@ enable_to_look_details(UserId) ->
 %% @end
 
 disable_to_look_details(UserId) ->
-    ok = nsm_db:delete(?CTYPES_TABLE, UserId),
+    ok = nsm_db:delete(?PERMS_TABLE, UserId),
     ok.
 
 

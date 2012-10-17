@@ -1,6 +1,6 @@
 -module(nsw_srv_sup).
 -behaviour(supervisor).
--export([start_link/0, init/1, create_tables/1]).
+-export([start_link/0, init/1, create_tables/1, start_cowboy/1]).
 -include("setup.hrl").
 -include("loger.hrl").
 
@@ -84,6 +84,15 @@ stress_test(NumberOfRooms) ->
     [{ok,OP2,_}|_] = lists:reverse(OkeyPlayers),
     ?INFO("Okey bot rooms runned (STRESS): ~p~n",[{OP1,OP2}]).
 
+start_cowboy(HttpOpts) ->
+    application:load(webmachine),
+    {ok, BindAddress} = application:get_env(webmachine, bind_address),
+    {ok, ParsedBindAddress} = inet_parse:address(BindAddress),
+    {ok, Port} = application:get_env(webmachine, port),
+    application:start(cowboy),
+    cowboy:start_listener(http, 10, cowboy_tcp_transport, [{port, Port}, {ip, ParsedBindAddress}], cowboy_http_protocol, HttpOpts),
+    cowboy:start_listener(https, 10, cowboy_ssl_transport, nsx_opt:get_env(nsw_srv, ssl, []) ++ [{ip, ParsedBindAddress}], cowboy_http_protocol, HttpOpts),
+    ?INFO("Starting Cowboy Server on ~s:~p~n", [BindAddress, Port]).
 
 init([]) ->
     net_kernel:connect(?APPSERVER_NODE),
@@ -96,11 +105,6 @@ init([]) ->
     rpc:call(?GAMESRVR_NODE,nsg_srv_app,start_gproc,[]),
     application:start(gproc),
 
-    application:load(webmachine),
-    {ok, BindAddress} = application:get_env(webmachine, bind_address),
-    {ok, ParsedBindAddress} = inet_parse:address(BindAddress),
-    {ok, Port} = application:get_env(webmachine, port),
-
     Restart = permanent,
     Shutdown = 2000,
     Type = worker,
@@ -110,8 +114,7 @@ init([]) ->
                         {['...'],cowboy_http_static,[{directory,{priv_dir,nsw_srv,[]},{mimetypes,mime()}}]} ] }], 
     HttpOpts = [{max_keepalive, 50}, {dispatch, Dispatch}],
 
-    ?INFO("Starting Cowboy Server on ~s:~p~n", [BindAddress, Port]),
-
+    application:start(nitrogen),
 
     gettext_server:start(),
     gettext:change_gettext_dir(code:priv_dir(nsw_srv)),
@@ -119,11 +122,10 @@ init([]) ->
 
     case nsm_db:get(config, "debug/production", false) of
          {ok, true} -> ok;
-         _ -> create_tables(10)
+         _ -> create_tables(100)
     end,
 
-    cowboy:start_listener(http, 10, cowboy_tcp_transport, [{port, Port}, {ip, ParsedBindAddress}], cowboy_http_protocol, HttpOpts),
-    cowboy:start_listener(https, 10, cowboy_ssl_transport, nsx_opt:get_env(nsw_srv, ssl, []) ++ [{ip, ParsedBindAddress}], cowboy_http_protocol, HttpOpts),
+    start_cowboy(HttpOpts),
 
     LuckyChild = {nsw_srv_lucky_sup,
                   {nsw_srv_lucky_sup, start_link, []},
