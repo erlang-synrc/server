@@ -666,7 +666,7 @@ convert_to_map(Data,_Setting,UId,GameFSM) ->
               {delete_table, TId, ProcId} ]
       end || #game_table{ name = Name,
                           id = TId,
-                          rounds = Rounds,
+                          rounds = _Rounds,
                           users = Users,
                           game_process = ProcId,
                           owner = _Owner,
@@ -819,11 +819,11 @@ check_required(Setting) ->
 		 {multiple, _} -> false;
 		 _ -> true
 	     end || Req <- Required ],
-    Rounds = wf:to_integer(case proplists:get_value(rounds, Setting, 0) of
-				{multiple, _} -> 0;
-				R -> R
-			   end),
-    Sets = 0,
+%    Rounds = wf:to_integer(case proplists:get_value(rounds, Setting, 0) of
+%				{multiple, _} -> 0;
+%				R -> R
+%			   end),
+%    Sets = 0,
     case lists:usort(Check) of
  	[true] ->
 	    %case site_utils:table_per_user_point(wf:user(), Sets, Rounds) of

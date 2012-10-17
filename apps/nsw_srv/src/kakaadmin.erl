@@ -161,9 +161,9 @@ config_new() ->
 
 config_list() ->
     get_tree_box([]). %% root
-get_tree_box(Branch) ->
+get_tree_box(_Branch) ->
 %    Childs = get_tree(Branch),
-    Items1 = nsm_db:all(config),
+    Items1 = lists:sort(nsm_db:all(config)),
     Items = [ begin V = case is_list(Value) of true -> Value; 
                                         _ -> [A] = io_lib:format("~p",[Value]),A 
                         end, 
@@ -250,7 +250,7 @@ config_edit_box(Key) ->
     {KeyString, DefaulValue, DefaulType} =
 	case Key of
 	    "" -> % new value
-		{"", "", string};
+		{"", "", integer};
 	    _ ->
 		KS = wf:f("~w", [Key]),
 		NotSet = make_ref(),
@@ -269,13 +269,13 @@ config_edit_box(Key) ->
 		end
 	end,
     [
-     #panel{body=[#label{text=?_TS("Variable key in format: $format$:",[{format, "[kakaserver, okey, robot_move]"}])},
+     #panel{body=[#label{text=?_TS("Variable key in format: $format$:",[{format, "accounts/default_quota"}])},
 		  #textbox{text=KeyString, id=config_var_name}]},
      #panel{body=[#label{text=?_T("Varialbe type:")},
 		  #dropdown{id=config_var_type, options=[
+							 #option { text=?_T("integer"), value=integer },
 							 #option { text=?_T("string"), value=string },
 							 #option { text=?_T("atom"),   value=atom },
-							 #option { text=?_T("integer"), value=integer },
 							 #option { text=?_T("float"), value=float }
 							],
 			   value = DefaulType}]},
@@ -541,7 +541,6 @@ gifts_list_get_data(Items) ->
                      integer_to_list(Kp),
                      integer_to_list(KK)]
               end || #gift{gift_name=Name,
-                           description_short=Desc,
                            real_price=Real,
                            retailer_price=Retailer,
                            our_price=Our,
@@ -1015,7 +1014,8 @@ u_event(config_save_new) ->
                      end,
 
             nsx_util_notification:notify(["system", "put"], #config{key = Key,value=NewValue}),
-		    wf:flash(?_TS("Value of $key$ set to $value$",[{key,wf:f("~w",[Key])},{value,NewValue}])); %% "
+%		    wf:flash(?_TS("Value of $key$ set to $value$",[{key,wf:f("~w",[Key])},{value,NewValue}])); %% "
+		    wf:flash(?_TS("Value of $key$ set to $value$",[{key,Key},{value,NewValue}])); %% "
 		{msg, Msg} ->
 		    wf:flash(Msg)
 	    end

@@ -451,7 +451,7 @@ inner_event({hide_entry, _EId, PanelId, true}, _) ->
 inner_event({show_all_likers, LeftPart, Id}, _) ->
     wf:update(Id, LeftPart);
 
-inner_event({like_entry, E, PanelId, LikeBtnId}, User) ->
+inner_event({like_entry, E, LikeBtnId}, User) ->
     UserInfo = webutils:user_info(),
     Eid = E#entry.entry_id,
     Fid = UserInfo#user.feed,
@@ -459,10 +459,6 @@ inner_event({like_entry, E, PanelId, LikeBtnId}, User) ->
     
     wf:replace(LikeBtnId, []);
 
-%    {ok, OrigEntry} = nsm_db:get(entry, {Eid, Fid}),
-%    VEntry = #view_entry{entry=OrigEntry},
-%    wf:replace(PanelId, VEntry),
-%    wf:wire("upd_scrollers()");
 
 inner_event({share_entry, Entry}, User) ->
    {Type, _Owner} = case wf:state(feed_owner) of

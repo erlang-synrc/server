@@ -334,8 +334,7 @@ section_body(account) ->
 
 section_body(invite) ->
     captcha:generate(invite),
-    RSpan = " <span class=\"req\">*</span>",
-    SentInvites = nsm_db:invite_code_by_issuer(wf:user()),
+    RSpan = " <span class=\"req\">*</span>",    
     [#h1{text=?_T("Invite")},
      #panel{id=invite_info},
      #panel{class="invite-form", body=[
@@ -373,35 +372,10 @@ section_body(invite) ->
 		]}]}
 	]},
 	"</form>"]},
-
     #h1{text=?_T("Sent invites")},
-        #list{class="history-list", id=orders_list, body = [
-            begin
-                Recipient = case RecipientOrUndefined of
-                    undefined -> ?_T("anyone");
-                    _ -> RecipientOrUndefined
-                end,
-                SDate = site_utils:feed_time_tuple(calendar:now_to_local_time(CreateDate)),
-                case CreatedUser of
-                    undefined ->
-                        #listitem{body = [
-                            #span{body=[
-                                "<b>" ++ Code ++ " </b><font style='color:#777;'>(" ++ SDate ++ ")</font> " ++ ?_T("Invited") ++ " " ++ Recipient                        
-                            ]},
-                            #link{class=btn, postback={invite_resend, Recipient},  text=?_T("Resend")}
-                        ]};
-                    _ ->
-                        #listitem{body = [
-                            #span{body=[
-                                "<b>" ++ Code ++ " </b><font style='color:#777;'>(" ++ SDate ++ ")</font> " ++ ?_T("Invited") ++ " " ++ 
-                                Recipient ++ " " ++ ?_T("became") ++ CreatedUser ++ " " ++ ?_T("on Kakaranet")
-                            ]}
-                        ]}
-                end
-            end
+    #panel{id=invite_list, body=invite_list()}
+    ];
 
-        || #invite_code{code=Code, create_date=CreateDate, recipient=RecipientOrUndefined, created_user=CreatedUser} <- SentInvites]}
-	];
 section_body(tournament) ->
 
     User0 = webutils:user_info(),
@@ -589,6 +563,37 @@ section_body(_) ->
 %        "}
         
     ].
+
+% invite list separated for easy update
+invite_list() ->
+    SentInvites = nsm_db:invite_code_by_issuer(wf:user()),
+    #list{class="history-list", id=orders_list, body = [
+        begin
+            Recipient = case RecipientOrUndefined of
+                undefined -> ?_T("anyone");
+                _ -> RecipientOrUndefined
+            end,
+            SDate = site_utils:feed_time_tuple(calendar:now_to_local_time(CreateDate)),
+            case CreatedUser of
+                undefined ->
+                    #listitem{body = [
+                        #span{body=[
+                            "<b>" ++ Code ++ " </b><font style='color:#777;'>(" ++ SDate ++ ")</font> " ++ ?_T("Invited") ++ " " ++ Recipient                        
+                        ]},
+                        #link{class=btn, postback={invite_resend, Recipient},  text=?_T("Resend")}
+                    ]};
+                _ ->
+                    #listitem{body = [
+                        #span{body=[
+                            "<b>" ++ Code ++ " </b><font style='color:#777;'>(" ++ SDate ++ ")</font> " ++ ?_T("Invited") ++ " " ++ 
+                            Recipient ++ " " ++ ?_T("became") ++ CreatedUser ++ " " ++ ?_T("on Kakaranet")
+                        ]}
+                    ]}
+            end
+        end
+
+    || #invite_code{code=Code, create_date=CreateDate, recipient=RecipientOrUndefined, created_user=CreatedUser} <- SentInvites]}.
+
 
 %%%% update avatar %%%%
 avatar_update_box(User) ->
@@ -785,7 +790,9 @@ u_event(invite_send) ->
 		    wf:set(mail_invite, ""),
 		    wf:set(name_invite, ""),
 		    wf:set(text_invite, ""),
-		    flash(info, invite_info, ?_T("Invite sent!"))
+		    flash(info, invite_info, ?_T("Invite sent!")),
+            timer:sleep(500),
+            wf:update(invite_list, invite_list())
 	    end;
 	false ->
 	    flash(error, invite_info, ?_T("Bad captcha!"))
@@ -801,7 +808,9 @@ u_event({invite_resend, Mail}) ->
 	{error, wrong_username} ->
 	    flash(error, invite_info, ?_T("Wrong username."));
 	{ok, _} ->
-	    flash(info, invite_info, ?_T("Invite sent! (this still need some tuning)"))
+	    flash(info, invite_info, ?_T("Invite sent!")),
+        timer:sleep(500),
+        wf:update(invite_list, invite_list())
     end;
 
 u_event({service, _}) ->

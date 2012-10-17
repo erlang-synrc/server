@@ -58,17 +58,6 @@
                   prev
                  }).
 
--record(like_entry, {id,        %%  {entry_id, user_id}
-                     entry_id,
-                     feed_id,
-                     user_id,
-                     created_time,
-                     next,
-                     prev}).
-
-%PUBLIC BETA I'm trying to do likes from scratch, as I believe we do need a new structure for it. 
-% So previous like_entry is not really used anymore.
-% One more thing. I don't really know why do we need time and feed_id, but it was here before, so it's best to leave it be.
 
 -record(entry_likes, {entry_id,       % this is a general entry_id. Every same entry in different feeds has the same id
                 one_like_head,  % this is a head for linked list of {user, time} tupples

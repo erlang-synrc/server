@@ -359,7 +359,7 @@ entry_element_usual(E, Comments, Avatar, {MediaThumb, MediaLists0}, _TargetMedia
                                 ]
                             }
                         },
-                        #listitem{body=#link{text=?_T("Like"), class="clr-1", id=LikeBtnId, postback={like_entry, E, TempId, LikeBtnId}, show_if=LikeBtnShow}},
+                        #listitem{body=#link{text=?_T("Like"), class="clr-1", id=LikeBtnId, postback={like_entry, E, LikeBtnId}, show_if=LikeBtnShow}},
 
                         % user should not share from own feed
                         case (webutils:user_info())#user.feed == E#entry.feed_id of
