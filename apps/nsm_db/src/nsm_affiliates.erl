@@ -181,7 +181,7 @@ enable_to_look_details(UserId) ->
 %% @end
 
 disable_to_look_details(UserId) ->
-    ok = nsm_db:delete(?CTYPES_TABLE, UserId),
+    ok = nsm_db:delete(?PERMS_TABLE, UserId),
     ok.
 
 
