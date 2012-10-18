@@ -169,10 +169,7 @@ register(#user{username=U, email=Email, facebook_id=FBId} = RegisterData0) ->
                                          DefaultQuota,
                                          #ti_default_assignment{}),
             %% init message queues infrastructure
-            init_mq(U, ["kakaranet", "yeniler"]),
-
-            nsx_util_notification:notify(["subscription", "user", U, "add_to_group"], {"kakaranet", member}),
-            nsx_util_notification:notify(["subscription", "user", U, "add_to_group"], {"yeniler", member}),
+            init_mq(U, []),
 
             login_posthook(U),
 
