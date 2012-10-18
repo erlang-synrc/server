@@ -268,16 +268,21 @@ group_info() ->
                 true -> #span{id=group_info_description, style="font-size:11pt;", text=Info#group.description};
                 false -> []
             end,
+            MemberCount = nsm_groups:get_members_count(Info#group.username),
             Membership = case group_info(member) of
                 true -> 
                     case Info#group.username of
                         "kakaranet" ->
                             ""; %PUBLIC BETA One can not unsubscribe from kakaranet for now. 
                         _ ->
-                            #link{text=?_T("Leave group"), postback={leave_group, Info}, id="leavegrouplink", 
-                                style="padding-left:17px; font-weight:bold; font-size:1.1em;",
-                                title=?_T("You may unsubscribe from group messages this way. 
-                                    You can also subscribe back later if you wish")}
+                            case MemberCount of
+                                1 -> "";
+                                _ ->
+                                    #link{text=?_T("Leave group"), postback={leave_group, Info}, id="leavegrouplink", 
+                                        style="padding-left:17px; font-weight:bold; font-size:1.1em;",
+                                        title=?_T("You may unsubscribe from group messages this way. 
+                                            You can also subscribe back later if you wish")}
+                            end
                     end;
                 false ->
                     %TODO:
@@ -295,7 +300,7 @@ group_info() ->
                     #listitem{body=[?_T("Publicity")++": ",#span{id=group_info_publicity, text=Info#group.publicity}]},
                     #listitem{body=[?_T("Created")++": ",#span{text=Date}]},
                     #listitem{body=[?_T("Owner")++": ",#span{id=group_info_owner, text=Info#group.owner}]},
-                    #listitem{body=[?_T("Members")++": ",#span{text=integer_to_list(nsm_groups:get_members_count(Info#group.username))}]}
+                    #listitem{body=[?_T("Members")++": ",#span{text=integer_to_list(MemberCount)}]}
                 ]},
                 Membership,
                 group_edit_form(Info#group.owner),

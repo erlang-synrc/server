@@ -339,7 +339,7 @@ active_members() ->
     ]}.
 
 
-% PHASE2 create new group block
+% new group block
 show_new_group_content() ->
     Title = #h1{class = "head", text = ?_T("Create your own group")},
     Settings = new_group_settings(),
@@ -354,7 +354,6 @@ show_new_group_content() ->
     webutils:lightbox_panel_template(simple_lightbox, Body).
 
 new_group_settings() ->
-    %PHASE2 need to develop new style sheets for it. For now it only has .textarea and it sucks
     [#panel { class="group-settings", body = [
         #grid_4 { body=[
             #label{text = ?_T("Short name")},
