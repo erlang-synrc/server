@@ -30,7 +30,8 @@
          put/3,
          replace/3,
          size/1,
-         del_first/2
+         del_first/2,
+         member/2
         ]).
 
 %%
@@ -72,7 +73,7 @@ shuffle(Deck) when is_list(Deck) ->
 
 shuffle([], 0, Acc) -> Acc;
 shuffle(Deck, Size, Acc) ->
-    Pos = crypto:random(Size) - 1,
+    Pos = crypto:rand_uniform(0, Size),
     {E, Deck1} = get(Pos, Deck),
     shuffle(Deck1, Size-1, [E |Acc]).
 
@@ -98,8 +99,8 @@ push(Deck1, Deck2) when is_list(Deck1), is_list(Deck2) ->
 %% Position is counted from top of the deck.
 %% @end
 
-get(Pos, Deck) when Pos >= 0, is_list(Deck) ->
-    {Head, [E | Tail]} = lists:split(Pos, Deck),
+get(Pos, Deck) when Pos > 0, is_list(Deck) ->
+    {Head, [E | Tail]} = lists:split(Pos - 1, Deck),
     {E, Head ++ Tail}.
 
 %% @spec put(E, Pos, Deck1) -> Deck2
@@ -107,8 +108,8 @@ get(Pos, Deck) when Pos >= 0, is_list(Deck) ->
 %% Position is counted from top of the deck.
 %% @end
 
-put(E, Pos, Deck) when Pos >= 0, is_list(Deck) ->
-    {Head, Tail} = lists:split(Pos, Deck),
+put(E, Pos, Deck) when Pos > 0, is_list(Deck) ->
+    {Head, Tail} = lists:split(Pos - 1, Deck),
     Head ++ [E | Tail].
 
 
@@ -140,6 +141,12 @@ del_first(E, Deck) ->
             error
     end.
 
+%% @spec member(E, Deck) -> boolean()
+%% @doc Checks is the element a memeber of the deck.
+%% @end
+
+member(E, Deck) ->
+    lists:member(E, Deck).
 %%
 %% Local Functions
 %%

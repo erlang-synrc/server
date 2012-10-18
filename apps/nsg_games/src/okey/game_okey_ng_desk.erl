@@ -1,10 +1,10 @@
 %%% -------------------------------------------------------------------
-%%% Author  : Serge Polkovnikov <serge.polkovnikov@gmail.com>
+%%% Author  : Sergii Polkovnikov <serge.polkovnikov@gmail.com>
 %%% Description : The desk-level logic for okey game.
 %%%
 %%% Created : Oct 8, 2012
 %%% -------------------------------------------------------------------
--module(okey_game_ng_desk).
+-module(game_okey_ng_desk).
 
 -behaviour(gen_fsm).
 %% --------------------------------------------------------------------
@@ -26,26 +26,28 @@
 
 -record(player,
         {
-         id               :: integer(),
-         hand             :: deck:deck(),
-         has_gostergi     :: boolean(),
-         finished_by_okey :: boolean(),
-         discarded        :: deck:deck()
+         id                :: integer(),
+         hand              :: deck:deck(),
+         can_show_gosterge :: boolean(),
+         has_gosterge      :: boolean(),
+         finished_by_okey  :: boolean(),
+         discarded         :: deck:deck()
         }).
 
 -record(state,
         {
-         players          :: list(#player{}),
-         cur_player       :: integer(),
-         deck             :: deck:deck(),
-         gostergi,
+         players           :: list(#player{}),
+         cur_player        :: integer(),
+         deck              :: deck:deck(),
+         gosterge,
          okey,
-         okey_blocked     :: boolean()
+         okey_blocked      :: boolean()
         }).
 
 
 -define(STATE_TAKE, state_take).
 -define(STATE_DISCARD, state_discard).
+-define(STATE_CONFIRMATION, state_confirmation).
 -define(STATE_FINISHED, state_finished).
 
 %% ====================================================================
@@ -72,14 +74,14 @@ stop(DeskFSM) ->
 init(Params) ->
     Hands = get_param(hands, Params),
     Deck = get_param(deck, Params),
-    Gostergi = get_param(gostergi, Params),
+    Gosterge = get_param(gosterge, Params),
     CurPlayer = get_param(cur_player, Params),
-    validate_params(Hands, Deck, Gostergi, CurPlayer),
+    validate_params(Hands, Deck, Gosterge, CurPlayer),
     Players = init_players(Hands),
-    Okey = init_okey(Gostergi),
+    Okey = init_okey(Gosterge),
     {ok, ?STATE_DISCARD, #state{players = Players,
                                 deck = deck:from_list(Deck),
-                                gostergi = Gostergi,
+                                gosterge = Gosterge,
                                 okey = Okey,
                                 cur_player = CurPlayer,
                                 okey_blocked = false}}.
@@ -151,6 +153,29 @@ code_change(_OldVsn, StateName, StateData, _Extra) ->
 %% Returns: {ok, Events, NextStateName, NextStateData}          |
 %%          {error, Reason}
 %% --------------------------------------------------------------------
+handle_player_action(PlayerId, i_have_gosterge, StateName,
+                     #state{players = Players,
+                            gosterge = Gosterge} = StateData) when
+  StateName == ?STATE_TAKE;
+  StateName == ?STATE_DISCARD ->
+    case get_player(PlayerId, Players) of
+        #player{can_show_gosterge = true,
+                hand = Hand} = Player ->
+            case deck:member(Gosterge, Hand) of
+                true ->
+                    NewPlayer = Player#player{has_gosterge = true,
+                                              can_show_gosterge = false},
+                    NewPlayers = update_player(NewPlayer, Players),
+                    Events = [{has_gosterge, PlayerId}],
+                    {ok, Events, StateName, StateData#state{players = NewPlayers}};
+                false ->
+                    {error, no_gosterge}
+            end;
+        #player{can_show_gosterge = false} ->
+            {error, invalid_action}
+    end;
+
+
 handle_player_action(PlayerId, see_okey, ?STATE_TAKE,
                      #state{cur_player = CurPlayerId,
                             players = Players,
@@ -163,6 +188,7 @@ handle_player_action(PlayerId, see_okey, ?STATE_TAKE,
         _ ->
             {error, no_okey_discarded}
     end;
+
 
 handle_player_action(PlayerId, take_from_discarded, ?STATE_TAKE,
                      #state{cur_player = CurPlayerId,
@@ -185,6 +211,7 @@ handle_player_action(PlayerId, take_from_discarded, ?STATE_TAKE,
            {error, not_your_order}
     end;
 
+
 handle_player_action(PlayerId, take_from_table, ?STATE_TAKE,
                      #state{cur_player = CurPlayerId,
                             players = Players,
@@ -201,6 +228,7 @@ handle_player_action(PlayerId, take_from_table, ?STATE_TAKE,
        true ->
            {error, not_your_order}
     end;
+
 
 handle_player_action(PlayerId, {discard, Tash}, ?STATE_DISCARD,
                      #state{cur_player = CurPlayerId,
@@ -229,7 +257,7 @@ handle_player_action(PlayerId, {discard, Tash}, ?STATE_DISCARD,
 handle_player_action(PlayerId, {reveal, Tash, TashPlaces}, ?STATE_DISCARD,
                      #state{cur_player = CurPlayerId,
                             players = Players,
-                            gostergi = Gostergi
+                            gosterge = Gosterge
                            } = StateData) ->
     if PlayerId == CurPlayerId ->
            case discard_tash(Tash, PlayerId, Players) of
@@ -237,12 +265,13 @@ handle_player_action(PlayerId, {reveal, Tash, TashPlaces}, ?STATE_DISCARD,
                    {error, no_tash};
                NewPlayers ->
                    RevealHand = tash_places_to_hand(TashPlaces),
-                   PlayerHand = get_player_hand(PlayerId, NewPlayers),
+                   #player{hand = PlayerHand,
+                           has_gosterge = HasGosterge} = get_player(PlayerId, NewPlayers),
                    case is_same_hands(RevealHand, PlayerHand) of
                        true ->
-                           Events = case is_right_finish(TashPlaces, Gostergi) of
-                                        true -> [{right_finish, PlayerId, TashPlaces}];
-                                        false -> [{wrong_finish, PlayerId, TashPlaces}]
+                           Events = case is_right_finish(TashPlaces, Gosterge) of
+                                        true -> [{right_finish, PlayerId, TashPlaces, HasGosterge}];
+                                        false -> [{wrong_finish, PlayerId, TashPlaces, HasGosterge}]
                                     end,
                            {ok, Events, ?STATE_FINISHED,
                             StateData#state{players = NewPlayers}};
@@ -266,7 +295,8 @@ get_param(Id, Params) ->
     Value.
 
 %% TODO: Implement the validator
-validate_params(_Hands, _Deck, _Gostergi, _CurPlayer) ->
+
+validate_params(_Hands, _Deck, _Gosterge, _CurPlayer) ->
     ok.
 
 init_players(Hands) ->
@@ -275,7 +305,8 @@ init_players(Hands) ->
                          hand = Hand,
                          discarded = deck:init_deck(empty),
                          finished_by_okey = false,
-                         has_gostergi = false},
+                         can_show_gosterge = true,
+                         has_gosterge = false},
                  Id+1}
         end,
     {Players, _} = lists:mapfoldl(F, 1, Hands),
@@ -309,19 +340,16 @@ take_tash_from_discarded(PlayerId, Players) ->
             {Taken, RestDiscarded} = deck:pop(1, Discarded),
             NewPrevPlayer = PrevPlayer#player{discarded = RestDiscarded},
             #player{hand = Hand} = Player = get_player(PlayerId, Players),
-            NewPlayer = Player#player{hand = deck:push(Taken, Hand)},
+            NewPlayer = Player#player{hand = deck:push(Taken, Hand),
+                                      can_show_gosterge = false},
             NewPlayers1 = update_player(NewPrevPlayer, Players),
             NewPlayers2 = update_player(NewPlayer, NewPlayers1),
             [Tash] = deck:to_list(Taken),
             {Tash, NewPlayers2}
     end.
 
-get_player(PlayerId, Players) ->
-    #player{} = lists:keyfind(PlayerId, #player.id, Players).
-
-update_player(#player{id = Id} = Player, Players) ->
-    lists:keyreplace(Id, #player.id, Players, Player).
-
+%% @spec take_tash_from_table(PlayerId, Players, Deck) -> {Tash, NewPlayers, NewDeck} | error
+%% @end
 take_tash_from_table(PlayerId, Players, Deck) ->
     case deck:size(Deck) of
         0 ->
@@ -329,12 +357,12 @@ take_tash_from_table(PlayerId, Players, Deck) ->
         _ ->
             {Taken, NewDeck} = deck:pop(1, Deck),
             #player{hand = Hand} = Player = get_player(PlayerId, Players),
-            NewPlayer = Player#player{hand = deck:push(Taken, Hand)},
+            NewPlayer = Player#player{hand = deck:push(Taken, Hand),
+                                      can_show_gosterge = false},
             NewPlayers = update_player(NewPlayer, Players),
             [Tash] = deck:to_list(Taken),
             {Tash, NewPlayers, NewDeck}
     end.
-
 
 %% @spec discard_tash(Tash, PlayerId, Players) -> NewPlayers
 %% @end
@@ -356,12 +384,17 @@ tash_places_to_hand(TashPlaces) ->
     Elements = [P || P <- lists:flatten(TashPlaces), P =/= null],
     deck:from_list(Elements).
 
-
-%% @spec get_player_hand(PlayerId, Players) -> Hand
+%% @spec get_player(PlayerId, Players) -> Player
 %% @end
-get_player_hand(PlayerId, Players) ->
-    #player{hand = Hand} = lists:keyfind(PlayerId, #player.id, Players),
-    Hand.
+get_player(PlayerId, Players) ->
+    #player{} = lists:keyfind(PlayerId, #player.id, Players).
+
+
+%% @spec update_player(Player, Players) -> NewPlayers
+%% @end
+update_player(#player{id = Id} = Player, Players) ->
+    lists:keyreplace(Id, #player.id, Players, Player).
+
 
 %% @spec is_same_hands(Hand1, Hand2) -> boolean()
 %% @end
@@ -370,11 +403,11 @@ is_same_hands(Hand1, Hand2) ->
     L2 = lists:sort(deck:to_list(Hand2)),
     L1 == L2.
 
-%% @spec is_right_finish(TashPlaces, Gostergi) -> boolean()
+%% @spec is_right_finish(TashPlaces, Gosterge) -> boolean()
 %% @end
-is_right_finish([TopRow, BottomRow], Gostergi) ->
+is_right_finish([TopRow, BottomRow], Gosterge) ->
     FlatList = TopRow ++ [null | BottomRow],
-    Okey = init_okey(Gostergi),
+    Okey = init_okey(Gosterge),
     Normalized = [case E of
                       Okey -> okey;
                       false_okey -> Okey
