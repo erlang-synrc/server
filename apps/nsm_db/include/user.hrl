@@ -120,6 +120,15 @@
         gift_id
     }).
 
+% users activity top
+-define(ACTIVE_USERS_TOP_N, 12).
+
+-record(active_users_top, {
+        no,
+        user_id,
+        entries_count,
+        last_one_timestamp    
+    }).
 
 %% Message queues stuff related to user
 %% User exchange name

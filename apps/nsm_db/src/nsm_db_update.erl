@@ -149,3 +149,8 @@ clean_multiple_likes() ->
             nsm_db:put(EntryLike#entry_likes{one_like_head = (hd(New))#one_like.id} )
         end
     || EntryLike <- EntryLikes].
+
+% fill top with users depending on entry count
+populate_active_users_top() ->
+    [nsm_users:attempt_active_user_top(UId) || #user{username=UId} <- nsm_db:all(user)].
+

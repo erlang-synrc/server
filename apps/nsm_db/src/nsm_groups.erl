@@ -248,7 +248,7 @@ get_popular_groups(Count) ->  get_popular_groups("Lalala", Count).
 %
 % now slow prototype
 %
-get_active_members()      -> get_active_members(10).
+get_active_members()      -> get_active_members(12).
 get_active_members(Count) ->
     Users = [UI#user.username || UI <- nsm_db:all(user)],
     UserActivity = lists:sort( fun({_, X1}, {_, X2}) -> X1 >= X2 end, [{U, feed:get_entries_count(U)} || U <- Users]),

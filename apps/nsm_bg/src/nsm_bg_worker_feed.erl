@@ -234,6 +234,7 @@ handle_notice(["feed", "user", UId, "count_entry_in_statistics"] = Route,
                 entries = 1
             })
     end,
+    nsm_users:attempt_active_user_top(UId),
     {noreply, State};
 
 handle_notice(["feed", "user", UId, "count_comment_in_statistics"] = Route, 

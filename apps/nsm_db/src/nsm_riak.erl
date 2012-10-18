@@ -105,6 +105,7 @@ clean() ->
     riak_clean(entry), riak_clean(likes), riak_clean(one_like), riak_clean(feed), riak_clean(comment),
     riak_clean(group_member), riak_clean(group_member_rev), riak_clean(subscription), riak_clean(subscription_rev),
     riak_clean(ut_word), riak_clean(ut_translation),
+    riak_clean(active_users_top),
     riak_clean("unsuported"),
     riak_clean("__riak_client_test__"),
     riak_clean(id_seq),
@@ -206,6 +207,7 @@ make_obj(T, invite_by_issuer) -> riak_object:new(<<"invite_by_issuer">>, list_to
 make_obj(T, entry_likes) -> riak_object:new(<<"entry_likes">>, list_to_binary(T#entry_likes.entry_id), T);
 make_obj(T, user_likes) -> riak_object:new(<<"user_likes">>, list_to_binary(T#user_likes.user_id), T);
 make_obj(T, one_like) -> riak_object:new(<<"one_like">>, list_to_binary(integer_to_list(T#one_like.id)), T);
+make_obj(T, active_users_top) -> riak_object:new(<<"active_users_top">>, list_to_binary(integer_to_list(T#active_users_top.no)), T);
 make_obj(T, user_etries_count) -> riak_object:new(<<"user_etries_count">>, list_to_binary(T#user_etries_count.user_id), T);
 make_obj(T, invitation_tree) ->
     Key = case T#invitation_tree.user of
