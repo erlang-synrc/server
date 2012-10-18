@@ -369,6 +369,7 @@ event({register_success, User}) ->
     timer:sleep(250),   % rarely, but sometimes it simply can't find new user with login:login_user, so I put a delay here
     nsx_util_notification:notify(["subscription", "user", User, "add_to_group"], {"kakaranet", member}),
     nsx_util_notification:notify(["subscription", "user", User, "add_to_group"], {"yeniler", member}),
+    timer:sleep(50),
     login:login_user(User);
 
 event(register) ->

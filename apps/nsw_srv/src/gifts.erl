@@ -79,7 +79,13 @@ product_list_paged(Page) ->
     AllGiftsData = nsm_gifts_db:get_all_gifts(),
     OnlyGiftsData = lists:sublist( 
         lists:sort(
-            fun(A, B) -> A#gift.kakush_point =< B#gift.kakush_point end,
+            fun(A, B) -> 
+                if
+                    A#gift.kakush_point < B#gift.kakush_point -> true;
+                    A#gift.kakush_point == B#gift.kakush_point -> A#gift.id =< B#gift.id;
+                    true -> false
+                end
+            end,
             [Gift || {Gift, _Obj} <- AllGiftsData, Gift#gift.enabled_on_site]
         ), 
     (Page-1) * ?GIFTSPERPAGE + 1, ?GIFTSPERPAGE),

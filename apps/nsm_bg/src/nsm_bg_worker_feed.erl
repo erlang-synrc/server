@@ -304,8 +304,8 @@ handle_notice(["system", "create_group"] = Route,
     {noreply, State};
 
 handle_notice(["db", "group", GroupId, "update_group"] = Route, 
-    Message, #state{owner = Owner, type =Type} = State) ->
-    ?INFO("queue_action(~p): update_group: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),
+    Message, #state{owner=ThisGroupOwner, type=Type} = State) ->
+    ?INFO("queue_action(~p): update_group: Owner=~p, Route=~p, Message=~p", [self(), {Type, ThisGroupOwner}, Route, Message]),    
     {UId, Username, Name, Description, Owner, Publicity} = Message,
     case catch nsm_groups:check_rights(GroupId, UId, admin) of
         true ->
@@ -516,7 +516,7 @@ handle_notice(["subscription", "user", UId, "set_user_game_status"] = Route,
     nsm_users:set_user_game_status(UId, Status),
     {noreply, State};
 
-handle_notice(["subscription", "user", UId, "update_user"] = Route,
+handle_notice(["subscription", "user", _UId, "update_user"] = Route,
     Message, #state{owner = Owner, type =Type} = State) ->
     ?INFO(" queue_action(~p): update_user: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),
     {NewUser} = Message,
