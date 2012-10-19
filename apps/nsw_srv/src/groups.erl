@@ -328,7 +328,8 @@ get_popular_group_container() ->
 
 
 active_members() ->
-    ActiveUsers = nsm_groups:get_active_members(12),
+%    ActiveUsers = nsm_groups:get_active_members(12),
+    ActiveUsers = nsm_users:get_active_user_top(),
     #panel{class="cell-space", body=[
         #h3{text=?_T("Active members")},
         #list{class="soc-users", body=[

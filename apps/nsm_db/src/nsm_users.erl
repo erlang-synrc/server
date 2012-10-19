@@ -43,6 +43,9 @@
          can_buy_gift/2,
          list_gifts_of/1,
 
+         attempt_active_user_top/2,
+         get_active_user_top/0,
+
          login_posthook/1,
          init_mq/2, subscribe_user_mq/3, remove_subscription_mq/3,
          init_mq_for_group/1,
@@ -429,6 +432,45 @@ buy_gift(UId, GiftId) ->
 
 list_gifts_of(UId) ->
     nsm_db:all_by_index(user_bought_gifts, <<"user_bought_gifts_username_bin">>, list_to_binary(UId)).
+
+
+% active_user_top
+calculate_activity(E, Timestamp) ->
+    GSnow = calendar:datetime_to_gregorian_seconds( calendar:now_to_datetime(erlang:now()) ),
+    GS = calendar:datetime_to_gregorian_seconds( calendar:now_to_datetime(Timestamp) ),
+    E/(1.0 + (GSnow-GS)/2592000).
+
+attempt_active_user_top(UId, UEC) ->
+    {_, Outsider} = nsm_db:get(active_users_top, ?ACTIVE_USERS_TOP_N),
+    case Outsider of
+        notfound ->    % Top is not yet filled
+            N = length(nsm_db:all(active_users_top)) + 1,
+            nsm_db:put(#active_users_top{
+                no = N,
+                user_id = UId,
+                entries_count = UEC,
+                last_one_timestamp = erlang:now()
+            });
+        #active_users_top{entries_count=EC, last_one_timestamp=LOT} ->
+            case calculate_activity(EC, LOT) < UEC of
+                true -> % Attemting user should be anywhere in top
+                    FullTop = lists:filter(fun(#active_users_top{user_id=OUId}) -> UId =/= OUId end, nsm_db:all(active_users_top)) ++ 
+                        [#active_users_top{user_id=UId, entries_count=UEC, last_one_timestamp = erlang:now()}],
+                    SortedTop = lists:sort(
+                        fun(#active_users_top{entries_count=E1, last_one_timestamp=T1},
+                            #active_users_top{entries_count=E2, last_one_timestamp=T2}) ->
+                            calculate_activity(E1, T1) >= calculate_activity(E2, T2)
+                        end, FullTop),
+                    ResetTop = [(lists:nth(I, SortedTop))#active_users_top{no=I} || I <- lists:seq(1, ?ACTIVE_USERS_TOP_N)],
+                    [nsm_db:put(TopEntry) || TopEntry <- ResetTop];
+                false -> % Attempting user don't get to the top
+                    ok
+            end
+    end.
+
+get_active_user_top() ->
+    SortedTop = lists:sort(nsm_db:all(active_users_top)),
+    [{UId, N} || #active_users_top{no = N, user_id = UId} <- SortedTop].
 
 
 %% This function will be called from nsm_auth, after successfull login.
