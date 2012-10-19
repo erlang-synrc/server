@@ -43,7 +43,7 @@
          can_buy_gift/2,
          list_gifts_of/1,
 
-         attempt_active_user_top/1,
+         attempt_active_user_top/2,
          get_active_user_top/0,
 
          login_posthook/1,
@@ -440,23 +440,22 @@ calculate_activity(E, Timestamp) ->
     GS = calendar:datetime_to_gregorian_seconds( calendar:now_to_datetime(Timestamp) ),
     E/(1.0 + (GSnow-GS)/2592000).
 
-attempt_active_user_top(UId) ->
+attempt_active_user_top(UId, UEC) ->
     {_, Outsider} = nsm_db:get(active_users_top, ?ACTIVE_USERS_TOP_N),
-    AttemptingEntries = feed:get_entries_count(UId),
     case Outsider of
         notfound ->    % Top is not yet filled
             N = length(nsm_db:all(active_users_top)) + 1,
             nsm_db:put(#active_users_top{
                 no = N,
                 user_id = UId,
-                entries_count = AttemptingEntries,
+                entries_count = UEC,
                 last_one_timestamp = erlang:now()
             });
         #active_users_top{entries_count=EC, last_one_timestamp=LOT} ->
-            case calculate_activity(EC, LOT) < AttemptingEntries of
+            case calculate_activity(EC, LOT) < UEC of
                 true -> % Attemting user should be anywhere in top
                     FullTop = lists:filter(fun(#active_users_top{user_id=OUId}) -> UId =/= OUId end, nsm_db:all(active_users_top)) ++ 
-                        [#active_users_top{user_id=UId, entries_count=AttemptingEntries, last_one_timestamp = erlang:now()}],
+                        [#active_users_top{user_id=UId, entries_count=UEC, last_one_timestamp = erlang:now()}],
                     SortedTop = lists:sort(
                         fun(#active_users_top{entries_count=E1, last_one_timestamp=T1},
                             #active_users_top{entries_count=E2, last_one_timestamp=T2}) ->

@@ -23,8 +23,6 @@
          get_popular_groups/2,
          get_popular_groups/0,
          get_popular_groups/1,
-         get_active_members/1,
-         get_active_members/0,
          % web api
          join_group/2,
          change_user_rights/4,
@@ -241,28 +239,6 @@ get_group_by_feed_id(FeedID) ->
 
 get_popular_groups()      ->  get_popular_groups(10).
 get_popular_groups(Count) ->  get_popular_groups("Lalala", Count).
-
-%
-% ToDo
-% also we need separate table/bucket "users_activity_info" #users_activity_info{totalPosts,period,user_id .... }
-%
-% now slow prototype
-%
-get_active_members()      -> get_active_members(12).
-get_active_members(Count) ->
-    Users = [UI#user.username || UI <- nsm_db:all(user)],
-    UserActivity = lists:sort( fun({_, X1}, {_, X2}) -> X1 >= X2 end, [{U, feed:get_entries_count(U)} || U <- Users]),
-    lists:sublist(UserActivity, Count).
-%    CurrentTime = now(),
-%    Users = [U || #entry{from=U} <- nsm_db:select(entry,
-%        fun(#entry{created_time=CT, type = ET}) when ET=:={user, normal};ET=:={user, group}->
-%            case timer:now_diff(CurrentTime, CT) of
-%                M when M < 2592000000000 -> true  % 30 days in microseconds
-%                ;_                       -> false
-%            end
-%           ;(_)->false end)],
-%    Dict = lists:foldl(fun(U, A)->dict:update(U, fun(V) -> V+1 end, 1, A) end, dict:new(), Users),
-%    lists:sublist(lists:sort(fun({_,N1},{_,N2}) when N1 > N2-> true;(_,_)->false end, dict:to_list(Dict)), Count).
 
 %%% ====================================
 %%% web api

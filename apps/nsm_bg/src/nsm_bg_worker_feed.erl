@@ -227,14 +227,15 @@ handle_notice(["feed", "user", UId, "count_entry_in_statistics"] = Route,
         {ok, UEC} -> 
             nsm_db:put(UEC#user_etries_count{
                 entries = UEC#user_etries_count.entries+1
-            });
+            }),
+            nsm_users:attempt_active_user_top(UId, UEC#user_etries_count.entries+1);
         {error, notfound} ->
             nsm_db:put(#user_etries_count{
                 user_id = UId,
                 entries = 1
-            })
+            }),
+            nsm_users:attempt_active_user_top(UId, 1)
     end,
-    nsm_users:attempt_active_user_top(UId),
     {noreply, State};
 
 handle_notice(["feed", "user", UId, "count_comment_in_statistics"] = Route, 

@@ -152,5 +152,5 @@ clean_multiple_likes() ->
 
 % fill top with users depending on entry count
 populate_active_users_top() ->
-    [nsm_users:attempt_active_user_top(UId) || #user{username=UId} <- nsm_db:all(user)].
+    [nsm_users:attempt_active_user_top(UId, feed:get_entries_count(UId)) || #user{username=UId} <- nsm_db:all(user)].
 
