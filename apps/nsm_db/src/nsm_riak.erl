@@ -66,6 +66,7 @@ init_indexes() ->
     ok = C:set_bucket(t_to_b(affiliates_contract_types), [{backend, leveldb_backend}]),
     ok = C:set_bucket(?COUNTERS_BUCKET_ID_SEQ, [{backend, leveldb_backend}]),
     ok = C:set_bucket(t_to_b(subs), [{backend, leveldb_backend}]),
+    ok = C:set_bucket(t_to_b(group_subs), [{backend, leveldb_backend}]),
     ok = C:set_bucket(t_to_b(user_bought_gifts), [{backend, leveldb_backend}]),
     ok = nsm_gifts_db:init_indexes().
 
@@ -137,6 +138,7 @@ r_to_b(R) -> t_to_b(element(1,R)).
 %% Table id to bucket id
 t_to_b(T) -> 
     %% list_to_binary(atom_to_list(T)). FIXME: This should be after we eleminate {transaction,_} tables
+                                                % no. We use complex keys for leveldb now
     [StringBucket] = io_lib:format("~p",[T]),
     erlang:list_to_binary(StringBucket).
 
@@ -149,6 +151,8 @@ make_indices(#affiliates_rels{user = OwnerId, affiliate = OwnerId}) -> [{<<"owne
 make_indices(#affiliates_rels{affiliate = OwnerId}) -> [{<<"owner_bin">>, key_to_bin(OwnerId)}];
 make_indices(#subs{who=Who, whom=Whom}) -> [{<<"subs_who_bin">>, key_to_bin(Who)},
                                             {<<"subs_whom_bin">>, key_to_bin(Whom)}];
+make_indices(#group_subs{user_id=UId, group_id=GId}) -> [{<<"group_subs_user_id_bin">>, key_to_bin(UId)},
+                                            {<<"group_subs_group_id_bin">>, key_to_bin(GId)}];
 make_indices(#user_bought_gifts{username=UId}) -> [{<<"user_bought_gifts_username_bin">>, key_to_bin(UId)}];
 
 make_indices(_Record) -> [].
@@ -161,6 +165,7 @@ make_obj(T, affiliates_purchases) -> #affiliates_purchases{contract_id = Contrac
                                      riak_object:new(r_to_b(T), key_to_bin({ContractId, UserId}), T);
 make_obj(T, affiliates_rels) -> riak_object:new(r_to_b(T), key_to_bin(T#affiliates_rels.user), T);
 make_obj(T, subs) -> [Key] = io_lib:format("~p", [{T#subs.who, T#subs.whom}]), riak_object:new(r_to_b(T), list_to_binary(Key), T);
+make_obj(T, group_subs) -> [Key] = io_lib:format("~p", [{T#group_subs.user_id, T#group_subs.group_id}]), riak_object:new(r_to_b(T), list_to_binary(Key), T);
 make_obj(T, user_bought_gifts) -> [Key] = io_lib:format("~p", [{T#user_bought_gifts.username, T#user_bought_gifts.timestamp}]), riak_object:new(r_to_b(T), list_to_binary(Key), T);
 make_obj(T, account) -> [Key] = io_lib:format("~p", [T#account.id]), riak_object:new(<<"account">>, list_to_binary(Key), T);
 make_obj(T, feed) -> riak_object:new(<<"feed">>, list_to_binary(integer_to_list(T#feed.id)), T);

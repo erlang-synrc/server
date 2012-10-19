@@ -236,28 +236,16 @@ group_row(GL) when is_list(GL)->
 group_row(GL) ->
     #list{class="group-list-mkh", body=show_group_ul(GL)}.
 
-show_group_ul(#group{username = GName, description= GDesc})          ->
-    GroupMembersCount = nsm_groups:get_members_count(GName),
-    Group = nsm_groups:get_group(GName),
-    UserGroups= [GP || #group_member{group=GP} <- nsm_groups:list_group_per_user(wf:user())],
-    show_group_ul_view(GName, GDesc, GroupMembersCount, UserGroups, Group#group.creator =:= wf:user());
-show_group_ul({#group_member{group = GName}, GroupMembersCount}) ->
-    Group = nsm_groups:get_group(GName),
-    UserGroups= [GP || #group_member{group=GP} <- nsm_groups:list_group_per_user(wf:user())],
-    show_group_ul_view(GName, Group#group.description, GroupMembersCount, UserGroups, Group#group.creator =:= wf:user()).
+show_group_ul(#group{username=GName, description=GDesc}) ->
+    GroupMembersCount = length(nsm_groups:list_group_members(GName)),
+    show_group_ul_view(GName, GDesc, GroupMembersCount).
 
-show_group_ul_view(GName, GDesc, GroupMembersCount, UserGroups) -> show_group_ul_view(GName, GDesc, GroupMembersCount, UserGroups, false).
-show_group_ul_view(GName, GDesc, GroupMembersCount, _UserGroups, _DeleteFlag) ->
-    RealGroupMembersCount = case GroupMembersCount of
+show_group_ul_view(GName, GDesc, GroupMembersCount) ->
+    RealGroupMembersCount = case GroupMembersCount of   % patch for freshly created groups
         {error, notfound} -> 1;
         _ -> GroupMembersCount
     end,
-%PHASE1
-%    SUId = wf:temp_id(),
-%    SubscribeUnsubscribeLink = case lists:member(GName, UserGroups) of
-%        true -> #listitem{id=SUId, body=#link{url="javascript:void(0)", text=?_T("Unsubscribe"), postback={unsubscribe, wf:user(), GName, SUId}}}
-%        ;_   -> #listitem{id=SUId, body=#link{url="javascript:void(0)", text=?_T("Subscribe"), postback={subscribe, wf:user(), GName, SUId}}}
-%    end,
+
     #listitem{class="group-item", body=[
         #panel{class="img", body=#link{url=site_utils:group_link(GName),
             body=#image{image=webutils:get_group_avatar(GName, "big"), style="width:96px; height:96px"}}},
@@ -266,33 +254,6 @@ show_group_ul_view(GName, GDesc, GroupMembersCount, _UserGroups, _DeleteFlag) ->
             io_lib:format("<p>~s</p>", [GDesc]),
             io_lib:format("<p><i>~p ~s</i></p>", [RealGroupMembersCount, ?_T("members")])
         ]}
-%PHASE1 no tooltip, as it works in a strange and unobvious way
-%        #panel{class="tooltip-1", body=[
-%            #panel{class="t", body=[
-%                #panel{class="c", body=[
-%                    #panel{class="frame", body=[
-%                        #panel{class="img", body=[
-%                            #image{image=webutils:get_group_avatar(GName, "big"), style="width:96px;height:96px"}
-%                        ]},
-%                        #panel{class="descr", body=[
-%                            io_lib:format("<strong class=\"user-name\">~s</strong>", [GName]),
-%                            #list{class="func-list", body=[
-%                                #listitem{body=SubscribeUnsubscribeLink},
-%                                case DeleteFlag of
-%                                    true -> #listitem{body=#link{url="javascript:void(0)", text=?_T("Delete"), postback={delete, %GName}}}
-%                                    ;_   -> []
-%                                end
-                                %#listitem{body=#link{url=io_lib:format("/dashboard/filter/direct/tu/s",["AAAA"]), text=?_T("Send direct message")}},
-                                %#listitem{body=#link{url="#", text=?_T("Recommend friends")}},
-                                %#listitem{body=[#link{url="#", text=?_T("Personal")}, " (", #link{url="#", text=?_T("edit")}, ")"]},
-                                %#listitem{body=#link{url="#", text=?_T("Abonelikten Ayrıl")}}
-%                            ]}
-%                        ]}
-%                    ]}
-%                ]},
-%                #panel{class="b", body="&nbsp;"}
-%            ]}
-%       ]}
     ]}.
 
 
@@ -313,17 +274,15 @@ get_popular_group_container() ->
         #h3{text=?_T("Popular groups")},
         #list{class="list-photo list-photo-in", body=[
             [begin 
-                GroupBody = nsm_groups:get_group(Group),
+                {ok, GroupBody} = nsm_groups:get_group(Group),
                 GroupName = GroupBody#group.name,
                 #listitem{body=
                     [#link{url=site_utils:group_link(Group), body=io_lib:format("~s", [GroupName])},
-                     #span{style="padding-left:4px;", text = io_lib:format("(~b)", [Number])}
+                     #span{style="padding-left:4px;", text = io_lib:format("(~b)", [length(nsm_groups:list_group_members(Group)) ])}
                     ]}
              end
-             ||{Group, Number}<-nsm_groups:get_popular_groups(wf:user(), 2)]
+             || Group <-nsm_groups:get_popular_groups()]
         ]}
-%PHASE1        io_lib:format("<span class=\"links\"><a href=\"/groups\">~s</a> / <a href=\"/groups\">~s</a></span>",
-%            [?_T("Browse"), ?_T("Edit groups list")])
     ]}.
 
 

@@ -150,7 +150,12 @@ clean_multiple_likes() ->
         end
     || EntryLike <- EntryLikes].
 
-% fill top with users depending on entry count
+% fill top with users depending on entry count 18 Oct 2012
 populate_active_users_top() ->
     [nsm_users:attempt_active_user_top(UId, feed:get_entries_count(UId)) || #user{username=UId} <- nsm_db:all(user)].
+
+% converting group subscriptions to leveldb
+group_member_to_group_subs() ->
+    [[nsm_db:put(#group_subs{user_id=Who, group_id=Group, user_type=Type}) || #group_member{who=Who, group=Group, type=Type} <- Subs] 
+    || #group_member{group=Subs} <- nsm_db:all(group_member)].
 

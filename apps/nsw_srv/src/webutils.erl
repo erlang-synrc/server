@@ -749,7 +749,7 @@ get_groups() ->
 
 %% user - #user{username}
 get_groups(User) ->
-    Groups = case nsm_groups:list_group_per_user_with_count(User, wf:user()) of
+    Groups = case nsm_groups:list_groups_per_user(User#user.username) of
         [] ->
             case User#user.username == wf:user() of
                 true ->
@@ -758,12 +758,21 @@ get_groups(User) ->
                     ?_T("$user$ is currently not in any group")
             end;
         Gs ->
+            UC_GId = lists:sublist(
+                lists:reverse(
+                    lists:sort([{length(nsm_groups:list_group_members(GId)), GId} || GId <- Gs])
+                ), 
+            5), % this is magic number! I'd macros it soon
             lists:flatten([
-                #listitem{body=[
-                    #link{body=[GName], url=site_utils:group_link(GId)},
-                    #span{style="padding-left:4px;", text="(" ++ integer_to_list(UserCount) ++ ")"}
-                ]}
-                || {#group_member{group = GId, group_name = GName}, UserCount} <- lists:sublist(Gs, 5)
+                begin
+                    {ok, Group} = nsm_groups:get_group(GId),
+                    GName = Group#group.name,
+                    #listitem{body=[
+                        #link{body=[GName], url=site_utils:group_link(GId)},
+                        #span{style="padding-left:4px;", text="(" ++ integer_to_list(UC) ++ ")"}
+                    ]}
+                end
+                || {UC, GId} <- UC_GId
             ])
     end,
     [

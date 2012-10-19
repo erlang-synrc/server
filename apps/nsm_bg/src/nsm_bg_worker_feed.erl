@@ -838,42 +838,44 @@ add_comment(#state{feed = Feed, direct = Direct}, From, EntryId, ParentComment,
        || FId <- [Feed, Direct]].
 
 
-add_to_group(MeId, FrId, Type) ->     
-    MeShow = case nsm_db:get(user, MeId) of
-        {ok, #user{name=MeName,surname=MeSur}} ->
-            io_lib:format("~s ~s", [MeName,MeSur]);
-        _ ->
-            MeId
-    end,
-    FrShow = case nsm_db:get(group, FrId) of
-        {ok, #group{name=FrName}} -> FrName;
-        _ -> FrId
-    end,
-    List = [#group_member{who=MeId, group=FrId, group_name=FrShow, type=Type} |
-        case nsm_db:get(group_member, MeId) of
-        {error,notfound} ->
-            nsm_db:delete(group_member, MeId),
-            [];
-        {ok,#group_member{group=Subscriptions}} ->
-            [ Sub || Sub <- Subscriptions, Sub#group_member.group=/=FrId ]
-        end],
-    nsm_db:put(#group_member{who=MeId, group=List, type=list}),
-    RevList = [#group_member_rev{ group= FrId, who=MeId, who_name=MeShow, type= Type} |
-        case nsm_db:get(group_member_rev, FrId) of
-        {error,notfound} ->
-            nsm_db:delete(group_member_rev, FrId),
-            [];
-        {ok,#group_member_rev{who=RevSubscriptions}} ->
-            [ Sub || Sub <- RevSubscriptions, Sub#group_member_rev.who=/=MeId ]
-        end],
+add_to_group(MeId, FrId, Type) ->
+    nsm_db:put(#group_subs{user_id=MeId, group_id=FrId, user_type=Type}).
+%    MeShow = case nsm_db:get(user, MeId) of
+%        {ok, #user{name=MeName,surname=MeSur}} ->
+%            io_lib:format("~s ~s", [MeName,MeSur]);
+%        _ ->
+%            MeId
+%    end,
+%    FrShow = case nsm_db:get(group, FrId) of
+%        {ok, #group{name=FrName}} -> FrName;
+%        _ -> FrId
+%    end,
+%    List = [#group_member{who=MeId, group=FrId, group_name=FrShow, type=Type} |
+%        case nsm_db:get(group_member, MeId) of
+%        {error,notfound} ->
+%            nsm_db:delete(group_member, MeId),
+%            [];
+%        {ok,#group_member{group=Subscriptions}} ->
+%            [ Sub || Sub <- Subscriptions, Sub#group_member.group=/=FrId ]
+%        end],
+%    nsm_db:put(#group_member{who=MeId, group=List, type=list}),
+%    RevList = [#group_member_rev{ group= FrId, who=MeId, who_name=MeShow, type= Type} |
+%        case nsm_db:get(group_member_rev, FrId) of
+%        {error,notfound} ->
+%            nsm_db:delete(group_member_rev, FrId),
+%            [];
+%        {ok,#group_member_rev{who=RevSubscriptions}} ->
+%            [ Sub || Sub <- RevSubscriptions, Sub#group_member_rev.who=/=MeId ]
+%        end],
     
-    nsx_util_notification:notify(["db", "group", FrId, "put"], #group_member_rev{who=RevList, group=FrId, type=list}).
+%    nsx_util_notification:notify(["db", "group", FrId, "put"], #group_member_rev{who=RevList, group=FrId, type=list}).
 
 remove_from_group(MeId, FrId) ->
-    List = nsm_db:list_membership(MeId),
-    NewList = [ Rec || Rec<-List, not(Rec#group_member.who == MeId andalso Rec#group_member.group == FrId) ],
-    nsm_db:put(#group_member{who = MeId, group=NewList, type=list}),
-    RevList = nsm_db:list_group_users(FrId),
-    NewRevList = [ Rec || Rec<-RevList, not(Rec#group_member_rev.who==MeId andalso Rec#group_member_rev.group==FrId) ],
-    nsx_util_notification:notify(["db", "group", FrId, "put"], #group_member_rev{who = NewRevList, group = FrId, type=list}).
+    nsm_db:delete(group_subs, {MeId, FrId}).
+%    List = nsm_db:list_membership(MeId),
+%    NewList = [ Rec || Rec<-List, not(Rec#group_member.who == MeId andalso Rec#group_member.group == FrId) ],
+%    nsm_db:put(#group_member{who = MeId, group=NewList, type=list}),
+%    RevList = nsm_db:list_group_users(FrId),
+%    NewRevList = [ Rec || Rec<-RevList, not(Rec#group_member_rev.who==MeId andalso Rec#group_member_rev.group==FrId) ],
+%    nsx_util_notification:notify(["db", "group", FrId, "put"], #group_member_rev{who = NewRevList, group = FrId, type=list}).
 

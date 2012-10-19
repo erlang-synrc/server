@@ -90,6 +90,11 @@
          who_name,
          type = user}).
 
+-record(group_subs,
+       {user_id,
+        group_id,
+        user_type}).
+
 -record(forget_password,
         {token :: string(),
          uid   :: string(),
