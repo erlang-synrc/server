@@ -6,5 +6,4 @@ ln -s /mnt/glusterfs/kakafiles $FILES
 
 rels/app/node/bin/ns_node start
 rels/game/node/bin/ns_node start
-sleep 10
 rels/web/node/bin/ns_node start

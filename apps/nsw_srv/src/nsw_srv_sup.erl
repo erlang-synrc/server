@@ -1,6 +1,6 @@
 -module(nsw_srv_sup).
 -behaviour(supervisor).
--export([start_link/0, init/1, create_tables/1, start_cowboy/1]).
+-export([start_link/0, init/1, create_tables/1]).
 -include("setup.hrl").
 -include("loger.hrl").
 
@@ -84,16 +84,6 @@ stress_test(NumberOfRooms) ->
     [{ok,OP2,_}|_] = lists:reverse(OkeyPlayers),
     ?INFO("Okey bot rooms runned (STRESS): ~p~n",[{OP1,OP2}]).
 
-start_cowboy(HttpOpts) ->
-    application:load(webmachine),
-    {ok, BindAddress} = application:get_env(webmachine, bind_address),
-    {ok, ParsedBindAddress} = inet_parse:address(BindAddress),
-    {ok, Port} = application:get_env(webmachine, port),
-    application:start(cowboy),
-    cowboy:start_listener(http, 10, cowboy_tcp_transport, [{port, Port}, {ip, ParsedBindAddress}], cowboy_http_protocol, HttpOpts),
-    cowboy:start_listener(https, 10, cowboy_ssl_transport, nsx_opt:get_env(nsw_srv, ssl, []) ++ [{ip, ParsedBindAddress}], cowboy_http_protocol, HttpOpts),
-    ?INFO("Starting Cowboy Server on ~s:~p~n", [BindAddress, Port]).
-
 init([]) ->
     net_kernel:connect(?APPSERVER_NODE),
     net_kernel:connect(?GAMESRVR_NODE),
@@ -110,10 +100,6 @@ init([]) ->
     Type = worker,
     DChild = {user_counter, {user_counter, start_link, []}, Restart, Shutdown, Type, [user_counter]},
 
-    Dispatch = [{'_', [ {'_',nitrogen_cowboy,[]},
-                        {['...'],cowboy_http_static,[{directory,{priv_dir,nsw_srv,[]},{mimetypes,mime()}}]} ] }], 
-    HttpOpts = [{max_keepalive, 50}, {dispatch, Dispatch}],
-
     application:start(nitrogen),
 
     gettext_server:start(),
@@ -128,20 +114,8 @@ init([]) ->
               end
     end,
 
-    start_cowboy(HttpOpts),
-
     LuckyChild = {nsw_srv_lucky_sup,
                   {nsw_srv_lucky_sup, start_link, []},
                   permanent, 2000, supervisor, [nsw_srv_lucky_sup]},
     {ok, { {one_for_one, 5, 10}, [DChild, LuckyChild]} }.
-
-mime() ->
-    [
-     {<<"html">>, [<<"text/html">>]},
-     {<<"css">>, [<<"text/css">>]},
-     {<<"png">>, [<<"image/png">>]},
-     {<<"gif">>, [<<"image/gif">>]},
-     {<<"jpg">>, [<<"image/jpeg">>]},
-     {<<"js">>, [<<"application/javascript">>]}
-    ].
 
