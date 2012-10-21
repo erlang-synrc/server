@@ -100,8 +100,6 @@ init([]) ->
     Type = worker,
     DChild = {user_counter, {user_counter, start_link, []}, Restart, Shutdown, Type, [user_counter]},
 
-    application:start(nitrogen),
-
     gettext_server:start(),
     gettext:change_gettext_dir(code:priv_dir(nsw_srv)),
     gettext:recreate_db(),
