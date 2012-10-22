@@ -4,6 +4,25 @@
 %%%
 %%% Created : Oct 8, 2012
 %%% -------------------------------------------------------------------
+
+%%        Players actions:        ||      Errors:
+%%  i_have_gosterge               || action_disabled, no_gosterge
+%%  see_okey                      || no_okey_discarded
+%%  take_from_discarded           || not_your_order, blocked, no_tash
+%%  take_from_table               || not_your_order, no_tash
+%%  {discard, Tash}               || not_your_order, no_such_tash
+%%  {reveal, Tash, TashPlaces}    || not_your_order, no_such_tash, hand_not_match
+
+%% Outgoing events:
+%%  {has_gosterge, SeatNum}
+%%  {saw_okey, SeatNum}
+%%  {taked_from_discarded, SeatNum, Tash}
+%%  {taked_from_table, SeatNum, Tash}
+%%  {tash_discarded, SeatNum, Tash}
+%%  {next_player, SeatNum}
+%%  no_winner_finish
+%%  {reveal, SeatNum, Right, TashPlaces, DiscardedTash, WithOkey, HasGosterge}
+
 -module(game_okey_ng_desk).
 
 -behaviour(gen_fsm).
@@ -20,9 +39,20 @@
          player_action/3
         ]).
 
+-export([
+         get_state_name/1,
+         get_cur_seat/1,
+         get_gosterge/1,
+         get_deck/1,
+         get_hand/2,
+         get_discarded/2
+        ]).
+
 %% gen_fsm callbacks
 -export([init/1, handle_event/3,
 	 handle_sync_event/4, handle_info/3, terminate/3, code_change/4]).
+
+-type tash() :: false_okey | {integer(), integer()}.
 
 -record(player,
         {
@@ -39,15 +69,14 @@
          players           :: list(#player{}),
          cur_player        :: integer(),
          deck              :: deck:deck(),
-         gosterge,
-         okey,
+         gosterge          :: tash(),
+         okey              :: tash(),
          okey_blocked      :: boolean()
         }).
 
 
 -define(STATE_TAKE, state_take).
 -define(STATE_DISCARD, state_discard).
--define(STATE_CONFIRMATION, state_confirmation).
 -define(STATE_FINISHED, state_finished).
 
 %% ====================================================================
@@ -55,11 +84,30 @@
 %% ====================================================================
 start(Params) -> gen_fsm:start(?MODULE, Params, []).
 
-player_action(DeskFSM, Player, Action) ->
-    gen_fsm:sync_send_all_state_event(DeskFSM, {player_action, Player, Action}).
+player_action(Desk, SeatNum, Action) ->
+    gen_fsm:sync_send_all_state_event(Desk, {player_action, SeatNum, Action}).
 
-stop(DeskFSM) ->
-    gen_fsm:send_all_state_event(DeskFSM, stop).
+stop(Desk) ->
+    gen_fsm:send_all_state_event(Desk, stop).
+
+
+get_state_name(Desk) ->
+    gen_fsm:sync_send_all_state_event(Desk, get_state_name).
+
+get_cur_seat(Desk) ->
+    gen_fsm:sync_send_all_state_event(Desk, get_cur_seat).
+
+get_gosterge(Desk) ->
+    gen_fsm:sync_send_all_state_event(Desk, get_gosterge).
+
+get_deck(Desk) ->
+    gen_fsm:sync_send_all_state_event(Desk, get_deck).
+
+get_hand(Desk, SeatNum) ->
+    gen_fsm:sync_send_all_state_event(Desk, {get_hand, SeatNum}).
+
+get_discarded(Desk, SeatNum) ->
+    gen_fsm:sync_send_all_state_event(Desk, {get_discarded, SeatNum}).
 
 %% ====================================================================
 %% Server functions
@@ -107,13 +155,39 @@ handle_event(_Event, StateName, StateData) ->
 %%          {stop, Reason, NewStateData}                          |
 %%          {stop, Reason, Reply, NewStateData}
 %% --------------------------------------------------------------------
-handle_sync_event({player_action, PlayerId, Action}, _From, StateName, StateData) ->
-    case handle_player_action(PlayerId, Action, StateName, StateData) of
+handle_sync_event({player_action, SeatNum, Action}, _From, StateName, StateData) ->
+    case handle_player_action(SeatNum, Action, StateName, StateData) of
         {ok, Events, NewStateName, NewStateData} ->
             {reply, {ok, lists:reverse(Events)}, NewStateName, NewStateData};
         {error, Reason} ->
             {reply, {error, Reason}, StateName, StateData}
     end;
+
+handle_sync_event(get_state_name, _From, StateName,
+                  StateData) ->
+    {reply, StateName, StateName, StateData};
+
+handle_sync_event(get_cur_seat, _From, StateName,
+                  #state{cur_player = CurSeat} = StateData) ->
+    {reply, CurSeat, StateName, StateData};
+
+handle_sync_event(get_gosterge, _From, StateName,
+                  #state{gosterge = Gosterge} = StateData) ->
+    {reply, Gosterge, StateName, StateData};
+
+handle_sync_event(get_deck, _From, StateName,
+                  #state{deck = Deck} = StateData) ->
+    {reply, deck:to_list(Deck), StateName, StateData};
+
+handle_sync_event({get_hand, SeatNum}, _From, StateName,
+                  #state{players = Players} = StateData) ->
+    #player{hand = Hand} = get_player(SeatNum, Players),
+    {reply, deck:to_list(Hand), StateName, StateData};
+
+handle_sync_event({get_discarded, SeatNum}, _From, StateName,
+                  #state{players = Players} = StateData) ->
+    #player{discarded = Discarded} = get_player(SeatNum, Players),
+    {reply, deck:to_list(Discarded), StateName, StateData};
 
 handle_sync_event(_Event, _From, StateName, StateData) ->
     Reply = ok,
@@ -172,7 +246,7 @@ handle_player_action(PlayerId, i_have_gosterge, StateName,
                     {error, no_gosterge}
             end;
         #player{can_show_gosterge = false} ->
-            {error, invalid_action}
+            {error, action_disabled}
     end;
 
 
@@ -237,7 +311,7 @@ handle_player_action(PlayerId, {discard, Tash}, ?STATE_DISCARD,
     if PlayerId == CurPlayerId ->
            case discard_tash(Tash, PlayerId, Players) of
                error ->
-                   {error, no_tash};
+                   {error, no_such_tash};
                NewPlayers ->
                    Events1 = [{tash_discarded, PlayerId, Tash}],
                    case deck:size(Deck) of
@@ -246,8 +320,10 @@ handle_player_action(PlayerId, {discard, Tash}, ?STATE_DISCARD,
                            {ok, Events, ?STATE_FINISHED,
                             StateData#state{players = NewPlayers}};
                        _ ->
-                           {ok, Events1, ?STATE_DISCARD,
-                            StateData#state{players = NewPlayers, cur_player = next_id(CurPlayerId)}}
+                           NextPlayerId = next_id(CurPlayerId),
+                           Events = [{next_player, NextPlayerId} | Events1],
+                           {ok, Events, ?STATE_DISCARD,
+                            StateData#state{players = NewPlayers, cur_player = NextPlayerId}}
                    end
             end;
        true ->
@@ -257,22 +333,22 @@ handle_player_action(PlayerId, {discard, Tash}, ?STATE_DISCARD,
 handle_player_action(PlayerId, {reveal, Tash, TashPlaces}, ?STATE_DISCARD,
                      #state{cur_player = CurPlayerId,
                             players = Players,
-                            gosterge = Gosterge
+                            gosterge = Gosterge,
+                            okey = Okey
                            } = StateData) ->
     if PlayerId == CurPlayerId ->
            case discard_tash(Tash, PlayerId, Players) of
                error ->
-                   {error, no_tash};
+                   {error, no_such_tash};
                NewPlayers ->
                    RevealHand = tash_places_to_hand(TashPlaces),
                    #player{hand = PlayerHand,
                            has_gosterge = HasGosterge} = get_player(PlayerId, NewPlayers),
                    case is_same_hands(RevealHand, PlayerHand) of
                        true ->
-                           Events = case is_right_finish(TashPlaces, Gosterge) of
-                                        true -> [{right_finish, PlayerId, TashPlaces, HasGosterge}];
-                                        false -> [{wrong_finish, PlayerId, TashPlaces, HasGosterge}]
-                                    end,
+                           WithOkey = Tash == Okey,
+                           Right = is_right_finish(TashPlaces, Gosterge),
+                           Events = [{reveal, PlayerId, Right, TashPlaces, Tash, WithOkey, HasGosterge}],
                            {ok, Events, ?STATE_FINISHED,
                             StateData#state{players = NewPlayers}};
                        false ->
