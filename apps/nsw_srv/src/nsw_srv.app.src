@@ -3,7 +3,7 @@
   {description, "Web Server"},
   {vsn, "1"},
   {registered, []},
-  {applications, [kernel, stdlib, sasl, mnesia, lager, ssl, nsm_db, nsm_mq, nprocreg, cowboy, mimetypes, nsm_auth]},
+  {applications, [kernel, stdlib, sasl, mnesia, lager, ssl, nsm_db, nsm_mq, nprocreg, cowboy, mimetypes, nsm_auth, nsx_mibs]},
   {mod, { nsw_srv_app, []}},
   {env, []}
  ]}.

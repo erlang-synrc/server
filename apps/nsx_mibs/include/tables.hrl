@@ -1,0 +1,2 @@
+-record(dhtTable, {dName, reqPerSec}).
+-record(gameTable, {gName, online}).

@@ -1,0 +1,53 @@
+DHT-MIB DEFINITIONS ::= BEGIN
+
+IMPORTS
+    enterprises, IpAddress, OBJECT-TYPE
+	FROM SNMPv2-SMI
+    DisplayString
+	FROM SNMPv2-TC
+    RowStatus
+	FROM STANDARD-MIB;
+
+paynet OBJECT IDENTIFIER ::= { enterprises 88888 }
+
+dhtTable OBJECT-TYPE
+    SYNTAX SEQUENCE OF DHTEntry
+    ACCESS not-accessible
+    STATUS mandatory
+    DESCRIPTION "Table of servers DHT information."
+    ::= { paynet 1 }
+
+dhtEntry OBJECT-TYPE
+    SYNTAX DHTEntry
+    ACCESS not-accessible
+    STATUS mandatory
+    DESCRIPTION        "An entry in dhtTable"
+    INDEX   { dName }    ::= { dhtTable 1 }
+
+DHTEntry ::= SEQUENCE {
+    dName DisplayString,
+    reqPerSec INTEGER,
+    dhtStatus RowStatus}
+
+dName OBJECT-TYPE
+    SYNTAX DisplayString
+    ACCESS read-only
+    STATUS mandatory
+    DESCRIPTION "Server name. Used as index for dhtTable."
+    ::= { dhtEntry 1 }
+
+reqPerSec OBJECT-TYPE
+    SYNTAX INTEGER
+    ACCESS  read-write
+    STATUS  mandatory
+    DESCRIPTION "Requests per seconds."
+    ::= { dhtEntry 2 }
+
+dhtStatus OBJECT-TYPE
+    SYNTAX RowStatus
+    ACCESS  read-write
+    STATUS  mandatory
+    DESCRIPTION "The status of this row."
+    ::= { dhtEntry 3 }
+
+END

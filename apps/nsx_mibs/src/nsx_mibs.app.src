@@ -1,0 +1,17 @@
+{application, nsx_mibs,
+ [
+  {description, "SNMP managment information base for Kakaranet.com nodes."},
+  {vsn, "1"},
+  {registered, [nsx_mibs_sup]},
+  {applications, [
+                  kernel,
+                  stdlib,
+                  sasl,
+                  mnesia,
+                  crypto,
+                  snmp,
+		  otp_mibs
+                 ]},
+  {mod, { nsx_mibs_app, []}},
+  {env, []}
+ ]}.
