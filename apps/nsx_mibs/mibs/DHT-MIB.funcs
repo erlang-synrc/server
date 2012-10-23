@@ -1,1 +1,1 @@
-%% mnesia defaults used
+{dhtTable, {dht_mib, dht_table, []}}.

@@ -26,7 +26,8 @@ dhtEntry OBJECT-TYPE
 
 DHTEntry ::= SEQUENCE {
     dName DisplayString,
-    reqPerSec INTEGER,
+    nodeGets INTEGER,
+    nodePuts INTEGER,
     dhtStatus RowStatus}
 
 dName OBJECT-TYPE
@@ -36,18 +37,25 @@ dName OBJECT-TYPE
     DESCRIPTION "Server name. Used as index for dhtTable."
     ::= { dhtEntry 1 }
 
-reqPerSec OBJECT-TYPE
+nodeGets OBJECT-TYPE
     SYNTAX INTEGER
     ACCESS  read-write
     STATUS  mandatory
-    DESCRIPTION "Requests per seconds."
+    DESCRIPTION "Number of Gets coordinated by this node within last minute."
     ::= { dhtEntry 2 }
+
+nodePuts OBJECT-TYPE
+    SYNTAX INTEGER
+    ACCESS  read-write
+    STATUS  mandatory
+    DESCRIPTION "Number of Puts coordinated by this node within last minute."
+    ::= { dhtEntry 3 }
 
 dhtStatus OBJECT-TYPE
     SYNTAX RowStatus
     ACCESS  read-write
     STATUS  mandatory
     DESCRIPTION "The status of this row."
-    ::= { dhtEntry 3 }
+    ::= { dhtEntry 4 }
 
 END
