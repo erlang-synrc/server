@@ -4,15 +4,14 @@
 -export([start/2, stop/1]).
 
 start(_StartType, _StartArgs) ->
+    application:stop(mnesia),
     application:stop(otp_mibs),
     application:stop(snmp),
-    mnesia:change_table_copy_type(schema, node(), disc_copies),
-
-    nsx_mibs_db:init(),
-    nsx_mibs_db:set_online("GameSrv", 1000),
-
+    mnesia:start(),
     application:start(snmp),
     application:start(otp_mibs),
+    otp_mib:load(snmp_master_agent),
+    os_mon_mib:load(snmp_master_agent),
     nsx_mibs_sup:start_link().
 
 stop(_State) ->

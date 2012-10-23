@@ -1,21 +1,23 @@
 DHT-MIB DEFINITIONS ::= BEGIN
 
 IMPORTS
-    enterprises, IpAddress, OBJECT-TYPE
+    OBJECT-TYPE
 	FROM SNMPv2-SMI
     DisplayString
 	FROM SNMPv2-TC
     RowStatus
-	FROM STANDARD-MIB;
+	FROM STANDARD-MIB
+    kakaSquares
+	FROM KAKA-REG;
 
-paynet OBJECT IDENTIFIER ::= { enterprises 88888 }
+dht OBJECT IDENTIFIER ::= { kakaSquares 1}
 
 dhtTable OBJECT-TYPE
     SYNTAX SEQUENCE OF DHTEntry
     ACCESS not-accessible
     STATUS mandatory
     DESCRIPTION "Table of servers DHT information."
-    ::= { paynet 1 }
+    ::= { dht 1 }
 
 dhtEntry OBJECT-TYPE
     SYNTAX DHTEntry

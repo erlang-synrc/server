@@ -1,1 +1,0 @@
--record(gameTable, {gName, online}).
