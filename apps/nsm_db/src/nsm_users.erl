@@ -260,22 +260,7 @@ list_subscr(UId, PageNumber, PageAmount) when is_list(UId) ->
 	 end,
 	lists:sublist(list_subscr(UId), Offset, PageAmount).
 list_subscr_for_metalist(UId) ->
-    [
-        begin
-              case get_user(UserId) of
-             {ok, UserInfo} ->
-                  RealName = if
-                   UserInfo#user.surname == undefined, UserInfo#user.name == undefined -> UserId;
-                   UserInfo#user.surname == undefined -> UserInfo#user.name;
-                   UserInfo#user.name == undefined -> UserInfo#user.surname;
-                   true -> UserInfo#user.name ++ " " ++ UserInfo#user.surname
-                   end,
-                  {UserId, RealName};
-              _ -> ?INFO("Metalist Error User Not Found: ~p",[UserId])
-              end
-
-        end
-    || {subs, _, UserId} <- list_subscr(UId)].
+    [{UserId, user_realname(UserId)} || {subs, _, UserId} <- list_subscr(UId)].
 
 list_subscr_me(#user{username = UId}) ->
     list_subscr_me(UId);

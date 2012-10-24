@@ -28,15 +28,10 @@ group_info() ->
 content() ->
     content(1).
 
-list_group_members_paged(GId, Page, PerPage) ->  % I'd like a decent paging here. This is poor
-    From = (Page-1)*PerPage+1,
-    All = lists:sort(nsm_groups:list_group_members(GId)),
-    lists:sublist(All, From, PerPage).
-
 content(Page) ->
     GId = wf:q(id),
     {ok, Group} = nsm_groups:get_group(GId),
-    friends:content(Page,?_TS("Members of $group$", [{group,Group#group.name}]),GId,{view_members, list_group_members_paged}).
+    friends:content(Page,?_TS("Members of $group$", [{group,Group#group.name}]),GId,{friends, list_group_members_paged}).
 
 getPageContent(Page) ->
     Id = wf:q(id),
