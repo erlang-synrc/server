@@ -672,7 +672,7 @@ get_friends(User) ->
 get_metalist(Id, Title, Module, List, EmptyMsg, Nav) ->
     Friends = case Module:List(Id) of
         [] ->
-            {EmptyMsg, 0};
+            [EmptyMsg];
         Sub ->
             Sub2 = lists:sublist(Sub, 10),
             case Sub2 of
