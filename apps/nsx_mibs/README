@@ -1,0 +1,6 @@
+
+Change DHT-MIB ASN.1 definition. Compile binary MIB and Generate HRL file.
+
+> snmpc:compile("DHT-MIB", [{db,mnesia}]).
+> snmpc:mib_to_hrl("DHT-MIB").
+
