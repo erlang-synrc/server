@@ -1,18 +1,18 @@
 -module(dht_mib).
 -include("DHT-MIB.hrl").
+-compile(export_all).
 
--export([dht_table/1, dht_table/3]).
--export([update_dht_table/0]).
-
--record(dhtTable, {nodeName, handoffTimeouts, nodeGetsTotal, nodePutsTotal, cpuAvg15,
-    nodeGetFsmTimeMedian, nodePutFsmTimeMedian}).
+-record(dhtTable,      {nodeName, handoffTimeouts, nodeGetsTotal, nodePutsTotal, 
+                        cpuAvg15, nodeGetFsmTimeMedian, nodePutFsmTimeMedian}).
 -define(dhtShadowArgs, {dhtTable, string, record_info(fields, dhtTable), 5000, fun dht_mib:update_dht_table/0}).
 
-dht_table(Op)->
-    snmp_shadow_table:table_func(Op, ?dhtShadowArgs).
+-record(dhtArray, {arrayIndex, value}).
+-define(dhtArrayShadowArgs, {dhtArray, integer, record_info(fields, dhtArray), 5000, fun dht_mib:update_dht_array/0}).
 
-dht_table(Op, RowIndex, Cols) ->
-    snmp_shadow_table:table_func(Op, RowIndex, Cols, ?dhtShadowArgs).
+dht_table(Op)->  snmp_shadow_table:table_func(Op, ?dhtShadowArgs).
+dht_table(Op, RowIndex, Cols) ->  snmp_shadow_table:table_func(Op, RowIndex, Cols, ?dhtShadowArgs).
+dht_array(Op) -> snmp_shadow_table:table_func(Op, ?dhtArrayShadowArgs).
+dht_array(Op, RowIndex, Cols) -> snmp_shadow_table:table_func(Op, RowIndex, Cols, ?dhtArrayShadowArgs).
 
 update_dht_table()->
     ok = mnesia:dirty_write(#dhtTable{
@@ -23,6 +23,11 @@ update_dht_table()->
 	cpuAvg15 = cpu_sup:avg15(),
 	nodeGetFsmTimeMedian= get_median(node_get_fsm_time),
 	nodePutFsmTimeMedian= get_median(node_put_fsm_time) }).
+
+update_dht_array()->
+    error_logger:info_msg("Update DHT array", []),
+    Table = folsom_metrics:get_metric_value({riak_kv,node_get_fsm_time}),
+    [mnesia:dirty_write(#dhtArray{arrayIndex = VAL, value = VAL})||VAL <- Table ].
 
 get_median(Metric) ->
     [{min, _}, {max, _},

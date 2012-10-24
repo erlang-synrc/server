@@ -12,12 +12,53 @@ IMPORTS
 
 dht OBJECT IDENTIFIER ::= { kakaSquares 1}
 
+dhtArray OBJECT-TYPE
+    SYNTAX SEQUENCE OF DHTArrayEntry
+    ACCESS not-accessible
+    STATUS mandatory
+    DESCRIPTION "Table of servers DHT information."
+    ::= { dht 1 }
+
+dhtArrayEntry OBJECT-TYPE
+    SYNTAX DHTArrayEntry
+    ACCESS not-accessible
+    STATUS mandatory
+    DESCRIPTION        "An entry in dhtTable"
+    INDEX   { arrayIndex }    ::= { dhtArray 1 }
+
+DHTArrayEntry ::= SEQUENCE {
+    arrayIndex INTEGER,
+    value INTEGER,
+    dhtStatus2 RowStatus
+    }
+
+arrayIndex OBJECT-TYPE
+    SYNTAX INTEGER
+    ACCESS read-only
+    STATUS mandatory
+    DESCRIPTION "Server name. Used as index for dhtArray."
+    ::= { dhtArrayEntry 1 }
+
+value OBJECT-TYPE
+    SYNTAX INTEGER
+    ACCESS read-only
+    STATUS mandatory
+    DESCRIPTION "Server name. Used as index for dhtArray."
+    ::= { dhtArrayEntry 2 }
+
+dhtStatus2 OBJECT-TYPE
+    SYNTAX RowStatus
+    ACCESS  read-write
+    STATUS  mandatory
+    DESCRIPTION "The status of this row."
+    ::= { dhtArrayEntry 3 }
+
 dhtTable OBJECT-TYPE
     SYNTAX SEQUENCE OF DHTEntry
     ACCESS not-accessible
     STATUS mandatory
     DESCRIPTION "Table of servers DHT information."
-    ::= { dht 1 }
+    ::= { dht 2 }
 
 dhtEntry OBJECT-TYPE
     SYNTAX DHTEntry
@@ -25,6 +66,7 @@ dhtEntry OBJECT-TYPE
     STATUS mandatory
     DESCRIPTION        "An entry in dhtTable"
     INDEX   { nodeName }    ::= { dhtTable 1 }
+
 
 DHTEntry ::= SEQUENCE {
     nodeName DisplayString,
@@ -42,6 +84,7 @@ nodeName OBJECT-TYPE
     STATUS mandatory
     DESCRIPTION "Server name. Used as index for dhtTable."
     ::= { dhtEntry 1 }
+
 
 handoffTimeouts OBJECT-TYPE
     SYNTAX INTEGER
@@ -91,5 +134,6 @@ dhtStatus OBJECT-TYPE
     STATUS  mandatory
     DESCRIPTION "The status of this row."
     ::= { dhtEntry 8 }
+
 
 END

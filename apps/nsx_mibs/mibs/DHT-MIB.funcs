@@ -1,1 +1,2 @@
 {dhtTable, {dht_mib, dht_table, []}}.
+{dhtArray, {dht_mib, dht_array, []}}.
