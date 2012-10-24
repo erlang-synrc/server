@@ -18,8 +18,8 @@ update_dht_table()->
     ok = mnesia:dirty_write(#dhtTable{
 	nodeName= "node",
 	handoffTimeouts = folsom_metrics:get_metric_value({riak_core, handoff_timeouts}),
-	nodeGetsTotal = get_one(node_gets),
-	nodePutsTotal = get_one(node_puts),
+	nodeGetsTotal = get_count(node_gets),
+	nodePutsTotal = get_count(node_puts),
 	cpuAvg15 = cpu_sup:avg15(),
 	nodeGetFsmTimeMedian= get_median(node_get_fsm_time),
 	nodePutFsmTimeMedian= get_median(node_put_fsm_time) }).
@@ -33,6 +33,6 @@ get_median(Metric) ->
     {histogram, _}] = folsom_metrics:get_histogram_statistics({riak_kv, Metric}),
     lists:nth(1, io_lib:format("~w", [Median])).
 
-get_one(Metric) ->
-    [{count,_}, {one, One}] = folsom_metrics:get_metric_value({riak_kv, Metric}),
-    One.
+get_count(Metric) ->
+    [{count,Count}, {one, _}] = folsom_metrics:get_metric_value({riak_kv, Metric}),
+    Count.

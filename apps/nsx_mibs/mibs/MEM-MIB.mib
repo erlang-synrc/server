@@ -1,0 +1,63 @@
+MEM-MIB DEFINITIONS ::= BEGIN
+
+IMPORTS
+    OBJECT-TYPE
+	FROM SNMPv2-SMI
+    DisplayString
+	FROM SNMPv2-TC
+    RowStatus
+	FROM STANDARD-MIB
+    kakaSquares
+	FROM KAKA-REG;
+
+mem OBJECT IDENTIFIER ::= { kakaSquares 2}
+
+memTable OBJECT-TYPE
+    SYNTAX SEQUENCE OF MEMEntry
+    ACCESS not-accessible
+    STATUS mandatory
+    DESCRIPTION "Table of servers MEM information."
+    ::= { mem 1 }
+
+memEntry OBJECT-TYPE
+    SYNTAX MEMEntry
+    ACCESS not-accessible
+    STATUS mandatory
+    DESCRIPTION        "An entry in memTable"
+    INDEX   { id }    ::= { memTable 1 }
+
+MEMEntry ::= SEQUENCE {
+    id DisplayString,
+    total INTEGER,
+    used INTEGER,
+    memStatus RowStatus}
+
+id OBJECT-TYPE
+    SYNTAX DisplayString
+    ACCESS read-only
+    STATUS mandatory
+    DESCRIPTION "Id. Used as index for memTable."
+    ::= { memEntry 1 }
+
+total OBJECT-TYPE
+    SYNTAX INTEGER
+    ACCESS read-only
+    STATUS mandatory
+    DESCRIPTION "Total memory, Kb"
+    ::= {memEntry 2}
+
+used OBJECT-TYPE
+    SYNTAX INTEGER
+    ACCESS read-write
+    STATUS mandatory
+    DESCRIPTION "Used memory, Kb"
+    ::= { memEntry 3 }
+
+memStatus OBJECT-TYPE
+    SYNTAX RowStatus
+    ACCESS  read-write
+    STATUS  mandatory
+    DESCRIPTION "The status of this row."
+    ::= { memEntry 4 }
+
+END
