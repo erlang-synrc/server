@@ -24,40 +24,72 @@ dhtEntry OBJECT-TYPE
     ACCESS not-accessible
     STATUS mandatory
     DESCRIPTION        "An entry in dhtTable"
-    INDEX   { dName }    ::= { dhtTable 1 }
+    INDEX   { nodeName }    ::= { dhtTable 1 }
 
 DHTEntry ::= SEQUENCE {
-    dName DisplayString,
-    nodeGets INTEGER,
-    nodePuts INTEGER,
+    nodeName DisplayString,
+    handoffTimeouts INTEGER,
+    nodeGetsTotal INTEGER,
+    nodePutsTotal INTEGER,
+    cpuAvg15 INTEGER,
+    nodeGetFsmTimeMedian OCTET STRING,
+    nodePutFsmTimeMedian OCTET STRING,
     dhtStatus RowStatus}
 
-dName OBJECT-TYPE
+nodeName OBJECT-TYPE
     SYNTAX DisplayString
     ACCESS read-only
     STATUS mandatory
     DESCRIPTION "Server name. Used as index for dhtTable."
     ::= { dhtEntry 1 }
 
-nodeGets OBJECT-TYPE
+handoffTimeouts OBJECT-TYPE
     SYNTAX INTEGER
-    ACCESS  read-write
-    STATUS  mandatory
-    DESCRIPTION "Number of Gets coordinated by this node within last minute."
-    ::= { dhtEntry 2 }
+    ACCESS read-only
+    STATUS mandatory
+    DESCRIPTION "Number of handoff timeouts encountered by this node."
+    ::= {dhtEntry 2}
 
-nodePuts OBJECT-TYPE
+nodeGetsTotal OBJECT-TYPE
     SYNTAX INTEGER
-    ACCESS  read-write
-    STATUS  mandatory
-    DESCRIPTION "Number of Puts coordinated by this node within last minute."
+    ACCESS read-write
+    STATUS mandatory
+    DESCRIPTION "Number of GET operations coordinated by vnodes on this node since node was started."
     ::= { dhtEntry 3 }
+
+nodePutsTotal OBJECT-TYPE
+    SYNTAX INTEGER
+    ACCESS read-write
+    STATUS mandatory
+    DESCRIPTION "Number of PUT operations coordinated by vnodes on this node since node was started."
+    ::= { dhtEntry 4 }
+
+cpuAvg15 OBJECT-TYPE
+    SYNTAX INTEGER
+    ACCESS read-write
+    STATUS mandatory
+    DESCRIPTION "The average number of active processes for the last 15 minutes."
+    ::= { dhtEntry 5 }
+
+nodeGetFsmTimeMedian OBJECT-TYPE
+    SYNTAX OCTET STRING
+    ACCESS read-write
+    STATUS mandatory
+    DESCRIPTION "Mean time between reception of client GET request and subsequent response to client."
+    ::= { dhtEntry 6 }
+
+nodePutFsmTimeMedian OBJECT-TYPE
+    SYNTAX OCTET STRING
+    ACCESS read-write
+    STATUS mandatory
+    DESCRIPTION "Mean time between reception of client PUT request and subsequent response to client."
+    ::= { dhtEntry 7 }
 
 dhtStatus OBJECT-TYPE
     SYNTAX RowStatus
     ACCESS  read-write
     STATUS  mandatory
     DESCRIPTION "The status of this row."
-    ::= { dhtEntry 4 }
+    ::= { dhtEntry 8 }
 
 END

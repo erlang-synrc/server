@@ -90,6 +90,7 @@ and put its libraries (listed below) to /mnt/glusterfs/apps/riak_bin.
  - webmachine
  - bitcask
  - folsom
+ - bear
  - sext
  - eleveldb
  - protobuffs
@@ -110,7 +111,7 @@ Symlink required riak libraries to your erlang libs dir:
     $ ln -s /mnt/glusterfs/apps/riak/rel/riak/lib/ \
          {riak_sysmon,riak_pipe,riak_kv,riak_core,poolboy, \
           luke,erlang_js,riak_pb,riak_control,webmachine,bitcask, \
-          folsom,riak_api,sext,eleveldb,protobuffs,ebloom,mochiweb}-* ~/erl-r14/lib/
+          folsom,bear,riak_api,sext,eleveldb,protobuffs,ebloom,mochiweb}-* ~/erl-r14/lib/
 
 Required files for db to be initialized properly:
 Create folder /home/kakauser/tmp/kaka. And copy files from ~/kakauser/tmp/kaka 
