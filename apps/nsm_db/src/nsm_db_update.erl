@@ -150,7 +150,52 @@ clean_multiple_likes() ->
         end
     || EntryLike <- EntryLikes].
 
-% fill top with users depending on entry count
+% fill top with users depending on entry count 18 Oct 2012
 populate_active_users_top() ->
     [nsm_users:attempt_active_user_top(UId, feed:get_entries_count(UId)) || #user{username=UId} <- nsm_db:all(user)].
 
+% converting group subscriptions to leveldb 19 Oct 2012
+count_entries(UId, GId) ->
+    AllEntries = nsm_db:all(entry),
+    {_, Group} = nsm_groups:get_group(GId),
+    case Group of
+        notfound -> ok;
+        _ ->
+            GFId = Group#group.feed,
+            length([1 || E <- AllEntries, E#entry.feed_id == GFId, E#entry.from == UId])
+    end.
+
+group_member_to_group_subs() ->
+    [[nsm_db:put(#group_subs{user_id=Who, group_id=Group, user_type=Type, user_posts_count=count_entries(Who, Group)}) 
+        || #group_member{who=Who, group=Group, type=Type} <- Subs] 
+            || #group_member{group=Subs} <- nsm_db:all(group_member)].
+
+% enriching group for useful statistics 22 Oct 2012
+count_group_users(GId) -> 
+    length(nsm_groups:list_group_members(GId)).
+
+count_group_entries(GId) ->
+    AllEntries = nsm_db:all(entry),
+    {ok, Group} = nsm_groups:get_group(GId),
+    GFId = Group#group.feed,
+    length([1 || E <- AllEntries, E#entry.feed_id == GFId]).
+
+add_two_0_to_group_if_needed() ->
+    Groups = nsm_db:all(group),
+    [case size(Group) of
+        9 -> nsm_db:put(list_to_tuple(tuple_to_list(Group) ++ [0,0]));
+        _ -> ok
+     end   
+        || Group <- Groups].
+
+enrich_groups_with_statistics() ->
+    add_two_0_to_group_if_needed(),
+    Groups = nsm_db:all(group),
+    [nsm_db:put(Group#group{users_count=count_group_users(Group#group.username), entries_count=count_group_entries(Group#group.username)})
+        || Group <- Groups].
+
+% in order to properly update groups with one call you should call this:
+update_groups_to_leveldb() ->
+    add_two_0_to_group_if_needed(),
+    group_member_to_group_subs(),
+    enrich_groups_with_statistics().

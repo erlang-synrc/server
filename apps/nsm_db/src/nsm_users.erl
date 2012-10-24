@@ -46,6 +46,8 @@
          attempt_active_user_top/2,
          get_active_user_top/0,
 
+         user_realname/1,
+
          login_posthook/1,
          init_mq/2, subscribe_user_mq/3, remove_subscription_mq/3,
          init_mq_for_group/1,
@@ -136,15 +138,13 @@ register(#user{username=U, email=Email, facebook_id=FBId} = RegisterData0) ->
 	end,
 
     % have to check groups for this name now
-    % also nsm_groups:get_group/1 doesn't work as it should, so have to do check like this
     FindUser2 = case FindUser of
     	ok ->
-            AllGroups = [G#group.username || G <- nsm_groups:get_all_groups()],
-            case lists:member(U, AllGroups) of
-                true ->
-                    {error, username_taken};
-                false ->
-                    ok
+            case nsm_groups:get_group(U) of
+                {error, notfound} ->
+                    ok; % it means username is free
+                _ ->
+                    {error, username_taken}
             end;
         SomethingElse ->
             SomethingElse
@@ -195,9 +195,8 @@ delete_user(UserName) ->
    case get_user(UserName) of
 	{ok, User} ->
 	   %% remove from all groups
-	   G = nsm_groups:list_group_per_user(User),
-	   G2R = [ {UId, GId} || #group_member{who = UId, group = GId} <- G],
-	   [ nsm_nsm_groups:remove_from_group(UId, GId) || {UId, GId} <- G2R],
+       GIds = nsm_group:list_groups_per_user(User),
+       [nsx_util_notification:notify(["subscription", "user", UserName, "remove_from_group"], {GId}) || GId <- GIds],
 	   %% remove from subcribtions
 	   S = list_subscr(User),
 	   F2U = [ {MeId, FrId} || #subscription{who = MeId, whom = FrId} <- S ],
@@ -261,22 +260,7 @@ list_subscr(UId, PageNumber, PageAmount) when is_list(UId) ->
 	 end,
 	lists:sublist(list_subscr(UId), Offset, PageAmount).
 list_subscr_for_metalist(UId) ->
-    [
-        begin
-              case get_user(UserId) of
-             {ok, UserInfo} ->
-                  RealName = if
-                   UserInfo#user.surname == undefined, UserInfo#user.name == undefined -> UserId;
-                   UserInfo#user.surname == undefined -> UserInfo#user.name;
-                   UserInfo#user.name == undefined -> UserInfo#user.surname;
-                   true -> UserInfo#user.name ++ " " ++ UserInfo#user.surname
-                   end,
-                  {UserId, RealName};
-              _ -> ?INFO("Metalist Error User Not Found: ~p",[UserId])
-              end
-
-        end
-    || {subs, _, UserId} <- list_subscr(UId)].
+    [{UserId, user_realname(UserId)} || {subs, _, UserId} <- list_subscr(UId)].
 
 list_subscr_me(#user{username = UId}) ->
     list_subscr_me(UId);
@@ -472,6 +456,25 @@ get_active_user_top() ->
     SortedTop = lists:sort(nsm_db:all(active_users_top)),
     [{UId, N} || #active_users_top{no = N, user_id = UId} <- SortedTop].
 
+user_realname(UId) ->
+    {ok, User} = get_user(UId),
+    Name = if
+        is_binary(User#user.name) -> binary_to_list(User#user.name);
+        is_atom(User#user.name) -> atom_to_list(User#user.name);
+        true -> User#user.name
+    end,
+    Surname = if
+        is_binary(User#user.surname) -> binary_to_list(User#user.surname);
+        is_atom(User#user.surname) -> atom_to_list(User#user.surname);
+        true -> User#user.surname
+    end,
+    if
+        Name=="undefined", Surname=="undefined" -> UId;
+        Name=="undefined" -> Name;
+        Surname=="undefined" -> Surname;
+        true -> Name ++ [" "] ++ Surname
+    end.
+
 
 %% This function will be called from nsm_auth, after successfull login.
 login_posthook(User) ->
@@ -509,7 +512,7 @@ init_mq(User, Groups) ->
     %% Then if user will open pages or run comet processes on different servers
     %% we just will create queue to consume from this exchange without any
     %% additional db requests.
-    ?INFO("~p init mq. nsm_groups: ~p", [User, Groups]),
+    ?INFO("~p init mq. nsm_users: ~p", [User, Groups]),
 
     UserExchange = ?USER_EXCHANGE(User),
     %% we need fanout exchange to give all information to all users queues
@@ -520,7 +523,7 @@ init_mq(User, Groups) ->
     ?INFO("Cration Exchange: ~p,",[{Channel,UserExchange,ExchangeOptions}]),
     ok = nsm_mq_channel:create_exchange(Channel, UserExchange,
                                         ExchangeOptions),
-                                          ?INFO("Creatied OK"),
+                                          ?INFO("Created OK"),
     %% build routing keys for user's relations
     Relations = build_user_relations(User, Groups),
 

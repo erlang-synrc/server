@@ -75,7 +75,7 @@ body() ->
 		    ui_update_buttons()
 	    end,
 	    UId = webutils:user_info(username), 
-	    wf:state(user_in_groups, nsm_groups:list_group_per_user(UId)),
+	    wf:state(user_in_groups, nsm_groups:list_groups_per_user(UId)),
 	    wf:state(users_subscribe, nsm_users:list_subscr(UId)), 
 	    main_authorized();
 	{redirect, login} ->
@@ -504,7 +504,7 @@ get_tables2(Setting,UId,GameFSM,Convert) ->
     FilterAnyUser = case GetPropList(group, Setting) of
         undefined -> [];
         GroupId -> 
-            [GMR#group_member_rev.who || GMR <- nsm_groups:list_group_membership(GroupId)]
+            [UId || UId <- nsm_groups:list_group_members(GroupId)]
     end,
 
     MaxUsers = case GameFSM of "tavla" -> 2; "okey" -> 4 end,
@@ -911,8 +911,13 @@ tab_group_setting() ->
         _ -> "list1"
     end,
     Groups = wf:state(user_in_groups),
-    View = [ #listitem{body=construct_id(#link{text=Name, postback={tag,{group, Name}}})}
-	     || #group_member{group = Name} <- Groups ],
+    View = [
+            begin
+                {ok, Group} = nsm_groups:get_group(GId),
+                Name = Group#group.name,
+                #listitem{body=construct_id(#link{text=Name, postback={tag,{group, Name}}})}
+            end
+	     || GId <- Groups ],
     #panel{class="create-game-groups-box",       
 	   body=[
          "<span id='guidersgroupfiltername'>",

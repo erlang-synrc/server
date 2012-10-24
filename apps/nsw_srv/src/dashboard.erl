@@ -577,13 +577,15 @@ autocomplete_enter_event(SearchTerm, _Tag) ->
             end || #subs{whom = Who} <- Sub,
                 lists:member(list_to_binary(string:to_lower(Who)), AlreadySelected)=:=false ]
         end,
-    DataG = case nsm_groups:list_group_per_user_with_count(wf:user(),wf:user()) of
+    DataG = case nsm_groups:list_groups_per_user(wf:user()) of
         [] -> [];
         Gs ->
             [begin
+                {ok, Group} = nsm_groups:get_group(GId),
+                GName = Group#group.name,
                 Value = encode_term({GId, group}),
                 {struct, [{id, list_to_binary(GName)}, {label, list_to_binary(GName)} , {value,  Value}]}
-            end || {#group_member{group = GId, group_name = GName}, _} <- Gs,
+            end || GId <- Gs,
                 lists:member(list_to_binary(GId), AlreadySelected)=:=false ]
     end,
     Data = DataU ++ DataG,

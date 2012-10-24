@@ -16,6 +16,8 @@
 
 -define(TOOLTIP_TIMEOUT, "1500").
 
+-define(GROUPS_ON_DASHBOARD, 5).
+
 main() ->
     [].
 
@@ -622,7 +624,7 @@ get_members(GId) ->
           #link{text=?_T("All members"), url=?_U("/view/members")++"/id/"++GId}
         ]}
     ],
-    get_metalist(GId, ?_T("MEMBERS"), nsm_groups, list_user_with_name_in_group, ?_T("Group have no members"), Nav).
+    get_metalist(GId, ?_T("MEMBERS"), nsm_groups, list_group_members, ?_T("Group have no members"), Nav).
 
 get_friends() ->
     User = webutils:user_info(),
@@ -670,36 +672,45 @@ get_friends(User) ->
     ].
 
 get_metalist(Id, Title, Module, List, EmptyMsg, Nav) ->
-    {Friends, _} = case Module:List(Id) of
+    Friends = case Module:List(Id) of
         [] ->
-            {EmptyMsg, 0};
+            [EmptyMsg];
         Sub ->
             Sub2 = lists:sublist(Sub, 10),
-            {[
-                begin
-                    case WhoName of
-                        [Name, 32, LastName] ->
-                            if   
-                                LastName == "", Name == "" ->
-                                    RealName = Who;
-                                LastName == "undefined", Name == "undefined" ->
-                                    RealName = Who;
-                                LastName == "undefined" ->
-                                    RealName = Name;
-                                Name == "undefined" ->
-                                    RealName = LastName;
-                                true ->
-                                    RealName = Name ++ [" "] ++ LastName
-                            end;
-                        "" -> RealName = Who;
-                        Name_Surname -> RealName = Name_Surname
+            case Sub2 of
+                [] -> [];
+                _ ->    
+                    Sub3 = case is_list(hd(Sub2)) of    % just ids, no names
+                        true -> [{UId, undefined} || UId <- lists:sort(Sub2)];
+                        _ -> Sub2
                     end,
-                    #listitem{body=[
-                        #image{image=get_user_avatar(Who), style="width:32px,height:33px"},
-                        #link{text=RealName, url=site_utils:user_link(Who)}
-                    ]}
-                end
-            || {Who,WhoName} <- Sub2 ], length(Sub)}
+                    [
+                        begin
+                            case WhoName of
+                                undefined -> RealName = nsm_users:user_realname(Who);   % because name is changable
+                                [Name, 32, LastName] ->
+                                    if   
+                                        LastName == "", Name == "" ->
+                                            RealName = Who;
+                                        LastName == "undefined", Name == "undefined" ->
+                                            RealName = Who;
+                                        LastName == "undefined" ->
+                                            RealName = Name;
+                                        Name == "undefined" ->
+                                            RealName = LastName;
+                                        true ->
+                                            RealName = Name ++ [" "] ++ LastName
+                                    end;
+                                "" -> RealName = Who;
+                                Name_Surname -> RealName = Name_Surname
+                            end,
+                            #listitem{body=[
+                                #image{image=get_user_avatar(Who), style="width:32px,height:33px"},
+                                #link{text=RealName, url=site_utils:user_link(Who)}
+                            ]}
+                        end
+                    || {Who, WhoName} <- Sub3 ]
+            end
     end,
     [
         #panel{class="box", body=[
@@ -749,7 +760,7 @@ get_groups() ->
 
 %% user - #user{username}
 get_groups(User) ->
-    Groups = case nsm_groups:list_group_per_user_with_count(User, wf:user()) of
+    Groups = case nsm_groups:list_groups_per_user(User#user.username) of
         [] ->
             case User#user.username == wf:user() of
                 true ->
@@ -758,12 +769,21 @@ get_groups(User) ->
                     ?_T("$user$ is currently not in any group")
             end;
         Gs ->
+            UC_GId = lists:sublist(
+                lists:reverse(
+                    lists:sort([{nsm_groups:group_members_count(GId), GId} || GId <- Gs])
+                ), 
+            ?GROUPS_ON_DASHBOARD),
             lists:flatten([
-                #listitem{body=[
-                    #link{body=[GName], url=site_utils:group_link(GId)},
-                    #span{style="padding-left:4px;", text="(" ++ integer_to_list(UserCount) ++ ")"}
-                ]}
-                || {#group_member{group = GId, group_name = GName}, UserCount} <- lists:sublist(Gs, 5)
+                begin
+                    {ok, Group} = nsm_groups:get_group(GId),
+                    GName = Group#group.name,
+                    #listitem{body=[
+                        #link{body=[GName], url=site_utils:group_link(GId)},
+                        #span{style="padding-left:4px;", text="(" ++ integer_to_list(UC) ++ ")"}
+                    ]}
+                end
+                || {UC, GId} <- UC_GId
             ])
     end,
     [

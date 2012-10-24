@@ -630,12 +630,19 @@ load_db(Path) ->
                     Meta = dict:store(<<"index">>, Indices, dict:new()),
                     Obj2 = riak_object:update_metadata(Obj1, Meta),
                     ok = Handler:put(Obj2, []);
-                transaction -> %%%%%%%%%%%%%%%%%%%% transaction
+                transaction ->
                     ?INFO("Tx: ~p",[E]),
                         case E of {transaction,Id,T,Am,R,A,C,I} ->
                          Tx = #transaction{id = Id, commit_time = T,  amount = Am, remitter =R, acceptor = A, currency =C, info = I},
                          %add_transaction_to_user(A,Tx);
                          put(Tx);
+                         _ -> skip 
+                        end;
+                group ->
+                    ?INFO("Grp: ~p",[E]),
+                        case E of {group,A1,A2,A3,A4,A5,A6,A7,A8} ->
+                         Grp = {group,A1,A2,A3,A4,A5,A6,A7,A8,0,0},
+                         put(Grp);
                          _ -> skip 
                         end;
                 membership_purchase ->
