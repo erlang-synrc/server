@@ -193,3 +193,9 @@ enrich_groups_with_statistics() ->
     Groups = nsm_db:all(group),
     [nsm_db:put(Group#group{users_count=count_group_users(Group#group.username), entries_count=count_group_entries(Group#group.username)})
         || Group <- Groups].
+
+% in order to properly update groups with one call you should call this:
+update_groups_to_leveldb() ->
+    add_two_0_to_group_if_needed(),
+    group_member_to_group_subs(),
+    enrich_groups_with_statistics().
