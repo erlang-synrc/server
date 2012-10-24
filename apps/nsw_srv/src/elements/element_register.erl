@@ -373,6 +373,8 @@ event({register_success, User}) ->
     login:login_user(User);
 
 event(register) ->
+    wf:update(register_hintbox, "<span style='color:#77AA77'>" ++ ?_T("Please wait...") ++ "</span>"),
+    wf:flush(),
     InviteCodeRec = wf:state(invite),
     case InviteCodeRec of
         #invite_code{code = InviteCode} ->
