@@ -15,88 +15,6 @@ main() ->
         false -> wf:redirect_to_login(?_U("/login"))
     end.
 
-group_info(all) ->
-    GId = wf:q(id),
-    case get(group_info) of
-        {GId, Info} ->
-            Info;
-        _ ->
-            Info = nsm_groups:get_group(GId),
-            put(group_info, {GId, Info}),
-            Info
-    end;
-group_info(exists) ->
-    Info = group_info(all),
-    is_record(Info, group);
-group_info(description) ->
-    Info = group_info(all),
-    Info#group.description;
-group_info(username) ->
-    Info = group_info(all),
-    Info#group.username;
-group_info(name) ->
-    Info = group_info(all),
-    Info#group.name;
-group_info(publicity) ->
-    Info = group_info(all),
-    Info#group.publicity;
-group_info(creator) ->
-    Info = group_info(all),
-    Info#group.creator;
-group_info(created) ->
-    Info = group_info(all),
-    Info#group.created;
-group_info(feed) ->
-    Info = group_info(all),
-    Info#group.feed;
-group_info(owner) ->
-    Info = group_info(all),
-    Info#group.owner;
-group_info(access_level) ->
-    GId = wf:q(id),
-    User = wf:user(),
-    case get(group_access_level) of
-        {GId, User, AccessLevel} -> AccessLevel;
-        _ ->
-            AccessLevel = nsm_groups:user_access(GId,User),
-            put(group_access_level, {GId, User, AccessLevel}),
-            AccessLevel
-    end;
-group_info(member) ->
-    GId = wf:q(id),
-    case {wf:user(), get(group_members)} of
-        {undefined, _} -> false;
-        {User, {GId, Members}} ->
-            lists:any(fun({A,_})->A==User;(A)->A==User end, Members);
-        {User, _} ->
-            case get(group_member) of
-                {GId, User, Member} -> Member;
-                _ ->
-                    Member = nsm_groups:user_inside(GId,User),
-                    put(group_member, {GId, User, Member}),
-                    Member
-            end
-    end;
-group_info(membership) ->
-    GId = wf:q(id),
-    case get(group_membership) of
-        {GId, Membership} -> Membership;
-        _ ->
-            Membership = nsm_groups:list_group_membership(GId),
-            put(group_membership, {GId, Membership}),
-            Membership
-    end;
-group_info(members) ->
-    GId = wf:q(id),
-    case get(group_members) of
-        {GId, Members} -> Members;
-        _ ->
-            Members = nsm_groups:list_user_in_group(GId),
-            put(group_members, {GId, Members}),
-            Members
-    end.
-
-
 main_authorized() ->
     dashboard:main_authorized().
 
@@ -105,37 +23,31 @@ title() -> webutils:title(?MODULE).
 body() ->
     #template{file=code:priv_dir(nsw_srv)++"/templates/view-group.html"}.
 
-has_access() ->
-    case group_info(exists) of
-        false ->
-            false;
-        true ->
-            case {group_info(publicity),group_info(member)} of
-                {public, _} -> true;
-                {moderated, _} -> true;
-                {private, true} -> true;
-                _ -> false
-            end
-    end.
-
 content() ->
-    case group_info(exists) of
-        true -> [
-            req_invite(),
-            case has_access() of
-                true -> feed_form();
-                false -> hidden_form()
-            end
-        ];
-        false -> [ no_group() ]
+    GId = wf:q(id),
+    UId = wf:user(),
+    {_, Group} = nsm_groups:get_group(GId),
+    case Group of
+        notfound -> [ 
+                no_group() 
+            ];
+        _ -> [
+                req_invite(),
+                case nsm_groups:user_has_access(UId, GId) of
+                    true -> feed_form(Group);
+                    false -> hidden_form()
+                end
+            ]
     end.
-
 
 req_invite() ->
-    case {group_info(publicity),group_info(member)} of
-        {_, true} -> [];
-        {public, false} -> join_form();
-        {_, false} -> req_invite_form()
+    GId = wf:q(id),
+    UId = wf:user(),
+    case {nsm_groups:group_publicity(GId), nsm_groups:group_user_type(UId, GId)} of
+        {_, member} -> [];
+        {_, admin} -> [];
+        {public, _} -> join_form();
+        {_, _} -> req_invite_form()
     end.
 
 %TODO
@@ -204,46 +116,55 @@ no_group() ->
             ]}
     ].
 
-feed_form() ->
-    FId  = group_info(feed),
-    wf:state(feed_owner, {group, wf:q(id)}),
+feed_form(Group) ->
+    GId = Group#group.username,
+    FId = Group#group.feed,
+    wf:state(feed_owner, {group, GId}),
     [
-     #panel{body=dashboard:entry_form(FId, dashboard, {add_entry, FId})},
-     #grid_clear{},
-     #panel{id=attachment_box},
-     #grid_clear{},
-     #panel{body=view_feed()}
+        #panel{body=dashboard:entry_form(FId, dashboard, {add_entry, FId})},
+        #grid_clear{},
+        #panel{id=attachment_box},
+        #grid_clear{},
+        #panel{body=view_feed(Group)}
     ].
 
-view_feed() ->
-    FId = group_info(feed),
-    UId = group_info(username),
+view_feed(Group) ->
+    UId = wf:user(),
+    GId = Group#group.username,
+    FId = Group#group.feed,
+    {ok, UInfo} = nsm_users:get_user(UId),
     Entries = nsm_db:entries_in_feed(FId, ?FEED_PAGEAMOUNT),
-    comet_feed:start(group, FId, UId, wf:session(user_info)),
+    comet_feed:start(group, FId, GId, UInfo),
     webutils:view_feed_entries(?MODULE, ?FEED_PAGEAMOUNT, Entries).
 
 
 get_members() ->
+    GId = wf:q(id),
+    UId = wf:user(),
     [
-        case group_info(access_level) of
+        case nsm_groups:group_user_type(UId, GId) of
             moder -> incoming_invites();
             admin -> incoming_invites();
             _ -> []
         end,
-        case has_access() of
-            true ->  webutils:get_members(group_info(username));
+        case nsm_groups:user_has_access(UId, GId) of
+            true ->  webutils:get_members(GId);
             false -> []
         end
     ].
 
 incoming_invites() ->
-    Members = group_info(membership),
+    GId = wf:q(id),
+    MemberTypes = nsm_groups:list_group_members_with_types(GId),
     Invites = [
-        #listitem{body=[
-            #link{ text = WhoName, postback={invite_act, WhoName, Who} }
-        ]}
-    || #group_member_rev{ who = Who, who_name = WhoName, type=Type } <- Members, Type == invreq ],
-    case Invites of  %PUBLIC DEMO No requests - no block
+        begin
+            RealName = nsm_users:real_name(UId),
+            #listitem{body=[
+                #link{ text = RealName, postback={invite_act, RealName, GId} }
+            ]}
+        end
+    || {UId, UType} <- MemberTypes, UType == invreq ],
+    case Invites of
         [] ->
             [];
         _ ->
@@ -254,86 +175,81 @@ incoming_invites() ->
     end.
 
 group_info() ->
-    case group_info(exists) of
-        false -> [];
-        true ->
-            CTime = group_info(created),
+    UId = wf:user(),
+    GId = wf:q(id),
+    {_, Group} = nsm_groups:get_group(GId),
+    case Group of
+        notfound -> [];
+        _ ->
+            CTime = Group#group.created,
             {D,_H} = calendar:now_to_local_time(CTime),
             Date = io_lib:fwrite("~b/~b/~b", tuple_to_list(D)),
-            Info = group_info(all),
 
-            Ava = webutils:get_group_avatar(Info#group.username, "big"),
+            Ava = webutils:get_group_avatar(Group#group.username, "big"),
 
-            Description = case has_access() of
-                true -> #span{id=group_info_description, style="font-size:11pt;", text=Info#group.description};
+            Description = case nsm_groups:user_has_access(UId, GId) of
+                true -> #span{id=group_info_description, style="font-size:11pt;", text=Group#group.description};
                 false -> []
             end,
-            MemberCount = nsm_groups:get_members_count(Info#group.username),
-            Membership = case group_info(member) of
+            MemberCount = Group#group.users_count,
+            Membership = case nsm_groups:user_in_group(UId, GId) of
                 true -> 
-                    case Info#group.username of
+                    case Group#group.username of
                         "kakaranet" ->
                             ""; %PUBLIC BETA One can not unsubscribe from kakaranet for now. 
                         _ ->
                             case MemberCount of
                                 1 -> "";
                                 _ ->
-                                    #link{text=?_T("Leave group"), postback={leave_group, Info}, id="leavegrouplink", 
+                                    #link{text=?_T("Leave group"), postback={leave_group, Group}, id="leavegrouplink", 
                                         style="padding-left:17px; font-weight:bold; font-size:1.1em;",
                                         title=?_T("You may unsubscribe from group messages this way. 
                                             You can also subscribe back later if you wish")}
                             end
                     end;
                 false ->
-                    %TODO:
-                    %#listitem{body=[?_T("$N$ of your friends are members")]}
                     ""
             end,
 
             #panel{class="box user-info", body=[
-                #h3{id=group_info_name, style="letter-spacing:0px;", text=Info#group.name},
+                #h3{id=group_info_name, style="letter-spacing:0px;", text=Group#group.name},
                 Description,
                 #br{},
                 #br{},
                 #panel{class=img, body=#image{image=Ava}},
             #list{class=user_info, body=[
-                    #listitem{body=[?_T("Publicity")++": ",#span{id=group_info_publicity, text=Info#group.publicity}]},
+                    #listitem{body=[?_T("Publicity")++": ",#span{id=group_info_publicity, text=Group#group.publicity}]},
                     #listitem{body=[?_T("Created")++": ",#span{text=Date}]},
-                    #listitem{body=[?_T("Owner")++": ",#span{id=group_info_owner, text=Info#group.owner}]},
+                    #listitem{body=[?_T("Owner")++": ",#span{id=group_info_owner, text=Group#group.owner}]},
                     #listitem{body=[?_T("Members")++": ",#span{text=integer_to_list(MemberCount)}]}
                 ]},
                 Membership,
-                group_edit_form(Info#group.owner),
+                group_edit_form(Group),
                 #br{},
                 #br{}
            ]}
     end.
 
 user_in_group() ->
-    Members = group_info(members),
-    [?_T("Users in this group:"),
-     #panel{style="text-align: left;",
-            body=[view_user(Members)]}].
-
-
-
-big() ->
-    [
+    GId = wf:q(id),
+    Members = nsm_groups:list_group_members(GId),
+    [   ?_T("Users in this group:"),
+         #panel{style="text-align: left;", body=[view_user(Members)]}
     ].
 
 view_user(Users) ->
-    [ #panel{body=site_utils:user_vcard(Who)}
-      || Who <- Users ].
+    [#panel{body=site_utils:user_vcard(Who)} || Who <- Users ].
 
-group_edit_form(Owner) ->
+group_edit_form(Group) ->
+    Owner = Group#group.owner,
     case wf:user() of
-        Owner -> [#br{}, #link{text=?_T("Group settings"), postback=show_group_edit, style="padding-left:17px; font-weight:bold; font-size:1.1em;"} ];
+        Owner -> [#br{}, #link{text=?_T("Group settings"), postback={show_group_edit, Group}, style="padding-left:17px; font-weight:bold; font-size:1.1em;"} ];
         _ -> []
     end.
 
-show_editgroup_content() ->
+show_editgroup_content(Group) ->
     Title = #h1{class = "head", text = ?_T("Group settings")},
-    Settings = editgroup_form(),
+    Settings = editgroup_form(Group),
     Body = [Title,
             #panel{class=holder, body=
              [Settings,
@@ -344,31 +260,31 @@ show_editgroup_content() ->
            ]}],
     webutils:lightbox_panel_template(simple_lightbox, Body).
 
-editgroup_form() ->
+editgroup_form(Group) ->
     [#panel { class="group-settings", body = [
         #grid_4 { body=[
             #panel{
                 body = [
                     #label{style="float:left;", text = ?_T("Group username") ++ ": "},
-                    #label{id = group_username, style="font-weight:bold;", text=group_info(username)}
+                    #label{id = group_username, style="font-weight:bold;", text=Group#group.username}
             ]},            
             #label{text = ?_T("Group name")},
             #panel{class = "text",
-                body = [#textbox{id = group_name, text=group_info(name)}]},
+                body = [#textbox{id = group_name, text=Group#group.name}]},
             #label{text = ?_T("Group owner")},
             #panel{class = "text",
-                body = [#textbox{id = group_owner, text=group_info(creator)}]}
+                body = [#textbox{id = group_owner, text=Group#group.creator}]}
         ]},
         #grid_4 { body=[
             #label{text = ?_T("Group description")},
             #panel{class = "textarea", style="height:74px;",
-                body = [#textarea{id = group_desc, text=group_info(description), style="resize:none; height:60px;"}]},
+                body = [#textarea{id = group_desc, text=Group#group.description, style="resize:none; height:60px;"}]},
             #panel{class = "error", body=[
                 #label{text = "", class="error", id="update_error"}
             ]},
             #label{text = ?_T("Publicity")},
             #panel{class="sel", body=[
-                #dropdown{class="cs-3", id=group_publicity, value=group_info(publicity), options=[
+                #dropdown{class="cs-3", id=group_publicity, value=Group#group.publicity, options=[
                     #option{text=?_T("Public group"), value=public},
                     #option{text=?_T("Private group"), value=private}
                 ]}
@@ -400,11 +316,8 @@ leave_group_form(Group) ->
            ]}],
     webutils:lightbox_panel_template(simple_lightbox, Body).
 
-event({change_language,SL}) ->  %PUBLIC BETA this is here just to fix not working language selector bug ASAP
-    webutils:event({change_language, SL});
-
-event(show_group_edit) ->
-    wf:update(simple_panel, show_editgroup_content()),
+event({show_group_edit, Group}) ->
+    wf:update(simple_panel, show_editgroup_content(Group)),
     wf:wire(simple_lightbox, #show{});
 
 event(hide_group) ->
@@ -413,41 +326,24 @@ event(hide_group) ->
 event({approve, Who}) ->
     GId = wf:q(id),
     User = wf:user(),
-    Rpc = nsm_groups:invite_user(GId, User, Who),
-    io:format("Approve result=~p~n", [Rpc]),
+    nsx_util_notification:notify(["subscription", "user", User, "invite_to_group"], {GId, Who}),
     wf:replace(incoming_invites, incoming_invites()),
     wf:wire(simple_lightbox, #hide{});
 
 event({reject, Who}) ->
     GId = wf:q(id),
     User = wf:user(),
-    Rpc = nsm_groups:reject_invite(GId, User, Who, "Sorry"),
-    io:format("Rpc = ~p~n", [Rpc]),
+    nsx_util_notification:notify(["subscription", "user", User, "reject_invite_to_group"], {GId, Who, ?_T("Sorry")}),
     wf:replace(incoming_invites, incoming_invites()),
     wf:wire(simple_lightbox, #hide{});
 
 event(update_group) ->
     GId = wf:q(id),
-    NewUId = case {wf:q(group_username),group_info(username)} of
-        {UId,UId} -> undefined;
-        {UId,_} -> UId
-    end,
-    NewName = case {wf:q(group_name),group_info(name)} of
-        {Name,Name} -> undefined;
-        {Name,_} -> Name
-    end,
-    NewDesc = case {wf:q(group_desc),group_info(description)} of
-        {Desc,Desc} -> undefined;
-        {Desc,_} -> Desc
-    end,
-    NewOwner = case {wf:q(group_owner),group_info(owner)} of
-        {Owner,Owner} -> Owner; %PUBLIC BETA we need to check if user exists, therefore it shouldn't been unknown
-        {Owner,_} -> Owner
-    end,
-    NewPublicity = case {wf:q(group_publicity),group_info(publicity)} of
-        {Publicity,Publicity} -> undefined;
-        {Publicity,_} -> Publicity
-    end,
+    NewUId = wf:q(group_username),
+    NewName = wf:q(group_name),
+    NewDesc = wf:q(group_desc),
+    NewOwner = wf:q(group_owner),
+    NewPublicity = wf:q(group_publicity),
     case nsm_users:get_user({username, NewOwner}) of
         {ok, _} ->
             nsx_util_notification:notify(["db", "group", GId, "update_group"], 
@@ -503,15 +399,8 @@ finish_upload_event(X1, X2, X3, X4) ->
 autocomplete_enter_event(SearchTerm, _Tag) -> dashboard:autocomplete_enter_event(SearchTerm, _Tag).
 autocomplete_select_event(SI , _Tag) -> dashboard:autocomplete_select_event(SI, _Tag).
 
-%autocomplete_enter_event(SearchTerm, search_member) ->
-%    Members = group_info(members),
-%    List = [ {struct,[{id, User}, {label, User}, {value, User}]}
-%             || UserStr <- Members, string:str(string:to_lower(UserStr),string:to_lower(SearchTerm))>0, User <- [ list_to_binary(UserStr) ] ],
-%    mochijson2:encode(List).
-
 inplace_textbox_event(Tag, Value, FeedEntry) ->
     dashboard:inplace_textbox_event(Tag, Value, FeedEntry).
 
-%PUBLIC BETA this too. I should merge this two things: dashboard and view_group to one entity
 start_upload_event({entry_att, BoxId}) ->
     dashboard:start_upload_event({entry_att, BoxId}).
