@@ -18,8 +18,7 @@ start(Type, FeedId, FeedOwner, CurrentUser) ->
         %% put info to process dictionary, to later examine who is owner
         %% of the process
         put('**process_description**', [comet_feed, FeedOwner, CurrentUser#user.username]),
-        ?INFO("(in comet):start ~p feed comet for =~p. Pid=~p ",
-              [Type, FeedOwner, self()]),
+        ?INFO("(in comet):start ~p feed comet for =~p. Pid=~p ", [Type, FeedOwner, self()]),
         case Type of
             user ->
                 nsx_util_notification:subscribe_user(FeedOwner, self());
@@ -184,7 +183,6 @@ add_entry(EntryId, FeedId, From, Destinations, Desc, Medias) ->
     end,
 
     VEntry = #view_entry{entry=Entry},
-%    wf:wire(#attr{target=add_entry_textbox, attr="value", value=""}), % ? Is this why it empties an input box
     wf:insert_top(feed, VEntry),
     wf:flush().
 

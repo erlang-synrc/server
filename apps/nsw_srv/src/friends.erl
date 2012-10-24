@@ -175,36 +175,13 @@ get_subscribed_users(Query,UId, {Mod,Fun}) when is_list(Query) ->
     end.
 
 
-friends_view(#subs{who = Who, whom = WhoName}) -> friends_view(Who, WhoName);
-friends_view(#user{username = Who, name = Name, surname = Surname})     -> friends_view(Who, io_lib:format("~s ~s", [Name, Surname]));
-friends_view({Who,WhoName}) -> friends_view(Who,WhoName);
-friends_view(Who) -> friends_view(Who, Who).
-
-user_short_description(WhoName) ->
-    case WhoName of
+user_short_description(UId) ->
+    case UId of
         undefined -> [];
         UserName ->
-            {ok, UInfo} = nsm_users:get_user({username, UserName}),
-            #user{name=UName, surname=ULastName, age=UAge, sex=USex, location=ULoc, education=UEdu} = UInfo,
-            if
-                ULastName == undefined, UName == undefined ->
-                    URealName = UserName;
-                ULastName == undefined ->
-                    URealName = UName;
-                UName == undefined ->
-                    URealName = ULastName;
-                true ->
-                    URealName = 
-                    case is_binary(UName) of
-                        true -> binary_to_list(UName);
-                        false -> UName
-                    end ++
-                    [" "] ++ 
-                    case is_binary(ULastName) of
-                        true -> binary_to_list(ULastName);
-                        false -> ULastName
-                    end
-            end,
+            {ok, UInfo} = nsm_users:get_user(UserName),
+            #user{age=UAge, sex=USex, location=ULoc, education=UEdu} = UInfo,
+            URealName = nsm_users:user_realname(UserName),
             UDOB = case UAge of
                 undefined ->
                     undefined;
@@ -213,65 +190,57 @@ user_short_description(WhoName) ->
                 {_,_,_} ->
                     site_utils:date_to_text(UAge);
                 _ ->
-                    ""  % for NYH on srv3
+                    ""
             end,
-
             UOI = fun(undefined) -> undefined;
                      (Info) when is_atom(Info) -> atom_to_list(Info);
                      (Info) when is_integer(Info) -> integer_to_list(Info);
                      (Info) when is_list(Info) -> lists:flatten(Info);
                      (Info) when is_binary(Info) -> binary_to_list(Info);
-                     (_Info) -> ""   % for NYH on srv3
+                     (_) -> ""
             end,                    
             string:join([Ok || Ok <- [UOI(URealName), UOI(USex), UOI(UDOB), UOI(ULoc), UOI(UEdu)], Ok =/= undefined], ", ")
     end.
 
-friends_view(Who_, WhoName_) ->
-%PUBLIC BETA WTF!? Who is the current user name and WhoName is the target user id
-%                  Ok. Due to a data structure changes, we have TWO different inputs for this function
-%                  Friends page gives us a WhoName as a target user id
-%                  And group members gives us a structure with a full name as a WhoName
-    ?INFO(" ~p ~p",[Who_, WhoName_]),
-    case is_list(hd(WhoName_)) of
-        true -> % we have Who as a traget user id
-            WhoName = Who_;
-        false -> % we have WhoName as a traget user id
-            WhoName = WhoName_
-    end,
 
+friends_view(#subs{who = Who}) -> friends_view(Who);
+friends_view(#user{username = Who}) -> friends_view(Who);
+friends_view({Who, _}) -> friends_view(Who);
+
+friends_view(UId) ->
     SUId = wf:temp_id(),
     SubUnsubItem = case wf:user() of
         undefined -> [];
         User ->
-            case nsm_users:is_user_subscr(User, WhoName) of
+            case nsm_users:is_user_subscr(User, UId) of
                 true   -> #listitem{id=SUId, body=#link{url="javascript:void(0)",
                                 text=?_T("Unsubscribe"), title=?_T("You can stop seeing this users posts in your feed"),
-                                    actions=#event { type=click, postback={unsubscribe, User, WhoName, SUId} } }};
+                                    actions=#event { type=click, postback={unsubscribe, User, UId, SUId} } }};
                 false -> #listitem{id=SUId, body=#link{url="javascript:void(0)",
                                 text=?_T("Subscribe"), title=?_T("You can start seeing this users posts in your feed"),
-                                    actions=#event { type=click, postback={subscribe, User, WhoName, SUId} } }}
+                                    actions=#event { type=click, postback={subscribe, User, UId, SUId} } }}
             end
     end,
-    ShortDescription = user_short_description(WhoName),
+    ShortDescription = user_short_description(UId),
     #listitem{class="user-item", body=[
-       #link{class="entity", url=site_utils:user_link(WhoName), body=[
-            #panel{class="img", body=#image{image=webutils:get_user_avatar(WhoName, "big"), style="width:96px;height:96px"}},
-            #panel{class="user-name", body=WhoName}
+       #link{class="entity", url=site_utils:user_link(UId), body=[
+            #panel{class="img", body=#image{image=webutils:get_user_avatar(UId, "big"), style="width:96px;height:96px"}},
+            #panel{class="user-name", body=UId}
        ]},
        #panel{class="tooltip-1", body=[
             #panel{class="t", body=[
                 #panel{class="c", body=[
                     #panel{class="frame", body=[
                         #panel{class="img", body=[
-                            #image{image=webutils:get_user_avatar(WhoName, "big"), style="width:96px;height:96px"}
+                            #image{image=webutils:get_user_avatar(UId, "big"), style="width:96px;height:96px"}
                         ]},
                         #panel{class="descr", body=[
-                            io_lib:format("<strong class=\"user-name\">~s</strong>", [WhoName]), %PHASE1
+                            io_lib:format("<strong class=\"user-name\">~s</strong>", [UId]), %PHASE1
                             #label{class="user-description", text=ShortDescription},
                             #br{},
                             #br{},
                             #list{class="func-list", body=[
-                                #listitem{body=#link{url=io_lib:format("/dashboard/filter/direct/tu/~s",[WhoName]), text=?_T("Send direct message"), title=?_T("You can send a message only this user will read")}},
+                                #listitem{body=#link{url=io_lib:format("/dashboard/filter/direct/tu/~s",[UId]), text=?_T("Send direct message"), title=?_T("You can send a message only this user will read")}},
 %PHASE1                                #listitem{body=#link{url="#", text=?_T("Recommend friends")}},
 %PHASE1                                #listitem{body=[#link{url="#", text=?_T("Personal")}, " (", #link{url="#", text=?_T("edit")}, ")"]},
                                 %#listitem{body=#link{url="#", text=?_T("Unsubscribe")}}

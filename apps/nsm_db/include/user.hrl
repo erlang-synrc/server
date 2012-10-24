@@ -75,16 +75,19 @@
          creator,
          created,
          owner,
-         feed}).
+         feed,
+         users_count = 0 :: integer(),   % we have to store this, counting would be very expensive and this number is sufficient for sorting and stuff
+         entries_count = 0 :: integer()  
+    }).
 
--record(group_member, % this contains a list of group for one user
+-record(group_member, % this contains a list of group for one user      ! obsoleted by group_subs, left for data migration
         {who,
          group,
          group_name,
          id, % unused in riak, left for mnesia
          type = user}).
 
--record(group_member_rev, % this contains a list of users for a group
+-record(group_member_rev, % this contains a list of users for a group      ! obsoleted by group_subs, left for data migration
         {group,
          who,
          who_name,
@@ -93,7 +96,9 @@
 -record(group_subs,
        {user_id,
         group_id,
-        user_type}).
+        user_type,
+        user_posts_count = 0 :: integer() % we need this for sorting and counting is expensive
+       }).
 
 -record(forget_password,
         {token :: string(),

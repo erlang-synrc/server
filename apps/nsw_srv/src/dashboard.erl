@@ -581,7 +581,7 @@ autocomplete_enter_event(SearchTerm, _Tag) ->
         [] -> [];
         Gs ->
             [begin
-                {ok, Group} = nsm_group:get_group(GId),
+                {ok, Group} = nsm_groups:get_group(GId),
                 GName = Group#group.name,
                 Value = encode_term({GId, group}),
                 {struct, [{id, list_to_binary(GName)}, {label, list_to_binary(GName)} , {value,  Value}]}

@@ -138,12 +138,11 @@ get_comments_count(Uid) ->
     end.
 
 broadcast({group, Group}, Entry) ->
-    Users = nsm_groups:list_user_in_group(Group),
+    Users = nsm_groups:list_group_members(Group),
     multi_broadcast(Users, Entry);
 
 broadcast(new_table, #game_table{owner=UId} = Table) ->
-    Groups = nsm_groups:list_group_per_user(UId),
-    GIds = [GName || #group_member{group = GName} <- Groups],
+    GIds = nsm_groups:list_groups_per_user(UId),
 
     UsersList0 = rpc:call(?WEBSERVER_NODE,site_utils,get_usort_user,[GIds, []]),
     Fun = fun(User) -> table_manager:filter_table(User, Table) end,

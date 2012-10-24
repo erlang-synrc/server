@@ -185,29 +185,29 @@ inner_content(PageNumber) ->
             ]
     end.
 
-searched_content(PageNumber, Content) ->
-    GroupsView = [group_row(X) || X <- split_subs(Content, [])],
-    NextButton = if
-        length(GroupsView) < ?GROUPPERPAGE/2
-             -> #listitem{body=#link{text=">", url="javascript:void(0)", class="inactive"}};
-        true -> #listitem{body=#link{text=">", postback={search_group, PageNumber + 1}}}
-    end,
-    PrevButton = case PageNumber of
-        I when is_integer(I),I>1 -> #listitem{body=#link{text="<", postback={search_group, PageNumber - 1}}};
-        _                        -> #listitem{body=#link{text="<", url="javascript:void(0)", class="inactive"}}
-    end,
-    [
-        #panel{body=[GroupsView]},
-        #panel{class="paging-2", body=[
-        #panel{class="center", body=[
-            #list{body=[
-                    PrevButton,
-                    #listitem{body=#link{class="inactive", url="javascript:void(0)", text=io_lib:format("~b",[PageNumber])}},
-                    NextButton
-                ]}
-            ]}
-        ]}
-    ].
+%searched_content(PageNumber, Content) ->
+%    GroupsView = [group_row(X) || X <- split_subs(Content, [])],
+%    NextButton = if
+%        length(GroupsView) < ?GROUPPERPAGE/2
+%             -> #listitem{body=#link{text=">", url="javascript:void(0)", class="inactive"}};
+%        true -> #listitem{body=#link{text=">", postback={search_group, PageNumber + 1}}}
+%   end,
+%    PrevButton = case PageNumber of
+%        I when is_integer(I),I>1 -> #listitem{body=#link{text="<", postback={search_group, PageNumber - 1}}};
+%        _                        -> #listitem{body=#link{text="<", url="javascript:void(0)", class="inactive"}}
+%    end,
+%    [
+%        #panel{body=[GroupsView]},
+%        #panel{class="paging-2", body=[
+%        #panel{class="center", body=[
+%            #list{body=[
+%                    PrevButton,
+%                    #listitem{body=#link{class="inactive", url="javascript:void(0)", text=io_lib:format("~b",[PageNumber])}},
+%                    NextButton
+%                ]}
+%            ]}
+%        ]}
+%    ].
 
 get_group_rows() -> get_group_rows(1).
 get_group_rows(Page) ->
@@ -217,11 +217,14 @@ get_group_rows(Page) ->
             All = lists:sort(fun(#group{created=T1}, #group{created=T2}) -> T2 =< T1 end, nsm_groups:get_all_groups()),
             {group_row(lists:sublist(All, Offset, ?GROUPPERPAGE)), length(All)};
         UId ->
-            case nsm_groups:list_group_per_user_with_count(UId, UId, Offset, ?GROUPPERPAGE) of
+            case nsm_groups:list_groups_per_user(UId) of
                 [] ->
                     {?_T("You are not subscribed to anyone"), 0};
-                Sub ->
-                    {group_row(Sub), length(nsm_groups:list_group_per_user(UId, undefined))}
+                Full ->
+                    GroupsFull = [begin {ok, Group} = nsm_groups:get_group(GId), Group end || GId <- Full],
+                    SortedFull = lists:sort(fun(#group{created=T1}, #group{created=T2}) -> T2 =< T1 end, GroupsFull),
+                    Sub = lists:sublist(SortedFull, Offset, ?GROUPPERPAGE),
+                    {group_row(Sub), length(Full)}
             end
     end.
 
@@ -236,9 +239,11 @@ group_row(GL) when is_list(GL)->
 group_row(GL) ->
     #list{class="group-list-mkh", body=show_group_ul(GL)}.
 
-show_group_ul(#group{username=GName, description=GDesc}) ->
-    GroupMembersCount = length(nsm_groups:list_group_members(GName)),
-    show_group_ul_view(GName, GDesc, GroupMembersCount).
+show_group_ul(#group{username=GName, description=GDesc, users_count=GroupMembersCount}) ->
+    show_group_ul_view(GName, GDesc, GroupMembersCount);
+show_group_ul(GId) ->
+    {ok, Group} = nsm_groups:get_group(GId),
+    show_group_ul(Group).
 
 show_group_ul_view(GName, GDesc, GroupMembersCount) ->
     RealGroupMembersCount = case GroupMembersCount of   % patch for freshly created groups
@@ -258,14 +263,17 @@ show_group_ul_view(GName, GDesc, GroupMembersCount) ->
 
 
 view_user_groups(UId) ->
-    case nsm_groups:list_group_per_user(UId) of
+    case nsm_groups:list_groups_per_user(UId) of
         [] ->
             ?_T("You are currently not in any group");
         Groups ->
             Source =
-                [ [#link{text=GName,
-                         url=lists:concat([?_U("/view/group"), "/id/", GName])}, #br{}]
-                  || #group_member{group = GName} <- Groups ],
+               [begin
+                    {ok, Group} = nsm_groups:get_group(GId),
+                    GName = Group#group.name,
+                    [#link{text=GName, url=lists:concat([?_U("/view/group"), "/id/", GName])}, #br{}]
+                end
+                || GId <- Groups ],
             lists:flatten(Source)
     end.
 
@@ -274,20 +282,20 @@ get_popular_group_container() ->
         #h3{text=?_T("Popular groups")},
         #list{class="list-photo list-photo-in", body=[
             [begin 
-                {ok, GroupBody} = nsm_groups:get_group(Group),
-                GroupName = GroupBody#group.name,
+                {ok, Group} = nsm_groups:get_group(GId),
+                GroupName = Group#group.name,
+                GroupUsers = Group#group.users_count,
                 #listitem{body=
-                    [#link{url=site_utils:group_link(Group), body=io_lib:format("~s", [GroupName])},
-                     #span{style="padding-left:4px;", text = io_lib:format("(~b)", [length(nsm_groups:list_group_members(Group)) ])}
+                    [#link{url=site_utils:group_link(GId), body=io_lib:format("~s", [GroupName])},
+                     #span{style="padding-left:4px;", text = io_lib:format("(~b)", [GroupUsers])}
                     ]}
              end
-             || Group <-nsm_groups:get_popular_groups()]
+             || GId <-nsm_groups:get_popular_groups()]
         ]}
     ]}.
 
 
 active_members() ->
-%    ActiveUsers = nsm_groups:get_active_members(12),
     ActiveUsers = nsm_users:get_active_user_top(),
     #panel{class="cell-space", body=[
         #h3{text=?_T("Active members")},
@@ -393,14 +401,14 @@ inner_event({page, N}, _) ->
     end,
     wf:update(groups_content, [ inner_content(ActialNumber) ]);
 
-inner_event({search_group, Page}, _) ->
-    SearchStr = wf:q("search_textbox"),
-    Searched = case nsm_groups:find_group(SearchStr, Page, ?GROUPPERPAGE) of
-        [] -> #panel{body=?_T("We could not find any groups matching the search") ++ " \"" ++ SearchStr ++ "\""};
-        L  -> searched_content(Page, L)
-    end,
-    wf:wire(wf:f("ReloadPostback='~s';",[wf_event:serialize_event_context({search_group, Page}, undefined, undefined, groups)])),
-    wf:update(groups_content, Searched);
+%inner_event({search_group, Page}, _) ->    % we should implement some kind of search, but it's not there yet
+%    SearchStr = wf:q("search_textbox"),
+%    Searched = case nsm_groups:find_group(SearchStr, Page, ?GROUPPERPAGE) of
+%        [] -> #panel{body=?_T("We could not find any groups matching the search") ++ " \"" ++ SearchStr ++ "\""};
+%        L  -> searched_content(Page, L)
+%    end,
+%    wf:wire(wf:f("ReloadPostback='~s';",[wf_event:serialize_event_context({search_group, Page}, undefined, undefined, groups)])),
+%    wf:update(groups_content, Searched);
 
 inner_event({subscribe, User1, GName, SUId}, _User) ->
     nsx_util_notification:notify(["subscription", "user", User1, "add_to_group"], {GName, user}),
