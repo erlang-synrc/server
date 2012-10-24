@@ -2,6 +2,3 @@ deps
 node
 ebin
 *.dets
-.eunit/
-.*.swp
-*~
