@@ -27,16 +27,16 @@ memEntry OBJECT-TYPE
     INDEX   { id }    ::= { memTable 1 }
 
 MEMEntry ::= SEQUENCE {
-    id DisplayString,
+    id INTEGER,
     total INTEGER,
     used INTEGER,
     memStatus RowStatus}
 
 id OBJECT-TYPE
-    SYNTAX DisplayString
+    SYNTAX INTEGER
     ACCESS read-only
     STATUS mandatory
-    DESCRIPTION "Id. Used as index for memTable."
+    DESCRIPTION "Row index."
     ::= { memEntry 1 }
 
 total OBJECT-TYPE
