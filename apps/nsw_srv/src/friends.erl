@@ -59,12 +59,6 @@ content(Page, Title, UId, ModFun) ->
              [100])),
     [
         #panel{class="top-space", body=[
-%PHASE1            #panel{class="search-cell", body=[
-%                #form{body=[
-%                    #panel{class="text", body=#textbox{id="search_textbox"}},
-%                    #button{class="btn-submit-mkh", id="sendsearch", postback={search_friend}, text=?_T("Search")}
-%                ]}
-%            ]},
             #h1{text=Title}
         ]},
         #panel{id="friends_content", body=getPageContent(Page, UId, ModFun)}
@@ -103,23 +97,6 @@ getPageContent(Page, UId, ModFun) when is_list(Page) ->
     ].
 
 friends_search_form() ->
-%PHASE1 no friends search yet
-%    #panel{class="sub-space", body=[
-%        #panel{class="sort-form", body=[
-%            #form{body=[
-%                #label{text=?_T("View")},
-%                #panel{class="sel", body=[
-%                    #dropdown{id="lb01", class="cs-3", options=[
-%                        #option{text=?_T("All subscribtions")}
-%                    ]}
-%                ]}
-%            ]}
-%        ]},
-%        #list{class="menu-1", body=[
-%            #listitem{style="background:none", body=#link{url="#", text=?_T("New friend list")}},
-%            #listitem{body=#link{url="#", text=?_T("Find/invite friends")}}
-%        ]}
-%    ]}.
     [].
 
 get_users_view(UsersView, false, _)         -> #list{class="user-list", body=[UsersView]};
@@ -203,7 +180,7 @@ user_short_description(UId) ->
     end.
 
 
-friends_view(#subs{who = Who}) -> friends_view(Who);
+friends_view(#subs{whom = Who}) -> friends_view(Who);
 friends_view(#user{username = Who}) -> friends_view(Who);
 friends_view({Who, _}) -> friends_view(Who);
 
@@ -377,4 +354,7 @@ autocomplete_select_event({struct, [{<<"id">>, _ },{<<"value">>, Value}]}, frien
             #button {text=?_T("Yes"), class="inputButton", postback={subscription, binary_to_list(Value)}}]),
     ok.
 
-
+list_group_members_paged(GId, Page, PerPage) ->  % I'd like a decent paging here. This is poor
+    From = (Page-1)*PerPage+1,
+    All = lists:sort(nsm_groups:list_group_members(GId)),
+    lists:sublist(All, From, PerPage).

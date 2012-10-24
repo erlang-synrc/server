@@ -29,16 +29,16 @@ content() ->
     content(1).
 
 content(Page) ->
-    friends:content(Page,?_T("All users of Kakaranet"), ?FRIENDSOURCE, {nsm_groups,list_user_with_name_in_group}).
+    friends:content(Page,?_T("All users of Kakaranet"), ?FRIENDSOURCE, {friends, list_group_members_paged}).
 
 getPageContent(Page) ->
-    friends:getPageContent(Page, ?FRIENDSOURCE, {nsm_groups,list_user_with_name_in_group}).
+    friends:getPageContent(Page, ?FRIENDSOURCE, {friends, list_group_members_paged}).
 
 group_info() ->
-    Info = nsm_groups:get_group(?FRIENDSOURCE),
+    {ok, Info} = nsm_groups:get_group(?FRIENDSOURCE),
     Ava = webutils:get_group_avatar(Info#group.username, "big"),
     Description = #span{id=group_info_description, style="font-size:11pt;", text=Info#group.description},
-    MembersCount = integer_to_list(nsm_groups:get_members_count(Info#group.username)),
+    MembersCount = nsm_groups:group_members_count(Info#group.username),
 
     #panel{class="box user-info", body=[
         #h3{id=group_info_name, style="letter-spacing:0px;", text=Info#group.name},
@@ -47,7 +47,7 @@ group_info() ->
         #br{},
         #panel{class=img, body=#image{image=Ava}},
         #panel{class="all-user-box-text", body=[
-            ?_T("There is") ++ " " ++ MembersCount ++ " " ++ ?_T("people here!")
+            ?_T("There is") ++ " " ++ integer_to_list(MembersCount) ++ " " ++ ?_T("people here!")
         ]},
         #br{}
     ]}.
