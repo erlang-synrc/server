@@ -16,6 +16,8 @@
 
 -define(TOOLTIP_TIMEOUT, "1500").
 
+-define(GROUPS_ON_DASHBOARD, 5).
+
 main() ->
     [].
 
@@ -771,7 +773,7 @@ get_groups(User) ->
                 lists:reverse(
                     lists:sort([{nsm_groups:group_members_count(GId), GId} || GId <- Gs])
                 ), 
-            5), % this is magic number! I'd macros it soon
+            ?GROUPS_ON_DASHBOARD),
             lists:flatten([
                 begin
                     {ok, Group} = nsm_groups:get_group(GId),

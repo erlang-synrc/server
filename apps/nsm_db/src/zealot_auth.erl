@@ -31,6 +31,7 @@
 -define(SERVER, ?MODULE).
 -record(state, {}).
 
+-define(REGISTER_TIMEOUT, 10000).
 
 %%====================================================================
 %% API
@@ -49,7 +50,7 @@ get_user_info(UserId) ->
     gen_server:call(?SERVER, {get_user_info, UserId}).
 
 register(User) ->
-    gen_server:call(?SERVER, {register, User}).
+    gen_server:call(?SERVER, {register, User}, ?REGISTER_TIMEOUT).
 
 update_gamestate(GaId, State) ->
     gen_server:cast(?SERVER, {update_gamestate, GaId, State}).
