@@ -157,9 +157,13 @@ populate_active_users_top() ->
 % converting group subscriptions to leveldb 19 Oct 2012
 count_entries(UId, GId) ->
     AllEntries = nsm_db:all(entry),
-    {ok, Group} = nsm_groups:get_group(GId),
-    GFId = Group#group.feed,
-    length([1 || E <- AllEntries, E#entry.feed_id == GFId, E#entry.from == UId]).
+    {_, Group} = nsm_groups:get_group(GId),
+    case Group of
+        notfound -> ok;
+        _ ->
+            GFId = Group#group.feed,
+            length([1 || E <- AllEntries, E#entry.feed_id == GFId, E#entry.from == UId])
+    end.
 
 group_member_to_group_subs() ->
     [[nsm_db:put(#group_subs{user_id=Who, group_id=Group, user_type=Type, user_posts_count=count_entries(Who, Group)}) 
