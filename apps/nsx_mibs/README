@@ -14,3 +14,7 @@ Change DHT-MIB ASN.1 definition. Compile binary MIB and Generate HRL file.
 потому компилировать
 и бинарник подставлять в nsx_mibs/priv/mibs/
 фактически то что я написал это инструкция
+
+Создание пароля для определенного агента engine_id:
+
+> snmp:passwd2localized_key(md5,"33914","app@rrv1kkakrrantt.com").
