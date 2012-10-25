@@ -16,7 +16,7 @@
 
 -define(TOOLTIP_TIMEOUT, "1500").
 
--define(GROUPS_ON_DASHBOARD, 5).
+-define(GROUPS_ON_DASHBOARD, 10).
 
 main() ->
     [].
@@ -268,7 +268,6 @@ check_is_facebook()->
 
 
 api_event(is_facebook, _Anchor, [Data]) ->
-%    ?PRINT({is_facebook, Data}),
     wf:session(is_facebook, Data),
     ok.
 

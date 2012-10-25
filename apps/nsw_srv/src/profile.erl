@@ -174,17 +174,23 @@ section_body(gifts) ->
         #list{class="history-list", id=orders_list, body = [
             begin
                 SDate = site_utils:feed_time_tuple(calendar:now_to_local_time(BoughtTime)),
-                {ok, {ThisGift, _}} = nsm_gifts_db:get_gift(GiftId),
-                SName = ThisGift#gift.gift_name,
-                SKakush = integer_to_list(ThisGift#gift.kakush_point),
-                SPrice = integer_to_list(ThisGift#gift.kakush_currency),
-                #listitem{body = [
-                    #span{body=[
-                        "<b>" ++ SName ++ " </b><font style='color:#777;'>(" ++ SDate ++ ")</font> " ++ ?_T("worth") ++ " " ++
-                        SPrice ++ " <font size=-1>TL</font> " ++ ?_T("for") ++ " " ++ SKakush ++ " " ++ ?_T("kakush")
-                    ]},
-                    #link{class=btn, postback={deliver},  text=?_T("Deliver")}
-                ]}
+                GiftIfAny = nsm_gifts_db:get_gift(GiftId),
+                case element(1, GiftIfAny) of
+                    ok ->
+                        {ok, {ThisGift, _}} = GiftIfAny,
+                        SName = ThisGift#gift.gift_name,
+                        SKakush = integer_to_list(ThisGift#gift.kakush_point),
+                        SPrice = integer_to_list(ThisGift#gift.kakush_currency),
+                        #listitem{body = [
+                            #span{body=[
+                                "<b>" ++ SName ++ " </b><font style='color:#777;'>(" ++ SDate ++ ")</font> " ++ ?_T("worth") ++ " " ++
+                                SPrice ++ " <font size=-1>TL</font> " ++ ?_T("for") ++ " " ++ SKakush ++ " " ++ ?_T("kakush")
+                            ]},
+                            #link{class=btn, postback={deliver},  text=?_T("Deliver")}
+                        ]};
+                    error ->    % some junk got into user_bought_gifts
+                        ?ERROR("No such gift with id: ~p", [GiftId])
+                end
             end
 
         || #user_bought_gifts{timestamp = BoughtTime, gift_id = GiftId} <- AllGifts]}
