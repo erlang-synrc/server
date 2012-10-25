@@ -1,10 +1,9 @@
 -module(mem_mib).
--include("MEM-MIB.hrl").
 
 -export([mem_table/1, mem_table/3]).
 -export([update_mem_table/0]).
 
--record(memTable, {id, total, used}).
+-record(memTable, {id, total, used, memStatus}).
 -define(memShadowArgs, {memTable, integer, record_info(fields, memTable), 5000, fun mem_mib:update_mem_table/0}).
 
 mem_table(Op)->

@@ -1,12 +1,11 @@
 -module(dht_mib).
--include("DHT-MIB.hrl").
 -compile(export_all).
 
--record(dhtTable,      {nodeName, handoffTimeouts, nodeGetsTotal, nodePutsTotal, 
-                        cpuAvg15, nodeGetFsmTimeMedian, nodePutFsmTimeMedian}).
--define(dhtShadowArgs, {dhtTable, string, record_info(fields, dhtTable), 5000, fun dht_mib:update_dht_table/0}).
+-record(dhtTable,      {dhtIndex, handoffTimeouts, nodeGetsTotal, nodePutsTotal,
+                        cpuAvg15, nodeGetFsmTimeMedian, nodePutFsmTimeMedian, dhtStatus}).
+-define(dhtShadowArgs, {dhtTable, integer, record_info(fields, dhtTable), 5000, fun dht_mib:update_dht_table/0}).
 
--record(dhtArray, {arrayIndex, value}).
+-record(dhtArray, {arrayIndex, value, dhtStatus2}).
 -define(dhtArrayShadowArgs, {dhtArray, integer, record_info(fields, dhtArray), 5000, fun dht_mib:update_dht_array/0}).
 
 dht_table(Op)->  snmp_shadow_table:table_func(Op, ?dhtShadowArgs).
@@ -16,18 +15,19 @@ dht_array(Op, RowIndex, Cols) -> snmp_shadow_table:table_func(Op, RowIndex, Cols
 
 update_dht_table()->
     ok = mnesia:dirty_write(#dhtTable{
-	nodeName= "node",
+	dhtIndex=1,
 	handoffTimeouts = folsom_metrics:get_metric_value({riak_core, handoff_timeouts}),
 	nodeGetsTotal = get_count(node_gets),
 	nodePutsTotal = get_count(node_puts),
 	cpuAvg15 = cpu_sup:avg15(),
 	nodeGetFsmTimeMedian= get_median(node_get_fsm_time),
-	nodePutFsmTimeMedian= get_median(node_put_fsm_time) }).
+	nodePutFsmTimeMedian= get_median(node_put_fsm_time),
+	dhtStatus=1 }).
 
 update_dht_array()->
     error_logger:info_msg("Update DHT array", []),
     Table = folsom_metrics:get_metric_value({riak_kv,node_get_fsm_time}),
-    [mnesia:dirty_write(#dhtArray{arrayIndex = VAL, value = VAL})||VAL <- Table ].
+    [mnesia:dirty_write(#dhtArray{arrayIndex = VAL, value = VAL, dhtStatus2=1})||VAL <- Table ].
 
 get_median(Metric) ->
     [{min, _}, {max, _},

@@ -65,11 +65,11 @@ dhtEntry OBJECT-TYPE
     ACCESS not-accessible
     STATUS mandatory
     DESCRIPTION        "An entry in dhtTable"
-    INDEX   { nodeName }    ::= { dhtTable 1 }
+    INDEX   { dhtIndex }    ::= { dhtTable 1 }
 
 
 DHTEntry ::= SEQUENCE {
-    nodeName DisplayString,
+    dhtIndex INTEGER,
     handoffTimeouts INTEGER,
     nodeGetsTotal INTEGER,
     nodePutsTotal INTEGER,
@@ -78,11 +78,11 @@ DHTEntry ::= SEQUENCE {
     nodePutFsmTimeMedian OCTET STRING,
     dhtStatus RowStatus}
 
-nodeName OBJECT-TYPE
-    SYNTAX DisplayString
+dhtIndex OBJECT-TYPE
+    SYNTAX INTEGER
     ACCESS read-only
     STATUS mandatory
-    DESCRIPTION "Server name. Used as index for dhtTable."
+    DESCRIPTION "Index for dhtTable."
     ::= { dhtEntry 1 }
 
 
