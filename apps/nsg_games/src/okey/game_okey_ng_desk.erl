@@ -29,7 +29,6 @@
 %% --------------------------------------------------------------------
 %% Include files
 %% --------------------------------------------------------------------
--include_lib("eunit/include/eunit.hrl").
 
 %% --------------------------------------------------------------------
 %% External exports
@@ -59,7 +58,6 @@
          id                :: integer(),
          hand              :: deck:deck(),
          can_show_gosterge :: boolean(),
-         has_gosterge      :: boolean(),
          finished_by_okey  :: boolean(),
          discarded         :: deck:deck()
         }).
@@ -71,7 +69,8 @@
          deck              :: deck:deck(),
          gosterge          :: tash(),
          okey              :: tash(),
-         okey_blocked      :: boolean()
+         okey_blocked      :: boolean(),
+         has_gosterge      :: undefined | integer() %% Seat num of a player who has gosterge
         }).
 
 
@@ -132,7 +131,8 @@ init(Params) ->
                                 gosterge = Gosterge,
                                 okey = Okey,
                                 cur_player = CurPlayer,
-                                okey_blocked = false}}.
+                                okey_blocked = false,
+                                has_gosterge = undefined}}.
 
 %% --------------------------------------------------------------------
 %% Func: handle_event/3
@@ -237,11 +237,11 @@ handle_player_action(PlayerId, i_have_gosterge, StateName,
                 hand = Hand} = Player ->
             case deck:member(Gosterge, Hand) of
                 true ->
-                    NewPlayer = Player#player{has_gosterge = true,
-                                              can_show_gosterge = false},
+                    NewPlayer = Player#player{can_show_gosterge = false},
                     NewPlayers = update_player(NewPlayer, Players),
                     Events = [{has_gosterge, PlayerId}],
-                    {ok, Events, StateName, StateData#state{players = NewPlayers}};
+                    {ok, Events, StateName, StateData#state{players = NewPlayers,
+                                                            has_gosterge = PlayerId}};
                 false ->
                     {error, no_gosterge}
             end;
@@ -332,9 +332,7 @@ handle_player_action(PlayerId, {discard, Tash}, ?STATE_DISCARD,
 
 handle_player_action(PlayerId, {reveal, Tash, TashPlaces}, ?STATE_DISCARD,
                      #state{cur_player = CurPlayerId,
-                            players = Players,
-                            gosterge = Gosterge,
-                            okey = Okey
+                            players = Players
                            } = StateData) ->
     if PlayerId == CurPlayerId ->
            case discard_tash(Tash, PlayerId, Players) of
@@ -342,13 +340,10 @@ handle_player_action(PlayerId, {reveal, Tash, TashPlaces}, ?STATE_DISCARD,
                    {error, no_such_tash};
                NewPlayers ->
                    RevealHand = tash_places_to_hand(TashPlaces),
-                   #player{hand = PlayerHand,
-                           has_gosterge = HasGosterge} = get_player(PlayerId, NewPlayers),
+                   #player{hand = PlayerHand} = get_player(PlayerId, NewPlayers),
                    case is_same_hands(RevealHand, PlayerHand) of
                        true ->
-                           WithOkey = Tash == Okey,
-                           Right = is_right_finish(TashPlaces, Gosterge),
-                           Events = [{reveal, PlayerId, Right, TashPlaces, Tash, WithOkey, HasGosterge}],
+                           Events = [{reveal, PlayerId, TashPlaces, Tash}],
                            {ok, Events, ?STATE_FINISHED,
                             StateData#state{players = NewPlayers}};
                        false ->
@@ -381,8 +376,7 @@ init_players(Hands) ->
                          hand = Hand,
                          discarded = deck:init_deck(empty),
                          finished_by_okey = false,
-                         can_show_gosterge = true,
-                         has_gosterge = false},
+                         can_show_gosterge = true},
                  Id+1}
         end,
     {Players, _} = lists:mapfoldl(F, 1, Hands),
@@ -479,133 +473,3 @@ is_same_hands(Hand1, Hand2) ->
     L2 = lists:sort(deck:to_list(Hand2)),
     L1 == L2.
 
-%% @spec is_right_finish(TashPlaces, Gosterge) -> boolean()
-%% @end
-is_right_finish([TopRow, BottomRow], Gosterge) ->
-    FlatList = TopRow ++ [null | BottomRow],
-    Okey = init_okey(Gosterge),
-    Normalized = [case E of
-                      Okey -> okey;
-                      false_okey -> Okey
-                  end || E <- FlatList],
-    Sets = split_by_delimiter(null, Normalized),
-    ProperHand = lists:all(fun(S) ->
-                                   is_set(S) orelse is_run(S)
-                           end, Sets),
-    PowerHand = lists:all(fun(S) ->
-                                  is_pair(S)
-                          end, Sets),
-    ProperHand orelse PowerHand.
-
-%% @spec split_by_delimiter(Delimiter, List) -> ListOfList
-%% @end
-split_by_delimiter(Delimiter, Hand) -> split_by_delimiter(Delimiter, Hand, []).
-split_by_delimiter(_, [], Acc) -> lists:reverse(Acc);
-split_by_delimiter(Delimiter, [Delimiter | Hand], Acc) -> split_by_delimiter(Delimiter, Hand, Acc);
-split_by_delimiter(Delimiter, Hand, Acc) ->
-    {L, Rest} = lists:splitwith(fun(X) -> X == Delimiter end, Hand),
-    split_by_delimiter(Delimiter, Rest, [L | Acc]).
-
-%% @spec is_set(Set) -> boolean()
-%% @end
-is_set(Set) when
-  length(Set) < 3;
-  length(Set) > 4 -> false;
-is_set(Set) ->
-    Normals = [ X || X <- Set, X =/= okey ],
-    {_, Value} = hd(Normals),
-    SameValue = lists:all(fun({_, V}) -> V == Value end, Normals),
-    UniqColors = length(Normals) == length(lists:usort([C || {C, _} <- Normals])),
-    SameValue andalso UniqColors.
-
-
-%% @spec is_run(Set) -> boolean()
-%% @end
-is_run(Set) when length(Set) < 3 -> false;
-is_run(Set) ->
-    {Okeys, Normals} = lists:partition(fun(X)-> X == okey end, Set),
-    {Color, _} = hd(Normals),
-    {Colors, Values} = lists:unzip(Normals),
-    SameColor = lists:all(fun(C) -> C == Color end, Colors),
-    SortedValues = lists:sort(Values),
-    NormalizedValues = if hd(SortedValues)==1 -> tl(SortedValues) ++ [14]; true -> false end,
-    OkeysNum = length(Okeys),
-    Check1 = check_run(SortedValues, OkeysNum),
-    Check2 = check_run(NormalizedValues, OkeysNum),
-    SameColor andalso (Check1 orelse Check2).
-
-
-check_run(false, _) -> false;
-check_run([First | Rest], OkeysNum) ->
-    check_run(First, Rest, OkeysNum).
-
-
-check_run(Cur, [Cur | _], _OkeysNum) -> false;
-check_run(Cur, [Next | Rest], OkeysNum) when Next == Cur + 1 ->
-    check_run(Cur+1, Rest, OkeysNum);
-check_run(_Cur, [_Next | _Rest], 0) -> false;
-check_run(Cur, [Next | Rest], OkeysNum) ->
-    check_run(Cur+1, [Next | Rest], OkeysNum - 1);
-check_run(_Cur, [], _OkeysNum) -> true.
-
-%% @spec is_pair(Set) -> boolean()
-%% @end
-is_pair([_A, okey]) -> true;
-is_pair([okey, _B]) -> true;
-is_pair([A, A]) -> true;
-is_pair(_) -> false.
-
-
-%% Tests
-test_test_() ->
-    [{"is_pair",
-      [?_assertEqual(true,  is_pair([{1,3}, {1,3}])),
-       ?_assertEqual(true,  is_pair([{4,13}, {4,13}])),
-       ?_assertEqual(false, is_pair([{4,12}, {4,13}])),
-       ?_assertEqual(false, is_pair([{1,1}, {4,8}])),
-       ?_assertEqual(true,  is_pair([okey, {3,8}])),
-       ?_assertEqual(true,  is_pair([{2,3}, okey])),
-       ?_assertEqual(true,  is_pair([okey, okey])),
-       ?_assertEqual(false, is_pair([{2,4}, {4,2}, {3,3}])),
-       ?_assertEqual(false, is_pair([{2,4}])),
-       ?_assertEqual(false, is_pair([okey])),
-       ?_assertEqual(false, is_pair([okey, okey, {2,6}]))
-      ]},
-     {"is_set",
-      [?_assertEqual(true,  is_set([{1,3}, {3,3}, {2,3}])),
-       ?_assertEqual(true,  is_set([{4,8}, okey, {2,8}])),
-       ?_assertEqual(true,  is_set([{4,3}, okey, okey])),
-       ?_assertEqual(true,  is_set([{4,13}, {1,13}, {3,13}, {2,13}])),
-       ?_assertEqual(true,  is_set([okey, {1,13}, {3,13}, {2,13}])),
-       ?_assertEqual(true,  is_set([okey, okey, {3,13}, {2,13}])),
-       ?_assertEqual(false, is_set([{2,6}])),
-       ?_assertEqual(false, is_set([okey])),
-       ?_assertEqual(false, is_set([{3,4}, {2,6}])),
-       ?_assertEqual(false, is_set([{2,3}, {4,3}])),
-       ?_assertEqual(false, is_set([okey, okey])),
-       ?_assertEqual(false, is_set([{3,4}, {1,4}, {3,4}])),
-       ?_assertEqual(false, is_set([{3,4}, {1,4}, {2,5}])),
-       ?_assertEqual(false, is_set([{3,4}, okey, {2,5}])),
-       ?_assertEqual(false, is_set([{2,5}, {3,5}, {4,5}, {1,6}])),
-       ?_assertEqual(false, is_set([{2,5}, {3,5}, {4,5}, {2,5}])),
-       ?_assertEqual(false, is_set([{2,3}, {3,3}, {4,3}, {1,3}, {3,1}])),
-       ?_assertEqual(false, is_set([{2,3}, okey, {4,3}, {1,3}, {3,3}]))
-      ]},
-     {"is_run",
-      [?_assertEqual(false, is_run([{1,3}])),
-       ?_assertEqual(false, is_run([okey])),
-       ?_assertEqual(false, is_run([{2,2}, {2,3}])),
-       ?_assertEqual(false, is_run([okey, {2,3}])),
-       ?_assertEqual(false, is_run([{4,1}, {2,3}])),
-       ?_assertEqual(true,  is_run([{4,4}, {4,6}, {4,5}])),
-       ?_assertEqual(true,  is_run([okey, {4,6}, {4,5}])),
-       ?_assertEqual(true,  is_run([okey, {4,6}, okey])),
-       ?_assertEqual(true,  is_run([{1,12}, {1,1}, {1,13}])),
-       ?_assertEqual(true,  is_run([{1,12}, {1,1}, {1,11}, {1,13}])),
-       ?_assertEqual(false, is_run([{1,12}, {1,1}, {1,11}, {1,11}, {1,13}])),
-       ?_assertEqual(false, is_run([{1,12}, {1,1}, {1,2}, {1,11}, {1,13}])),
-       ?_assertEqual(true,  is_run([{3,6}, {3,8}, okey, {3,5}, {3,9}])),
-       ?_assertEqual(false, is_run([{3,6}, {3,8}, okey, {3,5}, {3,9}, {3,2}])),
-       ?_assertEqual(false, is_run([{3,6}, {3,8}, okey, {3,5}, {3,9}, {1,2}]))
-      ]}
-    ].
