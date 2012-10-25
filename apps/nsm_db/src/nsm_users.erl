@@ -470,8 +470,8 @@ user_realname(UId) ->
     end,
     if
         Name=="undefined", Surname=="undefined" -> UId;
-        Name=="undefined" -> Name;
-        Surname=="undefined" -> Surname;
+        Name=="undefined" -> Surname;
+        Surname=="undefined" -> Name;
         true -> Name ++ [" "] ++ Surname
     end.
 

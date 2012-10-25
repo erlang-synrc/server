@@ -39,7 +39,8 @@
          deck               :: list(tash()),
          cur_seat           :: integer(),
          gosterge           :: tash(),
-         revealed           :: boolean(), %% Defined only when state = state_finished
+         has_gosterge       :: undefined | integer(), %% Seat num of a player who has gosterge
+         finish_reason      :: tashes_out | reveal, %% Defined only when state = state_finished
          reveal_info        :: tuple() %% {SeatNum::integer(), Right::boolean(), RevealedTashes::list(null | tash()),
                                        %%  DiscardedTash::tash(), WithOkey::boolean(), HasGosterge::boolean()}
         }).
@@ -135,7 +136,7 @@ init([GameId, TableId, Params]) ->
                    {table, {?MODULE, self()}}],
     {ok, Relay} = ?RELAY:start(RelayParams),
     ?INFO("OKEY_NG_TABLE_TRN <~p,~p> Started.", [GameId, TableId]),
-    notify_table_created(Parent, TableId, Relay),
+    parent_notify_table_created(Parent, TableId, Relay),
     {ok, ?STATE_WAITING_FOR_START, #state{game_id = GameId,
                                           table_id = TableId,
                                           table_name = TableName,
@@ -242,7 +243,7 @@ handle_parent_message({register_player, RequestId, UserInfo, PlayerId, SeatNum},
     NewPlayers = reg_player(PlayerId, SeatNum, UserId, IsBot, UserInfo, Players),
     ?RELAY:table_request(Relay, {register_player, UserId, PlayerId}), %% Sync registration in the relay
     %% TODO: Send notificitations to gamesessions
-    confirm_registration(Parent, RequestId),
+    parent_confirm_registration(Parent, TableId, RequestId),
     {next_state, StateName, StateData#state{players = NewPlayers}};
 
 handle_parent_message({replace_player, RequestId, UserInfo, PlayerId, SeatNum}, StateName,
@@ -255,7 +256,7 @@ handle_parent_message({replace_player, RequestId, UserInfo, PlayerId, SeatNum}, 
     ?RELAY:table_request(Relay, {register_player, UserId, PlayerId}), %% Sync registration in the relay
     ReplaceMsg = create_player_left(SeatNum, UserInfo, Players),
     publish_to_clients(Relay, ReplaceMsg),
-    confirm_replacement(Parent, RequestId),
+    parent_confirm_replacement(Parent, TableId, RequestId),
     {next_state, StateName, StateData#state{players = NewPlayers}};
 
 handle_parent_message(start_game, ?STATE_WAITING_FOR_START,
@@ -510,12 +511,13 @@ process_game_events(Events, #state{desk_state = DeskState,
                 cur_seat = CurSeatNum} = NewDeskState,
     case DeskStateName of
         state_finish ->
+            erlang:cancel_timer(OldTRef),
             on_game_finish(StateData#state{desk_state = NewDeskState});
         state_take ->
             case [E || {next_player, _} = E <- Events] of
                 [] ->
                     {next_state, ?STATE_PLAYING, StateData#state{desk_state = NewDeskState}};
-                [_|_] -> %% Setup new timeout
+                [_|_] ->
                     erlang:cancel_timer(OldTRef),
                     TRef = erlang:send_after(TurnTimeout, self(), {turn_timeout, CurSeatNum}),
                     {next_state, ?STATE_PLAYING, StateData#state{desk_state = NewDeskState,
@@ -529,26 +531,42 @@ process_game_events(Events, #state{desk_state = DeskState,
 on_game_finish(#state{desk_state = DeskState,
                       reveal_confirmation = RevealConfirmation,
                       reveal_confirmation_timeout = Timeout} = StateData) ->
-    #desk_state{revealed = Revealed} = DeskState,
-    case Revealed of
-        false ->
-            finalize_round(StateData);
-        true ->
-            if RevealConfirmation ->
-                   TRef = erlang:send_after(Timeout, self(), reveal_timeout),
-                   {next_state, ?STATE_REVEAL_CONFIRMATION,
-                    StateData#state{reveal_confirmation_list = [],
-                                    timeout_timer = TRef}};
-               true ->
-                   finalize_round(StateData)
-            end
+    #desk_state{finish_reason = FinishReason,
+                reveal_info = {Revealer, _Tashes, _Discarded},
+                hands = Hands} = DeskState,
+    if FinishReason == reveal andalso RevealConfirmation ->
+           WL = [SeatNum || {SeatNum, _} <- Hands, SeatNum =/= Revealer],
+           TRef = erlang:send_after(Timeout, self(), reveal_timeout),
+           {next_state, ?STATE_REVEAL_CONFIRMATION,
+            StateData#state{reveal_confirmation_list = [],
+                            wait_list = WL,
+                            timeout_timer = TRef}};
+       true ->
+            finalize_round(StateData)
     end.
 
 %%===================================================================
-finalize_round(StateData) ->
-    %% TODO: Send result to the parent
-    %% TODO: Check last round
-    %% TODO: Set timeout
+
+finalize_round(#state{desk_state = #desk_state{finish_reason = FinishReason,
+                                               reveal_info = {Revealer, Tashes, Discarded},
+                                               hands = Hands,
+                                               gosterge = Gosterge,
+                                               has_gosterge = WhoHasGosterge},
+                      reveal_confirmation = RevealConfirmation,
+                      reveal_confirmation_list = CList,
+                      parent = Parent,
+                      table_id = TableId} = StateData) ->
+    FR = case FinishReason of
+             tashes_out -> tashes_out;
+             reveal ->
+                 ConfirmationList = if RevealConfirmation -> CList; true -> [] end,
+                 {reveal, Revealer, Tashes, Discarded, ConfirmationList}
+         end,
+    parent_send_round_res(Parent, TableId, FR, Hands, Gosterge, WhoHasGosterge),
+%            Results = null,    %% FIXME: Real results needed
+%            NextAction = next_round, %% FIXME: Real value needed
+%            Msg = create_okey_round_ended_no_winner(Results, NextAction),
+%            publish_to_clients(Relay, Msg),
     {next_state, ?STATE_WAITING_FOR_START, StateData}.
 
 
@@ -563,82 +581,73 @@ handle_desk_events([Event | Events], DeskState, Players, Relay) ->
                 hands = Hands,
                 discarded = Discarded,
                 deck = Deck} = DeskState,
-    case Event of
-        {has_gosterge, SeatNum} ->
-            Msg = create_okey_player_has_gosterge(SeatNum, Players),
-            publish_to_clients(Relay, Msg),
-            handle_desk_events(Events, DeskState, Players, Relay);
-        {saw_okey, SeatNum} ->
-            Msg = create_okey_disable_okey(SeatNum, CurSeatNum, Players),
-            publish_to_clients(Relay, Msg),
-            handle_desk_events(Events, DeskState, Players, Relay);
-        {taked_from_discarded, SeatNum, Tash} ->
-            PrevSeatNum = prev_seat_num(SeatNum),
-            {_, [Tash | NewPile]} = lists:keyfind(PrevSeatNum, 1, Discarded),
-            NewDiskarded = lists:keyreplace(PrevSeatNum, 1, Discarded, {PrevSeatNum, NewPile}),
-            {_, Hand} = lists:keyfind(SeatNum, 1, Hands),
-            NewHands = lists:keyreplace(SeatNum, 1, Hands, {SeatNum, [Tash | Hand]}),
-            NewDeskState = DeskState#desk_state{hands = NewHands, discarded = NewDiskarded},
-            Msg = create_okey_tile_taken_discarded(SeatNum, Tash, length(NewPile), Players),
-            publish_to_clients(Relay, Msg),
-            handle_desk_events(Events, NewDeskState, Players, Relay);
-        {taked_from_table, SeatNum, Tash} ->
-            [Tash | NewDeck] = Deck,
-            {_, Hand} = lists:keyfind(SeatNum, 1, Hands),
-            NewHands = lists:keyreplace(SeatNum, 1, Hands, {SeatNum, [Tash | Hand]}),
-            NewDeskState = DeskState#desk_state{hands = NewHands, deck = NewDeck},
-            Msg = create_okey_tile_taken_table(SeatNum, length(NewDeck), Players),
-            publish_to_clients(Relay, Msg),
-            handle_desk_events(Events, NewDeskState, Players, Relay);
-        {tash_discarded, SeatNum, Tash} ->
-            {_, Hand} = lists:keyfind(SeatNum, 1, Hands),
-            NewHands = lists:keyreplace(SeatNum, 1, Hands, {SeatNum, lists:delete(Tash, Hand)}),
-            {_, Pile} = lists:keyfind(SeatNum, 1, Discarded),
-            NewDiscarded = lists:keyreplace(SeatNum, 1, Discarded, {SeatNum, [Tash | Pile]}),
-            NewDeskState = DeskState#desk_state{hands = NewHands, discarded = NewDiscarded, state = state_take},
-            Msg = create_okey_tile_discarded(SeatNum, Tash, false, Players),
-            publish_to_clients(Relay, Msg),
-            handle_desk_events(Events, NewDeskState, Players, Relay);
-        {tash_discarded_timeout, SeatNum, Tash} -> %% Injected event
-            {_, Hand} = lists:keyfind(SeatNum, 1, Hands),
-            NewHands = lists:keyreplace(SeatNum, 1, Hands, {SeatNum, lists:delete(Tash, Hand)}),
-            {_, Pile} = lists:keyfind(SeatNum, 1, Discarded),
-            NewDiscarded = lists:keyreplace(SeatNum, 1, Discarded, {SeatNum, [Tash | Pile]}),
-            NewDeskState = DeskState#desk_state{hands = NewHands, discarded = NewDiscarded, state = state_take},
-            Msg = create_okey_tile_discarded(SeatNum, Tash, true, Players),
-            publish_to_clients(Relay, Msg),
-            handle_desk_events(Events, NewDeskState, Players, Relay);
-        {auto_take_discard, SeatNum, Tash} ->    %% Injected event
-            #player{id = PlayerId} = get_player_by_seat_num(SeatNum, Players),
-            Msg = create_okey_turn_timeout(Tash, Tash),
-            send_to_client_ge(Relay, PlayerId, Msg),
-            handle_desk_events(Events, DeskState, Players, Relay);
-        {auto_discard, SeatNum, Tash} ->         %% Injected event
-            #player{id = PlayerId} = get_player_by_seat_num(SeatNum, Players),
-            Msg = create_okey_turn_timeout(null, Tash),
-            send_to_client_ge(Relay, PlayerId, Msg),
-            handle_desk_events(Events, DeskState, Players, Relay);
-        {next_player, SeatNum} ->
-            NewDeskState = DeskState#desk_state{cur_seat = SeatNum, state = state_take},
-            Msg = create_okey_next_turn(SeatNum, Players),
-            publish_to_clients(Relay, Msg),
-            handle_desk_events(Events, NewDeskState, Players, Relay);
-        no_winner_finish ->
-            NewDeskState = DeskState#desk_state{state = state_finished,
-                                                revealed = false},
-            Msg = create_okey_round_ended_no_winner(),
-            publish_to_clients(Relay, Msg),
-            handle_desk_events(Events, NewDeskState, Players, Relay);
-        {reveal, SeatNum, Right, RevealedTashes, DiscardedTash, WithOkey, HasGosterge} ->
-            NewDeskState = DeskState#desk_state{state = state_finished,
-                                                revealed = true,
-                                                reveal_info = {SeatNum, Right, RevealedTashes, DiscardedTash,
-                                                               WithOkey, HasGosterge}},
-            Msg = create_okey_revealed(SeatNum, DiscardedTash, RevealedTashes, Players),
-            publish_to_clients(Relay, Msg),
-            handle_desk_events(Events, NewDeskState, Players, Relay)
-    end.
-
+    NewDeskState =
+        case Event of
+            {has_gosterge, SeatNum} ->
+                Msg = create_okey_player_has_gosterge(SeatNum, Players),
+                publish_to_clients(Relay, Msg),
+                DeskState#desk_state{has_gosterge = SeatNum};
+            {saw_okey, SeatNum} ->
+                Msg = create_okey_disable_okey(SeatNum, CurSeatNum, Players),
+                publish_to_clients(Relay, Msg),
+                DeskState;
+            {taked_from_discarded, SeatNum, Tash} ->
+                PrevSeatNum = prev_seat_num(SeatNum),
+                {_, [Tash | NewPile]} = lists:keyfind(PrevSeatNum, 1, Discarded),
+                Msg = create_okey_tile_taken_discarded(SeatNum, Tash, length(NewPile), Players),
+                publish_to_clients(Relay, Msg),
+                NewDiskarded = lists:keyreplace(PrevSeatNum, 1, Discarded, {PrevSeatNum, NewPile}),
+                {_, Hand} = lists:keyfind(SeatNum, 1, Hands),
+                NewHands = lists:keyreplace(SeatNum, 1, Hands, {SeatNum, [Tash | Hand]}),
+                DeskState#desk_state{hands = NewHands, discarded = NewDiskarded};
+            {taked_from_table, SeatNum, Tash} ->
+                [Tash | NewDeck] = Deck,
+                Msg = create_okey_tile_taken_table(SeatNum, length(NewDeck), Players),
+                publish_to_clients(Relay, Msg),
+                {_, Hand} = lists:keyfind(SeatNum, 1, Hands),
+                NewHands = lists:keyreplace(SeatNum, 1, Hands, {SeatNum, [Tash | Hand]}),
+                DeskState#desk_state{hands = NewHands, deck = NewDeck};
+            {tash_discarded, SeatNum, Tash} ->
+                Msg = create_okey_tile_discarded(SeatNum, Tash, false, Players),
+                publish_to_clients(Relay, Msg),
+                {_, Hand} = lists:keyfind(SeatNum, 1, Hands),
+                NewHands = lists:keyreplace(SeatNum, 1, Hands, {SeatNum, lists:delete(Tash, Hand)}),
+                {_, Pile} = lists:keyfind(SeatNum, 1, Discarded),
+                NewDiscarded = lists:keyreplace(SeatNum, 1, Discarded, {SeatNum, [Tash | Pile]}),
+                DeskState#desk_state{hands = NewHands, discarded = NewDiscarded, state = state_take};
+            {tash_discarded_timeout, SeatNum, Tash} -> %% Injected event
+                Msg = create_okey_tile_discarded(SeatNum, Tash, true, Players),
+                publish_to_clients(Relay, Msg),
+                {_, Hand} = lists:keyfind(SeatNum, 1, Hands),
+                NewHands = lists:keyreplace(SeatNum, 1, Hands, {SeatNum, lists:delete(Tash, Hand)}),
+                {_, Pile} = lists:keyfind(SeatNum, 1, Discarded),
+                NewDiscarded = lists:keyreplace(SeatNum, 1, Discarded, {SeatNum, [Tash | Pile]}),
+                DeskState#desk_state{hands = NewHands, discarded = NewDiscarded, state = state_take};
+            {auto_take_discard, SeatNum, Tash} ->    %% Injected event
+                #player{id = PlayerId} = get_player_by_seat_num(SeatNum, Players),
+                Msg = create_okey_turn_timeout(Tash, Tash),
+                send_to_client_ge(Relay, PlayerId, Msg),
+                DeskState;
+            {auto_discard, SeatNum, Tash} ->         %% Injected event
+                #player{id = PlayerId} = get_player_by_seat_num(SeatNum, Players),
+                Msg = create_okey_turn_timeout(null, Tash),
+                send_to_client_ge(Relay, PlayerId, Msg),
+                DeskState;
+            {next_player, SeatNum} ->
+                Msg = create_okey_next_turn(SeatNum, Players),
+                publish_to_clients(Relay, Msg),
+                DeskState#desk_state{cur_seat = SeatNum, state = state_take};
+            no_winner_finish ->
+                DeskState#desk_state{state = state_finished,
+                                     finish_reason = tashes_out};
+            {reveal, SeatNum, RevealedTashes, DiscardedTash} ->
+                Msg = create_okey_revealed(SeatNum, DiscardedTash, RevealedTashes, Players),
+                publish_to_clients(Relay, Msg),
+                DeskState#desk_state{state = state_finished,
+                                     finish_reason = reveal,
+                                     reveal_info = {SeatNum, RevealedTashes, DiscardedTash}}
+        end,
+    handle_desk_events(Events, NewDeskState, Players, Relay).
 
 %%===================================================================
 
@@ -712,14 +721,17 @@ publish_to_clients(Relay, Msg) ->
     Event = #game_event{event = api_utils:name(Msg), args = api_utils:members(Msg)},
     ?RELAY:table_message(Relay, {publish, Event}).
 
-confirm_registration({ParentMod, ParentPid}, RequestId) ->
-    ParentMod:table_message(ParentPid, {player_registered, RequestId}).
+parent_confirm_registration({ParentMod, ParentPid}, TableId, RequestId) ->
+    ParentMod:table_message(ParentPid, TableId, {player_registered, RequestId}).
 
-confirm_replacement({ParentMod, ParentPid}, RequestId) ->
-    ParentMod:table_message(ParentPid, {player_replaced, RequestId}).
+parent_confirm_replacement({ParentMod, ParentPid}, TableId, RequestId) ->
+    ParentMod:table_message(ParentPid, TableId, {player_replaced, RequestId}).
 
-notify_table_created({ParentMod, ParentPid}, TableId, RelayPid) ->
-    ParentMod:table_message(ParentPid, {table_created, TableId, RelayPid}).
+parent_notify_table_created({ParentMod, ParentPid}, TableId, RelayPid) ->
+    ParentMod:table_message(ParentPid, TableId, {table_created, RelayPid}).
+
+parent_send_round_res({ParentMod, ParentPid}, TableId, FR, Hands, Gosterge, WhoHasGosterge) ->
+    ParentMod:table_message(ParentPid, TableId, {round_finished, FR, Hands, Gosterge, WhoHasGosterge}).
 
 desk_player_action(Desk, SeatNum, Action) ->
     ?DESK:player_action(Desk, SeatNum, Action).
@@ -908,11 +920,11 @@ create_okey_tile_discarded(SeatNum, Tash, Timeouted, Players) ->
                          tile = Tash,
                          timeouted = Timeouted}.
 
-create_okey_round_ended_no_winner() ->
+create_okey_round_ended_no_winner(Results, NextAction) ->
     #okey_round_ended{good_shot = false,
                       reason = <<"draw">>,
-                      results = null, %% FIXME: Real results needed
-                      next_action = next_round}. %% FIXME
+                      results = Results,
+                      next_action = NextAction}.
 
 
 create_okey_revealed(SeatNum, DiscardedTash, TashPlaces, Players) ->
@@ -921,7 +933,7 @@ create_okey_revealed(SeatNum, DiscardedTash, TashPlaces, Players) ->
                          null -> null;
                          _ -> tash_to_ext(T)
                      end || T <- TashPlaces],
-    #okey_revealed{player = UserId,
+    #okey_revealed{player = UserId,              %% FIXME: We need reveal message without confirmation
                    discarded = tash_to_ext(DiscardedTash),
                    hand = TashPlacesExt}.
 

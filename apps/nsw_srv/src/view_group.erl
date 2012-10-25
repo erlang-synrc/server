@@ -369,8 +369,8 @@ event(join_group) ->
         {error, not_found} -> msg_error();
         _ -> msg_error()
     end,
-    wf:replace(join_notice, Replace),
-    wf:wire("location.reload()");
+    wf:replace(join_notice, Replace);
+%    wf:wire("location.reload()");
 
 event({invite_act, WhoName, Who}) ->
     wf:update(simple_panel, invition_form(WhoName, Who)),
@@ -384,7 +384,7 @@ event({do_leave, GId}) ->
     User = wf:user(),
     nsx_util_notification:notify(["subscription", "user", User, "leave_group"], {GId}),
     wf:wire(simple_lightbox, #hide{}),
-    wf:redirect("");
+    wf:redirect(?_U("/dashboard"));
 
 event(Other) ->
     dashboard:event(Other).
