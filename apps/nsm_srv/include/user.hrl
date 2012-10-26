@@ -75,20 +75,30 @@
          creator,
          created,
          owner,
-         feed}).
+         feed,
+         users_count = 0 :: integer(),   % we have to store this, counting would be very expensive and this number is sufficient for sorting and stuff
+         entries_count = 0 :: integer()  
+    }).
 
--record(group_member, % this contains a list of group for one user
+-record(group_member, % this contains a list of group for one user      ! obsoleted by group_subs, left for data migration
         {who,
          group,
          group_name,
          id, % unused in riak, left for mnesia
          type = user}).
 
--record(group_member_rev, % this contains a list of users for a group
+-record(group_member_rev, % this contains a list of users for a group      ! obsoleted by group_subs, left for data migration
         {group,
          who,
          who_name,
          type = user}).
+
+-record(group_subs,
+       {user_id,
+        group_id,
+        user_type,
+        user_posts_count = 0 :: integer() % we need this for sorting and counting is expensive
+       }).
 
 -record(forget_password,
         {token :: string(),
@@ -120,6 +130,15 @@
         gift_id
     }).
 
+% users activity top
+-define(ACTIVE_USERS_TOP_N, 12).
+
+-record(active_users_top, {
+        no,
+        user_id,
+        entries_count,
+        last_one_timestamp    
+    }).
 
 %% Message queues stuff related to user
 %% User exchange name
