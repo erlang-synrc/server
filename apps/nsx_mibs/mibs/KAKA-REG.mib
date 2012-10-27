@@ -1,9 +1,0 @@
-KAKA-REG DEFINITIONS ::= BEGIN
-
-IMPORTS enterprises FROM SNMPv2-SMI;
-
-paynet OBJECT IDENTIFIER ::= { enterprises 88888 }
-kakaranet OBJECT IDENTIFIER ::= {paynet 1}
-kakaSquares OBJECT IDENTIFIER ::= {kakaranet 1}
-
-END

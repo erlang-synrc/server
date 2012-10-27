@@ -1,0 +1,9 @@
+SYNRC-REG DEFINITIONS ::= BEGIN
+
+IMPORTS enterprises FROM SNMPv2-SMI;
+
+synrc OBJECT IDENTIFIER ::= { enterprises 40750 }
+kakaranet OBJECT IDENTIFIER ::= {synrc 1}
+kakaSquares OBJECT IDENTIFIER ::= {kakaranet 1}
+
+END

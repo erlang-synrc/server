@@ -8,7 +8,7 @@ IMPORTS
     RowStatus
 	FROM STANDARD-MIB
     kakaSquares
-	FROM KAKA-REG;
+	FROM SYNRC-REG;
 
 mem OBJECT IDENTIFIER ::= { kakaSquares 2}
 
