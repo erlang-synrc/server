@@ -1,5 +1,5 @@
 %%% -------------------------------------------------------------------
-%%% Author  : serge
+%%% Author  : Sergei Polkovnikov <serge.polkovnikov@gmail.com>
 %%% Description :
 %%%
 %%% Created : Oct 16, 2012
@@ -11,11 +11,12 @@
 %% Include files
 %% --------------------------------------------------------------------
 -include_lib("nsg_srv/include/basic_types.hrl").
+-include_lib("nsx_config/include/log.hrl").
 
 %% --------------------------------------------------------------------
 %% External exports
 -export([start/1, table_message/2, table_request/2]).
--export([subscribe/4, submit/2, signal/2, publish/2]).
+-export([stop/1, subscribe/4, publish/2]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
@@ -46,14 +47,11 @@
 start(Params) ->
     gen_server:start(?MODULE, [Params], []).
 
+stop(Relay) ->
+    table_message(Relay, stop).
+
 subscribe(Relay, SessionPid, User, RegNum) ->
     client_request(Relay, {subscribe, SessionPid, User, RegNum}).
-
-submit(Relay, Command) ->
-    client_message(Relay, {submit, Command}).
-
-signal(Relay, Message) ->
-    client_message(Relay, {signal, Message}).
 
 publish(Relay, Message) ->
     client_message(Relay, {publish, Message}).
@@ -201,6 +199,7 @@ handle_client_request({subscribe, Pid, #'PlayerInfo'{id = UserId}, observer}, _F
 handle_client_request({subscribe, Pid, #'PlayerInfo'{id = UserId}, PlayerId}, _From,
                       #state{players = Players, subscribers = Subscribers,
                              table = {TableMod, TablePid}} = State) ->
+    ?INFO("RELAY_NG Subscription request from user ~p, PlayerId: ~p", [UserId, PlayerId]),
     case find_player(PlayerId, Players) of
         {ok, #player{user_id = UserId}} ->
             NewPlayers = update_player_status(PlayerId, online, Players),
@@ -208,36 +207,11 @@ handle_client_request({subscribe, Pid, #'PlayerInfo'{id = UserId}, PlayerId}, _F
             erlang:monitor(process, Pid),
             TableMod:relay_message(TablePid, {player_connected, PlayerId}),
             {reply, ok, State#state{players = NewPlayers, subscribers = NewSubscribers}};
-        {ok, #player{}} ->
-            {reply, {error, not_player_id_owner}, State};
+        {ok, #player{}=P} ->
+           ?INFO("RELAY_NG Subscription for user ~p rejected. Another owner of the PlayerId <~p>: ~p", [UserId, PlayerId, P]),
+           {reply, {error, not_player_id_owner}, State};
         error ->
             {reply, {error, unknown_player_id}, State}
-    end;
-
-
-%% TODO: Make this as an async message and identify the user by a PlayerId.
-%% Current implementation is only for compatebility.
-handle_client_request({submit, Command}, {ClientPid, _}=_From,
-                      #state{table = {TableMod, TablePid},
-                             subscribers = Subscribers} = State) ->
-    case find_subscriber(ClientPid, Subscribers) of
-        {ok, #subscriber{player_id = PlayerId}} when PlayerId =/= undefined ->
-            TableMod:player_action(TablePid, PlayerId, {submit, Command}),
-            {reply, ok, State};
-        _ ->
-            {reply, {error, not_player}, State}
-    end;
-
-
-handle_client_request({signal, Signal}, {ClientPid, _}=_From,
-                      #state{table = {TableMod, TablePid},
-                             subscribers = Subscribers} = State) ->
-    case find_subscriber(ClientPid, Subscribers) of
-        {ok, #subscriber{player_id = PlayerId}} when PlayerId =/= undefined ->
-            TableMod:player_action(TablePid, PlayerId, {signal, Signal}),
-            {reply, ok, State};
-        _ ->
-            {reply, {error, not_player}, State}
     end;
 
 
@@ -278,6 +252,7 @@ handle_client_message(_Msg, State) ->
 %%===================================================================
 
 handle_table_message({publish, Msg}, #state{subscribers = Subscribers} = State) ->
+    ?INFO("RELAY_NG The table publish message: ~p", [Msg]),
     Receipients = subscribers_to_list(Subscribers),
     [gen_server:cast(Pid, Msg) || #subscriber{pid = Pid} <- Receipients], %% XXX
     {noreply, State};
@@ -286,6 +261,9 @@ handle_table_message({to_client, PlayerId, Msg}, #state{subscribers = Subscriber
     Receipients = find_subscribers_by_player_id(PlayerId, Subscribers),
     [Pid ! Msg || #subscriber{pid = Pid} <- Receipients], %% XXX
     {noreply, State};
+
+handle_table_message(stop, State) ->
+    {stop, normal, State};
 
 handle_table_message(_Msg, State) ->
     {noreply, State}.
@@ -347,4 +325,4 @@ find_subscribers_by_player_id(PlayerId, Subscribers) ->
     midict:geti(PlayerId, player_id, Subscribers).
 
 subscribers_to_list(Subscribers) ->
-    midict:to_list(Subscribers).
+    midict:all_values(Subscribers).
