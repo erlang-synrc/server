@@ -77,7 +77,8 @@ init(Mode, SeatsNum) ->
            table = Table
           }.
 
-
+%% round_finished(State, FinishReason, Hands, Gosterge, WhoHasGosterge) ->
+%%                                    {NewState, RoundScores, PlayersAchsPoints}
 round_finished(#state{mode = ?MODE_STANDARD = GameMode,
                       seats_num = SeatsNum,
                       last_round_num = LastRoundNum,
