@@ -29,6 +29,7 @@
 %% --------------------------------------------------------------------
 %% Include files
 %% --------------------------------------------------------------------
+-include_lib("nsx_config/include/log.hrl").
 
 %% --------------------------------------------------------------------
 %% External exports
@@ -40,6 +41,7 @@
 
 -export([
          get_state_name/1,
+         get_seats_nums/1,
          get_cur_seat/1,
          get_gosterge/1,
          get_deck/1,
@@ -95,6 +97,9 @@ get_state_name(Desk) ->
 
 get_cur_seat(Desk) ->
     gen_fsm:sync_send_all_state_event(Desk, get_cur_seat).
+
+get_seats_nums(Desk) ->
+    gen_fsm:sync_send_all_state_event(Desk, get_seats_nums).
 
 get_gosterge(Desk) ->
     gen_fsm:sync_send_all_state_event(Desk, get_gosterge).
@@ -170,6 +175,11 @@ handle_sync_event(get_state_name, _From, StateName,
 handle_sync_event(get_cur_seat, _From, StateName,
                   #state{cur_player = CurSeat} = StateData) ->
     {reply, CurSeat, StateName, StateData};
+
+handle_sync_event(get_seats_nums, _From, StateName,
+                  #state{players = Players} = StateData) ->
+    SeatsNums = [P#player.id || P <- Players],
+    {reply, SeatsNums, StateName, StateData};
 
 handle_sync_event(get_gosterge, _From, StateName,
                   #state{gosterge = Gosterge} = StateData) ->
@@ -311,6 +321,7 @@ handle_player_action(PlayerId, {discard, Tash}, ?STATE_DISCARD,
     if PlayerId == CurPlayerId ->
            case discard_tash(Tash, PlayerId, Players) of
                error ->
+                   ?INFO("OKEY_NG_DESK Discard error. SeatNum: ~p. Tash: ~p", [PlayerId, Tash]),
                    {error, no_such_tash};
                NewPlayers ->
                    Events1 = [{tash_discarded, PlayerId, Tash}],
@@ -322,7 +333,7 @@ handle_player_action(PlayerId, {discard, Tash}, ?STATE_DISCARD,
                        _ ->
                            NextPlayerId = next_id(CurPlayerId),
                            Events = [{next_player, NextPlayerId} | Events1],
-                           {ok, Events, ?STATE_DISCARD,
+                           {ok, Events, ?STATE_TAKE,
                             StateData#state{players = NewPlayers, cur_player = NextPlayerId}}
                    end
             end;
@@ -355,6 +366,8 @@ handle_player_action(PlayerId, {reveal, Tash, TashPlaces}, ?STATE_DISCARD,
     end;
 
 handle_player_action(_PlayerId, _Action, _StateName, _StateData) ->
+    ?ERROR("OKEY_NG_DESK Invalid action passed. Player: ~p. Action: ~p. StateName: ~p.",
+           [_PlayerId, _Action, _StateName]),
     {error, invalid_action}.
 
 %%===================================================================
