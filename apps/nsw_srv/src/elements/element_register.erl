@@ -370,10 +370,10 @@ event({birthday_changed}) ->
     wf:update(birthday_box, birthday_box(SDay, SMonth, SYear));
 
 event({register_success, User}) ->
-    timer:sleep(250),   % rarely, but sometimes it simply can't find new user with login:login_user, so I put a delay here
+    timer:sleep(200),   % rarely, but sometimes it simply can't find new user with login:login_user, so I put a delay here
     nsx_util_notification:notify(["subscription", "user", User, "add_to_group"], {"kakaranet", member}),
     nsx_util_notification:notify(["subscription", "user", User, "add_to_group"], {"yeniler", member}),
-    timer:sleep(500),    % and this for group subscription
+    timer:sleep(300),    % and this for group subscription
     login:login_user(User);
 
 event(show_please_wait) ->
