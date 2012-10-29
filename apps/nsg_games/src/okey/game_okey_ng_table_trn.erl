@@ -24,7 +24,7 @@
          relay_message/2
         ]).
 
--export([submit/3]).
+-export([submit/3, signal/3]).
 
 %% gen_fsm callbacks
 -export([init/1, handle_event/3, handle_sync_event/4,
@@ -88,6 +88,7 @@
 -define(STATE_WAITING_FOR_START, state_waiting_for_start).
 -define(STATE_PLAYING, state_playing).
 -define(STATE_REVEAL_CONFIRMATION, state_reveal_confirmation).
+-define(STATE_FINISHED, state_finished).
 
 -define(HAND_SIZE, 14).
 -define(SEATS_NUM, 4).
@@ -113,6 +114,9 @@ relay_message(Srv, Message) ->
 
 submit(Table, PlayerId, Action) ->
     player_action(Table, PlayerId, {submit, Action}).
+
+signal(Table, PlayerId, Signal) ->
+    player_action(Table, PlayerId, {signal, Signal}).
 
 %% ====================================================================
 %% Server functions
@@ -265,10 +269,12 @@ handle_parent_message({replace_player, RequestId, UserInfo, PlayerId, SeatNum}, 
     parent_confirm_replacement(Parent, TableId, RequestId),
     {next_state, StateName, StateData#state{players = NewPlayers}};
 
-handle_parent_message(start_game, ?STATE_WAITING_FOR_START,
+handle_parent_message(start_game, StateName,
                       #state{game_id = GameId, table_id = TableId,
                              start_seat = StartSeat, players = Players,
-                             relay = Relay, turn_timeout = TurnTimeout} = StateData) ->
+                             relay = Relay, turn_timeout = TurnTimeout} = StateData)
+  when StateName == ?STATE_WAITING_FOR_START;
+       StateName == ?STATE_FINISHED ->
     ?INFO("OKEY_NG_TABLE_TRN <~p,~p> Received command to start game at the table. Starting...", [GameId, TableId]),
     Deck = deck:shuffle(deck:init_deck(okey)),
     {Gosterge, Deck1} = choose_gosterge(Deck),
@@ -295,6 +301,16 @@ handle_parent_message(start_game, ?STATE_WAITING_FOR_START,
     {next_state, ?STATE_PLAYING, StateData#state{desk_rule_pid = Desk,
                                                  desk_state = DeskState,
                                                  timeout_timer = TRef}};
+
+handle_parent_message({round_score, Score}, ?STATE_FINISHED,
+                      #state{game_id = GameId, table_id = TableId} = StateData) ->
+    ?INFO("OKEY_NG_TABLE_TRN <~p,~p> Received round score info. Sending it to players.", [GameId, TableId]),
+    %% TODO: Send round result to clients
+%            Results = null,    %% FIXME: Real results needed
+%            NextAction = next_round, %% FIXME: Real value needed
+%            Msg = create_okey_round_ended_no_winner(Results, NextAction),
+%            publish_to_clients(Relay, Msg),
+    {next_state, ?STATE_FINISHED, StateData#state{}};
 
 handle_parent_message(stop, _StateName,
                       #state{game_id = GameId, table_id = TableId} = StateData) ->
@@ -366,6 +382,15 @@ handle_player_action(PlayerId, {submit, #game_action{action = Action, args = Arg
         error ->
             {reply, {error, you_are_not_a_player}, StateName, StateData}
     end;
+
+
+handle_player_action(PlayerId, {signal, Signal}, _From, StateName,
+                     #state{table_id = TableId, game_id = GameId} = StateData) ->
+    ?INFO("OKEY_NG_TABLE_TRN <~p,~p> Received signal from player <~p> : ~p. Ignoring.",
+          [GameId, TableId, PlayerId, Signal]),
+    %% TODO: Pause support needed (if allowed by a parent process)
+    {reply, ok, StateName, StateData};
+
 
 handle_player_action(_PlayerId, _Message, _From, StateName, StateData) ->
     {next_state, StateName, StateData}.
@@ -576,11 +601,7 @@ finalize_round(#state{desk_state = #desk_state{finish_reason = FinishReason,
                  {reveal, Revealer, Tashes, Discarded, ConfirmationList}
          end,
     parent_send_round_res(Parent, TableId, FR, Hands, Gosterge, WhoHasGosterge),
-%            Results = null,    %% FIXME: Real results needed
-%            NextAction = next_round, %% FIXME: Real value needed
-%            Msg = create_okey_round_ended_no_winner(Results, NextAction),
-%            publish_to_clients(Relay, Msg),
-    {next_state, ?STATE_WAITING_FOR_START, StateData}.
+    {next_state, ?STATE_FINISHED, StateData}.
 
 
 
@@ -860,7 +881,19 @@ create_okey_game_player_state(PlayerId, ?STATE_REVEAL_CONFIRMATION,
                             pile_height = length(DeskDeck),
                             current_round = CurRound,
                             game_sub_type = SubType,
-                            next_turn_in = Timeout}.
+                            next_turn_in = Timeout};
+
+create_okey_game_player_state(_PlayerId, ?STATE_FINISHED,
+                              #state{cur_round = CurRound}) ->
+    #okey_game_player_state{whos_move = null,
+                            game_state = game_initializing,
+                            piles = null,
+                            tiles = null,
+                            gosterge = null,
+                            pile_height = null,
+                            current_round = CurRound,
+                            game_sub_type = null,
+                            next_turn_in = 0}.
 
 
 create_okey_game_started(SeatNum, DeskState, #state{cur_round = CurRound,
