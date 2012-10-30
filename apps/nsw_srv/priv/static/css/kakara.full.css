@@ -5030,6 +5030,73 @@ footer .lang img {
 .info-page-bg{
     margin-left:-24px;
 }
+
+/* rules pages */
+
+.rules-page-menu-elements{
+    position:absolute; 
+    font-family: 'Gotham Rounded Bold';
+    font-size: 16px;
+    top:10px; 
+    letter-spacing:-0.05px;
+}
+
+.rules-page-okey-label{
+    color:#444;
+    left:43px;
+}
+
+.rules-page-okey-link{
+    color:#FFF;
+    left:43px;
+}
+
+.rules-page-tavla-label{
+    color:#444;
+    left:188px;
+}
+
+.rules-page-tavla-link{
+    color:#FFF;
+    left:188px;
+}
+
+.rules-page-king-label{
+    color:#444;
+    left:350px;
+}
+
+.rules-page-king-link{
+    color:#FFF;
+    left:350px;
+}
+
+.rules-page-batak-label{
+    color:#444;
+    left:527px;
+}
+
+.rules-page-batak-link{
+    color:#FFF;
+    left:527px;
+}
+
+.rules-page-sorbi-label{
+    color:#444;
+    left:698px;
+}
+
+.rules-page-sorbi-link{
+    color:#FFF;
+    left:698px;
+}
+
+.rules-page-join-link{
+    color:#FFF;
+    top:20px; 
+    left:877px;
+}
+
 /* entry texts styles */
 .entry-h1{
 	font-size:1.6em;
