@@ -55,7 +55,7 @@ handle_call(get_id, _From, #state{lastid = LID} = State) ->
 
 handle_call(get_id2, _From, #state{robotid = RID} = State) ->
     Reply = RID + 1,
-    {reply, Reply, State#state{lastid = Reply}};
+    {reply, Reply, State#state{robotid = Reply}};
 
 handle_call(_Request, _From, State) ->
     Reply = ok,
