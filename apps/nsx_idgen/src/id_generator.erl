@@ -21,7 +21,7 @@
 -define(SERVER, ?MODULE).
 
 -record(state, {
-         lastid = 1000000}).
+         lastid = 1000000, robotid = 2000000}).
 
 %%%===================================================================
 %%% API
@@ -53,8 +53,8 @@ handle_call(get_id, _From, #state{lastid = LID} = State) ->
     Reply = LID + 1,
     {reply, Reply, State#state{lastid = Reply}};
 
-handle_call(get_id2, _From, #state{lastid = LID} = State) ->
-    Reply = 1000000 + LID + 1,
+handle_call(get_id2, _From, #state{robotid = RID} = State) ->
+    Reply = RID + 1,
     {reply, Reply, State#state{lastid = Reply}};
 
 handle_call(_Request, _From, State) ->
