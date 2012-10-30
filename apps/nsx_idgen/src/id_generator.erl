@@ -12,7 +12,7 @@
 
 %% API
 -export([start_link/0]).
--export([get_id/0]).
+-export([get_id/0,get_id2/0]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
@@ -28,6 +28,9 @@
 %%%===================================================================
 get_id() ->
     gen_server:call(?MODULE, get_id).
+
+get_id2() ->
+    gen_server:call(?MODULE, get_id2).
 
 %%--------------------------------------------------------------------
 %% @doc
@@ -48,6 +51,10 @@ init([]) ->
 
 handle_call(get_id, _From, #state{lastid = LID} = State) ->
     Reply = LID + 1,
+    {reply, Reply, State#state{lastid = Reply}};
+
+handle_call(get_id2, _From, #state{lastid = LID} = State) ->
+    Reply = 1000000 + LID + 1,
     {reply, Reply, State#state{lastid = Reply}};
 
 handle_call(_Request, _From, State) ->

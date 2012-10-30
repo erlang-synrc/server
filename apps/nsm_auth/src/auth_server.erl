@@ -213,7 +213,7 @@ code_change(_OldVsn, State, _Extra) ->
 fake_credentials0(Spare) ->
     Pos = crypto:rand_uniform(1, length(Spare)),
     H0 = lists:nth(Pos, Spare),
-    Id = list_to_binary(binary_to_list(H0#'PlayerInfo'.login) ++ integer_to_list(id_generator:get_id())),
+    Id = list_to_binary(binary_to_list(H0#'PlayerInfo'.login) ++ integer_to_list(id_generator:get_id2())),
     H0#'PlayerInfo'{id = Id}.
 
 store_token(E, Token, UserId) ->
