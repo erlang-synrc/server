@@ -12,7 +12,7 @@ SES=$PWD/apps/nsg_session
 GS=$PWD/apps/nsg_srv
 WEB=$PWD/apps/nsw_srv
 DB=$PWD/apps/nsm_db
-MIBS=$PWD/apps/nsx_mibs
+MIBS=$PWD/deps/nsx_mibs
 
 SRV_REL=rels/app/node/lib/nsm_srv-1
 DB_REL=rels/app/node/lib/nsm_db-1

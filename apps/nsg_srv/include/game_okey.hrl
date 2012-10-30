@@ -2,7 +2,7 @@
 -record('OkeyPiece', {
           color = -1 :: integer(),           %% 1..4
           value = -1 :: integer()            %% 1..13
-          %% color and value set to zero mean that this is false okey
+          %% color set to 1 and value set to zero mean that this is false okey
          }).
 
 -define(FALSE_OKEY, #'OkeyPiece'{value = 0, color = 1}).

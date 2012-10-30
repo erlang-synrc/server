@@ -24,6 +24,8 @@
          relay_message/2
         ]).
 
+-export([submit/3, signal/3]).
+
 %% gen_fsm callbacks
 -export([init/1, handle_event/3, handle_sync_event/4,
          handle_info/3, terminate/3, code_change/4]).
@@ -86,6 +88,7 @@
 -define(STATE_WAITING_FOR_START, state_waiting_for_start).
 -define(STATE_PLAYING, state_playing).
 -define(STATE_REVEAL_CONFIRMATION, state_reveal_confirmation).
+-define(STATE_FINISHED, state_finished).
 
 -define(HAND_SIZE, 14).
 -define(SEATS_NUM, 4).
@@ -107,6 +110,13 @@ parent_message(Srv, Message) ->
 
 relay_message(Srv, Message) ->
     gen_fsm:send_all_state_event(Srv, {relay_message, Message}).
+
+
+submit(Table, PlayerId, Action) ->
+    player_action(Table, PlayerId, {submit, Action}).
+
+signal(Table, PlayerId, Signal) ->
+    player_action(Table, PlayerId, {signal, Signal}).
 
 %% ====================================================================
 %% Server functions
@@ -259,35 +269,48 @@ handle_parent_message({replace_player, RequestId, UserInfo, PlayerId, SeatNum}, 
     parent_confirm_replacement(Parent, TableId, RequestId),
     {next_state, StateName, StateData#state{players = NewPlayers}};
 
-handle_parent_message(start_game, ?STATE_WAITING_FOR_START,
+handle_parent_message(start_game, StateName,
                       #state{game_id = GameId, table_id = TableId,
                              start_seat = StartSeat, players = Players,
-                             relay = Relay} = StateData) ->
-    ?INFO("OKEY_NG_TABLE_TRN Received command to start game at the table. Starting...", [GameId, TableId]),
+                             relay = Relay, turn_timeout = TurnTimeout} = StateData)
+  when StateName == ?STATE_WAITING_FOR_START;
+       StateName == ?STATE_FINISHED ->
+    ?INFO("OKEY_NG_TABLE_TRN <~p,~p> Received command to start game at the table. Starting...", [GameId, TableId]),
     Deck = deck:shuffle(deck:init_deck(okey)),
-    GostergePos = crypto:rand_uniform(0, deck:size(Deck)),
-    Gosterge = deck:get(GostergePos, Deck),
+    {Gosterge, Deck1} = choose_gosterge(Deck),
     F = fun(SeatNum, AccDeck) ->
                 Num = if SeatNum==StartSeat -> ?HAND_SIZE + 1; true -> ?HAND_SIZE end,
                 lists:split(Num, AccDeck)
         end,
-    {Hands, TableDeck} = lists:mapfoldl(F, deck:to_list(Deck), lists:seq(1, ?SEATS_NUM)),
+    {Hands, TablePile} = lists:mapfoldl(F, deck:to_list(Deck1), lists:seq(1, ?SEATS_NUM)),
     Params = [{hands, Hands},
-              {deck, TableDeck},
+              {deck, TablePile},
               {gosterge, Gosterge},
               {cur_player, StartSeat}],
     {ok, Desk} = ?DESK:start(Params),
     DeskState = init_desk_state(Desk),
     %% Send notifications to clients
     [begin
-         GameStartedMsg = create_okey_game_started(N, Desk, StateData),
+         GameStartedMsg = create_okey_game_started(N, DeskState, StateData),
          PlayerId = get_player_id_by_seat_num(N, Players),
          send_to_client_ge(Relay, PlayerId, GameStartedMsg)
      end || N <- lists:seq(1, ?SEATS_NUM)],
-    CurSeat = DeskState#desk_state.cur_seat,
-    publish_to_clients(Relay, create_okey_next_turn(CurSeat, Players)),
+    CurSeatNum = DeskState#desk_state.cur_seat,
+    publish_to_clients(Relay, create_okey_next_turn(CurSeatNum, Players)),
+    TRef = erlang:send_after(TurnTimeout, self(), {turn_timeout, CurSeatNum}),
     {next_state, ?STATE_PLAYING, StateData#state{desk_rule_pid = Desk,
-                                                 desk_state = DeskState}};
+                                                 desk_state = DeskState,
+                                                 timeout_timer = TRef}};
+
+handle_parent_message({round_score, Score}, ?STATE_FINISHED,
+                      #state{game_id = GameId, table_id = TableId} = StateData) ->
+    ?INFO("OKEY_NG_TABLE_TRN <~p,~p> Received round score info. Sending it to players.", [GameId, TableId]),
+    %% TODO: Send round result to clients
+%            Results = null,    %% FIXME: Real results needed
+%            NextAction = next_round, %% FIXME: Real value needed
+%            Msg = create_okey_round_ended_no_winner(Results, NextAction),
+%            publish_to_clients(Relay, Msg),
+    {next_state, ?STATE_FINISHED, StateData#state{}};
 
 handle_parent_message(stop, _StateName,
                       #state{game_id = GameId, table_id = TableId} = StateData) ->
@@ -341,20 +364,33 @@ handle_player_action(PlayerId, {submit, #game_action{action = Action, args = Arg
                      StateName,
                      #state{players = Players, game_id = GameId,
                             table_id = TableId} = StateData) ->
+    ?INFO("OKEY_NG_TABLE_TRN <~p,~p> Player <~p> submit the game action: ~p.",
+           [GameId, TableId, PlayerId, GA]),
     case get_player(PlayerId, Players) of
         {ok, #player{seat_num = SeatNum}} ->
             try api_utils:to_known_record(Action, Args) of
                 ExtAction ->
+                    ?INFO("OKEY_NG_TABLE_TRN <~p,~p> Player <~p> submit the game action (converted): ~p.",
+                          [GameId, TableId, PlayerId, ExtAction]),
                     do_action(SeatNum, ExtAction, From, StateName, StateData)
             catch
-                _Type:_Reason ->
-                    ?ERROR("OKEY_NG_TABLE_TRN <~p,~p> Invalid game action from player ~p: ~p. Ignoring.",
-                           [GameId, TableId, PlayerId, GA]),
+                _Class:_Exception ->
+                    ?ERROR("OKEY_NG_TABLE_TRN <~p,~p> Can't convert action ~p. Exception: ~p:~p.",
+                           [GameId, TableId, GA, _Class, _Exception]),
                     {reply, {error, invalid_action}, StateName, StateData}
             end;
         error ->
             {reply, {error, you_are_not_a_player}, StateName, StateData}
     end;
+
+
+handle_player_action(PlayerId, {signal, Signal}, _From, StateName,
+                     #state{table_id = TableId, game_id = GameId} = StateData) ->
+    ?INFO("OKEY_NG_TABLE_TRN <~p,~p> Received signal from player <~p> : ~p. Ignoring.",
+          [GameId, TableId, PlayerId, Signal]),
+    %% TODO: Pause support needed (if allowed by a parent process)
+    {reply, ok, StateName, StateData};
+
 
 handle_player_action(_PlayerId, _Message, _From, StateName, StateData) ->
     {next_state, StateName, StateData}.
@@ -402,10 +438,10 @@ do_action(_SeatNum, #okey_discard{}, _From, StateName, StateData) ->
 do_action(SeatNum, #okey_reveal{discarded = ExtDiscarded, hand = ExtHand}, From,
           ?STATE_PLAYING = StateName, StateData) ->
     Discarded = ext_to_tash(ExtDiscarded),
-    Hand = [case E of
+    Hand = [[case T of
                 null -> null;
                 ExtTash -> ext_to_tash(ExtTash)
-            end || E <- ExtHand],
+             end || T <- Row] || Row <- ExtHand],
     do_game_action(SeatNum, {reveal, Discarded, Hand}, From, StateName, StateData);
 
 do_action(_SeatNum, #okey_reveal{}, _From, StateName, StateData) ->
@@ -421,7 +457,7 @@ do_action(SeatNum, #okey_challenge{challenge = Challenge}, From,
             NewCList = [{SeatNum, Challenge} | CList],
             NewWL = lists:delete(SeatNum, WL),
             if NewWL == [] ->
-                   gen_fsm:reply(ok, From),
+                   gen_fsm:reply(From, ok),
                    erlang:cancel_timer(TRef),
                    finalize_round(StateData#state{timeout_timer = undefined,
                                                   reveal_confirmation_list = NewCList});
@@ -480,6 +516,7 @@ do_timeout_moves(#state{desk_rule_pid = Desk,
 
 do_game_action(SeatNum, GameAction, From, StateName,
                #state{desk_rule_pid = Desk} = StateData) ->
+    ?INFO("OKEY_NG_TABLE_TRN do_game_action SeatNum: ~p  GameAction: ~p", [SeatNum, GameAction]),
     case desk_player_action(Desk, SeatNum, GameAction) of
         {ok, Events} ->
             Response = case GameAction of
@@ -510,7 +547,7 @@ process_game_events(Events, #state{desk_state = DeskState,
     #desk_state{state = DeskStateName,
                 cur_seat = CurSeatNum} = NewDeskState,
     case DeskStateName of
-        state_finish ->
+        state_finished ->
             erlang:cancel_timer(OldTRef),
             on_game_finish(StateData#state{desk_state = NewDeskState});
         state_take ->
@@ -532,9 +569,10 @@ on_game_finish(#state{desk_state = DeskState,
                       reveal_confirmation = RevealConfirmation,
                       reveal_confirmation_timeout = Timeout} = StateData) ->
     #desk_state{finish_reason = FinishReason,
-                reveal_info = {Revealer, _Tashes, _Discarded},
+                reveal_info = RevealInfo,
                 hands = Hands} = DeskState,
     if FinishReason == reveal andalso RevealConfirmation ->
+           {Revealer, _Tashes, _Discarded} = RevealInfo,
            WL = [SeatNum || {SeatNum, _} <- Hands, SeatNum =/= Revealer],
            TRef = erlang:send_after(Timeout, self(), reveal_timeout),
            {next_state, ?STATE_REVEAL_CONFIRMATION,
@@ -563,11 +601,7 @@ finalize_round(#state{desk_state = #desk_state{finish_reason = FinishReason,
                  {reveal, Revealer, Tashes, Discarded, ConfirmationList}
          end,
     parent_send_round_res(Parent, TableId, FR, Hands, Gosterge, WhoHasGosterge),
-%            Results = null,    %% FIXME: Real results needed
-%            NextAction = next_round, %% FIXME: Real value needed
-%            Msg = create_okey_round_ended_no_winner(Results, NextAction),
-%            publish_to_clients(Relay, Msg),
-    {next_state, ?STATE_WAITING_FOR_START, StateData}.
+    {next_state, ?STATE_FINISHED, StateData}.
 
 
 
@@ -599,14 +633,14 @@ handle_desk_events([Event | Events], DeskState, Players, Relay) ->
                 NewDiskarded = lists:keyreplace(PrevSeatNum, 1, Discarded, {PrevSeatNum, NewPile}),
                 {_, Hand} = lists:keyfind(SeatNum, 1, Hands),
                 NewHands = lists:keyreplace(SeatNum, 1, Hands, {SeatNum, [Tash | Hand]}),
-                DeskState#desk_state{hands = NewHands, discarded = NewDiskarded};
+                DeskState#desk_state{hands = NewHands, discarded = NewDiskarded, state = state_discard};
             {taked_from_table, SeatNum, Tash} ->
                 [Tash | NewDeck] = Deck,
                 Msg = create_okey_tile_taken_table(SeatNum, length(NewDeck), Players),
                 publish_to_clients(Relay, Msg),
                 {_, Hand} = lists:keyfind(SeatNum, 1, Hands),
                 NewHands = lists:keyreplace(SeatNum, 1, Hands, {SeatNum, [Tash | Hand]}),
-                DeskState#desk_state{hands = NewHands, deck = NewDeck};
+                DeskState#desk_state{hands = NewHands, deck = NewDeck, state = state_discard};
             {tash_discarded, SeatNum, Tash} ->
                 Msg = create_okey_tile_discarded(SeatNum, Tash, false, Players),
                 publish_to_clients(Relay, Msg),
@@ -728,7 +762,7 @@ parent_confirm_replacement({ParentMod, ParentPid}, TableId, RequestId) ->
     ParentMod:table_message(ParentPid, TableId, {player_replaced, RequestId}).
 
 parent_notify_table_created({ParentMod, ParentPid}, TableId, RelayPid) ->
-    ParentMod:table_message(ParentPid, TableId, {table_created, RelayPid}).
+    ParentMod:table_message(ParentPid, TableId, {table_created, {?RELAY, RelayPid}}).
 
 parent_send_round_res({ParentMod, ParentPid}, TableId, FR, Hands, Gosterge, WhoHasGosterge) ->
     ParentMod:table_message(ParentPid, TableId, {round_finished, FR, Hands, Gosterge, WhoHasGosterge}).
@@ -847,7 +881,19 @@ create_okey_game_player_state(PlayerId, ?STATE_REVEAL_CONFIRMATION,
                             pile_height = length(DeskDeck),
                             current_round = CurRound,
                             game_sub_type = SubType,
-                            next_turn_in = Timeout}.
+                            next_turn_in = Timeout};
+
+create_okey_game_player_state(_PlayerId, ?STATE_FINISHED,
+                              #state{cur_round = CurRound}) ->
+    #okey_game_player_state{whos_move = null,
+                            game_state = game_initializing,
+                            piles = null,
+                            tiles = null,
+                            gosterge = null,
+                            pile_height = null,
+                            current_round = CurRound,
+                            game_sub_type = null,
+                            next_turn_in = 0}.
 
 
 create_okey_game_started(SeatNum, DeskState, #state{cur_round = CurRound,
@@ -917,7 +963,7 @@ create_okey_tile_taken_table(SeatNum, PileHeight, Players) ->
 create_okey_tile_discarded(SeatNum, Tash, Timeouted, Players) ->
     #player{user_id = UserId} = get_player_by_seat_num(SeatNum, Players),
     #okey_tile_discarded{player = UserId,
-                         tile = Tash,
+                         tile = tash_to_ext(Tash),
                          timeouted = Timeouted}.
 
 create_okey_round_ended_no_winner(Results, NextAction) ->
@@ -929,24 +975,27 @@ create_okey_round_ended_no_winner(Results, NextAction) ->
 
 create_okey_revealed(SeatNum, DiscardedTash, TashPlaces, Players) ->
     #player{user_id = UserId} = get_player_by_seat_num(SeatNum, Players),
-    TashPlacesExt = [case T of
+    TashPlacesExt = [[case T of
                          null -> null;
                          _ -> tash_to_ext(T)
-                     end || T <- TashPlaces],
+                      end || T <- Row ] || Row <- TashPlaces],
     #okey_revealed{player = UserId,              %% FIXME: We need reveal message without confirmation
                    discarded = tash_to_ext(DiscardedTash),
                    hand = TashPlacesExt}.
 
 
+create_okey_turn_timeout(null, TashDiscarded) ->
+    #okey_turn_timeout{tile_taken = null,
+                       tile_discarded = tash_to_ext(TashDiscarded)};
 create_okey_turn_timeout(TashTaken, TashDiscarded) ->
-    #okey_turn_timeout{tile_taken = TashTaken,
-                       tile_discarded = TashDiscarded}.
+    #okey_turn_timeout{tile_taken = tash_to_ext(TashTaken),
+                       tile_discarded = tash_to_ext(TashDiscarded)}.
 
 
-tash_to_ext(false_okey) -> #'OkeyPiece'{color = 0, value = 0};
+tash_to_ext(false_okey) -> #'OkeyPiece'{color = 1, value = 0};
 tash_to_ext({Color, Value}) ->  #'OkeyPiece'{color = Color, value = Value}.
 
-ext_to_tash(#'OkeyPiece'{color = 0, value = 0}) -> false_okey;
+ext_to_tash(#'OkeyPiece'{color = 1, value = 0}) -> false_okey;
 ext_to_tash(#'OkeyPiece'{color = Color, value = Value}) -> {Color, Value}.
 
 %statename_to_api_string(state_wait) -> do_okey_ready;
@@ -1026,3 +1075,11 @@ b2c(1) -> red;
 b2c(2) -> blue;
 b2c(3) -> yellow;
 b2c(4) -> black.
+
+
+choose_gosterge(Deck) ->
+    Pos = crypto:rand_uniform(1, deck:size(Deck)),
+    case deck:get(Pos, Deck) of
+        {false_okey, _} -> choose_gosterge(Deck);
+        {Gosterge, Deck1} -> {Gosterge, Deck1}
+    end.

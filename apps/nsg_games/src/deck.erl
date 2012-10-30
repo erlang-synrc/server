@@ -46,7 +46,7 @@
 init_deck(empty) ->
     [];
 init_deck(okey) ->
-    [false_okey, fasle_okey | [{C, V} || C <- [1,2,3,4], V <- lists:seq(1,13), _ <- [1,2]]].
+    [false_okey, false_okey | [{C, V} || C <- [1,2,3,4], V <- lists:seq(1,13), _ <- [1,2]]].
 
 
 %% @spec from_list(List) -> Deck
@@ -73,7 +73,7 @@ shuffle(Deck) when is_list(Deck) ->
 
 shuffle([], 0, Acc) -> Acc;
 shuffle(Deck, Size, Acc) ->
-    Pos = crypto:rand_uniform(0, Size),
+    Pos = crypto:rand_uniform(1, Size+1),
     {E, Deck1} = get(Pos, Deck),
     shuffle(Deck1, Size-1, [E |Acc]).
 

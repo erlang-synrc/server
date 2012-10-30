@@ -8,6 +8,7 @@
 %% Include files
 %%
 -include_lib("eunit/include/eunit.hrl").
+-include_lib("nsx_config/include/log.hrl").
 
 %%
 %% Exported Functions
@@ -77,7 +78,8 @@ init(Mode, SeatsNum) ->
            table = Table
           }.
 
-
+%% round_finished(State, FinishReason, Hands, Gosterge, WhoHasGosterge) ->
+%%                                    {NewState, RoundScores, PlayersAchsPoints}
 round_finished(#state{mode = ?MODE_STANDARD = GameMode,
                       seats_num = SeatsNum,
                       last_round_num = LastRoundNum,
@@ -235,7 +237,7 @@ split_by_delimiter(Delimiter, Hand) -> split_by_delimiter(Delimiter, Hand, []).
 split_by_delimiter(_, [], Acc) -> lists:reverse(Acc);
 split_by_delimiter(Delimiter, [Delimiter | Hand], Acc) -> split_by_delimiter(Delimiter, Hand, Acc);
 split_by_delimiter(Delimiter, Hand, Acc) ->
-    {L, Rest} = lists:splitwith(fun(X) -> X == Delimiter end, Hand),
+    {L, Rest} = lists:splitwith(fun(X) -> X =/= Delimiter end, Hand),
     split_by_delimiter(Delimiter, Rest, [L | Acc]).
 
 %% @spec is_set(Set) -> boolean()
@@ -322,7 +324,7 @@ player_achivements(SeatNum, WhoHasGosterge, Has8Tashes, FinishType, Revealer, Wr
 %%     <<"deduction to empty box">>,                    %% 13
        {?ACH_EMPTY_BOX, false}, %% FIXME: what is it?
 %%     <<"rejected good hand">>,                        %% 14
-       {?ACH_REJECT_GOOD_HAND, FinishType = reveal andalso lists:member(SeatNum, WrongRejects)},
+       {?ACH_REJECT_GOOD_HAND, FinishType == reveal andalso lists:member(SeatNum, WrongRejects)},
 %%     <<"gosterge winner">>                            %% 15
        {?ACH_GOSTERGE_WINNER, false} %% FIXME: what is it?
     ],

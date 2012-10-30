@@ -321,8 +321,13 @@ get_hand(State) ->
 
 do_turn(State, Hand) ->
     Delay = get_delay(State),
-    simulate_delay(take, Delay),
-    {_, Hand1} = do_take(State, Hand),
+    Hand1 = if length(Hand) == 15 ->
+                   Hand;
+               true ->
+                   simulate_delay(take, Delay),
+                   {_, H1} = do_take(State, Hand),
+                   H1
+            end,
     true = is_list(Hand1),
     {TryDiscard, _} = draw_random(Hand1),
     simulate_delay(discard, Delay),

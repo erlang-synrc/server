@@ -101,7 +101,11 @@ field(birth)->
 
 register_button()->
     #button{id=aa, class="btn-submit", text=?_T("Register"),
-	    actions=webutils:serialize_event(register, undefined, ?MODULE)}.
+	    actions=[
+            webutils:serialize_event(show_please_wait, undefined, ?MODULE),
+            webutils:serialize_event(register, undefined, ?MODULE)
+        ]
+    }.
 
 facebook_button()->
     #link{class="login-facebook",postback=login_facebook, body=[#image{image="/images/login/login-facebook.png"}]}.
@@ -366,15 +370,16 @@ event({birthday_changed}) ->
     wf:update(birthday_box, birthday_box(SDay, SMonth, SYear));
 
 event({register_success, User}) ->
-    timer:sleep(50),   % rarely, but sometimes it simply can't find new user with login:login_user, so I put a delay here
+    timer:sleep(200),   % rarely, but sometimes it simply can't find new user with login:login_user, so I put a delay here
     nsx_util_notification:notify(["subscription", "user", User, "add_to_group"], {"kakaranet", member}),
     nsx_util_notification:notify(["subscription", "user", User, "add_to_group"], {"yeniler", member}),
-    timer:sleep(50),    % and this for group subscription
+    timer:sleep(300),    % and this for group subscription
     login:login_user(User);
 
+event(show_please_wait) ->
+    wf:update(register_hintbox, "<span style='color:#44AA44'>" ++ ?_T("Please wait...") ++ "</span>");
+
 event(register) ->
-    wf:update(register_hintbox, "<span style='color:#77AA77'>" ++ ?_T("Please wait...") ++ "</span>"),
-    wf:flush(),
     InviteCodeRec = wf:state(invite),
     case InviteCodeRec of
         #invite_code{code = InviteCode} ->
