@@ -154,13 +154,13 @@ handle_notice(["feed", "group", _Group, "entry", EntryId, "delete_system"] = Rou
 
 
 %% share entry
-handle_notice(["feed", _, WhoShares, "entry", EntryId, "share"],
+handle_notice(["feed", _, WhoShares, "entry", NewEntryId, "share"],
               #entry{entry_id = EntryId, raw_description = Desc, media = Medias,
                      to = Destinations, from = From} = E,
               #state{feed = Feed, type = user} = State) ->
     %% FIXME: sharing is like posting to the wall
     ?INFO("share: ~p, WhoShares: ~p", [E, WhoShares]),
-    NewEntryId = utils:uuid_ex(),
+%    NewEntryId = utils:uuid_ex(),
     feed:add_shared_entry(Feed, From, Destinations, NewEntryId, Desc, Medias, {user, normal}, WhoShares),
     {noreply, State};
 
