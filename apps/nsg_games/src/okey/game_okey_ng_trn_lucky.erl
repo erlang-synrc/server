@@ -104,7 +104,6 @@ reg(FLPid, User) ->
     client_sync_send(FLPid, {reg, User}, 10000).
 
 table_message(Pid, TableId, Message) ->
-    ?INFO("TABLE_MESSAGE TableId: ~p Message: ~p", [TableId, Message]),
     gen_fsm:send_all_state_event(Pid, {table_message, TableId, Message}).
 
 client_send(Pid, Message) ->
@@ -145,9 +144,9 @@ init([GameId, Params, _Manager]) ->
                            pointing_rules   = [],
                            pointing_rules_ex = [],
                            users = [],
-                           name = "Okey Tournament: Elimination - " ++ erlang:integer_to_list(GameId) ++ " "
+                           name = "I'm filling lucky - " ++ erlang:integer_to_list(GameId) ++ " "
                           },
-    ?INFO("Okey Tournament: Elimination - ~p started.  Pid:~p",[GameId, self()]),
+    ?INFO("Okey I'm filling lucky - ~p started.  Pid:~p",[GameId, self()]),
     ?INFO("GProc Registration: ~p", [GProcVal]),
     gproc:reg({p,g,self()}, GProcVal),
 
@@ -227,7 +226,7 @@ handle_info({'DOWN', MonRef, process, _Pid, _}, StateName,
                    seats = Seats, players = Players} = StateData) ->
     case get_table_by_mon_ref(MonRef, Tables) of
         #table{id = TabId} ->
-            ?INFO("OKEY_NG_TRN_ELIM <~p> Table <~p> is down. Cleaning up registeres.", [GameId, TabId]),
+            ?INFO("OKEY_NG_TRN_LUCKY <~p> Table <~p> is down. Cleaning up registeres.", [GameId, TabId]),
             PlayersIds =
                 [PlayerId || #seat{player_id = PlayerId} <- find_seats_with_players_for_table_id(TabId, Seats)],
             NewTables = del_table(TabId, Tables),
@@ -257,7 +256,7 @@ handle_info(_Info, StateName, StateData) ->
 %% Returns: any
 %% --------------------------------------------------------------------
 terminate(_Reason, _StateName, #state{game_id=GameId}=_StatData) ->
-    ?INFO("OKEY_NG_TRN_ELIM <~p> Shutting down at state: <~p>. Reason: ~p", [GameId, _StateName, _Reason]),
+    ?INFO("OKEY_NG_TRN_LUCKY <~p> Shutting down at state: <~p>. Reason: ~p", [GameId, _StateName, _Reason]),
     ok.
 
 %% --------------------------------------------------------------------
@@ -280,7 +279,7 @@ handle_table_message(TableId, {player_connected, PlayerId},
                      ?STATE_PROCESSING,
                      #state{game_id = GameId, seats = Seats, tables = Tables} = StateData)
   when is_integer(TableId), is_integer(PlayerId) ->
-    ?INFO("OKEY_NG_TRN_ELIM <~p> The player_connected notification received from table <~p>. PlayerId: <~p>",
+    ?INFO("OKEY_NG_TRN_LUCKY <~p> The player_connected notification received from table <~p>. PlayerId: <~p>",
           [GameId, TableId, PlayerId]),
     case find_seats_by_player_id(PlayerId, Seats) of
         [#seat{seat_num = SeatNum}] ->
@@ -289,10 +288,10 @@ handle_table_message(TableId, {player_connected, PlayerId},
                 #table{state = ?TABLE_STATE_READY, pid = TabPid} ->
                     case is_all_players_connected(TableId, NewSeats) of
                         true ->
-                            ?INFO("OKEY_NG_TRN_ELIM <~p> All clients connected. Starting a game.",
+                            ?INFO("OKEY_NG_TRN_LUCKY <~p> All clients connected. Starting a game.",
                                   [GameId]),
                             NewTables = set_table_state(TableId, ?TABLE_STATE_IN_PROGRESS, Tables),
-                            ?INFO("OKEY_NG_TRN_ELIM <~p> TablePid: ~p.",
+                            ?INFO("OKEY_NG_TRN_LUCKY <~p> TablePid: ~p.",
                                   [GameId, TabPid]),
                             send_to_table(TabPid, start_game),
                             {next_state, ?STATE_PROCESSING, StateData#state{seats = NewSeats,
@@ -311,17 +310,17 @@ handle_table_message(TableId, {player_connected, PlayerId},
 handle_table_message(TableId, {player_disconnected, PlayerId},
                      ?STATE_PROCESSING, #state{game_id = GameId, seats = Seats} = StateData)
   when is_integer(TableId), is_integer(PlayerId) ->
-    ?INFO("OKEY_NG_TRN_ELIM <~p> The player_disconnected notification received from table <~p>. PlayerId: <~p>",
+    ?INFO("OKEY_NG_TRN_LUCKY <~p> The player_disconnected notification received from table <~p>. PlayerId: <~p>",
           [GameId, TableId, PlayerId]),
     case find_seats_by_player_id(PlayerId, Seats) of
         [#seat{seat_num = SeatNum}] ->
             case real_players_at_table(TableId, Seats) of
                 1 -> %% Last real player gone
-                    ?INFO("OKEY_NG_TRN_ELIM <~p> Last real player gone from table <~p>. Closing the table.",
+                    ?INFO("OKEY_NG_TRN_LUCKY <~p> Last real player gone from table <~p>. Closing the table.",
                           [GameId, TableId]),
                     unreg_player_and_eliminate_table(PlayerId, TableId, StateData);
                 _ ->
-                    ?INFO("OKEY_NG_TRN_ELIM <~p> Al least one real player is at table <~p>. Starting a bot to replace free seat.",
+                    ?INFO("OKEY_NG_TRN_LUCKY <~p> Al least one real player is at table <~p>. Starting a bot to replace free seat.",
                           [GameId, TableId]),
                     unreg_player_and_call_a_bot(PlayerId, TableId, SeatNum, StateData)
             end;
@@ -333,32 +332,28 @@ handle_table_message(TableId, {table_created, Relay}, ?STATE_PROCESSING,
                     #state{game_id = GameId, tables = Tables,
                            cr_tab_requests = Requests} = StateData)
   when is_integer(TableId) ->
-    ?INFO("OKEY_NG_TRN_ELIM <~p> The <table_created> notification received from table: ~p.",
+    ?INFO("OKEY_NG_TRN_LUCKY <~p> The <table_created> notification received from table: ~p.",
           [GameId, TableId]),
     NewTables = update_created_table(TableId, Relay, Tables),
     TablePid = get_table_pid(TableId, Tables),
     WL = dict:fetch(TableId, Requests),
-    ?INFO("OKEY_NG_TRN_ELIM <~p> WL: ~p.", [GameId, WL]),
+    ?INFO("OKEY_NG_TRN_LUCKY <~p> WL: ~p.", [GameId, WL]),
     NewRequests = dict:erase(TableId, Requests),
     [gen_fsm:reply(From, {ok, {PlayerId, Relay, {?TAB_MOD, TablePid}}}) || {From, PlayerId} <- WL],
     {next_state, ?STATE_PROCESSING, StateData#state{tables = NewTables,
                                                     cr_tab_requests = NewRequests}};
 
-handle_table_message(TableId, {round_finished, FinishReason, Hands, Gosterge, WhoHasGosterge},
+handle_table_message(TableId, {round_finished, NewScoringState},
                      ?STATE_PROCESSING,
                      #state{game_id = GameId, tables = Tables} = StateData)
   when is_integer(TableId) ->
-    ?INFO("OKEY_NG_TRN_ELIM <~p> The <round_finished> notification received from table: ~p.",
+    ?INFO("OKEY_NG_TRN_LUCKY <~p> The <round_finished> notification received from table: ~p.",
           [GameId, TableId]),
-    #table{scoring_state = Scoring, pid = TablePid} = Table = fetch_table(TableId, Tables),
-    ?INFO("OKEY_NG_TRN_ELIM <~p> Starting score calculation.", [GameId]),
-    {NewScoring, RoundScores, _PlayersAchsPoints} = %% XXX
-        ?SCORING_MOD:round_finished(Scoring, FinishReason, Hands, Gosterge, WhoHasGosterge),
-    ?INFO("OKEY_NG_TRN_ELIM <~p> Score calculation finished.", [GameId]),
+    #table{pid = TablePid} = Table = fetch_table(TableId, Tables),
     TRef = erlang:send_after(?REST_TIMEOUT, self(), {rest_timeout, TableId}),
-    NewTable = Table#table{scoring_state = NewScoring, state = finished, timer = TRef},
+    NewTable = Table#table{scoring_state = NewScoringState, state = finished, timer = TRef},
     NewTables = store_table(NewTable, Tables),
-    send_to_table(TablePid, {round_score, RoundScores}),
+    send_to_table(TablePid, show_round_result),
     {next_state, ?STATE_PROCESSING, StateData#state{tables = NewTables}};
 
 handle_table_message(_TableId, _Event, StateName, StateData) ->
@@ -370,7 +365,7 @@ handle_sync_client_event({reg, User}, From, ?STATE_PROCESSING,
                           #state{game_id = GameId, cr_tab_requests = Requests,
                                  seats = Seats, players=Players, tables = Tables} = StateData) ->
     #'PlayerInfo'{id = UserId, robot = IsBot} = User,
-    ?INFO("OKEY_NG_TRN_ELIM <~p> Exclusive mode. Register clime received from user: ~p.", [GameId, UserId]),
+    ?INFO("OKEY_NG_TRN_LUCKY <~p> Exclusive mode. Register clime received from user: ~p.", [GameId, UserId]),
     case IsBot of
         true ->
             case get_player_id_by_user_id(UserId, Players) of
@@ -385,33 +380,33 @@ handle_sync_client_event({reg, User}, From, ?STATE_PROCESSING,
                             {reply, {ok, {PlayerId, Relay, {?TAB_MOD, TPid}}}, ?STATE_PROCESSING, StateData}
                     end;
                 error ->
-                    ?INFO("OKEY_NG_TRN_ELIM <~p> User ~p is a bot. The user not registered. "
+                    ?INFO("OKEY_NG_TRN_LUCKY <~p> User ~p is a bot. The user not registered. "
                           "Rejecting registration.", [GameId, UserId]),
                     reject_registration(not_registered, StateData)
             end;
 %%             case find_free_seat(Seats) of
 %%                 #seat{table = TabId, seat_num = SeatNum} ->
-%%                     ?INFO("OKEY_NG_TRN_ELIM <~p> Found a table with free seats. TabId: ~p SeatNum: ~p.", [GameId, TabId, SeatNum]),
+%%                     ?INFO("OKEY_NG_TRN_LUCKY <~p> Found a table with free seats. TabId: ~p SeatNum: ~p.", [GameId, TabId, SeatNum]),
 %%                     reg_player_normaly(UserId, IsBot, TabId, SeatNum, From, StateData);
 %%                 not_found ->
-%%                     ?INFO("OKEY_NG_TRN_ELIM <~p> User ~p is a bot. No free seats. Rejecting registration.", [GameId, UserId]),
+%%                     ?INFO("OKEY_NG_TRN_LUCKY <~p> User ~p is a bot. No free seats. Rejecting registration.", [GameId, UserId]),
 %%                     reject_registration(no_free_seats, StateData)
 %%             end;
         false ->
             IgnoredPlayers = [Id || #player{id = Id} <- midict:geti(UserId, user_id, Players)],
             case find_free_seat_without_players(Seats, IgnoredPlayers) of
                 #seat{table = TabId, seat_num = SeatNum} ->
-                    ?INFO("OKEY_NG_TRN_ELIM <~p> Found a table with free seats. TabId: ~p SeatNum: ~p.", [GameId, TabId, SeatNum]),
+                    ?INFO("OKEY_NG_TRN_LUCKY <~p> Found a table with free seats. TabId: ~p SeatNum: ~p.", [GameId, TabId, SeatNum]),
                     reg_player_normaly(User, IsBot, TabId, SeatNum, From, StateData);
                 not_found ->
-                    ?INFO("OKEY_NG_TRN_ELIM <~p> There are no table with free seats.", [GameId]),
+                    ?INFO("OKEY_NG_TRN_LUCKY <~p> There are no table with free seats.", [GameId]),
                     case find_bot_seat_without_players(Seats, IgnoredPlayers) of
                         #seat{table = TabId, seat_num = SeatNum, player_id = OldPlayerId} ->
-                            ?INFO("OKEY_NG_TRN_ELIM <~p> Found a seat with a bot. Replacing by the user. UserId:~p TabId: ~p SeatNum: ~p.",
+                            ?INFO("OKEY_NG_TRN_LUCKY <~p> Found a seat with a bot. Replacing by the user. UserId:~p TabId: ~p SeatNum: ~p.",
                                   [GameId, UserId, TabId, SeatNum]),
                             reg_player_with_replace(User, IsBot, TabId, SeatNum, OldPlayerId, From, StateData);
                         not_found ->
-                            ?INFO("OKEY_NG_TRN_ELIM <~p> There are no seats with bots. Creating new table for user: ~p.",
+                            ?INFO("OKEY_NG_TRN_LUCKY <~p> There are no seats with bots. Creating new table for user: ~p.",
                                   [GameId, UserId]),
                             reg_player_at_new_table(User, IsBot, From, StateData)
                     end
@@ -431,9 +426,9 @@ reg_player_normaly(User, IsBot, TabId, SeatNum, From,
                          } = StateData) ->
     #'PlayerInfo'{id = UserId} = User,
     NewPlayers = reg_player(#player{id = PlayerId, user_id = UserId, is_bot = IsBot}, Players),
-    ?INFO("OKEY_NG_TRN_ELIM <~p> User ~p registered as player <~p>.", [GameId, UserId, PlayerId]),
+    ?INFO("OKEY_NG_TRN_LUCKY <~p> User ~p registered as player <~p>.", [GameId, UserId, PlayerId]),
     NewSeats = assign_seat(TabId, SeatNum, PlayerId, IsBot, Seats),
-    ?INFO("OKEY_NG_TRN_ELIM <~p> User ~p assigned to seat <~p> of table <~p>.", [GameId, UserId, SeatNum, TabId]),
+    ?INFO("OKEY_NG_TRN_LUCKY <~p> User ~p assigned to seat <~p> of table <~p>.", [GameId, UserId, SeatNum, TabId]),
     TabPid = get_table_pid(TabId, Tables),
     send_to_table(TabPid, {register, PlayerId, SeatNum, reg_confirm_fun(From, PlayerId, {?TAB_MOD, TabPid})}),
     {next_state, ?STATE_PROCESSING, StateData#state{players = NewPlayers,
@@ -450,9 +445,9 @@ reg_player_with_replace(User, IsBot, TabId, SeatNum, OldPlayerId, From,
                               } = StateData) ->
     #'PlayerInfo'{id = UserId} = User,
     NewPlayers = reg_player(#player{id = PlayerId, user_id = UserId, is_bot = IsBot}, Players),
-    ?INFO("OKEY_NG_TRN_ELIM <~p> User ~p registered as player <~p>.", [GameId, UserId, PlayerId]),
+    ?INFO("OKEY_NG_TRN_LUCKY <~p> User ~p registered as player <~p>.", [GameId, UserId, PlayerId]),
     NewSeats = assign_seat(TabId, SeatNum, PlayerId, IsBot, Seats),
-    ?INFO("OKEY_NG_TRN_ELIM <~p> User ~p assigned to seat <~p> of table <~p>.", [GameId, UserId, SeatNum, TabId]),
+    ?INFO("OKEY_NG_TRN_LUCKY <~p> User ~p assigned to seat <~p> of table <~p>.", [GameId, UserId, SeatNum, TabId]),
 %%    OldUserId = get_player_user_id(OldPlayerId, Players),
     TabPid = get_table_pid(TabId, Tables),
     send_to_table(TabPid, {replace, OldPlayerId, PlayerId, SeatNum, reg_confirm_fun(From, PlayerId, {?TAB_MOD, TabPid})}),
@@ -474,7 +469,7 @@ reg_player_at_new_table(User, IsBot, From,
     #'PlayerInfo'{id = UserId} = User,
     SeatsNum = seats_num(TableParams),
     RobotsInfo = spawn_bots(GameId, BotsParams, SeatsNum - 1),
-    ?INFO("OKEY_NG_TRN_ELIM <~p> Bots for table <~p> are spawned.", [GameId, TableId]),
+    ?INFO("OKEY_NG_TRN_LUCKY <~p> Bots for table <~p> are spawned.", [GameId, TableId]),
     F = fun(BotInfo, {PlId,SNum}) -> {{PlId, BotInfo, SNum}, {PlId + 1, SNum + 1}} end,
     {RobotsRegData, {PlayerId, SeatNum}} = lists:mapfoldl(F, {PlayerIdCounter, 1}, RobotsInfo),
 
@@ -486,7 +481,7 @@ reg_player_at_new_table(User, IsBot, From,
     %% FIXME: Table global id should use a persistent counter
     Scoring = ?SCORING_MOD:init(proplists:get_value(game_type, TableParams2), ?SEATS_NUM),
     NewTables = reg_table(TableId, TabPid, MonRef, 0, Scoring, Tables),
-    ?INFO("OKEY_NG_TRN_ELIM <~p> New table created: ~p.", [GameId, TableId]),
+    ?INFO("OKEY_NG_TRN_LUCKY <~p> New table created: ~p.", [GameId, TableId]),
 
     NewPlayers = reg_player(#player{id = PlayerId, user_id = UserId, is_bot = IsBot}, Players),
     F2 = fun({PlId, #'PlayerInfo'{id = UId}, _SNum}, Acc) ->
@@ -494,7 +489,7 @@ reg_player_at_new_table(User, IsBot, From,
          end,
     NewPlayers2 = lists:foldl(F2, NewPlayers, RobotsRegData),
 
-    ?INFO("OKEY_NG_TRN_ELIM <~p> User ~p registered as player <~p>.", [GameId, UserId, PlayerId]),
+    ?INFO("OKEY_NG_TRN_LUCKY <~p> User ~p registered as player <~p>.", [GameId, UserId, PlayerId]),
     NewSeats = create_seats(TableId, ?SEATS_NUM, Seats),
     NewSeats2 = assign_seat(TableId, SeatNum, PlayerId, IsBot, NewSeats),
     F3 = fun({PlId, _UserInfo, SNum}, Acc) ->
@@ -502,7 +497,7 @@ reg_player_at_new_table(User, IsBot, From,
          end,
     NewSeats3 = lists:foldl(F3, NewSeats2, RobotsRegData),
 
-    ?INFO("OKEY_NG_TRN_ELIM <~p> User ~p assigned to seat <~p> of table <~p>.", [GameId, UserId, 1, TableId]),
+    ?INFO("OKEY_NG_TRN_LUCKY <~p> User ~p assigned to seat <~p> of table <~p>.", [GameId, UserId, 1, TableId]),
 
     NewRequests = dict:store(TableId, [{From, PlayerId}], Requests),
     {next_state, ?STATE_PROCESSING, StateData#state{players = NewPlayers2,
@@ -639,7 +634,7 @@ lookup_free_seat_without_players([TabId | Rest], PlayersList, Seats) ->
     TabPlayers = [Id || #seat{player_id=Id} <-
                                  midict:geti(TabId, non_free_at_tab, Seats), lists:member(Id, PlayersList)],
     if TabPlayers == [] ->
-           ?INFO("OKEY_NG_TRN_ELIM Seats:~p", [midict:geti(TabId, table_id, Seats)]),
+           ?INFO("OKEY_NG_TRN_LUCKY Seats:~p", [midict:geti(TabId, table_id, Seats)]),
            hd(midict:geti(TabId, free_at_tab, Seats));
        true -> lookup_free_seat_without_players(Rest, PlayersList, Seats)
     end.
@@ -657,7 +652,7 @@ lookup_bot_seat_without_players([TabId | Rest], PlayersList, Seats) ->
     TabPlayers = [Id || #seat{player_id=Id} <-
                                  midict:geti(TabId, non_free_at_tab, Seats), lists:member(Id, PlayersList)],
     if TabPlayers == [] ->
-           ?INFO("OKEY_NG_TRN_ELIM Seats:~p", [midict:geti(TabId, table_id, Seats)]),
+           ?INFO("OKEY_NG_TRN_LUCKY Seats:~p", [midict:geti(TabId, table_id, Seats)]),
            hd(midict:geti(TabId, bot_at_tab, Seats));
        true -> lookup_bot_seat_without_players(Rest, PlayersList, Seats)
     end.
@@ -766,7 +761,8 @@ table_parameters(ParentMod, ParentPid) ->
      {speed, normal},
      {game_type, standard},
      {rounds, 10},
-     {reveal_confirmation, true}
+     {reveal_confirmation, true},
+     {pause_mode, normal}
     ].
 
 %% bots_parameters() -> Proplist
