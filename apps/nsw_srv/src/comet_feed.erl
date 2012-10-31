@@ -96,7 +96,7 @@ process_delivery({_Type, FeedId, Owner, _},
 
 
 process_delivery({Type, FeedId, Owner, _},
-                 ["feed", _Type, WhoShares, "entry", EntryId, "share"],
+                 ["feed", _Type, WhoShares, "entry", NewEntryId, "share"],
                  #entry{entry_id = EntryId, raw_description = Desc, media = Medias,
                         to = Destinations, from = From}) ->
     ?PRINT({"SHARE",EntryId }),
@@ -105,7 +105,7 @@ process_delivery({Type, FeedId, Owner, _},
          true ->
             skip;
         _ ->
-            add_entry(EntryId, FeedId, From, Destinations, Desc, Medias, WhoShares)
+            add_entry(NewEntryId, FeedId, From, Destinations, Desc, Medias, WhoShares)
     end;
 
 %%-----------------------------------------------------------------------------
