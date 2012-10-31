@@ -22,8 +22,6 @@
          user_status/1,
          user_status/2,
          user_status/3,
-         get_user_point/1,
-         set_user_point/2,
          get_all_users/0,
          check_register_data/1,
          register/1,
@@ -325,14 +323,6 @@ user_status(User, Key, Value) ->
         _ ->
             {error, status_info_not_found}
     end.
-
-get_user_point(User) ->
-    {ok, #user_counter{point = Point}} = nsm_db:get(user_counter, User),
-    Point.
-
-set_user_point(User, Point) ->
-    R = #user_counter{username = User, point = Point},
-    nsm_db:put(R).
 
 get_user_by_feed_id(Fid) ->
     nsm_db:select(user, fun(#user{feed=F}) when F=:=Fid-> true;(_)->false end).
