@@ -120,7 +120,7 @@
           current_set   :: integer,
           game_type     :: atom(),
           game_speed    :: atom(),
-          game_submode  :: atom(),
+          game_submode  :: atom(), %% FIXME Deprecated
           chanak_points :: integer()
          }).
 
@@ -135,9 +135,10 @@
           gosterge      :: #'OkeyPiece'{},
           pile_height   :: integer(),
           current_round :: integer(),
-          game_sub_type :: atom(),
-          next_turn_in  :: integer() | atom()
+          game_sub_type :: atom(), %% FIXME Deprecated
+          next_turn_in  :: integer() | atom(),
           %% number of milliseconds until next turn or 'infinity'
+          paused = false :: boolean()
          }).
 
 -record(okey_next_turn, {
