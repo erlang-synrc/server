@@ -4,6 +4,7 @@
          add_entry/4,
          add_entry/5,
          add_entry/7,
+         add_shared_entry/8,
          add_like/3,
          broadcast/2,
          multi_broadcast/2,
@@ -11,7 +12,6 @@
          get_entries_in_feed/2,
          get_entries_in_feed/3,
          get_entries_in_feed/4,        
-         share_entry/3,
          get_feed/1,
          get_entries_likes/1,
          get_entries_likes_count/1,
@@ -55,10 +55,6 @@ create() ->
     ok = nsm_db:put(#feed{id = FId} ),
     FId.
 
-share_entry(FId, Eid, User) ->
-    {ok, OriginalEntry} = nsm_db:get(entry, {Eid, FId}),
-    add_entry(FId, User, OriginalEntry#entry.description, OriginalEntry#entry.media).
-
 add_direct_message(FId, User, EntryId, Desc) ->
     add_direct_message(FId, User, undefined, EntryId, Desc, []).
 add_direct_message(FId, User, To, EntryId, Desc, Medias) ->
@@ -74,8 +70,9 @@ add_entry(FId, User, EntryId, Desc) ->
 add_entry(FId, User, EntryId, Desc, Medias) ->
     nsm_db:feed_add_entry(FId, User, EntryId, Desc, Medias).
 add_entry(FId, User, To, EntryId, Desc, Medias, Type) ->
-    nsm_db:feed_add_entry(FId, User, To, EntryId, Desc, Medias, Type).
-
+    nsm_db:feed_add_entry(FId, User, To, EntryId, Desc, Medias, Type, "").
+add_shared_entry(FId, User, To, EntryId, Desc, Medias, Type, SharedBy) ->
+    nsm_db:feed_add_entry(FId, User, To, EntryId, Desc, Medias, Type, SharedBy).
 
 add_like(Fid, Eid, Uid) ->
     Write_one_like = fun(Next) ->

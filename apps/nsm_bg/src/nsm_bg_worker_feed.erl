@@ -159,9 +159,9 @@ handle_notice(["feed", _, WhoShares, "entry", EntryId, "share"],
                      to = Destinations, from = From} = E,
               #state{feed = Feed, type = user} = State) ->
     %% FIXME: sharing is like posting to the wall
-    ?INFO("share: ~p, WhyShares: ~p", [E, WhoShares]),
-    feed:add_entry(Feed, From, Destinations, EntryId, Desc, Medias,
-                   {user, normal}),
+    ?INFO("share: ~p, WhoShares: ~p", [E, WhoShares]),
+    NewEntryId = utils:uuid_ex(),
+    feed:add_shared_entry(Feed, From, Destinations, NewEntryId, Desc, Medias, {user, normal}, WhoShares),
     {noreply, State};
 
 %% delete entry from feed
