@@ -266,7 +266,7 @@ handle_player_action(PlayerId, see_okey, ?STATE_TAKE,
                             okey = Okey} = StateData) ->
     #player{discarded = Discarded} = get_player(prev_id(CurPlayerId), Players),
     case deck:get(1, Discarded) of
-        Okey ->
+        {Okey, _} ->
             Events = [{saw_okey, PlayerId}],
             {ok, Events, ?STATE_TAKE, StateData#state{okey_blocked = true}};
         _ ->

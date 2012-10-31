@@ -467,7 +467,7 @@ inner_event({share_entry, Entry}, User) ->
         _ ->
             {user, User}
     end,
-    nsx_util_notification:notify([feed, Type, User, entry, Entry#entry.entry_id, share], Entry);
+    nsx_util_notification:notify([feed, Type, User, entry, utils:uuid_ex(), share], Entry); % it is not good design to issue id in web part, but we need it both in comet and db
 
 inner_event({comment_entry, _EId, _PanelId}, _) ->
     ?PRINT({comment,event,button});
