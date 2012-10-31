@@ -42,7 +42,7 @@
          put_if_none_match/1, update/2, get_for_update/2,
          delete_browser_counter_older_than/1,browser_counter_by_game/1,
          unused_invites/0, get_word/1, acl_add_entry/3, acl_entries/1,
-         feed_add_entry/5, feed_add_entry/7, feed_add_direct_message/6,
+         feed_add_entry/5, feed_add_entry/8, feed_add_direct_message/6,
          entries_in_feed/1, entries_in_feed/2, entries_in_feed/3, add_transaction_to_user/2,
          entry_by_id/1, comment_by_id/1, comments_by_entry/1, feed_direct_messages/3,
          add_comment/7, dir/0, purchases/1, transactions/1,
@@ -474,7 +474,7 @@ update_user_name(UId,Name,Surname) -> DBA=?DBA,DBA:update_user_name(UId,Name,Sur
 
 feed_add_direct_message(FId, User, To, EntryId, Desc, Medias) -> DBA=?DBA,DBA:feed_add_direct_message(FId, User, To, EntryId, Desc, Medias).
 feed_add_entry(FId, User, EntryId, Desc, Medias) -> DBA=?DBA,DBA:feed_add_entry(FId, User, EntryId, Desc, Medias).
-feed_add_entry(FId, User, To, EntryId, Desc, Medias, Type) -> DBA=?DBA,DBA:feed_add_entry(FId, User, To, EntryId, Desc, Medias, Type).
+feed_add_entry(FId, User, To, EntryId, Desc, Medias, Type, SharedBy) -> DBA=?DBA,DBA:feed_add_entry(FId, User, To, EntryId, Desc, Medias, Type, SharedBy).
 acl_add_entry(AclId, Accessor, Action) -> DBA=?DBA,DBA:acl_add_entry(AclId, Accessor, Action).
 acl_entries(AclId) -> DBA=?DBA,DBA:acl_entries(AclId).
 entry_by_id(EntryId) -> DBA=?DBA,DBA:entry_by_id(EntryId).

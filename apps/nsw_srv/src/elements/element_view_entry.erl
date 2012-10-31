@@ -343,6 +343,12 @@ entry_element_usual(E, Comments, Avatar, {MediaThumb, MediaLists0}, _TargetMedia
             ]},
             #panel{class="entity", body=[
                 TitleStr,
+                case E#entry.shared of
+                     undefined -> [];
+                    "" -> [];
+                    Someone -> #span{style="font-size:12px;", 
+                                    body=[" (", ?_T("shared by"), " <b>", #link{text=Someone, url=site_utils:user_link(Someone)}, "</b>)"]}
+                end,
                 Description,
                 #panel{class="meta", body=[
                     io_lib:format("<span class=\"entry-time\"> ~s </span>",[Time]),
@@ -361,8 +367,8 @@ entry_element_usual(E, Comments, Avatar, {MediaThumb, MediaLists0}, _TargetMedia
                         },
                         #listitem{body=#link{text=?_T("Like"), class="clr-1", id=LikeBtnId, postback={like_entry, E, LikeBtnId}, show_if=LikeBtnShow}},
 
-                        % user should not share from own feed
-                        case (webutils:user_info())#user.feed == E#entry.feed_id of
+                        % user should not reshare own shares
+                        case wf:user() == E#entry.shared of
                             true ->
                                 "";
                             false ->
@@ -371,7 +377,7 @@ entry_element_usual(E, Comments, Avatar, {MediaThumb, MediaLists0}, _TargetMedia
                                     true ->
                                         "";
                                     false ->
-                                        #listitem{body=#link{text=?_T("Share"), class="clr-2", url="javascript:void(0)", postback={share_entry, E}}}
+                                        #listitem{body=#link{text=?_T("Share"), class="clr-1", url="javascript:void(0)", postback={share_entry, E}}}
                                 end
                         end,
 

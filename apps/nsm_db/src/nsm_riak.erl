@@ -29,7 +29,7 @@
          get_group_members_count/1, change_group_name/2, riak_clean/1, add_transaction_to_user/2,
          clean/0, acl_entries/1, acl_add_entry/3, update_user_name/3,
          user_by_verification_code/1, user_by_email/1, user_by_facebook_id/1, user_by_username/1,
-         feed_add_entry/5, feed_add_entry/7, feed_add_direct_message/6,
+         feed_add_entry/5, feed_add_entry/8, feed_add_direct_message/6,
          entry_by_id/1, comment_by_id/1, comments_by_entry/1, feed_direct_messages/5, read_comments/1,
          feed_add_comment/7, entries_in_feed/3, purchases/1, transactions/1,
          subscribe_user/2, remove_subscription/2, list_subscriptions/1, list_subscription_me/1, is_user_subscribed/2,
@@ -817,16 +817,16 @@ is_user_blocked(Who, Whom) ->
 
 % feeds
 
-feed_add_direct_message(FId,User,To,EntryId,Desc,Medias) -> feed_add_entry(FId,User,To,EntryId,Desc,Medias,{user,direct}).
-feed_add_entry(FId,From,EntryId,Desc,Medias) -> feed_add_entry(FId,From,undefined,EntryId,Desc,Medias,{user,normal}).
-feed_add_entry(FId, User, To, EntryId,Desc,Medias,Type) ->
+feed_add_direct_message(FId,User,To,EntryId,Desc,Medias) -> feed_add_entry(FId,User,To,EntryId,Desc,Medias,{user,direct},"").
+feed_add_entry(FId,From,EntryId,Desc,Medias) -> feed_add_entry(FId,From,undefined,EntryId,Desc,Medias,{user,normal},"").
+feed_add_entry(FId, User, To, EntryId,Desc,Medias,Type,SharedBy) ->
     %% prevent adding of duplicate records to feed
     case nsm_db:entry_by_id({EntryId, FId}) of
         {ok, _} -> ok;
-        _ -> do_feed_add_entry(FId, User, To, EntryId, Desc, Medias, Type)
+        _ -> do_feed_add_entry(FId, User, To, EntryId, Desc, Medias, Type, SharedBy)
     end.
 
-do_feed_add_entry(FId, User, To, EntryId, Desc, Medias, Type) ->
+do_feed_add_entry(FId, User, To, EntryId, Desc, Medias, Type, SharedBy) ->
     {ok,Feed} = nsm_db:get(feed,erlang:integer_to_list(FId)),
     Id = {EntryId, FId},
     Next = undefined,
@@ -858,6 +858,7 @@ do_feed_add_entry(FId, User, To, EntryId, Desc, Medias, Type) ->
                     created_time = now(),
                     description = Desc,
                     raw_description = Desc,
+                    shared = SharedBy,
                     next = Next,
                     prev = Prev},
 
