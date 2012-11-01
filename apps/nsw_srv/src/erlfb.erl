@@ -22,8 +22,6 @@
          oauth/4,
          create_uri/3,
          create_uri/1,
-         create_auth_uri/0,
-         create_auth_uri/1,
          send_request/1,
          get/3,
          get/2,
@@ -40,15 +38,15 @@ start() ->
 stop() ->
     ok.
 
-
-
 oauth(AppId, AppSecret, RedirectUri, Code) ->
     Uri = create_uri(oauth, access_token,
                      [{client_id, AppId},
                       {redirect_uri, mochiweb_util:quote_plus(RedirectUri)},
                       {client_secret, AppSecret},
                       {code, Code}]),
+    wf:info("Request uri:~p~n", [Uri]),
     {ok, Data} = send_request(Uri),
+    wf:info("Received: ~p~n", [Data]),
     path_to_proplists(Data).
 
 
@@ -125,8 +123,6 @@ path_to_proplists(Path) ->
             Path
     end.
 
-
-
 revoke_access(AccessToken) ->
     Uri = lists:flatten(io_lib:fwrite("~s/~s?format=JSON&access_token=~s", [?FB_OLD_API,
                                                                 "auth.revokeAuthorization",
@@ -137,15 +133,6 @@ revoke_access(AccessToken) ->
         {error, _} = E ->
             E
     end.
-
-
-
-
-create_auth_uri() ->
-    create_auth_uri(?FB_REDIRECT_URI).
-
-create_auth_uri(RedirectUri) ->
-    lists:concat([?FB_LOGIN_LINK, RedirectUri]).
 
 -spec get_user_info(string()) -> {ok, term()} | {error, term()}.
 

@@ -83,7 +83,6 @@ login_panel_content() ->
 
 
 login_facebook_panel_content()->
-    FB_LOGIN_LINK = erlfb:create_auth_uri(),
     Content = [
         #panel{class=holder, body=
             [
@@ -91,7 +90,7 @@ login_facebook_panel_content()->
                 #image{image="/images/login/fb_perm.png"},
                 #br{},
                 #label{text=?_T("You should click 'Allow' to continue!")},
-                #cool_button{url=FB_LOGIN_LINK, text=?_T("Continue login")},
+                #cool_button{url=?FB_LOGIN_URI, text=?_T("Continue login")},
                 #cool_button{postback=cancel_login, text=?_T("Cancel")},
                 #grid_clear{}
     ]}],
@@ -446,54 +445,6 @@ event(change_password) ->
 
 event({change_language,SL}) ->  
     webutils:event({change_language, SL}).
-
-facebook_login() ->
-    %%FIX: handle denied authorization case
-    Code = wf:q(code),
-    ?INFO("FacebookLogin: Code=~p, APPID=~p, APPSECRET=~p, REDIRECT_URI=~p",
-          [Code, ?FB_APP_ID, ?FB_APP_SECRET, ?FB_REDIRECT_URI]),
-    %%FIX: make callback configurable or figure it out at runtime
-    case erlfb:oauth(?FB_APP_ID, ?FB_APP_SECRET, ?FB_REDIRECT_URI, Code) of
-        {struct, Err} ->
-            Web = main(),
-            wf:update(login_hintbox, io_lib:fwrite("~p", [Err])),
-            Web;
-        Token ->
-            OnlyToken = proplists:get_value("access_token", Token),
-            wf:session(fb_access_token, OnlyToken),
-            ?INFO("Save token... ~p~n~n",[Token]),
-            case erlfb:get_user_info(OnlyToken) of
-                {ok, {struct, UserInfo}} ->
-                    check_fb(UserInfo);
-                Error ->
-                    ?ERROR("unexpected error while erlfb:get_user_info/1: ~p, Token:~s",
-                           [Error, OnlyToken]),
-                    Web = main(),
-                    wf:update(login_hintbox, ?_T("Application error. Please, try later")),
-                    Web
-            end
-    end.
-
-
-check_fb(UserInfo) ->
-    UId = wf:to_list(proplists:get_value(<<"id">>, UserInfo, <<"">>)),
-    UId == "" andalso ?WARNING("User id undefined. UserInfo: ~p", [UserInfo]),
-
-    ?INFO("Userinfo: ~p, UId:~p", [UserInfo, UId]),
-
-    case zealot_auth:login_fb([{username, UId}]) of
-        {ok, UserName} ->
-            ?INFO("login from fb: ~p", [UserName]),
-            login_user(UserName);
-        {error, banned} ->
-            Message = ?_T("Your account is blocked. Please, contact with administration."),
-            EncodedMessage = site_utils:base64_encode_to_url(Message),
-            wf:redirect(?_U("/index/message/")++EncodedMessage);
-        {error, notfound} ->
-            wf:session(facebook, UserInfo),
-            wf:redirect(?_U("/login/register/facebook/true"))
-    end.
-
 
 fb_info(UserInfo) ->
     Id = wf:to_list(proplists:get_value(<<"id">>, UserInfo)),

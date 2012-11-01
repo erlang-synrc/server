@@ -84,6 +84,7 @@ cat vm.args.template | sed "s#WEBSERVER_NODE#$WEBSERVER@$H#g" > vm.args
 ./config -file app.config nsw_srv game_srv_host -list "\"$GAMESERVERHOST\""
 ./config -file app.config nsw_srv fb_id -list "\"$FBAPPID\""
 ./config -file app.config nsw_srv fb_secret -list "\"$FBAPPSECRET\""
+./config -file app.config nsw_srv fb_redirect_uri -list "\"http://$H:$WEBPORT\""
 ./config -file app.config nsw_srv jspack -list "\"$JSPACK\""
 ./config -file app.config nsw_srv csspack -list "\"$CSSPACK\""
 ./config -file app.config nsm_mq amqp_host -list "\"$MQ_HOST\""

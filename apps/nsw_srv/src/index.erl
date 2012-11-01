@@ -42,22 +42,24 @@ body() ->
 	_ -> no_need_to_login
     end,
     case wf:q(message) of
-        undefined ->
+	undefined ->
             ok;
         Message ->
             show_message(Message)
     end,
-
     case wf:q(facebook) of
-        "true" ->
-            case wf:q(code) /= undefined of
-                true ->
-                    login:facebook_login();
-                false ->
-                    main_notauthorized()
-            end;
-        _ ->
+    "true" ->
+	case wf:q(code) /= undefined of
+        true ->
+	    wf:info("Login with FB", []),
+	    fb_utils:login();
+	    %login:facebook_login();
+        false ->
             main_notauthorized()
+        end;
+    _ ->
+	wf:info("No FB tag"),
+        main_notauthorized()
     end.
 
 main_notauthorized() ->

@@ -282,10 +282,6 @@ section_body(account) ->
             <dt>"++ ?_T("Remaining Quota") ++":</dt>
             <dd>"++wf:to_list(Quota)++"</dd>
             </dl>",
-            % demo_id 176025532423202, kakaranet_id 154227314626053
-            "<div id=\"fb-root\"></div>",
-            "<script src=\"http://connect.facebook.net/en_US/all.js\"></script>",
-            "<script>FB.init({appId: \"154227314626053\", status: true, cookie: true});</script>",
             "<script>var js_callback = function(data){if(data['error_code']){ alert(\"Code: \"+data['error_code'] + \" Message: \"+ data['error_message']);  } }</script>",
             "<script>function fb_buy() {FB.ui({method:'pay', action: 'buy_item', order_info: {'item_id':'1a'} ,dev_purchase_params:{'oscif':true}}, js_callback); }</script>",
             case wf:session(is_facebook) of

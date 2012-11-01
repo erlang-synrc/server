@@ -21,8 +21,6 @@ main() ->
 
 %% @doc Returns javascript as string. If it's first call that we have to
 %% initialize FB js SDK first.
-fb_script() ->
-    fb_script("").
 fb_script(Add) ->
     case wf:state(fb_initiated) of
 	true ->
@@ -56,10 +54,7 @@ fb_script(Add) ->
    }(document));"
 end.
 
-body() ->
-    ["<script type=\"text/javascript\">",
-     fb_script(),
-     "</script>", hemen_nav()].
+body() -> [hemen_nav()].
 
 hemen_nav() ->
     {_, _, C} = now(), Csid = "&amp;csid="++wf:to_list(C),
