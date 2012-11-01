@@ -50,7 +50,7 @@ create_tables(Num) ->
                           {owner,"kate"}],[<<"maxim">>,<<"alice">>,robot,robot]])||X<-lists:seq(1,Num)],
     [{ok,OP1,_}|_] = OkeyPlayers,
     [{ok,OP2,_}|_] = lists:reverse(OkeyPlayers),
-    ?INFO("Okey bot rooms: ~p~n",[{OP1,OP2}]),
+    ?INFO("Okey two players bot rooms: ~p~n",[{OP1,OP2}]),
     TavlaPairedPlayers = [rpc:call(?GAMESRVR_NODE,game_manager,create_table,
              [game_tavla,[{table_name,"maxim and robots"},
                           {speed, normal},
@@ -59,7 +59,16 @@ create_tables(Num) ->
                           {owner,"maxim"}],[<<"maxim">>,robot, robot, robot]])|| _ <-lists:seq(1,Num)],
     [{ok,TP1,_}|_] = TavlaPairedPlayers,
     [{ok,TP2,_}|_] = lists:reverse(TavlaPairedPlayers),
-    ?INFO("Paired Tavla rooms: ~p",[{TP1,TP2}]),
+    ?INFO("Paired Tavla 2 tables rooms: ~p",[{TP1,TP2}]),
+    TavlaPairedPlayers5Tables = [rpc:call(?GAMESRVR_NODE,game_manager,create_table,
+             [game_tavla,[{table_name,"maxim and robots"},
+                          {speed, normal},
+                          {rounds,3},
+                          {game_mode, paired},
+                          {owner,"maxim"}],[<<"maxim">>,robot, robot, robot, robot, robot, robot, robot, robot, robot]])|| _ <-lists:seq(1,Num)],
+    [{ok,TP15,_}|_] = TavlaPairedPlayers5Tables,
+    [{ok,TP25,_}|_] = lists:reverse(TavlaPairedPlayers5Tables),
+    ?INFO("Paired Tavla 5 tables rooms: ~p",[{TP15,TP25}]),
     ok.
 
 stress_test(NumberOfRooms) ->
