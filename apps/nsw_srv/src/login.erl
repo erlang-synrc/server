@@ -56,7 +56,6 @@ lightboxes() ->
 login_panel_content() ->
     wf:wire(element_register:js_text_focus_script(".wfid_login_panel input")),
     wf:wire("objs('login').focus();"),
-    facebook_login_script(),
 
     RightBody = ["<h3>",
         #span{class = "large", text = ?_T("Hey!")},
@@ -459,46 +458,6 @@ fb_info(Picture, Name, Surname) ->
      #label{text=Name},
      #label{text=Surname}
     ].
-
-facebook_login_script()->
-    FBPostback = site_utils:postback_to_js_string(?MODULE, fb_login),
-    wf:wire(facebook:fb_script(
-    "if (FB.Canvas.getPageInfo() && FB.Canvas.getPageInfo().clientWidth > 0) {
-	// We are in facebook iframe, so we have to use FB auth to login user
-	var $fb_panel = $('.fb-login-panel');
-	$fb_panel.html('Loading...');
-	var logged = function() {
-			var response = FB.getAuthResponse();
-			$fb_panel.append(' You have logined as '+response.userID);
-			// will be sent as get parameter
-			Nitrogen.$set_param(\"facebook_userid\", response.userID);
-			Nitrogen.$set_param(\"facebook_access_token\", response.accessToken);
-			"++FBPostback++"};
-
-        $fb_panel.parent().find('input.textbox, input.password, .text').removeClass('text-focus').attr('disabled', true).css('background', '#EBEBE4');
-
-        FB.getLoginStatus(function(response) {
-          if (response.authResponse) {
-            // logged in and connected user, someone you know
-            // console.log('r', response);
-            logged();
-          } else {
-            // no user session available, someone you dont know
-            // console.log('nr', response);
-	    $fb_panel.html('<a class=\"btn-submit\" href=\"javascript:facebook_login();\">Click here to grant permissions</a>');
-          }
-         });
-
-	facebook_login = function() {
-	        var r = FB.getAuthResponse();
-		if (r && r.userID) {
-			// user already logged in
-			logged();
-		} else {
-			FB.login(function(response) {logged();}, {scope: 'email user_birthday'});
-		}
-	}
-    };")).
 
 redirect(Url, Delay) ->
     wf:wire(#event{type=timer, delay = Delay, actions=#script{script="window.location=\""++Url++"\";"}}).
