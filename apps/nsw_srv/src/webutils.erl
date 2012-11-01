@@ -75,7 +75,6 @@ header_box() ->
 
 header_body() ->
     %% check if we in fb
-
     HiddenEl = check_is_facebook(),
 
     A = [account_menu(),

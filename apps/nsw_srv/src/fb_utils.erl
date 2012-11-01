@@ -4,7 +4,8 @@
 -include("setup.hrl").
 -include("elements/records.hrl").
 
--export([init/0, login/0]).
+%-export([init/0, login/0, api_event/3]).
+-compile(export_all).
 
 % demo_id 176025532423202, kakaranet_id 154227314626053
 % TODO:
@@ -12,20 +13,25 @@
 % - Add channel file for x-domain communication and handle its caching.
 %   channelUrl : '//WWW.YOUR_DOMAIN.COM/channel.html',
 init()->
+    wf:wire(#api{name=checkSignedRequest, tag=fb}),
     ["<div id=fb-root></div>",
     "<script>window.fbAsyncInit = function() {
     FB.init({ appId: '"++?FB_APP_ID++"', status: true, cookie: true, xfbml: false});
 
     FB.getLoginStatus(function(response) {
 	if (response.status === 'connected') {
-	var uid = response.authResponse.userID;
-	var accessToken = response.authResponse.accessToken;
-	console.log(\"User is connected: \" + uid);
-    } else if (response.status === 'not_authorized') {
-	console.log(\"Not authenticated the app\");
-    } else {
-	console.log(\"User isn't logged in\");
-    } }); };
+	    console.log(\"Signed request: \" + response.authResponse.signedRequest);
+	    var uid = response.authResponse.userID;
+	    var accessToken = response.authResponse.accessToken;
+	    console.log(\"User is connected: \" + uid);
+	    if(page.checkSignedRequest){
+		page.checkSignedRequest(response.authResponse.signedRequest);
+	    }
+	} else if (response.status === 'not_authorized') {
+	    console.log(\"Not authenticated the app\");
+	} else {
+	    console.log(\"User isn't logged in\");
+	} }); };
 
     (function(d){
     var js, id = 'facebook-jssdk', ref = d.getElementsByTagName('script')[0];
@@ -37,6 +43,10 @@ init()->
     ref.parentNode.insertBefore(js, ref);
     }(document));
     </script>"].
+
+api_event(checkSignedRequest, _, SignedRequest)->
+    {ok, Data} = fb_signed_request:parse(SignedRequest, ?FB_APP_SECRET),
+    ?INFO("Signed request data: ~p~n", [Data]).
 
 login() ->
     case oauth(?FB_APP_ID, ?FB_APP_SECRET, ?FB_REDIRECT_URI, wf:q(code)) of

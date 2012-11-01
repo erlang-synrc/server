@@ -18,42 +18,6 @@
 main() ->
     #template { file=code:priv_dir(nsw_srv)++"/templates/facebook.html"}.
 
-
-%% @doc Returns javascript as string. If it's first call that we have to
-%% initialize FB js SDK first.
-fb_script(Add) ->
-    case wf:state(fb_initiated) of
-	true ->
-	    Add;
-	_ ->
-	    wf:state(fb_initiated, true),
-"window.fbAsyncInit = function() {
-    FB.init({
-      appId      : '"++?FB_APP_ID++"', // App ID
-      status     : true, // check login status
-      cookie     : true, // enable cookies to allow the server to access the session
-      oauth      : true, // enable OAuth 2.0
-      xfbml      : true  // parse XFBML
-    });
-
-    // FB.Canvas.getPageInfo(
-    //   function(info) {
-    //     console.log('Width: ' + info.clientWidth + ' Height: ' + info.clientHeight, info, FB.getAuthResponse());
-    //   }
-    // );
-    // Additional initialization code here
-    "++Add++";
-  };
-
-  // Load the SDK Asynchronously
-  (function(d){
-     var js, id = 'facebook-jssdk'; if (d.getElementById(id)) {return;}
-     js = d.createElement('script'); js.id = id; js.async = true;
-     js.src = \"//connect.facebook.net/en_US/all.js\";
-     d.getElementsByTagName('head')[0].appendChild(js);
-   }(document));"
-end.
-
 body() -> [hemen_nav()].
 
 hemen_nav() ->

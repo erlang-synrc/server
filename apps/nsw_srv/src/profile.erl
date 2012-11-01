@@ -69,7 +69,9 @@ callback(#api{anchor = Id, name = Name}, DataVar) ->
     wf:f("obj('~s').~p(~s)", [Id, Name, DataVar]).
 
 api_event(savePackage, Anchor, Data) ->
-    ?INFO("Api Event: ~p ~p",[Anchor, Data]).
+    ?INFO("Api Event: ~p ~p",[Anchor, Data]);
+api_event(Name, Tag, Args)->
+    fb_utils:api_event(Name, Tag, Args).
 
 section_body(profile) ->
     User0 = webutils:user_info(),
@@ -272,27 +274,30 @@ section_body(account) ->
 %    wf:wire(ApiSave),
 %    Script = wf:f(" { ~s } ",[callback(ApiSave,"self == top")]),
 %    wf:wire(Id, Script),
-    ?INFO("wf:session: ~p",[wf:session(is_facebook)]),
     Orders = nsm_db:get_purchases_by_user(Username, ?ORDERS_PER_PAGE, [?MP_STATE_DONE]),
 
     [
-        #h1{text=?_T("Account")},
-        #panel{class="inform-block", body = [
-            "<dl>
-            <dt>"++ ?_T("Remaining Quota") ++":</dt>
-            <dd>"++wf:to_list(Quota)++"</dd>
-            </dl>",
-            "<script>var js_callback = function(data){if(data['error_code']){ alert(\"Code: \"+data['error_code'] + \" Message: \"+ data['error_message']);  } }</script>",
-            "<script>function fb_buy() {FB.ui({method:'pay', action: 'buy_item', order_info: {'item_id':'1a'} ,dev_purchase_params:{'oscif':true}}, js_callback); }</script>",
-            case wf:session(is_facebook) of
-               true -> #link{class=btn, text=?_T("Üyelİk Yenİle"),
-               actions=#event{type=click, actions=#script{script="fb_buy();"}}};
-                _ ->  #link{class=btn, url=?_U("/price-table"), text=?_T("Üyelİk Yenİle")}
-            end
-        ]},
+	#h1{text=?_T("Account")},
+	#panel{class="inform-block", body = [
+	    "<dl>
+	    <dt>"++ ?_T("Remaining Quota") ++":</dt>
+	    <dd>"++wf:to_list(Quota)++"</dd>
+	    </dl>",
+	    "<script>var js_callback = function(data){",
+	    "if(data['error_code']){ alert(\"Code: \"+data['error_code'] + \" Message: \"+ data['error_message']);  }",
+	    "}</script>",
+	    "<script>function fb_buy() {",
+	    "FB.ui({method:'pay', action: 'buy_item', order_info: {'item_id':'1a'} ,dev_purchase_params:{'oscif':true}},",
+	    "js_callback); }</script>",
 
-	    #panel{class="profile-info", body = [
-            #panel{class="col-l",body=[
+	    case wf:session(is_facebook) of
+		true -> #link{class=btn, text=?_T("Üyelİk Yenİle"), actions=#event{type=click, actions=#script{script="fb_buy();"}}};
+	    _ ->  #link{class=btn, url=?_U("/price-table"), text=?_T("Üyelİk Yenİle")}
+	    end
+	]},
+
+	#panel{class="profile-info", body = [
+	    #panel{class="col-l",body=[
                 #form{body=[
                     "<fieldset>",
                     "<h2 class=\"ttl\"><span>"++?_T("Account information")++"</span></h2>",

@@ -7,21 +7,21 @@
 -include("elements/records.hrl").
 
 main() ->
-	webutils:add_raw("<script type=\"text/javascript\">
-		$(document).ready(function() {
-			$('.slideshow').cycle({
-				fx:		'fade',
-				prev:	'.pager .prev',
-				next:	'.pager .next',
-				pager:	'.switcher ul',
-				timeout:	5000,
-				pagerAnchorBuilder: function(idx, slide) {
-					return '.switcher ul li:eq(' + idx + ') a';
-				}
-			});
-		});
-	</script>"),
-	#template { file=code:priv_dir(nsw_srv)++"/templates/bare_no_uservoice.html"}.
+    webutils:add_raw("<script type=\"text/javascript\">
+    	$(document).ready(function() {
+    		$('.slideshow').cycle({
+    			fx:		'fade',
+    			prev:	'.pager .prev',
+    			next:	'.pager .next',
+    			pager:	'.switcher ul',
+    			timeout:	5000,
+    			pagerAnchorBuilder: function(idx, slide) {
+    				return '.switcher ul li:eq(' + idx + ') a';
+    			}
+    		});
+    	});
+    </script>"),
+    #template { file=code:priv_dir(nsw_srv)++"/templates/bare_no_uservoice.html"}.
 
 title() -> "Main Page".
 
@@ -51,9 +51,7 @@ body() ->
     "true" ->
 	case wf:q(code) /= undefined of
         true ->
-	    wf:info("Login with FB", []),
 	    fb_utils:login();
-	    %login:facebook_login();
         false ->
             main_notauthorized()
         end;
@@ -64,6 +62,7 @@ body() ->
 
 main_notauthorized() ->
     S = site_utils:postback_to_js_string(?MODULE, show_register),
+    wf:info("Postback js: ~s~n", [S]),
     case wf:user() of   %PUBLIC BETA this is unused right now, but should be useful later. It determines the logic of main page LET'S PLAY button
 	undefined ->
 	    wf:wire("$('.btn-light').click(function(){"++S++";return false;});");
@@ -77,6 +76,8 @@ event(show_register) ->
 event(Other) ->
     webutils:event(Other).
 
+api_event(Name, Tag, Args)->
+    fb_utils:api_event(Name, Tag, Args).
 
 show_message(Message) ->
     Decoded = site_utils:base64_decode_from_url(Message),
