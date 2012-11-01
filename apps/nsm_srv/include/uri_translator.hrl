@@ -50,6 +50,8 @@
                          {"info-social", "tr", "sosyal-bilgi"},
                          {"info-matchmaker", "tr", "oyun-kuran-bilgi"},
                          {"info-why", "tr", "neden-bilgi"},
+                         {"rules-okey", "tr", "okey-kurallari"},
+                         {"rules-tavla", "tr", "tavla-kurallari"},
                          {"success", "tr", "basarili"},
                          {"fail", "tr", "basarisiz"},
                          %% Spanish ----------------------------------------------------------------
