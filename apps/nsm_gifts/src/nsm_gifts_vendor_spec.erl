@@ -29,7 +29,11 @@
          {?VENDOR_ENILGINC,
           <<"Enilginc">>,
           <<"Enilging">>,
-          nsm_gifts_plugin_enilginc}
+          nsm_gifts_plugin_enilginc},
+         {?VENDOR_ARISTO,
+          <<"ARISTO">>,
+          <<"ARISTO">>,
+          nsm_gifts_plugin_aristo}
         ]).
 %%
 %% API Functions

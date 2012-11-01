@@ -1,1 +1,2 @@
 -define(VENDOR_ENILGINC, 1).
+-define(VENDOR_ARISTO, 2).
