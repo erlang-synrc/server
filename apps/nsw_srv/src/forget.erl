@@ -45,8 +45,9 @@ check_token(Token) ->
 
 -spec create_token() -> string().
 create_token() ->
-    T0 = crypto:rand_bytes(20),
-    binary_to_list(base64:encode(T0)).
+%    T0 = crypto:rand_bytes(20),
+%    binary_to_list(base64:encode(T0)).
+    [hd(erlang:integer_to_list(Nibble, 16)) || << Nibble:4 >> <= crypto:rand_bytes(20)].
 
 -spec create_message(string() | record(user), string()) -> {string(), iolist()}.
 create_message(#user{username = UId}, Url) ->

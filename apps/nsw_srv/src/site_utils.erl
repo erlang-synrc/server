@@ -32,7 +32,6 @@
 
          nl_to_br/1,
          get_usort_user/2,
-         table_per_user_point/3,
 
 	 js_close_on_click/1,
 	 create_url_invite/1,
@@ -406,20 +405,6 @@ get_usort_user(Groups, Users) ->
                             lists:umerge(lists:usort(UsersInGroup), Acc)
                     end, [], Groups),
     lists:umerge(lists:usort(Users), GroupsUsers).
-
-% TODO: are SETS still used?
--spec table_per_user_point(iolist(), 'undefined' | integer(), 'undefined' | integer()) -> true | false.
-table_per_user_point(User, undefined, Rounds0) ->
-    table_per_user_point(User, 0, Rounds0);
-table_per_user_point(User, Sets0, undefined) ->
-    table_per_user_point(User, Sets0, 0);
-table_per_user_point(User, Sets, Rounds) when is_integer(Sets),
-                                              is_integer(Rounds) ->
-    Point = nsm_users:get_user_point(User),
-    case Point of
-        X when X < (Sets*Rounds) -> false;
-        X when X >= (Sets*Rounds) -> true
-    end.
 
 
 -spec js_close_on_click(string()) -> record(event).

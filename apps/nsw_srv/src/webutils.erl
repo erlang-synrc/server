@@ -493,13 +493,14 @@ lightbox_panel_template(LightboxId, PanelBody, CloseActions) ->
 
 -spec table_info(proplist()) -> [record(p)].
 table_info(Table) ->
-    UId = wf:user(),
-%    ?INFO("Users: ~p",[Table#game_table.users]),
-    UsersList = site_utils:join([ site_utils:linkify_name(Name, normal) || Name <- Table#game_table.users ], #br{}),
-%    ?INFO("UserList: ~p",[UsersList]),
+    UsersList = site_utils:join([ site_utils:linkify_name(Name, normal) || Name <- Table#game_table.users ], ", "),
     InviteUsersList = [],
-    ViewPerPoint = site_utils:table_per_user_point(UId, Table#game_table.sets, Table#game_table.rounds),
-
+    AgeLimit = case site_utils:as_str(Table#game_table.age_limit) of
+        "undefined" -> 
+            undefined;
+        [From|[To|[]]] -> 
+            integer_to_list(From) ++ "–" ++ integer_to_list(To)
+    end,
     [
         #p{body=[?_T("Name"), ": ", site_utils:as_str(Table#game_table.name)],
         show_if=site_utils:show_if(Table#game_table.name)},
@@ -523,14 +524,9 @@ table_info(Table) ->
             show_if=site_utils:show_if(InviteUsersList)},
   %      #p{body=[?_T("Paid"), ": ", site_utils:as_str(Table#game_table.paid)],
   %          show_if=site_utils:show_if(Table#game_table.paid)},
-        #p{body=[?_T("Age limit"), ": ", site_utils:as_str(Table#game_table.age_limit)],
-            show_if=site_utils:show_if(Table#game_table.age_limit)},
    %     #p{body=[?_T("Location"), ": ", site_utils:as_str(Table#game_table.location)],
     %        show_if=site_utils:show_if(Table#game_table.location)},
-
-
-        #p{body=[?_T("You don't have enough points to play!")], style="color: red",
-            show_if=ViewPerPoint /= true}
+        #p{body=[?_T("Age limit"), ": ", AgeLimit], show_if = (AgeLimit =/= undefined) }
     ].
 
 serialize_event(Fun, Anchor, Module) ->

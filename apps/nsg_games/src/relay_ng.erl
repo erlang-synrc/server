@@ -244,7 +244,11 @@ handle_table_request(_Request, _From, State) ->
     {reply, Reply, State}.
 
 %%===================================================================
-
+%% TODO: Player id should be passed with a published message. After the legacy code removing.
+handle_client_message({publish, Msg}, #state{subscribers = Subscribers} = State) ->
+    Receipients = subscribers_to_list(Subscribers),
+    [gen_server:cast(Pid, Msg) || #subscriber{pid = Pid} <- Receipients], %% XXX
+    {noreply, State};
 
 handle_client_message(_Msg, State) ->
     {noreply, State}.
