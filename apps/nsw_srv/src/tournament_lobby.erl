@@ -47,13 +47,46 @@ main() ->
                 font-size:16px; color:#363638; line-height:42px;
             }
 
+            .tourlobby_orange_button:hover {
+                display:block; width:190px; height:41px; background: url(../images/tournament/lobby/btn_orange_hover.png);
+                font-size:16px; color:#363638; line-height:42px;
+                text-decoration:none;
+            }
+
+            .tourlobby_orange_button:active {
+                display:block; width:190px; height:41px; background: url(../images/tournament/lobby/btn_orange_pressed.png);
+                font-size:16px; color:#363638; line-height:42px;
+            }
+
             .tourlobby_red_button {
                 display:block; width:190px; height:41px; background: url(../images/tournament/lobby/btn_red_normal.png);
                 font-size:16px; color:#121212; line-height:42px;
             }
 
+            .tourlobby_red_button:hover {
+                display:block; width:190px; height:41px; background: url(../images/tournament/lobby/btn_red_hover.png);
+                font-size:16px; color:#121212; line-height:42px;
+                text-decoration:none;
+            }
+
+            .tourlobby_red_button:active {
+                display:block; width:190px; height:41px; background: url(../images/tournament/lobby/btn_red_pressed.png);
+                font-size:16px; color:#121212; line-height:42px;
+            }
+
             .tourlobby_yellow_button {
                 display:block; width:190px; height:41px; background: url(../images/tournament/lobby/btn_yellow_normal.png);
+                font-size:16px; color:#363638; line-height:42px;
+            }
+
+            .tourlobby_yellow_button:hover {
+                display:block; width:190px; height:41px; background: url(../images/tournament/lobby/btn_yellow_hover.png);
+                font-size:16px; color:#363638; line-height:42px;
+                text-decoration:none;
+            }
+
+            .tourlobby_yellow_button:active {
+                display:block; width:190px; height:41px; background: url(../images/tournament/lobby/btn_yellow_pressed.png);
                 font-size:16px; color:#363638; line-height:42px;
             }
             
@@ -188,8 +221,23 @@ main() ->
             }
 
             .tourlobby_chat_button {
-                position:absolute; left:577px; top:146px;
+                position:absolute; left:577px; top:145px;
                 display:block; width:74px; height:36px; background: url(../images/tournament/lobby/btn_chat_normal.png);
+                font-size:16px; color:#121212; line-height:35px;
+                text-align:center;
+            }
+
+            .tourlobby_chat_button:hover {
+                position:absolute; left:577px; top:145px;
+                display:block; width:74px; height:36px; background: url(../images/tournament/lobby/btn_chat_hover.png);
+                font-size:16px; color:#121212; line-height:35px;
+                text-align:center;
+                text-decoration:none;
+            }
+
+            .tourlobby_chat_button:active {
+                position:absolute; left:577px; top:145px;
+                display:block; width:74px; height:36px; background: url(../images/tournament/lobby/btn_chat_pressed.png);
                 font-size:16px; color:#121212; line-height:35px;
                 text-align:center;
             }
@@ -224,11 +272,7 @@ body() ->
 
 
 content() ->
-    Req = wf_context:request_bridge(),
-    Port = Req:peer_port(),
     [  
-        ["<!--" ++ integer_to_list(Port) ++ "-->"],
-        
         #panel{class="tourlobby_title", body=[
                 #label{class="tourlobby_title_label", body="TURNUVA LOBY"}
             ]
