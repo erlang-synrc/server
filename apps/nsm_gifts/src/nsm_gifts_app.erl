@@ -1,12 +1,6 @@
-%%----------------------------------------------------------------------
-%% @author Serge Polkovnikov <serge.polkovnikov@gmail.com>
-%% @copyright Paynet Internet ve Bilisim Hizmetleri A.S. All Rights Reserved.
-%% @doc
-%% Gifts management application.
-%% @end
-%% Created: Sep 7, 2012
-%%----------------------------------------------------------------------
 -module(nsm_gifts_app).
+-copyright("Paynet Internet ve Bilisim Hizmetleri A.S. All Rights Reserved.").
+-author('Serge Polkovnikov <serge.polkovnikov@gmail.com>').
 
 -behaviour(application).
 -export([start/2,stop/1]).
