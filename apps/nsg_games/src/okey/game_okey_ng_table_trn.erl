@@ -205,8 +205,14 @@ handle_event(_Event, StateName, StateData) ->
 %%          {stop, Reason, NewStateData}                          |
 %%          {stop, Reason, Reply, NewStateData}
 %% --------------------------------------------------------------------
-handle_sync_event({player_action, PlayerId, Action}, From, StateName, StateData) ->
-    handle_player_action(PlayerId, Action, From, StateName, StateData);
+handle_sync_event({player_action, PlayerId, Action}, From, StateName,
+                  #state{players = Players} = StateData) ->
+    case get_player(PlayerId, Players) of
+        {ok, Player} ->
+            handle_player_action(Player, Action, From, StateName, StateData);
+        error ->
+            {reply, {error, you_are_not_a_player}, StateName, StateData}
+    end;
 
 handle_sync_event(_Event, _From, StateName, StateData) ->
     Reply = ok,
@@ -276,12 +282,14 @@ handle_parent_message({replace_player, RequestId, UserInfo, PlayerId, SeatNum}, 
     ?INFO("OKEY_NG_TABLE_TRN <~p,~p> Received command to replace player at seat <~p> by player <~p>.",
           [GameId, TableId, SeatNum, PlayerId]),
     #'PlayerInfo'{id = UserId, robot = IsBot} = UserInfo,
-    NewPlayers = reg_player(PlayerId, SeatNum, UserId, IsBot, UserInfo, Players),
+    [#player{id = OldPlayerId}] = find_players_by_seat_num(SeatNum, Players),
+    NewPlayers = del_player(OldPlayerId, Players),
+    NewPlayers2 = reg_player(PlayerId, SeatNum, UserId, IsBot, UserInfo, NewPlayers),
     ?RELAY:table_request(Relay, {register_player, UserId, PlayerId}), %% Sync registration in the relay
     ReplaceMsg = create_player_left(SeatNum, UserInfo, Players),
     relay_publish_ge(Relay, ReplaceMsg),
     parent_confirm_replacement(Parent, TableId, RequestId),
-    {next_state, StateName, StateData#state{players = NewPlayers}};
+    {next_state, StateName, StateData#state{players = NewPlayers2}};
 
 handle_parent_message(start_game, StateName,
                       #state{game_id = GameId, cur_round = CurRound, table_id = TableId,
@@ -383,105 +391,87 @@ handle_relay_message({player_disconnected, PlayerId}, StateName,
 handle_relay_message(_Message, StateName, StateData) ->
     {next_state, StateName, StateData}.
 
-%% --------------------------------------------------------------------
-%% Func: handle_player_action/4
-%% Returns: {next_state, NextStateName, NextStateData}            |
-%%          {next_state, NextStateName, NextStateData, Timeout}   |
-%%          {reply, Reply, NextStateName, NextStateData}          |
-%%          {reply, Reply, NextStateName, NextStateData, Timeout} |
-%%          {stop, Reason, NewStateData}                          |
-%%          {stop, Reason, Reply, NewStateData}
-%% --------------------------------------------------------------------
-handle_player_action(PlayerId, {submit, #game_action{action = Action, args = Args} = GA}, From,
+%%===================================================================
+
+handle_player_action(#player{id = PlayerId, seat_num = SeatNum},
+                     {submit, #game_action{action = Action, args = Args} = GA}, From,
                      StateName,
-                     #state{players = Players, game_id = GameId,
-                            table_id = TableId} = StateData) ->
+                     #state{game_id = GameId, table_id = TableId} = StateData) ->
     ?INFO("OKEY_NG_TABLE_TRN <~p,~p> Player <~p> submit the game action: ~p.",
-           [GameId, TableId, PlayerId, GA]),
-    case get_player(PlayerId, Players) of
-        {ok, #player{seat_num = SeatNum}} ->
-            try api_utils:to_known_record(Action, Args) of
-                ExtAction ->
-                    ?INFO("OKEY_NG_TABLE_TRN <~p,~p> Player <~p> submit the game action (converted): ~p.",
-                          [GameId, TableId, PlayerId, ExtAction]),
-                    do_action(SeatNum, ExtAction, From, StateName, StateData)
-            catch
-                _Class:_Exception ->
-                    ?ERROR("OKEY_NG_TABLE_TRN <~p,~p> Can't convert action ~p. Exception: ~p:~p.",
-                           [GameId, TableId, GA, _Class, _Exception]),
-                    {reply, {error, invalid_action}, StateName, StateData}
-            end;
-        error ->
-            {reply, {error, you_are_not_a_player}, StateName, StateData}
+          [GameId, TableId, PlayerId, GA]),
+    try api_utils:to_known_record(Action, Args) of
+        ExtAction ->
+            ?INFO("OKEY_NG_TABLE_TRN <~p,~p> Player <~p> submit the game action (converted): ~p.",
+                  [GameId, TableId, PlayerId, ExtAction]),
+            do_action(SeatNum, ExtAction, From, StateName, StateData)
+    catch
+        _Class:_Exception ->
+            ?ERROR("OKEY_NG_TABLE_TRN <~p,~p> Can't convert action ~p. Exception: ~p:~p.",
+                   [GameId, TableId, GA, _Class, _Exception]),
+            {reply, {error, invalid_action}, StateName, StateData}
     end;
 
 
-handle_player_action(PlayerId, {signal, {pause_game, _}=Signal}, _From, StateName,
+handle_player_action(#player{id = PlayerId, user_id = UserId},
+                     {signal, {pause_game, _}=Signal}, _From,
+                     StateName,
                      #state{table_id = TableId, game_id = GameId, timeout_timer = TRef,
-                            pause_mode = PauseMode, players = Players, relay = Relay} = StateData) ->
+                            pause_mode = PauseMode, relay = Relay} = StateData) ->
     ?INFO("OKEY_NG_TABLE_TRN <~p,~p> Received signal from player <~p> : ~p. PauseMode: ~p",
           [GameId, TableId, PlayerId, Signal, PauseMode]),
-    case get_player(PlayerId, Players) of
-        {ok, #player{user_id = UserId}} ->
-            case PauseMode of
-                disabled ->
-                    {reply, {error, pause_disabled}, StateName, StateData};
-                normal ->
-                    if StateName == ?STATE_PLAYING;
-                       StateName == ?STATE_REVEAL_CONFIRMATION ->
-                           Timeout = case erlang:cancel_timer(TRef) of
-                                         false -> 0;
-                                         T -> T
-                                     end,
-                           relay_publish(Relay, create_game_paused_pause(UserId, GameId)),
-                           {reply, 0, ?STATE_PAUSE, StateData#state{paused_statename = StateName,
-                                                                    paused_timeout_value = Timeout,
-                                                                    timeout_magic = undefined}};
-                       true ->
-                           {reply, {error, pause_not_possible}, StateName, StateData}
-                    end
-            end;
-        error ->
-            {reply, {error, you_are_not_a_player}, StateName, StateData}
+    case PauseMode of
+        disabled ->
+            {reply, {error, pause_disabled}, StateName, StateData};
+        normal ->
+            if StateName == ?STATE_PLAYING;
+               StateName == ?STATE_REVEAL_CONFIRMATION ->
+                   Timeout = case erlang:cancel_timer(TRef) of
+                                 false -> 0;
+                                 T -> T
+                             end,
+                   relay_publish(Relay, create_game_paused_pause(UserId, GameId)),
+                   {reply, 0, ?STATE_PAUSE, StateData#state{paused_statename = StateName,
+                                                            paused_timeout_value = Timeout,
+                                                            timeout_magic = undefined}};
+               true ->
+                   {reply, {error, pause_not_possible}, StateName, StateData}
+            end
     end;
 
 
-handle_player_action(PlayerId, {signal, {resume_game, _}=Signal}, _From, StateName,
-                     #state{table_id = TableId, game_id = GameId,
-                            pause_mode = PauseMode, players = Players, relay = Relay,
-                            paused_statename = ResumedStateName, paused_timeout_value = Timeout
-                           } = StateData) ->
+handle_player_action(#player{id = PlayerId, user_id = UserId},
+                     {signal, {resume_game, _}=Signal}, _From,
+                     StateName,
+                     #state{table_id = TableId, game_id = GameId, pause_mode = PauseMode,
+                            relay = Relay, paused_statename = ResumedStateName,
+                            paused_timeout_value = Timeout} = StateData) ->
     ?INFO("OKEY_NG_TABLE_TRN <~p,~p> Received signal from player <~p> : ~p. PauseMode: ~p",
           [GameId, TableId, PlayerId, Signal, PauseMode]),
-    case get_player(PlayerId, Players) of
-        {ok, #player{user_id = UserId}} ->
-            case PauseMode of
-                disabled ->
-                    {reply, {error, pause_disabled}, StateName, StateData};
-                normal ->
-                    if StateName == ?STATE_PAUSE ->
-                           relay_publish(Relay, create_game_paused_resume(UserId, GameId)),
-                           Magic = make_ref(),
-                           TRef = erlang:send_after(Timeout, self(), {timeout, Magic}),
-                           {reply, 0, ResumedStateName, StateData#state{timeout_timer = TRef,
-                                                                        timeout_magic = Magic}};
-                       true ->
-                           {reply, {error, game_is_not_paused}, StateName, StateData}
-                    end
-            end;
-        error ->
-            {reply, {error, you_are_not_a_player}, StateName, StateData}
+    case PauseMode of
+        disabled ->
+            {reply, {error, pause_disabled}, StateName, StateData};
+        normal ->
+            if StateName == ?STATE_PAUSE ->
+                   relay_publish(Relay, create_game_paused_resume(UserId, GameId)),
+                   Magic = make_ref(),
+                   TRef = erlang:send_after(Timeout, self(), {timeout, Magic}),
+                   {reply, 0, ResumedStateName, StateData#state{timeout_timer = TRef,
+                                                                timeout_magic = Magic}};
+               true ->
+                   {reply, {error, game_is_not_paused}, StateName, StateData}
+            end
     end;
 
 
-handle_player_action(PlayerId, {signal, Signal}, _From, StateName,
+handle_player_action(#player{id = PlayerId},
+                     {signal, Signal}, _From, StateName,
                      #state{table_id = TableId, game_id = GameId} = StateData) ->
     ?INFO("OKEY_NG_TABLE_TRN <~p,~p> Received signal from player <~p> : ~p. Ignoring.",
           [GameId, TableId, PlayerId, Signal]),
     {reply, ok, StateName, StateData};
 
 
-handle_player_action(_PlayerId, _Message, _From, StateName, StateData) ->
+handle_player_action(_Player, _Message, _From, StateName, StateData) ->
     {next_state, StateName, StateData}.
 
 
@@ -860,10 +850,10 @@ relay_publish(Relay, Msg) ->
     ?RELAY:table_message(Relay, {publish, Msg}).
 
 parent_confirm_registration({ParentMod, ParentPid}, TableId, RequestId) ->
-    ParentMod:table_message(ParentPid, TableId, {player_registered, RequestId}).
+    ParentMod:table_message(ParentPid, TableId, {response, RequestId, ok}).
 
 parent_confirm_replacement({ParentMod, ParentPid}, TableId, RequestId) ->
-    ParentMod:table_message(ParentPid, TableId, {player_replaced, RequestId}).
+    ParentMod:table_message(ParentPid, TableId, {response, RequestId, ok}).
 
 parent_notify_table_created({ParentMod, ParentPid}, TableId, RelayPid) ->
     ParentMod:table_message(ParentPid, TableId, {table_created, {?RELAY, RelayPid}}).
@@ -999,7 +989,7 @@ create_okey_game_player_state(_PlayerId, ?STATE_FINISHED,
                             next_turn_in = 0,
                             paused = false};
 
-create_okey_game_player_state(PlayerId, ?STATE_FINISHED,
+create_okey_game_player_state(PlayerId, ?STATE_PAUSE,
                               #state{paused_statename = PausedStateName,
                                      paused_timeout_value = Timeout
                                      } = StateData) ->
