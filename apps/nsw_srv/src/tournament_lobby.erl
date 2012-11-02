@@ -8,7 +8,6 @@
 main() ->
     webutils:js_for_main_authorized_game_stats_menu(),
     webutils:add_to_head({raw,              % this goes to styles.css. Still here for convenience of editing
-    % todo :hover :active
     "
         <style media='screen' type='text/css'>
             .tourlobby_title {
@@ -262,6 +261,16 @@ main() ->
                 text-shadow:0 1px 1px #353535;
             }
         </style>
+        <script>
+            new Image('../images/tournament/lobby/btn_orange_hover.png');
+            new Image('../images/tournament/lobby/btn_orange_pressed.png');
+            new Image('../images/tournament/lobby/btn_red_hover.png');
+            new Image('../images/tournament/lobby/btn_red_pressed.png');
+            new Image('../images/tournament/lobby/btn_yellow_hover.png');
+            new Image('../images/tournament/lobby/btn_yellow_pressed.png');
+            new Image('../images/tournament/lobby/btn_chat_hover.png');
+            new Image('../images/tournament/lobby/btn_chat_pressed.png');
+        </script>
     "}),
     #template { file=code:priv_dir(nsw_srv)++"/templates/bare.html" }.
 
