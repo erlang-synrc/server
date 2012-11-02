@@ -128,13 +128,6 @@ signal(Table, PlayerId, Signal) ->
 %% ====================================================================
 %% Server functions
 %% ====================================================================
-%% --------------------------------------------------------------------
-%% Func: init/1
-%% Returns: {ok, StateName, StateData}          |
-%%          {ok, StateName, StateData, Timeout} |
-%%          ignore                              |
-%%          {stop, StopReason}
-%% --------------------------------------------------------------------
 init([GameId, TableId, Params]) ->
     Parent = proplists:get_value(parent, Params),
     PlayersInfo = proplists:get_value(players, Params),
@@ -181,12 +174,6 @@ init([GameId, TableId, Params]) ->
                                           scoring_state = ScoringState
                                          }}.
 
-%% --------------------------------------------------------------------
-%% Func: handle_event/3
-%% Returns: {next_state, NextStateName, NextStateData}          |
-%%          {next_state, NextStateName, NextStateData, Timeout} |
-%%          {stop, Reason, NewStateData}
-%% --------------------------------------------------------------------
 handle_event({parent_message, Message}, StateName, StateData) ->
     handle_parent_message(Message, StateName, StateData);
 
@@ -196,15 +183,6 @@ handle_event({relay_message, Message}, StateName, StateData) ->
 handle_event(_Event, StateName, StateData) ->
     {next_state, StateName, StateData}.
 
-%% --------------------------------------------------------------------
-%% Func: handle_sync_event/4
-%% Returns: {next_state, NextStateName, NextStateData}            |
-%%          {next_state, NextStateName, NextStateData, Timeout}   |
-%%          {reply, Reply, NextStateName, NextStateData}          |
-%%          {reply, Reply, NextStateName, NextStateData, Timeout} |
-%%          {stop, Reason, NewStateData}                          |
-%%          {stop, Reason, Reply, NewStateData}
-%% --------------------------------------------------------------------
 handle_sync_event({player_action, PlayerId, Action}, From, StateName,
                   #state{players = Players} = StateData) ->
     case get_player(PlayerId, Players) of
@@ -218,12 +196,6 @@ handle_sync_event(_Event, _From, StateName, StateData) ->
     Reply = ok,
     {reply, Reply, StateName, StateData}.
 
-%% --------------------------------------------------------------------
-%% Func: handle_info/3
-%% Returns: {next_state, NextStateName, NextStateData}          |
-%%          {next_state, NextStateName, NextStateData, Timeout} |
-%%          {stop, Reason, NewStateData}
-%% --------------------------------------------------------------------
 handle_info({timeout, Magic}, ?STATE_PLAYING,
             #state{timeout_magic = Magic} = StateData) ->
     do_timeout_moves(StateData);
@@ -237,20 +209,10 @@ handle_info({timeout, Magic}, ?STATE_REVEAL_CONFIRMATION,
 handle_info(_Info, StateName, StateData) ->
     {next_state, StateName, StateData}.
 
-%% --------------------------------------------------------------------
-%% Func: terminate/3
-%% Purpose: Shutdown the fsm
-%% Returns: any
-%% --------------------------------------------------------------------
 terminate(_Reason, _StateName, #state{relay = Relay}) ->
     ?RELAY:stop(Relay),
     ok.
 
-%% --------------------------------------------------------------------
-%% Func: code_change/4
-%% Purpose: Convert process state when code is changed
-%% Returns: {ok, NewState, NewStateData}
-%% --------------------------------------------------------------------
 code_change(_OldVsn, StateName, StateData, _Extra) ->
     {ok, StateName, StateData}.
 
@@ -258,12 +220,8 @@ code_change(_OldVsn, StateName, StateData, _Extra) ->
 %%% Internal functions
 %% --------------------------------------------------------------------
 
-%% --------------------------------------------------------------------
-%% Func: handle_parent_message/3
-%% Returns: {next_state, NextStateName, NextStateData}          |
-%%          {next_state, NextStateName, NextStateData, Timeout} |
-%%          {stop, Reason, NewStateData}
-%% --------------------------------------------------------------------
+%% handle_parent_message(Msg, StateName, StateData)
+
 handle_parent_message({register_player, RequestId, UserInfo, PlayerId, SeatNum}, StateName,
                       #state{game_id = GameId, table_id = TableId, players = Players,
                              parent = Parent, relay = Relay} = StateData) ->
@@ -320,8 +278,7 @@ handle_parent_message(start_game, StateName,
      end || N <- lists:seq(1, ?SEATS_NUM)],
     CurSeatNum = DeskState#desk_state.cur_seat,
     relay_publish_ge(Relay, create_okey_next_turn(CurSeatNum, Players)),
-    Magic = make_ref(),
-    TRef = erlang:send_after(TurnTimeout, self(), {timeout, Magic}),
+    {Magic, TRef} = start_timer(TurnTimeout),
     {next_state, ?STATE_PLAYING, StateData#state{cur_round = NewCurRound,
                                                  desk_rule_pid = Desk,
                                                  desk_state = DeskState,
@@ -364,12 +321,10 @@ handle_parent_message(Message, StateName,
     {stop, unknown_parent_message, StateData}.
 
 
-%% --------------------------------------------------------------------
-%% Func: handle_relay_message/3
-%% Returns: {next_state, NextStateName, NextStateData}          |
-%%          {next_state, NextStateName, NextStateData, Timeout} |
-%%          {stop, Reason, NewStateData}
-%% --------------------------------------------------------------------
+%%===================================================================
+
+%% handle_parent_message(Msg, StateName, StateData)
+
 handle_relay_message({player_connected, PlayerId}, StateName,
                      #state{relay = Relay, parent = {ParentMod, ParentPid},
                             table_id = TableId} = StateData) ->
@@ -393,12 +348,12 @@ handle_relay_message(_Message, StateName, StateData) ->
 
 %%===================================================================
 
+%% handle_player_action(Player, Msg, StateName, StateData)
+
 handle_player_action(#player{id = PlayerId, seat_num = SeatNum},
                      {submit, #game_action{action = Action, args = Args} = GA}, From,
                      StateName,
                      #state{game_id = GameId, table_id = TableId} = StateData) ->
-    ?INFO("OKEY_NG_TABLE_TRN <~p,~p> Player <~p> submit the game action: ~p.",
-          [GameId, TableId, PlayerId, GA]),
     try api_utils:to_known_record(Action, Args) of
         ExtAction ->
             ?INFO("OKEY_NG_TABLE_TRN <~p,~p> Player <~p> submit the game action (converted): ~p.",
@@ -453,8 +408,7 @@ handle_player_action(#player{id = PlayerId, user_id = UserId},
         normal ->
             if StateName == ?STATE_PAUSE ->
                    relay_publish(Relay, create_game_paused_resume(UserId, GameId)),
-                   Magic = make_ref(),
-                   TRef = erlang:send_after(Timeout, self(), {timeout, Magic}),
+                   {Magic, TRef} = start_timer(Timeout),
                    {reply, 0, ResumedStateName, StateData#state{timeout_timer = TRef,
                                                                 timeout_magic = Magic}};
                true ->
@@ -634,8 +588,7 @@ process_game_events(Events, #state{desk_state = DeskState,
                     {next_state, ?STATE_PLAYING, StateData#state{desk_state = NewDeskState}};
                 [_|_] ->
                     erlang:cancel_timer(OldTRef),
-                    Magic = make_ref(),
-                    TRef = erlang:send_after(TurnTimeout, self(), {timeout, Magic}),
+                    {Magic, TRef} = start_timer(TurnTimeout),
                     {next_state, ?STATE_PLAYING, StateData#state{desk_state = NewDeskState,
                                                                  timeout_timer = TRef,
                                                                  timeout_magic = Magic}}
@@ -654,8 +607,7 @@ on_game_finish(#state{desk_state = DeskState,
     if FinishReason == reveal andalso RevealConfirmation ->
            {Revealer, _Tashes, _Discarded} = RevealInfo,
            WL = [SeatNum || {SeatNum, _} <- Hands, SeatNum =/= Revealer],
-           Magic = make_ref(),
-           TRef = erlang:send_after(Timeout, self(), {timeout, Magic}),
+           {Magic, TRef} = start_timer(Timeout),
            {next_state, ?STATE_REVEAL_CONFIRMATION,
             StateData#state{reveal_confirmation_list = [],
                             wait_list = WL,
@@ -775,6 +727,12 @@ handle_desk_events([Event | Events], DeskState, Players, Relay) ->
     handle_desk_events(Events, NewDeskState, Players, Relay).
 
 %%===================================================================
+
+%% start_timer(Timeout) -> {Magic, TRef}
+start_timer(Timeout) ->
+    Magic = make_ref(),
+    TRef = erlang:send_after(Timeout, self(), {timeout, Magic}),
+    {Magic, TRef}.
 
 %% players_init() -> players()
 players_init() ->
@@ -1012,8 +970,8 @@ create_okey_game_started(SeatNum, DeskState, CurRound, #state{game_type = GameTy
                        pile_height = length(DeskDeck),
                        current_round = CurRound,
                        current_set = 1,        %% XXX Concept of sets is deprecated
-                       game_type = GameType,   %% XXX Why it isn't declared in game_info message?
-                       game_speed = GameSpeed, %% XXX Why it isn't declared in game_info message?
+                       game_type = GameType,   %% FIXME It is defined in game_info already
+                       game_speed = GameSpeed, %% FIXME It is defined in game_info already
                        game_submode = null, %% Deprecated
                        chanak_points = 0}.
 

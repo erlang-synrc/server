@@ -228,6 +228,8 @@ handle_client_message(_Msg, StateName, StateData) ->
 
 %%===================================================================
 
+%% handle_table_message(TableId, Message, StateName, StateData)
+
 handle_table_message(TableId, {player_connected, PlayerId},
                      ?STATE_PROCESSING,
                      #state{game_id = GameId, seats = Seats,
@@ -356,23 +358,8 @@ handle_table_message(_TableId, _Event, StateName, StateData) ->
     {next_state, StateName, StateData}.
 
 %%===================================================================
-handle_table_response({register_player, PlayerId, TableId, SeatNum}, ok = _Response,
-                      ?STATE_PROCESSING,
-                      #state{reg_requests = RegRequests, seats = Seats,
-                             tables = Tables} = StateData) ->
-    Seat = fetch_seat(TableId, SeatNum, Seats),
-    NewSeats = store_seat(Seat#seat{registered_by_table = true}, Seats),
-    %% Send response to a client for a delayed request
-    NewRegRequests =
-        case dict:find(PlayerId, RegRequests) of
-            {ok, From} ->
-                #table{relay = Relay, pid = TablePid} = fetch_table(TableId, Tables),
-                gen_fsm:reply(From, {ok, {PlayerId, Relay, {?TAB_MOD, TablePid}}}),
-                dict:erase(PlayerId, RegRequests);
-            error -> RegRequests
-        end,
-    {next_state, ?STATE_PROCESSING, StateData#state{seats = NewSeats,
-                                                    reg_requests = NewRegRequests}};
+
+%% handle_table_response(RequestContext, Response, StateName, StateData)
 
 handle_table_response({replace_player, PlayerId, TableId, SeatNum}, ok = _Response,
                       ?STATE_PROCESSING,
@@ -391,6 +378,7 @@ handle_table_response({replace_player, PlayerId, TableId, SeatNum}, ok = _Respon
         end,
     {next_state, ?STATE_PROCESSING, StateData#state{seats = NewSeats,
                                                     reg_requests = NewRegRequests}}.
+
 %%===================================================================
 
 handle_client_request({reg, User}, From, ?STATE_PROCESSING,
@@ -540,6 +528,7 @@ replace_player_by_bot(PlayerId, TableId, SeatNum,
                                                     tab_requests = NewRequests}}.
 
 
+%% table_req_replace_player(TablePid, PlayerId, UserInfo, TableId, SeatNum, TabRequests) -> NewRequests
 table_req_replace_player(TablePid, PlayerId, UserInfo, TableId, SeatNum, TabRequests) ->
     RequestId = make_ref(),
     NewRequests = dict:store(RequestId, {replace_player, PlayerId, TableId, SeatNum}, TabRequests),
