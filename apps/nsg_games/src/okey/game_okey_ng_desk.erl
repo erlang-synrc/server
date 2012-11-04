@@ -5,6 +5,28 @@
 %%% Created : Oct 8, 2012
 %%% -------------------------------------------------------------------
 
+%% Parameters:
+%%  hands - contains tashes of players. A position of an element in the list
+%%        is a seat number of a player. Each element contain a list of tashes.
+%%        One of the element must contain 15 tashes and all other element must
+%%        contain 14 tashes per each.
+%%        Type: [Hand1, Hand2, Hand3, Hand4],
+%%              Hand1 = Hand2 = Hand3 = Hand4 = [tash()]
+%%  deck - contains tashes which will be placed on the table.
+%%        Type: [tash()]
+%%  gosterge - a tash that indicate a jocker. It must not be "fasle okey" tash.
+%%        Type: tash()
+%%  cur_player - a seat number of a player who will make first move. The hand
+%%        of the player must contain 15 tashes.
+%%        Type: 1 | 2 | 3 | 4
+%%  gosterge_finish_list - the list of players who allowed to do gosterge finish.
+%%        Type: [SeatNum]
+%%              SeatNum = 1 | 2 | 3 | 4
+
+%% tash() = {Color, Value} | false_okey
+%%    Color = 1 - 4
+%%    Value = 1 - 13
+
 %%        Players actions:        ||      Errors:
 %%  i_have_gosterge               || action_disabled, no_gosterge
 %%  see_okey                      || no_okey_discarded
@@ -21,7 +43,8 @@
 %%  {tash_discarded, SeatNum, Tash}
 %%  {next_player, SeatNum}
 %%  no_winner_finish
-%%  {reveal, SeatNum, Right, TashPlaces, DiscardedTash, WithOkey, HasGosterge}
+%%  {reveal, SeatNum, TashPlaces, DicardedTash}
+%%  {gosterge_finish, SeatNum}
 
 -module(game_okey_ng_desk).
 
@@ -66,6 +89,7 @@
 
 -record(state,
         {
+         gosterge_finish_list :: list(integer()), %% Seats nums of players which allowed to do gosterge finish
          players           :: list(#player{}),
          cur_player        :: integer(),
          deck              :: deck:deck(),
@@ -117,21 +141,17 @@ get_discarded(Desk, SeatNum) ->
 %% Server functions
 %% ====================================================================
 %% --------------------------------------------------------------------
-%% Func: init/1
-%% Returns: {ok, StateName, StateData}          |
-%%          {ok, StateName, StateData, Timeout} |
-%%          ignore                              |
-%%          {stop, StopReason}
-%% --------------------------------------------------------------------
 init(Params) ->
     Hands = get_param(hands, Params),
     Deck = get_param(deck, Params),
     Gosterge = get_param(gosterge, Params),
     CurPlayer = get_param(cur_player, Params),
-    validate_params(Hands, Deck, Gosterge, CurPlayer),
+    GostFinishList = get_param(gosterge_finish_list, Params),
+    validate_params(Hands, Deck, Gosterge, CurPlayer, GostFinishList),
     Players = init_players(Hands),
-    Okey = init_okey(Gosterge),
+    Okey = gosterge_to_okey(Gosterge),
     {ok, ?STATE_DISCARD, #state{players = Players,
+                                gosterge_finish_list = GostFinishList,
                                 deck = deck:from_list(Deck),
                                 gosterge = Gosterge,
                                 okey = Okey,
@@ -140,25 +160,12 @@ init(Params) ->
                                 has_gosterge = undefined}}.
 
 %% --------------------------------------------------------------------
-%% Func: handle_event/3
-%% Returns: {next_state, NextStateName, NextStateData}          |
-%%          {next_state, NextStateName, NextStateData, Timeout} |
-%%          {stop, Reason, NewStateData}
-%% --------------------------------------------------------------------
 handle_event(stop, _StateName, StateData) ->
     {stop, normal, StateData};
 
 handle_event(_Event, StateName, StateData) ->
     {next_state, StateName, StateData}.
 
-%% --------------------------------------------------------------------
-%% Func: handle_sync_event/4
-%% Returns: {next_state, NextStateName, NextStateData}            |
-%%          {next_state, NextStateName, NextStateData, Timeout}   |
-%%          {reply, Reply, NextStateName, NextStateData}          |
-%%          {reply, Reply, NextStateName, NextStateData, Timeout} |
-%%          {stop, Reason, NewStateData}                          |
-%%          {stop, Reason, Reply, NewStateData}
 %% --------------------------------------------------------------------
 handle_sync_event({player_action, SeatNum, Action}, _From, StateName, StateData) ->
     case handle_player_action(SeatNum, Action, StateName, StateData) of
@@ -202,28 +209,12 @@ handle_sync_event({get_discarded, SeatNum}, _From, StateName,
 handle_sync_event(_Event, _From, StateName, StateData) ->
     Reply = ok,
     {reply, Reply, StateName, StateData}.
-
-%% --------------------------------------------------------------------
-%% Func: handle_info/3
-%% Returns: {next_state, NextStateName, NextStateData}          |
-%%          {next_state, NextStateName, NextStateData, Timeout} |
-%%          {stop, Reason, NewStateData}
 %% --------------------------------------------------------------------
 handle_info(_Info, StateName, StateData) ->
     {next_state, StateName, StateData}.
-
-%% --------------------------------------------------------------------
-%% Func: terminate/3
-%% Purpose: Shutdown the fsm
-%% Returns: any
 %% --------------------------------------------------------------------
 terminate(_Reason, _StateName, _StatData) ->
     ok.
-
-%% --------------------------------------------------------------------
-%% Func: code_change/4
-%% Purpose: Convert process state when code is changed
-%% Returns: {ok, NewState, NewStateData}
 %% --------------------------------------------------------------------
 code_change(_OldVsn, StateName, StateData, _Extra) ->
     {ok, StateName, StateData}.
@@ -232,14 +223,14 @@ code_change(_OldVsn, StateName, StateData, _Extra) ->
 %%% Internal functions
 %% --------------------------------------------------------------------
 
-%% --------------------------------------------------------------------
-%% Func: handle_player_action/4
-%% Returns: {ok, Events, NextStateName, NextStateData}          |
+%% @spec handle_player_action(SeatNum, Action, StateName, StateData) ->
+%%          {ok, Events, NextStateName, NextStateData}          |
 %%          {error, Reason}
-%% --------------------------------------------------------------------
+%% @end
+
 handle_player_action(PlayerId, i_have_gosterge, StateName,
-                     #state{players = Players,
-                            gosterge = Gosterge} = StateData) when
+                     #state{players = Players, gosterge = Gosterge,
+                            gosterge_finish_list = GostFinishList} = StateData) when
   StateName == ?STATE_TAKE;
   StateName == ?STATE_DISCARD ->
     case get_player(PlayerId, Players) of
@@ -247,11 +238,18 @@ handle_player_action(PlayerId, i_have_gosterge, StateName,
                 hand = Hand} = Player ->
             case deck:member(Gosterge, Hand) of
                 true ->
-                    NewPlayer = Player#player{can_show_gosterge = false},
-                    NewPlayers = update_player(NewPlayer, Players),
-                    Events = [{has_gosterge, PlayerId}],
-                    {ok, Events, StateName, StateData#state{players = NewPlayers,
-                                                            has_gosterge = PlayerId}};
+                    case lists:member(PlayerId, GostFinishList) of
+                        false ->
+                            NewPlayer = Player#player{can_show_gosterge = false},
+                            NewPlayers = update_player(NewPlayer, Players),
+                            Events = [{has_gosterge, PlayerId}],
+                            {ok, Events, StateName, StateData#state{players = NewPlayers,
+                                                                    has_gosterge = PlayerId}};
+                        true ->
+                           Events = [{gosterge_finish, PlayerId}],
+                           {ok, Events, ?STATE_FINISHED,
+                            StateData#state{has_gosterge = PlayerId}}
+                    end;
                 false ->
                     {error, no_gosterge}
             end;
@@ -372,15 +370,14 @@ handle_player_action(_PlayerId, _Action, _StateName, _StateData) ->
 
 %%===================================================================
 
-%% @spec get_param(Id, Params) -> Value
-%% @end
+%% get_param(Id, Params) -> Value
 get_param(Id, Params) ->
     {_, Value} =lists:keyfind(Id, 1, Params),
     Value.
 
 %% TODO: Implement the validator
 
-validate_params(_Hands, _Deck, _Gosterge, _CurPlayer) ->
+validate_params(_Hands, _Deck, _Gosterge, _CurPlayer, _GostFinishList) ->
     ok.
 
 init_players(Hands) ->
@@ -396,9 +393,8 @@ init_players(Hands) ->
     Players.
 
 
-%% @spec init_okey(GostergyTash) -> OkeyTash
-
-init_okey({Color, Value}) ->
+%% gosterge_to_okey(GostergyTash) -> OkeyTash
+gosterge_to_okey({Color, Value}) ->
     if Value == 13 -> {Color, 1};
        true -> {Color, Value + 1}
     end.
@@ -412,8 +408,7 @@ next_id(Id) -> Id + 1.
 prev_id(1) -> 4;
 prev_id(Id) -> Id - 1.
 
-%% @spec take_tash_from_discarded(PlayerId, Players) -> {Tash, NewPlayers} | error
-%% @end
+%% take_tash_from_discarded(PlayerId, Players) -> {Tash, NewPlayers} | error
 take_tash_from_discarded(PlayerId, Players) ->
     #player{discarded = Discarded} = PrevPlayer = get_player(prev_id(PlayerId), Players),
     case deck:size(Discarded) of
@@ -431,8 +426,7 @@ take_tash_from_discarded(PlayerId, Players) ->
             {Tash, NewPlayers2}
     end.
 
-%% @spec take_tash_from_table(PlayerId, Players, Deck) -> {Tash, NewPlayers, NewDeck} | error
-%% @end
+%% take_tash_from_table(PlayerId, Players, Deck) -> {Tash, NewPlayers, NewDeck} | error
 take_tash_from_table(PlayerId, Players, Deck) ->
     case deck:size(Deck) of
         0 ->
@@ -447,8 +441,7 @@ take_tash_from_table(PlayerId, Players, Deck) ->
             {Tash, NewPlayers, NewDeck}
     end.
 
-%% @spec discard_tash(Tash, PlayerId, Players) -> NewPlayers
-%% @end
+%% discard_tash(Tash, PlayerId, Players) -> NewPlayers
 discard_tash(Tash, PlayerId, Players) ->
     #player{hand = Hand, discarded = Discarded} = Player = get_player(PlayerId, Players),
     case deck:del_first(Tash, Hand) of
@@ -461,26 +454,22 @@ discard_tash(Tash, PlayerId, Players) ->
     end.
 
 
-%% @spec tash_places_to_hand(TashPlaces) -> Hand
-%% @end
+%% tash_places_to_hand(TashPlaces) -> Hand
 tash_places_to_hand(TashPlaces) ->
     Elements = [P || P <- lists:flatten(TashPlaces), P =/= null],
     deck:from_list(Elements).
 
-%% @spec get_player(PlayerId, Players) -> Player
-%% @end
+%% get_player(PlayerId, Players) -> Player
 get_player(PlayerId, Players) ->
     #player{} = lists:keyfind(PlayerId, #player.id, Players).
 
 
-%% @spec update_player(Player, Players) -> NewPlayers
-%% @end
+%% update_player(Player, Players) -> NewPlayers
 update_player(#player{id = Id} = Player, Players) ->
     lists:keyreplace(Id, #player.id, Players, Player).
 
 
-%% @spec is_same_hands(Hand1, Hand2) -> boolean()
-%% @end
+%% is_same_hands(Hand1, Hand2) -> boolean()
 is_same_hands(Hand1, Hand2) ->
     L1 = lists:sort(deck:to_list(Hand1)),
     L2 = lists:sort(deck:to_list(Hand2)),

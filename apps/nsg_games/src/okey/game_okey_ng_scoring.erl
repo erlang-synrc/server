@@ -14,7 +14,7 @@
 %% Exported Functions
 %%
 -export([
-         init/2,
+         init/3,
          last_round_result/1,
          round_finished/5
         ]).
@@ -51,23 +51,32 @@
 -record(state,
         {mode             :: standard | evenodd | color | countdown,
          seats_num        :: integer(),
+         rounds_num       :: undefined | pos_integer(),
          last_round_num   :: integer(),
          rounds_scores    :: list(),    %% [{Round, [{SeatNum, DeltaPoints}]}]
          rounds_achs      :: list(),    %% [{Round, [{SeatNum, Achs}]}], Achs = [{AchId, Points}]
          table            :: list(),    %% [{Round, [{SeatNum, Points}]}]
          rounds_finish_info :: list(),  %% [{Round, FinishInfo}]
-         chanak           :: integer()  %% Defined only for evenodd and color mode
+         chanak           :: integer(), %% Defined only for evenodd and color mode
+         winners          :: false | list() %% [SeatNum]
         }).
-
 
 %%
 %% API Functions
 %%
 
-%% @spec init(Mode, SeatsNum) -> ScoringState
+%% @spec init(Mode, SeatsNum, RoundsNum) -> ScoringState
 %% @doc Initialises scoring state.
 %% @end
-init(Mode, SeatsNum) ->
+%% Types:
+%%     Mode = standard | evenodd | color | countdown
+%%     SeatsNum = integer(),
+%%     RoundsNum = undefined | pos_integer()
+
+init(Mode, SeatsNum, RoundsNum) ->
+    true = lists:member(Mode, [?MODE_STANDARD, ?MODE_EVENODD, ?MODE_COLOR, ?MODE_COUNTDOWN]),
+    true = if Mode == ?MODE_COUNTDOWN -> RoundsNum == undefined;
+              true -> is_integer(RoundsNum) orelse RoundsNum == undefined end,
     InitPointsNum = case Mode of
                         ?MODE_COUNTDOWN -> ?COUNTDOWN10_INIT_POINTS;
                         _ -> 0
@@ -75,15 +84,28 @@ init(Mode, SeatsNum) ->
     Table = [{0, [{SeatNum, InitPointsNum} || SeatNum <- lists:seq(1, SeatsNum)]}],
     #state{mode = Mode,
            seats_num = SeatsNum,
+           rounds_num = RoundsNum,
            last_round_num = 0,
            chanak = 0,
            rounds_scores = [],
-           table = Table
+           rounds_finish_info =[],
+           rounds_achs = [],
+           table = Table,
+           winners = false
           }.
 
 
-%% last_round_result(State) -> {FinishInfo, RoundScore, AchsPoints, TotalScore} |
-%%                             no_rounds_played
+%% @spec last_round_result(ScoringState) -> {FinishInfo, RoundScore, AchsPoints, TotalScore} |
+%%                                          no_rounds_played
+%% @end
+%% Types:
+%%     FinishInfo =  tashes_out |
+%%                   {win_reveal, Revealer, WrongRejects, RevealWithColor, RevealWithOkey, RevealWithPairs} |
+%%                   {fail_reveal, Revealer} |
+%%                   {gosterge_finish, Winner}
+%%     RoundScore = [{SeatNum, DeltaPoints}]
+%%     AchsPoints = [{SeatNum, [{AchId, Points}]}]
+%%     TotalScore = [{SeatNum, Points}]
 
 last_round_result(#state{last_round_num = 0}) -> no_rounds_played;
 
@@ -100,21 +122,31 @@ last_round_result(#state{last_round_num = LastRoundNum,
     {FinishInfo, RoundScore, RoundAchs, TotalScore}.
 
 
-%% round_finished(State, FinishReason, Hands, Gosterge, WhoHasGosterge) ->
-%%                                    {NewState, GameOver}
+%% @spec round_finished(ScoringState, FinishReason, Hands, Gosterge, WhoHasGosterge) ->
+%%                                    {NewScoringState, Winners}
+%% @end
+%% Types:
+%%     FinishReason = tashes_out |
+%%                    {reveal, SeatNum, Tashes, Discarded, ConfirmationList} |
+%%                    {gosterge_finish, SeatNum}
+%%       Tashes = [Row1, Row2]
+%%         Row1 = Row2 = [null | tash()]
+%%       Discaded = tash()
+%%       ConfirmationList = [SeatNum, boolean()]
+%%     Hands = [{SeatNum, Hand}]
+%%       Hand = [tash()]
+%%     Gosterge = normal_tash()
+%%     WhoHasGosterge = undefined | SeatNum
+%%     Winners = false | [SeatNum]
 
-round_finished(#state{mode = ?MODE_STANDARD = GameMode,
-                      seats_num = SeatsNum,
-                      last_round_num = LastRoundNum,
-                      rounds_scores = RoundsScores,
-                      rounds_achs = RoundsAchs,
-                      table = Table,
-                      rounds_finish_info = RoundsFinishInfo
+%% TODO: handle chanak
+
+round_finished(#state{mode = GameMode, seats_num = SeatsNum,
+                      rounds_num = _MaxRoundsNum, last_round_num = LastRoundNum,
+                      rounds_scores = RoundsScores, rounds_achs = RoundsAchs,
+                      table = Table, rounds_finish_info = RoundsFinishInfo
                      } = State,
-               FinishReason,
-               Hands,
-               Gosterge,
-               WhoHasGosterge) ->
+               FinishReason, Hands, Gosterge, WhoHasGosterge) ->
     ScoringMode = get_scoring_mode(GameMode, Gosterge),
     PointingRules = get_pointing_rules(ScoringMode),
     Seats = lists:seq(1, SeatsNum),
@@ -127,59 +159,44 @@ round_finished(#state{mode = ?MODE_STANDARD = GameMode,
     RoundNum = LastRoundNum + 1,
     NewRoundsScores = [{RoundNum, RoundScores} | RoundsScores],
     NewRoundsAchs = [{RoundNum, RoundAchsPoints} | RoundsAchs],
-    {TotalScores, NewTable} = table_add_delta(Table, RoundNum, RoundScores),
+    NewTable = table_add_delta(GameMode, Table, RoundNum, RoundScores),
     NewRoundsFinishInfo = [{RoundNum, FinishInfo} | RoundsFinishInfo],
     NewState = State#state{last_round_num = RoundNum,
                            rounds_scores = NewRoundsScores,
                            table = NewTable,
                            rounds_achs = NewRoundsAchs,
                            rounds_finish_info = NewRoundsFinishInfo},
-    GameOver = false, %% FIXME
-    {NewState, GameOver};
-
-%% TODO: handle other two game modes
-
-round_finished(#state{mode = ?MODE_COUNTDOWN = GameMode,
-                      seats_num = SeatsNum,
-                      last_round_num = LastRoundNum,
-                      rounds_scores = RoundsScores,
-                      rounds_achs = RoundsAchs,
-                      table = Table,
-                      rounds_finish_info = RoundsFinishInfo
-                     } = State,
-               FinishReason,
-               Hands,
-               Gosterge,
-               WhoHasGosterge) ->
-    ScoringMode = get_scoring_mode(GameMode, Gosterge),
-    PointingRules = get_pointing_rules(ScoringMode),
-    Seats = lists:seq(1, SeatsNum),
-    FinishInfo = finish_info(GameMode, FinishReason, Gosterge),
-    PlayersAchs = players_achivements(Seats, Hands, WhoHasGosterge, FinishInfo),
-    RoundAchsPoints = [{SeatNum, get_achivements_points(PointingRules, Achivements)}
-                       || {SeatNum, Achivements} <- PlayersAchs],
-    RoundScores = [{SeatNum, sum_achivements_points(AchPoints)}
-                   || {SeatNum, AchPoints} <- RoundAchsPoints],
-    RoundNum = LastRoundNum + 1,
-    NewRoundsScores = [{RoundNum, RoundScores} | RoundsScores],
-    NewRoundsAchs = [{RoundNum, RoundAchsPoints} | RoundsAchs],
-    {TotalScores, NewTable} = table_sub_delta(Table, RoundNum, RoundScores),
-    NewRoundsFinishInfo = [{RoundNum, FinishInfo} | RoundsFinishInfo],
-    NewState = State#state{last_round_num = RoundNum,
-                           rounds_scores = NewRoundsScores,
-                           table = NewTable,
-                           rounds_achs = NewRoundsAchs,
-                           rounds_finish_info = NewRoundsFinishInfo},
-    GameOver = false, %% FIXME
-    {NewState, GameOver}.
+    case detect_game_winners(NewState) of
+        [] -> {NewState, false};
+        Winners -> {NewState#state{winners = Winners}, Winners}
+    end.
 
 %%
 %% Local Functions
 %%
-players_achivements(Seats,
-                    Hands,
-                    WhoHasGosterge,
-                    FinishInfo) ->
+
+detect_game_winners(#state{mode = GameMode, last_round_num = RoundNum,
+                           rounds_num = MaxRoundNum, table = Table,
+                           rounds_finish_info = RoundsFinishInfo}) ->
+    ?INFO("OKEY_NG_SCORRING Table: ~p", [Table]),
+    ?INFO("OKEY_NG_SCORRING RoundsFinishInfo: ~p", [RoundsFinishInfo]),
+    TotalScores = proplists:get_value(RoundNum, Table),
+    FinishInfo = proplists:get_all_values(RoundNum, RoundsFinishInfo),
+    if GameMode == ?MODE_COUNTDOWN ->
+           case FinishInfo of
+               {gosterge_finish, Winner} -> [Winner];
+               _ ->[SeatNum || {SeatNum, P} <- TotalScores, P =< 0]
+           end;
+       true ->
+           if (RoundNum == MaxRoundNum) -> %% Round over. Define winners.
+                  MaxPoints = lists:max([P || {_, P} <- TotalScores]),
+                  _Winners = [SeatNum || {SeatNum, P} <- TotalScores, P == MaxPoints];
+              true -> []
+           end
+    end.
+
+
+players_achivements(Seats, Hands, WhoHasGosterge, FinishInfo) ->
     case FinishInfo of
         tashes_out ->
             [begin
@@ -202,15 +219,22 @@ players_achivements(Seats,
                  Achivements = player_achivements_fail_reveal(SeatNum, WhoHasGosterge,
                                                               Has8Tashes, Revealer),
                  {SeatNum, Achivements}
+             end || SeatNum <- Seats];
+        {gosterge_finish, Winner} ->
+            [begin
+                 {_, _Hand} = lists:keyfind(SeatNum, 1, Hands),
+                 Has8Tashes = false, %% TODO:
+                 Achivements = player_achivements_gosterge_finish(SeatNum, Winner, Has8Tashes),
+                 {SeatNum, Achivements}
              end || SeatNum <- Seats]
-    %% TODO: Gosterge finish... if needed
     end.
 
 
 %% finish_info(GameMode, FinishReason, Gosterge) ->
 %%      tashes_out |
 %%      {win_reveal, Revealer, WrongRejects, RevealWithColor, RevealWithOkey, RevealWithPairs} |
-%%      {fail_reveal, Revealer}
+%%      {fail_reveal, Revealer} |
+%%      {gosterge_finish, Winner}
 finish_info(GameMode, FinishReason, Gosterge) ->
     case FinishReason of
         tashes_out ->
@@ -226,7 +250,7 @@ finish_info(GameMode, FinishReason, Gosterge) ->
                                          ?MODE_COUNTDOWN -> false
                                      end,
                    Okey = gosterge_to_okey(Gosterge),
-                   RevealWithOkey = WinReveal andalso Discarded == Okey,
+                   RevealWithOkey = Discarded == Okey,
                    WrongRejects = if RightReveal ->
                                          [S || {S, Answer} <- ConfirmationList, Answer==false];
                                      true -> []
@@ -234,8 +258,9 @@ finish_info(GameMode, FinishReason, Gosterge) ->
                    {win_reveal, Revealer, WrongRejects, RevealWithColor, RevealWithOkey, RevealWithPairs};
                true ->
                    {fail_reveal, Revealer}
-            end
-    %% TODO: Gosterge finish... if needed
+            end;
+        {gosterge_finish, Winner} when GameMode == ?MODE_COUNTDOWN ->
+            {gosterge_finish, Winner}
     end.
 
 
@@ -249,25 +274,21 @@ get_achivements_points(PointingRules, Achivements) ->
 sum_achivements_points(AchPoints) ->
     lists:foldl(fun({_, P}, Acc)-> Acc + P end, 0, AchPoints).
 
-%% @spec table_add_delta(Table1, RoundNum, RoundScores) -> {TotalScores, Table2}
+%% @spec table_add_delta(GameMode, Table1, RoundNum, RoundScores) -> {TotalScores, Table2}
 %% @end
-table_add_delta(Table, RoundNum, RoundScores) ->
-    {_, LastTableRecScores} = lists:keyfind(RoundNum - 1, 1, Table),
-    NewTableScores = [begin
-                          {_, LastScore} = lists:keyfind(SeatNum, 1, LastTableRecScores),
-                          {SeatNum, LastScore + Delta}
-                      end || {SeatNum, Delta} <- RoundScores],
-    {NewTableScores, [{RoundNum, NewTableScores} | Table]}.
+table_add_delta(GameMode, Table, RoundNum, RoundScores) ->
+    {_, TotalScores} = lists:keyfind(RoundNum - 1, 1, Table),
+    NewTotalScores =
+        case GameMode of
+            ?MODE_COUNTDOWN ->
+                [{SeatNum, proplists:get_value(SeatNum, TotalScores) - Delta}
+                 || {SeatNum, Delta} <- RoundScores];
+            _ ->
+                [{SeatNum, proplists:get_value(SeatNum, TotalScores) + Delta}
+                 || {SeatNum, Delta} <- RoundScores]
+        end,
+    [{RoundNum, NewTotalScores} | Table].
 
-%% @spec table_sub_delta(Table1, RoundNum, RoundScores) -> Table2
-%% @end
-table_sub_delta(Table, RoundNum, RoundScores) ->
-    {_, LastTableRecScores} = lists:keyfind(RoundNum - 1, 1, Table),
-    NewTableScores = [begin
-                          {_, LastScore} = lists:keyfind(SeatNum, 1, LastTableRecScores),
-                          {SeatNum, LastScore - Delta}
-                      end || {SeatNum, Delta} <- RoundScores],
-    [{RoundNum, NewTableScores} | Table].
 
 
 %% @spec gosterge_to_okey(GostergyTash) -> OkeyTash
@@ -368,42 +389,46 @@ player_achivements_fail_reveal(SeatNum, WhoHasGosterge, Has8Tashes, Revealer) ->
     player_achivements(SeatNum, WhoHasGosterge, Has8Tashes, reveal,
                        Revealer, [], false, false, false, false).
 
+player_achivements_gosterge_finish(SeatNum, WhoHasGosterge, Has8Tashes) ->
+    player_achivements(SeatNum, WhoHasGosterge, Has8Tashes, gosterge_finish,
+                       undefined, [], false, false, false, false).
+
 %% player_achivements(SeatNum, WhoHasGosterge, Has8Tashes, FinishType, Revealer, WrongRejects,
 %%                    WinReveal, RevealWithOkey, RevealWithPairs, WithColor) -> [{AchId}]
 player_achivements(SeatNum, WhoHasGosterge, Has8Tashes, FinishType, Revealer, WrongRejects,
                    WinReveal, RevealWithOkey, RevealWithPairs, WithColor) ->
     L=[
-%%     <<"gosterge shown">>,                            %% 1
+       %% 1
        {?ACH_GOSTERGE_SHOWN, SeatNum == WhoHasGosterge},
-%%     <<"proper reveal">>,                             %% 2
+       %% 2
        {?ACH_WIN_REVEAL, FinishType == reveal andalso SeatNum == Revealer andalso WinReveal andalso (not RevealWithOkey) andalso (not RevealWithPairs) andalso (not WithColor)},
-%%     <<"reveal with okey">>,                          %% 3
+       %% 3
        {?ACH_WIN_REVEAL_WITH_OKEY, FinishType == reveal andalso SeatNum == Revealer andalso WinReveal andalso RevealWithOkey andalso (not RevealWithPairs) andalso (not WithColor)},
-%%     <<"reveal with even tashes">>,                   %% 4
+       %% 4
        {?ACH_WIN_REVEAL_WITH_PAIRS, FinishType == reveal andalso SeatNum == Revealer andalso WinReveal andalso (not RevealWithOkey) andalso RevealWithPairs andalso (not WithColor)},
-%%     <<"reveal with even tashes and okey">>,          %% 5
+       %% 5
        {?ACH_WIN_REVEAL_WITH_OKEY_PAIRS, FinishType == reveal andalso SeatNum == Revealer andalso WinReveal andalso RevealWithOkey andalso RevealWithPairs andalso (not WithColor)},
-%%     <<"8 tashes of value in hand">>,                 %% 6
+       %% 6
        {?ACH_NOT_REVEAL_8_TASHES, FinishType == reveal andalso SeatNum =/= Revealer andalso Has8Tashes},
-%%     <<"reveal with color">>,                         %% 7
+       %% 7
        {?ACH_WIN_REVEAL_WITH_COLOR, FinishType == reveal andalso SeatNum == Revealer andalso WinReveal andalso (not RevealWithOkey) andalso (not RevealWithPairs) andalso WithColor},
-%%     <<"reveal with color and okey">>,                %% 8
+       %% 8
        {?ACH_WIN_REVEAL_WITH_COLOR_OKEY, FinishType == reveal andalso SeatNum == Revealer andalso WinReveal andalso RevealWithOkey andalso (not RevealWithPairs) andalso WithColor},
-%%     <<"reveal with color and even tashes">>,         %% 9
+       %% 9
        {?ACH_WIN_REVEAL_WITH_COLOR_PAIRS, FinishType == reveal andalso SeatNum == Revealer andalso WinReveal andalso (not RevealWithOkey) andalso RevealWithPairs andalso WithColor},
-%%     <<"reveal with color, even tashes and okey">>,   %% 10
+       %% 10
        {?ACH_WIN_REVEAL_WITH_COLOR_OKEY_PAIRS, FinishType == reveal andalso SeatNum == Revealer andalso WinReveal andalso RevealWithOkey andalso RevealWithPairs andalso WithColor},
-%%     <<"reveal with wrong hand">>,                    %% 11
+       %% 11
        {?ACH_FAIL_REVEAL, FinishType == reveal andalso SeatNum == Revealer andalso (not WinReveal)},
-%%     <<"caught bluff">>,                              %% 12 %% AKA others_on_wrong_reveal
+       %% 12 AKA others_on_wrong_reveal
        {?ACH_CAUGHT_BLUFF, FinishType == reveal andalso SeatNum =/= Revealer andalso (not WinReveal)},
-%%     <<"deduction to empty box">>,                    %% 13
-       {?ACH_EMPTY_BOX, false}, %% FIXME: what is it?
-%%     <<"rejected good hand">>,                        %% 14
+       %% 13
+       {?ACH_EMPTY_BOX, false}, %% XXX: By the last information it is no deduction from players to the chanak
+       %% 14
        {?ACH_REJECT_GOOD_HAND, FinishType == reveal andalso lists:member(SeatNum, WrongRejects)},
-%%     <<"gosterge winner">>                            %% 15
-       {?ACH_GOSTERGE_WINNER, false} %% FIXME: what is it?
-    ],
+       %% 15
+       {?ACH_GOSTERGE_WINNER, FinishType == gosterge_finish andalso SeatNum == WhoHasGosterge}
+      ],
     [Ach || {Ach, true} <- L].
 
 get_pointing_rules(ScoringMode) ->

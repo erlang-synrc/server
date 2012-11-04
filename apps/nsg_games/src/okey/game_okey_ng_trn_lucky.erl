@@ -200,7 +200,7 @@ handle_info({rest_timeout, TableId}, StateName,
     #table{pid = TablePid} = Table = fetch_table(TableId, Tables),
     NewTable = Table#table{state = in_process},
     NewTables = store_table(NewTable, Tables),
-    send_to_table(TablePid, start_game),
+    send_to_table(TablePid, start_round),
     {next_state, StateName, StateData#state{tables = NewTables}};
 
 handle_info(_Info, StateName, StateData) ->
@@ -249,7 +249,7 @@ handle_table_message(TableId, {player_connected, PlayerId},
                                   [GameId]),
                             NewTables = set_table_state(TableId, ?TABLE_STATE_IN_PROGRESS, Tables),
                             ?INFO("OKEY_NG_TRN_LUCKY <~p> TablePid: ~p.", [GameId, TabPid]),
-                            send_to_table(TabPid, start_game),
+                            send_to_table(TabPid, start_round),
                             {next_state, ?STATE_PROCESSING, StateData#state{seats = NewSeats,
                                                                             tables = NewTables}};
                         false ->
@@ -719,7 +719,7 @@ table_parameters(ParentMod, ParentPid) ->
      {observers_allowed, false},
      {speed, normal},
      {game_type, standard},
-     {rounds, infinity},
+     {rounds, undefined},
      {reveal_confirmation, true},
      {pause_mode, normal}
     ].
@@ -731,7 +731,7 @@ bots_parameters() ->
      {game_mode, standard},
      {lucky, true},
      {speed, normal},
-     {rounds, infinity}
+     {rounds, undefined}
     ].
 
 seats_num(TableParams) ->
