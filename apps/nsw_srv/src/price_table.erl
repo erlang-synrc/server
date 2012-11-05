@@ -13,21 +13,22 @@
 -define(ACTIVE_CLS, "ui-state-active").
 -define(INTERNAL_URL(PaymentType), url=lists:concat(["#", ?_U(payment_type_to_url(PaymentType))])).
 
-main() ->
-    #template { file=code:priv_dir(nsw_srv)++"/templates/bare.html" }.
+main() -> #template { file=code:priv_dir(nsw_srv)++"/templates/bare.html" }.
 
 title() -> webutils:title(?MODULE).
 
-body() ->
-    #template{file=code:priv_dir(nsw_srv)++"/templates/price_table.html"}.
+body() -> #template{file=code:priv_dir(nsw_srv)++"/templates/price_table.html"}.
 
-payment_type_selector()->
+payment_type_selector()-> payment_types(wf:session(is_facebook)).
+
+payment_types(false)->
     ["<ul class=\"tabset\" id=\"tabset\">",
         "<li class=\""++?ACTIVE_CLS++"\">",#link{id=credit_card,   ?INTERNAL_URL(credit_card),   postback={payment_select, credit_card},   ?ACTIVATION_ACTION("credit_card")},"<span class=\"img\"><img class=\"png\" src=\"/images/ico-06.png\" alt=\"\" width=\"48\" height=\"56\" ><img class=\"png\" src=\"/images/ico-08.png\" alt=\"\" width=\"48\" height=\"56\" ></span><strong>",?_T("Credit card"),"</strong></a></li>",
         "<li>",                            #link{id=paypal,        ?INTERNAL_URL(paypal),        postback={payment_select, paypal},        ?ACTIVATION_ACTION("paypal")}, "<span class=\"img\"><img class=\"png\" src=\"/images/ico-09.png\" alt=\"\" width=\"62\" height=\"56\" ><img class=\"png\" src=\"/images/ico-07.png\" alt=\"\" width=\"62\" height=\"56\" ></span><strong>",?_T("Paypal"),"</strong></a></li>",
         "<li>",                            #link{id=wire_transfer, ?INTERNAL_URL(wire_transfer), postback={payment_select, wire_transfer}, ?ACTIVATION_ACTION("wire_transfer")},"<span class=\"img\"><img class=\"png\" src=\"/images/ico-10.png\" alt=\"\" width=\"48\" height=\"56\" ><img class=\"png\" src=\"/images/ico-11.png\" alt=\"\" width=\"48\" height=\"56\" ></span><strong>",?_T("Wire"),"</strong></a></li>",
         "<li>",                            #link{id=mobile,        ?INTERNAL_URL(mobile),        postback={payment_select, mobile},        ?ACTIVATION_ACTION("mobile")},"<span class=\"img\"><img class=\"png\" src=\"/images/ico-12.png\" alt=\"\" width=\"31\" height=\"56\" ><img class=\"png\" src=\"/images/ico-13.png\" alt=\"\" width=\"31\" height=\"56\" ></span><strong>",?_T("Mobile"),"</strong></a></li>",
-    "</ul>"].
+    "</ul>"];
+payment_types(true)-> [].
 
 -spec table()->#table{}.
 table()->
@@ -60,7 +61,7 @@ table(PaymentType)->
           to_tl(P#membership_package.deducted_for_gifts),
           to_tl(P#membership_package.net_membership),
           wf:to_list(P#membership_package.quota),
-          buy_button_element(P#membership_package.id, PaymentType)
+          buy_button_element(P#membership_package.id, PaymentType, wf:session(is_facebook))
          ] || P <- PackagesSorted],
 
     % transform columns data to table rows
@@ -137,10 +138,11 @@ packet_price_element(Price)->
      "<em>TL</em>",
      "</span></span>"].
 
--spec buy_button_element(PackageId::any(), PaymentType::payment_type())-> #link{}.
-buy_button_element(PackageId, PaymentType)->
-    #link{class="btn", text=?_T("Buy"), postback={buy, PackageId, PaymentType}}.
-
+-spec buy_button_element(PackageId::any(), PaymentType::payment_type(), wf:session(is_facebook))-> #link{}.
+buy_button_element(PackageId, PaymentType, false)->
+    #link{class="btn", text=?_T("Buy"), postback={buy, PackageId, PaymentType}};
+buy_button_element(PackageId, _PaymentType, true)->
+    #link{class="pay_fb_btn", actions=#event{type=click, actions=#script{script="pay_with_fb(\""++ PackageId ++ "\");"}}}.
 
 odd_even("odd")-> "even";
 odd_even("even")-> "odd".

@@ -3871,6 +3871,17 @@ div.post:first-child {background:none !important}
 	position:relative;
 }
 .data .btn:hover {text-decoration:none;}
+
+.data .pay_fb_btn{
+    display:block;
+    width:101px;
+    height:27px;
+    background:url(/images/facebook/paybutton.png) repeat-x;
+    padding:7px 0;
+    margin:0 auto;
+    position:relative;
+}
+
 .article .boxes {
 	width:933px;
 	overflow:hidden;

@@ -283,19 +283,8 @@ section_body(account) ->
 	    <dt>"++ ?_T("Remaining Quota") ++":</dt>
 	    <dd>"++wf:to_list(Quota)++"</dd>
 	    </dl>",
-	    "<script>var js_callback = function(data){",
-	    "if(data['error_code']){ alert(\"Code: \"+data['error_code'] + \" Message: \"+ data['error_message']);  }",
-	    "}</script>",
-	    "<script>function fb_buy() {",
-	    "FB.ui({method:'pay', action: 'buy_item', order_info: {'item_id':'1a'} ,dev_purchase_params:{'oscif':true}},",
-	    "js_callback); }</script>",
-
-	    case wf:session(is_facebook) of
-		true -> #link{class=btn, text=?_T("Üyelİk Yenİle"), actions=#event{type=click, actions=#script{script="fb_buy();"}}};
-	    _ ->  #link{class=btn, url=?_U("/price-table"), text=?_T("Üyelİk Yenİle")}
-	    end
+	    #link{class=btn, url=?_U("/price-table"), text=?_T("Üyelİk Yenİle")}
 	]},
-
 	#panel{class="profile-info", body = [
 	    #panel{class="col-l",body=[
                 #form{body=[
