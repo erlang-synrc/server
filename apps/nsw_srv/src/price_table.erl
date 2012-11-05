@@ -28,7 +28,7 @@ payment_types(false)->
         "<li>",                            #link{id=wire_transfer, ?INTERNAL_URL(wire_transfer), postback={payment_select, wire_transfer}, ?ACTIVATION_ACTION("wire_transfer")},"<span class=\"img\"><img class=\"png\" src=\"/images/ico-10.png\" alt=\"\" width=\"48\" height=\"56\" ><img class=\"png\" src=\"/images/ico-11.png\" alt=\"\" width=\"48\" height=\"56\" ></span><strong>",?_T("Wire"),"</strong></a></li>",
         "<li>",                            #link{id=mobile,        ?INTERNAL_URL(mobile),        postback={payment_select, mobile},        ?ACTIVATION_ACTION("mobile")},"<span class=\"img\"><img class=\"png\" src=\"/images/ico-12.png\" alt=\"\" width=\"31\" height=\"56\" ><img class=\"png\" src=\"/images/ico-13.png\" alt=\"\" width=\"31\" height=\"56\" ></span><strong>",?_T("Mobile"),"</strong></a></li>",
     "</ul>"];
-payment_types(true)-> [].
+payment_types(true)-> fb_utils:pay_dialog().
 
 -spec table()->#table{}.
 table()->
@@ -69,12 +69,8 @@ table(PaymentType)->
 
     #table{rows=Rows}.
 
-%%
 %% Events
-%%
-
 event({payment_select, PaymentType}) ->
-    %% update price list with payment depeneded data
     wf:update(price_container, table(PaymentType));
 event({buy, PackageId, PaymentType}) ->
     case wf:user() of
@@ -84,15 +80,13 @@ event({buy, PackageId, PaymentType}) ->
             URL = lists:concat([?_U("/buy/"), PaymentType, "/package_id/", wf:to_list(PackageId)]),
             wf:redirect(URL)
     end;
-%% redirection for other events
 event(Any)->
     webutils:event(Any).
 
-%%
+api_event(Name, Tag, Data) ->
+    fb_utils:api_event(Name, Tag, Data).
+
 %% Local functions
-%%
-
-
 -spec columns_to_rows(Columns::list())-> Rows::list().
 columns_to_rows(Rows)->
     columns_to_rows("odd", true, Rows).

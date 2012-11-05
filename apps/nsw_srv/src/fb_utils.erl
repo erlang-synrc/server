@@ -44,9 +44,38 @@ init()->
     }(document));
     </script>"].
 
+pay_dialog()->
+    wf:wire(#api{name=processOrder, tag=fb}),
+    ["<script type=\"text/javascript\">",
+    "var callback = function(data){",
+	"if(data['error_code']){",
+	    "console.log(\"Code: \"+data['error_code'] + \" Message: \"+ data['error_message']);",
+	    "return false;}",
+	"if(data['order_id']){",
+	    "console.log(\"Order:\" + data);",
+	    "if(page.processOrder){",
+		"page.processOrder(data);",
+	    "}",
+	    "return true;",
+	"}",
+    "};",
+    "function pay_with_fb(package_id){",
+	"console.log(\"Call pay dialog for\" + package_id);"
+	"FB.ui({",
+	    "method:'pay',",
+	    "action:'buy_item',",
+	    "order_info: {'item_id': package_id},",
+	    "dev_purchase_params: {'oscif':true} },",
+	    "callback);",
+    "}",
+    "</script>"].
+
 api_event(checkSignedRequest, _, SignedRequest)->
     {ok, Data} = fb_signed_request:parse(SignedRequest, ?FB_APP_SECRET),
-    ?INFO("Signed request data: ~p~n", [Data]).
+    ?INFO("Signed request data: ~p~n", [Data]);
+api_event(processOrder, _, Data)->
+    ?INFO("Payment complete. Order:~p~n", [Data]),
+    .
 
 login() ->
     case oauth(?FB_APP_ID, ?FB_APP_SECRET, ?FB_REDIRECT_URI, wf:q(code)) of
