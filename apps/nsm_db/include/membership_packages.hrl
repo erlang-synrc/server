@@ -75,6 +75,10 @@
 %% purchase dropped by admin
 -define(MP_STATE_DISCARDED, discarded).
 
+
+-define(MP_MONTHLY_LIMIT_MULTIPLIER, 3).
+
+
 %% Payment specific info records
 
 %% pi - from Purchase Info

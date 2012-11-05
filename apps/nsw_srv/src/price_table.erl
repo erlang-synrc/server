@@ -76,9 +76,14 @@ event({buy, PackageId, PaymentType}) ->
     case wf:user() of
         undefined ->
             buy:unregistered_popup();
-        _ ->
-            URL = lists:concat([?_U("/buy/"), PaymentType, "/package_id/", wf:to_list(PackageId)]),
-            wf:redirect(URL)
+        UId ->
+            case nsm_membership_packages:check_limit_over(UId, PackageId) of
+                true ->
+                    buy:over_limit_popup(nsm_membership_packages:get_monthly_purchase_limit());
+               _ ->
+                    URL = lists:concat([?_U("/buy/"), PaymentType, "/package_id/", wf:to_list(PackageId)]),
+                    wf:redirect(URL)
+            end
     end;
 event(Any)->
     webutils:event(Any).

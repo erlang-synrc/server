@@ -11,6 +11,7 @@
 -export([add_purchase/1, add_purchase/3, get_purchase/1, set_purchase_external_id/2,
          set_purchase_state/3, set_purchase_info/2, list_purchases/0, list_purchases/1,
          purchase_id/0]).
+-export([get_monthly_purchase_limit/0, check_limit_over/2]).
 
 -type package_id() :: integer().
 -type list_options()::[{payment_type, payment_type()}|{available_for_sale, boolean()}].
@@ -393,3 +394,21 @@ change_availability_([Id | _]) ->
          ?assertMatch({ok, #membership_package{id=Id, available_for_sale = State}},
                       ?MODULE:get_package(Id))
      end || State <- [true, false]].
+
+
+get_monthly_purchase_limit() ->
+    MostExpencivePackageWorth = lists:max([P#membership_package.amount || P <- nsm_db:all(membership_package), P#membership_package.available_for_sale]),
+    ?MP_MONTHLY_LIMIT_MULTIPLIER * MostExpencivePackageWorth.
+
+check_limit_over(UId, PackageId) ->
+    Limit = get_monthly_purchase_limit(),
+    {ok, Package} = nsm_membership_packages:get_package(PackageId),
+    PackagePrice = Package#membership_package.amount,
+    {{CurYear, CurMonth, _}, _} = calendar:now_to_datetime(now()),
+    UserMonthlyPurchases = [begin
+        {{Year, Month, _}, _} = calendar:now_to_datetime(P#membership_purchase.start_time),
+        {Year, Month, P}
+    end || P <- nsm_db:purchases(UId)],
+    ThisMonthPurchases = [P || {Y, M, P} <- UserMonthlyPurchases, Y == CurYear, M == CurMonth],
+    ThisMonthTotal = lists:sum([(P#membership_purchase.membership_package)#membership_package.amount || P <- ThisMonthPurchases]),
+    (ThisMonthTotal + PackagePrice) > Limit.
