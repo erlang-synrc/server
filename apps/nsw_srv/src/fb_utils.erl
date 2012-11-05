@@ -74,8 +74,7 @@ api_event(checkSignedRequest, _, SignedRequest)->
     {ok, Data} = fb_signed_request:parse(SignedRequest, ?FB_APP_SECRET),
     ?INFO("Signed request data: ~p~n", [Data]);
 api_event(processOrder, _, Data)->
-    ?INFO("Payment complete. Order:~p~n", [Data]),
-    .
+    ?INFO("Payment complete. Order:~p~n", [Data]).
 
 login() ->
     case oauth(?FB_APP_ID, ?FB_APP_SECRET, ?FB_REDIRECT_URI, wf:q(code)) of
