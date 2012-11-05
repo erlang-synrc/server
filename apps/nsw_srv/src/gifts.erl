@@ -16,29 +16,34 @@ main() ->
 
    
 decode_letters(In) ->
-    ling:replace_a_lot(In, [ 
-        {[286], "Ğ"},    % 'unicode'
-        {[287], "ğ"},
-        {[304], "İ"},
-        {[305], "ı"},
-        {[350], "Ş"},
-        {[351], "ş"},
+    case is_list(hd(In)) of
+        true ->
+            decode_letters(hd(In));
+        _ ->
+            ling:replace_a_lot(In, [ 
+                {[286], "Ğ"},    % 'unicode'
+                {[287], "ğ"},
+                {[304], "İ"},
+                {[305], "ı"},
+                {[350], "Ş"},
+                {[351], "ş"},
 
-        {[246], "ö"},    % both latin-5 and 'unicode'
-        {[214], "Ö"},
-        {[252], "ü"},
-        {[220], "Ü"},
+                {[246], "ö"},    % both latin-5 and 'unicode'
+                {[214], "Ö"},
+                {[252], "ü"},
+                {[220], "Ü"},
 
-        {[231], "ç"},    % latin-5
-        {[199], "Ç"},
-        {[240], "ğ"},
-        {[208], "Ğ"},
+                {[231], "ç"},    % latin-5
+                {[199], "Ç"},
+                {[240], "ğ"},
+                {[208], "Ğ"},
 
-        {[253], "ı"},
-        {[221], "İ"},
-        {[254], "ş"},
-        {[222], "Ş"}
-    ]).
+                {[253], "ı"},
+                {[221], "İ"},
+                {[254], "ş"},
+                {[222], "Ş"}
+            ])
+    end.
 
 decode_amp(In) ->
     ling:replace(In, "&amp;", "&").
@@ -138,7 +143,7 @@ product_list_paged(Page) ->
                         postback={show_details, OneGift#gift.description_long, OneGift#gift.image_big_url, OneGift#gift.id}},
                     "</div>
 				    <strong class='prod-name' style='padding-bottom:15px; margin-top:-15px;'>",
-                    #link{text=decode_letters(OneGift#gift.gift_name), 
+                    #link{text=decode_letters(OneGift#gift.gift_name),  
                         postback={show_details, OneGift#gift.description_long, OneGift#gift.image_big_url, OneGift#gift.id}},
                     "</strong>",
 				"</div>",
