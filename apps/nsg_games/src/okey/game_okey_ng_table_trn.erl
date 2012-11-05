@@ -651,8 +651,9 @@ finalize_round(#state{desk_state = #desk_state{finish_reason = FinishReason,
                  Winner = FinishInfo,
                  {gosterge_finish, Winner}
          end,
-
-    {NewScoringState, GameOver} = ?SCORING:round_finished(ScoringState, FR, Hands, Gosterge, WhoHasGosterge),
+    Has8Tashes = [], %% TODO: Implement "Have 8 Tashes"
+    {NewScoringState, GameOver} = ?SCORING:round_finished(ScoringState, FR, Hands, Gosterge,
+                                                          WhoHasGosterge, Has8Tashes),
     case GameOver of
         false ->
            parent_send_round_res(Parent, TableId, NewScoringState);

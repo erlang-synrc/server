@@ -16,7 +16,7 @@
 -export([
          init/3,
          last_round_result/1,
-         round_finished/5
+         round_finished/6
         ]).
 
 -type normal_tash() :: {integer(), integer()}.
@@ -30,12 +30,14 @@
 
 -define(COUNTDOWN10_INIT_POINTS, 10).
 
+-define(ACH_CHANAK_WINNER, 0). %% Not defined in the points matrix
+
 -define(ACH_GOSTERGE_SHOWN, 1).
 -define(ACH_WIN_REVEAL, 2).
 -define(ACH_WIN_REVEAL_WITH_OKEY, 3).
 -define(ACH_WIN_REVEAL_WITH_PAIRS, 4).
 -define(ACH_WIN_REVEAL_WITH_OKEY_PAIRS, 5).
--define(ACH_NOT_REVEAL_8_TASHES, 6).
+-define(ACH_8_TASHES, 6).
 -define(ACH_WIN_REVEAL_WITH_COLOR, 7).
 -define(ACH_WIN_REVEAL_WITH_COLOR_OKEY, 8).
 -define(ACH_WIN_REVEAL_WITH_COLOR_PAIRS, 9).
@@ -45,7 +47,6 @@
 -define(ACH_EMPTY_BOX, 13).
 -define(ACH_REJECT_GOOD_HAND, 14).
 -define(ACH_GOSTERGE_WINNER, 15).
-
 
 
 -record(state,
@@ -122,8 +123,8 @@ last_round_result(#state{last_round_num = LastRoundNum,
     {FinishInfo, RoundScore, RoundAchs, TotalScore}.
 
 
-%% @spec round_finished(ScoringState, FinishReason, Hands, Gosterge, WhoHasGosterge) ->
-%%                                    {NewScoringState, Winners}
+%% @spec round_finished(ScoringState, FinishReason, Hands, Gosterge, WhoHasGosterge, Has8Tashes) ->
+%%                                    {NewScoringState, GameWinners}
 %% @end
 %% Types:
 %%     FinishReason = tashes_out |
@@ -137,23 +138,26 @@ last_round_result(#state{last_round_num = LastRoundNum,
 %%       Hand = [tash()]
 %%     Gosterge = normal_tash()
 %%     WhoHasGosterge = undefined | SeatNum
-%%     Winners = false | [SeatNum]
-
-%% TODO: handle chanak
+%%     Has8Tahses = [SeatNum]
+%%     GameWinners = false | [SeatNum]
 
 round_finished(#state{mode = GameMode, seats_num = SeatsNum,
                       rounds_num = _MaxRoundsNum, last_round_num = LastRoundNum,
                       rounds_scores = RoundsScores, rounds_achs = RoundsAchs,
-                      table = Table, rounds_finish_info = RoundsFinishInfo
-                     } = State,
-               FinishReason, Hands, Gosterge, WhoHasGosterge) ->
+                      table = Table, rounds_finish_info = RoundsFinishInfo,
+                      chanak = Chanak} = State,
+               FinishReason, Hands, Gosterge, WhoHasGosterge, Has8Tashes) ->
     ScoringMode = get_scoring_mode(GameMode, Gosterge),
     PointingRules = get_pointing_rules(ScoringMode),
+    ChanakRefillingPoints = get_chanak_refilling_points(ScoringMode),
     Seats = lists:seq(1, SeatsNum),
     FinishInfo = finish_info(GameMode, FinishReason, Gosterge),
-    PlayersAchs = players_achivements(Seats, Hands, WhoHasGosterge, FinishInfo),
-    RoundAchsPoints = [{SeatNum, get_achivements_points(PointingRules, Achivements)}
+    PlayersAchs = players_achivements(GameMode, Seats, Hands, WhoHasGosterge, Has8Tashes, FinishInfo),
+    {ChanakWinPoints, NewChanak} = calc_chanak(GameMode, WhoHasGosterge, PlayersAchs,
+                                               ChanakRefillingPoints, PointingRules, Chanak),
+    PlayersAchsRecs = [{SeatNum, get_achivements_points(PointingRules, Achivements)}
                        || {SeatNum, Achivements} <- PlayersAchs],
+    RoundAchsPoints = merge_points(PlayersAchsRecs, ChanakWinPoints),
     RoundScores = [{SeatNum, sum_achivements_points(AchPoints)}
                    || {SeatNum, AchPoints} <- RoundAchsPoints],
     RoundNum = LastRoundNum + 1,
@@ -165,7 +169,8 @@ round_finished(#state{mode = GameMode, seats_num = SeatsNum,
                            rounds_scores = NewRoundsScores,
                            table = NewTable,
                            rounds_achs = NewRoundsAchs,
-                           rounds_finish_info = NewRoundsFinishInfo},
+                           rounds_finish_info = NewRoundsFinishInfo,
+                           chanak = NewChanak},
     case detect_game_winners(NewState) of
         [] -> {NewState, false};
         Winners -> {NewState#state{winners = Winners}, Winners}
@@ -175,11 +180,53 @@ round_finished(#state{mode = GameMode, seats_num = SeatsNum,
 %% Local Functions
 %%
 
+merge_points(PlayersAchsRecs, ChanakWinPoints) ->
+    F = fun({SeatNum, ChanakPoints}, Acc) ->
+                ChanakRec = {?ACH_CHANAK_WINNER, ChanakPoints},
+                case lists:keyfind(SeatNum, 1, Acc) of
+                    {_, AchsRecs} -> lists:keyreplace(SeatNum, 1, Acc,
+                                                      {SeatNum, [ChanakRec | AchsRecs]});
+                    false ->
+                        [{SeatNum, [ChanakRec]}]
+                end
+        end,
+    lists:foldl(F, PlayersAchsRecs, ChanakWinPoints).
+
+%% calc_chanak(GameMode, WhoHasGosterge, PlayersAchs, Chanak) -> {ChanakWinPoints, NewChanak}
+calc_chanak(GameMode, WhoHasGosterge, PlayersAchs, RefillingPoints, PointingRules, Chanak) ->
+    if GameMode == ?MODE_EVENODD;
+       GameMode == ?MODE_COLOR ->
+           GostergePoints = if WhoHasGosterge == undefined ->
+                                   proplists:get_value(?ACH_GOSTERGE_SHOWN, PointingRules);
+                               true -> 0
+                            end,
+           case find_chanak_winners(PlayersAchs) of
+               [] ->
+                   {[], Chanak + GostergePoints};
+               ChanakWinners ->
+                   WinnersNum = length(ChanakWinners),
+                   PerWinnerPoints = Chanak div WinnersNum,
+                   RestPoints = Chanak rem WinnersNum,
+                   ChanakWinPoints = [{SeatNum, PerWinnerPoints} || SeatNum <- ChanakWinners],
+                   {ChanakWinPoints, RestPoints + GostergePoints + RefillingPoints}
+           end;
+       true -> {[], 0}
+    end.
+
+
+find_chanak_winners(PlayersAchs) ->
+    [SeatNum || {SeatNum, Achs} <- PlayersAchs, is_chanak_winner(Achs)].
+
+
+is_chanak_winner(Achs) ->
+    F = fun(Ach) -> lists:member(Ach, chanak_win_achievements())
+        end,
+    lists:any(F, Achs).
+
+
 detect_game_winners(#state{mode = GameMode, last_round_num = RoundNum,
                            rounds_num = MaxRoundNum, table = Table,
                            rounds_finish_info = RoundsFinishInfo}) ->
-    ?INFO("OKEY_NG_SCORRING Table: ~p", [Table]),
-    ?INFO("OKEY_NG_SCORRING RoundsFinishInfo: ~p", [RoundsFinishInfo]),
     TotalScores = proplists:get_value(RoundNum, Table),
     FinishInfo = proplists:get_all_values(RoundNum, RoundsFinishInfo),
     if GameMode == ?MODE_COUNTDOWN ->
@@ -196,18 +243,17 @@ detect_game_winners(#state{mode = GameMode, last_round_num = RoundNum,
     end.
 
 
-players_achivements(Seats, Hands, WhoHasGosterge, FinishInfo) ->
+players_achivements(Mode, Seats, Hands, WhoHasGosterge, Has8Tashes, FinishInfo) ->
     case FinishInfo of
         tashes_out ->
             [begin
-                 Achivements = player_achivements_no_winner(SeatNum, WhoHasGosterge),
+                 Achivements = player_achivements_no_winner(Mode, SeatNum, WhoHasGosterge, Has8Tashes),
                  {SeatNum, Achivements}
              end || SeatNum <- Seats];
         {win_reveal, Revealer, WrongRejects, RevealWithColor, RevealWithOkey, RevealWithPairs} ->
             [begin
                  {_, _Hand} = lists:keyfind(SeatNum, 1, Hands),
-                 Has8Tashes = false, %% TODO:
-                 Achivements = player_achivements_win_reveal(SeatNum, WhoHasGosterge, Has8Tashes,
+                 Achivements = player_achivements_win_reveal(Mode, SeatNum, WhoHasGosterge, Has8Tashes,
                                                              Revealer, WrongRejects, RevealWithOkey,
                                                              RevealWithPairs, RevealWithColor),
                  {SeatNum, Achivements}
@@ -215,16 +261,14 @@ players_achivements(Seats, Hands, WhoHasGosterge, FinishInfo) ->
         {fail_reveal, Revealer} ->
             [begin
                  {_, _Hand} = lists:keyfind(SeatNum, 1, Hands),
-                 Has8Tashes = false, %% TODO:
-                 Achivements = player_achivements_fail_reveal(SeatNum, WhoHasGosterge,
+                 Achivements = player_achivements_fail_reveal(Mode, SeatNum, WhoHasGosterge,
                                                               Has8Tashes, Revealer),
                  {SeatNum, Achivements}
              end || SeatNum <- Seats];
-        {gosterge_finish, Winner} ->
+        {gosterge_finish, _Winner} ->
             [begin
                  {_, _Hand} = lists:keyfind(SeatNum, 1, Hands),
-                 Has8Tashes = false, %% TODO:
-                 Achivements = player_achivements_gosterge_finish(SeatNum, Winner, Has8Tashes),
+                 Achivements = player_achivements_gosterge_finish(Mode, SeatNum, WhoHasGosterge, Has8Tashes),
                  {SeatNum, Achivements}
              end || SeatNum <- Seats]
     end.
@@ -339,7 +383,7 @@ is_set(Set) ->
 
 %% @spec is_run(Set) -> boolean()
 %% @end
-is_run(Set) when length(Set) < 3 -> false;
+is_run(Set) when length(Set) < 4 -> false;
 is_run(Set) ->
     {Okeys, Normals} = lists:partition(fun(X)-> X == okey end, Set),
     {Color, _} = hd(Normals),
@@ -374,28 +418,28 @@ is_pair([A, A]) -> true;
 is_pair(_) -> false.
 
 
-player_achivements_no_winner(SeatNum, WhoHasGosterge) ->
-    player_achivements(SeatNum, WhoHasGosterge, undefined, no_winner, undefined, undefined,
-                       undefined, undefined, undefined, undefined).
+player_achivements_no_winner(Mode, SeatNum, WhoHasGosterge, Has8Tashes) ->
+    player_achivements(Mode, SeatNum, WhoHasGosterge, Has8Tashes, no_winner, undefined,
+                       undefined, undefined, undefined, undefined, undefined).
 
-player_achivements_win_reveal(SeatNum, WhoHasGosterge, Has8Tashes,
+player_achivements_win_reveal(Mode, SeatNum, WhoHasGosterge, Has8Tashes,
                               Revealer, WrongRejects, RevealWithOkey,
                               RevealWithPairs, RevealWithColor) ->
-    player_achivements(SeatNum, WhoHasGosterge, Has8Tashes, reveal,
+    player_achivements(Mode, SeatNum, WhoHasGosterge, Has8Tashes, reveal,
                        Revealer, WrongRejects, true, RevealWithOkey,
                        RevealWithPairs, RevealWithColor).
 
-player_achivements_fail_reveal(SeatNum, WhoHasGosterge, Has8Tashes, Revealer) ->
-    player_achivements(SeatNum, WhoHasGosterge, Has8Tashes, reveal,
+player_achivements_fail_reveal(Mode, SeatNum, WhoHasGosterge, Has8Tashes, Revealer) ->
+    player_achivements(Mode, SeatNum, WhoHasGosterge, Has8Tashes, reveal,
                        Revealer, [], false, false, false, false).
 
-player_achivements_gosterge_finish(SeatNum, WhoHasGosterge, Has8Tashes) ->
-    player_achivements(SeatNum, WhoHasGosterge, Has8Tashes, gosterge_finish,
+player_achivements_gosterge_finish(Mode, SeatNum, WhoHasGosterge, Has8Tashes) ->
+    player_achivements(Mode, SeatNum, WhoHasGosterge, Has8Tashes, gosterge_finish,
                        undefined, [], false, false, false, false).
 
-%% player_achivements(SeatNum, WhoHasGosterge, Has8Tashes, FinishType, Revealer, WrongRejects,
+%% player_achivements(Mode, SeatNum, WhoHasGosterge, Has8Tashes, FinishType, Revealer, WrongRejects,
 %%                    WinReveal, RevealWithOkey, RevealWithPairs, WithColor) -> [{AchId}]
-player_achivements(SeatNum, WhoHasGosterge, Has8Tashes, FinishType, Revealer, WrongRejects,
+player_achivements(Mode, SeatNum, WhoHasGosterge, Has8Tashes, FinishType, Revealer, WrongRejects,
                    WinReveal, RevealWithOkey, RevealWithPairs, WithColor) ->
     L=[
        %% 1
@@ -409,15 +453,15 @@ player_achivements(SeatNum, WhoHasGosterge, Has8Tashes, FinishType, Revealer, Wr
        %% 5
        {?ACH_WIN_REVEAL_WITH_OKEY_PAIRS, FinishType == reveal andalso SeatNum == Revealer andalso WinReveal andalso RevealWithOkey andalso RevealWithPairs andalso (not WithColor)},
        %% 6
-       {?ACH_NOT_REVEAL_8_TASHES, FinishType == reveal andalso SeatNum =/= Revealer andalso Has8Tashes},
+       {?ACH_8_TASHES, (Mode == ?MODE_EVENODD orelse Mode == ?MODE_COLOR) andalso FinishType == reveal andalso lists:member(SeatNum, Has8Tashes)},
        %% 7
-       {?ACH_WIN_REVEAL_WITH_COLOR, FinishType == reveal andalso SeatNum == Revealer andalso WinReveal andalso (not RevealWithOkey) andalso (not RevealWithPairs) andalso WithColor},
+       {?ACH_WIN_REVEAL_WITH_COLOR, (Mode == ?MODE_EVENODD orelse Mode == ?MODE_COLOR) andalso FinishType == reveal andalso SeatNum == Revealer andalso WinReveal andalso (not RevealWithOkey) andalso (not RevealWithPairs) andalso WithColor},
        %% 8
-       {?ACH_WIN_REVEAL_WITH_COLOR_OKEY, FinishType == reveal andalso SeatNum == Revealer andalso WinReveal andalso RevealWithOkey andalso (not RevealWithPairs) andalso WithColor},
+       {?ACH_WIN_REVEAL_WITH_COLOR_OKEY, (Mode == ?MODE_EVENODD orelse Mode == ?MODE_COLOR) andalso FinishType == reveal andalso SeatNum == Revealer andalso WinReveal andalso RevealWithOkey andalso (not RevealWithPairs) andalso WithColor},
        %% 9
-       {?ACH_WIN_REVEAL_WITH_COLOR_PAIRS, FinishType == reveal andalso SeatNum == Revealer andalso WinReveal andalso (not RevealWithOkey) andalso RevealWithPairs andalso WithColor},
+       {?ACH_WIN_REVEAL_WITH_COLOR_PAIRS, (Mode == ?MODE_EVENODD orelse Mode == ?MODE_COLOR) andalso FinishType == reveal andalso SeatNum == Revealer andalso WinReveal andalso (not RevealWithOkey) andalso RevealWithPairs andalso WithColor},
        %% 10
-       {?ACH_WIN_REVEAL_WITH_COLOR_OKEY_PAIRS, FinishType == reveal andalso SeatNum == Revealer andalso WinReveal andalso RevealWithOkey andalso RevealWithPairs andalso WithColor},
+       {?ACH_WIN_REVEAL_WITH_COLOR_OKEY_PAIRS, (Mode == ?MODE_EVENODD orelse Mode == ?MODE_COLOR) andalso FinishType == reveal andalso SeatNum == Revealer andalso WinReveal andalso RevealWithOkey andalso RevealWithPairs andalso WithColor},
        %% 11
        {?ACH_FAIL_REVEAL, FinishType == reveal andalso SeatNum == Revealer andalso (not WinReveal)},
        %% 12 AKA others_on_wrong_reveal
@@ -427,9 +471,19 @@ player_achivements(SeatNum, WhoHasGosterge, Has8Tashes, FinishType, Revealer, Wr
        %% 14
        {?ACH_REJECT_GOOD_HAND, FinishType == reveal andalso lists:member(SeatNum, WrongRejects)},
        %% 15
-       {?ACH_GOSTERGE_WINNER, FinishType == gosterge_finish andalso SeatNum == WhoHasGosterge}
+       {?ACH_GOSTERGE_WINNER, Mode == ?MODE_COUNTDOWN andalso FinishType == gosterge_finish andalso SeatNum == WhoHasGosterge}
       ],
     [Ach || {Ach, true} <- L].
+
+chanak_win_achievements() ->
+    [?ACH_WIN_REVEAL_WITH_OKEY,
+     ?ACH_WIN_REVEAL_WITH_PAIRS,
+     ?ACH_WIN_REVEAL_WITH_OKEY_PAIRS,
+     ?ACH_8_TASHES,
+     ?ACH_WIN_REVEAL_WITH_COLOR,
+     ?ACH_WIN_REVEAL_WITH_COLOR_OKEY,
+     ?ACH_WIN_REVEAL_WITH_COLOR_PAIRS,
+     ?ACH_WIN_REVEAL_WITH_COLOR_OKEY_PAIRS].
 
 get_pointing_rules(ScoringMode) ->
     {_, Rules} = lists:keyfind(ScoringMode, 1, points_matrix()),
@@ -437,17 +491,32 @@ get_pointing_rules(ScoringMode) ->
 
 %% TODO: Fix table
 points_matrix() ->
-    [%%          1   2   3   4   5   6   7   8   9  10  11  12  13  14, 15 <--- achievement number
-     {standard, [1,  3,  6,  6, 12,  0,  0,  0,  0,  0, -9,  3,  1,  0,  1]},
-     {odd,      [1,  3,  6,  6, 12, 12, 24, 48, 48, 96, -9,  3,  1,  0,  8]},
-     {even,     [2,  6, 12, 12, 24, 24, 48, 96, 96,192,-18,  6,  2,  0,  8]},
-     {ybodd,    [1,  3,  6,  6, 12, 12, 24, 48, 48, 96, -9,  3,  1,  0, 16]},
-     {ybeven,   [2,  6, 12, 12, 24, 24, 48, 96, 96,192,-18,  6,  2,  0, 16]},
-     {rbodd,    [2,  6, 12, 12, 24, 24, 48, 96, 96,192,-18,  6,  2,  0, 16]},
-     {rbeven,   [4, 12, 24, 24, 48, 48, 96,192,192,384,-36, 12,  4,  0, 16]},
-     {countdown,[1,  2,  4,  4,  8,  0,  0,  0,  0,  0, -2,  0,  1,  0,  1]}
+    [%%          1   2   3   4   5   6   7   8   9  10  11  12  13  14  15 <--- achievement number
+     {standard, [1,  3,  6,  6, 12,  0,  0,  0,  0,  0, -9,  3,  0, -1,  0]},
+     {odd,      [1,  3,  6,  6, 12, 12, 24, 48, 48, 96, -9,  3,  0, -1,  0]},
+     {even,     [2,  6, 12, 12, 24, 24, 48, 96, 96,192,-18,  6,  0, -1,  0]},
+     {ybodd,    [1,  3,  6,  6, 12, 12, 24, 48, 48, 96, -9,  3,  0, -1,  0]},
+     {ybeven,   [2,  6, 12, 12, 24, 24, 48, 96, 96,192,-18,  6,  0, -1,  0]},
+     {rbodd,    [2,  6, 12, 12, 24, 24, 48, 96, 96,192,-18,  6,  0, -1,  0]},
+     {rbeven,   [4, 12, 24, 24, 48, 48, 96,192,192,384,-36, 12,  0, -1,  0]},
+     {countdown,[1,  2,  4,  4,  8,  0,  0,  0,  0,  0, -2,  0,  0, -1,  1]}
     ].
 
+get_chanak_refilling_points(ScoringMode) ->
+    {_, RefillingPoints} = lists:keyfind(ScoringMode, 1, chanak_refilling_table()),
+    RefillingPoints.
+
+chanak_refilling_table() ->
+    [
+     {standard, 0},
+     {odd,      8},
+     {even,     8},
+     {ybodd,   16},
+     {ybeven,  16},
+     {rbodd,   16},
+     {rbeven,  16},
+     {countdown,0}
+    ].
 %%===================================================================
 
 %% @spec get_scoring_mode(GameMode, Gosterge) ->  ScoringMode
@@ -511,13 +580,17 @@ test_test_() ->
        ?_assertEqual(false, is_run([{2,2}, {2,3}])),
        ?_assertEqual(false, is_run([okey, {2,3}])),
        ?_assertEqual(false, is_run([{4,1}, {2,3}])),
-       ?_assertEqual(true,  is_run([{4,4}, {4,6}, {4,5}])),
-       ?_assertEqual(true,  is_run([okey, {4,6}, {4,5}])),
-       ?_assertEqual(true,  is_run([okey, {4,6}, okey])),
-       ?_assertEqual(true,  is_run([{1,12}, {1,1}, {1,13}])),
+       ?_assertEqual(false, is_run([{4,4}, {4,6}, {4,5}])),
+       ?_assertEqual(false, is_run([okey, {4,6}, {4,5}])),
+       ?_assertEqual(false, is_run([okey, {4,6}, okey])),
+       ?_assertEqual(false, is_run([{1,12}, {1,1}, {1,13}])),
        ?_assertEqual(true,  is_run([{1,12}, {1,1}, {1,11}, {1,13}])),
+       ?_assertEqual(true,  is_run([{2,4}, {2,6}, {2,7}, {2,5}])),
+       ?_assertEqual(false, is_run([{2,4}, {1,6}, {2,7}, {2,5}])),
+       ?_assertEqual(true,  is_run([{1,12}, {1,1}, {1,11}, {1,10}, {1,13}])),
        ?_assertEqual(false, is_run([{1,12}, {1,1}, {1,11}, {1,11}, {1,13}])),
        ?_assertEqual(false, is_run([{1,12}, {1,1}, {1,2}, {1,11}, {1,13}])),
+       ?_assertEqual(true,  is_run([{3,6}, {3,8}, okey, {3,5}, okey])),
        ?_assertEqual(true,  is_run([{3,6}, {3,8}, okey, {3,5}, {3,9}])),
        ?_assertEqual(false, is_run([{3,6}, {3,8}, okey, {3,5}, {3,9}, {3,2}])),
        ?_assertEqual(false, is_run([{3,6}, {3,8}, okey, {3,5}, {3,9}, {1,2}]))
