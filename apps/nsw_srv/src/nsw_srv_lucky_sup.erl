@@ -20,8 +20,8 @@ init([]) ->
 
     OkeyLucky =
         {okey_lucky, %% Id
-         {nsw_proxy_lucky, start_link, [[{game_type, game_okey},
-                                         {mode, normal}]]},
+         {nsw_proxy_lucky, start_link, [okey, [{game_type, game_okey},
+                                               {mode, normal}]]},
          permanent, %% Restart
          2000,      %% Shutdown timeout
          worker,    %% Process type
@@ -29,8 +29,8 @@ init([]) ->
         },
     TavlaLucky =
         {tavla_lucky, %% Id
-         {nsw_proxy_lucky, start_link, [[{game_type, game_tavla},
-                                         {mode, exclusive}]]},
+         {nsw_proxy_lucky, start_link, [tavla, [{game_type, game_tavla},
+                                                {mode, exclusive}]]},
          permanent, %% Restart
          2000,      %% Shutdown timeout
          worker,    %% Process type
