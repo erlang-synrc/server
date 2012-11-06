@@ -887,6 +887,8 @@ create_okey_game_info(#state{table_name = TName, mult_factor = MulFactor,
 
 create_okey_game_player_state(_PlayerId, ?STATE_WAITING_FOR_START,
                               #state{cur_round = CurRound}) ->
+%%    Chanak = ?SCORING:chanak(ScoringState),
+%% TODO: Add chanak to the structure
     #okey_game_player_state{whos_move = null,
                             game_state = game_initializing,
                             piles = null,
@@ -921,6 +923,8 @@ create_okey_game_player_state(PlayerId, ?STATE_PLAYING,
         end,
     {Piles, _} = lists:mapfoldl(F, prev_seat_num(SeatNum), lists:seq(1, ?SEATS_NUM)),
     GameState = statename_to_api_string(DeskStateName),
+%%    Chanak = ?SCORING:chanak(ScoringState),
+%% TODO: Add chanak to the structure
     #okey_game_player_state{whos_move = CurUserId,
                             game_state = GameState,
                             piles = Piles,
@@ -953,6 +957,8 @@ create_okey_game_player_state(PlayerId, ?STATE_REVEAL_CONFIRMATION,
                 {Pile, next_seat_num(N)}
         end,
     {Piles, _} = lists:mapfoldl(F, prev_seat_num(SeatNum), lists:seq(1, ?SEATS_NUM)),
+%%    Chanak = ?SCORING:chanak(ScoringState),
+%% TODO: Add chanak to the structure
     #okey_game_player_state{whos_move = CurUserId,
                             game_state = do_okey_challenge,
                             piles = Piles,
@@ -966,6 +972,8 @@ create_okey_game_player_state(PlayerId, ?STATE_REVEAL_CONFIRMATION,
 
 create_okey_game_player_state(_PlayerId, ?STATE_FINISHED,
                               #state{cur_round = CurRound}) ->
+%%    Chanak = ?SCORING:chanak(ScoringState),
+%% TODO: Add chanak to the structure
     #okey_game_player_state{whos_move = null,
                             game_state = game_initializing,
                             piles = null,
@@ -987,9 +995,9 @@ create_okey_game_player_state(PlayerId, ?STATE_PAUSE,
 
 
 create_okey_game_started(SeatNum, DeskState, CurRound, #state{game_type = GameType,
-                                                              speed = GameSpeed}) ->
-    %% TODO: Fix chanak
-    %%Chanak = game_okey_scoring:get_chanak_points(State#state.stats),
+                                                              speed = GameSpeed,
+                                                              scoring_state = ScoringState}) ->
+    Chanak = ?SCORING:chanak(ScoringState),
     #desk_state{hands = Hands,
                 gosterge = Gosterge,
                 deck = DeskDeck} = DeskState,
@@ -1003,7 +1011,7 @@ create_okey_game_started(SeatNum, DeskState, CurRound, #state{game_type = GameTy
                        game_type = GameType,   %% FIXME It is defined in game_info already
                        game_speed = GameSpeed, %% FIXME It is defined in game_info already
                        game_submode = null, %% Deprecated
-                       chanak_points = 0}.
+                       chanak_points = Chanak}.
 
 
 create_okey_next_turn(CurSeat, Players) ->
