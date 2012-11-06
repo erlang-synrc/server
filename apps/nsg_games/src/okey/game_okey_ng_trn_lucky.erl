@@ -464,10 +464,10 @@ reg_player_at_new_table(User, From,
     SeatsNum = seats_num(TableParams),
     RobotsInfo = spawn_bots(GameId, BotsParams, SeatsNum - 1),
     ?INFO("OKEY_NG_TRN_LUCKY <~p> Bots for table <~p> are spawned.", [GameId, TableId]),
-    F = fun(BotInfo, {PlId,SNum}) -> {{PlId, BotInfo, SNum}, {PlId + 1, SNum + 1}} end,
+    F = fun(BotInfo, {PlId,SNum}) -> {{PlId, BotInfo, SNum, _Points = 0}, {PlId + 1, SNum + 1}} end,
     {RobotsRegData, {PlayerId, SeatNum}} = lists:mapfoldl(F, {PlayerIdCounter, 1}, RobotsInfo),
 
-    TPlayers = [{PlayerId, User, SeatNum} | RobotsRegData],
+    TPlayers = [{PlayerId, User, SeatNum, 0} | RobotsRegData],
     TableParams2 = [{players, TPlayers} | TableParams],
     {ok, TabPid} = spawn_table(GameId, TableId, TableParams2),
 
@@ -477,25 +477,24 @@ reg_player_at_new_table(User, From,
     ?INFO("OKEY_NG_TRN_LUCKY <~p> New table created: ~p.", [GameId, TableId]),
 
     NewPlayers = reg_player(#player{id = PlayerId, user_id = UserId, is_bot = IsBot}, Players),
-    F2 = fun({PlId, #'PlayerInfo'{id = UId}, _SNum}, Acc) ->
+    F2 = fun({PlId, #'PlayerInfo'{id = UId}, _SNum, _Points}, Acc) ->
                  reg_player(#player{id = PlId, user_id = UId, is_bot = true}, Acc)
          end,
     NewPlayers2 = lists:foldl(F2, NewPlayers, RobotsRegData),
     ?INFO("OKEY_NG_TRN_LUCKY <~p> User ~p registered as player <~p>.", [GameId, UserId, PlayerId]),
 
-    NewSeats = create_seats(TableId, SeatsNum, Seats),
-    NewSeats2 = assign_seat(TableId, SeatNum, PlayerId, IsBot, false, false, NewSeats),
-    F3 = fun({PlId, _UserInfo, SNum}, Acc) ->
+    NewSeats = assign_seat(TableId, SeatNum, PlayerId, IsBot, false, false, Seats),
+    F3 = fun({PlId, _UserInfo, SNum, _Points}, Acc) ->
                  assign_seat(TableId, SNum, PlId, true, false, false, Acc)
          end,
-    NewSeats3 = lists:foldl(F3, NewSeats2, RobotsRegData),
+    NewSeats2 = lists:foldl(F3, NewSeats, RobotsRegData),
     ?INFO("OKEY_NG_TRN_LUCKY <~p> User ~p assigned to seat <~p> of table <~p>.", [GameId, UserId, SeatNum, TableId]),
 
     NewRegRequests = dict:store(PlayerId, From, RegRequests),
-    PlayersIds = [PlayerId | [PlId || {PlId, _, _} <- RobotsRegData]],
+    PlayersIds = [PlayerId | [PlId || {PlId, _, _, _} <- RobotsRegData]],
     NewTCrRequests = dict:store(TableId, PlayersIds, TCrRequests),
     {next_state, ?STATE_PROCESSING, StateData#state{players = NewPlayers2,
-                                                    seats = NewSeats3,
+                                                    seats = NewSeats2,
                                                     tables = NewTables,
                                                     player_id_counter = PlayerId + 1,
                                                     table_id_counter = TableId + 1,

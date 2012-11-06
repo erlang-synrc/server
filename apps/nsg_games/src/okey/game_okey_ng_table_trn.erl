@@ -142,11 +142,11 @@ init([GameId, TableId, Params]) ->
     PauseMode = proplists:get_value(pause_mode, Params),
     GostergeFinishAllowed = proplists:get_value(gosterge_finish_allowed, Params),
     %% Next two options will be passed on table respawn (after fail or service maintaince)
-    ScoringState = proplists:get_value(scoring_state, Params, ?SCORING:init(GameType, ?SEATS_NUM, Rounds)),
+    ScoringState = proplists:get_value(scoring_state, Params, init_scoring(GameType, PlayersInfo, Rounds)),
     CurRound = proplists:get_value(cur_round, Params, 0),
 
     Players = init_players(PlayersInfo),
-    RelayParams = [{players, [{PlayerId, UserInfo#'PlayerInfo'.id} || {PlayerId, UserInfo, _} <- PlayersInfo]},
+    RelayParams = [{players, [{PlayerId, UserInfo#'PlayerInfo'.id} || {PlayerId, UserInfo, _, _} <- PlayersInfo]},
                    {observers_allowed, false},
                    {table, {?MODULE, self()}}],
     {ok, Relay} = ?RELAY:start(RelayParams),
@@ -748,6 +748,10 @@ handle_desk_events([Event | Events], DeskState, Players, Relay) ->
     handle_desk_events(Events, NewDeskState, Players, Relay).
 
 %%===================================================================
+init_scoring(GameType, PlayersInfo, Rounds) ->
+    SeatsInfo = [{SeatNum, Points} || {_PlayerId, _UserInfo, SeatNum, Points} <- PlayersInfo],
+    ?SCORING:init(GameType, SeatsInfo, Rounds).
+
 
 %% start_timer(Timeout) -> {Magic, TRef}
 start_timer(Timeout) ->
@@ -802,7 +806,7 @@ players_to_list(Players) ->
 
 %% @spec init_players(PlayersInfo) -> Players
 %% @end
-%% PlayersInfo = [{PlayerId, UserInfo, SeatNum}]
+%% PlayersInfo = [{PlayerId, UserInfo, SeatNum, StartPoints}]
 
 init_players(PlayersInfo) ->
     init_players(PlayersInfo, players_init()).
@@ -810,7 +814,7 @@ init_players(PlayersInfo) ->
 init_players([], Players) ->
     Players;
 
-init_players([{PlayerId, UserInfo, SeatNum} | PlayersInfo], Players) ->
+init_players([{PlayerId, UserInfo, SeatNum, _StartPoints} | PlayersInfo], Players) ->
     #'PlayerInfo'{id = UserId, robot = IsBot} = UserInfo,
     NewPlayers = reg_player(PlayerId, SeatNum, UserId, IsBot, UserInfo, Players),
     init_players(PlayersInfo, NewPlayers).

@@ -29,8 +29,6 @@
 -define(MODE_COUNTDOWN, countdown).
 
 
--define(COUNTDOWN10_INIT_POINTS, 10).
-
 -define(ACH_CHANAK_WINNER, 0). %% Not defined in the points matrix
 
 -define(ACH_GOSTERGE_SHOWN, 1).
@@ -67,23 +65,22 @@
 %% API Functions
 %%
 
-%% @spec init(Mode, SeatsNum, RoundsNum) -> ScoringState
+%% @spec init(Mode, SeatsInfo, RoundsNum) -> ScoringState
 %% @doc Initialises scoring state.
 %% @end
 %% Types:
 %%     Mode = standard | evenodd | color | countdown
-%%     SeatsNum = integer(),
+%%     SeatsInfo = [{SeatNum, Points}]
+%%       SeatNum = integer()
+%%       Points = integer()
 %%     RoundsNum = undefined | pos_integer()
 
-init(Mode, SeatsNum, RoundsNum) ->
+init(Mode, SeatsInfo, RoundsNum) ->
     true = lists:member(Mode, [?MODE_STANDARD, ?MODE_EVENODD, ?MODE_COLOR, ?MODE_COUNTDOWN]),
     true = if Mode == ?MODE_COUNTDOWN -> RoundsNum == undefined;
               true -> is_integer(RoundsNum) orelse RoundsNum == undefined end,
-    InitPointsNum = case Mode of
-                        ?MODE_COUNTDOWN -> ?COUNTDOWN10_INIT_POINTS;
-                        _ -> 0
-                    end,
-    Table = [{0, [{SeatNum, InitPointsNum} || SeatNum <- lists:seq(1, SeatsNum)]}],
+    SeatsNum = length(SeatsInfo),
+    true = lists:seq(1, SeatsNum) == lists:sort([SeatNum || {SeatNum, _} <- SeatsInfo]),
     #state{mode = Mode,
            seats_num = SeatsNum,
            rounds_num = RoundsNum,
@@ -92,7 +89,7 @@ init(Mode, SeatsNum, RoundsNum) ->
            rounds_scores = [],
            rounds_finish_info =[],
            rounds_achs = [],
-           table = Table,
+           table = [{0, SeatsInfo}],
            winners = false
           }.
 
