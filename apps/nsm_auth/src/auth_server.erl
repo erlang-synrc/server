@@ -229,7 +229,6 @@ store_token(E, Token, UserId) ->
 user_info(UserId) ->
     case zealot_auth:get_user_info(UserId) of
         {ok, UserData} ->
-            ?INFO("..user info retrieved", []),
             {ok, #'PlayerInfo'{id = list_to_binary(UserData#user_info.username),
                                login = list_to_binary(UserData#user_info.username),
                                name = utils:convert_if(UserData#user_info.name, binary),
