@@ -13,7 +13,7 @@
 -include_lib("stdlib/include/qlc.hrl").
 
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
--export([do_rematch/2, signal/2, publish/2, submit/2, republish/2, resubmit/3, cast_resubmit/3,
+-export([do_rematch/2, signal/3, publish/2, submit/3, republish/2, resubmit/3, cast_resubmit/3,
          notify_table/2, game/1, to_session/3, reg/2,
          subscribe/2, subscribe/3, subscribe/4, unsubscribe/2, get_requirements/2, start/5, start_link/5, stop/1, get_topic/1,
          get_player_state/2, get_table_info/1, update_gamestate/2, can_observe/2, unreg/2, im_ready/1]).
@@ -46,10 +46,10 @@ reg(Srv, User) -> gen_server:call(Srv, {reg, User}).
 publish(Srv, Msg) -> gen_server:cast(Srv, {publish, Msg}).
 republish(Srv, Msg) -> gen_server:cast(Srv, {republish, Msg}). %% Used by parent relay
 notify_table(Srv, Msg) -> gen_server:cast(Srv, {notify_table, Msg}).
-submit(Srv, Msg) -> gen_server:call(Srv, {submit, Msg}).
+submit(Srv, _UserId, Msg) -> gen_server:call(Srv, {submit, Msg}).
 resubmit(Srv, From, Msg) -> gen_server:cast(Srv, {resubmit, From, Msg}). %% Used by parent relay
 cast_resubmit(Srv, PlayerId, Msg) -> gen_server:cast(Srv, {cast_resubmit, PlayerId, Msg}).
-signal(Srv, Msg) -> gen_server:cast(Srv, {signal, Msg}).
+signal(Srv, _UserId, Msg) -> gen_server:cast(Srv, {signal, Msg}).
 to_session(Srv, Session, Msg) -> gen_server:cast(Srv, {to_session, Session, Msg}).
 unreg(Srv, Key) -> gen_server:call(Srv, {unreg, Key}).
 subscribe(Srv, Pid, User, _RegNum) -> subscribe(Srv, Pid, User).
@@ -217,7 +217,7 @@ handle_call({can_observe, Id}, _From, State) ->
 
 handle_call({reg, User}, _From, State) -> % Emulate first level relay
     UserId = User#'PlayerInfo'.id,
-    {reply, {ok, {UserId, {?MODULE, self()}}}, State};
+    {reply, {ok, {UserId, {?MODULE, self()}, {?MODULE, self()}}}, State};
 
 handle_call(Event, From, State) ->
     {stop, {unknown_call, Event, From}, State}.

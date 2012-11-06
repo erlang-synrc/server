@@ -61,7 +61,21 @@ unregistered_popup() ->
         #panel{class=holder, body=[
             #panel{body=Msg}, #br{},
             #cool_button{text=?_T("OK"), delegate=?MODULE, postback=ok_simple_lightbox},
-            #cool_button{text=?_T("Close"), delegate=?MODULE, postback=hide_simpe_lightbox},
+            #cool_button{text=?_T("Close"), delegate=?MODULE, postback=hide_simple_lightbox},
+            #grid_clear{}
+        ]}
+    ]),
+    wf:update(simple_panel, Element),
+    wf:wire(simple_lightbox, #show{}).
+
+over_limit_popup(Limit) ->
+    Msg = ?_TS("Dear visitor, we respect your enthusiasm,"
+        " but we can't sell more then $limit$ TL worth packages a month to a single person. Sorry.", [{limit, Limit}]),
+    Element = webutils:lightbox_panel_template(simple_lightbox, [
+        #h1{class="head", text=?_T("Please, try next month")},
+        #panel{class=holder, body=[
+            #panel{body=Msg}, #br{},
+            #cool_button{text=?_T("OK"), delegate=?MODULE, postback=hide_simple_lightbox},
             #grid_clear{}
         ]}
     ]),
@@ -102,11 +116,11 @@ package_price()->
 
 
 %% redirect other to webutils:event/1
-event(hide_simpe_lightbox) ->
+event(hide_simple_lightbox) ->
     wf:wire(simple_lightbox, #hide{});
 event(ok_simple_lightbox) ->
     wf:redirect_to_login(?_U("/login")),
-    event(hide_simpe_lightbox);
+    event(hide_simple_lightbox);
 event(Any) ->
     webutils:event(Any).
 

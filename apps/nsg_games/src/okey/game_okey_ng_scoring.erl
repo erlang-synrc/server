@@ -16,6 +16,7 @@
 -export([
          init/3,
          last_round_result/1,
+         chanak/1,
          round_finished/6
         ]).
 
@@ -122,6 +123,12 @@ last_round_result(#state{last_round_num = LastRoundNum,
     {_, TotalScore} = lists:keyfind(LastRoundNum, 1, Table),
     {FinishInfo, RoundScore, RoundAchs, TotalScore}.
 
+%% @spec chanak(ScoringState) -> Chanak
+%% @end
+%% Types: Chanak = integer()
+
+chanak(#state{chanak = Chanak}) ->
+    Chanak.
 
 %% @spec round_finished(ScoringState, FinishReason, Hands, Gosterge, WhoHasGosterge, Has8Tashes) ->
 %%                                    {NewScoringState, GameWinners}

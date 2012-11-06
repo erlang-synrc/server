@@ -18,14 +18,14 @@
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 
--export([start_link/1]).
+-export([start_link/2]).
 
 -record(state, {}).
 
 %% ====================================================================
 %% External functions
 %% ====================================================================
-start_link(Params) -> gen_server:start_link(?MODULE, [Params], []).
+start_link(Game, Params) -> gen_server:start_link(?MODULE, [Game, Params], []).
 
 %% ====================================================================
 %% Server functions
@@ -39,8 +39,12 @@ start_link(Params) -> gen_server:start_link(?MODULE, [Params], []).
 %%          ignore               |
 %%          {stop, Reason}
 %% --------------------------------------------------------------------
-init([Params]) ->
-    {ok, _, Pid} = rpc:call(?GAMESRVR_NODE, game_manager, create_game, [fl_lucky, Params]),
+init([Game, Params]) ->
+    {ok, _, Pid} =
+        case Game of
+            tavla -> rpc:call(?GAMESRVR_NODE, game_manager, create_game, [fl_lucky, Params]);
+            okey -> rpc:call(?GAMESRVR_NODE, game_manager, create_game, [game_okey_ng_trn_lucky, Params])
+        end,
     link(Pid),
     {ok, #state{}}.
 

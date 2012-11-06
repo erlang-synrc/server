@@ -207,7 +207,7 @@ handle_call({reg, User}, _From, #state{topic = Topic,
      NewTableArray  = Tables -- [Res],
      TablesUsers = NewTableArray ++ [setelement(Pos,Res,User#'PlayerInfo'.id)],
     ?INFO("PAIRED_TAVLA <~p> User ~p registered.", [Topic, UserId]),
-    {reply, {ok, {UserId, {?TAB_MOD, TabPid}}}, State#state{tables_users = TablesUsers}};
+    {reply, {ok, {UserId, {?TAB_MOD, TabPid}, {?TAB_MOD, TabPid}}}, State#state{tables_users = TablesUsers}};
 
 
 handle_call(Event, From, State) ->

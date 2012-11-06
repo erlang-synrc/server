@@ -30,7 +30,8 @@
 -record(subscriber,
         {pid          :: pid(),
          user_id,
-         player_id    :: integer()
+         player_id    :: integer(),
+         mon_ref      :: reference()
         }).
 
 -record(player,
@@ -79,13 +80,6 @@ client_request(Relay, Request, Timeout) ->
 %% ====================================================================
 
 %% --------------------------------------------------------------------
-%% Function: init/1
-%% Description: Initiates the server
-%% Returns: {ok, State}          |
-%%          {ok, State, Timeout} |
-%%          ignore               |
-%%          {stop, Reason}
-%% --------------------------------------------------------------------
 init([Params]) ->
     PlayersInfo = proplists:get_value(players, Params),
     ObserversAllowed = proplists:get_value(observers_allowed, Params),
@@ -96,15 +90,6 @@ init([Params]) ->
                 observers_allowed = ObserversAllowed,
                 table = Table}}.
 
-%% --------------------------------------------------------------------
-%% Function: handle_call/3
-%% Description: Handling call messages
-%% Returns: {reply, Reply, State}          |
-%%          {reply, Reply, State, Timeout} |
-%%          {noreply, State}               |
-%%          {noreply, State, Timeout}      |
-%%          {stop, Reason, Reply, State}   | (terminate/2 is called)
-%%          {stop, Reason, State}            (terminate/2 is called)
 %% --------------------------------------------------------------------
 handle_call({client_request, Request}, From, State) ->
     handle_client_request(Request, From, State);
@@ -117,12 +102,6 @@ handle_call(_Request, _From, State) ->
     {reply, Reply, State}.
 
 %% --------------------------------------------------------------------
-%% Function: handle_cast/2
-%% Description: Handling cast messages
-%% Returns: {noreply, State}          |
-%%          {noreply, State, Timeout} |
-%%          {stop, Reason, State}            (terminate/2 is called)
-%% --------------------------------------------------------------------
 handle_cast({client_message, Msg}, State) ->
     handle_client_message(Msg, State);
 
@@ -133,13 +112,6 @@ handle_cast(_Msg, State) ->
     {noreply, State}.
 
 %% --------------------------------------------------------------------
-%% Function: handle_info/2
-%% Description: Handling all non call/cast messages
-%% Returns: {noreply, State}          |
-%%          {noreply, State, Timeout} |
-%%          {stop, Reason, State}            (terminate/2 is called)
-%% --------------------------------------------------------------------
-
 handle_info({'DOWN', _, process, Pid, _},
             #state{subscribers = Subscribers, players = Players,
                    table = {TableMod, TablePid}} = State) ->
@@ -165,17 +137,9 @@ handle_info(_Info, State) ->
     {noreply, State}.
 
 %% --------------------------------------------------------------------
-%% Function: terminate/2
-%% Description: Shutdown the server
-%% Returns: any (ignored by gen_server)
-%% --------------------------------------------------------------------
 terminate(_Reason, _State) ->
     ok.
 
-%% --------------------------------------------------------------------
-%% Func: code_change/3
-%% Purpose: Convert process state when code is changed
-%% Returns: {ok, NewState}
 %% --------------------------------------------------------------------
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
@@ -188,8 +152,8 @@ handle_client_request({subscribe, Pid, #'PlayerInfo'{id = UserId}, observer}, _F
                       #state{observers_allowed = ObserversAllowed,
                              subscribers = Subscribers} = State) ->
     if ObserversAllowed ->
-           NewSubscribers = store_subscriber(Pid, UserId, undefined, Subscribers),
-           erlang:monitor(process, Pid),
+           MonRef = erlang:monitor(process, Pid),
+           NewSubscribers = store_subscriber(Pid, UserId, undefined, MonRef, Subscribers),
            {reply, ok, State#state{subscribers = NewSubscribers}};
        true ->
            {reply, {error, observers_not_allowed}, State}
@@ -203,13 +167,14 @@ handle_client_request({subscribe, Pid, #'PlayerInfo'{id = UserId}, PlayerId}, _F
     case find_player(PlayerId, Players) of
         {ok, #player{user_id = UserId}} ->
             NewPlayers = update_player_status(PlayerId, online, Players),
-            NewSubscribers = store_subscriber(Pid, UserId, PlayerId, Subscribers),
-            erlang:monitor(process, Pid),
+            MonRef = erlang:monitor(process, Pid),
+            NewSubscribers = store_subscriber(Pid, UserId, PlayerId, MonRef, Subscribers),
             TableMod:relay_message(TablePid, {player_connected, PlayerId}),
             {reply, ok, State#state{players = NewPlayers, subscribers = NewSubscribers}};
         {ok, #player{}=P} ->
-           ?INFO("RELAY_NG Subscription for user ~p rejected. Another owner of the PlayerId <~p>: ~p", [UserId, PlayerId, P]),
-           {reply, {error, not_player_id_owner}, State};
+            ?INFO("RELAY_NG Subscription for user ~p rejected. Another owner of the "
+                  "PlayerId <~p>: ~p", [UserId, PlayerId, P]),
+            {reply, {error, not_player_id_owner}, State};
         error ->
             {reply, {error, unknown_player_id}, State}
     end;
@@ -233,6 +198,21 @@ handle_table_request({unregister_player, PlayerId}, _From,
     UpdSubscribers = find_subscribers_by_player_id(PlayerId, Subscribers),
     F = fun(S, Acc) ->
                 store_subscriber_rec(S#subscriber{player_id = undefined}, Acc)
+        end,
+    NewSubscribers = lists:foldl(F, Subscribers, UpdSubscribers),
+    {reply, ok, State#state{players = NewPlayers,
+                            subscribers = NewSubscribers}};
+
+
+handle_table_request({kick_player, PlayerId}, _From,
+                     #state{players = Players,
+                            subscribers = Subscribers} = State) ->
+    NewPlayers = del_player(PlayerId, Players),
+    UpdSubscribers = find_subscribers_by_player_id(PlayerId, Subscribers),
+    F = fun(#subscriber{pid = Pid, mon_ref = MonRef}, Acc) ->
+                erlang:demonitor(MonRef, [flush]),
+                Pid ! terminate,              %% XXX
+                del_subscriber(Pid, Acc)
         end,
     NewSubscribers = lists:foldl(F, Subscribers, UpdSubscribers),
     {reply, ok, State#state{players = NewPlayers,
@@ -313,8 +293,9 @@ update_player_status(PlayerId, Status, Players) ->
 
 subscribers_init() -> midict:new().
 
-store_subscriber(Pid, UserId, PlayerId, Subscribers) ->
-    store_subscriber_rec(#subscriber{pid = Pid, user_id = UserId, player_id = PlayerId}, Subscribers).
+store_subscriber(Pid, UserId, PlayerId, MonRef, Subscribers) ->
+    store_subscriber_rec(#subscriber{pid = Pid, user_id = UserId,
+                                     player_id = PlayerId, mon_ref = MonRef}, Subscribers).
 
 store_subscriber_rec(#subscriber{pid = Pid, user_id = _UserId, player_id = PlayerId} = Rec, Subscribers) ->
     midict:store(Pid, Rec, [{player_id, PlayerId}], Subscribers).

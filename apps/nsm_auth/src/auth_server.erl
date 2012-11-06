@@ -23,7 +23,8 @@
 -export([store_token/2,
          robot_credentials/0,
          fake_credentials/0,
-         get_user_info/1, get_user_info/2
+         get_user_info/1, get_user_info/2,
+         get_user_info_by_user_id/1
         ]).
 
 %% gen_server callbacks
@@ -84,6 +85,14 @@ get_user_info(Token, Id) when is_list(Id) ->
 get_user_info(Token, Id) when is_binary(Token), is_binary(Id) ->
     gen_server:call(?SERVER, {get_user_info, Token, Id}).
 
+%% get_user_info_by_user_id(UserId) -> {ok, #'PlayerInfo'{}} | Error
+%% FIXME: It is not the place for the function, but #'PlayerInfo'{} is generating here.
+get_user_info_by_user_id(UserId) when is_list(UserId) ->
+    get_user_info_by_user_id(list_to_binary(UserId));
+
+get_user_info_by_user_id(UserId) ->
+    user_info(UserId).
+
 fake_credentials() ->
     gen_server:call(?SERVER, {fake_credentials}).
 
@@ -129,16 +138,10 @@ handle_call({get_user_info, Token}, _From, #state{tokens = E} = State) ->
             ?INFO("token was registred, getting user info for ~p",[UserId]),
 	            proc_lib:spawn_link(fun() ->
                                         Reply =
-                                            case zealot_auth:get_user_info(UserId) of
-                                                {ok, UserData} ->
+                                            case user_info(UserId) of
+                                                {ok, UserInfo} ->
                                                     ?INFO("..user info retrieved", []),
-                                                    #'PlayerInfo'{id = list_to_binary(UserData#user_info.username),
-                                                                  login = list_to_binary(UserData#user_info.username),
-                                                                  name = utils:convert_if(UserData#user_info.name, binary),
-                                                                  avatar_url = utils:convert_if(UserData#user_info.avatar_url, binary),
-                                                                  skill = UserData#user_info.skill,
-                                                                  score = UserData#user_info.score,
-                                                                  surname = utils:convert_if(UserData#user_info.surname, binary)};
+                                                    UserInfo;
                                                 {error, user_not_found} ->
                                                     ?INFO("..no such user info, providing fake credentials", []),
                                                     fake_credentials0(State#state.spare); %% for eunit tests. FIX
@@ -163,6 +166,7 @@ handle_call({get_user_info, Token, Id}, _From, #state{tokens = E} = State) ->
             Reply = Reply0#'PlayerInfo'{id = Id},
             {reply, Reply, State}
     end;
+
 
 handle_call({fake_credentials}, _From, #state{spare = Spare} = State) ->
     H = fake_credentials0(Spare),
@@ -220,3 +224,19 @@ store_token(E, Token, UserId) ->
     ?INFO("storing token: ~p", [Token]),
     Data = #authtoken{token = Token, id = UserId},
     ets:insert(E, Data).
+
+
+user_info(UserId) ->
+    case zealot_auth:get_user_info(UserId) of
+        {ok, UserData} ->
+            {ok, #'PlayerInfo'{id = list_to_binary(UserData#user_info.username),
+                               login = list_to_binary(UserData#user_info.username),
+                               name = utils:convert_if(UserData#user_info.name, binary),
+                               avatar_url = utils:convert_if(UserData#user_info.avatar_url, binary),
+                               skill = UserData#user_info.skill,
+                               score = UserData#user_info.score,
+                               surname = utils:convert_if(UserData#user_info.surname, binary)}};
+        Error ->
+            Error
+    end.
+

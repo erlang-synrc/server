@@ -181,8 +181,9 @@ handle_info({'DOWN', MonRef, process, _Pid, _}, StateName,
             #state{game_id = GameId, tables = Tables,
                    seats = Seats, players = Players} = StateData) ->
     case get_table_by_mon_ref(MonRef, Tables) of
-        #table{id = TabId} ->
+        #table{id = TabId, timer = TRef} ->
             ?INFO("OKEY_NG_TRN_LUCKY <~p> Table <~p> is down. Cleaning up registeres.", [GameId, TabId]),
+            erlang:cancel_timer(TRef),
             PlayersIds =
                 [PlayerId || #seat{player_id = PlayerId} <- find_seats_with_players_for_table_id(TabId, Seats)],
             NewTables = del_table(TabId, Tables),
@@ -197,11 +198,15 @@ handle_info({'DOWN', MonRef, process, _Pid, _}, StateName,
 
 handle_info({rest_timeout, TableId}, StateName,
             #state{tables = Tables} = StateData) ->
-    #table{pid = TablePid} = Table = fetch_table(TableId, Tables),
-    NewTable = Table#table{state = in_process},
-    NewTables = store_table(NewTable, Tables),
-    send_to_table(TablePid, start_round),
-    {next_state, StateName, StateData#state{tables = NewTables}};
+    case get_table(TableId, Tables) of
+        {ok, #table{pid = TablePid} = Table} ->
+            NewTable = Table#table{state = in_process},
+            NewTables = store_table(NewTable, Tables),
+            send_to_table(TablePid, start_round),
+            {next_state, StateName, StateData#state{tables = NewTables}};
+        error -> %% If no such table ignore the timeout
+            {next_state, StateName, StateData}
+    end;
 
 handle_info(_Info, StateName, StateData) ->
     {next_state, StateName, StateData}.
@@ -269,9 +274,9 @@ handle_table_message(TableId, {player_disconnected, PlayerId},
     ?INFO("OKEY_NG_TRN_LUCKY <~p> The player_disconnected notification received from "
           "table <~p>. PlayerId: <~p>", [GameId, TableId, PlayerId]),
     case find_seats_by_player_id(PlayerId, Seats) of
-        [#seat{seat_num = SeatNum}] ->
+        [#seat{seat_num = SeatNum, is_bot = IsBot}] ->
             case real_players_at_table(TableId, Seats) of
-                1 -> %% Last real player gone
+                1 when not IsBot -> %% Last real player gone
                     ?INFO("OKEY_NG_TRN_LUCKY <~p> Last real player gone from "
                           "table <~p>. Closing the table.", [GameId, TableId]),
                     unreg_player_and_eliminate_table(PlayerId, TableId, StateData);
@@ -579,6 +584,9 @@ store_table(#table{id = TableId, pid = Pid, mon_ref = MonRef, global_id = Global
 fetch_table(TableId, Tables) ->
     midict:fetch(TableId, Tables).
 
+get_table(TableId, Tables) ->
+    midict:find(TableId, Tables).
+
 get_table_pid(TabId, Tables) ->
     {ok, #table{pid = TabPid}} = midict:find(TabId, Tables),
     TabPid.
@@ -696,7 +704,7 @@ spawn_bot(BM, GameId) ->
 create_robot(BM, GameId) ->
     User = auth_server:robot_credentials(),
     NUId = User#'PlayerInfo'.id,
-    {ok, NPid} = BM:start_link(self(), User, GameId),
+    {ok, NPid} = BM:start(self(), User, GameId),
     SPid = BM:get_session(NPid),
     {NPid, SPid, NUId, User}.
 
