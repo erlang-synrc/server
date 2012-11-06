@@ -8,18 +8,18 @@
 
 main() ->
     webutils:add_raw("<script type=\"text/javascript\">
-    	$(document).ready(function() {
-    		$('.slideshow').cycle({
-    			fx:		'fade',
-    			prev:	'.pager .prev',
-    			next:	'.pager .next',
-    			pager:	'.switcher ul',
-    			timeout:	5000,
-    			pagerAnchorBuilder: function(idx, slide) {
-    				return '.switcher ul li:eq(' + idx + ') a';
-    			}
-    		});
-    	});
+    $(document).ready(function() {
+	$('.slideshow').cycle({
+	    fx:		'fade',
+	    prev:	'.pager .prev',
+	    next:	'.pager .next',
+	    pager:	'.switcher ul',
+	    timeout:	5000,
+	    pagerAnchorBuilder: function(idx, slide) {
+		return '.switcher ul li:eq(' + idx + ') a';
+	    }
+	});
+    });
     </script>"),
     #template { file=code:priv_dir(nsw_srv)++"/templates/bare_no_uservoice.html"}.
 
@@ -47,30 +47,9 @@ body() ->
         Message ->
             show_message(Message)
     end,
-    case wf:q(facebook) of
-    "true" ->
-	case wf:q(code) /= undefined of
-        true ->
-	    fb_utils:login();
-        false ->
-            main_notauthorized()
-        end;
-    _ ->
-	wf:info("No FB tag"),
-        main_notauthorized()
-    end.
-
-main_notauthorized() ->
-    S = site_utils:postback_to_js_string(?MODULE, show_register),
-    wf:info("Postback js: ~s~n", [S]),
-    case wf:user() of   %PUBLIC BETA this is unused right now, but should be useful later. It determines the logic of main page LET'S PLAY button
-	undefined ->
-	    wf:wire("$('.btn-light').click(function(){"++S++";return false;});");
-	_User -> ""
-    end,
     #template { file=code:priv_dir(nsw_srv)++"/templates/"++site_utils:detect_language()++"/main.html"}.
 
-event(show_register) -> 
+event(show_register) ->
     wf:redirect(?_U("/login/register"));
 
 event(Other) ->

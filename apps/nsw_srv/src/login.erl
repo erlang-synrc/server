@@ -23,9 +23,6 @@ body()->
     Request = wf_context:request_bridge(),
     wf:session(ip, Request:peer_ip()),
     Content = case wf:q('__submodule__') of
-        %% if there facebook in url path - show facebook login form
-        "facebook" ->
-            login_facebook_panel_content();
         "register" ->
             login_register_panel_content();
         "verify" ->
@@ -78,23 +75,6 @@ login_panel_content() ->
         #panel{id=login_panel, class = "col-holder col-holder-2", body = [LeftCol, RightCol]}
     ],
     login_panel_wrapper(regular, Content).
-
-
-
-login_facebook_panel_content()->
-    Content = [
-        #panel{class=holder, body=
-            [
-                #label{text=?_T("You'll see a window shown here after clicking the continue login:")},
-                #image{image="/images/login/fb_perm.png"},
-                #br{},
-                #label{text=?_T("You should click 'Allow' to continue!")},
-                #cool_button{url=?FB_LOGIN_URI, text=?_T("Continue login")},
-                #cool_button{postback=cancel_login, text=?_T("Cancel")},
-                #grid_clear{}
-    ]}],
-    login_panel_wrapper(facebook, Content).
-
 
 login_register_panel_content() ->
     case wf:user() of
@@ -227,18 +207,9 @@ login_forget_panel_content() ->
     ],
     login_panel_wrapper(forget, Content).
 
-
-
-login_panel_wrapper(Type, Content) ->
-    Class = case Type of
-        facebook ->
-            "popup-2";
-        _ ->
-            "popup-2 popup-3"
-    end,
-    #panel{class=Class, body =#panel{class = in,
+login_panel_wrapper(_Type, Content) ->
+    #panel{class="popup-2 popup-3", body =#panel{class = in,
         body = #panel{class = frame, body = Content }}}.
-
 
 login_form() ->
     [#label{class = "login_hintBox", id = login_hintbox,
@@ -255,17 +226,8 @@ login_form() ->
         "</label>",
         #panel{class = "row chk-row", body = [#button{id = postlogin, class = "btn-submit",
                 text = ?_T("Login"), postback = login},
-                #checkbox{class = "chk",
-                    text = ?_T("Keep me logged in"), checked = true}]},
-        #panel{class = "center fb-login-panel", id = fb_login_panel,
-            body =
-            [#link{postback = login_facebook,
-                body = case site_utils:detect_language() of
-                    "en" -> #image{image = "/images/login/login_fb.png", style = "width:154px;height:22px", alt = "Login with facebook"};
-                    "tr" -> #image{image = "/images/login/giris_fb.png", alt = "Facebook ile giriş yap"}
-                end
-            }]}].
-
+                #checkbox{class = "chk", text = ?_T("Keep me logged in"), checked = true}]},
+        #panel{class = "center fb-login-panel", body = fb_utils:login_btn("Login with Facebook")}].
 
 splash_lightbox() ->
     ColLeft = #panel{class = "col-l",
@@ -349,9 +311,6 @@ forget_password(Token) ->
 
 event(login) ->
     webutils:login(login,password,login_hintbox);
-
-event(login_facebook) ->
-    wf:update(login_panel_holder, login_facebook_panel_content());
 
 event(hide_login) ->
     wf:redirect("/");
@@ -442,9 +401,11 @@ event(change_password) ->
             wf:update(change_password_info, ?_T("Password different!"))
     end;
 
-event({change_language,SL}) ->  
-    webutils:event({change_language, SL}).
+event({change_language,SL}) -> webutils:event({change_language, SL}).
 
+api_event(Name, Tag, Data)-> fb_utils:api_event(Name, Tag, Data).
+
+%% TODO:
 fb_info(UserInfo) ->
     Id = wf:to_list(proplists:get_value(<<"id">>, UserInfo)),
     Picture = lists:concat(["https://graph.facebook.com/",Id,"/picture"]),

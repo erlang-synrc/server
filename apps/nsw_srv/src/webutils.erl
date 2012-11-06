@@ -18,9 +18,7 @@
 
 -define(GROUPS_ON_DASHBOARD, 10).
 
-main() ->
-    [].
-
+main() -> [].
 
 user_info() ->
     User = wf:session(user_info),
@@ -69,70 +67,56 @@ new_tab_js(Url) when is_list(Url)->
                   Url,
                   "');"]).
 
-
 header_box() ->
     #template { file=code:priv_dir(nsw_srv)++"/templates/header.html"}.
 
-header_body() ->
-    %% check if we in fb
-    HiddenEl = check_is_facebook(),
-
-    A = [account_menu(),
-        HiddenEl,
-        menu_links()
-    ],
-    A.
+header_body() -> [account_menu(), menu_links()].
 
 account_menu() ->
-    Element =
-        case wf:user() /= undefined of 
-	    true ->
-		case R = nsm_users:get_user(wf:user()) of 
-		    {error,notfound} -> % wrong user_id
-			event(logout);
-		    _UserFound -> 
-		{ok, User} = R,
-		Submenus = #list{body=[#listitem{body=#link{url=Url,text=Text}} || {Url,Text}
-									  <- [{?_U("/profile"), ?_T("My Profile")},
-									      {?_U("/profile/account"), ?_T("My Account")},
-									      {?_U("/profile/gifts"), ?_T("My Gifts")},
-									      {?_U("/profile/stats"), ?_T("Stats")},
-									      {?_U("/profile/invite"), ?_T("Invite Buddy")}
-									     ]
-			++ case nsm_acl:check_access(User, {feature, admin}) of
-				allow -> [{?_U("/kakaadmin"), ?_T("Admin")}];
-				_ -> []
-			   end ]},
-            {ok,#user_info{username=Username,avatar_url = AvatarUrl}} = zealot_auth:get_user_info(webutils:user_info(username)),
-            {ok, Quota}  = nsm_accounts:balance(Username, ?CURRENCY_QUOTA),
-            {ok, Kakush} = nsm_accounts:balance(Username, ?CURRENCY_KAKUSH),
-
-            #list{class="user-menu", body=[
-                #listitem{body=[
-                    #link{url="#", body=[#image{image=AvatarUrl, id=header_user_avatar, style="width:23px;height:23px", alt="#"}, #label{class="username", text=Username}]},
-                    Submenus
-                ]},
-
-                #listitem{class=quota, body=[ #link{text=lists:concat([?_T("Quota"), " : ",Quota])}]},
-                #listitem{class=kakus, body=[ #link{text=lists:concat([?_T("Kakush")," : ",Kakush])}]},
-                #listitem{body=#link{text=?_T("Logout"), postback=logout}}
-            ]}
-           end;
-
-	    _UserLoggedIn ->
-		[
-        case site_utils:detect_language() of
-            "en" -> #link{class=al, url=?_U("/login/facebook"), body=#image{image="/images/img-01.png"}};
-            "tr" -> #link{class=al, url=?_U("/login/facebook"), body=#image{image="/images/fb_connect_tr.png"}, 
-                style="margin-top:-2px;"}
-        end,
-		 #list{class="user-menu", body=[
-                    #listitem{body=#link{class=login, text=?_T("Login"), postback=login1, url=?_U("/login")}},
-                    #listitem{body=#link{class=signup, text=?_T("Signup"), url=?_U("/login/register")}}
-		]}]
+    Element = case wf:user() /= undefined of 
+	true ->
+	    case R = nsm_users:get_user(wf:user()) of 
+		{error,notfound} -> event(logout);
+		_UserFound -> 
+		    {ok, User} = R,
+		    Submenus = #list{body=[#listitem{body=#link{url=Url,text=Text}}
+		    || {Url,Text}  <- [{?_U("/profile"), ?_T("My Profile")},
+				      {?_U("/profile/account"), ?_T("My Account")},
+				      {?_U("/profile/gifts"), ?_T("My Gifts")},
+				      {?_U("/profile/stats"), ?_T("Stats")},
+				      {?_U("/profile/invite"), ?_T("Invite Buddy")}]
+					++ case nsm_acl:check_access(User, {feature, admin}) of
+					    allow -> [{?_U("/kakaadmin"), ?_T("Admin")}];
+					    _ -> []
+					end ]},
+		    {ok,#user_info{username=Username,avatar_url = AvatarUrl}} = zealot_auth:get_user_info(webutils:user_info(username)),
+		    {ok, Quota}  = nsm_accounts:balance(Username, ?CURRENCY_QUOTA),
+		    {ok, Kakush} = nsm_accounts:balance(Username, ?CURRENCY_KAKUSH),
+		    #list{class="user-menu", body=[
+			#listitem{body=[
+			    #link{url="#", body=[ 
+				#image{image=AvatarUrl, id=header_user_avatar, style="width:23px;height:23px", alt="#"},
+				#label{class="username", text=Username}]},
+			    Submenus
+			]},
+			#listitem{class=quota, body=[ #link{text=lists:concat([?_T("Quota"), " : ",Quota])}]},
+			#listitem{class=kakus, body=[ #link{text=lists:concat([?_T("Kakush")," : ",Kakush])}]},
+			case wf:session(logged_with_fb) of
+			    true -> #listitem{body=fb_utils:logout_btn()};
+			    _ -> #listitem{body=#link{text=?_T("Logout"), postback=logout}}
+			end
+		    ]}
+	    end;
+	_UserLoggedIn -> [
+	     #list{class="user-menu", body=[
+		#listitem{body=fb_utils:login_btn()},
+		#listitem{body=#link{class=login, text=?_T("Login"), postback=login1, url=?_U("/login")}},
+		#listitem{body=#link{class=signup, text=?_T("Signup"), url=?_U("/login/register")}}
+	    ]}
+	    ]
 	end,
-    #panel{class="top", body=
-	#panel{class="ar", body=[#panel{class=box, body=Element}]}}.
+	#panel{class="top", body= #panel{class="ar", body=[#panel{class=box, body=Element}]}}.
+
 menu_links() ->
 	["<nav>",
 	 #list{body=[
@@ -224,8 +208,7 @@ facebook_footer_box() ->
     LangFooter = ["<footer>",language(),"</footer>"],
     case wf_context:page_module() of
 	    facebook ->
-	        [facebook_counter_box(),
-	         LangFooter];
+	        [facebook_counter_box(), LangFooter];
 	    view_table ->
 	        #panel{style="border-top: solid 1px #b4d7ed", body=" "};
 	    _ ->
@@ -252,24 +235,6 @@ facebook_counter_box() ->
 	    ]}
     ]}.
 
-check_is_facebook()->
-    try
-        Id = wf:temp_id(),
-        wf:wire(#api{anchor = Id, tag = Id,  name = is_facebook, delegate = ?MODULE}),
-        Script = wf:f("obj('~s').is_facebook(top!=self);", [Id]),
-        wf:wire(#script{script=Script}),
-        #form_hidden{id = Id}
-    catch
-        _:Error ->
-            ?PRINT(Error),
-            []
-    end.
-
-
-api_event(is_facebook, _Anchor, [Data]) ->
-    wf:session(is_facebook, Data),
-    ok.
-
 event({error, Msg}) ->
     wf:wire(#alert{text=Msg});
 
@@ -279,15 +244,17 @@ event(login1) ->
 event(login) ->
     login(login,password,login_hintbox);
 event(logout) ->
+    wf:info("LOGOUT PRESSED"),
+    %wf:clear_session(),
     wf:logout(),
     wf:redirect("/");
 event(show_login_with_facebook) ->
     wf:redirect(lists:concat([?_U("/login"), "/facebook"]));
 event({change_language,SL}) ->
     NewLang = case SL of
-	    		"en" -> "tr";
-	    		"tr" -> "en"
-    	      end,
+		"en" -> "tr";
+		"tr" -> "en"
+	      end,
     site_utils:reset_language(),
     wf:session(lang, NewLang),
     wf:cookie("lang", site_utils:detect_language(), "/", 100*24*60), %% 100 days
@@ -439,7 +406,7 @@ city_list() ->
      "Ardahan",
      "Iğdır",
      "Yalova",
-	 "Kilis",
+     "Kilis",
      "Karabük",
      "Osmaniye"
      ].

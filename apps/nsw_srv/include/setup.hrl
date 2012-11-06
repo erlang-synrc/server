@@ -12,5 +12,5 @@
 -define(FB_APP_ID, nsx_opt:get_env(nsw_srv, fb_id, "154227314626053")).
 -define(FB_APP_SECRET, nsx_opt:get_env(nsw_srv, fb_secret, "cf9d49958ee536dd75f15bf8ca541965")).
 -define(FB_REDIRECT_URI, nsx_opt:get_env(nsw_srv, fb_redirect_uri, "http://doxtop.cc:8000")).
--define(FB_LOGIN_URI, "https://www.facebook.com/dialog/oauth/?client_id="++?FB_APP_ID++"&redirect_uri="++?FB_REDIRECT_URI++"/?facebook=true").
+%-define(FB_LOGIN_URI, "https://www.facebook.com/dialog/oauth/?client_id="++?FB_APP_ID++"&redirect_uri="++?FB_REDIRECT_URI++"/?facebook=true").
 

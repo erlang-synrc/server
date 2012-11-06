@@ -107,9 +107,6 @@ register_button()->
         ]
     }.
 
-facebook_button()->
-    #link{class="login-facebook",postback=login_facebook, body=[#image{image="/images/login/login-facebook.png"}]}.
-
 login_form()->
     [
      #panel{id=fb_info},
@@ -131,8 +128,9 @@ login_form()->
 		 #checkbox{class = "chk",
 			   text = ?_T("Keep me logged in"), checked = true}]},
 
-     #panel{class="center", body=facebook_button()}
+     #panel{class="center", body=fb_utils:login_btn("Login with Facebook")}
     ].
+
 %%FIX: create our own screenshot instead of currently used (if this
 %% images stays at all
 register_form_facebook() ->

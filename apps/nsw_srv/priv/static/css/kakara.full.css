@@ -4060,6 +4060,27 @@ footer .lang img {
     margin:0 auto;
 }
 
+.fb_login_btn{
+    border-top: 1px solid #29447E;
+    border-right: 1px solid #29447E;
+    border-bottom: 1px solid #1A356E;
+    padding:0;
+    margin:0;
+    display:block;
+    height:22px;
+    background-color: #5F78AB;
+    background-image:url(/images/facebook/fbs.png);
+    background-repeat:no-repeat;
+    background-position: 0px -82px;
+    padding-left:32px;
+    padding-right:7px;
+    margin-top:-4px;
+    line-height:22px;
+    color:white;
+    font-weight:bold;
+    font-size: 12px;
+}
+
 .popup-2 .in {
 	padding:10px;
 	text-align: left;
