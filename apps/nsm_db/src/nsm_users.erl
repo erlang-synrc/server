@@ -193,7 +193,7 @@ delete_user(UserName) ->
    case get_user(UserName) of
 	{ok, User} ->
 	   %% remove from all groups
-       GIds = nsm_group:list_groups_per_user(User),
+       GIds = nsm_groups:list_groups_per_user(UserName),
        [nsx_util_notification:notify(["subscription", "user", UserName, "remove_from_group"], {GId}) || GId <- GIds],
 	   %% remove from subcribtions
 	   S = list_subscr(User),
@@ -210,7 +210,6 @@ delete_user(UserName) ->
 	   {ok, User};
 	E -> E
    end.
-
 
 get_user({username, UserName}) ->
     nsm_db:user_by_username(UserName);
