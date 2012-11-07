@@ -9,7 +9,7 @@
 
 -export([get_gifts/0]).
 
--define(PRODUCTS_FILE, "/home/kakauser/tmp/kaka/aristo").
+-define(PRODUCTS_FILE, "/home/kakauser/tmp/kaka/aristo.htm").
 -record(product_aristo, {no, name, brand, model, price, currency, image, tl_price, count, cargo, fix, 
                          logistic_service_rate, tl_lsr, total, desc}).
 
@@ -46,11 +46,7 @@ process_data(ProductsData) when is_list(ProductsData) ->
     error_logger:info_msg("~w:process_data/3 Parsing finished Ok", [?MODULE]),
     process(P_XML).
 
-process_data_block(Data) ->
-    Acc = fun(#xmlText{value = " ", pos = P}, Acc, S) -> {Acc, P, S};
-                                          (X, Acc, S) -> {[X|Acc], S}
-          end,
-    xmerl_scan:string(Data, [{space,normalize}, {acc_fun, Acc}]).
+process_data_block(Data) -> xmerl_scan:string(Data).
 
 process(P_XML) ->
     Products = process_products(P_XML),
@@ -74,7 +70,34 @@ process(P_XML) ->
 
 process_products(XML = #xmlElement{name='TABLE'}) ->
     List=xmerl_xs:select("TR", XML),
-    [#product_aristo{} || E <- List].
+    [begin
+         Cells= xmerl_xs:select("TD", E),
+          case XXX = length(Cells) of
+           17 -> ok;
+            _ -> ?INFO("Wrong Tuples: ~p",[{XXX,xmerl_xs:value_of(lists:nth(1,Cells))}])
+          end,
+         [XNo,XName,XVendor,XModel,XPrice,XCurr,XImg,XTL,XA,XCargo,XFix,XLSR,XTLLSR,XY,XZ,XTotal,XDesc]=Cells, 
+         No = xmerl_xs:value_of(XNo),
+         Name = xmerl_xs:value_of(XName),
+         Vendor = xmerl_xs:value_of(XVendor),
+         Model = xmerl_xs:value_of(XModel),
+         [OPrice] = xmerl_xs:value_of(XPrice),
+         Price = ling:replace(ling:replace(OPrice,",","")," ",""),
+         Curr = xmerl_xs:value_of(XCurr),
+         Img = xmerl_xs:value_of(XImg),
+         TL = xmerl_xs:value_of(XTL),
+         A = xmerl_xs:value_of(XA),
+         Cargo = xmerl_xs:value_of(XCargo),
+         Fix = xmerl_xs:value_of(XFix),
+         LSR = xmerl_xs:value_of(XLSR),
+         TLLSR = xmerl_xs:value_of(XTLLSR),
+         [OTotal] = xmerl_xs:value_of(XTotal),
+         Total = ling:replace(OTotal,",",""),
+         Desc = xmerl_xs:value_of(XDesc),
+         #product_aristo{no = No, name = Name, brand =Vendor, model = Model, price = nsm_gifts_plugin_enilginc:list_to_float_smart(Price), currency = Curr, 
+                         image = Img, tl_price = TL, count = A, cargo = Cargo, fix = Fix,
+                         logistic_service_rate = LSR, tl_lsr = TLLSR, total = nsm_gifts_plugin_enilginc:list_to_float_smart(Total), desc = Desc}
+     end|| E <- List].
 
 str_price_to_int(String) -> round(list_to_float_smart(String)*100).
 

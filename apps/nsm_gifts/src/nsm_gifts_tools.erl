@@ -12,6 +12,7 @@
 %%
 
 -include("common.hrl").
+-include_lib("nsx_config/include/log.hrl").
 
 %%
 %% Exported Functions
@@ -91,6 +92,7 @@ dumb_store(List) ->
     {A, B, C, D} = nsm_gifts_db:get_factors(),
     List2 =
         [begin
+             ?INFO("User Price: ~p",[{UserPrice,ExtId}]),
              OurPrice = round(UserPrice * A),
              KakushCurrencyPre = round(OurPrice * D / 100),
              {KakushCurrency, KakushPoints} =

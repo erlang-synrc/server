@@ -17,16 +17,7 @@
 -include("common.hrl").
 -include("vendors.hrl").
 
-%%
-%% Exported Functions
-%%
--export([
-         get_gifts/0
-        ]).
-
--export([
-         get_gifts_test/0
-        ]).
+-compile(export_all).
 
 -define(PRODUCTS_URL, "http://www.enilginc.com/xml/urunler.asp?ip=188.40.111.156").
 -define(CATEGORIES_URL, "http://www.enilginc.com/xml/kategoriler.asp?ip=188.40.111.156").

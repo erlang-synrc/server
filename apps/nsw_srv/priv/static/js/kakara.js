@@ -1,4 +1,4 @@
-// @depends ../nitrogen/js/jquery-1.6.2.js
+// @depends ../nitrogen/jquery-1.8.2.min.js
 // @depends ../nitrogen/js/inputs.js
 // @depends ../nitrogen/jquery-ui.js
 // @depends ../nitrogen/livevalidation.js
