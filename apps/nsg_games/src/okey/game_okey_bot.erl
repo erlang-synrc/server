@@ -16,7 +16,7 @@
         is_robot = true :: boolean(),
         conn :: pid(),
         mode :: atom(),
-        hand :: list(#'OkeyPiece'{}),
+        hand = [] :: list(#'OkeyPiece'{}),
         gosterge :: #'OkeyPiece'{},
         set_state :: #'OkeySetState'{},
         delay :: integer(),
@@ -27,33 +27,18 @@
         session :: pid(),
         gid :: 'GameId'(),
         bot :: pid(),
+        okey_disable :: boolean(),
         running_requests = dict:new() :: any(),
         request_id = 0
     }).
 
-%% session talks to bot
-send_message(Pid, Message) ->
-    ?INFO("OKEY message to pid ~p body ~p",[Pid,Message]),
-    gen_server:call(Pid, {send_message, Message}).
-
-%% bot talks to session
-call_rpc(Pid, Message) ->
-    gen_server:call(Pid, {call_rpc, Message}).
-
-get_session(Pid) ->
-    gen_server:call(Pid, get_session).
-
-init_state(Pid, Situation) ->
-    gen_server:cast(Pid, {init_state, Situation}).
-
-join_game(Pid) ->
-    gen_server:cast(Pid, join_game).
-
-start(Owner, PlayerInfo, GameId) ->
-    gen_server:start(?MODULE, [Owner, PlayerInfo, GameId], []).
-
-start_link(Owner, PlayerInfo, GameId) ->
-    gen_server:start_link(?MODULE, [Owner, PlayerInfo, GameId], []).
+send_message(Pid, Message) -> gen_server:call(Pid, {send_message, Message}).
+call_rpc(Pid, Message) -> gen_server:call(Pid, {call_rpc, Message}).
+get_session(Pid) -> gen_server:call(Pid, get_session).
+init_state(Pid, Situation) -> gen_server:cast(Pid, {init_state, Situation}).
+join_game(Pid) -> gen_server:cast(Pid, join_game).
+start(Owner, PlayerInfo, GameId) -> gen_server:start(?MODULE, [Owner, PlayerInfo, GameId], []).
+start_link(Owner, PlayerInfo, GameId) -> gen_server:start_link(?MODULE, [Owner, PlayerInfo, GameId], []).
 
 init([Owner, PlayerInfo, GameId]) ->
     {ok, SPid} = game_session:start_link(self()),
@@ -87,7 +72,7 @@ handle_call({call_rpc, Msg}, From, State) ->
                                       end,
                                 gen_server:call(Self, Res)
                         end),
-    {noreply, State#state{running_requests = RR1, request_id = Id}};
+    {noreply, State#state{running_requests = RR1, request_id = Id, okey_disable = false}};
 
 handle_call({reply, Id, Answer}, _From, State) ->
     RR = State#state.running_requests,
@@ -103,15 +88,6 @@ handle_call(Request, _From, State) ->
     ?INFO("unknown call: ~p", [Request]),
     {reply, Reply, State}.
 
-handle_cast({init_state, Situation}, State) ->
-    Mon = erlang:monitor(process, State#state.owner),
-    UId = State#state.uid,
-    GId = State#state.gid,
-    SPid = State#state.session,
-    game_session:bot_join_game(SPid, GId),
-    BPid = proc_lib:spawn_link(game_okey_bot, robot_init, [#state{gid = GId, uid = UId, conn = self()}]),
-    BPid ! {init_hand, Situation},
-    {noreply, State#state{bot = BPid, owner_mon = Mon}};
 handle_cast(join_game, State) ->
     Mon = erlang:monitor(process, State#state.owner),
     UId = State#state.uid,
@@ -119,6 +95,7 @@ handle_cast(join_game, State) ->
     BPid = proc_lib:spawn_link(game_okey_bot, robot_init, [#state{gid = GId, uid = UId, conn = self()}]),
     BPid ! join_game,
     {noreply, State#state{bot = BPid, owner_mon = Mon}};
+
 handle_cast(Msg, State) ->
     ?INFO("unknown cast: ~p", [Msg]),
     {noreply, State}.
@@ -166,76 +143,112 @@ robot_init_loop(State) ->
     Id = State#state.uid,
     GameId = State#state.gid,
     receive
-        {init_hand, {[GI, GS], RobotInfo}} ->
-            {Next, Delay} = RobotInfo,
-            #okey_game_info{set_no = CurSet, rounds = MaxRound, sets = MaxSet, game_type = Mode} = GI,
-            #okey_game_player_state{whos_move = Turn, game_state = GameState,
-                                    tiles = Hand, gosterge = Gosterge, current_round = CurRound} = GS,
-            SS = #'OkeySetState'{round_cur = CurRound, round_max = MaxRound,
-                            set_cur = CurSet,set_max = MaxSet},
-            State1 = State#state{set_state = SS, delay = Delay, mode = Mode},
-            case {Turn, GameState} of
-                {_, game_finished} ->
-                    okey_client_rematch(State1),
-                    init_set(State1);
-                {_, do_okey_ready} ->
-                    say_ready(State1),
-                    okey_client_round(Next, State1);
-                {Id, do_okey_take} ->
-                    ?INFO("init bot: move both", []),
-                    Hand1 = do_turn(State1, Hand),
-                    okey_client_loop(State1#state{hand = Hand1, gosterge = Gosterge});
-                {Id, do_okey_discard} ->
-                    ?INFO("init bot: move discard only", []),
-                    {TryDiscard, _} = draw_random(Hand),
-                    Hand1 = do_discard(State1, Hand, TryDiscard),
-                    okey_client_loop(State1#state{hand = Hand1, gosterge = Gosterge});
-                {_, do_okey_challenge} ->
-                    ?INFO("init bot: challenge", []),
-                    do_challenge(State1),
-                    okey_client_loop(State1#state{hand = Hand, gosterge = Gosterge});
-                {_, _} ->
-                    ?INFO("init bot: not bot's move", []),
-                    okey_client_loop(State1#state{hand = Hand, gosterge = Gosterge})
-            end;
         join_game ->
+            ?INFO("OKEY BOT JOINED"),
             case call_rpc(S, #join_game{game = GameId}) of
                 #'TableInfo'{game = _Atom} ->
-                    init_set(State);
+                    Delay = game_okey:get_timeout(robot, fast),
+                    okey_client_loop(State#state{delay = Delay});
                 _Err ->
                     ?INFO("ID: ~p failed take with msg ~p", [Id, _Err]),
                     erlang:error(robot_cant_join_game)
-            end
+            end;
+        _X ->
+           ?INFO("OKEY BOT X: ~p",[_X])
     end.
 
 okey_client_loop(State) ->
+    ?INFO("OKEY BOT CLIENT LOOP"),
     Hand0 = State#state.hand,
     Id = State#state.uid,
     receive
         #game_event{event = <<"okey_next_turn">>, args = Args} ->
+            ?INFO("OKEY NEXT TURN ~p",[{proplists:get_value(player, Args), proplists:get_value(can_challenge, Args)}]),
             Hand1 = case {proplists:get_value(player, Args), proplists:get_value(can_challenge, Args)} of
                         {Id, false} ->
+                            ?INFO("OKEY NEXT TURN"),
                             do_turn(State, Hand0);
                         {_OtherId, _Val} ->
                             Hand0
                     end,
             okey_client_loop(State#state{hand = Hand1});
-        #'game_event'{event = <<"okey_revealed">>} ->
+        #game_event{event = <<"okey_revealed">>} ->
             do_challenge(State),
             okey_client_loop(State);
-        #'game_event'{event = <<"okey_series_ended">>} ->
+        #game_event{event = <<"okey_series_ended">>} ->
             S = State#state.conn,
             call_rpc(S, #logout{});
-        #'game_event'{event = <<"okey_round_ended">>, args = Args} ->
+        #game_event{event = <<"okey_round_ended">>, args = Args} ->
             NextAction = proplists:get_value(next_action, Args),
             ?INFO("ID: ~p round ended", [Id]),
             okey_client_round(NextAction, State);
-        #'game_event'{event = <<"okey_game_info">>, args = Args} ->
+        #game_event{event = <<"okey_game_info">>, args = Args} ->
             ?INFO("OKEY BOT OKEY GAME INFO: ~p ", [Args]),
-            okey_client_loop(State);
-        #'game_event'{event = <<"okey_game_player_state">>, args = Args} ->
-            ?INFO("OKEY BOT OKEY GAME INFO: ~p ", [Args]),
-            okey_client_loop(State);
+            Mode = proplists:get_value(game_type, Args),
+            SM = proplists:get_value(sets, Args),
+            SC = proplists:get_value(set_no, Args),
+            RM = proplists:get_value(rounds, Args),
+            TO = proplists:get_value(timeouts, Args),
+            Speed = TO#'OkeyTimeouts'.speed,
+            SpeedAtom = list_to_atom(binary_to_list(Speed)),
+            Delay = game_okey:get_timeout(robot, fast),
+            ST = #'OkeySetState'{round_cur = 1, round_max = RM, set_cur = SC, set_max = SM},
+            okey_client_loop(State#state{set_state = ST, delay = Delay, mode = Mode});
+        #game_event{event = <<"okey_disable_okey">>, args = Args} ->
+            okey_client_loop(State#state{okey_disable = true});
+        #game_event{event = <<"okey_game_started">>, args = Args} ->
+            MH = proplists:get_value(tiles, Args),
+            G = proplists:get_value(gosterge, Args),
+            RC = proplists:get_value(current_round, Args),
+            ST = State#state.set_state,
+            ST1 = ST#'OkeySetState'{round_cur = RC},
+            State#state{hand = MH, gosterge = G, set_state = ST1},
+            ?INFO("OKEY BOT GAME STARTED : ~p",[length(MH)]),
+            okey_client_loop(State#state{hand = MH});
+        #game_event{event = <<"okey_game_player_state">>, args = Args} ->
+            ?INFO("OKEY BOT OKEY GAME PLAYER STATE: ~p ROBOT NAME ~p", [Args,Id]),
+            SS = #'OkeySetState'{round_cur = 1, round_max = 3,
+                            set_cur = 1,set_max = 1},
+
+            Pause = proplists:get_value(paused, Args, false),
+            Turn = proplists:get_value(whos_move, Args),
+            GameState = proplists:get_value(game_state, Args),
+            Gosterge = State#state.gosterge,
+            ?INFO("Id ~p Turn: ~p GameState: ~p",[Id, Turn,GameState]),
+
+            case Pause of
+                 true -> wait_for_resume();
+                 false -> ok
+            end,
+
+
+            case {Turn, GameState} of
+                {Id, <<"do_okey_take">>} ->
+                    ?INFO("init bot: take", []),
+                    Hand1 = do_turn(State, Hand0),
+                    okey_client_loop(State#state{hand = Hand1, gosterge = Gosterge});
+                {Id, <<"do_okey_discard">>} ->
+                    ?INFO("init bot: discard", []),
+                    {TryDiscard, _} = draw_random(Hand0),
+                    Hand1 = do_discard(State, Hand0, TryDiscard),
+                    okey_client_loop(State#state{hand = Hand1, gosterge = Gosterge});
+                {_, <<"game_finished">>} ->
+                    ?INFO("init bot: finished", []),
+                     okey_client_rematch(State),
+                    okey_client_loop(State);
+                {_, <<"do_okey_ready">>} ->
+                    ?INFO("init bot: ready", []),
+                    say_ready(State),
+                    okey_client_round(<<"done">>, State);
+                {_, <<"do_okey_challenge">>} ->
+                    ?INFO("init bot: challenge", []),
+                    do_challenge(State),
+                    okey_client_loop(State#state{hand = Hand0, gosterge = Gosterge});
+                {_, _B} ->
+                    ?INFO("init bot: UNKNOWN ~p", [_B]),
+                    okey_client_loop(State#state{hand = Hand0, gosterge = Gosterge})
+            end;
+
         _Other ->
             ?INFO("OKEY BOT OTHER: ~p ", [_Other]),
             okey_client_loop(State)
@@ -259,11 +272,11 @@ okey_client_round(<<"done">>, State = #state{}) ->
     %init_set(State);
 okey_client_round(<<"next_set">>, State = #state{}) ->
     %% set ended, wait for new set info
-    init_set(State);
+    okey_client_loop(State);
 okey_client_round(<<"next_round">>, State) ->
     %% round ended, wait for new round info
-    State2 = get_hand(State),
-    okey_client_loop(State2).
+%    State2 = get_hand(State),
+    okey_client_loop(State).
 
 okey_client_rematch(State) ->
     S = State#state.conn,
@@ -293,50 +306,24 @@ okey_client_rematch2(State) ->
             end
     end.
 
-init_set(State) ->
-    State1 = receive
-                 #game_event{event = <<"okey_game_info">>, args = Args} ->
-                     Mode = proplists:get_value(game_type, Args),
-                     SM = proplists:get_value(sets, Args),
-                     SC = proplists:get_value(set_no, Args),
-                     RM = proplists:get_value(rounds, Args),
-                     TO = proplists:get_value(timeouts, Args),
-                     Speed = TO#'OkeyTimeouts'.speed,
-                     SpeedAtom = list_to_atom(binary_to_list(Speed)),
-                     Delay = game_okey:get_timeout(robot, SpeedAtom),
-                     ST = #'OkeySetState'{round_cur = 1, round_max = RM, set_cur = SC, set_max = SM},
-                     State#state{set_state = ST, delay = Delay, mode = Mode}
-             end,
-    State2 = get_hand(State1),
-    okey_client_loop(State2).
-
 say_ready(State) ->
     S = State#state.conn,
     GameId = State#state.gid,
     ok = call_rpc(S, #game_action{game = GameId, action = okey_ready, args = []}).
-
-get_hand(State) ->
-    receive
-        #game_event{event = <<"okey_game_started">>, args = Args} ->
-            MH = proplists:get_value(tiles, Args),
-            G = proplists:get_value(gosterge, Args),
-            RC = proplists:get_value(current_round, Args),
-            ST = State#state.set_state,
-            ST1 = ST#'OkeySetState'{round_cur = RC},
-            State#state{hand = MH, gosterge = G, set_state = ST1}
-    end.
 
 do_turn(State, Hand) ->
     Delay = get_delay(State),
     Hand1 = if length(Hand) == 15 ->
                    Hand;
                true ->
+                   ?INFO("OKEY BOT TAKE ? ~p ",[length(Hand)]),
                    simulate_delay(take, Delay),
                    {_, H1} = do_take(State, Hand),
                    H1
             end,
     true = is_list(Hand1),
     {TryDiscard, _} = draw_random(Hand1),
+    ?INFO("DO TURN"),
     simulate_delay(discard, Delay),
     do_discard(State, Hand1, TryDiscard).
 
@@ -364,7 +351,10 @@ do_take(State, Hand) ->
     S = State#state.conn,
     GameId = State#state.gid,
     Id = State#state.uid,
-    Pile = crypto:rand_uniform(0, 2),
+    Pile = case State#state.okey_disable of
+                true -> 0;
+                false -> crypto:rand_uniform(0, 2)
+           end,
     case call_rpc(S, #game_action{
                         game = GameId,
                         action = okey_take,
@@ -394,7 +384,6 @@ draw_random([One]) ->
     {One, []};
 draw_random(List) ->
     {is_list, true} = {is_list, is_list(List)},
-%    ?INFO("List: ~p",[List]),
     Pos = crypto:rand_uniform(1, length(List)),
     Item = lists:nth(Pos, List),
     ResList = lists:delete(Item, List),
