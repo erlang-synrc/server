@@ -346,6 +346,33 @@ handle_call(_Request, _From, State) ->
     Reply = ok,
     {stop, Reply, State}.
 
+%% The notification from the current table to rejoin to the game
+%% because the user for example was moved to another table.
+handle_cast({rejoin, GameId} = Message, State = #state{user = User, games = Games}) ->
+    ?INFO("Recived a notification from the table: ~p", [Message]),
+    ?INFO("Requesting main relay info...",[]),
+    case game_manager:get_relay_mod_pid(GameId) of
+        {FLMod, FLPid} ->
+            ?INFO("Found the game: ~p. Trying to register...",[{FLMod, FLPid}]),
+            case FLMod:reg(FLPid, User) of
+                {ok, {RegNum, {RMod, RPid}, {TMod, TPid}}} ->
+                    ?INFO("join to game relay: ~p",[{RMod, RPid}]),
+                    ok = RMod:subscribe(RPid, self(), User, RegNum),
+                    Ref = erlang:monitor(process, RPid),
+                    Part = #participation{ref = Ref, game_id = GameId, reg_num = RegNum,
+                                          rel_module = RMod, rel_pid = RPid,
+                                          tab_module = TMod, tab_pid = TPid, role = player},
+                    NewGames = lists:replace(GameId, #participation.game_id, Games, Part),
+                    {noreply, State#state{games = NewGames}};
+                {error, out} ->
+                    {stop, normal, State};
+                {error, not_allowed} ->
+                    {stop, {error, not_allowed_to_join}, State}
+            end;
+        undefined ->
+            {stop, {error, game_not_found}, State}
+    end;
+
 handle_cast({bot_session_attach, UserInfo}, State = #state{user = undefined}) ->
 %    ?INFO("bot session attach", []),
     {noreply, State#state{user = UserInfo}};
@@ -494,30 +521,6 @@ code_change(_OldVsn, State, _Extra) ->
 
 get_relay(GameId, GameList) ->
     lists:keyfind(GameId, #participation.game_id, GameList).
-
-
-%% @spec get_second_level_relay(FirstLevelRelay, UserId) -> {ok, Pid} |
-%%                                                          {error, Reason}
-%% @doc
-%% Types:
-%%     FirstLevelRelay = pid()
-%%     UserId = binary()
-%%     Reason = not_allowed |
-%%              timeout
-%% @end
-
-get_second_level_relay(FirstLevelRelay, UserId) ->
-    Ref = make_ref(),
-    From = {self(), Ref},
-    FirstLevelRelay ! {get_second_level_relay, From, UserId},
-    receive
-        {FirstLevelRelay, {Ref, {ok, Pid}}} ->
-            {ok, Pid};
-        {FirstLevelRelay, {Ref, {error, not_allowed}}} ->
-            {error, not_allowed}
-    after 5000 ->
-            {error, timeout}
-    end.
 
 
 maybe_send_message(RPC, Msg, State) ->

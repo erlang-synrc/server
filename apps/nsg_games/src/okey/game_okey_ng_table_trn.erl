@@ -176,10 +176,16 @@ init([GameId, TableId, Params]) ->
                                           scoring_state = ScoringState
                                          }}.
 
-handle_event({parent_message, Message}, StateName, StateData) ->
+handle_event({parent_message, Message}, StateName,
+             #state{game_id = GameId, table_id = TableId} = StateData) ->
+    ?INFO("OKEY_NG_TABLE_TRN <~p,~p> Received message from the parent: ~p.",
+          [GameId, TableId, Message]),
     handle_parent_message(Message, StateName, StateData);
 
-handle_event({relay_message, Message}, StateName, StateData) ->
+handle_event({relay_message, Message}, StateName,
+             #state{game_id = GameId, table_id = TableId} =  StateData) ->
+    ?INFO("OKEY_NG_TABLE_TRN <~p,~p> Received message from the relay: ~p.",
+          [GameId, TableId, Message]),
     handle_relay_message(Message, StateName, StateData);
 
 handle_event(_Event, StateName, StateData) ->
@@ -205,7 +211,7 @@ handle_info({timeout, Magic}, ?STATE_PLAYING,
 handle_info({timeout, Magic}, ?STATE_REVEAL_CONFIRMATION,
             #state{timeout_magic = Magic, wait_list = WL,
                    reveal_confirmation_list = CList} = StateData) ->
-    NewCList = lists:foldl(fun(SeatNum, Acc) -> [{SeatNum, false} | Acc] end, CList, WL), %% FIXME: false?
+    NewCList = lists:foldl(fun(SeatNum, Acc) -> [{SeatNum, false} | Acc] end, CList, WL),
     finalize_round(StateData#state{reveal_confirmation_list = NewCList});
 
 handle_info(_Info, StateName, StateData) ->
@@ -225,24 +231,20 @@ code_change(_OldVsn, StateName, StateData, _Extra) ->
 %% handle_parent_message(Msg, StateName, StateData)
 
 handle_parent_message({register_player, RequestId, UserInfo, PlayerId, SeatNum}, StateName,
-                      #state{game_id = GameId, table_id = TableId, players = Players,
+                      #state{table_id = TableId, players = Players,
                              parent = Parent, relay = Relay} = StateData) ->
-    ?INFO("OKEY_NG_TABLE_TRN <~p,~p> Received command to register player <~p> to seat <~p>. RequestId: ~p.",
-          [GameId, TableId, PlayerId, SeatNum, RequestId]),
     #'PlayerInfo'{id = UserId, robot = IsBot} = UserInfo,
     NewPlayers = reg_player(PlayerId, SeatNum, UserId, IsBot, UserInfo, Players),
     relay_register_player(Relay, UserId, PlayerId),
-    %% TODO: Send notificitations to gamesessions
+    %% TODO: Send notificitations to gamesessions (we have no such notification)
     parent_confirm_registration(Parent, TableId, RequestId),
     {next_state, StateName, StateData#state{players = NewPlayers}};
 
 handle_parent_message({replace_player, RequestId, UserInfo, PlayerId, SeatNum}, StateName,
-                      #state{game_id = GameId, table_id = TableId, players = Players,
+                      #state{table_id = TableId, players = Players,
                              parent = Parent, relay = Relay} = StateData) ->
-    ?INFO("OKEY_NG_TABLE_TRN <~p,~p> Received command to replace player at seat <~p> by player <~p>.",
-          [GameId, TableId, SeatNum, PlayerId]),
     #'PlayerInfo'{id = UserId, robot = IsBot} = UserInfo,
-    [#player{id = OldPlayerId}] = find_players_by_seat_num(SeatNum, Players),
+    #player{id = OldPlayerId} = get_player_by_seat_num(SeatNum, Players),
     NewPlayers = del_player(OldPlayerId, Players),
     NewPlayers2 = reg_player(PlayerId, SeatNum, UserId, IsBot, UserInfo, NewPlayers),
     relay_kick_player(Relay, OldPlayerId),
@@ -253,16 +255,13 @@ handle_parent_message({replace_player, RequestId, UserInfo, PlayerId, SeatNum}, 
     {next_state, StateName, StateData#state{players = NewPlayers2}};
 
 handle_parent_message(start_round, StateName,
-                      #state{game_id = GameId, game_type = GameMode,
+                      #state{game_type = GameMode, cur_round = CurRound,
                              gosterge_finish_allowed = GostergeFinishAllowed,
-                             cur_round = CurRound, table_id = TableId,
                              start_seat = StartSeat, players = Players,
                              relay = Relay, turn_timeout = TurnTimeout,
                              scoring_state = ScoringState} = StateData)
   when StateName == ?STATE_WAITING_FOR_START;
        StateName == ?STATE_FINISHED ->
-    ?INFO("OKEY_NG_TABLE_TRN <~p,~p> Received command to start game at the table. "
-          "Starting...", [GameId, TableId]),
     NewCurRound = CurRound + 1,
     Deck = deck:shuffle(deck:init_deck(okey)),
     {Gosterge, Deck1} = choose_gosterge(Deck),
@@ -298,13 +297,9 @@ handle_parent_message(start_round, StateName,
                                                  timeout_timer = TRef,
                                                  timeout_magic = Magic}};
 
-handle_parent_message(show_round_result = Message,
-                      ?STATE_FINISHED,
-                      #state{game_id = GameId, table_id = TableId,
-                             relay = Relay, scoring_state = ScoringState
+handle_parent_message(show_round_result, ?STATE_FINISHED,
+                      #state{relay = Relay, scoring_state = ScoringState
                             } = StateData) ->
-    ?INFO("OKEY_NG_TABLE_TRN <~p,~p> Received message from the parent: ~p.",
-          [GameId, TableId, Message]),
     {FinishInfo, RoundScore, AchsPoints, TotalScore} = ?SCORING:last_round_result(ScoringState),
     Msg = case FinishInfo of
               {win_reveal, Revealer, WrongRejects, _RevealWithColor, _RevealWithOkey, _RevealWithPairs} ->
@@ -320,14 +315,25 @@ handle_parent_message(show_round_result = Message,
                   create_okey_round_ended_gosterge_finish(Winner, RoundScore, TotalScore,
                                                           AchsPoints, StateData)
           end,
-    ?INFO("OKEY_NG_TABLE_TRN <~p,~p> Finish: ~p", [GameId, TableId, Msg]),
     relay_publish_ge(Relay, Msg),
     {next_state, ?STATE_FINISHED, StateData#state{}};
 
 
-handle_parent_message(stop, _StateName,
-                      #state{game_id = GameId, table_id = TableId} = StateData) ->
-    ?INFO("OKEY_NG_TABLE_TRN <~p,~p> Received command to stop. Initiate stopping procedure...", [GameId, TableId]),
+handle_parent_message(rejoin_players, StateName,
+                      #state{game_id = GameId, relay = Relay,
+                             players = Players} = StateData) ->
+    relay_publish(Relay, {rejoin, GameId}), %% XXX Looks like a hack...
+    [relay_unregister_player(Relay, P#player.id) || P <- players_to_list(Players)],
+    {next_state, StateName, StateData#state{players = players_init()}};
+
+
+handle_parent_message(disconnect_players, StateName,
+                      #state{relay = Relay, players = Players} = StateData) ->
+    [relay_kick_player(Relay, P#player.id) || P <- players_to_list(Players)],
+    {next_state, StateName, StateData#state{players = players_init()}};
+
+
+handle_parent_message(stop, _StateName, StateData) ->
     {stop, normal, StateData};
 
 handle_parent_message(Message, StateName,
@@ -372,7 +378,7 @@ handle_player_action(#player{id = PlayerId, seat_num = SeatNum},
                      #state{game_id = GameId, table_id = TableId} = StateData) ->
     try api_utils:to_known_record(Action, Args) of
         ExtAction ->
-            ?INFO("OKEY_NG_TABLE_TRN <~p,~p> Player <~p> submit the game action (converted): ~p.",
+            ?INFO("OKEY_NG_TABLE_TRN <~p,~p> Player <~p> submit the game action: ~p.",
                   [GameId, TableId, PlayerId, ExtAction]),
             do_action(SeatNum, ExtAction, From, StateName, StateData)
     catch
