@@ -299,9 +299,9 @@ content() ->
                     #br{},
                     #link{postback=orange_button, class="tourlobby_orange_button", text="TURNUVAYA KATIL"},
                     #br{},
-                    #link{postback=orange_button, class="tourlobby_red_button", text="TURNUVADAN AYRIL"},
+                    #link{postback=red_button, class="tourlobby_red_button", text="TURNUVADAN AYRIL"},
                     #br{},
-                    #link{postback=orange_button, class="tourlobby_yellow_button", text="TURNUVADAN GİT"},
+                    #link{postback=yellow_button, class="tourlobby_yellow_button", text="TURNUVADAN GİT"},
                     "</center>"
                 ]
             },
