@@ -17,8 +17,8 @@ get_gifts() ->
     Res = fetch_data_files(?PRODUCTS_FILE),
     case Res of
         {error, Reason} -> {error, {fetching, Reason}};
-        {ok, {ProductsData}} -> try List = process_data(ProductsData), {ok, List}
-                                catch _:Exception -> {error, {parsing, Exception}} end
+        {ok, {ProductsData}} -> List = process_data(ProductsData), {ok, List}
+%                                catch _:Exception -> {error, {parsing, Exception}} end
     end.
 
 fetch_data_files(Products) ->

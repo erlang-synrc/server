@@ -29,7 +29,7 @@
 
 %% --------------------------------------------------------------------
 %% External exports
--export([start/3, subscribe/4, submit/2, signal/2]).
+-export([start/3, subscribe/4, submit/3, signal/3]).
 -export([publish/2, to_session/3, update_gamestate/2]).
 
 %% gen_fsm callbacks
@@ -82,10 +82,10 @@ start(GameId, TableId, Params) ->
 subscribe(Relay, SessionPid, User, RegNum) ->
     client_sync_send(Relay, {subscribe, SessionPid, User, RegNum}, 10000).
 
-submit(Relay, Command) ->
+submit(Relay, _UserId, Command) ->
     client_sync_send(Relay, {submit, Command}).
 
-signal(Relay, Message) ->
+signal(Relay, _UserId, Message) ->
     client_send(Relay, {signal, Message}).
 
 publish(Relay, Message) ->

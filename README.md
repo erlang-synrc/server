@@ -21,9 +21,9 @@ Project consist of set of erlang applications
 that you can find in "apps" directory. They running
 in context of tree erlang instances (three-layer cluster):
 
-* Application server middleware
-* Game server
-* Web server
+* Application Processes
+* Game Processes
+* Comet server
 
 Each application has its own prefix to easily determine
 to which layer it belongs:
@@ -31,13 +31,13 @@ to which layer it belongs:
     nsx - common applications
     nsm - application server
     nsg - game server
-    nsw - web server
+    nsw - comet server
 
 All system relies on external erlang instances
 that should be installed as part of deployment process externally:
 
 * RabbitMQ enterprise message bus (separate cluster)
-* Riak distributed hashtable (built-in in application server)
+* Riak distributed hashtable (built-in in each node)
 
 Building Project
 ----------------
@@ -60,9 +60,10 @@ And the kerl procedure is following:
     $ ./kerl install r15b02 ~/apps/erlang-R15B02
     $ . ~/apps/erlang-R15B02/activate
 
-Add folloowing lines to /etc/profile ({username} - your name):
-    PATH=$PATH:/home/{username}/apps/erlang-R15B02/bin
-    . /home/{username}/apps/erlang-R15B02/activate
+Add folloowing lines to /etc/profile:
+
+    PATH=$PATH:/home/kakauser/apps/erlang-R15B02/bin
+    . /home/kakauser/apps/erlang-R15B02/activate
 
 Create this dir and subdirs for later usage:
 
@@ -72,68 +73,41 @@ Create this dir and subdirs for later usage:
 
 ### RIAK
 
-Ubuntu users:
-
-For Ubuntu users please install riak from prebuilt binaries from Basho site.Then remove riak from autostart 
-and put its libraries (listed below) to /mnt/glusterfs/apps/riak_bin.
-
- - riak_core
- - riak_sysmon
- - riak_pipe
- - riak_pb
- - riak_control
- - riak_api
- - riak_kv
- - poolboy
- - luke
- - erlang_js
- - webmachine
- - bitcask
- - folsom
- - bear
- - sext
- - eleveldb
- - protobuffs
- - mochiweb
- - ebloom
-
-Mac Users:
-
 Install Riak version 1.2 from sources:
 
     $ cd /mnt/glusterfs/apps
     $ git clone https://github.com/basho/riak.git
     $ cd riak
+    $ git checkout 8b32af5f362daa7018c10ecd509c1c3694cd8f3f
     $ make rel
 
 Symlink required riak libraries to your erlang libs dir:
 
     $ ln -s /mnt/glusterfs/apps/riak/rel/riak/lib/ \
-         {riak_sysmon,riak_pipe,riak_kv,riak_core,poolboy, \
+         {riak_sysmon,bear,riak_pipe,riak_kv,riak_core,poolboy, \
           luke,erlang_js,riak_pb,riak_control,webmachine,bitcask, \
-          folsom,bear,riak_api,sext,eleveldb,protobuffs,ebloom,mochiweb}-* ~/erl-r14/lib/
+          folsom,bear,riak_api,sext,eleveldb,protobuffs,ebloom,mochiweb}-* ~/apps/erlang-R15B02/lib/
 
 Required files for db to be initialized properly:
-Create folder /home/kakauser/tmp/kaka. And copy files from ~/kakauser/tmp/kaka 
-on srv1.kakaranet.com or srv2.kakaranet.com to this folder.
+Create folder for gifts:
+
+    $ mkdir -p /home/kakauser/tmp
+    $ mkdir -p /home/kakauser/tmp/kaka
+
+And copy files from ~/kakauser/tmp/kaka  n srv1.kakaranet.com 
+or srv2.kakaranet.com to this folder.
 
 ### RABBIT-MQ
 
-For Ubuntu users please install prebuilt binaries from official site.
-
+For Ubuntu and Windows users please install prebuilt binaries from official site.
 For Mac users please build RabbitMQ from sources:
-
-Download from here:
-http://www.rabbitmq.com/download.html
-Source .tar.gz
-Current version is 2.8.5
 
     $ cd /mnt/glusterfs/apps/
     $ wget http://www.rabbitmq.com/releases/rabbitmq-server/v2.8.5/rabbitmq-server-2.8.5.tar.gz
-    $ tar xvzf rabbitmq-server-*.tar.gz
-    $ cd rabbitmq-server-*
+    $ tar xvzf rabbitmq-server-2.8.5.tar.gz
+    $ cd rabbitmq-server-2.8.5
 
-install additional lib before you go:
+Install additional lib before you go if you are building from sources:
 
     $ apt-get install xmlto
     $ make
@@ -160,6 +134,7 @@ Then just do local build
     $ ./rebar get-deps
     $ ./rebar compile
     $ ./release.sh
+    $ ./release_sync.sh (for code hot-load)
     $ ./single_configure.sh
     $ ./start.sh
 
@@ -179,7 +154,7 @@ All releases will be put in rels/*/node directories.
 For local use all releases can be configured as above
 but Web server needs to be configured at least with two parameters:
 
-    host:~/ns/rels/web/files$ ./configure -ip 192.168.1.108 -web-port 8000
+    host:~/ns/rels/web/files$ ./configure 192.168.1.108 app@local.com
 
 You can tune each release with custom "config" erlang script.
 E.g. if you want to change AMF port in Game server you can do following:
@@ -256,11 +231,11 @@ And the juicer
 Deploying to MASTER {SRV1,SRV2,SRV3}
 ------------------------------------
 
-Go to srv3
+Go to srv1/srv2/srv3:
 
-    $ cd /home/kakauser/release/
-    $ ./deploy.sh
+    $ cd /home/kakauser/release/server
 
+And perform steps described in Fast Local Start. 
 Check if everything is OK and Enjoy!
 
 Profiling
@@ -285,7 +260,6 @@ To create profile of request to some URL, attach to webserver node console, and 
 Result of analyse will be in ./rels/web/node/fprof.analysis, sorted by ACC.
 How to read that output, see into fprof man page.
 
-
 Feed Attachments
 ----------------
 
@@ -296,4 +270,6 @@ Get it using apt-get:
 
 Or read installation notes from official website.
 
+-- 
+maxim@synrc.com 
 OM A HUM

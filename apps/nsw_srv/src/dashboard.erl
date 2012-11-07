@@ -909,3 +909,6 @@ guiders_script() ->
             title: '"++s_T("Thank you!")++"'
         });
     ").
+
+api_event(Name, Tag, Data)->
+    fb_utils:api_event(Name, Tag, Data).

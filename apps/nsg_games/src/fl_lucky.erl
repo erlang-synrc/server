@@ -428,8 +428,8 @@ unreg_player_and_call_a_bot(PlayerId, TabId, SeatNum, #state{players = Players,
     {next_state, ?STATE_PROCESSING, StateData#state{players = NewPlayers,
                                                     seats = NewSeats}}.
 
-reg_confirm_fun(From, PlayerId, TabPid) ->
-    fun() -> gen_fsm:reply(From, {ok, {PlayerId, TabPid}}) end.
+reg_confirm_fun(From, PlayerId, Tab) ->
+    fun() -> gen_fsm:reply(From, {ok, {PlayerId, Tab, Tab}}) end.
 
 %% players_init() -> players()
 players_init() ->

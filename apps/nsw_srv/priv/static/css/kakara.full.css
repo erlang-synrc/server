@@ -3871,6 +3871,17 @@ div.post:first-child {background:none !important}
 	position:relative;
 }
 .data .btn:hover {text-decoration:none;}
+
+.data .pay_fb_btn{
+    display:block;
+    width:101px;
+    height:27px;
+    background:url(/images/facebook/paybutton.png) repeat-x;
+    padding:7px 0;
+    margin:0 auto;
+    position:relative;
+}
+
 .article .boxes {
 	width:933px;
 	overflow:hidden;
@@ -4047,6 +4058,27 @@ footer .lang img {
 .login .popup-2 {
     padding: 20px;
     margin:0 auto;
+}
+
+.fb_login_btn{
+    border-top: 1px solid #29447E;
+    border-right: 1px solid #29447E;
+    border-bottom: 1px solid #1A356E;
+    padding:0;
+    margin:0;
+    display:block;
+    height:22px;
+    background-color: #5F78AB;
+    background-image:url(/images/facebook/fbs.png);
+    background-repeat:no-repeat;
+    background-position: 0px -82px;
+    padding-left:32px;
+    padding-right:7px;
+    margin-top:-4px;
+    line-height:22px;
+    color:white;
+    font-weight:bold;
+    font-size: 12px;
 }
 
 .popup-2 .in {
