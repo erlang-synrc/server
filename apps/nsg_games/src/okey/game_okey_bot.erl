@@ -27,7 +27,7 @@
         session :: pid(),
         gid :: 'GameId'(),
         bot :: pid(),
-        okey_disable :: boolean(),
+        okey_disable = false :: boolean(),
         running_requests = dict:new() :: any(),
         request_id = 0
     }).

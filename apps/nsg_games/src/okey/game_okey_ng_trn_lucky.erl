@@ -89,7 +89,7 @@
 -define(TABLE_STATE_IN_PROGRESS, in_progress).
 -define(TABLE_STATE_FINISHED, finished).
 
--define(REST_TIMEOUT, 20000). %% Time between game finsh and start of new round
+-define(REST_TIMEOUT, 5000). %% Time between game finsh and start of new round
 
 %% ====================================================================
 %% External functions
