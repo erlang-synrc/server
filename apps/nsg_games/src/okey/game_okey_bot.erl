@@ -230,7 +230,14 @@ okey_client_loop(State) ->
             NextAction = proplists:get_value(next_action, Args),
             ?INFO("ID: ~p round ended", [Id]),
             okey_client_round(NextAction, State);
+        #'game_event'{event = <<"okey_game_info">>, args = Args} ->
+            ?INFO("OKEY BOT OKEY GAME INFO: ~p ", [Args]),
+            okey_client_loop(State);
+        #'game_event'{event = <<"okey_game_player_state">>, args = Args} ->
+            ?INFO("OKEY BOT OKEY GAME INFO: ~p ", [Args]),
+            okey_client_loop(State);
         _Other ->
+            ?INFO("OKEY BOT OTHER: ~p ", [_Other]),
             okey_client_loop(State)
     end.
 
