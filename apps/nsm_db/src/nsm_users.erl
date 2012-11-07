@@ -206,7 +206,7 @@ delete_user(UserName) ->
 	   nsm_db:delete(user_status, UserName),
 	   %% TODO: delete feed? or not?
 	   %% delete user
-	   nsm_db:delete(User),
+	   nsm_db:delete(user, UserName),
 	   {ok, User};
 	E -> E
    end.
