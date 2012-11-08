@@ -37,8 +37,7 @@ body()->
         _ ->
             login_panel_content()
     end,
-
-    #panel{id=login_panel_holder, class="lightbox", body=Content }.
+    #panel{id=login_panel_holder, class="lightbox", body=Content}.
 
 
 lightboxes() ->
@@ -49,7 +48,6 @@ lightboxes() ->
         #lightbox{id=simple_lightbox, body=#panel{id=simple_panel, body=[]}, style="display: none; position: relative;"}
     ].
 
-
 login_panel_content() ->
     wf:wire(element_register:js_text_focus_script(".wfid_login_panel input")),
     wf:wire("objs('login').focus();"),
@@ -59,17 +57,12 @@ login_panel_content() ->
         #span{class = "small", text = ?_T("Why don't you ")},
         #span{class = "mdl", text = ?_T("join us :)")},
         "</h3>",
-        #p{body =
-            ?_T("Let's rock this place "
-                "together with you")},
-        #link{class = btn, text = ?_T("Join Now!"),
-            url=?_U("/login/register")}],
-    Title = #span{class = "head",
-        text = ?_T("Member Login")},
-    LeftCol = #panel{class = "col-3",
-        body = #panel{class = "form-3", body = login_form()}},
-    RightCol = #panel{class = "col-4",
-        body = #panel{class = "box", body = RightBody}},
+        #p{body = ?_T("Let's rock this place together with you")},
+        #link{class = btn, text = ?_T("Join Now!"), url=?_U("/login/register")}],
+
+    Title = #span{class = "head", text = ?_T("Member Login")},
+    LeftCol = #panel{class = "col-3", body = #panel{class = "form-3", body = login_form()}},
+    RightCol = #panel{class = "col-4", body = #panel{class = "box", body = RightBody}},
     Content = [
         Title,
         #panel{id=login_panel, class = "col-holder col-holder-2", body = [LeftCol, RightCol]}
@@ -82,30 +75,30 @@ login_register_panel_content() ->
             wf:wire(element_register:js_text_focus_script(".wfid_register_panel input")),
             wf:wire("objs('change_password').focus();"),
             [   #register{id="register_panel"},
-                "<!-- Google Code for order Conversion Page -->
-                <script type='text/javascript'>
-                /* <![CDATA[ */
-                var google_conversion_id = 1008605414;
-                var google_conversion_language = 'tr';
-                var google_conversion_format = '2';
-                var google_conversion_color = 'ffffff';
-                var google_conversion_label = 'zEe1CPKo1AMQ5rH44AM';
-                var google_conversion_value = 0;
-                /* ]]> */
-                </script>
-                <script type='text/javascript' src='http://www.googleadservices.com/pagead/conversion.js'>
-                </script>
-                <noscript>
-                <div style='display:inline;'>
-                <img height='1' width='1' style='border-style:none;' alt='' src='http://www.googleadservices.com/pagead/conversion/1008605414/?value=0&amp;label=zEe1CPKo1AMQ5rH44AM&amp;guid=ON&amp;script=0'/>
-                </div>
-                </noscript>"
+
+                "<!-- Google Code for order Conversion Page -->",
+                "<script type='text/javascript'>",
+                "/* <![CDATA[ */",
+                "var google_conversion_id = 1008605414;",
+                "var google_conversion_language = 'tr';"
+                "var google_conversion_format = '2';",
+                "var google_conversion_color = 'ffffff';",
+                "var google_conversion_label = 'zEe1CPKo1AMQ5rH44AM';",
+                "var google_conversion_value = 0;",
+                "/* ]]> */",
+                "</script>",
+                "<script type='text/javascript' src='http://www.googleadservices.com/pagead/conversion.js'>",
+                "</script>",
+                "<noscript>",
+                "<div style='display:inline;'>",
+                "<img height='1' width='1' style='border-style:none;' alt='' src='http://www.googleadservices.com/pagead/conversion/1008605414/?value=0&amp;label=zEe1CPKo1AMQ5rH44AM&amp;guid=ON&amp;script=0'/>",
+                "</div>",
+                "</noscript>"
             ];
         _ ->
             wf:redirect_from_login(?_U("/matchmaker/okey")),
             []
     end.
-
 
 login_register_success_panel_content(Mail) ->
     Body = #panel{body=[
@@ -212,22 +205,16 @@ login_panel_wrapper(_Type, Content) ->
         body = #panel{class = frame, body = Content }}}.
 
 login_form() ->
-    [#label{class = "login_hintBox", id = login_hintbox,
-        style = "color:red"},
-        #label{text = ?_T("Username")},
-        #panel{class = "text text-focus", body = [
-            #textbox{id = login, next = password}
-        ]},
-        #panel{class = text,
-            body = #password{id = password, next = postlogin}},
-        "<label>",
-        #link{class = "ar", text = ?_T("I forgot my password!"),
-            postback = show_forget},
-        "</label>",
-        #panel{class = "row chk-row", body = [#button{id = postlogin, class = "btn-submit",
-                text = ?_T("Login"), postback = login},
-                #checkbox{class = "chk", text = ?_T("Keep me logged in"), checked = true}]},
-        #panel{class = "center fb-login-panel", body = fb_utils:login_btn("Login with Facebook")}].
+    [#label{class = "login_hintBox", id = login_hintbox, style = "color:red"},
+    #label{text = ?_T("Username")},
+    #panel{class = "text text-focus", body = [#textbox{id = login, next = password}]},
+    #panel{class = text, body = #password{id = password, next = postlogin}},
+    "<label>",
+    #link{class = "ar", text = ?_T("I forgot my password!"), postback = show_forget},
+    "</label>",
+    #panel{class = "row chk-row", body = [#button{id = postlogin, class = "btn-submit", text = ?_T("Login"), postback = login},
+    #checkbox{class = "chk", text = ?_T("Keep me logged in"), checked = true}]},
+    #panel{class = "center", body = fb_utils:login_btn("Login with Facebook")}].
 
 splash_lightbox() ->
     ColLeft = #panel{class = "col-l",
@@ -310,6 +297,7 @@ forget_password(Token) ->
 %% EVENTS
 
 event(login) ->
+    wf:info("login.erl login event"),
     webutils:login(login,password,login_hintbox);
 
 event(hide_login) ->
@@ -403,28 +391,15 @@ event(change_password) ->
 
 event({change_language,SL}) -> webutils:event({change_language, SL}).
 
-api_event(Name, Tag, Data)-> fb_utils:api_event(Name, Tag, Data).
-
-%% TODO:
-fb_info(UserInfo) ->
-    Id = wf:to_list(proplists:get_value(<<"id">>, UserInfo)),
-    Picture = lists:concat(["https://graph.facebook.com/",Id,"/picture"]),
-    Name = proplists:get_value(<<"first_name">>, UserInfo),
-    Surname = proplists:get_value(<<"last_name">>, UserInfo),
-    fb_info(Picture, Name, Surname).
-
-
-fb_info(Picture, Name, Surname) ->
-    [#image{image=Picture},
-     #label{text=Name},
-     #label{text=Surname}
-    ].
+api_event(Name, Tag, Data)-> 
+    fb_utils:api_event(Name, Tag, Data).
 
 redirect(Url, Delay) ->
     wf:wire(#event{type=timer, delay = Delay, actions=#script{script="window.location=\""++Url++"\";"}}).
 
 
 login_user(UserName) ->
+    wf:info("login.erl login_user ~p", [UserName]),
     {ok, User} = nsm_users:get_user(UserName),
 %    rpc:call(?APSERVER_NODE,nsm_users,update_after_login,[UserName]),
     nsx_util_notification:notify(["login", "user", UserName, "update_after_login"], []),

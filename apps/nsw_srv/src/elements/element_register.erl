@@ -13,30 +13,20 @@
 reflect() -> record_info(fields, register).
 
 render_element(#register{}) ->
-    inside_register_popup().
-
-%% Page Elements
-%%
-
-inside_register_popup() ->
-    PanelBody = #panel{class=[register_panel, clearfix], body=
-							    #template { file=code:priv_dir(nsw_srv)++"/templates/register.html" }
-							   },
+    PanelBody = #panel{class=[register_panel, clearfix], body=#template{ file=code:priv_dir(nsw_srv)++"/templates/register.html"}},
     Render = #panel{id=register_panel, body=login:login_panel_wrapper(register, PanelBody)},
 
     %% try to get invite and put it to state
     case invite:get_invite() of
-        {ok, Invite} ->
-            wf:state(invite, Invite);
-        _ ->
-            ok
+        {ok, Invite} -> wf:state(invite, Invite);
+        _ -> ok
     end,
 
     wf:wire(reg_username, reg_username,
-            #validate{on=blur,
-                      validators=[#is_required{text=?_T("Please fill this field")},
-                                  #custom{text=?_T("This name is exist"),
-                                          function=fun custom_validator/2 }]}),
+	#validate{on=blur, validators=[
+	    #is_required{text=?_T("Please fill this field")},
+	    #custom{text=?_T("This name is exist"),
+	    function=fun custom_validator/2}]}),
 
     wf:wire(reg_email, reg_email,
             #validate{on=blur,
@@ -60,33 +50,20 @@ inside_register_popup() ->
 		  "bottom left",
 		  "top center"
 		 ])),
-
-    case wf:session(facebook) of
-        undefined ->
-            ok;
-        UserInfo ->
-            wf:update(fb_info, fb_info(UserInfo))
-    end,
-
     Render.
 
-title()->
-    #h1{text=?_T("Sign Up")}.
+title()-> #panel{text=?_T("Sign Up"), class="dlg-title"}.
 
-register_hintbox()->
-    #label {class="login_hintBox", id=register_hintbox, style="color:red"}.
+register_hintbox()-> #label {class="login_hintBox", id=register_hintbox, style="color:red"}.
 
-field(username)->
+field(username)-> 
     [#label{text=?_T("Username")},
      #panel{class="text text-focus", body=#textbox{class=ftxt, id=reg_username, next=reg_email}}];
 field(email)->
     Mail = case wf:state(invite) of
-        #invite_code{recipient = EMail} when EMail /= undefined->
-            EMail;
-        _ ->
-            ""
+        #invite_code{recipient = EMail} when EMail /= undefined-> EMail;
+        _ -> ""
     end,
-
     [#label{text=?_T("E-mail")},
      #panel{class="text", body=#textbox{class=ftxt, id=reg_email, next=reg_passwd, text=Mail}}];
 field(passwd)->
@@ -100,50 +77,26 @@ field(birth)->
      #panel{class="ar",id=birthday_box, body=[birthday_box()]}].
 
 register_button()->
-    #button{id=aa, class="btn-submit", text=?_T("Register"),
-	    actions=[
-            webutils:serialize_event(show_please_wait, undefined, ?MODULE),
-            webutils:serialize_event(register, undefined, ?MODULE)
-        ]
-    }.
+    #button{id=aa, class="btn-submit", text=?_T("Register"), actions=[
+	webutils:serialize_event(show_please_wait, undefined, ?MODULE),
+	webutils:serialize_event(register, undefined, ?MODULE)]}.
 
-login_form()->
-    [
-     #panel{id=fb_info},
-     #label{class="login_hintBox", id=reg_login_hintbox, style="color:red"},
-     #label{class = "login_hintBox", id = login_hintbox, style = "color:red"},
-     #label{text = ?_T("Username")},
-     #panel{class = "text text-3",
-	    body = [#textbox{id=reg_login, next=reg_password}]},
-     "<label>",
-     #link{class = "ar", text = ?_T("I forgot my password!"),
-	   postback = show_forget},
-     "</label>",
-     #panel{class = "text text-3",
-	    body = #password{id=reg_password, next=postlogin}},
-     #panel{class = "row chk-row",
-	    body =
-		[#button{id = postlogin, class = "btn-submit",
-			 text = ?_T("Login"), actions=webutils:serialize_event(reg_login, undefined, ?MODULE)},
-		 #checkbox{class = "chk",
-			   text = ?_T("Keep me logged in"), checked = true}]},
-
-     #panel{class="center", body=fb_utils:login_btn("Login with Facebook")}
-    ].
-
-%%FIX: create our own screenshot instead of currently used (if this
-%% images stays at all
-register_form_facebook() ->
-    [#label{text=?_T("You'll see a window shown here after clicking the continue login:")},
-     #br{},
-     #image{image="/images/login/fb_perm.png"},
-     #br{},
-     #label{text=?_T("You should click 'Allow' to continue!")},
-     #br{},
-     #link{class="fb_continue", postback=register_by_facebook, text=?_T("Continue login >>")}
-     #link{class="fb_continue", url="/", text=?_T("Cancel")}
-    ].
-
+facebook()->
+    case wf:session(fb_registration) of
+	undefined -> [];
+	RegArgs ->
+	    wf:info("Registration with fb ~p~n", [RegArgs]),
+	    UserName = proplists:get_value(username, RegArgs),
+	    [M,D,Y] = string:tokens(proplists:get_value(birthday, RegArgs), "/"),
+	    wf:set(reg_email, proplists:get_value(email, RegArgs)),
+	    wf:set(reg_username, UserName),
+	    wf:set(reg_month, string:tokens(M,"0")),
+	    wf:set(reg_day, D),
+	    wf:set(reg_year, Y),
+	    #panel{id=fb_info, class="fb-info-block", body=[
+		#image{image="https://graph.facebook.com/" ++ UserName ++ "/picture"},
+		proplists:get_value(username, RegArgs)]}
+    end.
 
 terms_and_privacy() ->
     Terms = "<a target=\"_blank\" href=\""++?_U("/terms")++"\">"++?_T("Terms of Service")++"</a>",
@@ -155,12 +108,9 @@ terms_and_privacy() ->
 why_birthday() ->
     #label{id=birthday_desc, text=?_T("Why asking for birthday?")}.
 
-
 %% TODO: custom validation isn't working
 custom_validator(_Tag, User) ->
     nsm_users:if_exist(User).
-
-
 
 birthday_box() ->
     birthday_box(undefined, undefined, undefined).
@@ -193,8 +143,6 @@ birthday_box(SDay, SMonth, SYear) ->
 js_text_focus_script(Selector) ->
     "jQuery(\""++Selector++"\").parent().filter(\".text\").find(\"input\").focus(function(){$(\".text-focus\").removeClass(\"text-focus\");$(this).parent().addClass(\"text-focus\");})".
 
-%%%%%%%% END register %%%%%%%%%%
-
 finish_register(Invite) ->
     try
 	finish_register_(Invite)
@@ -206,22 +154,23 @@ finish_register(Invite) ->
 
 finish_register_(Invite) ->
     {Name, Surname, FbId} =
-        case wf:session(facebook) of
+        case wf:session(fb_registration) of
             undefined ->
                 {wf:q(reg_name), wf:q(reg_surname), undefined};
             Data ->
-                N = proplists:get_value(<<"first_name">>, Data),
-                S = proplists:get_value(<<"last_name">>, Data),
-                F =  wf:to_list(proplists:get_value(<<"id">>, Data)),
+                N = proplists:get_value(first_name, Data),
+                S = proplists:get_value(last_name, Data),
+                F =  wf:to_list(proplists:get_value(id, Data)),
                 {N,S,F}
         end,
+    wf:info("Registration element:finish_register: name:~p surname:~p fbid:~p", [Name, Surname, FbId]),
     Day = site_utils:element_value(reg_day),
     Month = site_utils:element_value(reg_month),
     Year = site_utils:element_value(reg_year),
-    BirthDay = case site_utils:check_date_correct({Year, Month, Day}) of
-		   {ok, Date} -> Date;
-		   {error, _} -> throw({msg, ?_T("Date of birth is incorrect.")})
-	       end,
+    BirthDay =  case site_utils:check_date_correct({Year, Month, Day}) of
+		    {ok, Date} -> Date;
+		    {error, _} -> throw({msg, ?_T("Date of birth is incorrect.")})
+		end,
 
     Mail = wf:q(reg_email),
 
@@ -308,59 +257,6 @@ finish_register_(Invite) ->
 	    wf:update(register_hintbox, ?_T("Passwords should match!"))
     end.
 
-set_form_values_from_FB() ->
-    FBID = wf:q(facebook_userid),
-    FbToken = wf:q(facebook_access_token),
-
-    FBInfo =
-	case erlfb:get_user_info(FbToken) of
-	    {ok, {struct, Response}} ->
-		Id = wf:to_list(proplists:get_value(<<"id">>, Response)),
-		case wf:to_list(Id) of
-		    FBID ->
-			wf:session(facebook, Response),
-			Response;
-		    _ -> error
-		end;
-	    _ -> error
-	end,
-
-    case FBInfo of
-	error -> ignore;
-	_ ->
-	    set_form_values_from_FB(FBInfo)
-    end.
-
-set_form_values_from_FB(FBInfo) ->
-    Username = wf:to_list(proplists:get_value(<<"username">>, FBInfo)),
-    Email    = wf:to_list(proplists:get_value(<<"email">>, FBInfo)),
-    BirthDay = wf:to_list(proplists:get_value(<<"birthday">>, FBInfo)),
-    wf:set(reg_email, Email),
-    wf:set(reg_username, Username),
-    case string:tokens(BirthDay, "/") of
-	[M, D, Y] ->
-	    wf:set(reg_day, D),
-	    wf:set(reg_month, M),
-	    wf:set(reg_year, Y);
-	_ -> ignore
-    end,
-    ok.
-
-
-fb_info(UserInfo) ->
-    Id = wf:to_list(proplists:get_value(<<"id">>, UserInfo)),
-    Picture = lists:concat(["https://graph.facebook.com/",Id,"/picture"]),
-    Name = proplists:get_value(<<"first_name">>, UserInfo),
-    Surname = proplists:get_value(<<"last_name">>, UserInfo),
-    fb_info(Picture, Name, Surname).
-
-
-fb_info(Picture, Name, Surname) ->
-    [#image{image=Picture},
-     #label{text=Name},
-     #label{text=Surname}
-    ].
-
 event({birthday_changed}) ->
     SDay=wf:q(reg_day),
     SMonth=wf:q(reg_month),
@@ -368,6 +264,7 @@ event({birthday_changed}) ->
     wf:update(birthday_box, birthday_box(SDay, SMonth, SYear));
 
 event({register_success, User}) ->
+    wf:session(fb_registration, undefined),
     timer:sleep(200),   % rarely, but sometimes it simply can't find new user with login:login_user, so I put a delay here
     nsx_util_notification:notify(["subscription", "user", User, "add_to_group"], {"kakaranet", member}),
     nsx_util_notification:notify(["subscription", "user", User, "add_to_group"], {"yeniler", member}),
@@ -378,26 +275,14 @@ event(show_please_wait) ->
     wf:update(register_hintbox, "<span style='color:#44AA44'>" ++ ?_T("Please wait...") ++ "</span>");
 
 event(register) ->
-    InviteCodeRec = wf:state(invite),
-    case InviteCodeRec of
+    case wf:state(invite) of
         #invite_code{code = InviteCode} ->
-            CheckCode = invite:check_code(InviteCode),
-            case CheckCode of
-                {ok, Invite} ->
-                    ?PRINT("With CODE"),
-                    finish_register(Invite);
-                %% finish register without code, user will be independent
-                error ->
-                    ?PRINT("Without CODE"),
-                    finish_register(undefined)
+            case invite:check_code(InviteCode) of
+                {ok, Invite} -> finish_register(Invite);
+                error -> finish_register(undefined)
             end;
-        _ ->
-            ?PRINT("Without CODE2"),
-            finish_register(undefined)
+        _ -> finish_register(undefined)
     end;
-
-event(reg_login) ->
-    webutils:login(reg_login,reg_password,reg_login_hintbox);
 
 event({error, Msg}) ->
     wf:wire(#alert{text=Msg});
