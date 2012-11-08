@@ -13,7 +13,7 @@ main() ->
             .tourlobby_title {
                 width:250px; 
                 height:43px; 
-                background: url(../images/tournament/lobby/top_plask.png);
+                background: url(images/tournament/lobby/top_plask.png);
                 position:absolute; 
                 left:21px; 
                 top:-7px; 
@@ -42,50 +42,50 @@ main() ->
             }
 
             .tourlobby_orange_button {
-                display:block; width:190px; height:41px; background: url(../images/tournament/lobby/btn_orange_normal.png);
+                display:block; width:190px; height:41px; background: url(/images/tournament/lobby/btn_orange_normal.png);
                 font-size:16px; color:#363638; line-height:42px;
             }
 
             .tourlobby_orange_button:hover {
-                display:block; width:190px; height:41px; background: url(../images/tournament/lobby/btn_orange_hover.png);
+                display:block; width:190px; height:41px; background: url(/images/tournament/lobby/btn_orange_hover.png);
                 font-size:16px; color:#363638; line-height:42px;
                 text-decoration:none;
             }
 
             .tourlobby_orange_button:active {
-                display:block; width:190px; height:41px; background: url(../images/tournament/lobby/btn_orange_pressed.png);
+                display:block; width:190px; height:41px; background: url(/images/tournament/lobby/btn_orange_pressed.png);
                 font-size:16px; color:#363638; line-height:42px;
             }
 
             .tourlobby_red_button {
-                display:block; width:190px; height:41px; background: url(../images/tournament/lobby/btn_red_normal.png);
+                display:block; width:190px; height:41px; background: url(/images/tournament/lobby/btn_red_normal.png);
                 font-size:16px; color:#121212; line-height:42px;
             }
 
             .tourlobby_red_button:hover {
-                display:block; width:190px; height:41px; background: url(../images/tournament/lobby/btn_red_hover.png);
+                display:block; width:190px; height:41px; background: url(/images/tournament/lobby/btn_red_hover.png);
                 font-size:16px; color:#121212; line-height:42px;
                 text-decoration:none;
             }
 
             .tourlobby_red_button:active {
-                display:block; width:190px; height:41px; background: url(../images/tournament/lobby/btn_red_pressed.png);
+                display:block; width:190px; height:41px; background: url(/images/tournament/lobby/btn_red_pressed.png);
                 font-size:16px; color:#121212; line-height:42px;
             }
 
             .tourlobby_yellow_button {
-                display:block; width:190px; height:41px; background: url(../images/tournament/lobby/btn_yellow_normal.png);
+                display:block; width:190px; height:41px; background: url(/images/tournament/lobby/btn_yellow_normal.png);
                 font-size:16px; color:#363638; line-height:42px;
             }
 
             .tourlobby_yellow_button:hover {
-                display:block; width:190px; height:41px; background: url(../images/tournament/lobby/btn_yellow_hover.png);
+                display:block; width:190px; height:41px; background: url(/images/tournament/lobby/btn_yellow_hover.png);
                 font-size:16px; color:#363638; line-height:42px;
                 text-decoration:none;
             }
 
             .tourlobby_yellow_button:active {
-                display:block; width:190px; height:41px; background: url(../images/tournament/lobby/btn_yellow_pressed.png);
+                display:block; width:190px; height:41px; background: url(/images/tournament/lobby/btn_yellow_pressed.png);
                 font-size:16px; color:#363638; line-height:42px;
             }
             
@@ -106,17 +106,17 @@ main() ->
             }
 
             .tourlobby_orange_plask {
-                width:213px; height:61px; background: url(../images/tournament/lobby/orange_plask.png);
+                width:213px; height:61px; background: url(/images/tournament/lobby/orange_plask.png);
                 position:absolute; left:275px; top:75px; text-align:center; padding-top:9px;
             }
 
             .tourlobby_sky_plask {
-                width:213px; height:61px; background: url(../images/tournament/lobby/sky_plask.png);
+                width:213px; height:61px; background: url(/images/tournament/lobby/sky_plask.png);
                 position:absolute; left:501px; top:75px; text-align:center; padding-top:9px;
             }
 
             .tourlobby_blue_plask {
-                width:213px; height:61px; background: url(../images/tournament/lobby/blue_plask.png);
+                width:213px; height:61px; background: url(/images/tournament/lobby/blue_plask.png);
                 position:absolute; left:727px; top:75px; text-align:center; padding-top:9px;
             }
 
@@ -177,17 +177,17 @@ main() ->
             }
 
             .tourlobby_prize_star_1 {
-                width:55px; height:51px; background: url(../images/tournament/lobby/star_1.png);
+                width:55px; height:51px; background: url(/images/tournament/lobby/star_1.png);
                 position:relative; left:-19px; top:-175px; text-align:center;
             }
 
             .tourlobby_prize_star_2 {
-                width:55px; height:51px; background: url(../images/tournament/lobby/star_2.png);
+                width:55px; height:51px; background: url(/images/tournament/lobby/star_2.png);
                 position:relative; left:-19px; top:-175px; text-align:center;
             }
 
             .tourlobby_prize_star_3 {
-                width:55px; height:51px; background: url(../images/tournament/lobby/star_3.png);
+                width:55px; height:51px; background: url(/images/tournament/lobby/star_3.png);
                 position:relative; left:-19px; top:-175px; text-align:center;
             }
 
@@ -221,14 +221,14 @@ main() ->
 
             .tourlobby_chat_button {
                 position:absolute; left:577px; top:145px;
-                display:block; width:74px; height:36px; background: url(../images/tournament/lobby/btn_chat_normal.png);
+                display:block; width:74px; height:36px; background: url(/images/tournament/lobby/btn_chat_normal.png);
                 font-size:16px; color:#121212; line-height:35px;
                 text-align:center;
             }
 
             .tourlobby_chat_button:hover {
                 position:absolute; left:577px; top:145px;
-                display:block; width:74px; height:36px; background: url(../images/tournament/lobby/btn_chat_hover.png);
+                display:block; width:74px; height:36px; background: url(/images/tournament/lobby/btn_chat_hover.png);
                 font-size:16px; color:#121212; line-height:35px;
                 text-align:center;
                 text-decoration:none;
@@ -236,7 +236,7 @@ main() ->
 
             .tourlobby_chat_button:active {
                 position:absolute; left:577px; top:145px;
-                display:block; width:74px; height:36px; background: url(../images/tournament/lobby/btn_chat_pressed.png);
+                display:block; width:74px; height:36px; background: url(/images/tournament/lobby/btn_chat_pressed.png);
                 font-size:16px; color:#121212; line-height:35px;
                 text-align:center;
             }
@@ -262,14 +262,14 @@ main() ->
             }
         </style>
         <script>
-            new Image('../images/tournament/lobby/btn_orange_hover.png');
-            new Image('../images/tournament/lobby/btn_orange_pressed.png');
-            new Image('../images/tournament/lobby/btn_red_hover.png');
-            new Image('../images/tournament/lobby/btn_red_pressed.png');
-            new Image('../images/tournament/lobby/btn_yellow_hover.png');
-            new Image('../images/tournament/lobby/btn_yellow_pressed.png');
-            new Image('../images/tournament/lobby/btn_chat_hover.png');
-            new Image('../images/tournament/lobby/btn_chat_pressed.png');
+            new Image('/images/tournament/lobby/btn_orange_hover.png');
+            new Image('/images/tournament/lobby/btn_orange_pressed.png');
+            new Image('/images/tournament/lobby/btn_red_hover.png');
+            new Image('/images/tournament/lobby/btn_red_pressed.png');
+            new Image('/images/tournament/lobby/btn_yellow_hover.png');
+            new Image('/images/tournament/lobby/btn_yellow_pressed.png');
+            new Image('/images/tournament/lobby/btn_chat_hover.png');
+            new Image('/images/tournament/lobby/btn_chat_pressed.png');
         </script>
     "}),
     #template { file=code:priv_dir(nsw_srv)++"/templates/bare.html" }.
@@ -294,7 +294,7 @@ content() ->
                     "<center>",
                     #label{class="tourlobby_left_top_block_label", body="TAVLA TURNUVASI"},
                     #br{},
-                    #image{image="../images/tournament/lobby/tour_avatar.png"},
+                    #image{image="/images/tournament/lobby/tour_avatar.png"},
                     #br{},
                     #br{},
                     #link{postback=orange_button, class="tourlobby_orange_button", text="TURNUVAYA KATIL"},
@@ -411,7 +411,7 @@ content() ->
                         ]},
                         #tablerow{cells=[
                             #tablecell{colspan=4, class="tourlobby_table_arrow", body=[
-                                #link{postback=arrow_up, body=#image{image="../images/tournament/lobby/arrow_up.png"}}
+                                #link{postback=arrow_up, body=#image{image="/images/tournament/lobby/arrow_up.png"}}
                             ]}
                         ]},
                         [[
@@ -435,7 +435,7 @@ content() ->
 
                         #tablerow{cells=[
                             #tablecell{colspan=4, class="tourlobby_table_arrow",  body=[
-                                #link{postback=arrow_down, body=#image{image="../images/tournament/lobby/arrow_down.png"}}
+                                #link{postback=arrow_down, body=#image{image="/images/tournament/lobby/arrow_down.png"}}
                             ]}
                         ]}
                     ]}
@@ -471,9 +471,9 @@ user_table_row(UId, P1, P2, Color) ->
         #tablecell{style="text-align:center;", body=[
             case Color of
                 red ->
-                    #image{image="../images/tournament/lobby/red_bullet.png"};
+                    #image{image="/images/tournament/lobby/red_bullet.png"};
                 _ ->
-                    #image{image="../images/tournament/lobby/green_bullet.png"}
+                    #image{image="/images/tournament/lobby/green_bullet.png"}
             end
         ]}
     ]}.

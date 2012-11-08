@@ -95,6 +95,8 @@ main() ->
         new Image('../images/tournament/new_tournament/btn_big_orange_pressed.png');
         </script>
     "}),
+    wf:state(slider_min, 0),
+    wf:state(slider_max, 50000),
     #template { file=code:priv_dir(nsw_srv)++"/templates/bare.html" }.
 
    
@@ -166,8 +168,8 @@ content() ->
             #label{style="position:absolute; left:160px; top:329px;", text="0"},
             #label{style="position:absolute; left:312px; top:329px;", text="50 000"},
             #panel{id=slider_panel, style="position:absolute; left:160px; top:352px; width:200px; height:20px;", body=[
-                #slider{range = true, id=newtour_slider, 
-                    postback={?MODULE, {tag, {age, slider}}},
+                #slider{range = true, id=newtour_slider, max=50000,
+                    postback={?MODULE, {newtour_slider}},
                     values=[{min,0}, {max,50000}]
                 }
             ]},
@@ -198,6 +200,8 @@ content() ->
     ].
 
 product_list_paged(Page) ->
+    MinPrice = wf:state(slider_min),
+    MaxPrice = wf:state(slider_max),
     AllGiftsData = nsm_gifts_db:get_all_gifts(),
     OnlyGiftsData = lists:sublist( 
         lists:sort(
@@ -210,8 +214,10 @@ product_list_paged(Page) ->
             end,
             [Gift || {Gift, _Obj} <- AllGiftsData, Gift#gift.enabled_on_site]
         ), 
-    (Page-1) * ?GIFTSPERTOURPAGE + 1, ?GIFTSPERTOURPAGE),
-    Buttons = case length(AllGiftsData) > ?GIFTSPERTOURPAGE of
+        (Page-1) * ?GIFTSPERTOURPAGE + 1, ?GIFTSPERTOURPAGE),
+    FilteredGiftsData = lists:filter(fun(G) -> (G#gift.kakush_point >= MinPrice) and (G#gift.kakush_point =< MaxPrice) end, OnlyGiftsData),
+    ?PRINT({MinPrice, MaxPrice, FilteredGiftsData}),
+    Buttons = case length(FilteredGiftsData) > ?GIFTSPERTOURPAGE of
         true ->
             #panel{class="paging-2", style="padding: 10px 0px 0px 0px;", body=[
                 #panel{class="center", body=[
@@ -225,8 +231,8 @@ product_list_paged(Page) ->
                                 style="color:#444444; font-weight:bold;"}};
                             _ -> #listitem{body=#link{text=integer_to_list(N), postback={page, N}}}
                         end
-                        || N <- lists:seq(1, (length(AllGiftsData) - 1) div ?GIFTSPERTOURPAGE + 1)],
-                        case Page * ?GIFTSPERTOURPAGE >= length(AllGiftsData) of                 
+                        || N <- lists:seq(1, (length(FilteredGiftsData) - 1) div ?GIFTSPERTOURPAGE + 1)],
+                        case Page * ?GIFTSPERTOURPAGE >= length(FilteredGiftsData) of                 
                             true -> #listitem{body=#link{text=">", postback={nothing}, class="inactive"}};
                             false -> #listitem{body=#link{text=">", postback={page, Page + 1}}}
                         end
@@ -245,7 +251,7 @@ product_list_paged(Page) ->
                         #tablecell{body=
         					"<h2 class='head'>"++ ?_T("Price") ++ ":&nbsp;" ++ integer_to_list(OneGift#gift.kakush_currency) ++ "<br>" 
                             ++ ?_T("Kakuş") ++ ":&nbsp;" ++ integer_to_list(OneGift#gift.kakush_point) ++ "</h2>"
-                        }%,
+                        }
                     ]},
 					"<div class='img'>",
                     #link{body=#image{image=OneGift#gift.image_small_url, style="width:144px; height:118px;"}, 
@@ -257,14 +263,49 @@ product_list_paged(Page) ->
                     "</strong>",
 				"</div>",
             "</li>"]
-            || OneGift <- OnlyGiftsData
+            || OneGift <- FilteredGiftsData
         ],
         "</ul>",
         Buttons
     ].
 
+event({newtour_slider}) ->
+    wf:state(slider_min, list_to_integer(wf:q(newtour_slider_values_min))),
+    wf:state(slider_max, list_to_integer(wf:q(newtour_slider_values_max))),
+    wf:update(product_list, product_list_paged(1));
+
 event({page, Page}) ->
     wf:update(product_list, product_list_paged(Page));
+
+event({show_details, Description, ImageUrl, Id}) ->
+    Body = [
+        #panel{class=holder, body=[
+            "<center>",
+            #image{image=ImageUrl, style="margin:10px; width:300px; height:300px;"},
+            "</center>",
+            gifts:decode_html(Description),
+            #singlerow{cells=[
+                #tablecell{
+                    body="", style="width:172px;"
+                },
+                #tablecell{
+                    body=#cool_button{text=?_T("1-st prize"), postback={chose_1_prize, Id, ImageUrl}, style="display:block;"}
+                },
+                #tablecell{
+                    body=#cool_button{text=?_T("2-nd prize"), postback={chose_2_prize, Id, ImageUrl}, style="display:block;"}
+                },
+                #tablecell{
+                    body=#cool_button{text=?_T("3-rd prize"), postback={chose_3_prize, Id, ImageUrl}, style="display:block;"}
+                }
+            ]},
+            #grid_clear{}
+        ]}
+    ],    
+    wf:update(simple_panel, webutils:lightbox_panel_template(gift_lightbox, Body, hide_details)),
+    wf:wire(simple_lightbox, #show{});
+
+event(hide_details) ->
+    wf:wire(simple_lightbox, #hide{});
 
 event(Any) ->
     webutils:event(Any).
