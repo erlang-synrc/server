@@ -20,6 +20,7 @@ start(_StartType, _StartArgs) ->
                   {['...'],cowboy_http_static,[{directory,{priv_dir,nsw_srv,[]},{mimetypes,mime()}}]} ] }],
     HttpOpts = [{dispatch, Dispatch}],
     start_cowboy(HttpOpts),
+    nsm_srv_tournament_lobby_sup:start_link(),
     case nsw_srv_sup:start_link() of
                  {ok, Pid} -> io:format("Web Started OK\n."), {ok, Pid};
          {error, shutdown} -> {ok, Port} = application:get_env(webmachine, port),

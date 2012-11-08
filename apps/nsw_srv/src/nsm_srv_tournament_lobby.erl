@@ -15,7 +15,7 @@
 -include_lib("nsm_db/include/user.hrl").
 -include_lib("nsm_db/include/tournaments.hrl").
 -include_lib("nsx_config/include/log.hrl").
--include("config.hrl").
+-include("setup.hrl").
 %% --------------------------------------------------------------------
 %% External exports
 -export([start_link/1]).
@@ -150,7 +150,7 @@ dump_tables(ArraysList, Check) -> lists:map(fun(A) -> ?INFO("~p",[A]) end, Array
 
 start_tournament(TID, ListUsers) ->
     ?INFO("Start Tournament ~p", [TID]),
-    {C,Tables} = rpc:call(?GAMESERVER_NODE,shuffle,generate_tournament,[4,4]),
+    {C,Tables} = rpc:call(?GAMESRVR_NODE,shuffle,generate_tournament,[4,4]),
 
     dump_tables(Tables,""),
 
