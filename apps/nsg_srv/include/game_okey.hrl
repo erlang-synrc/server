@@ -91,6 +91,8 @@
           rematch_timeout   :: integer()    %% timeout value for general api #rematch{} msg
          }).
 
+-type tournament() :: standalone | elimination | pointing | lucky.
+
 %% outgoing messages; wrapped into #'KakaMessage'
 -record(okey_game_info, {
           players :: list(#'PlayerInfo'{}),
@@ -104,6 +106,7 @@
           rounds :: integer(), %% number of rounds in this set
           mul_factor    :: pos_integer(),
           slang_flag    :: boolean(),
+          tournament_type = standalone :: tournament(),
           observer_flag :: boolean()
          }).
 -record(okey_player_ready, {
