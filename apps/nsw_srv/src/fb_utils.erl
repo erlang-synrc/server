@@ -5,32 +5,31 @@
 -include("setup.hrl").
 -include("elements/records.hrl").
 -compile(export_all).
--record(struct, {list=[]}).
 
 % demo_id 176025532423202, kakaranet_id 154227314626053
-% TODO:
-% - Change en_US locale of the JS SDK script
-% - Add channel file for x-domain communication and handle its caching.
-%   channelUrl : '//WWW.YOUR_DOMAIN.COM/channel.html',
 init()->
-    wf:wire(#api{name=checkSignedRequest, tag=fb}),
     wf:wire(#api{name=setFbIframe, tag=fb}),
     wf:wire(#api{name=fbLogin, tag=fb}),
     wf:wire(#api{name=fbLogout, tag=fb}),
     ["<div id=fb-root></div>",
     "<script>window.fbAsyncInit = function() {",
-    "FB.init({ appId: '"++?FB_APP_ID++"', channelUrl: '"++ ?HTTP_ADDRESS++"channel.html', status: true, cookie: true, xfbml: true});",
-
-    "if(page.fbLogin) FB.Event.subscribe('auth.login', function(response){
-	if(response.authResponse){
-	    page.fbLogin(response.authResponse.signedRequest);
-	}
-    });",
-
-    "if(page.fbLogout) FB.Event.subscribe('auth.logout', function(response){
-	page.fbLogout(response);
-    });",
-
+    "FB.init({ appId: '"++ ?FB_APP_ID ++"',",
+	"channelUrl: '" ++ ?HTTP_ADDRESS ++"/channel.html',",
+	"status: true,",
+	"cookie: true,",
+	"xfbml: true,",
+    "});",
+    "if(page.fbLogin) FB.Event.subscribe('auth.login', function(response){",
+	"if(response.authResponse){",
+	    "if(page.fbLogin){",
+		"FB.api(\"/me?fields=id,username,first_name,last_name,email,birthday\",",
+		"function(response){page.fbLogin(response);});",
+	    "}",
+	"}",
+    "});",
+    "if(page.fbLogout) FB.Event.subscribe('auth.logout', function(response){",
+	"page.fbLogout(response);",
+    "});",
     "FB.getLoginStatus(function(response) {",
 	"if(page.setFbIframe){",
 	    "console.log(\"Set FB application flag: \"+ (top!=self));",
@@ -39,9 +38,6 @@ init()->
 	"if (response.status === 'connected') {",
 	    "var uid = response.authResponse.userID;",
 	    "console.log(\"User is connected: \" + uid);",
-	    "if(page.checkSignedRequest){",
-		"page.checkSignedRequest(response.authResponse.signedRequest);",
-	    "}",
 	"} else if (response.status === 'not_authorized') {",
 	    "console.log(\"Not authenticated the app\");",
 	"} else {",
@@ -49,7 +45,19 @@ init()->
 	"}",
     "});",
     "};",
-
+    "function fb_login(){",
+	"FB.getLoginStatus(function(response){",
+	    "if(response.status == 'connected'){",
+		"console.log(\"User connected to FB, check for registered account\");",
+		"if(page.fbLogin){",
+		    "FB.api(\"/me?fields=id,username,first_name,last_name,email,birthday\",",
+			"function(response){page.fbLogin(response);});",
+		"}",
+	    "}else{",
+		"FB.login(function(r){},{scope: 'email,user_birthday'});",
+	    "}",
+	"});",
+    "}",
     "(function(d){",
     "var js, id = 'facebook-jssdk', ref = d.getElementsByTagName('script')[0];",
     "if (d.getElementById(id)) {return;}",
@@ -63,7 +71,7 @@ init()->
 
 login_btn()-> login_btn("Login").
 login_btn(Label)->
-    [#link{class="fb_login_btn", text=?_T(Label), actions=#event{type=click, actions=#script{script="FB.login()"} }}].
+    [#link{class="fb_login_btn", text=?_T(Label), actions=#event{type=click, actions=#script{script="fb_login()"} }}].
 
 logout_btn()->
     [#link{text=?_T("Logout"), actions=#event{type=click, actions=#script{script="FB.logout()"}}, postback=logout }].
@@ -94,19 +102,16 @@ pay_dialog()->
     "}",
     "</script>"].
 
-api_event(fbLogin, _, Data)->
-    {ok, Req} = fb_signed_request:parse(Data, ?FB_APP_SECRET),
-    SignedReq = mochijson2:decode(Req),
-    Uid = proplists:get_value(<<"user_id">>, SignedReq#struct.list),
-    {ok, User} = nsm_users:get_user({facebook, binary_to_list(Uid)}),
-    login:login_user(User#user.username),
-    wf:session(logged_with_fb, true),
-    wf:redirect("/dashboard");
-api_event(fbLogout, _, _Data)-> ok;
-api_event(checkSignedRequest, Tag, Data)->
-    case wf:user() of
-	undefined -> api_event(fbLogin, Tag, Data);
-	_ -> ok
+api_event(fbLogin, _, [Args])->
+    case nsm_users:get_user({facebook, proplists:get_value(id, Args)}) of
+	{ok, User} -> 
+	    login:login_user(User#user.username),
+	    wf:session(logged_with_fb, true),
+	    wf:redirect_from_login(?_U("/dashboard"));
+	_ ->
+	    wf:session(fb_registration, Args),
+	    wf:redirect(?_U("/login/register"))
     end;
+api_event(fbLogout, _, _Data)-> wf:session(fb_registration, undefined);
 api_event(processOrder, _, Data)-> ?INFO("Payment complete. Order:~p~n", [Data]);
 api_event(setFbIframe, _, [IsIframe]) -> wf:session(is_facebook, IsIframe).

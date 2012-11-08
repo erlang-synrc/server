@@ -244,7 +244,6 @@ event(login1) ->
 event(login) ->
     login(login,password,login_hintbox);
 event(logout) ->
-    wf:info("LOGOUT PRESSED"),
     %wf:clear_session(),
     wf:logout(),
     wf:redirect("/");

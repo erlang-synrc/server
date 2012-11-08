@@ -5176,3 +5176,50 @@ footer .lang img {
     color:rgb(114, 114, 114); 
     font-weight:bold;
 }
+
+/* registration popup*/
+.head .dlg-title{
+    width:120px;
+    height:30px;
+    margin:5px 0 0;}
+
+.head .fb-info-block {
+    width:200px;
+    height:30px;
+    font-size:15px;
+    line-height:30px;
+    display:table-cell;
+    vertical-align:middle;}
+
+.fb-info-block img{
+    width:30px;
+    height:30px;
+    float:left;
+    margin-right:5px;
+}
+.reg-form{
+    overflow:hidden;
+    margin:0 0 19px;
+    padding:0 8px 0 32px;
+}
+
+.fb_login_btn{
+    border-top: 1px solid #29447E;
+    border-right: 1px solid #29447E;
+    border-bottom: 1px solid #1A356E;
+    padding:0;
+    margin:0;
+    display:block;
+    height:22px;
+    background-color: #5F78AB;
+    background-image:url(/images/facebook/fbs.png);
+    background-repeat:no-repeat;
+    background-position: 0px -82px;
+    padding-left:32px;
+    padding-right:7px;
+    margin-top:-4px;
+    line-height:22px;
+    color:white;
+    font-weight:bold;
+    font-size: 12px;
+}

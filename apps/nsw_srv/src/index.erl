@@ -5,6 +5,7 @@
 
 -include("gettext.hrl").
 -include("elements/records.hrl").
+-include("setup.hrl").
 
 main() ->
     webutils:add_raw("<script type=\"text/javascript\">
@@ -49,8 +50,8 @@ body() ->
     end,
     #template { file=code:priv_dir(nsw_srv)++"/templates/"++site_utils:detect_language()++"/main.html"}.
 
-event(show_register) ->
-    wf:redirect(?_U("/login/register"));
+%event(show_register) ->
+%    wf:redirect(?_U("/login/register"));
 
 event(Other) ->
     webutils:event(Other).
