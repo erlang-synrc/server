@@ -77,7 +77,7 @@ main() ->
         <script>
         window.onload = function(){
             $('#inputDate').DatePicker({
-	            format:'d/m/Y',
+	            format:'d.m.Y',
 	            date: $('#inputDate').val(),
 	            current: $('#inputDate').val(),
 	            starts: 1,
@@ -91,6 +91,8 @@ main() ->
 	            }
             });
         };
+        new Image('../images/tournament/new_tournament/btn_big_orange_hover.png');
+        new Image('../images/tournament/new_tournament/btn_big_orange_pressed.png');
         </script>
     "}),
     #template { file=code:priv_dir(nsw_srv)++"/templates/bare.html" }.
@@ -153,7 +155,7 @@ content() ->
             "<input type='text' id='inputDate' class='newtour_textbox' 
                 style='position:absolute; left:310px; top:191px; width:140px; height:28px; font-size:16px;
                        background:url(../images/tournament/new_tournament/calendar_icon.png) no-repeat 118px 2px;' 
-                value='" ++ SD ++ "/" ++ SM ++ "/" ++ SY ++ "'/>",
+                value='" ++ SD ++ "." ++ SM ++ "." ++ SY ++ "'/>",
 
             #panel{style="height:1px; background-color:#c2c2c2; width:960px; margin-left:-25px; position:absolute; top:282px;", body=[]},
             #panel{class="newtour_title", style="top:257px;", body=[
