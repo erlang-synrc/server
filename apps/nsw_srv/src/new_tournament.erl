@@ -124,23 +124,23 @@ content() ->
             #panel{id=upload, class=file, body=[
                 #label{style="position:absolute; left:575px; top:84px;", text="Turnuva Resmi:"},
                 #textbox{style="position:absolute; left:692px; top:77px; width:110px; height:28px; font-size:16px;", class="newtour_textbox", id=tournament_official},
-                #upload{tag=newtour_upload, show_button=false},
+%                #upload{tag=newtour_upload, show_button=false},
                 #button{style="position:absolute; left:806px; top:77px; width:110px; height:32px; font-size:16px;", text="BROWSE", id=browse, postback=browse_pressed}
 %                "<input style='position:absolute; left:806px; top:77px; width:110px; height:32px; font-size:16px;' text='BROWSE' type='file' name='browse'>"
             ]},
 
             #label{style="position:absolute; left:42px; top:145px;", text="Oyun Türü:"},
-            #dropdown {style="position:absolute; left:126px; top:138px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
+            #dropdown {id=tour_game, style="position:absolute; left:126px; top:138px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
                         #option { text="OKEY" },
-                        #option { text="TAVLA" }
+                        #option { text="—" }
             ]},
             #label{style="position:absolute; left:281px; top:145px;", text="Oyun Tipi:"},
-            #dropdown {style="position:absolute; left:357px; top:138px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
+            #dropdown {id=tour_esli, style="position:absolute; left:357px; top:138px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
                         #option { text="EŞLİ" },
                         #option { text="—" }
             ]},
             #label{style="position:absolute; left:514px; top:145px;", text="Oyun Sayısı:"},
-            #dropdown {style="position:absolute; left:610px; top:138px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
+            #dropdown {id=tour_players, style="position:absolute; left:610px; top:138px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
                         #option { text="16" },
                         #option { text="32" },
                         #option { text="64" },
@@ -150,17 +150,15 @@ content() ->
                         #option { text="1024" }
             ]},
             #label{style="position:absolute; left:764px; top:145px;", text="Kota:"},
-            #dropdown {style="position:absolute; left:807px; top:138px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
-                        #option { text="+100" },
-                        #option { text="+500" },
-                        #option { text="+1000" },
-                        #option { text="+2500" },
-                        #option { text="+5000" },
-                        #option { text="+7500" },
-                        #option { text="+10 000" }
+            #dropdown {id=tour_quota, style="position:absolute; left:807px; top:138px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
+                        #option { text="2" },
+                        #option { text="4" },
+                        #option { text="6" },
+                        #option { text="8" },
+                        #option { text="10" }
             ]},
             #label{style="position:absolute; left:242px; top:197px;", text="Turnuva Türü:"},
-            #dropdown {style="position:absolute; left:346px; top:190px; width:100px; height:32px; font-size:16px; padding-top:2px;", options=[
+            #dropdown {id=tour_type, style="position:absolute; left:346px; top:190px; width:100px; height:32px; font-size:16px; padding-top:2px;", options=[
                         #option { text="Elemeli" },
                         #option { text="—" }
             ]},
@@ -169,6 +167,10 @@ content() ->
                 style='position:absolute; left:510px; top:190px; width:140px; height:28px; font-size:16px;
                        background:url(../images/tournament/new_tournament/calendar_icon.png) no-repeat 118px 2px;' 
                 value='" ++ SD ++ "." ++ SM ++ "." ++ SY ++ "'/>",
+%            #textbox{id=tour_date, class="newtour_textbox inputDate",
+%                style="position:absolute; left:510px; top:190px; width:140px; height:28px; font-size:16px;
+%                       background:url(../images/tournament/new_tournament/calendar_icon.png) no-repeat 118px 2px;",
+%                text= (SD ++ "." ++ SM ++ "." ++ SY)},
 
             #panel{style="height:1px; background-color:#c2c2c2; width:960px; margin-left:-25px; position:absolute; top:282px;", body=[]},
             #panel{class="newtour_title", style="top:257px;", body=[
@@ -335,7 +337,34 @@ event(browse_pressed) ->
     wf:wire(#alert{text=?_T("Not ready yet.")});
 
 event(create_pressed) ->
-    wf:wire(#alert{text=?_T("Not ready yet.")});
+    TourName = wf:q(tournament_name),
+    TourDesc = wf:q(tournament_desc),
+    TourGame = case wf:q(tour_game) of
+        "OKEY" -> game_okey;
+        "TAVLA" -> game_tavla
+    end,
+    TourType = case wf:q(tour_type) of
+        "Elemeli" -> pointing;
+        _ -> unknown
+    end,
+    TourDate = {2012, 11, 9},   % obvious mockup!
+    TourPlayers = list_to_integer(wf:q(tour_players)),
+    TourQuota = list_to_integer(wf:q(tour_quota)),
+    Prize1 = wf:state(prize_1),
+    Prize2 = wf:state(prize_2),
+    Prize3 = wf:state(prize_3),
+    case (Prize1 == undefined) or (Prize2 == undefined) or (Prize3 == undefined) of
+        true ->
+            wf:wire(#alert{text=?_T("Please, choose all the prizes for tournament!")});
+        false ->
+            case TourName == "" of
+                true -> 
+                    wf:wire(#alert{text=?_T("Please, provide tournament name!")}); 
+                false ->
+                    nsm_tournaments:create(wf:user(), TourName, TourDesc, TourDate, TourPlayers, TourQuota, [Prize1, Prize2, Prize3], TourType, TourGame),
+                    wf:wire(#alert{text=?_T("New tournament created!")})
+            end
+    end;
 
 event(hide_details) ->
     wf:wire(simple_lightbox, #hide{});
