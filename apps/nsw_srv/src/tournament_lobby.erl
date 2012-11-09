@@ -3,11 +3,38 @@
 -compile(export_all).
 -include_lib("nitrogen_core/include/wf.hrl").
 -include_lib("nsm_db/include/common.hrl").
+-include_lib("nsm_db/include/user.hrl").
+-include_lib("nsm_db/include/accounts.hrl").
 -include_lib("nsm_db/include/tournaments.hrl").
 -include("setup.hrl").
 -include("common.hrl").
 
+
+%% time to wait after heartbeat request to update userlist
+-define(SLEEP, 5000). 
+-define(MAX_CHAT_LENGTH, 1024). % 1024 bytes
+-define(COMET_POOL, tournament_lobby).
+
+
 main() ->
+    case wf:user() /= undefined of
+        true  -> main_authorized();
+        false -> wf:redirect_to_login(?_U("/login"))
+    end.
+
+main_authorized() ->
+    TournamentId = wf:q(id),
+%    UserInfo = webutils:user_info(),
+    wf:state(tournament_id, TournamentId),
+
+    %% user became ready automatically
+%    nsx_util_notification:notify_tournament_user_ready(TournamentId, UserInfo),
+
+    TournamentInfo = nsm_tournaments:get(TournamentId),
+    wf:state(tournament, TournamentInfo),
+
+    start_comet(),
+
     webutils:js_for_main_authorized_game_stats_menu(),
     webutils:add_to_head({raw,              % this goes to styles.css. Still here for convenience of editing
     "
@@ -201,6 +228,7 @@ main() ->
                 width:600px; height:100px; background-color:#fff;
                 position:absolute; left:10px; top:36px;
                 font-size:14px; line-height:20px;
+                overflow:auto;
             }
 
             .tourlobby_chat_panel {
@@ -327,7 +355,7 @@ content() ->
                     #image{image="/images/tournament/lobby/tour_avatar.png"},
                     #br{},
                     #br{},
-                    #link{postback=orange_button, class="tourlobby_orange_button", text="TURNUVAYA KATIL"},
+                    #link{class="tourlobby_orange_button", text="TURNUVAYA KATIL", postback=join_tournament},
                     #br{},
                     #link{postback=red_button, class="tourlobby_red_button", text="TURNUVADAN AYRIL"},
                     #br{},
@@ -415,66 +443,49 @@ content() ->
                         ]
                     },
                     %chat window
-                    #panel{class="tourlobby_chat_window", body=[
-                            "<b>Someone:</b> vsem chmoke v etom chate",
-                            #br{},
-                            "<b>Another:</b> English please.",
-                            #br{},
-                            "<b>Someone:</b> nyet!",
-                            #br{},
-                            "<b>Another:</b> Ok then."
+                    #panel{id=chat_history, class="tourlobby_chat_window", body=[
                         ]
                     },
-                    #textarea{id=chat_input, class="tourlobby_chat_textarea"},
-                    #link{postback=chat_input_pressed, class="tourlobby_chat_button", text="Gönder"}
+                    #textbox{id=message_text_box, class="tourlobby_chat_textarea"},
+                    #link{id=chat_send_button, class="tourlobby_chat_button", text="Gönder", postback=chat}
                 ]
             },
 
             %players table
-            #panel{class="tourlobby_table_panel", body=[
-                    #table{class="tourlobby_table", rows=[
-                        #tablerow{class="tourlobby_table_head", cells=[
-                            #tableheader{style="padding-left:16px;", text="KULLANICHI"},
-                            #tableheader{style="text-align:center;", text="TOPLAM PUAN"},
-                            #tableheader{style="text-align:center;", text="YETENEK PUANI"},
-                            #tableheader{style="text-align:center;", text="DURUM"}
-                        ]},
-                        #tablerow{cells=[
-                            #tablecell{colspan=4, class="tourlobby_table_arrow", body=[
-                                #link{postback=arrow_up, body=#image{image="/images/tournament/lobby/arrow_up.png"}}
-                            ]}
-                        ]},
-                        [[
-                            #tablerow{style="background-color:#888c8d; height:1px;", cells=[#tablecell{colspan=4, body=[]}]},
-
-                            case I of
-                                1 ->
-                                    user_table_row("demo1", 1942, 524, red);
-                                2 ->
-                                    user_table_row("sustel", 3241, 836, green);
-                                3 ->
-                                    user_table_row("ahmettez", 3123, 867, green);
-                                4 ->
-                                    user_table_row("maxim", 1645, 234, red);
-                                _ ->
-                                    user_table_row("alice", 1345, 456, green)
-                            end
-                        ] || I <- lists:seq(1,5)],
-
-                        #tablerow{style="background-color:#888c8d; height:1px;", cells=[#tablecell{colspan=4, body=[]}]},
-
-                        #tablerow{cells=[
-                            #tablecell{colspan=4, class="tourlobby_table_arrow",  body=[
-                                #link{postback=arrow_down, body=#image{image="/images/tournament/lobby/arrow_down.png"}}
-                            ]}
-                        ]}
-                    ]}
-                ]
-            },
+            #panel{id=players_table, class="tourlobby_table_panel", body=[
+                user_table(get_tour_user_list())
+            ]},
             ""
         ]}
     ].
 
+
+user_table(Users) ->
+    #table{class="tourlobby_table", rows=[
+        #tablerow{class="tourlobby_table_head", cells=[
+            #tableheader{style="padding-left:16px;", text="KULLANICHI"},
+            #tableheader{style="text-align:center;", text="TOPLAM PUAN"},
+            #tableheader{style="text-align:center;", text="YETENEK PUANI"},
+            #tableheader{style="text-align:center;", text="DURUM"}
+        ]},
+        #tablerow{cells=[
+            #tablecell{colspan=4, class="tourlobby_table_arrow", body=[
+                #link{postback=arrow_up, body=#image{image="/images/tournament/lobby/arrow_up.png"}}
+            ]}
+        ]},
+        [[
+            #tablerow{style="background-color:#888c8d; height:1px;", cells=[#tablecell{colspan=4, body=[]}]},
+            user_table_row(Name, Score1, Score2, Color)
+        ] || {Name, Score1, Score2, Color} <- Users],
+
+        #tablerow{style="background-color:#888c8d; height:1px;", cells=[#tablecell{colspan=4, body=[]}]},
+
+        #tablerow{cells=[
+            #tablecell{colspan=4, class="tourlobby_table_arrow",  body=[
+                #link{postback=arrow_down, body=#image{image="/images/tournament/lobby/arrow_down.png"}}
+            ]}
+        ]}
+    ]}.
 
 user_table_row(UId, P1, P2, Color) ->
     RealName = nsm_users:user_realname(UId),
@@ -502,12 +513,191 @@ user_table_row(UId, P1, P2, Color) ->
             case Color of
                 red ->
                     #image{image="/images/tournament/lobby/red_bullet.png"};
+                green ->
+                    #image{image="/images/tournament/lobby/green_bullet.png"};
                 _ ->
-                    #image{image="/images/tournament/lobby/green_bullet.png"}
+                    #image{image="/images/tournament/lobby/yellow_bullet.png"}
             end
         ]}
     ]}.
 
+
+
+add_chat_history(Messages) ->
+    [process_chat(Action, User, Message) || {User, Action, Message} <- Messages].
+
+process_chat("message", User, Message) ->
+    chat_new_msg(User, Message).
+
+
+chat_info(Info) ->
+    Terms = #panel{class="info", body = Info},
+    update_table_chat(Terms).
+
+chat_error(Message) ->
+    chat_info(#span{class=error, text= Message}).
+
+chat_user_in(Username) ->
+    Terms = #panel{class="user join",
+		   body = [
+			   ?_TS("User $username$ connected.", [{username, Username}])
+			  ]},
+    update_table_chat(Terms).
+
+chat_user_out(Username) ->
+    Terms = #panel{class="user left",
+		   body = [
+			   ?_TS("User $username$ has left.", [{username, Username}])
+			  ]},
+    update_table_chat(Terms).
+
+chat_new_msg(User, Message) ->
+    Terms = #panel{class="chat",
+        body = [
+            #span{class="username", style="font-weight:bold;", text = User},
+            ":&nbsp;", #span{text = Message}
+    ]},
+    update_table_chat(Terms).
+
+
+update_table_chat(Terms) ->
+    wf:insert_bottom(chat_history, Terms),
+    wf:wire("obj('chat_history').scrollTop = obj('chat_history').scrollHeight;"),
+    wf:flush(),
+    ok.
+
+
+start_comet() ->
+    User = wf:user(),
+    TournamentId = wf:state(tournament_id),
+    {ok, Pid} = wf:comet(fun()->
+        CometProcess = self(),
+
+        %% TODO: error handling when unable to subscribe
+        (catch nsx_util_notification:subscribe_for_tournament(TournamentId, User, CometProcess)),
+        comet_update(wf:user(), wf:state(tournament_id))
+    end,  ?COMET_POOL),
+    wf:state(comet_pid, Pid).
+
+
+comet_update(User, TournamentId) ->
+    receive
+        {delivery, _, tournament_heartbeat} ->
+            UserRecord = webutils:user_info(),
+
+            nsx_util_notification:notify_tournament_heartbeat_reply(
+                TournamentId, UserRecord),
+
+            %% afer sleep send update userlist message to self
+            timer:apply_after(?SLEEP, erlang, send, [self(), update_userlist]);
+
+        %% start game section
+        {delivery, ["tournament", TournamentId, User, "start_game"], Data}  ->
+            ?INFO("(in comet): start game TId: ~p, User: ~p, Data: ~p", [TournamentId, User, Data]),
+            Id = 10, % Game Id
+            Url = lists:concat([?_U("/client"), "/", ?_U("okey"), "/id/", Id]),
+            StartClient = webutils:new_window_js(Url),
+            wf:wire(#script{script=StartClient}),
+            wf:flush();
+
+        %% chat section
+        {delivery, ["tournament", TournamentId, "chat", _Action], {UserName, Action, Message}}  ->
+            process_chat(Action, UserName, Message);
+
+        %% local request
+        update_userlist ->
+            update_userlist();
+
+        {delivery, Route, Other}  ->
+            ?PRINT({other_in_comet, Route, Other, wf:user()})
+    end,
+    comet_update(User, TournamentId).
+
+
+get_tour_user_list() ->
+    TID = wf:state(tournament_id),
+    ActiveUsers       = nsm_tournaments:active_users(TID),
+    NotActiveUsers    = not_active_users(TID, ActiveUsers),
+    AUL = [
+        begin
+            {ok, Score1} = nsm_accounts:balance(UId, ?CURRENCY_GAME_POINTS),
+            {ok, Score2} = nsm_accounts:balance(UId, ?CURRENCY_KAKUSH),
+            {UId, Score1, Score2, green}
+        end
+    || #user{username=UId} <- ActiveUsers],
+    NUL = [
+        begin
+            {ok, Score1} = nsm_accounts:balance(UId, ?CURRENCY_GAME_POINTS),
+            {ok, Score2} = nsm_accounts:balance(UId, ?CURRENCY_KAKUSH),
+            {UId, Score1, Score2, red}
+        end
+    || #user{username=UId} <- NotActiveUsers],
+    case lists:sum([1 || {UId, _, _, _} <- AUL, UId == wf:user()] ++ [1 || {UId, _, _, _} <- NUL, UId == wf:user()]) of
+        0 ->
+            {ok, Score1} = nsm_accounts:balance(wf:user(), ?CURRENCY_GAME_POINTS),
+            {ok, Score2} = nsm_accounts:balance(wf:user(), ?CURRENCY_KAKUSH),
+            lists:usort(AUL++NUL++[{wf:user(), Score1, Score2, yellow}]);
+        _ ->
+            lists:usort(AUL++NUL)
+    end.
+
+
+update_userlist() ->
+    wf:update(players_table, user_table(get_tour_user_list())),
+    wf:flush().
+
+
+not_active_users(TID, ActiveUsers) ->
+    CurrentUser = wf:user(),
+    %% get play records for tournament
+    AllUsers = nsm_tournaments:joined_users(TID),
+
+    AllUsersCount = length(AllUsers),
+    wf:update(user_count, wf:to_list(AllUsersCount)),
+
+    ActiveKeysSet0 = sets:from_list([U#user.username    || U <- ActiveUsers]),
+    AllKeysSet     = sets:from_list([PR#play_record.who || PR <- AllUsers]),
+
+    %% add user to active list
+    ActiveKeysSet = sets:add_element(CurrentUser, ActiveKeysSet0),
+    NotActiveKeys = sets:subtract(AllKeysSet, ActiveKeysSet),
+
+    lists:foldl(
+        fun(User, Acc) ->
+            case nsm_users:get_user(User) of
+                {ok, U} ->
+                    [U | Acc];
+                _ ->
+                    ?WARNING("user not forund: ~p", [User]),
+                    Acc
+            end
+        end, [], sets:to_list(NotActiveKeys)).
+
+
+event(chat) ->
+    User = wf:user(),
+    TID = wf:state(tournament_id),
+    Msg = wf:q(message_text_box),
+    case string:strip(Msg) of
+        "" ->
+            ok;        % dont send empty messages
+        Message ->
+            case length(Message) > ?MAX_CHAT_LENGTH of
+               true ->
+                    chat_info(#span{class=error, text= ?_T("Message too long.")});
+                false ->
+                    wf:set(message_text_box, ""),
+                    wf:wire("obj('message_text_box').focus();"),
+                    nsx_util_notification:notify_tournament_chat(TID, "message", User, Msg)
+           end,
+           wf:flush()
+    end;
+
+event(join_tournament) ->
+    User = wf:user(),
+    TID = wf:state(tournament_id),
+    nsm_tournaments:join(User, list_to_integer(TID)),
+    update_userlist();    
 
 event(Any)->
     webutils:event(Any).
