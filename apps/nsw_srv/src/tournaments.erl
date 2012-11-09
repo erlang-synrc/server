@@ -9,7 +9,7 @@
 
 main() ->
     add_scripts(),
-    webutils:add_script("/nitrogen/blockui.js"),    %PUBLIC BETA this is for blocking undone content
+%    webutils:add_script("/nitrogen/blockui.js"),    %PUBLIC BETA this is for blocking undone content
     webutils:add_raw("
         <script type=\"text/javascript\">
         $(document).ready(function(){

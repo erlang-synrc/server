@@ -97,11 +97,12 @@ init([Pid]) ->
 %% @end
 %%--------------------------------------------------------------------
 handle_call({connect}, _From, State) ->
-    {ok, Socket} = gen_tcp:connect(localhost, ?LISTEN_PORT, [{active, once}, binary, {packet, 0}]),
+    {ok, Socket} = gen_tcp:connect('127.0.1.1', ?LISTEN_PORT, [{active, once}, binary, {packet, 0}]),
     ok = gen_tcp:send(Socket, <<?KAMF_MAGIC:48>>),
     {reply, ok, State#state{socket = Socket}};
 
 handle_call({connect, {Host, Port}}, _From, State) ->
+    ?INFO("TC_SOCK: ~p",[{Host,Port}]),
     {ok, Socket} = gen_tcp:connect(Host, Port, [{active, once}, binary, {packet, 0}]),
     ok = gen_tcp:send(Socket, <<?KAMF_MAGIC:48>>),
     {reply, ok, State#state{socket = Socket}};

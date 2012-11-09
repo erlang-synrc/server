@@ -1,10 +1,3 @@
-%%----------------------------------------------------------------------
-%% @author Vladimir Baranov <baranoff.vladimir@gmail.com>
-%% @copyright Paynet Internet ve Bilisim Hizmetleri A.S. All Rights Reserved.
-%% @doc
-%%  Application supervisor
-%% @end
-%%--------------------------------------------------------------------
 -module(nsm_mq_sup).
 
 -behaviour(supervisor).

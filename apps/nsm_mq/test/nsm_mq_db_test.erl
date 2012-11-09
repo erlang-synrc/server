@@ -1,10 +1,3 @@
-%%----------------------------------------------------------------------
-%% @author Vladimir Baranov <baranoff.vladimir@gmail.com>
-%% @copyright Paynet Internet ve Bilisim Hizmetleri A.S. All Rights Reserved.
-%% @doc
-%%  Message queue work with db tests
-%% @end
-%%--------------------------------------------------------------------
 -module(nsm_mq_db_test).
 
 -include("nsm_mq.hrl").

@@ -72,7 +72,7 @@ main() ->
         </style>
 
         <link rel='stylesheet' href='/nitrogen/datepicker/css/datepicker.css' type='text/css' />
-	    <script type='text/javascript' src='/nitrogen/datepicker/js/datepicker.js'></script>
+	    <script type='text/javascript' src='/nitrogen/datepicker/js/datepicker_tr.js'></script>
 
         <script>
         window.onload = function(){
@@ -81,7 +81,7 @@ main() ->
 	            date: $('#inputDate').val(),
 	            current: $('#inputDate').val(),
 	            starts: 1,
-	            position: 'r',
+	            position: 'bottom',
 	            onBeforeShow: function(){
 		            $('#inputDate').DatePickerSetDate($('#inputDate').val(), true);
 	            },
@@ -120,44 +120,57 @@ content() ->
             #textbox{style="position:absolute; left:137px; top:77px; width:140px; height:28px; font-size:16px;", class="newtour_textbox", id=tournament_name},
             #label{style="position:absolute; left:300px; top:84px;", text="Açiklama:"},
             #textbox{style="position:absolute; left:375px; top:77px; width:180px; height:28px; font-size:16px;", class="newtour_textbox", id=tournament_desc},
-            #label{style="position:absolute; left:575px; top:84px;", text="Turnuva Resmi:"},
-            #textbox{style="position:absolute; left:692px; top:77px; width:110px; height:28px; font-size:16px;", class="newtour_textbox", id=tournament_official},
-            #button{style="position:absolute; left:806px; top:77px; width:110px; height:32px; font-size:16px;", text="BROWSE", id=browse},
+
+            #panel{id=upload, class=file, body=[
+                #label{style="position:absolute; left:575px; top:84px;", text="Turnuva Resmi:"},
+                #textbox{style="position:absolute; left:692px; top:77px; width:110px; height:28px; font-size:16px;", class="newtour_textbox", id=tournament_official},
+%                #upload{tag=newtour_upload, show_button=false},
+                #button{style="position:absolute; left:806px; top:77px; width:110px; height:32px; font-size:16px;", text="BROWSE", id=browse, postback=browse_pressed}
+%                "<input style='position:absolute; left:806px; top:77px; width:110px; height:32px; font-size:16px;' text='BROWSE' type='file' name='browse'>"
+            ]},
 
             #label{style="position:absolute; left:42px; top:145px;", text="Oyun Türü:"},
-            #dropdown {style="position:absolute; left:126px; top:138px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
+            #dropdown {id=tour_game, style="position:absolute; left:126px; top:138px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
                         #option { text="OKEY" },
-                        #option { text="TAVLA" }
+                        #option { text="—" }
             ]},
-            #label{style="position:absolute; left:264px; top:145px;", text="Oyun Tipi:"},
-            #dropdown {style="position:absolute; left:340px; top:138px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
+            #label{style="position:absolute; left:281px; top:145px;", text="Oyun Tipi:"},
+            #dropdown {id=tour_esli, style="position:absolute; left:357px; top:138px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
                         #option { text="EŞLİ" },
                         #option { text="—" }
             ]},
-            #label{style="position:absolute; left:480px; top:145px;", text="Oyun Sayısı:"},
-            #dropdown {style="position:absolute; left:576px; top:138px; width:160px; height:32px; font-size:16px; padding-top:2px;", options=[
-                        #option { text="1000–2000" },
-                        #option { text="2000–5000" },
-                        #option { text="5000–10 000" },
-                        #option { text="10 000–20 000" }
+            #label{style="position:absolute; left:514px; top:145px;", text="Oyun Sayısı:"},
+            #dropdown {id=tour_players, style="position:absolute; left:610px; top:138px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
+                        #option { text="16" },
+                        #option { text="32" },
+                        #option { text="64" },
+                        #option { text="128" },
+                        #option { text="256" },
+                        #option { text="512" },
+                        #option { text="1024" }
             ]},
             #label{style="position:absolute; left:764px; top:145px;", text="Kota:"},
-            #dropdown {style="position:absolute; left:807px; top:138px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
-                        #option { text="+10 000" },
-                        #option { text="+20 000" },
-                        #option { text="+50 000" },
-                        #option { text="+100 000" }
+            #dropdown {id=tour_quota, style="position:absolute; left:807px; top:138px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
+                        #option { text="2" },
+                        #option { text="4" },
+                        #option { text="6" },
+                        #option { text="8" },
+                        #option { text="10" }
             ]},
-            #label{style="position:absolute; left:42px; top:197px;", text="Turnuva Türü:"},
-            #dropdown {style="position:absolute; left:146px; top:190px; width:100px; height:32px; font-size:16px; padding-top:2px;", options=[
+            #label{style="position:absolute; left:242px; top:197px;", text="Turnuva Türü:"},
+            #dropdown {id=tour_type, style="position:absolute; left:346px; top:190px; width:100px; height:32px; font-size:16px; padding-top:2px;", options=[
                         #option { text="Elemeli" },
                         #option { text="—" }
             ]},
-            #label{style="position:absolute; left:265px; top:197px;", text="Tarih:"},
+            #label{style="position:absolute; left:465px; top:197px;", text="Tarih:"},
             "<input type='text' id='inputDate' class='newtour_textbox' 
-                style='position:absolute; left:310px; top:191px; width:140px; height:28px; font-size:16px;
+                style='position:absolute; left:510px; top:190px; width:140px; height:28px; font-size:16px;
                        background:url(../images/tournament/new_tournament/calendar_icon.png) no-repeat 118px 2px;' 
                 value='" ++ SD ++ "." ++ SM ++ "." ++ SY ++ "'/>",
+%            #textbox{id=tour_date, class="newtour_textbox inputDate",
+%                style="position:absolute; left:510px; top:190px; width:140px; height:28px; font-size:16px;
+%                       background:url(../images/tournament/new_tournament/calendar_icon.png) no-repeat 118px 2px;",
+%                text= (SD ++ "." ++ SM ++ "." ++ SY)},
 
             #panel{style="height:1px; background-color:#c2c2c2; width:960px; margin-left:-25px; position:absolute; top:282px;", body=[]},
             #panel{class="newtour_title", style="top:257px;", body=[
@@ -176,15 +189,15 @@ content() ->
             #label{style="position:absolute; left:550px; top:350px;", text="Ödüller:"},
             #panel{id=prize_1, style="position:absolute; left:620px; top:315px; border:1px solid #cdcdcd;", body=[
                 #label{style="position:absolute; left:36px; top:-20px;", text="1"},
-                #image{style="width:80px; height:80px;", image="http://www.enilginc.com/images/products/00/08/45/845_buyuk.jpg"}
+                #image{id=img_prize_1, style="width:80px; height:80px;", image="/images/tournament/new_tournament/question.png"}
             ]},
             #panel{id=prize_2, style="position:absolute; left:710px; top:315px; border:1px solid #cdcdcd;", body=[
                 #label{style="position:absolute; left:36px; top:-20px;", text="2"},
-                #image{style="width:80px; height:80px;", image="http://www.enilginc.com/images/products/00/02/12/212_buyuk.jpg"}
+                #image{id=img_prize_2, style="width:80px; height:80px;", image="/images/tournament/new_tournament/question.png"}
             ]},
             #panel{id=prize_3, style="position:absolute; left:800px; top:315px; border:1px solid #cdcdcd;", body=[
                 #label{style="position:absolute; left:36px; top:-20px;", text="3"},
-                #image{style="width:80px; height:80px;", image="http://www.enilginc.com/images/products/00/07/31/731_buyuk.jpg"}
+                #image{id=img_prize_3, style="width:80px; height:80px;", image="/images/tournament/new_tournament/question.png"}
             ]}
         ]},
 
@@ -195,7 +208,7 @@ content() ->
         #br{},
         #br{},
         "<center>",
-        #button{class="newtour_orange_button", text="YARAT", id=create},
+        #button{class="newtour_orange_button", text="YARAT", id=create, postback=create_pressed},
         "</center>"
     ].
 
@@ -203,7 +216,9 @@ product_list_paged(Page) ->
     MinPrice = wf:state(slider_min),
     MaxPrice = wf:state(slider_max),
     AllGiftsData = nsm_gifts_db:get_all_gifts(),
-    OnlyGiftsData = lists:sublist( 
+%    FilteredGiftsData = lists:filter(fun(G) -> (G#gift.kakush_point >= MinPrice) and (G#gift.kakush_point =< MaxPrice) end, OnlyGiftsData),
+    FilteredGiftsData = [Gift || {Gift, _Obj} <- AllGiftsData, Gift#gift.enabled_on_site, (Gift#gift.kakush_point >= MinPrice) and (Gift#gift.kakush_point =< MaxPrice)],
+    PageGiftsData = lists:sublist( 
         lists:sort(
             fun(A, B) -> 
                 if
@@ -212,11 +227,10 @@ product_list_paged(Page) ->
                     true -> false
                 end
             end,
-            [Gift || {Gift, _Obj} <- AllGiftsData, Gift#gift.enabled_on_site]
+            FilteredGiftsData
         ), 
         (Page-1) * ?GIFTSPERTOURPAGE + 1, ?GIFTSPERTOURPAGE),
-    FilteredGiftsData = lists:filter(fun(G) -> (G#gift.kakush_point >= MinPrice) and (G#gift.kakush_point =< MaxPrice) end, OnlyGiftsData),
-    ?PRINT({MinPrice, MaxPrice, FilteredGiftsData}),
+
     Buttons = case length(FilteredGiftsData) > ?GIFTSPERTOURPAGE of
         true ->
             #panel{class="paging-2", style="padding: 10px 0px 0px 0px;", body=[
@@ -263,7 +277,7 @@ product_list_paged(Page) ->
                     "</strong>",
 				"</div>",
             "</li>"]
-            || OneGift <- FilteredGiftsData
+            || OneGift <- PageGiftsData
         ],
         "</ul>",
         Buttons
@@ -284,10 +298,8 @@ event({show_details, Description, ImageUrl, Id}) ->
             #image{image=ImageUrl, style="margin:10px; width:300px; height:300px;"},
             "</center>",
             gifts:decode_html(Description),
+            "<center>",
             #singlerow{cells=[
-                #tablecell{
-                    body="", style="width:172px;"
-                },
                 #tablecell{
                     body=#cool_button{text=?_T("1-st prize"), postback={chose_1_prize, Id, ImageUrl}, style="display:block;"}
                 },
@@ -298,11 +310,61 @@ event({show_details, Description, ImageUrl, Id}) ->
                     body=#cool_button{text=?_T("3-rd prize"), postback={chose_3_prize, Id, ImageUrl}, style="display:block;"}
                 }
             ]},
+            "</center>",
             #grid_clear{}
         ]}
     ],    
     wf:update(simple_panel, webutils:lightbox_panel_template(gift_lightbox, Body, hide_details)),
     wf:wire(simple_lightbox, #show{});
+
+event({chose_1_prize, Id, ImageUrl}) ->
+    wf:state(prize_1, Id),
+    wf:replace(img_prize_1, #image{id=img_prize_1, style="width:80px; height:80px;", image=ImageUrl}),
+    event(hide_details);
+
+event({chose_2_prize, Id, ImageUrl}) ->
+    wf:state(prize_2, Id),
+    wf:replace(img_prize_2, #image{id=img_prize_2, style="width:80px; height:80px;", image=ImageUrl}),
+    event(hide_details);
+
+event({chose_3_prize, Id, ImageUrl}) ->
+    wf:state(prize_3, Id),
+    wf:replace(img_prize_3, #image{id=img_prize_3, style="width:80px; height:80px;", image=ImageUrl}),
+    event(hide_details);
+
+
+event(browse_pressed) ->
+    wf:wire(#alert{text=?_T("Not ready yet.")});
+
+event(create_pressed) ->
+    TourName = wf:q(tournament_name),
+    TourDesc = wf:q(tournament_desc),
+    TourGame = case wf:q(tour_game) of
+        "OKEY" -> game_okey;
+        "TAVLA" -> game_tavla
+    end,
+    TourType = case wf:q(tour_type) of
+        "Elemeli" -> pointing;
+        _ -> unknown
+    end,
+    TourDate = {2012, 11, 9},   % obvious mockup!
+    TourPlayers = list_to_integer(wf:q(tour_players)),
+    TourQuota = list_to_integer(wf:q(tour_quota)),
+    Prize1 = wf:state(prize_1),
+    Prize2 = wf:state(prize_2),
+    Prize3 = wf:state(prize_3),
+    case (Prize1 == undefined) or (Prize2 == undefined) or (Prize3 == undefined) of
+        true ->
+            wf:wire(#alert{text=?_T("Please, choose all the prizes for tournament!")});
+        false ->
+            case TourName == "" of
+                true -> 
+                    wf:wire(#alert{text=?_T("Please, provide tournament name!")}); 
+                false ->
+                    nsm_tournaments:create(wf:user(), TourName, TourDesc, TourDate, TourPlayers, TourQuota, [Prize1, Prize2, Prize3], TourType, TourGame),
+                    wf:wire(#alert{text=?_T("New tournament created!")})
+            end
+    end;
 
 event(hide_details) ->
     wf:wire(simple_lightbox, #hide{});

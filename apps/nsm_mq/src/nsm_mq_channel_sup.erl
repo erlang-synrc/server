@@ -1,11 +1,5 @@
-%%----------------------------------------------------------------------
-%% @author Vladimir Baranov <baranoff.vladimir@gmail.com>
-%% @copyright Paynet Internet ve Bilisim Hizmetleri A.S. All Rights Reserved.
-%% @doc
-%%  Channels supervisor
-%% @end
-%%--------------------------------------------------------------------
 -module(nsm_mq_channel_sup).
+-author('Vladimir Baranov <baranoff.vladimir@gmail.com>').
 
 -behaviour(supervisor).
 

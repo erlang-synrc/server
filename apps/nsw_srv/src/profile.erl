@@ -137,37 +137,35 @@ section_body(profile) ->
 
     AvatarP = avatar_update_box(User),
     Services = [
-	{"/images/img-51.png", "Facebook", add},
-	{"/images/img-52.png", "Twitter", add},
-	{"/images/img-53.png", "Tumblr", del},
-	{"/images/img-54.png", "Vimeo", add},
-	{"/images/img-55.png", "RSS", add}
+	%{"/images/img-51.png", "Facebook", add},
+	{"/images/img-52.png", "Twitter", add}
+	%{"/images/img-53.png", "Tumblr", del},
+	%{"/images/img-54.png", "Vimeo", add},
+	%{"/images/img-55.png", "RSS", add}
     ],
     ServicesP = #panel{class=cell,body=[
-				    #h3{text=?_T("Services")},
-				    #list{class="soc-list",body=[
-					begin
-					#listitem{class=png, body=[#image{image=Img},#span{text=Text},
-					    case Butt of
-						add ->
-						    #link{class="btn", text=["<span>+</span>",?_T("Add")],
-							  html_encode = false, postback={service, Text}};
-						del ->
-						    #link{class="btn btn-2", text=?_T("Edit"),
-							  postback={service, Text}}
-					    end
-					    ]}
-					end || {Img, Text, Butt} <- Services ]
-				    }
-	    ]},
-
-    ColR = [ AvatarP, ServicesP ],
+	#h3{text=?_T("Services")},
+	#list{class="soc-list",body=[
+	    fb_utils:service_item(),
+	    [begin
+		#listitem{class=png, body=[#image{image=Img},#span{text=Text},
+		    case Butt of
+			add ->
+			    #link{class="btn", text=["<span>+</span>",?_T("Add")],
+			    actions=#event{type=click, actions=#script{script="add_fb_service()"}},
+			    html_encode = false, postback={service, Text}};
+			del ->
+			    #link{class="btn btn-2", text=?_T("Edit"), postback={service, Text}}
+		    end]}
+	    end || {Img, Text, Butt} <- Services]
+	]}
+    ]},
     [
      #h1{text=?_T("Profile Information")},
      #panel{id=profile_info},
-     #panel{class="profile-info", body=[#panel{class="col-l",body=["<form>", ColL, "</form>"]},
-					#panel{class="col-r",body=ColR}
-				       ]}
+     #panel{class="profile-info", body=[
+	    #panel{class="col-l",body=["<form>", ColL, "</form>"]},
+	    #panel{class="col-r",body= [AvatarP, ServicesP]}]}
     ];
 section_body(gifts) ->
     AllGifts = lists:reverse(lists:sort(nsm_users:list_gifts_of(wf:user()))),
@@ -640,12 +638,6 @@ event(Event) ->
 	    u_event(Event)
     end.
 
-u_event({is_facebook, Flag}) ->
-    ?INFO("is_facebook: ~p",[Flag]);
-
-u_event({is_facebook, _, A}) ->
-    ?INFO("is_facebook p: ~p",[A]);
-
 u_event({show_contract_details, ContractId, PanelId}) ->
     affiliates:inner_event({show_contract_details, ContractId, PanelId}, "");
 
@@ -663,7 +655,6 @@ u_event({hide_user_details, PanelId}) ->
 
 u_event({contracts_page, Page, UserID}) ->
     affiliates:inner_event({contracts_page, Page, UserID}, "");
-
 
 u_event({nothing}) ->
     ok;

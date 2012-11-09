@@ -1,9 +1,3 @@
-%%----------------------------------------------------------------------
-%% @author Vladimir Baranov <baranoff.vladimir@gmail.com>
-%% @copyright Paynet Internet ve Bilisim Hizmetleri A.S. All Rights Reserved.
-%% @doc Message queue. tests
-%% @end
-%%--------------------------------------------------------------------
 -module(nsm_mq_test).
 
 -include("nsm_mq.hrl").

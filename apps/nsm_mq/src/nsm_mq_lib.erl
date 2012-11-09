@@ -1,10 +1,5 @@
-%%----------------------------------------------------------------------
-%% @author Vladimir Baranov <baranoff.vladimir@gmail.com>
-%% @copyright Paynet Internet ve Bilisim Hizmetleri A.S. All Rights Reserved.
-%% @doc nsm_mq routines
-%% @end
-%%--------------------------------------------------------------------
 -module(nsm_mq_lib).
+-author('Vladimir Baranov <baranoff.vladimir@gmail.com>').
 
 %%
 %% Include files

@@ -2,8 +2,10 @@
 -module (tournament_lobby).
 -compile(export_all).
 -include_lib("nitrogen_core/include/wf.hrl").
--include("gettext.hrl").
+-include_lib("nsm_db/include/common.hrl").
+-include_lib("nsm_db/include/tournaments.hrl").
 -include("setup.hrl").
+-include("common.hrl").
 
 main() ->
     webutils:js_for_main_authorized_game_stats_menu(),
@@ -281,6 +283,34 @@ body() ->
 
 
 content() ->
+    Id = list_to_integer(wf:q("id")),
+    {ok, T} = nsm_db:get(tournament, Id),
+    Title = T#tournament.name,
+    Game = case T#tournament.game_type of
+        game_okey -> "OKEY";
+        game_tavla -> "TAVLA";
+        game_batak -> "BATAK";
+        _ -> "WTF"
+    end,
+    Date = integer_to_list(element(3, T#tournament.start_date)) ++ "." ++ 
+           integer_to_list(element(2, T#tournament.start_date)) ++ "." ++ 
+           integer_to_list(element(1, T#tournament.start_date)),
+    NPlayers = T#tournament.players_count,
+    Quota = T#tournament.quota,
+    Prizes = case is_list(T#tournament.awards) of
+        true ->
+            GOs = [nsm_gifts_db:get_gift(A) || A <- T#tournament.awards],
+            [case GO of
+                {error, notfound} -> {"?", "/images/tournament/new_tournament/question.png"};
+                {ok, {Gift, _}} -> {Gift#gift.gift_name, Gift#gift.image_small_url}
+            end || GO <- GOs];
+        false ->
+            [{"?", "/images/tournament/new_tournament/question.png"},{"?", "/images/tournament/new_tournament/question.png"},{"?", "/images/tournament/new_tournament/question.png"}]
+    end,
+    {PN1, PI1} = hd(Prizes),
+    {PN2, PI2} = hd(tl(Prizes)),
+    {PN3, PI3} = hd(tl(tl(Prizes))),
+
     [  
         #panel{class="tourlobby_title", body=[
                 #label{class="tourlobby_title_label", body="TURNUVA LOBY"}
@@ -292,7 +322,7 @@ content() ->
             % left top block
             #panel{class="tourlobby_left_top_block", body=[
                     "<center>",
-                    #label{class="tourlobby_left_top_block_label", body="TAVLA TURNUVASI"},
+                    #label{class="tourlobby_left_top_block_label", body=Title},
                     #br{},
                     #image{image="/images/tournament/lobby/tour_avatar.png"},
                     #br{},
@@ -311,9 +341,9 @@ content() ->
                     #br{},
                     #label{class="tourlobby_left_bottom_block_title", body="Turnuva Bilgileri"},
                     #br{},
-                    #label{class="tourlobby_left_bottom_block_label", body="Oyun Türü: Tavla"},
+                    #label{class="tourlobby_left_bottom_block_label", body="Oyun Türü: " ++ Game},
                     #br{},
-                    #label{class="tourlobby_left_bottom_block_label", body="Kota: 800"}
+                    #label{class="tourlobby_left_bottom_block_label", body="Kota: " ++ integer_to_list(Quota)}
                 ]
              },
         
@@ -321,21 +351,21 @@ content() ->
             #panel{class="tourlobby_orange_plask", body=[
                     #label{class="tourlobby_every_plask_title", body="KATILIMCI SAYISI"},
                     #br{},
-                    #label{class="tourlobby_every_plask_label", body="512"}
+                    #label{class="tourlobby_every_plask_label", body=integer_to_list(NPlayers)}
                 ]
             },
 
             #panel{class="tourlobby_sky_plask", body=[
                     #label{class="tourlobby_every_plask_title", body="BAŞLAMA TARİHİ"},
                     #br{},
-                    #label{class="tourlobby_every_plask_label", body="10.02.2012"}
+                    #label{class="tourlobby_every_plask_label", body=Date}
                 ]
             },
 
             #panel{class="tourlobby_blue_plask", body=[
-                    #label{class="tourlobby_every_plask_title", body="KATILIMCI SAYISI"},
+                    #label{class="tourlobby_every_plask_title", body="KALAN ZAMAN"},
                     #br{},
-                    #label{class="tourlobby_every_plask_label", body="73:49:11"}
+                    #label{class="tourlobby_every_plask_label", body="12:00"}
                 ]
             },
 
@@ -343,9 +373,9 @@ content() ->
             #panel{class="tourlobby_prizes", body=[
                     #panel{class="tourlobby_prize_1", body=[
                             "<center>",
-                            #image{style="width:120px; height:130px;", image="http://www.enilginc.com/images/products/00/08/45/845_buyuk.jpg"},
+                            #image{style="width:120px; height:130px;", image=PI1},
                             #br{},
-                            #label{style="font-size:12px; color:#000;", body="Zamanlay"},
+                            #label{style="font-size:12px; color:#000;", body=PN1},
                             "</center>",
                             #panel{class="tourlobby_prize_star_1", body=
                                 #label{class="tourlobby_prize_star_text", body="1"}
@@ -354,9 +384,9 @@ content() ->
                     },
                     #panel{class="tourlobby_prize_2", body=[
                             "<center>",
-                            #image{style="width:120px; height:130px;", image="http://www.enilginc.com/images/products/00/02/12/212_buyuk.jpg"},
+                            #image{style="width:120px; height:130px;", image=PI2},
                             #br{},
-                            #label{style="font-size:12px; color:#000;", body="Dart Vader Saat"},
+                            #label{style="font-size:12px; color:#000;", body=PN2},
                             "</center>",
                             #panel{class="tourlobby_prize_star_2", body=
                                 #label{class="tourlobby_prize_star_text", body="2"}
@@ -365,9 +395,9 @@ content() ->
                     },
                     #panel{class="tourlobby_prize_3", body=[
                             "<center>",
-                            #image{style="width:120px; height:130px;", image="http://www.enilginc.com/images/products/00/07/31/731_buyuk.jpg"},
+                            #image{style="width:120px; height:130px;", image=PI3},
                             #br{},
-                            #label{style="font-size:12px; color:#000;", body="Kamera Kalemt"},
+                            #label{style="font-size:12px; color:#000;", body=PN3},
                             "</center>",
                             #panel{class="tourlobby_prize_star_3", body=
                                 #label{class="tourlobby_prize_star_text", body="3"}

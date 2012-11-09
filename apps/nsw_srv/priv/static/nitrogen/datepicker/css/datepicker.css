@@ -99,11 +99,11 @@ div.datepicker table td {
 }
 div.datepicker th {
 	text-align: center;
-	color: #888;
+	color: #1b4c6a;
 	font-weight: normal;
 }
 div.datepicker tbody th {
-	text-align: left;
+	text-align: center;
 }
 div.datepicker tbody a {
 	display: block;
@@ -122,7 +122,7 @@ div.datepicker tbody a {
 	text-align: center;
 }
 td.datepickerNotInMonth a {
-	color: #666;
+	color: #777;
 }
 tbody.datepickerDays td.datepickerSelected{
 	background: #c4d1da;
@@ -141,9 +141,7 @@ div.datepicker a:hover {
 div.datepicker td.datepickerNotInMonth a:hover {
 	color: #777;
 }
-div.datepicker tbody th {
-	text-align: left;
-}
+
 .datepickerSpace div {
 	width: 20px;
 }

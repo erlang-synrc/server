@@ -1,11 +1,5 @@
-%%----------------------------------------------------------------------
-%% @author Vladimir Baranov <baranoff.vladimir@gmail.com>
-%% @copyright Paynet Internet ve Bilisim Hizmetleri A.S. All Rights Reserved.
-%% @doc
-%%   Routines to provide rpc calls with message queues
-%% @end
-%%--------------------------------------------------------------------
 -module(nsm_mq_rpc).
+-author('Vladimir Baranov <baranoff.vladimir@gmail.com>').
 
 %%
 %% Include files

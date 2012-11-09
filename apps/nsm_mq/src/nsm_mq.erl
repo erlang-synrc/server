@@ -1,10 +1,5 @@
-%%----------------------------------------------------------------------
-%% @author Vladimir Baranov <baranoff.vladimir@gmail.com>
-%% @copyright Paynet Internet ve Bilisim Hizmetleri A.S. All Rights Reserved.
-%% @doc Message queue. Wrapper for RabbitMQ
-%% @end
-%%--------------------------------------------------------------------
 -module(nsm_mq).
+-author('Vladimir Baranov <baranoff.vladimir@gmail.com>').
 
 -behaviour(gen_server).
 %% --------------------------------------------------------------------

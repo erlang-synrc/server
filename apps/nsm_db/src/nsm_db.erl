@@ -265,6 +265,16 @@ add_sample_users() ->
                            education="Bc. S.",
                            register_date={1345,14070,852889}
                      },
+                     #user{username = "nata88", password="123456",
+                           name = "Nata", surname = "Eightyeight", feed = feed_create(),
+                           team = create_team("tours"), direct = feed_create(),
+                           status=ok,
+                           sex="female",
+                           location="Ankara",
+                           age={1985,8,3},
+                           education="Bc. S.",
+                           register_date={1345,14070,852889}
+                     },
                      #user{username = "serg", password="kaka1224",
                            name = "Serg", surname = "Polkovnikov", feed = feed_create(),
                            team = create_team("tours"), direct = feed_create(),

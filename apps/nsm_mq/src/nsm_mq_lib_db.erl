@@ -1,11 +1,5 @@
-%%----------------------------------------------------------------------
-%% @author Vladimir Baranov <baranoff.vladimir@gmail.com>
-%% @copyright Paynet Internet ve Bilisim Hizmetleri A.S. All Rights Reserved.
-%% @doc
-%%  Message queue routines to deal with DB
-%% @end
-%%--------------------------------------------------------------------
 -module(nsm_mq_lib_db).
+-author('Vladimir Baranov <baranoff.vladimir@gmail.com>').
 
 %%
 %% Include files

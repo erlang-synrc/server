@@ -1,12 +1,5 @@
-%%----------------------------------------------------------------------
-%% @author Vladimir Baranov <baranoff.vladimir@gmail.com>
-%% @copyright Paynet Internet ve Bilisim Hizmetleri A.S. All Rights Reserved.
-%% @doc
-%%   Abstraction for make rpc requests via message queue without creating
-%%   channel, queue and etc. on client.
-%% @end
-%%--------------------------------------------------------------------
 -module(nsm_mq_rpc_srv).
+-author('Vladimir Baranov <baranoff.vladimir@gmail.com>').
 
 -behaviour(gen_server).
 %% --------------------------------------------------------------------

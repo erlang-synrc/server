@@ -1,10 +1,3 @@
-%%----------------------------------------------------------------------
-%% @author Vladimir Baranov <baranoff.vladimir@gmail.com>
-%% @copyright Paynet Internet ve Bilisim Hizmetleri A.S. All Rights Reserved.
-%% @doc
-%%  RPC calls throuth message queue tests
-%% @end
-%%--------------------------------------------------------------------
 -module(nsm_mq_rpc_test).
 
 -include("nsm_mq.hrl").

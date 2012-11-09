@@ -1,9 +1,3 @@
-%%----------------------------------------------------------------------
-%% @author Vladimir Baranov <baranoff.vladimir@gmail.com>
-%% @copyright Paynet Internet ve Bilisim Hizmetleri A.S. All Rights Reserved.
-%% @doc Application callback module
-%% @end
-%%--------------------------------------------------------------------
 -module(nsm_mq_app).
 
 -behaviour(application).
