@@ -96,7 +96,7 @@ init()->
 	    if(page.fbRemovePermissions){
 		page.fbRemovePermissions(response);
 	    }
-	    console.log(response);
+	    console.log(\"Response revoke:\" + response);
 	}); 
     };",
     "(function(d){",
@@ -160,9 +160,13 @@ api_event(fbLogin, _, [Args])->
 	_ ->
 	    case nsm_users:get_user({facebook, proplists:get_value(id, Args)}) of
 	    {ok, User} ->
-		login:login_user(User#user.username),
-		wf:session(logged_with_fb, true),
-		wf:redirect_from_login(?_U("/dashboard"));
+		case same_or_undefined(wf:user(), User#user.username) of
+		    true ->
+			login:login_user(User#user.username),
+			wf:session(logged_with_fb, true),
+			wf:redirect_from_login(?_U("/dashboard"));
+		    _ -> fb_user_not_match
+		end;
 	    _ ->
 	        wf:session(fb_registration, Args),
 		wf:redirect(?_U("/login/register"))
@@ -182,6 +186,8 @@ api_event(fbRemovePermissions, _, [Data]) ->
     end.
 
 check_permissions([{publish_stream, 1}|_Rest])->
+    wf:info("Attach service! ~p~n", [wf:user()]),
+
     wf:update(fbServiceButton, [
 	#image{image="/images/img-51.png"},
 	#span{text="Facebook"},
@@ -191,6 +197,8 @@ check_permissions([{publish_stream, 1}|_Rest])->
     ]);
 check_permissions("publish_stream") -> check_permissions([{publish_stream, 1}]);
 check_permissions([])-> ok;
-check_permissions([{_P,_V}|Perms])-> check_permissions(Perms).
+check_permissions([{_P,_V}|Perms]) -> check_permissions(Perms).
 
-
+same_or_undefined(undefined, _) -> true;
+same_or_undefined(User, FbUser) when User =:= FbUser -> true;
+same_or_undefined(_,_) -> false.

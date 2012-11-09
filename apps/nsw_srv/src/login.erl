@@ -294,11 +294,13 @@ forget_password(Token) ->
             [?_T("Token expired")]
     end.
 
-%% EVENTS
+% Events
 
 event(login) ->
-    wf:info("login.erl login event"),
     webutils:login(login,password,login_hintbox);
+
+event(register) ->
+    webutils:event(register);
 
 event(hide_login) ->
     wf:redirect("/");
@@ -397,13 +399,10 @@ api_event(Name, Tag, Data)->
 redirect(Url, Delay) ->
     wf:wire(#event{type=timer, delay = Delay, actions=#script{script="window.location=\""++Url++"\";"}}).
 
-
 login_user(UserName) ->
-    wf:info("login.erl login_user ~p", [UserName]),
     {ok, User} = nsm_users:get_user(UserName),
-%    rpc:call(?APSERVER_NODE,nsm_users,update_after_login,[UserName]),
     nsx_util_notification:notify(["login", "user", UserName, "update_after_login"], []),
-    wf:session(user_info, User), 
+    wf:session(user_info, User),
     wf:user(UserName),
     wf:cookie("lang", site_utils:detect_language(), "/", 100*24*60), %% 100 days
     wf:config_default(session_timeout, 120),    % setting nitrogen session to 2 hours

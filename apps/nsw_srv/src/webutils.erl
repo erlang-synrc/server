@@ -47,8 +47,6 @@ title(_Site) ->
             "Kakaranet"
     end.
 
-
-
 -spec new_window_js(string()) -> string().
 new_window_js(Url) ->
     new_window_js(Url, "").
@@ -107,13 +105,12 @@ account_menu() ->
 			end
 		    ]}
 	    end;
-	_UserLoggedIn -> [
-	     #list{class="user-menu", body=[
+	_UserLoggedIn ->
+	    [#list{class="user-menu", body=[
 		#listitem{body=fb_utils:login_btn()},
-		#listitem{body=#link{class=login, text=?_T("Login"), postback=login1, url=?_U("/login")}},
-		#listitem{body=#link{class=signup, text=?_T("Signup"), url=?_U("/login/register")}}
-	    ]}
-	    ]
+		#listitem{body=#link{class=login, text=?_T("Login"), url=?_U("/login")}},
+		#listitem{body=#link{class=signup, text=?_T("Signup"), postback=register}}
+	    ]}]
 	end,
 	#panel{class="top", body= #panel{class="ar", body=[#panel{class=box, body=Element}]}}.
 
@@ -238,17 +235,15 @@ facebook_counter_box() ->
 event({error, Msg}) ->
     wf:wire(#alert{text=Msg});
 
-event(login1) ->
-    wf:redirect("/login");
-
 event(login) ->
     login(login,password,login_hintbox);
+event(register)->
+    wf:session(fb_registration, undefined),
+    wf:redirect(?_T("/login/register"));
 event(logout) ->
     %wf:clear_session(),
     wf:logout(),
     wf:redirect("/");
-event(show_login_with_facebook) ->
-    wf:redirect(lists:concat([?_U("/login"), "/facebook"]));
 event({change_language,SL}) ->
     NewLang = case SL of
 		"en" -> "tr";
@@ -278,7 +273,6 @@ event(replay_guiders_changed) ->
 
 event(Other) ->
     login:event(Other).
-
 
 %% API: list_to_options/1,2,3
 list_to_options(List) ->
@@ -499,19 +493,15 @@ serialize_event(Fun, Anchor, Module) ->
     #event{type=click, actions=#script{script=wf:f("Nitrogen.$queue_event(null, '~s', '')", [Event])}}.
 
 login(UserField, PassField, MsgBox)->
-	wf:wire(MsgBox, #hide{effect=blink, speed=300}),
-	User = wf:q(UserField),
+    wf:wire(MsgBox, #hide{effect=blink, speed=300}),
+    User = wf:q(UserField),
     Password = wf:q(PassField),
 
-    case zealot_auth:login([{username, User},
-                                               {password, Password}]) of
+    case zealot_auth:login([{username, User},{password, Password}]) of
         {ok, User} ->
-	    save_facebook_id(User, wf:q(facebook_userid), wf:q(facebook_access_token)),
             login:login_user(User);
         {error, user_not_found} ->
             display_error(MsgBox, "User not found");
-        %% if user is not verified we loing him in, but will show alert message
-        %% in his dashboard, to get verification
         {error, not_verified} ->
             login:login_user(User);
         {error, banned} ->
@@ -524,9 +514,9 @@ login(UserField, PassField, MsgBox)->
 
 -spec save_facebook_id(string(), string(), string()) -> ok.
 save_facebook_id(UserName, FBID, undefined) ->
-	%% if token unedfined log and skip
-	?WARNING("facebook token unedfined. User=~p, FBId=~p", [UserName, FBID]),
-	ok;
+    %% if token unedfined log and skip
+    ?WARNING("facebook token unedfined. User=~p, FBId=~p", [UserName, FBID]),
+    ok;
 save_facebook_id(UserName, FBID, FbToken) ->
     ?PRINT(FbToken),
     case erlfb:get_user_info(FbToken) of
@@ -561,12 +551,11 @@ save_facebook_id(UserName, FBID, FbToken) ->
     ok.
 
 display_error(MsgBox, Message)->
-	wf:update(MsgBox,?_T(Message)),
-	wf:wire(MsgBox, #show{effect=slide, speed=300}).
-
+    wf:update(MsgBox,?_T(Message)),
+    wf:wire(MsgBox, #show{effect=slide, speed=300}).
 
 user_count() ->
-	integer_to_list(user_counter:user_count()).
+    integer_to_list(user_counter:user_count()).
 
 user_count(GameH) ->
     GameCounts = rpc:call(?GAMESRVR_NODE,game_manager,counter,[
@@ -674,8 +663,7 @@ get_metalist(Id, Title, Module, List, EmptyMsg, Nav) ->
     end,
     [
         #panel{class="box", body=[
-            #h3{text=Title},
-	        #list{class="list-photo", body=[ Friends ]},
+            #h3{text=Title}, #list{class="list-photo", body=[ Friends ]},
             Nav
         ]}
     ].
