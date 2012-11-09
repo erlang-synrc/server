@@ -152,7 +152,6 @@ section_body(profile) ->
 		    case Butt of
 			add ->
 			    #link{class="btn", text=["<span>+</span>",?_T("Add")],
-			    actions=#event{type=click, actions=#script{script="add_fb_service()"}},
 			    html_encode = false, postback={service, Text}};
 			del ->
 			    #link{class="btn btn-2", text=?_T("Edit"), postback={service, Text}}
