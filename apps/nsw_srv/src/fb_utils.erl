@@ -13,6 +13,7 @@ init()->
     wf:wire(#api{name=fbLogout, tag=fb}),
     wf:wire(#api{name=fbSignedRequest, tag=fb}),
     wf:wire(#api{name=fbCheckPermissions, tag=fb}),
+    wf:wire(#api{name=fbRemovePermissions, tag=fb}),
     ["<div id=fb-root></div>",
     "<script>window.fbAsyncInit = function() {",
     "FB.init({ appId: '"++ ?FB_APP_ID ++"',",
@@ -87,6 +88,16 @@ init()->
     "};
     function del_fb_service(){
 	console.log(\"Todo: revoke fb permission.\");
+	FB.api({
+	    method: 'auth.revokeExtendedPermission',
+	    perm: 'publish_stream'
+	},
+	function(response) {
+	    if(page.fbRemovePermissions){
+		page.fbRemovePermissions(response);
+	    }
+	    console.log(response);
+	}); 
     };",
     "(function(d){",
     "var js, id = 'facebook-jssdk', ref = d.getElementsByTagName('script')[0];",
@@ -107,12 +118,13 @@ logout_btn()->
     [#link{text=?_T("Logout"), actions=#event{type=click, actions=#script{script="FB.logout()"}}, postback=logout }].
 
 service_item()->
-    #listitem{id=fbServiceButton, class=png, body=[
-	    #image{image="/images/img-51.png"},
-	    #span{text="Facebook"},
-	    #link{class="btn", text=["<span>+</span>",?_T("Add")],
-	    actions=#event{type=click, actions=#script{script="add_fb_service()"}},
-	    html_encode = false}]}.
+    #listitem{id=fbServiceButton, class=png, body=add_service_btn()}.
+
+add_service_btn()->
+    [#image{image="/images/img-51.png"}, #span{text="Facebook"},
+    #link{class="btn", text=["<span>+</span>",?_T("Add")],
+	actions=#event{type=click, actions=#script{script="add_fb_service()"}},
+	html_encode = false}].
 
 pay_dialog()->
     wf:wire(#api{name=processOrder, tag=fb}),
@@ -160,7 +172,14 @@ api_event(fbLogout, _, _Data)-> wf:session(fb_registration, undefined);
 api_event(processOrder, _, Data)-> ?INFO("Payment complete. Order:~p~n", [Data]);
 api_event(setFbIframe, _, [IsIframe]) -> wf:session(is_facebook, IsIframe);
 api_event(fbCheckPermissions, _, [Perms])-> check_permissions(Perms);
-api_event(fbSignedRequest, _, _Data) -> ok.
+api_event(fbSignedRequest, _, _Data) -> ok;
+api_event(fbRemovePermissions, _, [Data]) ->
+    case Data of
+	true -> 
+	    wf:update(fbServiceButton, add_service_btn());
+	_ -> 
+	    wf:info("Remove FB permissions error: ~p~n", [Data])
+    end.
 
 check_permissions([{publish_stream, 1}|_Rest])->
     wf:update(fbServiceButton, [
