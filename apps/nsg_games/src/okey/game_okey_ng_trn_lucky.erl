@@ -327,7 +327,7 @@ handle_table_message(TableId, {table_created, Relay}, ?STATE_PROCESSING,
                                                     reg_requests = NewRegRequests}};
 
 
-handle_table_message(TableId, {round_finished, NewScoringState},
+handle_table_message(TableId, {round_finished, NewScoringState, _RoundScore, _TotalScore},
                      ?STATE_PROCESSING,
                      #state{game_id = GameId, tables = Tables} = StateData)
   when is_integer(TableId) ->
@@ -724,7 +724,9 @@ table_parameters(ParentMod, ParentPid) ->
      {mult_factor, 1},
      {slang_allowed, false},
      {observers_allowed, false},
+     {tournament_type, lucky},
      {speed, normal},
+     {round_timeout, infinity},
      {game_type, standard},
      {rounds, undefined},
      {reveal_confirmation, true},

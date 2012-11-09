@@ -57,8 +57,7 @@
          rounds_achs      :: list(),    %% [{Round, [{SeatNum, Achs}]}], Achs = [{AchId, Points}]
          table            :: list(),    %% [{Round, [{SeatNum, Points}]}]
          rounds_finish_info :: list(),  %% [{Round, FinishInfo}]
-         chanak           :: integer(), %% Defined only for evenodd and color mode
-         winners          :: false | list() %% [SeatNum]
+         chanak           :: integer()  %% Defined only for evenodd and color mode
         }).
 
 %%
@@ -89,8 +88,7 @@ init(Mode, SeatsInfo, RoundsNum) ->
            rounds_scores = [],
            rounds_finish_info =[],
            rounds_achs = [],
-           table = [{0, SeatsInfo}],
-           winners = false
+           table = [{0, SeatsInfo}]
           }.
 
 
@@ -128,7 +126,7 @@ chanak(#state{chanak = Chanak}) ->
     Chanak.
 
 %% @spec round_finished(ScoringState, FinishReason, Hands, Gosterge, WhoHasGosterge, Has8Tashes) ->
-%%                                    {NewScoringState, GameWinners}
+%%                                    {NewScoringState, GameIsOver}
 %% @end
 %% Types:
 %%     FinishReason = tashes_out |
@@ -143,7 +141,7 @@ chanak(#state{chanak = Chanak}) ->
 %%     Gosterge = normal_tash()
 %%     WhoHasGosterge = undefined | SeatNum
 %%     Has8Tahses = [SeatNum]
-%%     GameWinners = false | [SeatNum]
+%%     GameisOver = boolean() 
 
 round_finished(#state{mode = GameMode, seats_num = SeatsNum,
                       rounds_num = _MaxRoundsNum, last_round_num = LastRoundNum,
@@ -175,10 +173,7 @@ round_finished(#state{mode = GameMode, seats_num = SeatsNum,
                            rounds_achs = NewRoundsAchs,
                            rounds_finish_info = NewRoundsFinishInfo,
                            chanak = NewChanak},
-    case detect_game_winners(NewState) of
-        [] -> {NewState, false};
-        Winners -> {NewState#state{winners = Winners}, Winners}
-    end.
+    {NewState, detect_game_finish(NewState)}.
 
 %%
 %% Local Functions
@@ -228,22 +223,13 @@ is_chanak_winner(Achs) ->
     lists:any(F, Achs).
 
 
-detect_game_winners(#state{mode = GameMode, last_round_num = RoundNum,
-                           rounds_num = MaxRoundNum, table = Table,
-                           rounds_finish_info = RoundsFinishInfo}) ->
+detect_game_finish(#state{mode = GameMode, last_round_num = RoundNum,
+                          rounds_num = MaxRoundNum, table = Table}) ->
     TotalScores = proplists:get_value(RoundNum, Table),
-    FinishInfo = proplists:get_all_values(RoundNum, RoundsFinishInfo),
     if GameMode == ?MODE_COUNTDOWN ->
-           case FinishInfo of
-               {gosterge_finish, Winner} -> [Winner];
-               _ ->[SeatNum || {SeatNum, P} <- TotalScores, P =< 0]
-           end;
+           lists:any(fun({_, Points}) -> Points =< 0 end, TotalScores);
        true ->
-           if (RoundNum == MaxRoundNum) -> %% Round over. Define winners.
-                  MaxPoints = lists:max([P || {_, P} <- TotalScores]),
-                  _Winners = [SeatNum || {SeatNum, P} <- TotalScores, P == MaxPoints];
-              true -> []
-           end
+           RoundNum == MaxRoundNum
     end.
 
 
