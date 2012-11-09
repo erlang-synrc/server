@@ -179,6 +179,10 @@ fields(okey_round_ended) ->
     record_info(fields, okey_round_ended);
 fields(okey_series_ended) ->
     record_info(fields, okey_series_ended);
+fields(okey_turn_result) ->
+    record_info(fields, okey_turn_result);
+fields(okey_turn_record) ->
+    record_info(fields, okey_turn_record);
 
 
 
