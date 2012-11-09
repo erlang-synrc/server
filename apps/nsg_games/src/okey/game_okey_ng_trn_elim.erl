@@ -40,10 +40,11 @@
          params            :: proplists:proplist(),
          bots_params       :: proplists:proplist(),
          turns_plan        :: list(integer()), %% Defines how many players will be passed to a next turn
+         kakush_per_round  :: integer(),
          players,          %% The register of tournament players
          tables,           %% The register of tournament tables
          seats,            %% Stores relation between players and tables seats
-         tournament_table  :: list(), %% XXX [{TurnNum, TurnRes}], TurnRes = [{PlayerId, Points}]
+         tournament_table  :: list(), %% XXX [{TurnNum, TurnRes}], TurnRes = [{PlayerId, Points, Status}]
          table_id_counter  :: pos_integer(),
          turn              :: pos_integer(),
          cr_tab_requests   :: dict(),  %% {TableId, PlayersIds}
@@ -60,7 +61,8 @@
          id              :: pos_integer(),
          user_id,
          user_info       :: #'PlayerInfo'{},
-         is_bot          :: boolean()
+         is_bot          :: boolean(),
+         status          :: active | eliminated
         }).
 
 -record(table,
@@ -152,6 +154,7 @@ init([GameId, Params, _Manager]) ->
     {ok, ?STATE_INIT, #state{game_id = GameId,
                              params = TableParams,
                              bots_params = BotsParams,
+                             kakush_per_round = KakushPerRound,
                              turns_plan = TurnsPlan,
                              players = Players,
                              tournament_table = TTable,
@@ -179,16 +182,19 @@ handle_event(go, ?STATE_INIT, #state{game_id = GameId} = StateData) ->
     gproc:reg({p,g,self()}, GProcVal),
     init_turn(1, StateData);
 
-handle_event({client_message, Message}, StateName, StateData) ->
+handle_event({client_message, Message}, StateName, #state{game_id = GameId} = StateData) ->
+    ?INFO("OKEY_NG_TRN_ELIM <~p> Received the message from a client: ~p.", [GameId, Message]),
     handle_client_message(Message, StateName, StateData);
 
-handle_event({table_message, TableId, Message}, StateName, StateData) ->
+handle_event({table_message, TableId, Message}, StateName, #state{game_id = GameId} = StateData) ->
+    ?INFO("OKEY_NG_TRN_ELIM <~p> Received the message from table <~p>: ~p.", [GameId, TableId, Message]),
     handle_table_message(TableId, Message, StateName, StateData);
 
 handle_event(_Event, StateName, StateData) ->
     {next_state, StateName, StateData}.
 
-handle_sync_event({client_request, Request}, From, StateName, StateData) ->
+handle_sync_event({client_request, Request}, From, StateName, #state{game_id = GameId} = StateData) ->
+    ?INFO("OKEY_NG_TRN_ELIM <~p> Received the request from a client: ~p.", [GameId, Request]),
     handle_client_request(Request, From, StateName, StateData);
 
 handle_sync_event(_Event, _From, StateName, StateData) ->
@@ -333,7 +339,7 @@ handle_table_message(TableId, {table_created, Relay},
     end;
 
 
-handle_table_message(TableId, {round_finished, NewScoringState},
+handle_table_message(TableId, {round_finished, NewScoringState, _RoundScore, _TotalScore},
                      ?STATE_TURN_PROCESSING,
                      #state{game_id = GameId, tables = Tables} = StateData) ->
     ?INFO("OKEY_NG_TRN_ELIM <~p> The <round_finished> notification received from table: ~p.",
@@ -346,13 +352,13 @@ handle_table_message(TableId, {round_finished, NewScoringState},
     {next_state, ?STATE_TURN_PROCESSING, StateData#state{tables = NewTables}};
 
 
-handle_table_message(TableId, {game_finished, TableContext, Result},
+handle_table_message(TableId, {game_finished, TableContext, _RoundScore, TotalScore},
                      ?STATE_TURN_PROCESSING = StateName,
                      #state{game_id = GameId, tables = Tables, tables_wl = WL,
                             tables_results = TablesResults} = StateData) ->
     ?INFO("OKEY_NG_TRN_ELIM <~p> The <round_finished> notification received from table: ~p.",
           [GameId, TableId]),
-    NewTablesResults = [{TableId, Result} | TablesResults],
+    NewTablesResults = [{TableId, TotalScore} | TablesResults],
     #table{pid = TablePid} = Table = fetch_table(TableId, Tables),
     NewTable = Table#table{scoring_state = TableContext, state = ?TABLE_STATE_FINISHED},
     NewTables = store_table(NewTable, Tables),
@@ -434,9 +440,8 @@ handle_client_request({join, User}, From, StateName,
                              seats = Seats, players=Players, tables = Tables} = StateData) ->
     #'PlayerInfo'{id = UserId, robot = _IsBot} = User,
     ?INFO("OKEY_NG_TRN_ELIM <~p> The Register request received from user: ~p.", [GameId, UserId]),
-    case get_player_id_by_user_id(UserId, Players) of
-        {ok, PlayerId} -> %% The user is a member of the tournament.
-            %% TODO: Check the user is eliminated. If yes then reject join.
+    case get_player_by_user_id(UserId, Players) of
+        {ok, #player{status = active, id = PlayerId}} -> %% The user is an active member of the tournament.
             [#seat{table = TableId, registered_by_table = RegByTable}] = find_seats_by_player_id(PlayerId, Seats),
             case RegByTable of
                 false -> %% Store this request to the waiting pool
@@ -446,8 +451,12 @@ handle_client_request({join, User}, From, StateName,
                     #table{relay = Relay, pid = TPid} = fetch_table(TableId, Tables),
                     {reply, {ok, {PlayerId, Relay, {?TAB_MOD, TPid}}}, StateName, StateData}
             end;
+        {ok, #player{status = eliminated}} ->
+            ?INFO("OKEY_NG_TRN_ELIM <~p> User ~p is mamber of the tournament member but was eliminated. "
+                      "Rejecting join.", [GameId, UserId]),
+            {reply, {error, out}, StateName, StateData};
         error -> %% Not a member
-            ?INFO("OKEY_NG_TRN_ELIM <~p> User ~p is not a tournament member. "
+            ?INFO("OKEY_NG_TRN_ELIM <~p> User ~p is not a member of the tournament. "
                       "Rejecting join.", [GameId, UserId]),
             {reply, {error, not_allowed}, StateName, StateData}
     end;
@@ -490,31 +499,39 @@ start_turn(#state{tables = Tables} = StateData) ->
 
 
 process_turn_result(#state{game_id = GameId, tournament_table = TTable,
-                           turns_plan = Plan, turn = Turn, tables_results = TablesResults
-                          } = StateData) ->
+                           turns_plan = Plan, turn = Turn, tables_results = TablesResults,
+                           players = Players, tables = Tables} = StateData) ->
     ?INFO("OKEY_NG_TRN_ELIM <~p> turn completed. Starting results processing...", [GameId]),
     NextTurnLimit = lists:nth(Turn, Plan),
-    TurnResult =  %% TODO: Redesign turns plan (add turn type)
-        if  NextTurnLimit == 4 ->
-                turn_result_all(TablesResults);
-            true ->
-                if Turn == 1 -> turn_result_per_table(NextTurnLimit, TablesResults);
-                   true ->
-                       case lists:nth(Turn - 1, Plan) of
-                           4 -> turn_result_overall(NextTurnLimit, TablesResults);
-                           _ -> turn_result_per_table(NextTurnLimit, TablesResults)
-                       end
-                end
-        end,
+    TurnResult = case turn_type(Turn, Plan) of
+                     non_elim -> turn_result_all(TablesResults);
+                     table_elim -> turn_result_per_table(NextTurnLimit, TablesResults);
+                     common_elim -> turn_result_overall(NextTurnLimit, TablesResults)
+                 end,
     NewTTable = ttable_store_turn_result(Turn, TurnResult, TTable),
+    F = fun({PlayerId, _, eliminated}, Acc) -> set_player_status(PlayerId, eliminated, Acc);
+           (_, Acc) -> Acc
+        end,
+    NewPlayers = lists:foldl(F, Players, TurnResult),
+    TurnResultWithPos = set_turn_results_position(TurnResult), %% [{PlayerId, Position, Points, Status}]
+    TurnResultWithUserId = [[{get_user_id(PlayerId, Players), Position, Points, Status}]
+                            || {PlayerId, Position, Points, Status} <- TurnResultWithPos],
+    TablesResultsWithPos = set_tables_results_position(TablesResults, TurnResult),
+    [send_to_table(TablePid, {turn_result, Turn, TurnResultWithUserId})
+       || #table{pid = TablePid} <- tables_to_list(Tables)],
+    [send_to_table(get_table_pid(TableId, Tables),
+                   {show_series_result, subs_status(TableResultWithPos, Turn, Plan)})
+       || {TableId, TableResultWithPos} <- TablesResultsWithPos],
     {TRef, Magic} = start_timer(?SHOW_TURN_RESULT_TIMEOUT),
     {next_state, ?STATE_SHOW_TURN_RESULT, StateData#state{timer = TRef, timer_magic = Magic,
-                                                          tournament_table = NewTTable}}.
+                                                          tournament_table = NewTTable,
+                                                          players = NewPlayers}}.
 
 finalize_tournament(StateData) ->
     %% TODO: Real finalization needed
     {TRef, Magic} = start_timer(?SHOW_TOURNAMENT_RESULT_TIMEOUT),
     {next_state, ?STATE_FINISHED, StateData#state{timer = TRef, timer_magic = Magic}}.
+
 
 turn_result_all(TablesResults) ->
     F = fun({_, TableRes}, Acc) ->
@@ -529,7 +546,7 @@ turn_result_per_table(NextTurnLimit, TablesResults) ->
                 {Winners, _} = lists:unzip(lists:sublist(SortedRes, NextTurnLimit)),
                 [case lists:member(Pl, Winners) of
                      true -> {Pl, Points, active};
-                     false -> {Pl, Points, {out, eliminated}}
+                     false -> {Pl, Points, eliminated}
                  end || {Pl, Points} <- TableResult] ++ Acc
         end,
     lists:foldl(F, [], TablesResults).
@@ -543,9 +560,54 @@ turn_result_overall(NextTurnLimit1, TablesResults) ->
     {Winners, _} = lists:unzip(lists:sublist(SortedResults, NextTurnLimit)),
     [case lists:member(Pl, Winners) of
          true -> {Pl, Points, active};
-         false -> {Pl, Points, {out, eliminated}}
+         false -> {Pl, Points, eliminated}
      end || {Pl, Points} <- OverallResults].
 
+%% set_turn_results_position([{PlayerId, Points, Status}]) -> [{PlayerId, Pos, Points, Status}]
+set_turn_results_position(TurnResult) ->
+    F = fun({PlayerId, Points, Status}, Pos) ->
+                {{PlayerId, Pos, Points, Status}, Pos + 1}
+        end,
+    {TurnResultsWithPos, _} = lists:mapfoldl(F, 1, sort_results2(TurnResult)),
+    TurnResultsWithPos.
+
+%% set_tables_results_position/2 -> [{TableId, [{PlayerId, Position, Points, Status}]}]
+set_tables_results_position(TablesResults, TurnResult) ->
+    [begin
+         TabResWithStatus = [lists:keyfind(PlayerId, 1, TurnResult) || {PlayerId, _} <- TableResult],
+         {TableId, set_table_results_position(TabResWithStatus)}
+     end || {TableId, TableResult} <- TablesResults].
+
+%% set_table_results_position([{PlayerId, Points, Status}]) -> [{PlayerId, Pos, Points, Status}]
+set_table_results_position(TableResult) ->
+    F = fun({PlayerId, Points, Status}, Pos) ->
+                {{PlayerId, Pos, Points, Status}, Pos + 1}
+        end,
+    {TurnResultsWithPos, _} = lists:mapfoldl(F, 1, sort_results2(TableResult)),
+    TurnResultsWithPos.
+
+subs_status(TableResultWithPos, Turn, Plan) ->
+    LastTurn = Turn == length(Plan),
+    {ActSubst, ElimSubst} = if LastTurn -> {winner, eliminated};
+                               true -> {none, eliminated}
+                            end,
+    [case Status of
+         active -> {PlayerId, Pos, Points, ActSubst};
+         eliminated -> {PlayerId, Pos, Points, ElimSubst}
+     end || {PlayerId, Pos, Points, Status} <- TableResultWithPos].
+
+%% turn_type(Turn, Plan) -> non_elim | table_elim | common_elim
+%% TODO: Redesign turns plan (add explict turn type)
+turn_type(Turn, Plan) ->
+    TurnLimit = lists:nth(Turn, Plan),
+    if TurnLimit == 4 -> non_elim;
+       Turn == 1 -> table_elim;
+       true ->
+           case lists:nth(Turn - 1, Plan) of
+               4 -> common_elim;
+               _ -> table_elim
+           end
+    end.
 
 %% sort_results(Results) -> SortedResults
 %% Types: Results = SortedResults = [{PlayerId, Points}]
@@ -556,7 +618,14 @@ sort_results(Results) ->
          end,
     lists:sort(SF, Results).
 
-
+%% sort_results2(Results) -> SortedResults
+%% Types: Results = SortedResults = [{PlayerId, Points, Status}] Status = active | eliminated
+sort_results2(Results) ->
+    SF = fun({PId1, Points, Status}, {PId2, Points, Status}) -> PId1 =< PId2;
+            ({_PId1, Points1, Status}, {_PId2, Points2, Status}) -> Points2 =< Points1;
+            ({_PId1, _Points1, eliminated}, {_PId2, _Points2, _Status2}) -> true
+         end,
+    lists:sort(SF, Results).
 
 %% replace_player_by_bot(PlayerId, TableId, SeatNum,
 %%                       #state{players = Players, seats = Seats,
@@ -633,8 +702,8 @@ setup_tables(Players, TableIdCounter, GameId, TableParams) ->
 setup_players(Registrants) ->
     F = fun(UserId, {Acc, PlayerId}) ->
                 {ok, UserInfo} = auth_server:get_user_info_by_user_id(UserId),
-                NewAcc = reg_player(#player{id = PlayerId, user_id = UserId,
-                                            user_info = UserInfo}, Acc),
+                NewAcc = store_player(#player{id = PlayerId, user_id = UserId,
+                                              user_info = UserInfo, status = active}, Acc),
                 {NewAcc, PlayerId + 1}
         end,
     {Players, _} = lists:foldl(F, {players_init(), 1}, Registrants),
@@ -678,16 +747,16 @@ ttable_store_turn_result(Turn, TurnResult, TTable) ->
 %% players_init() -> players()
 players_init() -> midict:new().
 
-%% reg_player(#player{}, Players) -> NewPlayers
-reg_player(#player{id =Id, user_id = UserId} = Player, Players) ->
+%% store_player(#player{}, Players) -> NewPlayers
+store_player(#player{id =Id, user_id = UserId} = Player, Players) ->
     midict:store(Id, Player, [{user_id, UserId}], Players).
 
 get_players_ids(Players) ->
     [P#player.id || P <- players_to_list(Players)].
 
-get_player_id_by_user_id(UserId, Players) ->
+get_player_by_user_id(UserId, Players) ->
     case midict:geti(UserId, user_id, Players) of
-        [#player{id = PlayerId}] -> {ok, PlayerId};
+        [Player] -> {ok, Player};
         [] -> error
     end.
 
@@ -703,9 +772,16 @@ del_players([PlayerId | Rest], Players) ->
 players_to_list(Players) -> midict:all_values(Players).
 
 get_user_info(PlayerId, Players) ->
+    #player{user_info = UserInfo} = midict:fetch(PlayerId, Players),
+    UserInfo.
+
+get_user_id(PlayerId, Players) ->
     #player{user_id = UserId} = midict:fetch(PlayerId, Players),
     UserId.
 
+set_player_status(PlayerId, Status, Players) ->
+    Player = midict:fetch(PlayerId, Players),
+    store_player(Player#player{status = Status}, Players).
 
 tables_init() -> midict:new().
 
@@ -725,7 +801,7 @@ store_table(#table{id = TableId, pid = Pid, mon_ref = MonRef, global_id = Global
 fetch_table(TableId, Tables) -> midict:fetch(TableId, Tables).
 
 get_table_pid(TabId, Tables) ->
-    {ok, #table{pid = TabPid}} = midict:find(TabId, Tables),
+    #table{pid = TabPid} = midict:fetch(TabId, Tables),
     TabPid.
 
 del_table(TabId, Tables) -> midict:erase(TabId, Tables).
@@ -834,6 +910,7 @@ table_parameters(ParentMod, ParentPid) ->
      {mult_factor, 1},
      {slang_allowed, false},
      {observers_allowed, false},
+     {tournament_type, elimination},
      {speed, normal},
      {game_type, standard},
      {rounds, 10},
