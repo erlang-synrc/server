@@ -57,10 +57,12 @@
          mult_factor          :: integer(),
          slang_flag           :: boolean(),
          observer_flag        :: boolean(),
+         tournament_type      :: atom(), %%  standalone | elimination | pointing | lucky
          speed                :: slow | normal | fast,
          turn_timeout         :: integer(),
          reveal_confirmation_timeout    :: integer(),
          ready_timeout        :: integer(),
+         round_timeout        :: infinity | integer(),
          game_type            :: standard | color | evenodd | countdown,
          rounds               :: undefined | integer(), %% Not defined for countdown game type
          reveal_confirmation  :: boolean(),
@@ -77,6 +79,7 @@
          wait_list            :: list(),
          timeout_timer        :: undefined | reference(),
          timeout_magic        :: term(),
+         round_timer          :: undefined | reference(),
          paused_statename     :: atom(), %% For storing a statename before pause
          paused_timeout_value :: integer() %% For storing remain timeout value
         }).
@@ -135,7 +138,9 @@ init([GameId, TableId, Params]) ->
     MultFactor = proplists:get_value(mult_factor, Params),
     SlangFlag = proplists:get_value(slang_allowed, Params),
     ObserversFlag = proplists:get_value(observers_allowed, Params),
+    TournamentType = proplists:get_value(tournament_type, Params),
     Speed = proplists:get_value(speed, Params),
+    RoundTimeout = proplists:get_value(round_timeout, Params),
     GameType = proplists:get_value(game_type, Params),
     Rounds = proplists:get_value(rounds, Params),
     RevealConfirmation = proplists:get_value(reveal_confirmation, Params),
@@ -161,10 +166,12 @@ init([GameId, TableId, Params]) ->
                                           mult_factor = MultFactor,
                                           slang_flag = SlangFlag,
                                           observer_flag = ObserversFlag,
+                                          tournament_type = TournamentType,
                                           speed = Speed,
                                           turn_timeout = get_timeout(turn, Speed),
                                           reveal_confirmation_timeout = get_timeout(challenge, Speed),
                                           ready_timeout = get_timeout(ready, Speed),
+                                          round_timeout = RoundTimeout,
                                           game_type = GameType,
                                           rounds = Rounds,
                                           reveal_confirmation = RevealConfirmation,
@@ -207,6 +214,10 @@ handle_sync_event(_Event, _From, StateName, StateData) ->
 handle_info({timeout, Magic}, ?STATE_PLAYING,
             #state{timeout_magic = Magic} = StateData) ->
     do_timeout_moves(StateData);
+
+%% handle_info({round_timeout, Round}, ?STATE_PLAYING,
+%%             #state{cur_round = Round} = StateData) ->
+%%     round_timeout_finish(StateData);
 
 handle_info({timeout, Magic}, ?STATE_REVEAL_CONFIRMATION,
             #state{timeout_magic = Magic, wait_list = WL,
@@ -259,6 +270,7 @@ handle_parent_message(start_round, StateName,
                              gosterge_finish_allowed = GostergeFinishAllowed,
                              start_seat = StartSeat, players = Players,
                              relay = Relay, turn_timeout = TurnTimeout,
+                             round_timeout = RoundTimeout,
                              scoring_state = ScoringState} = StateData)
   when StateName == ?STATE_WAITING_FOR_START;
        StateName == ?STATE_FINISHED ->
@@ -291,11 +303,16 @@ handle_parent_message(start_round, StateName,
     CurSeatNum = DeskState#desk_state.cur_seat,
     relay_publish_ge(Relay, create_okey_next_turn(CurSeatNum, Players)),
     {Magic, TRef} = start_timer(TurnTimeout),
+    RoundTRef = if is_integer(RoundTimeout) ->
+                       erlang:send_after(RoundTimeout, self(), {round_timeout, NewCurRound});
+                   true -> undefined
+                end,
     {next_state, ?STATE_PLAYING, StateData#state{cur_round = NewCurRound,
                                                  desk_rule_pid = Desk,
                                                  desk_state = DeskState,
                                                  timeout_timer = TRef,
-                                                 timeout_magic = Magic}};
+                                                 timeout_magic = Magic,
+                                                 round_timer = RoundTRef}};
 
 handle_parent_message(show_round_result, ?STATE_FINISHED,
                       #state{relay = Relay, scoring_state = ScoringState
@@ -317,6 +334,20 @@ handle_parent_message(show_round_result, ?STATE_FINISHED,
           end,
     relay_publish_ge(Relay, Msg),
     {next_state, ?STATE_FINISHED, StateData#state{}};
+
+%% Results = [{PlayerId, Position, Score, Status}] Status = winner | loser | eliminated | none
+handle_parent_message({show_series_result, Results}, ?STATE_FINISHED,
+                      #state{relay = Relay, players = Players} = StateData) ->
+    Msg = create_okey_series_ended(Results, Players),
+    relay_publish_ge(Relay, Msg),
+    {next_state, ?STATE_FINISHED, StateData#state{}};
+
+%% Results = [{UserId, Position, Score, Status}] Status = active | eliminated
+handle_parent_message({turn_result, TurnNum, Results}, StateName,
+                      #state{relay = Relay} = StateData) ->
+    Msg = create_okey_turn_result(TurnNum, Results),
+    relay_publish_ge(Relay, Msg),
+    {next_state, StateName, StateData#state{}};
 
 
 handle_parent_message(rejoin_players, StateName,
@@ -348,20 +379,19 @@ handle_parent_message(Message, StateName,
 %% handle_relay_message(Msg, StateName, StateData)
 
 handle_relay_message({player_connected, PlayerId}, StateName,
-                     #state{relay = Relay, parent = {ParentMod, ParentPid},
+                     #state{relay = Relay, parent = Parent,
                             table_id = TableId} = StateData) ->
     GI = create_okey_game_info(StateData),
     PlState = create_okey_game_player_state(PlayerId, StateName, StateData),
     send_to_client_ge(Relay, PlayerId, GI),
     send_to_client_ge(Relay, PlayerId, PlState),
-    ParentMod:table_message(ParentPid, TableId, {player_connected, PlayerId}),
+    parent_send_player_connected(Parent, TableId, PlayerId),
     {next_state, StateName, StateData};
 
 
 handle_relay_message({player_disconnected, PlayerId}, StateName,
-                     #state{parent = {ParentMod, ParentPid},
-                            table_id = TableId} = StateData) ->
-    ParentMod:table_message(ParentPid, TableId, {player_disconnected, PlayerId}),
+                     #state{parent = Parent, table_id = TableId} = StateData) ->
+    parent_send_player_disconnected(Parent, TableId, PlayerId),
     {next_state, StateName, StateData};
 
 
@@ -645,7 +675,7 @@ finalize_round(#state{desk_state = #desk_state{finish_reason = FinishReason,
                       scoring_state = ScoringState,
                       reveal_confirmation = RevealConfirmation,
                       reveal_confirmation_list = CList,
-                      parent = Parent,
+                      parent = Parent, players = Players,
                       table_id = TableId} = StateData) ->
     FR = case FinishReason of
              tashes_out -> tashes_out;
@@ -660,12 +690,11 @@ finalize_round(#state{desk_state = #desk_state{finish_reason = FinishReason,
     Has8Tashes = [], %% TODO: Implement "Have 8 Tashes"
     {NewScoringState, GameOver} = ?SCORING:round_finished(ScoringState, FR, Hands, Gosterge,
                                                           WhoHasGosterge, Has8Tashes),
-    case GameOver of
-        false ->
-           parent_send_round_res(Parent, TableId, NewScoringState);
-        _Winners ->
-           %% TODO: parent_send_game_res
-           parent_send_round_res(Parent, TableId, NewScoringState)
+    {_, RoundScore, _, TotalScore} = ?SCORING:last_round_result(NewScoringState),
+    RoundScorePl = [{get_player_id_by_seat_num(SeatNum, Players), Points} || {SeatNum, Points} <- RoundScore],
+    TotalScorePl = [{get_player_id_by_seat_num(SeatNum, Players), Points} || {SeatNum, Points} <- TotalScore],
+    if GameOver -> parent_send_game_res(Parent, TableId, NewScoringState, RoundScorePl, TotalScorePl);
+       true -> parent_send_round_res(Parent, TableId, NewScoringState, RoundScorePl, TotalScorePl)
     end,
     {next_state, ?STATE_FINISHED, StateData#state{scoring_state = NewScoringState}}.
 
@@ -856,8 +885,17 @@ parent_confirm_replacement({ParentMod, ParentPid}, TableId, RequestId) ->
 parent_notify_table_created({ParentMod, ParentPid}, TableId, RelayPid) ->
     ParentMod:table_message(ParentPid, TableId, {table_created, {?RELAY, RelayPid}}).
 
-parent_send_round_res({ParentMod, ParentPid}, TableId, ScoringState) ->
-    ParentMod:table_message(ParentPid, TableId, {round_finished, ScoringState}).
+parent_send_round_res({ParentMod, ParentPid}, TableId, ScoringState, RoundScores, TotalScores) ->
+    ParentMod:table_message(ParentPid, TableId, {round_finished, ScoringState, RoundScores, TotalScores}).
+
+parent_send_game_res({ParentMod, ParentPid}, TableId, ScoringState, RoundScores, TotalScores) ->
+    ParentMod:table_message(ParentPid, TableId, {game_finished, ScoringState, RoundScores, TotalScores}).
+
+parent_send_player_connected({ParentMod, ParentPid}, TableId, PlayerId) ->
+    ParentMod:table_message(ParentPid, TableId, {player_connected, PlayerId}).
+
+parent_send_player_disconnected({ParentMod, ParentPid}, TableId, PlayerId) ->
+    ParentMod:table_message(ParentPid, TableId, {player_disconnected, PlayerId}).
 
 desk_player_action(Desk, SeatNum, Action) ->
     ?DESK:player_action(Desk, SeatNum, Action).
@@ -869,7 +907,9 @@ create_okey_game_info(#state{table_name = TName, mult_factor = MulFactor,
                              speed = Speed, turn_timeout = TurnTimeout,
                              reveal_confirmation_timeout = RevealConfirmationTimeout,
                              ready_timeout = ReadyTimeout, game_type = GameType,
-                             rounds = Rounds, players = Players}) ->
+                             rounds = Rounds, players = Players,
+                             gosterge_finish_allowed = GostergeFinish,
+                             tournament_type = TournamentType}) ->
     PInfos = [case find_players_by_seat_num(SeatNum, Players) of
                   [#player{info = UserInfo}] -> UserInfo;
                   [] -> null
@@ -883,7 +923,7 @@ create_okey_game_info(#state{table_name = TName, mult_factor = MulFactor,
                     players = PInfos,
                     timeouts = Timeouts,
                     game_type = GameType,
-                    finish_with_gosterge = false, %% XXX WTF?
+                    finish_with_gosterge = GostergeFinish,
                     rounds = case Rounds of
                                  infinity -> -1;
                                  RM -> RM
@@ -892,7 +932,8 @@ create_okey_game_info(#state{table_name = TName, mult_factor = MulFactor,
                     set_no = 1,    %% XXX Concept of sets is deprecated
                     mul_factor = MulFactor,
                     slang_flag = SlangFlag,
-                    observer_flag = ObserverFlag}.
+                    observer_flag = ObserverFlag,
+                    tournament_type = TournamentType}.
 
 
 create_okey_game_player_state(_PlayerId, ?STATE_WAITING_FOR_START,
@@ -906,7 +947,6 @@ create_okey_game_player_state(_PlayerId, ?STATE_WAITING_FOR_START,
                             gosterge = null,
                             pile_height = null,
                             current_round = CurRound,
-                            game_sub_type = null, %% Deprecated
                             next_turn_in = 0,
                             paused = false};
 
@@ -942,7 +982,6 @@ create_okey_game_player_state(PlayerId, ?STATE_PLAYING,
                             gosterge = tash_to_ext(Gosterge),
                             pile_height = length(DeskDeck),
                             current_round = CurRound,
-                            game_sub_type = null, %% Deprecated
                             next_turn_in = Timeout,
                             paused = false};
 
@@ -976,7 +1015,6 @@ create_okey_game_player_state(PlayerId, ?STATE_REVEAL_CONFIRMATION,
                             gosterge = tash_to_ext(Gosterge),
                             pile_height = length(DeskDeck),
                             current_round = CurRound,
-                            game_sub_type = null, %% Deprecated
                             next_turn_in = Timeout,
                             paused = false};
 
@@ -991,7 +1029,6 @@ create_okey_game_player_state(_PlayerId, ?STATE_FINISHED,
                             gosterge = null,
                             pile_height = null,
                             current_round = CurRound,
-                            game_sub_type = null, %% Deprecated
                             next_turn_in = 0,
                             paused = false};
 
@@ -1020,7 +1057,6 @@ create_okey_game_started(SeatNum, DeskState, CurRound, #state{game_type = GameTy
                        current_set = 1,        %% XXX Concept of sets is deprecated
                        game_type = GameType,   %% FIXME It is defined in game_info already
                        game_speed = GameSpeed, %% FIXME It is defined in game_info already
-                       game_submode = null, %% Deprecated
                        chanak_points = Chanak}.
 
 
@@ -1133,7 +1169,7 @@ create_okey_round_ended_tashes_out(RoundScore, TotalScore, PlayersAchsPoints,
                       next_action = next_round}. %%XXX
 
 create_okey_round_ended_gosterge_finish(Winner, RoundScore, TotalScore, PlayersAchsPoints,
-                                   #state{players = Players}) ->
+                                        #state{players = Players}) ->
     PlResults = [begin
                      #player{user_id = UserId} = get_player_by_seat_num(SeatNum, Players),
                      WinnerStatus = SeatNum == Winner,
@@ -1160,6 +1196,25 @@ create_okey_round_ended_gosterge_finish(Winner, RoundScore, TotalScore, PlayersA
                       results = Results,
                       next_action = next_round}. %%XXX
 
+create_okey_series_ended(Results, Players) ->
+    Standings = [begin
+                     #player{user_id = UserId} = get_player_by_seat_num(PlayerId, Players),
+                     Winner = case Status of    %% TODO: Implement in the client support of all statuses
+                                  winner -> <<"true">>;
+                                  _ -> <<"none">>
+                              end,
+                     #'OkeySeriesResult'{player_id = UserId, place = Position, score = Score,
+                                         winner = Winner}
+                 end || {PlayerId, Position, Score, Status} <- Results],
+    #okey_series_ended{standings = Standings}.
+
+create_okey_turn_result(TurnNum, Results) ->
+    Records = [begin
+                   #okey_turn_record{player_id = UserId, place = Position, score = Score,
+                                     status = Status}
+               end || {UserId, Position, Score, Status} <- Results],
+    #okey_turn_result{num = TurnNum,
+                      records = Records}.
 
 create_okey_revealed(SeatNum, DiscardedTash, TashPlaces, Players) ->
     #player{user_id = UserId} = get_player_by_seat_num(SeatNum, Players),
