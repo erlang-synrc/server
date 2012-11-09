@@ -33,18 +33,6 @@ init()->
     "if(page.fbLogout) FB.Event.subscribe('auth.logout', function(response){",
 	"page.fbLogout(response);",
     "});",
-
-    "FB.Event.subscribe('auth.authResponseChange', function(response) {
-	console.log('The status of the session is: ' + response.status);
-	if(page.fbCheckPermissions()){
-	    FB.api(\"/me/permissions\", function(response){
-		var perms = response.data[0];
-		console.log(\"Permissions: \"+response);
-		page.fbCheckPermissions(perms);
-	    });
-	}
-    });",
-
     "FB.getLoginStatus(function(response) {",
 	"if(page.setFbIframe){",
 	    "console.log(\"Set FB application flag: \"+ (top!=self));",
@@ -53,6 +41,14 @@ init()->
 	"if (response.status === 'connected') {",
 	    "var uid = response.authResponse.userID;",
 	    "console.log(\"User is connected: \" + uid);",
+
+	    "if(page.fbCheckPermissions){
+		FB.api(\"/me/permissions\", function(response){
+		    var perms = response.data[0];
+		    console.log(\"Permissions: \"+perms);
+		    page.fbCheckPermissions(perms);
+		});
+	    }else{console.log(\"No fbCheckPermissions\")}",
 	"} else if (response.status === 'not_authorized') {",
 	    "console.log(\"Not authenticated the app\");",
 	"} else {",
@@ -108,7 +104,12 @@ logout_btn()->
     [#link{text=?_T("Logout"), actions=#event{type=click, actions=#script{script="FB.logout()"}}, postback=logout }].
 
 service_item()->
-    #listitem{class=png, body=[#image{image="/images/img-51.png"},#span{text="Facebook"},#link{id=serviceButton}]}.
+    #listitem{id=fbServiceButton, class=png, body=[
+	    #image{image="/images/img-51.png"},
+	    #span{text="Facebook"},
+	    #link{class="btn", text=["<span>+</span>",?_T("Add")],
+	    actions=#event{type=click, actions=#script{script="add_fb_service()"}},
+	    html_encode = false}]}.
 
 pay_dialog()->
     wf:wire(#api{name=processOrder, tag=fb}),
@@ -137,11 +138,13 @@ pay_dialog()->
     "</script>"].
 
 api_event(fbLogin, _, [Args])->
+    wf:info("fblogin: ~p~n", [Args]),
     case Args of
-	[{error, [{message, Msg},{type, Type},{code, Code}]}] ->
-	    ErrorMsg = io_lib:format("Facebook error. Code: ~p Type: ~p Message: ~p", [Code, Type, Msg]),
+	[{error, E}] ->
+	    ErrorMsg = io_lib:format("Facebook error:~p", [E]),
 	    wf:redirect( ?_U("/index/message/") ++ site_utils:base64_encode_to_url(ErrorMsg));
 	_ ->
+	    wf:info("ARGS:~p~n", [Args]),
 	    case nsm_users:get_user({facebook, proplists:get_value(id, Args)}) of
 	    {ok, User} ->
 		login:login_user(User#user.username),
@@ -155,8 +158,18 @@ api_event(fbLogin, _, [Args])->
 api_event(fbLogout, _, _Data)-> wf:session(fb_registration, undefined);
 api_event(processOrder, _, Data)-> ?INFO("Payment complete. Order:~p~n", [Data]);
 api_event(setFbIframe, _, [IsIframe]) -> wf:session(is_facebook, IsIframe);
-api_event(fbCheckPermissions, _, Perms)->
-    wf:info("Permissions: ~p~n", [Perms]);
+api_event(fbCheckPermissions, _, [Perms])-> check_permissions(Perms);
 api_event(fbSignedRequest, _, _Data) -> ok.
+
+check_permissions([{publish_stream, 1}|_Rest])->
+    wf:update(fbServiceButton, [
+	#image{image="/images/img-51.png"},
+	#span{text="Facebook"},
+	#link{class="btn", text=["<span>-</span>",?_T("Del")],
+	actions=#event{type=click, actions=#script{script="del_fb_service()"}},
+	html_encode = false}
+    ]);
+check_permissions([])-> ok;
+check_permissions([{_P,_V}|Perms])-> check_permissions(Perms).
 
 

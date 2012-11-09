@@ -83,9 +83,11 @@ register_button()->
 
 facebook()->
     case wf:session(fb_registration) of
-	undefined -> [];
+	[{error, E}] -> 
+	    ErrorMsg = io_lib:format("Facebook error: ~p", [E]),
+	    wf:redirect( ?_U("/index/message/") ++ site_utils:base64_encode_to_url(ErrorMsg));
 	RegArgs ->
-	    wf:info("Registration with fb ~p~n", [RegArgs]),
+	    wf:info("Registration Element with fb ~p~n", [RegArgs]),
 	    UserName = proplists:get_value(username, RegArgs),
 	    [M,D,Y] = string:tokens(proplists:get_value(birthday, RegArgs, "1/1/1970"), "/"),
 	    wf:set(reg_email, proplists:get_value(email, RegArgs)),
