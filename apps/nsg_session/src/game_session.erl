@@ -287,9 +287,11 @@ handle_call(#join_game{game = GameId}, _From, #state{user = User} = State) ->
                             Res = #'TableInfo'{}, %relay:get_table_info(SecondLevelRelay),
                             {reply, Res, State#state{games = [Part | State#state.games]}};
                         {error, not_allowed} ->
+                            ?ERROR("Not allowed to connect: ~p.",[GameId]),
                             {reply, {error, this_game_is_private}, State}
                     end;
                 undefined ->
+                    ?ERROR("Game not found: ~p.",[GameId]),
                     {reply, {error, game_not_found}, State}
             end
     end;
@@ -362,7 +364,7 @@ handle_cast({rejoin, GameId} = Message, State = #state{user = User, games = Game
                     Part = #participation{ref = Ref, game_id = GameId, reg_num = RegNum,
                                           rel_module = RMod, rel_pid = RPid,
                                           tab_module = TMod, tab_pid = TPid, role = player},
-                    NewGames = lists:replace(GameId, #participation.game_id, Games, Part),
+                    NewGames = lists:keyreplace(GameId, #participation.game_id, Games, Part),
                     {noreply, State#state{games = NewGames}};
                 {error, out} ->
                     {stop, normal, State};
