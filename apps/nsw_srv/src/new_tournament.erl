@@ -11,6 +11,12 @@
 -define(GIFTSPERTOURPAGE, 20).
 
 main() ->
+    case wf:user() /= undefined of
+        true  -> main_authorized();
+        false -> wf:redirect_to_login(?_U("/login"))
+    end.
+
+main_authorized() ->
     webutils:add_to_head({raw,              % this goes to styles.css. Still here for convenience of editing
     "
         <style media='screen' type='text/css'>

@@ -12,6 +12,12 @@
 -define(TOURSPERTOURPAGE, 20).
 
 main() ->
+    case wf:user() /= undefined of
+        true  -> main_authorized();
+        false -> wf:redirect_to_login(?_U("/login"))
+    end.
+
+main_authorized() ->
     webutils:add_to_head({raw,              % this goes to styles.css. Still here for convenience of editing
     "
         <style media='screen' type='text/css'>
@@ -388,6 +394,7 @@ content() ->
             #link{style="position:absolute; top:726px; left:326px;", class="alltour_big_buttons alltour_orange_button", text="FILTRELE", postback=btn_orange},
             #link{style="position:absolute; top:726px; left:492px;", class="alltour_big_buttons alltour_gray_button", text="SIFIRLA", postback=btn_gray},
 
+            #button{style="position:absolute; top:740px; left:650px;", text=?_T("New"), postback=new_pressed},
 
             #panel{style="position:absolute; top:800px; left:0px; width:960px;", body=[
                 "<center>",
@@ -518,6 +525,10 @@ buttons(Page) ->
            ]}
        ]}
     ]}.
+
+
+event(new_pressed) ->
+    wf:redirect(?_U("/new-tournament"));
 
 event(Any) ->
     webutils:event(Any).
