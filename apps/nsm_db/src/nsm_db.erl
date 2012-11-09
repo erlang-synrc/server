@@ -292,7 +292,16 @@ add_sample_users() ->
                            status=ok,
                            age={1981,9,29},
                            register_date={1345,14071,852889}
-                     }],
+                     } |
+                     [#user{username = "trn_player" ++ integer_to_list(N),
+                            password="password",
+                            feed = feed_create(),
+                            name = "Tournament Player " ++ integer_to_list(N),
+                            team = create_team("tours"), direct = feed_create(),
+                            status=ok,
+                            age={1981,9,29},
+                            register_date={1345,14071,852889}
+                           } || N <- lists:seq(1, 512)]],
 
 
     ?INFO("creating groups"),
