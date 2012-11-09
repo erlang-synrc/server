@@ -102,7 +102,7 @@
 -define(TABLE_STATE_FINISHED, finished).
 
 -define(WAITING_PLAYERS_TIMEOUT, 15000). %% Time between all table was created and starting a turn
--define(REST_TIMEOUT, 20000). %% Time between game finsh and start of new round
+-define(REST_TIMEOUT, 5000). %% Time between game finsh and start of new round
 -define(SHOW_TURN_RESULT_TIMEOUT, 15000).
 -define(SHOW_TOURNAMENT_RESULT_TIMEOUT, 15000).
 
@@ -137,6 +137,7 @@ client_request(Pid, Message, Timeout) ->
 %% ====================================================================
 
 init([GameId, Params, _Manager]) ->
+    ?INFO("OKEY_NG_TRN_ELIM <~p> Init started",[GameId]),
     Registrants = get_param(registrants, Params),
     KakushPerRound = get_param(kakush_per_round, Params),
 
@@ -209,7 +210,7 @@ handle_info({'DOWN', MonRef, process, _Pid, _}, StateName,
         #table{id = TableId} ->
             ?INFO("OKEY_NG_TRN_ELIM <~p> Table <~p> is down. Stopping", [GameId, TableId]),
             %% TODO: More smart handling (failover) needed
-            {stop, {one_of_tables_down, TableId}, StateName, StateData};
+            {stop, {one_of_tables_down, TableId}, StateData};
         not_found ->
             {next_state, StateName, StateData}
     end;
@@ -220,7 +221,7 @@ handle_info({rest_timeout, TableId}, StateName,
     #table{pid = TablePid} = Table = fetch_table(TableId, Tables),
     NewTable = Table#table{state = in_process},
     NewTables = store_table(NewTable, Tables),
-    send_to_table(TablePid, start_game),
+    send_to_table(TablePid, start_round),
     {next_state, StateName, StateData#state{tables = NewTables}};
 
 
@@ -237,10 +238,10 @@ handle_info({timeout, Magic}, ?STATE_SHOW_TURN_RESULT,
     end;
 
 
-handle_info({timeout, Magic}, ?STATE_FINISHED = StateName,
+handle_info({timeout, Magic}, ?STATE_FINISHED,
             #state{timer_magic = Magic, tables = Tables} = StateData) ->
     finalize_tables_with_disconnect(Tables),
-    {stop, normal, StateName, StateData#state{tables = [], seats = []}};
+    {stop, normal, StateData#state{tables = [], seats = []}};
 
 
 handle_info(_Info, StateName, StateData) ->
@@ -270,9 +271,7 @@ handle_client_message(_Msg, StateName, StateData) ->
 
 handle_table_message(TableId, {player_connected, PlayerId},
                      StateName,
-                     #state{game_id = GameId, seats = Seats} = StateData) ->
-    ?INFO("OKEY_NG_TRN_ELIM <~p> The player_connected notification received from "
-          "table <~p>. PlayerId: <~p>", [GameId, TableId, PlayerId]),
+                     #state{seats = Seats} = StateData) ->
     case find_seats_by_player_id(PlayerId, Seats) of
         [#seat{seat_num = SeatNum}] ->
             NewSeats = update_seat_connect_status(TableId, SeatNum, true, Seats),
@@ -283,9 +282,7 @@ handle_table_message(TableId, {player_connected, PlayerId},
 
 
 handle_table_message(TableId, {player_disconnected, PlayerId},
-                     StateName, #state{game_id = GameId, seats = Seats} = StateData) ->
-    ?INFO("OKEY_NG_TRN_ELIM <~p> The player_disconnected notification received from "
-          "table <~p>. PlayerId: <~p>", [GameId, TableId, PlayerId]),
+                     StateName, #state{seats = Seats} = StateData) ->
     case find_seats_by_player_id(PlayerId, Seats) of
         [#seat{seat_num = SeatNum}] ->
             NewSeats = update_seat_connect_status(TableId, SeatNum, false, Seats),
@@ -297,12 +294,9 @@ handle_table_message(TableId, {player_disconnected, PlayerId},
 
 handle_table_message(TableId, {table_created, Relay},
                      ?STATE_WAITING_FOR_TABLES,
-                     #state{game_id = GameId, tables = Tables, seats = Seats,
+                     #state{tables = Tables, seats = Seats,
                             cr_tab_requests = TCrRequests,
                             reg_requests = RegRequests} = StateData) ->
-    ?INFO("OKEY_NG_TRN_ELIM <~p> The <table_created> notification received from table: ~p.",
-          [GameId, TableId]),
-
     TabInitPlayers = dict:fetch(TableId, TCrRequests),
     NewTCrRequests = dict:erase(TableId, TCrRequests),
     %% Update status of players
@@ -341,9 +335,7 @@ handle_table_message(TableId, {table_created, Relay},
 
 handle_table_message(TableId, {round_finished, NewScoringState, _RoundScore, _TotalScore},
                      ?STATE_TURN_PROCESSING,
-                     #state{game_id = GameId, tables = Tables} = StateData) ->
-    ?INFO("OKEY_NG_TRN_ELIM <~p> The <round_finished> notification received from table: ~p.",
-          [GameId, TableId]),
+                     #state{tables = Tables} = StateData) ->
     #table{pid = TablePid} = Table = fetch_table(TableId, Tables),
     TRef = erlang:send_after(?REST_TIMEOUT, self(), {rest_timeout, TableId}),
     NewTable = Table#table{scoring_state = NewScoringState, state = ?TABLE_STATE_FINISHED, timer = TRef},
@@ -354,10 +346,8 @@ handle_table_message(TableId, {round_finished, NewScoringState, _RoundScore, _To
 
 handle_table_message(TableId, {game_finished, TableContext, _RoundScore, TotalScore},
                      ?STATE_TURN_PROCESSING = StateName,
-                     #state{game_id = GameId, tables = Tables, tables_wl = WL,
+                     #state{tables = Tables, tables_wl = WL,
                             tables_results = TablesResults} = StateData) ->
-    ?INFO("OKEY_NG_TRN_ELIM <~p> The <round_finished> notification received from table: ~p.",
-          [GameId, TableId]),
     NewTablesResults = [{TableId, TotalScore} | TablesResults],
     #table{pid = TablePid} = Table = fetch_table(TableId, Tables),
     NewTable = Table#table{scoring_state = TableContext, state = ?TABLE_STATE_FINISHED},
@@ -475,15 +465,15 @@ init_turn(Turn, #state{game_id = GameId, turns_plan = Plan, tournament_table = T
     if Turn > 1 -> finalize_tables_with_rejoin(OldTables);
        true -> do_nothing
     end,
-    {ok, ?STATE_WAITING_FOR_TABLES, StateData#state{tables = NewTables,
-                                                    seats = Seats,
-                                                    table_id_counter = NewTableIdCounter,
-                                                    turn = Turn,
-                                                    cr_tab_requests = CrRequests,
-                                                    reg_requests = dict:new(),
-                                                    tab_requests = dict:new(),
-                                                    tables_results = []
-                                                   }}.
+    {next_state, ?STATE_WAITING_FOR_TABLES, StateData#state{tables = NewTables,
+                                                            seats = Seats,
+                                                            table_id_counter = NewTableIdCounter,
+                                                            turn = Turn,
+                                                            cr_tab_requests = CrRequests,
+                                                            reg_requests = dict:new(),
+                                                            tab_requests = dict:new(),
+                                                            tables_results = []
+                                                           }}.
 
 
 start_turn(#state{tables = Tables} = StateData) ->
@@ -514,7 +504,7 @@ process_turn_result(#state{game_id = GameId, tournament_table = TTable,
         end,
     NewPlayers = lists:foldl(F, Players, TurnResult),
     TurnResultWithPos = set_turn_results_position(TurnResult), %% [{PlayerId, Position, Points, Status}]
-    TurnResultWithUserId = [[{get_user_id(PlayerId, Players), Position, Points, Status}]
+    TurnResultWithUserId = [{get_user_id(PlayerId, Players), Position, Points, Status}
                             || {PlayerId, Position, Points, Status} <- TurnResultWithPos],
     TablesResultsWithPos = set_tables_results_position(TablesResults, TurnResult),
     [send_to_table(TablePid, {turn_result, Turn, TurnResultWithUserId})
@@ -623,7 +613,7 @@ sort_results(Results) ->
 sort_results2(Results) ->
     SF = fun({PId1, Points, Status}, {PId2, Points, Status}) -> PId1 =< PId2;
             ({_PId1, Points1, Status}, {_PId2, Points2, Status}) -> Points2 =< Points1;
-            ({_PId1, _Points1, eliminated}, {_PId2, _Points2, _Status2}) -> true
+            ({_PId1, _Points1, _Status1}, {_PId2, _Points2, Status2}) -> Status2 == eliminated
          end,
     lists:sort(SF, Results).
 
@@ -686,7 +676,7 @@ setup_tables(Players, TableIdCounter, GameId, TableParams) ->
                 MonRef = erlang:monitor(process, TabPid),
                 GlobalTableId = 0, Scoring = undefined, %% FIXME: Table global id should use a persistent counter
                 NewTAcc = reg_table(TableId, TabPid, MonRef, GlobalTableId, Scoring, TAcc),
-                F2 = fun({PlId, SNum}, Acc) ->
+                F2 = fun({PlId, _, SNum, _}, Acc) ->
                              RegByTable = false, Connected = false,
                              assign_seat(TableId, SNum, PlId, RegByTable, Connected, Acc)
                      end,
@@ -911,6 +901,7 @@ table_parameters(ParentMod, ParentPid) ->
      {slang_allowed, false},
      {observers_allowed, false},
      {tournament_type, elimination},
+     {round_timeout, 10000},
      {speed, normal},
      {game_type, standard},
      {rounds, 10},
@@ -941,7 +932,7 @@ get_param(ParamId, Params) ->
 
 get_plan(KakushPerRound, RegistrantsNum) ->
     case lists:keyfind({KakushPerRound, RegistrantsNum}, 1, tournament_matrix()) of
-        fasle -> {error, no_such_plan};
+        false -> {error, no_such_plan};
         Plan -> {ok, Plan}
     end.
 
