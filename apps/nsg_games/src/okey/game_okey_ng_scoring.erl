@@ -96,7 +96,7 @@ init(Mode, SeatsInfo, RoundsNum) ->
 %%                                          no_rounds_played
 %% @end
 %% Types:
-%%     FinishInfo =  tashes_out |
+%%     FinishInfo =  tashes_out | timeout |
 %%                   {win_reveal, Revealer, WrongRejects, RevealWithColor, RevealWithOkey, RevealWithPairs} |
 %%                   {fail_reveal, Revealer} |
 %%                   {gosterge_finish, Winner}
@@ -240,6 +240,11 @@ players_achivements(Mode, Seats, Hands, WhoHasGosterge, Has8Tashes, FinishInfo) 
                  Achivements = player_achivements_no_winner(Mode, SeatNum, WhoHasGosterge, Has8Tashes),
                  {SeatNum, Achivements}
              end || SeatNum <- Seats];
+        timeout ->
+            [begin
+                 Achivements = player_achivements_no_winner(Mode, SeatNum, WhoHasGosterge, Has8Tashes),
+                 {SeatNum, Achivements}
+             end || SeatNum <- Seats];
         {win_reveal, Revealer, WrongRejects, RevealWithColor, RevealWithOkey, RevealWithPairs} ->
             [begin
                  {_, _Hand} = lists:keyfind(SeatNum, 1, Hands),
@@ -266,13 +271,14 @@ players_achivements(Mode, Seats, Hands, WhoHasGosterge, Has8Tashes, FinishInfo) 
 
 %% finish_info(GameMode, FinishReason, Gosterge) ->
 %%      tashes_out |
+%%      timeout |
 %%      {win_reveal, Revealer, WrongRejects, RevealWithColor, RevealWithOkey, RevealWithPairs} |
 %%      {fail_reveal, Revealer} |
 %%      {gosterge_finish, Winner}
 finish_info(GameMode, FinishReason, Gosterge) ->
     case FinishReason of
-        tashes_out ->
-            tashes_out;
+        tashes_out -> tashes_out;
+        timeout -> timeout;
         {reveal, Revealer, Tashes, Discarded, ConfirmationList} ->
             {RightReveal, RevealWithPairs, WithColor} = check_reveal(Tashes, Gosterge),
             WinReveal = RightReveal orelse lists:all(fun({_, Answer}) -> Answer == true end, ConfirmationList),

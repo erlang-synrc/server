@@ -215,9 +215,9 @@ handle_info({timeout, Magic}, ?STATE_PLAYING,
             #state{timeout_magic = Magic} = StateData) ->
     do_timeout_moves(StateData);
 
-%% handle_info({round_timeout, Round}, ?STATE_PLAYING,
-%%             #state{cur_round = Round} = StateData) ->
-%%     round_timeout_finish(StateData);
+handle_info({round_timeout, Round}, ?STATE_PLAYING,
+            #state{cur_round = Round, desk_state = DeskState} = StateData) ->
+     finalize_round(StateData#state{desk_state = DeskState#desk_state{finish_reason = timeout}});
 
 handle_info({timeout, Magic}, ?STATE_REVEAL_CONFIRMATION,
             #state{timeout_magic = Magic, wait_list = WL,
@@ -326,6 +326,9 @@ handle_parent_message(show_round_result, ?STATE_FINISHED,
                   create_okey_round_ended_reveal(Revealer, false, [], RoundScore,
                                                  TotalScore, AchsPoints, StateData);
               tashes_out ->
+                  create_okey_round_ended_tashes_out(RoundScore, TotalScore, AchsPoints,
+                                                     StateData);
+              timeout ->
                   create_okey_round_ended_tashes_out(RoundScore, TotalScore, AchsPoints,
                                                      StateData);
               {gosterge_finish, Winner} ->
@@ -623,11 +626,13 @@ do_game_action(SeatNum, GameAction, From, StateName,
 
 process_game_events(Events, #state{desk_state = DeskState, players = Players,
                                    relay = Relay, timeout_timer = OldTRef,
+                                   round_timer = RoundTRef,
                                    turn_timeout = TurnTimeout} = StateData) ->
     NewDeskState = handle_desk_events(Events, DeskState, Players, Relay), %% Track the desk and send game events to clients
     #desk_state{state = DeskStateName} = NewDeskState,
     case DeskStateName of
         state_finished ->
+            erlang:cancel_timer(RoundTRef),
             erlang:cancel_timer(OldTRef),
             on_game_finish(StateData#state{desk_state = NewDeskState});
         state_take ->
@@ -679,6 +684,7 @@ finalize_round(#state{desk_state = #desk_state{finish_reason = FinishReason,
                       table_id = TableId} = StateData) ->
     FR = case FinishReason of
              tashes_out -> tashes_out;
+             timeout -> timeout;
              reveal ->
                  {Revealer, Tashes, Discarded} = FinishInfo,
                  ConfirmationList = if RevealConfirmation -> CList; true -> [] end,
@@ -1198,7 +1204,7 @@ create_okey_round_ended_gosterge_finish(Winner, RoundScore, TotalScore, PlayersA
 
 create_okey_series_ended(Results, Players) ->
     Standings = [begin
-                     #player{user_id = UserId} = get_player_by_seat_num(PlayerId, Players),
+                     #player{user_id = UserId} = fetch_player(PlayerId, Players),
                      Winner = case Status of    %% TODO: Implement in the client support of all statuses
                                   winner -> <<"true">>;
                                   _ -> <<"none">>
