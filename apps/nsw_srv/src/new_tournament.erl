@@ -367,7 +367,8 @@ event(create_pressed) ->
                 true -> 
                     wf:wire(#alert{text=?_T("Please, provide tournament name!")}); 
                 false ->
-                    nsm_tournaments:create(wf:user(), TourName, TourDesc, TourDate, TourPlayers, TourQuota, [Prize1, Prize2, Prize3], TourType, TourGame),
+                    TID = nsm_tournaments:create(wf:user(), TourName, TourDesc, TourDate, TourPlayers, TourQuota, [Prize1, Prize2, Prize3], TourType, TourGame),
+                    nsm_srv_tournament_lobby_sup:start_lobby(TID),
                     wf:wire(#alert{text=?_T("New tournament created!")})
             end
     end;
