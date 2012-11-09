@@ -76,7 +76,7 @@ messages_callback(Envelope, Server) ->
 	gen_server:cast(Server, {messages_callback, Envelope}).
 
 active_users(TID) ->
-	Server = tid_to_atom(TID), 
+	Server = tid_to_atom(TID),
         
 	gen_server:call(Server, active_users).
 
@@ -93,7 +93,7 @@ chat_history(TID) ->
 init([TID]) ->
     {H,M,S} = time(),
     Tour = nsm_tournaments:get(TID),
-%     Tour = #tournament{},
+    ?INFO("Lobby Starting: ~p",[Tour]),
     {TH,TM,TS} = Tour#tournament.start_time,
     Server = self(),
 
