@@ -121,9 +121,9 @@
           pile_height   :: integer(),
           current_round :: integer,
           current_set   :: integer,
-          game_type     :: atom(),
-          game_speed    :: atom(),
-          game_submode  :: atom(), %% FIXME Deprecated
+          game_type     = null :: atom(), %% FIXME Deprecated
+          game_speed    = null :: atom(), %% FIXME Deprecated
+          game_submode  = null :: atom(), %% FIXME Deprecated
           chanak_points :: integer()
          }).
 
@@ -138,7 +138,7 @@
           gosterge      :: #'OkeyPiece'{},
           pile_height   :: integer(),
           current_round :: integer(),
-          game_sub_type :: atom(), %% FIXME Deprecated
+          game_sub_type = null :: atom(), %% FIXME Deprecated
           next_turn_in  :: integer() | atom(),
           %% number of milliseconds until next turn or 'infinity'
           paused = false :: boolean()
@@ -189,6 +189,17 @@
           standings :: list(#'OkeySeriesResult'{})
          }).
 
+-record(okey_turn_record, {
+          player_id       :: 'PlayerId'(),
+          place           :: integer(),
+          score           :: integer(),
+          status          :: atom() | binary() %% active | eliminated 
+         }).
+
+-record(okey_turn_result, {
+          num              :: integer(),
+          records          :: list(#okey_turn_record{})
+         }).
 
 %%%%%
 %%%%%  Debug
