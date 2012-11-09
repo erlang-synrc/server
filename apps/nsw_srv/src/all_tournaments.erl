@@ -4,6 +4,7 @@
 
 -include_lib("nitrogen_core/include/wf.hrl").
 -include_lib("nsm_db/include/common.hrl").
+-include_lib("nsm_db/include/tournaments.hrl").
 -include("setup.hrl").
 -include("common.hrl").
 -include("elements/records.hrl").
@@ -354,13 +355,11 @@ content() ->
             ]},
             #label{style="position:absolute; left:764px; top:540px;", text="Kota:"},
             #dropdown {style="position:absolute; left:807px; top:533px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
-                        #option { text="+100" },
-                        #option { text="+500" },
-                        #option { text="+1000" },
-                        #option { text="+2500" },
-                        #option { text="+5000" },
-                        #option { text="+7500" },
-                        #option { text="+10 000" }
+                        #option { text="2" },
+                        #option { text="4" },
+                        #option { text="6" },
+                        #option { text="8" },
+                        #option { text="10" }
             ]},
             #label{style="position:absolute; left:265px; top:540px;", text="Tarih:"},
             "<input type='text' id='inputDate' class='alltour_textbox' 
@@ -390,30 +389,59 @@ content() ->
             #link{style="position:absolute; top:726px; left:492px;", class="alltour_big_buttons alltour_gray_button", text="SIFIRLA", postback=btn_gray},
 
 
-            #panel{style="position:absolute; top:800px; left:0px; width:960px; height:900px;", body=[
+            #panel{style="position:absolute; top:800px; left:0px; width:960px;", body=[
                 "<center>",
                 #panel{style="height:1px; background-color:#c2c2c2; width:700px;", body=[]},
-                #table{rows=[
-                    #tablerow{cells=[
-                        #tablecell{body=#panel{style="margin:16px;", body=test_tourblock()}},
-                        #tablecell{body=#panel{style="margin:16px;", body=test_tourblock()}},
-                        #tablecell{body=#panel{style="margin:16px;", body=test_tourblock()}},
-                        #tablecell{body=#panel{style="margin:16px;", body=test_tourblock()}}
-                    ]},
-                    #tablerow{cells=[
-                        #tablecell{body=#panel{style="margin:16px;", body=test_tourblock()}},
-                        #tablecell{body=#panel{style="margin:16px;", body=test_tourblock()}},
-                        #tablecell{body=#panel{style="margin:16px;", body=test_tourblock()}},
-                        #tablecell{body=#panel{style="margin:16px;", body=test_tourblock()}}
-                    ]},
-                    #tablerow{cells=[
-                        #tablecell{body=#panel{style="margin:16px;", body=test_tourblock()}},
-                        #tablecell{body=#panel{style="margin:16px;", body=test_tourblock()}},
-                        #tablecell{body=#panel{style="margin:16px;", body=test_tourblock()}},
-                        #tablecell{body=#panel{style="margin:16px;", body=test_tourblock()}}
-                    ]}
-                ]},
-                buttons(1),            
+                [begin
+                    Id = T#tournament.id,
+                    Title = T#tournament.name,
+                    Game = case T#tournament.game_type of
+                        game_okey -> "OKEY";
+                        game_tavla -> "TAVLA";
+                        game_batak -> "BATAK";
+                        _ -> "WTF"
+                    end,
+                    Date = integer_to_list(element(3, T#tournament.start_date)) ++ "." ++ 
+                           integer_to_list(element(2, T#tournament.start_date)) ++ "." ++ 
+                           integer_to_list(element(1, T#tournament.start_date)),
+                    NPlayers = T#tournament.players_count,
+                    Quota = T#tournament.quota,
+                    Avatar = "/images/tournament/tournaments_page/tournament_default_avatar.png",
+                    Prizes = case is_list(T#tournament.awards) of
+                        true ->
+                            GOs = [nsm_gifts_db:get_gift(A) || A <- T#tournament.awards],
+                            [case GO of
+                                {error, notfound} -> "/images/tournament/new_tournament/question.png";
+                                {ok, {Gift, _}} -> Gift#gift.image_small_url
+                            end || GO <- GOs];
+                        false ->
+                            ["/images/tournament/new_tournament/question.png","/images/tournament/new_tournament/question.png","/images/tournament/new_tournament/question.png"]
+                    end,
+                    #panel{style="margin:16px; float:left", body=tourblock(Id, Title, Game, Date, NPlayers, Quota, Avatar, Prizes)}
+                end
+                || T <- nsm_db:all(tournament)],
+
+%                #table{rows=[
+%                    #tablerow{cells=[
+%                        #tablecell{body=#panel{style="margin:16px;", body=test_tourblock()}},
+%                        #tablecell{body=#panel{style="margin:16px;", body=test_tourblock()}},
+%                        #tablecell{body=#panel{style="margin:16px;", body=test_tourblock()}},
+%                        #tablecell{body=#panel{style="margin:16px;", body=test_tourblock()}}
+%                    ]},
+%                    #tablerow{cells=[
+%                        #tablecell{body=#panel{style="margin:16px;", body=test_tourblock()}},
+%                        #tablecell{body=#panel{style="margin:16px;", body=test_tourblock()}},
+%                        #tablecell{body=#panel{style="margin:16px;", body=test_tourblock()}},
+%                        #tablecell{body=#panel{style="margin:16px;", body=test_tourblock()}}
+%                    ]},
+%                    #tablerow{cells=[
+%                        #tablecell{body=#panel{style="margin:16px;", body=test_tourblock()}},
+%                        #tablecell{body=#panel{style="margin:16px;", body=test_tourblock()}},
+%                        #tablecell{body=#panel{style="margin:16px;", body=test_tourblock()}},
+%                        #tablecell{body=#panel{style="margin:16px;", body=test_tourblock()}}
+%                    ]}
+%                ]},
+%                buttons(1),            
                 "</center>"
             ]},
 
@@ -424,47 +452,49 @@ content() ->
     ].
 
 test_tourblock() ->
-    tourblock("OKEY TURNUVASI", "TAVLA", "7.11.2012", 64, 5000, 
+    tourblock(0,"OKEY TURNUVASI", "TAVLA", "7.11.2012", 64, 5000, 
         "/images/tournament/tournaments_page/tournament_default_avatar.png",
         ["http://www.enilginc.com/images/products/00/08/45/845_buyuk.jpg", 
          "http://www.enilginc.com/images/products/00/02/12/212_buyuk.jpg",
          "http://www.enilginc.com/images/products/00/07/31/731_buyuk.jpg"]).
 
-tourblock(Title, Game, Date, NGames, Quota, Avatar, Prizes) ->
-    #panel{style="width:200px; height:308px; border:1px solid #adb1b0; background-color:#f6f9ff; position:relative;", body=[
-        #panel{style="width:200px; height:28; position:absolute; left:-1px; top:-1px; 
-                font:14px 'Gotham Rounded Bold','Trebuchet MS'; color:#fff; text-shadow:0 1px 1px #353535; text-align:center; padding-top:6px;
-                background-color:#595959; border:1px solid #adb1b0;", body=[Title]},
-        #image{image=Avatar, style="position:absolute; left:7px; top:34px;
-                -moz-border-radius:2px;
-                -webkit-border-radius:2px;
-                border-radius:2px;
-                border:1px solid #7e7f83;"},
-        #panel{style="width:200px; height:1px; position:absolute; left:0px; top:134px; background-color:#9c9da2;", body=[]},
-        #panel{style="width:200px; height:1px; position:absolute; left:0px; top:198px; background-color:#9c9da2;", body=[]},
-        #label{style="position:absolute; left:9px; top:113px; color:#f67436; font-size:14px; font-weight:bold;", 
-            body="Oyun Türü: <span style='color:#222; font-weight:normal;'>" ++ Game ++ "</span>" },
+tourblock(Id, Title, Game, Date, NGames, Quota, Avatar, Prizes) ->
+    #link{url=?_T("tournament/lobby/id/")++integer_to_list(Id), body=[
+        #panel{style="width:200px; height:308px; border:1px solid #adb1b0; background-color:#f6f9ff; position:relative;", body=[
+            #panel{style="width:200px; height:28; position:absolute; left:-1px; top:-1px; 
+                    font:14px 'Gotham Rounded Bold','Trebuchet MS'; color:#fff; text-shadow:0 1px 1px #353535; text-align:center; padding-top:6px;
+                    background-color:#595959; border:1px solid #adb1b0;", body=[Title]},
+            #image{image=Avatar, style="position:absolute; left:7px; top:34px;
+                    -moz-border-radius:2px;
+                    -webkit-border-radius:2px;
+                    border-radius:2px;
+                    border:1px solid #7e7f83;"},
+            #panel{style="width:200px; height:1px; position:absolute; left:0px; top:134px; background-color:#9c9da2;", body=[]},
+            #panel{style="width:200px; height:1px; position:absolute; left:0px; top:198px; background-color:#9c9da2;", body=[]},
+            #label{style="position:absolute; left:9px; top:113px; color:#f67436; font-size:14px; font-weight:bold;", 
+                body="Oyun Türü: <span style='color:#222; font-weight:normal;'>" ++ Game ++ "</span>" },
 
-        #label{style="position:absolute; left:9px; top:143px; color:#f67436; font-size:12px; font-weight:bold;", 
-            body="Başlangiç Tarihi: <span style='color:#222; font-weight:normal;'>" ++ Date ++ "</span>" },
-        #label{style="position:absolute; left:9px; top:160px; color:#f67436; font-size:12px; font-weight:bold;", 
-            body="Oyuncu Sayısı: <span style='color:#222; font-weight:normal;'>" ++ integer_to_list(NGames) ++ "</span>" },
-        #label{style="position:absolute; left:9px; top:177px; color:#f67436; font-size:12px; font-weight:bold;", 
-            body="Kota: <span style='color:#222; font-weight:normal;'>" ++ integer_to_list(Quota) ++ "</span>" },
+            #label{style="position:absolute; left:9px; top:143px; color:#f67436; font-size:12px; font-weight:bold;", 
+                body="Başlangiç Tarihi: <span style='color:#222; font-weight:normal;'>" ++ Date ++ "</span>" },
+            #label{style="position:absolute; left:9px; top:160px; color:#f67436; font-size:12px; font-weight:bold;", 
+                body="Oyuncu Sayısı: <span style='color:#222; font-weight:normal;'>" ++ integer_to_list(NGames) ++ "</span>" },
+            #label{style="position:absolute; left:9px; top:177px; color:#f67436; font-size:12px; font-weight:bold;", 
+                body="Kota: <span style='color:#222; font-weight:normal;'>" ++ integer_to_list(Quota) ++ "</span>" },
 
-        #label{style="position:absolute; left:9px; top:203px; color:#f67436; font-size:14px; font-weight:bold;", text="Ödüler: "},
+            #label{style="position:absolute; left:9px; top:203px; color:#f67436; font-size:14px; font-weight:bold;", text="Ödüler: "},
 
-        #label{style="position:absolute; left:34px; top:224px; color:#222; font-size:14px;", text="1"},
-        #panel{style="position:absolute; left:9px; top:240px; background-color:#9c9da2; width:55px; height:1px;", body=[]},
-        #image{style="position:absolute; left:9px; top:246px; width:55px; border:1px solid #ccd0d3;", image=lists:nth(1, Prizes)},
+            #label{style="position:absolute; left:34px; top:224px; color:#222; font-size:14px;", text="1"},
+            #panel{style="position:absolute; left:9px; top:240px; background-color:#9c9da2; width:55px; height:1px;", body=[]},
+            #image{style="position:absolute; left:9px; top:246px; width:55px; border:1px solid #ccd0d3;", image=lists:nth(1, Prizes)},
 
-        #label{style="position:absolute; left:97px; top:224px; color:#222; font-size:14px;", text="2"},
-        #panel{style="position:absolute; left:72px; top:240px; background-color:#9c9da2; width:55px; height:1px;", body=[]},
-        #image{style="position:absolute; left:72px; top:246px; width:55px; border:1px solid #ccd0d3;", image=lists:nth(2, Prizes)},
+            #label{style="position:absolute; left:97px; top:224px; color:#222; font-size:14px;", text="2"},
+            #panel{style="position:absolute; left:72px; top:240px; background-color:#9c9da2; width:55px; height:1px;", body=[]},
+            #image{style="position:absolute; left:72px; top:246px; width:55px; border:1px solid #ccd0d3;", image=lists:nth(2, Prizes)},
 
-        #label{style="position:absolute; left:159px; top:224px; color:#222; font-size:14px;", text="3"},
-        #panel{style="position:absolute; left:135px; top:240px; background-color:#9c9da2; width:55px; height:1px;", body=[]},
-        #image{style="position:absolute; left:135px; top:246px; width:55px; border:1px solid #ccd0d3;", image=lists:nth(3, Prizes)}
+            #label{style="position:absolute; left:159px; top:224px; color:#222; font-size:14px;", text="3"},
+            #panel{style="position:absolute; left:135px; top:240px; background-color:#9c9da2; width:55px; height:1px;", body=[]},
+            #image{style="position:absolute; left:135px; top:246px; width:55px; border:1px solid #ccd0d3;", image=lists:nth(3, Prizes)}
+        ]}
     ]}.
 
 buttons(Page) ->
