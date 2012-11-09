@@ -76,8 +76,11 @@ init()->
 	display: 'popup'},
 	function(response){
 	    if(response && response.perms){
-		console.log(\"Permissions granted: \"+response.perms);
-	    }else if(!response.perms){
+		console.log(\"Permissions granted: \"+response.perms);",
+		"if(page.fbCheckPermissions){
+		    page.fbCheckPermissions(response.perms);
+		}",
+	    "}else if(!response.perms){
 		console.log(\"User did't grant permission.\");
 	    }
 	});",
@@ -138,13 +141,11 @@ pay_dialog()->
     "</script>"].
 
 api_event(fbLogin, _, [Args])->
-    wf:info("fblogin: ~p~n", [Args]),
     case Args of
 	[{error, E}] ->
 	    ErrorMsg = io_lib:format("Facebook error:~p", [E]),
 	    wf:redirect( ?_U("/index/message/") ++ site_utils:base64_encode_to_url(ErrorMsg));
 	_ ->
-	    wf:info("ARGS:~p~n", [Args]),
 	    case nsm_users:get_user({facebook, proplists:get_value(id, Args)}) of
 	    {ok, User} ->
 		login:login_user(User#user.username),
@@ -169,6 +170,7 @@ check_permissions([{publish_stream, 1}|_Rest])->
 	actions=#event{type=click, actions=#script{script="del_fb_service()"}},
 	html_encode = false}
     ]);
+check_permissions("publish_stream") -> check_permissions([{publish_stream, 1}]);
 check_permissions([])-> ok;
 check_permissions([{_P,_V}|Perms])-> check_permissions(Perms).
 

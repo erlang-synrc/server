@@ -83,6 +83,7 @@ register_button()->
 
 facebook()->
     case wf:session(fb_registration) of
+	undefined -> [];
 	[{error, E}] -> 
 	    ErrorMsg = io_lib:format("Facebook error: ~p", [E]),
 	    wf:redirect( ?_U("/index/message/") ++ site_utils:base64_encode_to_url(ErrorMsg));
