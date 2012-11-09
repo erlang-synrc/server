@@ -1,6 +1,6 @@
 -module(nsw_srv_sup).
 -behaviour(supervisor).
--export([start_link/0, init/1, create_tables/1]).
+-export([start_link/0, init/1, create_tables/1,stress_test/1]).
 -include("setup.hrl").
 -include("loger.hrl").
 
@@ -76,13 +76,13 @@ stress_test(NumberOfRooms) ->
           {ok,GameId,A} = rpc:call(?GAMESRVR_NODE,game_manager,create_table,
             [game_okey,[{table_name,"okey maxim and alice + 2 robots"},
                           {speed,normal},
-                          {rounds,1},
+                          {rounds,80},
                           {sets,1},
                           {game_mode,standard},
                           {owner,"kate"}],[<<"maxim">>,<<"alice">>,robot,robot]]),
             Clients = [ proc_lib:spawn_link(fun() -> 
                                  rpc:call(?GAMESRVR_NODE,test_okey,init_with_join_game,
-                                    [self(), localhost, 9001, GameId, Id, 1, normal])
+                                    [self(), ?GAMEHOST, 9000, GameId, Id, 1, normal])
                         end) || Id <- [<<"maxim">>,<<"alice">>] ],
 
                     {ok,GameId,A}
@@ -124,5 +124,5 @@ init([]) ->
     LuckyChild = {nsw_srv_lucky_sup,
                   {nsw_srv_lucky_sup, start_link, []},
                   permanent, 2000, supervisor, [nsw_srv_lucky_sup]},
-    {ok, { {one_for_one, 5, 10}, [DChild, LuckyChild]} }.
+    {ok, { {one_for_one, 5, 10}, [DChild]} }.
 
