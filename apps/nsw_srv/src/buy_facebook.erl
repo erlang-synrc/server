@@ -9,7 +9,7 @@
 
 main() ->
     wf:content_type("application/json"),
-    {ok, Data} = fb_signed_request:parse(wf:q(signed_request), "df0ed1f649bf974189947caf832ffa01"), %?FB_APP_SECRET
+    {ok, Data} = fb_signed_request:parse(wf:q(signed_request), ?FB_APP_SECRET), %?FB_APP_SECRET "df0ed1f649bf974189947caf832ffa01"
     SignedReq = mochijson2:decode(Data),
     wf:info("signed_request:~p~n",[SignedReq]),
     Response = #struct{list=[
@@ -20,12 +20,19 @@ main() ->
 
 process_order("payments_get_items", Credits)->
     Packages = nsm_membership_packages:list_packages([{payment_type, credit_card},{available_for_sale, true}]),
-    wf:info("Check order in packs: ~p~n", [Packages]),
+    OrderInfo = mochijson2:decode(proplists:get_value(<<"order_info">>, Credits#struct.list)),
+    ItemId = binary_to_list(proplists:get_value(<<"item_id">>, OrderInfo#struct.list)),
     [#struct{list=[
-        {<<"title">>, <<"title1">>},
-        {<<"price">>, 1},
-        {<<"image_url">>, <<"http:\/\/www.facebook.com\/images\/gifts\/21.png">>},
-        {<<"description">>, <<"Description">>}]}];
+	{<<"title">>, list_to_binary(["Packet No ", integer_to_list(No)])},
+	{<<"price">>, Amount},
+	{<<"image_url">>, <<"http:\/\/www.facebook.com\/images\/gifts\/21.png">>},
+	{<<"description">>, list_to_binary(
+	    ["Gift points :", integer_to_list(GiftPoints),
+	    " Net membership: ", integer_to_list(NetMembership)])}]}
+	|| #membership_package{id = Id, no=No,
+	    amount=Amount,
+	    deducted_for_gifts=GiftPoints,
+	    net_membership=NetMembership} <- Packages, Id=:=ItemId];
 process_order("payments_status_update", Credits)->
     OrderId = proplists:get_value(<<"order_id">>, Credits#struct.list),
     OrderDetails = proplists:get_value(<<"order_details">>, Credits#struct.list),
