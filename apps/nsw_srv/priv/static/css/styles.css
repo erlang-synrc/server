@@ -160,7 +160,7 @@ header .box img {vertical-align:top;}
 	width:141px;
 	color:#a2a2a2;
 }
-.signup .btn-submit {
+.signup .btn-submit{
 	float:left;
 	margin:0 0 0 4px;
 	padding:0 0 4px;
@@ -5204,6 +5204,50 @@ footer .lang img {
 }
 
 .fb_login_btn{
+    border-top: 1px solid #29447E;
+    border-right: 1px solid #29447E;
+    border-bottom: 1px solid #1A356E;
+    padding:0;
+    margin:0;
+    display:block;
+    height:22px;
+    background-color: #5F78AB;
+    background-image:url(/images/facebook/fbs.png);
+    background-repeat:no-repeat;
+    background-position: 0px -82px;
+    padding-left:32px;
+    padding-right:7px;
+    margin-top:-4px;
+    line-height:22px;
+    color:white;
+    font-weight:bold;
+    font-size: 12px;
+}
+
+.reg-form .btn-submit {
+    float:right;
+    margin:0 0 0 10px;
+    padding:0 0 2px;
+    border:1px solid #7bbad2;
+    cursor:pointer;
+    background:url(/images/btn-4.gif?jcb=1349856288) repeat-x;
+    width:80px;
+    height:30px;
+    -moz-border-radius:3px;
+    -webkit-border-radius:3px;
+    border-radius:3px;
+    color:#42788e;
+    font-size:14px;
+    line-height:30px;
+    font-weight:bold;
+    text-transform:uppercase;
+    text-shadow:0 1px 1px #b6e6f9
+    -moz-box-shadow:0 1px 2px 2px #d3d3d3;
+    -webkit-box-shadow:0 1px 2px 2px #d3d3d3;
+    box-shadow:0 1px 1px 1px #d3d3d3;
+}
+
+.pay_fb_btn {
     border-top: 1px solid #29447E;
     border-right: 1px solid #29447E;
     border-bottom: 1px solid #1A356E;

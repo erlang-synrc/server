@@ -141,7 +141,7 @@ packet_price_element(Price)->
 buy_button_element(PackageId, PaymentType, false)->
     #link{class="btn", text=?_T("Buy"), postback={buy, PackageId, PaymentType}};
 buy_button_element(PackageId, _PaymentType, true)->
-    #link{class="pay_fb_btn", actions=#event{type=click, actions=#script{script="pay_with_fb(\""++ PackageId ++ "\");"}}}.
+    #link{class="pay_fb_btn", text=?_T("Buy"), actions=#event{type=click, actions=#script{script="pay_with_fb(\""++ PackageId ++ "\");"}}}.
 
 odd_even("odd")-> "even";
 odd_even("even")-> "odd".
