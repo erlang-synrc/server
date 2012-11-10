@@ -1,6 +1,6 @@
 -module(nsw_srv_sup).
 -behaviour(supervisor).
--export([start_link/0, init/1, create_tables/1,stress_test/1, start_tournament/1]).
+-export([start_link/0, init/1, create_tables/1,stress_test/1, start_tournament/2]).
 -include("setup.hrl").
 -include("loger.hrl").
 
@@ -93,20 +93,23 @@ stress_test(NumberOfRooms) ->
     [{ok,OP2,_}|_] = lists:reverse(OkeyPlayers),
     ?INFO("Okey bot rooms runned (STRESS): ~p~n",[{OP1,OP2}]).
 
-start_tournament(NumberOfRooms) ->
+start_tournament(NumberOfTournaments, NumberOfPlayers) ->
     Registrants = [ erlang:list_to_binary([<<"trn_player">>, integer_to_list(N)])
-                      || N <- lists:seq(1, 16)],
-    OkeyPlayers = [begin
-                       {ok,GameId,A} = rpc:call(?GAMESRVR_NODE,game_manager,create_game,
-                                                [game_okey_ng_trn_elim, [{registrants, Registrants},
-                                                                         {kakush_per_round, 8}]]),
-                       [ proc_lib:spawn_link(fun() ->
-                                                     rpc:call(?GAMESRVR_NODE,test_okey,init_with_join_game,
-                                                              [self(), ?GAMEHOST, 9000, GameId, Id, 1, normal])
-                                             end) || Id <- Registrants ],
-                       {ok,GameId,A}
-                   end || _ <-lists:seq(1,NumberOfRooms)],
-    ?INFO("Okey tournaments runned~n",[]).
+                      || N <- lists:seq(1, NumberOfPlayers)],
+    OkeyTournaments =
+        [begin
+             {ok,GameId,A} = rpc:call(?GAMESRVR_NODE,game_manager,create_game,
+                                      [game_okey_ng_trn_elim, [{registrants, Registrants},
+                                                               {kakush_per_round, 8}]]),
+             [ proc_lib:spawn_link(fun() ->
+                                           rpc:call(?GAMESRVR_NODE,test_okey,init_with_join_game,
+                                                    [self(), ?GAMEHOST, 9000, GameId, Id, 1, normal])
+                                   end) || Id <- Registrants ],
+             {ok,GameId,A}
+         end || _ <-lists:seq(1,NumberOfTournaments)],
+    [{ok,OP1,_}|_] = OkeyTournaments,
+    [{ok,OP2,_}|_] = lists:reverse(OkeyTournaments),
+    ?INFO("Okey tournaments runned: ~p~n",[{OP1,OP2}]).
 
 
 
