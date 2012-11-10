@@ -44,7 +44,7 @@
          players,          %% The register of tournament players
          tables,           %% The register of tournament tables
          seats,            %% Stores relation between players and tables seats
-         tournament_table  :: list(), %% XXX [{TurnNum, TurnRes}], TurnRes = [{PlayerId, Points, Status}]
+         tournament_table  :: list(), %% [{TurnNum, TurnRes}], TurnRes = [{PlayerId, Points, Status}]
          table_id_counter  :: pos_integer(),
          turn              :: pos_integer(),
          cr_tab_requests   :: dict(),  %% {TableId, PlayersIds}
@@ -69,11 +69,11 @@
         {
          id              :: pos_integer(),
          global_id       :: pos_integer(),
-         pid,
-         relay           :: {atom(), pid()}, %%{RelayMod, RelayPid}
-         mon_ref,
+         pid             :: pid(),
+         relay           :: {atom(), pid()}, %% {RelayMod, RelayPid}
+         mon_ref         :: reference(),
          state           :: initializing | ready | in_process | finished,
-         scoring_state,
+         context         :: term(), %% Context term of a table. For failover proposes.
          timer           :: reference()
         }).
 
@@ -102,9 +102,9 @@
 -define(TABLE_STATE_FINISHED, finished).
 
 -define(WAITING_PLAYERS_TIMEOUT, 15000). %% Time between all table was created and starting a turn
--define(REST_TIMEOUT, 5000). %% Time between game finsh and start of new round
--define(SHOW_TURN_RESULT_TIMEOUT, 15000).
--define(SHOW_TOURNAMENT_RESULT_TIMEOUT, 15000).
+-define(REST_TIMEOUT, 5000).             %% Time between a round finish and start of a new one
+-define(SHOW_TURN_RESULT_TIMEOUT, 15000).%% Time between a turn finish and start of a new one
+-define(SHOW_TOURNAMENT_RESULT_TIMEOUT, 15000). %% Time between last tour result showing and the tournament finish
 
 %% ====================================================================
 %% External functions
@@ -164,6 +164,7 @@ init([GameId, Params, _Manager]) ->
 
 %%===================================================================
 handle_event(go, ?STATE_INIT, #state{game_id = GameId} = StateData) ->
+    ?INFO("OKEY_NG_TRN_ELIM <~p> Received a directive to starting the tournament.", [GameId]),
     GProcVal = #game_table{game_type = game_okey,
                            game_process = self(),
                            game_module = ?MODULE,
@@ -191,16 +192,19 @@ handle_event({table_message, TableId, Message}, StateName, #state{game_id = Game
     ?INFO("OKEY_NG_TRN_ELIM <~p> Received the message from table <~p>: ~p.", [GameId, TableId, Message]),
     handle_table_message(TableId, Message, StateName, StateData);
 
-handle_event(_Event, StateName, StateData) ->
+handle_event(Message, StateName, #state{game_id = GameId} = StateData) ->
+    ?INFO("OKEY_NG_TRN_ELIM <~p> Unhandled message(event) received in state <~p>: ~p.",
+          [GameId, StateName, Message]),
     {next_state, StateName, StateData}.
 
 handle_sync_event({client_request, Request}, From, StateName, #state{game_id = GameId} = StateData) ->
     ?INFO("OKEY_NG_TRN_ELIM <~p> Received the request from a client: ~p.", [GameId, Request]),
     handle_client_request(Request, From, StateName, StateData);
 
-handle_sync_event(_Event, _From, StateName, StateData) ->
-    Reply = ok,
-    {reply, Reply, StateName, StateData}.
+handle_sync_event(Request, From, StateName, #state{game_id = GameId} = StateData) ->
+    ?INFO("OKEY_NG_TRN_ELIM <~p> Unhandled request(event) received in state <~p> from ~p: ~p.",
+          [GameId, StateName, From, Request]),
+    {reply, {error, unknown_request}, StateName, StateData}.
 
 %%===================================================================
 
@@ -217,7 +221,8 @@ handle_info({'DOWN', MonRef, process, _Pid, _}, StateName,
 
 
 handle_info({rest_timeout, TableId}, StateName,
-            #state{tables = Tables} = StateData) ->
+            #state{game_id = GameId, tables = Tables} = StateData) ->
+    ?INFO("OKEY_NG_TRN_ELIM <~p> Time to start new round for table <~p>.", [GameId, TableId]),
     #table{pid = TablePid} = Table = fetch_table(TableId, Tables),
     NewTable = Table#table{state = in_process},
     NewTables = store_table(NewTable, Tables),
@@ -226,25 +231,34 @@ handle_info({rest_timeout, TableId}, StateName,
 
 
 handle_info({timeout, Magic}, ?STATE_WAITING_FOR_PLAYERS,
-            #state{timer_magic = Magic} = StateData) ->
+            #state{timer_magic = Magic, game_id = GameId} = StateData) ->
+    ?INFO("OKEY_NG_TRN_ELIM <~p> Time to start new turn.", [GameId]),
     start_turn(StateData);
 
 
 handle_info({timeout, Magic}, ?STATE_SHOW_TURN_RESULT,
             #state{timer_magic = Magic, turn = Turn,
-                   turns_plan = Plan} = StateData) ->
-    if Turn == length(Plan) -> finalize_tournament(StateData);
-       true -> init_turn(Turn + 1, StateData)
+                   turns_plan = Plan, game_id = GameId} = StateData) ->
+    if Turn == length(Plan) ->
+           ?INFO("OKEY_NG_TRN_ELIM <~p> Time to finalize the tournament.", [GameId]),
+           finalize_tournament(StateData);
+       true ->
+           NewTurn = Turn + 1,
+           ?INFO("OKEY_NG_TRN_ELIM <~p> Time to initialize turn <~p>.", [GameId, NewTurn]),
+           init_turn(NewTurn, StateData)
     end;
 
 
 handle_info({timeout, Magic}, ?STATE_FINISHED,
-            #state{timer_magic = Magic, tables = Tables} = StateData) ->
+            #state{timer_magic = Magic, tables = Tables, game_id = GameId} = StateData) ->
+    ?INFO("OKEY_NG_TRN_ELIM <~p> Time to stopping the tournament.", [GameId]),
     finalize_tables_with_disconnect(Tables),
     {stop, normal, StateData#state{tables = [], seats = []}};
 
 
-handle_info(_Info, StateName, StateData) ->
+handle_info(Message, StateName, #state{game_id = GameId} = StateData) ->
+    ?INFO("OKEY_NG_TRN_ELIM <~p> Unhandled message(info) received in state <~p>: ~p.",
+          [GameId, StateName, Message]),
     {next_state, StateName, StateData}.
 
 %%===================================================================
@@ -264,7 +278,9 @@ code_change(_OldVsn, StateName, StateData, _Extra) ->
 %% --------------------------------------------------------------------
 
 
-handle_client_message(_Msg, StateName, StateData) ->
+handle_client_message(Message, StateName, #state{game_id = GameId} = StateData) ->
+    ?INFO("OKEY_NG_TRN_ELIM <~p> Unhandled client message received in "
+          "state <~p>: ~p.", [GameId, StateName, Message]),
     {next_state, StateName, StateData}.
 
 %%===================================================================
@@ -338,7 +354,7 @@ handle_table_message(TableId, {round_finished, NewScoringState, _RoundScore, _To
                      #state{tables = Tables} = StateData) ->
     #table{pid = TablePid} = Table = fetch_table(TableId, Tables),
     TRef = erlang:send_after(?REST_TIMEOUT, self(), {rest_timeout, TableId}),
-    NewTable = Table#table{scoring_state = NewScoringState, state = ?TABLE_STATE_FINISHED, timer = TRef},
+    NewTable = Table#table{context = NewScoringState, state = ?TABLE_STATE_FINISHED, timer = TRef},
     NewTables = store_table(NewTable, Tables),
     send_to_table(TablePid, show_round_result),
     {next_state, ?STATE_TURN_PROCESSING, StateData#state{tables = NewTables}};
@@ -350,7 +366,7 @@ handle_table_message(TableId, {game_finished, TableContext, _RoundScore, TotalSc
                             tables_results = TablesResults} = StateData) ->
     NewTablesResults = [{TableId, TotalScore} | TablesResults],
     #table{pid = TablePid} = Table = fetch_table(TableId, Tables),
-    NewTable = Table#table{scoring_state = TableContext, state = ?TABLE_STATE_FINISHED},
+    NewTable = Table#table{context = TableContext, state = ?TABLE_STATE_FINISHED},
     NewTables = store_table(NewTable, Tables),
     send_to_table(TablePid, show_round_result),
     %% TODO: Send to table "Waiting for the end of the turn"
@@ -375,7 +391,7 @@ handle_table_message(TableId, {response, RequestId, Response},
             ?INFO("OKEY_NG_TRN_ELIM <~p> The a response received from table <~p>. "
                   "RequestId: ~p. Request context: ~p. Response: ~p",
                   [GameId, TableId, RequestId, ReqContext, Response]),
-            handle_table_response(ReqContext, Response, StateName,
+            handle_table_response(TableId, ReqContext, Response, StateName,
                                   StateData#state{tab_requests = NewTabRequests});
         error ->
             ?ERROR("OKEY_NG_TRN_ELIM <~p> Table <~p> sent a response for unknown request. "
@@ -384,54 +400,66 @@ handle_table_message(TableId, {response, RequestId, Response},
     end;
 
 
-handle_table_message(_TableId, _Event, StateName, StateData) ->
+handle_table_message(TableId, Message, StateName, #state{game_id = GameId} = StateData) ->
+    ?INFO("OKEY_NG_TRN_ELIM <~p> Unhandled table message received from table <~p> in "
+          "state <~p>: ~p.", [GameId, TableId, StateName, Message]),
     {next_state, StateName, StateData}.
 
 %%===================================================================
-handle_table_response({register_player, PlayerId, TableId, SeatNum}, ok = _Response,
-                      StateName,
-                      #state{reg_requests = RegRequests, seats = Seats,
-                             tables = Tables} = StateData) ->
-    Seat = fetch_seat(TableId, SeatNum, Seats),
-    NewSeats = store_seat(Seat#seat{registered_by_table = true}, Seats),
-    %% Send response to a client for a delayed request
-    NewRegRequests =
-        case dict:find(PlayerId, RegRequests) of
-            {ok, From} ->
-                #table{relay = Relay, pid = TablePid} = fetch_table(TableId, Tables),
-                gen_fsm:reply(From, {ok, {PlayerId, Relay, {?TAB_MOD, TablePid}}}),
-                dict:erase(PlayerId, RegRequests);
-            error -> RegRequests
-        end,
-    {next_state, StateName, StateData#state{seats = NewSeats,
-                                            reg_requests = NewRegRequests}};
+%% handle_table_response(_TableId, {register_player, PlayerId, TableId, SeatNum}, ok = _Response,
+%%                       StateName,
+%%                       #state{reg_requests = RegRequests, seats = Seats,
+%%                              tables = Tables} = StateData) ->
+%%     Seat = fetch_seat(TableId, SeatNum, Seats),
+%%     NewSeats = store_seat(Seat#seat{registered_by_table = true}, Seats),
+%%     %% Send response to a client for a delayed request
+%%     NewRegRequests =
+%%         case dict:find(PlayerId, RegRequests) of
+%%             {ok, From} ->
+%%                 #table{relay = Relay, pid = TablePid} = fetch_table(TableId, Tables),
+%%                 gen_fsm:reply(From, {ok, {PlayerId, Relay, {?TAB_MOD, TablePid}}}),
+%%                 dict:erase(PlayerId, RegRequests);
+%%             error -> RegRequests
+%%         end,
+%%     {next_state, StateName, StateData#state{seats = NewSeats,
+%%                                             reg_requests = NewRegRequests}};
 
-handle_table_response({replace_player, PlayerId, TableId, SeatNum}, ok = _Response,
-                      StateName,
-                      #state{reg_requests = RegRequests, seats = Seats,
-                             tables = Tables} = StateData) ->
-    Seat = fetch_seat(TableId, SeatNum, Seats),
-    NewSeats = store_seat(Seat#seat{registered_by_table = true}, Seats),
-    %% Send response to a client for a delayed request
-    NewRegRequests =
-        case dict:find(PlayerId, RegRequests) of
-            {ok, From} ->
-                #table{relay = Relay, pid = TablePid} = fetch_table(TableId, Tables),
-                gen_fsm:reply(From, {ok, {PlayerId, Relay, {?TAB_MOD, TablePid}}}),
-                dict:erase(PlayerId, RegRequests);
-            error -> RegRequests
-        end,
-    {next_state, StateName, StateData#state{seats = NewSeats,
-                                            reg_requests = NewRegRequests}}.
+%% handle_table_response(_TableId, {replace_player, PlayerId, TableId, SeatNum}, ok = _Response,
+%%                       StateName,
+%%                       #state{reg_requests = RegRequests, seats = Seats,
+%%                              tables = Tables} = StateData) ->
+%%     Seat = fetch_seat(TableId, SeatNum, Seats),
+%%     NewSeats = store_seat(Seat#seat{registered_by_table = true}, Seats),
+%%     %% Send response to a client for a delayed request
+%%     NewRegRequests =
+%%         case dict:find(PlayerId, RegRequests) of
+%%             {ok, From} ->
+%%                 #table{relay = Relay, pid = TablePid} = fetch_table(TableId, Tables),
+%%                 gen_fsm:reply(From, {ok, {PlayerId, Relay, {?TAB_MOD, TablePid}}}),
+%%                 dict:erase(PlayerId, RegRequests);
+%%             error -> RegRequests
+%%         end,
+%%     {next_state, StateName, StateData#state{seats = NewSeats,
+%%                                             reg_requests = NewRegRequests}}.
+
+handle_table_response(TableId, RequestContext, Response, StateName,
+                      #state{game_id = GameId} = StateData) ->
+    ?INFO("OKEY_NG_TRN_ELIM <~p> Unhandled 'table response' received from table <~p> "
+          "in state <~p>. Request context: ~p. Response: ~p.",
+          [GameId, TableId, StateName, RequestContext, Response]),
+    {next_state, StateName, StateData}.
+
 %%===================================================================
 
 handle_client_request({join, User}, From, StateName,
                       #state{game_id = GameId, reg_requests = RegRequests,
                              seats = Seats, players=Players, tables = Tables} = StateData) ->
     #'PlayerInfo'{id = UserId, robot = _IsBot} = User,
-    ?INFO("OKEY_NG_TRN_ELIM <~p> The Register request received from user: ~p.", [GameId, UserId]),
+    ?INFO("OKEY_NG_TRN_ELIM <~p> The 'Join' request received from user: ~p.", [GameId, UserId]),
     case get_player_by_user_id(UserId, Players) of
         {ok, #player{status = active, id = PlayerId}} -> %% The user is an active member of the tournament.
+            ?INFO("OKEY_NG_TRN_ELIM <~p> User ~p is an active member of the tournament. "
+                      "Allow to join.", [GameId, UserId]),
             [#seat{table = TableId, registered_by_table = RegByTable}] = find_seats_by_player_id(PlayerId, Seats),
             case RegByTable of
                 false -> %% Store this request to the waiting pool
@@ -442,29 +470,34 @@ handle_client_request({join, User}, From, StateName,
                     {reply, {ok, {PlayerId, Relay, {?TAB_MOD, TPid}}}, StateName, StateData}
             end;
         {ok, #player{status = eliminated}} ->
-            ?INFO("OKEY_NG_TRN_ELIM <~p> User ~p is mamber of the tournament member but was eliminated. "
-                      "Rejecting join.", [GameId, UserId]),
+            ?INFO("OKEY_NG_TRN_ELIM <~p> User ~p is member of the tournament but he was eliminated. "
+                      "Reject to join.", [GameId, UserId]),
             {reply, {error, out}, StateName, StateData};
         error -> %% Not a member
             ?INFO("OKEY_NG_TRN_ELIM <~p> User ~p is not a member of the tournament. "
-                      "Rejecting join.", [GameId, UserId]),
+                      "Reject to join.", [GameId, UserId]),
             {reply, {error, not_allowed}, StateName, StateData}
     end;
 
-handle_client_request(_Request, _From, StateName, StateData) ->
-   Reply = {error, unexpected_request},
-   {reply, Reply, StateName, StateData}.
+handle_client_request(Request, From, StateName, #state{game_id = GameId} = StateData) ->
+    ?INFO("OKEY_NG_TRN_ELIM <~p> Unhandled client request received from ~p in "
+          "state <~p>: ~p.", [GameId, From, StateName, Request]),
+   {reply, {error, unexpected_request}, StateName, StateData}.
 
 %%===================================================================
 init_turn(Turn, #state{game_id = GameId, turns_plan = Plan, tournament_table = TTable,
                        params = TableParams, players = Players,
                        table_id_counter = TableIdCounter, tables = OldTables} = StateData) ->
+    ?INFO("OKEY_NG_TRN_ELIM <~p> Initializing turn <~p>...", [GameId, Turn]),
     PlayersList = prepare_players_for_new_turn(Turn, TTable, Plan, Players),
     {NewTables, Seats, NewTableIdCounter, CrRequests} =
         setup_tables(PlayersList, TableIdCounter, GameId, TableParams),
     if Turn > 1 -> finalize_tables_with_rejoin(OldTables);
        true -> do_nothing
     end,
+    ?INFO("OKEY_NG_TRN_ELIM <~p> Initializing of turn <~p> is finished. "
+          "Waiting creating confirmations from the turns' tables...",
+          [GameId, Turn]),
     {next_state, ?STATE_WAITING_FOR_TABLES, StateData#state{tables = NewTables,
                                                             seats = Seats,
                                                             table_id_counter = NewTableIdCounter,
@@ -476,7 +509,8 @@ init_turn(Turn, #state{game_id = GameId, turns_plan = Plan, tournament_table = T
                                                            }}.
 
 
-start_turn(#state{tables = Tables} = StateData) ->
+start_turn(#state{game_id = GameId, turn = Turn, tables = Tables} = StateData) ->
+    ?INFO("OKEY_NG_TRN_ELIM <~p> Starting turn <~p>...", [GameId, Turn]),
     TablesList = tables_to_list(Tables),
     [send_to_table(Pid, start_round) || #table{pid = Pid} <- TablesList],
     F = fun(Table, Acc) ->
@@ -484,6 +518,8 @@ start_turn(#state{tables = Tables} = StateData) ->
         end,
     NewTables = lists:foldl(F, Tables, TablesList),
     WL = [T#table.id || T <- TablesList],
+    ?INFO("OKEY_NG_TRN_ELIM <~p> Turn <~p> is started. Processing...",
+          [GameId, Turn]),
     {next_state, ?STATE_TURN_PROCESSING, StateData#state{tables = NewTables,
                                                          tables_wl = WL}}.
 
@@ -491,7 +527,7 @@ start_turn(#state{tables = Tables} = StateData) ->
 process_turn_result(#state{game_id = GameId, tournament_table = TTable,
                            turns_plan = Plan, turn = Turn, tables_results = TablesResults,
                            players = Players, tables = Tables} = StateData) ->
-    ?INFO("OKEY_NG_TRN_ELIM <~p> turn completed. Starting results processing...", [GameId]),
+    ?INFO("OKEY_NG_TRN_ELIM <~p> Turn <~p> is completed. Starting results processing...", [GameId, Turn]),
     NextTurnLimit = lists:nth(Turn, Plan),
     TurnResult = case turn_type(Turn, Plan) of
                      non_elim -> turn_result_all(TablesResults);
@@ -513,13 +549,20 @@ process_turn_result(#state{game_id = GameId, tournament_table = TTable,
                    {show_series_result, subs_status(TableResultWithPos, Turn, Plan)})
        || {TableId, TableResultWithPos} <- TablesResultsWithPos],
     {TRef, Magic} = start_timer(?SHOW_TURN_RESULT_TIMEOUT),
+    ?INFO("OKEY_NG_TRN_ELIM <~p> Results processing of turn <~p> is finished. "
+          "Waiting some time (~p secs) before continue...",
+          [GameId, Turn, ?SHOW_TURN_RESULT_TIMEOUT div 1000]),
     {next_state, ?STATE_SHOW_TURN_RESULT, StateData#state{timer = TRef, timer_magic = Magic,
                                                           tournament_table = NewTTable,
                                                           players = NewPlayers}}.
 
-finalize_tournament(StateData) ->
+finalize_tournament(#state{game_id = GameId} = StateData) ->
+    ?INFO("OKEY_NG_TRN_ELIM <~p> Finalizing the tournament...", [GameId]),
     %% TODO: Real finalization needed
     {TRef, Magic} = start_timer(?SHOW_TOURNAMENT_RESULT_TIMEOUT),
+    ?INFO("OKEY_NG_TRN_ELIM <~p> The tournament is finalized. "
+          "Waiting some time (~p secs) before continue...",
+          [GameId, ?SHOW_TOURNAMENT_RESULT_TIMEOUT div 1000]),
     {next_state, ?STATE_FINISHED, StateData#state{timer = TRef, timer_magic = Magic}}.
 
 
@@ -634,11 +677,11 @@ sort_results2(Results) ->
 %%                                                     tab_requests = NewRequests}}.
 %% 
 
-table_req_replace_player(TablePid, PlayerId, UserInfo, TableId, SeatNum, TabRequests) ->
-    RequestId = make_ref(),
-    NewRequests = dict:store(RequestId, {replace_player, PlayerId, TableId, SeatNum}, TabRequests),
-    send_to_table(TablePid, {replace_player, RequestId, UserInfo, PlayerId, SeatNum}),
-    NewRequests.
+%% table_req_replace_player(TablePid, PlayerId, UserInfo, TableId, SeatNum, TabRequests) ->
+%%     RequestId = make_ref(),
+%%     NewRequests = dict:store(RequestId, {replace_player, PlayerId, TableId, SeatNum}, TabRequests),
+%%     send_to_table(TablePid, {replace_player, RequestId, UserInfo, PlayerId, SeatNum}),
+%%     NewRequests.
 
 
 
@@ -674,11 +717,9 @@ setup_tables(Players, TableIdCounter, GameId, TableParams) ->
                 TableParams2 = [{players, TPlayers} | TableParams],
                 {ok, TabPid} = spawn_table(GameId, TableId, TableParams2),
                 MonRef = erlang:monitor(process, TabPid),
-                GlobalTableId = 0, Scoring = undefined, %% FIXME: Table global id should use a persistent counter
-                NewTAcc = reg_table(TableId, TabPid, MonRef, GlobalTableId, Scoring, TAcc),
+                NewTAcc = reg_table(TableId, TabPid, MonRef, _GlTableId = 0, _Context = undefined, TAcc),
                 F2 = fun({PlId, _, SNum, _}, Acc) ->
-                             RegByTable = false, Connected = false,
-                             assign_seat(TableId, SNum, PlId, RegByTable, Connected, Acc)
+                             assign_seat(TableId, SNum, PlId, _Reg = false, _Conn = false, Acc)
                      end,
                 NewSAcc = lists:foldl(F2, SAcc, TPlayers),
                 PlayersIds = [PlayerId || {PlayerId, _, _} <- Group],
@@ -725,7 +766,7 @@ ttable_init(PlayersIds) -> [{0, [{Id, 0, active} || Id <- PlayersIds]}].
 
 %% ttable_get_turn_result(Turn, TTable) -> undefined | TurnResult
 %% Types: TurnResult = [{PlayerId, Points, PlayerState}]
-%%          PlayerState = undefined | active | {out, Reason}, Reason = atom()
+%%          PlayerState = undefined | active | eliminated
 ttable_get_turn_result(Turn, TTable) ->
     proplists:get_value(Turn, TTable).
 
@@ -750,14 +791,6 @@ get_player_by_user_id(UserId, Players) ->
         [] -> error
     end.
 
-%% del_player(PlayerId, Players) -> NewPlayers
-del_player(PlayerId, Players) -> midict:erase(PlayerId, Players).
-
-%% del_player(PlayersIds, Players) -> NewPlayers
-del_players([], Players) -> Players;
-del_players([PlayerId | Rest], Players) ->
-    del_players(Rest, del_player(PlayerId, Players)).
-
 %% players_to_list(Players) -> List
 players_to_list(Players) -> midict:all_values(Players).
 
@@ -775,9 +808,9 @@ set_player_status(PlayerId, Status, Players) ->
 
 tables_init() -> midict:new().
 
-reg_table(TableId, Pid, MonRef, GlobalId, Scoring, Tables) ->
+reg_table(TableId, Pid, MonRef, GlobalId, TableContext, Tables) ->
     Table = #table{id = TableId, pid = Pid, mon_ref = MonRef, global_id = GlobalId,
-                   state = initializing, scoring_state = Scoring},
+                   state = initializing, context = TableContext},
     store_table(Table, Tables).
 
 update_created_table(TableId, Relay, Tables) ->
@@ -804,10 +837,6 @@ get_table_by_mon_ref(MonRef, Tables) ->
 
 tables_to_list(Tables) -> midict:all_values(Tables).
 
-set_table_state(TableId, State, Tables) ->
-    Table = midict:fetch(TableId, Tables),
-    store_table(Table#table{state = State}, Tables).
-
 seats_init() -> midict:new().
 
 find_seats_by_player_id(PlayerId, Seats) ->
@@ -815,9 +844,6 @@ find_seats_by_player_id(PlayerId, Seats) ->
 
 find_seats_by_table_id(TabId, Seats) ->
     midict:geti(TabId, table_id, Seats).
-
-is_all_players_connected(TableId, TableSeatsNum, Seats) ->
-    TableSeatsNum == length(midict:geti(true, {connected, TableId}, Seats)).
 
 fetch_seat(TableId, SeatNum, Seats) -> midict:fetch({TableId, SeatNum}, Seats).
 
@@ -846,11 +872,9 @@ store_seat(#seat{table = TabId, seat_num = SeatNum, player_id = PlayerId,
     midict:store({TabId, SeatNum}, Seat, Indices, Seats).
 
 
-shuffle(List) ->
-    deck:to_list(deck:shuffle(deck:from_list(List))).
+shuffle(List) -> deck:to_list(deck:shuffle(deck:from_list(List))).
 
-split_by_num(Num, List) ->
-    split_by_num(Num, List, []).
+split_by_num(Num, List) -> split_by_num(Num, List, []).
 
 split_by_num(_, [], Acc) -> lists:reverse(Acc);
 split_by_num(Num, List, Acc) ->
@@ -883,12 +907,9 @@ create_robot(BM, GameId) ->
     SPid = BM:get_session(NPid),
     {NPid, SPid, NUId, User}.
 
-spawn_table(GameId, TableId, Params) ->
-    Pid = ?TAB_MOD:start(GameId, TableId, Params),
-    Pid.
+spawn_table(GameId, TableId, Params) -> ?TAB_MOD:start(GameId, TableId, Params).
 
-send_to_table(TabPid, Message) ->
-    ?TAB_MOD:parent_message(TabPid, Message).
+send_to_table(TabPid, Message) -> ?TAB_MOD:parent_message(TabPid, Message).
 
 %% table_parameters(ParentMod, ParentPid) -> Proplist
 table_parameters(ParentMod, ParentPid) ->
@@ -919,13 +940,13 @@ bots_parameters() ->
      {rounds, 10}
     ].
 
-seats_num(TableParams) ->
-    proplists:get_value(seats_num, TableParams).
+seats_num(TableParams) -> proplists:get_value(seats_num, TableParams).
 
 bot_module(TableParams) ->
     case proplists:get_value(game, TableParams) of
         game_okey -> game_okey_bot
     end.
+
 get_param(ParamId, Params) ->
     {_, Value} = lists:keyfind(ParamId, 1, Params),
     Value.
@@ -937,7 +958,7 @@ get_plan(KakushPerRound, RegistrantsNum) ->
     end.
 
 tournament_matrix() ->
-    [%% Kakush Pl.No   1  2  3  4  5  6  7
+    [%% Kakush Pl.No   1  2  3  4  5  6  7  8
      { {  8,   16},   [4, 1, 1],                        0 },
      { { 10,   16},   [4, 1, 1],                        0 },
      { {  2,   64},   [4, 1, 1, 1],                     0 },
