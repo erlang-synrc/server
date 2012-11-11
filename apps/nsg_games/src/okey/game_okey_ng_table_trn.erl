@@ -626,13 +626,13 @@ do_game_action(SeatNum, GameAction, From, StateName,
 
 process_game_events(Events, #state{desk_state = DeskState, players = Players,
                                    relay = Relay, timeout_timer = OldTRef,
-                                   round_timer = RoundTRef,
+                                   round_timeout = RoundTimeout, round_timer = RoundTRef,
                                    turn_timeout = TurnTimeout} = StateData) ->
     NewDeskState = handle_desk_events(Events, DeskState, Players, Relay), %% Track the desk and send game events to clients
     #desk_state{state = DeskStateName} = NewDeskState,
     case DeskStateName of
         state_finished ->
-            erlang:cancel_timer(RoundTRef),
+            if is_integer(RoundTimeout) -> erlang:cancel_timer(RoundTRef); true -> do_nothing end,
             erlang:cancel_timer(OldTRef),
             on_game_finish(StateData#state{desk_state = NewDeskState});
         state_take ->
