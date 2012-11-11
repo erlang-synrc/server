@@ -106,6 +106,8 @@
 -define(SHOW_TURN_RESULT_TIMEOUT, 15000).%% Time between a turn finish and start of a new one
 -define(SHOW_TOURNAMENT_RESULT_TIMEOUT, 15000). %% Time between last tour result showing and the tournament finish
 
+-define(SEATS_NUM, 4). %% TODO: Define this by a parameter. Number of seats per table
+
 %% ====================================================================
 %% External functions
 %% ====================================================================
@@ -142,7 +144,7 @@ init([GameId, Params, _Manager]) ->
     KakushPerRound = get_param(kakush_per_round, Params),
 
     RegistrantsNum = length(Registrants),
-    {ok, {_, TurnsPlan, _}} = get_plan(KakushPerRound, RegistrantsNum),
+    {ok, {_, TurnsPlan}} = get_plan(KakushPerRound, RegistrantsNum),
     TableParams = table_parameters(?MODULE, self()),
     BotsParams = bots_parameters(),
 
@@ -528,11 +530,11 @@ process_turn_result(#state{game_id = GameId, tournament_table = TTable,
                            turns_plan = Plan, turn = Turn, tables_results = TablesResults,
                            players = Players, tables = Tables} = StateData) ->
     ?INFO("OKEY_NG_TRN_ELIM <~p> Turn <~p> is completed. Starting results processing...", [GameId, Turn]),
-    NextTurnLimit = lists:nth(Turn, Plan),
-    TurnResult = case turn_type(Turn, Plan) of
-                     non_elim -> turn_result_all(TablesResults);
-                     table_elim -> turn_result_per_table(NextTurnLimit, TablesResults);
-                     common_elim -> turn_result_overall(NextTurnLimit, TablesResults)
+    TurnType = lists:nth(Turn, Plan),
+    TurnResult = case TurnType of
+                     ne -> turn_result_all(TablesResults);
+                     {te, Limit} -> turn_result_per_table(Limit, TablesResults);
+                     {ce, Limit} -> turn_result_overall(Limit, TablesResults)
                  end,
     NewTTable = ttable_store_turn_result(Turn, TurnResult, TTable),
     F = fun({PlayerId, _, eliminated}, Acc) -> set_player_status(PlayerId, eliminated, Acc);
@@ -585,12 +587,11 @@ turn_result_per_table(NextTurnLimit, TablesResults) ->
     lists:foldl(F, [], TablesResults).
 
 
-turn_result_overall(NextTurnLimit1, TablesResults) ->
-    NextTurnLimit = NextTurnLimit1 * length(TablesResults),
+turn_result_overall(TurnLimit, TablesResults) ->
     F = fun({_, TableRes}, Acc) -> TableRes ++ Acc end,
     OverallResults = lists:foldl(F, [], TablesResults),
     SortedResults = sort_results(OverallResults),
-    {Winners, _} = lists:unzip(lists:sublist(SortedResults, NextTurnLimit)),
+    {Winners, _} = lists:unzip(lists:sublist(SortedResults, TurnLimit)),
     [case lists:member(Pl, Winners) of
          true -> {Pl, Points, active};
          false -> {Pl, Points, eliminated}
@@ -629,18 +630,6 @@ subs_status(TableResultWithPos, Turn, Plan) ->
          eliminated -> {PlayerId, Pos, Points, ElimSubst}
      end || {PlayerId, Pos, Points, Status} <- TableResultWithPos].
 
-%% turn_type(Turn, Plan) -> non_elim | table_elim | common_elim
-%% TODO: Redesign turns plan (add explict turn type)
-turn_type(Turn, Plan) ->
-    TurnLimit = lists:nth(Turn, Plan),
-    if TurnLimit == 4 -> non_elim;
-       Turn == 1 -> table_elim;
-       true ->
-           case lists:nth(Turn - 1, Plan) of
-               4 -> common_elim;
-               _ -> table_elim
-           end
-    end.
 
 %% sort_results(Results) -> SortedResults
 %% Types: Results = SortedResults = [{PlayerId, Points}]
@@ -694,7 +683,7 @@ prepare_players_for_new_turn(Turn, TTable, TurnsPlan, Players) ->
             || {PlayerId, _, active} <- TResult];
        true ->
            case lists:nth(PrevTurn, TurnsPlan) of
-               4 -> %% No one was eliminated => using the prev turn points
+               ne -> %% No one was eliminated => using the prev turn points
                    [{PlayerId, get_user_info(PlayerId, Players), Points}
                     || {PlayerId, Points, active} <- TResult];
                _ ->
@@ -709,7 +698,7 @@ prepare_players_for_new_turn(Turn, TTable, TurnsPlan, Players) ->
 %% Types: Players = {PlayerId, UserInfo, Points}
 setup_tables(Players, TableIdCounter, GameId, TableParams) ->
     SPlayers = shuffle(Players),
-    Groups = split_by_num(4, SPlayers),
+    Groups = split_by_num(?SEATS_NUM, SPlayers),
     F = fun(Group, {TAcc, SAcc, TableId, TCrRequestsAcc}) ->
                 {TPlayers, _} = lists:mapfoldl(fun({PlayerId, UserInfo, Points}, SeatNum) ->
                                                        {{PlayerId, UserInfo, SeatNum, Points}, SeatNum+1}
@@ -958,55 +947,55 @@ get_plan(KakushPerRound, RegistrantsNum) ->
     end.
 
 tournament_matrix() ->
-    [%% Kakush Pl.No   1  2  3  4  5  6  7  8
-     { {  8,   16},   [4, 1, 1],                        0 },
-     { { 10,   16},   [4, 1, 1],                        0 },
-     { {  2,   64},   [4, 1, 1, 1],                     0 },
-     { {  4,   64},   [4, 1, 1, 1],                     0 },
-     { {  6,   64},   [4, 1, 1, 1],                     0 },
-     { {  8,   64},   [4, 1, 1, 1],                     0 },
-     { { 10,   64},   [4, 1, 1, 1],                     0 },
-     { {  2,  128},   [2, 2, 2, 1, 1],                  0 },
-     { {  4,  128},   [2, 2, 2, 1, 1],                  0 },
-     { {  6,  128},   [2, 2, 2, 1, 1],                  0 },
-     { {  8,  128},   [2, 2, 2, 1, 1],                  0 },
-     { { 10,  128},   [2, 2, 2, 1, 1],                  0 },
-     { {  2,  256},   [4, 1, 1, 1, 1],                  0 },
-     { {  4,  256},   [4, 1, 1, 1, 1],                  0 },
-     { {  6,  256},   [4, 1, 1, 1, 1],                  0 },
-     { {  8,  256},   [4, 1, 1, 1, 1],                  0 },
-     { { 10,  256},   [4, 1, 1, 1, 1],                  0 },
-     { {  2,  256},   [4, 2, 4, 2, 1, 1, 1],            0 },
-     { {  4,  256},   [4, 2, 4, 2, 1, 1, 1],            0 },
-     { {  6,  256},   [4, 2, 4, 2, 1, 1, 1],            0 },
-     { {  8,  256},   [4, 2, 4, 2, 1, 1, 1],            0 },
-     { { 10,  256},   [4, 2, 4, 2, 1, 1, 1],            0 },
-     { {  2,  512},   [2, 2, 2, 1, 1, 1],               0 },
-     { {  4,  512},   [2, 2, 2, 1, 1, 1],               0 },
-     { {  6,  512},   [2, 2, 2, 1, 1, 1],               0 },
-     { {  8,  512},   [2, 2, 2, 1, 1, 1],               0 },
-     { { 10,  512},   [2, 2, 2, 1, 1, 1],               0 },
-     { {  2,  512},   [4, 2, 4, 2, 2, 1, 1, 1],         0 },
-     { {  4,  512},   [4, 2, 4, 2, 2, 1, 1, 1],         0 },
-     { {  6,  512},   [4, 2, 4, 2, 2, 1, 1, 1],         0 },
-     { {  8,  512},   [4, 2, 4, 2, 2, 1, 1, 1],         0 },
-     { { 10,  512},   [4, 2, 4, 2, 2, 1, 1, 1],         0 },
-     { {  2, 1024},   [4, 1, 1, 1, 1, 1],               0 },
-     { {  4, 1024},   [4, 1, 1, 1, 1, 1],               0 },
-     { {  6, 1024},   [4, 1, 1, 1, 1, 1],               0 },
-     { {  8, 1024},   [4, 1, 1, 1, 1, 1],               0 },
-     { { 10, 1024},   [4, 1, 1, 1, 1, 1],               0 },
-     { {  2, 1024},   [4, 2, 4, 2, 1, 1, 1, 1],         0 },
-     { {  4, 1024},   [4, 2, 4, 2, 1, 1, 1, 1],         0 },
-     { {  6, 1024},   [4, 2, 4, 2, 1, 1, 1, 1],         0 },
-     { {  8, 1024},   [4, 2, 4, 2, 1, 1, 1, 1],         0 },
-     { { 10, 1024},   [4, 2, 4, 2, 1, 1, 1, 1],         0 },
-     { {  2, 2048},   [2, 1, 2, 1, 1, 1],               0 },
-     { {  4, 2048},   [2, 1, 2, 1, 1, 1],               0 },
-     { {  6, 2048},   [2, 1, 2, 1, 1, 1],               0 },
-     { {  8, 2048},   [2, 1, 2, 1, 1, 1],               0 },
-     { { 10, 2048},   [2, 1, 2, 1, 1, 1],               0 },
-     { {  2, 2048},   [4, 2, 2, 2, 1, 1, 1, 1],         0 },
-     { {  4, 2048},   [4, 2, 2, 2, 1, 1, 1, 1],         0 },
-     { {  6, 2048},   [4, 2, 2, 2, 1, 1, 1, 1],         0 }
+    [%% Kakush Pl.No       1        2         3         4         5         6         7         8
+     { {  8,   16},   [ne      , {ce,  4}, {te,  1}                                                  ]},
+     { { 10,   16},   [ne      , {ce,  4}, {te,  1}                                                  ]},
+     { {  2,   64},   [ne      , {ce, 16}, {te,  1}, {te,  1}                                        ]},
+     { {  4,   64},   [ne      , {ce, 16}, {te,  1}, {te,  1}                                        ]},
+     { {  6,   64},   [ne      , {ce, 16}, {te,  1}, {te,  1}                                        ]},
+     { {  8,   64},   [ne      , {ce, 16}, {te,  1}, {te,  1}                                        ]},
+     { { 10,   64},   [ne      , {ce, 16}, {te,  1}, {te,  1}                                        ]},
+     { {  2,  128},   [{te,  2}, {te,  2}, {te,  2}, {te,  1}, {te,  1}                              ]},
+     { {  4,  128},   [{te,  2}, {te,  2}, {te,  2}, {te,  1}, {te,  1}                              ]},
+     { {  6,  128},   [{te,  2}, {te,  2}, {te,  2}, {te,  1}, {te,  1}                              ]},
+     { {  8,  128},   [{te,  2}, {te,  2}, {te,  2}, {te,  1}, {te,  1}                              ]},
+     { { 10,  128},   [{te,  2}, {te,  2}, {te,  2}, {te,  1}, {te,  1}                              ]},
+     { {  2,  256},   [ne      , {ce, 64}, {te,  1}, {te,  1}, {te,  1}                              ]},
+     { {  4,  256},   [ne      , {ce, 64}, {te,  1}, {te,  1}, {te,  1}                              ]},
+     { {  6,  256},   [ne      , {ce, 64}, {te,  1}, {te,  1}, {te,  1}                              ]},
+     { {  8,  256},   [ne      , {ce, 64}, {te,  1}, {te,  1}, {te,  1}                              ]},
+     { { 10,  256},   [ne      , {ce, 64}, {te,  1}, {te,  1}, {te,  1}                              ]},
+     { {  2,  256},   [ne      , {ce,128}, ne      , {ce, 64}, {te,  1}, {te,  1}, {te,   1}         ]},
+     { {  4,  256},   [ne      , {ce,128}, ne      , {ce, 64}, {te,  1}, {te,  1}, {te,   1}         ]},
+     { {  6,  256},   [ne      , {ce,128}, ne      , {ce, 64}, {te,  1}, {te,  1}, {te,   1}         ]},
+     { {  8,  256},   [ne      , {ce,128}, ne      , {ce, 64}, {te,  1}, {te,  1}, {te,   1}         ]},
+     { { 10,  256},   [ne      , {ce,128}, ne      , {ce, 64}, {te,  1}, {te,  1}, {te,   1}         ]},
+     { {  2,  512},   [{te,  2}, {te,  2}, {te,  2}, {te,  1}, {te,  1}, {te,  1}                    ]},
+     { {  4,  512},   [{te,  2}, {te,  2}, {te,  2}, {te,  1}, {te,  1}, {te,  1}                    ]},
+     { {  6,  512},   [{te,  2}, {te,  2}, {te,  2}, {te,  1}, {te,  1}, {te,  1}                    ]},
+     { {  8,  512},   [{te,  2}, {te,  2}, {te,  2}, {te,  1}, {te,  1}, {te,  1}                    ]},
+     { { 10,  512},   [{te,  2}, {te,  2}, {te,  2}, {te,  1}, {te,  1}, {te,  1}                    ]},
+     { {  2,  512},   [ne      , {ce,256}, ne      , {ce,128}, {te,  2}, {te,  1}, {te,  1}, {te,  1}]},
+     { {  4,  512},   [ne      , {ce,256}, ne      , {ce,128}, {te,  2}, {te,  1}, {te,  1}, {te,  1}]},
+     { {  6,  512},   [ne      , {ce,256}, ne      , {ce,128}, {te,  2}, {te,  1}, {te,  1}, {te,  1}]},
+     { {  8,  512},   [ne      , {ce,256}, ne      , {ce,128}, {te,  2}, {te,  1}, {te,  1}, {te,  1}]},
+     { { 10,  512},   [ne      , {ce,256}, ne      , {ce,128}, {te,  2}, {te,  1}, {te,  1}, {te,  1}]},
+     { {  2, 1024},   [ne      , {ce,256}, {te,  1}, {te,  1}, {te,  1}, {te,  1}                    ]},
+     { {  4, 1024},   [ne      , {ce,256}, {te,  1}, {te,  1}, {te,  1}, {te,  1}                    ]},
+     { {  6, 1024},   [ne      , {ce,256}, {te,  1}, {te,  1}, {te,  1}, {te,  1}                    ]},
+     { {  8, 1024},   [ne      , {ce,256}, {te,  1}, {te,  1}, {te,  1}, {te,  1}                    ]},
+     { { 10, 1024},   [ne      , {ce,256}, {te,  1}, {te,  1}, {te,  1}, {te,  1}                    ]},
+     { {  2, 1024},   [ne      , {ce,512}, ne      , {ce,256}, {te,  1}, {te,  1}, {te,  1}, {te,  1}]},
+     { {  4, 1024},   [ne      , {ce,512}, ne      , {ce,256}, {te,  1}, {te,  1}, {te,  1}, {te,  1}]},
+     { {  6, 1024},   [ne      , {ce,512}, ne      , {ce,256}, {te,  1}, {te,  1}, {te,  1}, {te,  1}]},
+     { {  8, 1024},   [ne      , {ce,512}, ne      , {ce,256}, {te,  1}, {te,  1}, {te,  1}, {te,  1}]},
+     { { 10, 1024},   [ne      , {ce,512}, ne      , {ce,256}, {te,  1}, {te,  1}, {te,  1}, {te,  1}]},
+     { {  2, 2048},   [{te,  2}, {te,  1}, {te,  1}, {te,  1}, {te,  1}, {te,  1}                    ]},
+     { {  4, 2048},   [{te,  2}, {te,  1}, {te,  1}, {te,  1}, {te,  1}, {te,  1}                    ]},
+     { {  6, 2048},   [{te,  2}, {te,  1}, {te,  1}, {te,  1}, {te,  1}, {te,  1}                    ]},
+     { {  8, 2048},   [{te,  2}, {te,  1}, {te,  1}, {te,  1}, {te,  1}, {te,  1}                    ]},
+     { { 10, 2048},   [{te,  2}, {te,  1}, {te,  1}, {te,  1}, {te,  1}, {te,  1}                    ]},
+     { {  2, 2048},   [ne      , {ce,1024},{te,  2}, {te,  2}, {te,  1}, {te,  1}, {te,  1}, {te,  1}]},
+     { {  4, 2048},   [ne      , {ce,1024},{te,  2}, {te,  2}, {te,  1}, {te,  1}, {te,  1}, {te,  1}]},
+     { {  6, 2048},   [ne      , {ce,1024},{te,  2}, {te,  2}, {te,  1}, {te,  1}, {te,  1}, {te,  1}]}
   ].
