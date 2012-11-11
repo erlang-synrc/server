@@ -35,12 +35,14 @@
 -export([table_message/3, client_message/2, client_request/2, client_request/3]).
 
 -record(state,
-        {
+        {%% Static values
          game_id           :: pos_integer(),
          params            :: proplists:proplist(),
          bots_params       :: proplists:proplist(),
          turns_plan        :: list(integer()), %% Defines how many players will be passed to a next turn
          kakush_per_round  :: integer(),
+         demo_mode         :: boolean(), %% If true then results of turns will be generated randomly
+         %% Dinamic values
          players,          %% The register of tournament players
          tables,           %% The register of tournament tables
          seats,            %% Stores relation between players and tables seats
@@ -142,9 +144,10 @@ init([GameId, Params, _Manager]) ->
     ?INFO("OKEY_NG_TRN_ELIM <~p> Init started",[GameId]),
     Registrants = get_param(registrants, Params),
     KakushPerRound = get_param(kakush_per_round, Params),
+    DemoMode = get_option(demo_mode, Params, false),
 
     RegistrantsNum = length(Registrants),
-    {ok, {_, TurnsPlan}} = get_plan(KakushPerRound, RegistrantsNum),
+    {ok, TurnsPlan} = get_plan(KakushPerRound, RegistrantsNum),
     TableParams = table_parameters(?MODULE, self()),
     BotsParams = bots_parameters(),
 
@@ -159,6 +162,7 @@ init([GameId, Params, _Manager]) ->
                              bots_params = BotsParams,
                              kakush_per_round = KakushPerRound,
                              turns_plan = TurnsPlan,
+                             demo_mode = DemoMode,
                              players = Players,
                              tournament_table = TTable,
                              table_id_counter = 1
@@ -364,9 +368,12 @@ handle_table_message(TableId, {round_finished, NewScoringState, _RoundScore, _To
 
 handle_table_message(TableId, {game_finished, TableContext, _RoundScore, TotalScore},
                      ?STATE_TURN_PROCESSING = StateName,
-                     #state{tables = Tables, tables_wl = WL,
+                     #state{tables = Tables, tables_wl = WL, demo_mode = DemoMode,
                             tables_results = TablesResults} = StateData) ->
-    NewTablesResults = [{TableId, TotalScore} | TablesResults],
+    TableScore = if DemoMode -> [{PlayerId, crypto:rand_uniform(1, 30)} || {PlayerId, _} <- TotalScore];
+                    true -> TotalScore
+                 end,
+    NewTablesResults = [{TableId, TableScore} | TablesResults],
     #table{pid = TablePid} = Table = fetch_table(TableId, Tables),
     NewTable = Table#table{context = TableContext, state = ?TABLE_STATE_FINISHED},
     NewTables = store_table(NewTable, Tables),
@@ -940,10 +947,13 @@ get_param(ParamId, Params) ->
     {_, Value} = lists:keyfind(ParamId, 1, Params),
     Value.
 
+get_option(OptionId, Params, DefValue) ->
+    proplists:get_value(OptionId, Params, DefValue).
+
 get_plan(KakushPerRound, RegistrantsNum) ->
     case lists:keyfind({KakushPerRound, RegistrantsNum}, 1, tournament_matrix()) of
         false -> {error, no_such_plan};
-        Plan -> {ok, Plan}
+        {_, Plan} -> {ok, Plan}
     end.
 
 tournament_matrix() ->

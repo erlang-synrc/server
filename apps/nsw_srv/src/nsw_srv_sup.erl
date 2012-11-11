@@ -100,7 +100,8 @@ start_tournament(NumberOfTournaments, NumberOfPlayers) ->
         [begin
              {ok,GameId,A} = rpc:call(?GAMESRVR_NODE,game_manager,create_game,
                                       [game_okey_ng_trn_elim, [{registrants, Registrants},
-                                                               {kakush_per_round, 8}]]),
+                                                               {kakush_per_round, 8},
+                                                               {demo_mode, true}]]),
              [ proc_lib:spawn_link(fun() ->
                                            rpc:call(?GAMESRVR_NODE,test_okey,init_with_join_game,
                                                     [self(), ?GAMEHOST, 9000, GameId, Id, 1, normal])
