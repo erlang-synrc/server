@@ -53,10 +53,10 @@
          seats_num        :: integer(),
          rounds_num       :: undefined | pos_integer(),
          last_round_num   :: integer(),
-         rounds_scores    :: list(),    %% [{Round, [{SeatNum, DeltaPoints}]}]
-         rounds_achs      :: list(),    %% [{Round, [{SeatNum, Achs}]}], Achs = [{AchId, Points}]
-         table            :: list(),    %% [{Round, [{SeatNum, Points}]}]
-         rounds_finish_info :: list(),  %% [{Round, FinishInfo}]
+         round_score      :: list(),    %% [{SeatNum, DeltaPoints}]
+         round_achs       :: list(),    %% [{SeatNum, [{AchId, Points}]}]
+         total_score      :: list(),    %% [{SeatNum, Points}]
+         finish_info      :: term(),    %% FinishInfo
          chanak           :: integer()  %% Defined only for evenodd and color mode
         }).
 
@@ -85,10 +85,10 @@ init(Mode, SeatsInfo, RoundsNum) ->
            rounds_num = RoundsNum,
            last_round_num = 0,
            chanak = 0,
-           rounds_scores = [],
-           rounds_finish_info =[],
-           rounds_achs = [],
-           table = [{0, SeatsInfo}]
+           round_score = undefined,
+           finish_info = undefined,
+           round_achs = undefined,
+           total_score = SeatsInfo
           }.
 
 
@@ -106,16 +106,11 @@ init(Mode, SeatsInfo, RoundsNum) ->
 
 last_round_result(#state{last_round_num = 0}) -> no_rounds_played;
 
-last_round_result(#state{last_round_num = LastRoundNum,
-                         rounds_scores = RoundsScores,
-                         rounds_achs = RoundsAchs,
-                         table = Table,
-                         rounds_finish_info = RoundsFinishInfo
+last_round_result(#state{round_score = RoundScore,
+                         round_achs = RoundAchs,
+                         total_score = TotalScore,
+                         finish_info = FinishInfo
                         }) ->
-    {_, FinishInfo} = lists:keyfind(LastRoundNum, 1, RoundsFinishInfo),
-    {_, RoundScore} = lists:keyfind(LastRoundNum, 1, RoundsScores),
-    {_, RoundAchs}  = lists:keyfind(LastRoundNum, 1, RoundsAchs),
-    {_, TotalScore} = lists:keyfind(LastRoundNum, 1, Table),
     {FinishInfo, RoundScore, RoundAchs, TotalScore}.
 
 %% @spec chanak(ScoringState) -> Chanak
@@ -144,10 +139,8 @@ chanak(#state{chanak = Chanak}) ->
 %%     GameisOver = boolean() 
 
 round_finished(#state{mode = GameMode, seats_num = SeatsNum,
-                      rounds_num = _MaxRoundsNum, last_round_num = LastRoundNum,
-                      rounds_scores = RoundsScores, rounds_achs = RoundsAchs,
-                      table = Table, rounds_finish_info = RoundsFinishInfo,
-                      chanak = Chanak} = State,
+                      last_round_num = LastRoundNum,
+                      total_score = TotalScore, chanak = Chanak} = State,
                FinishReason, Hands, Gosterge, WhoHasGosterge, Has8Tashes) ->
     ScoringMode = get_scoring_mode(GameMode, Gosterge),
     PointingRules = get_pointing_rules(ScoringMode),
@@ -159,19 +152,16 @@ round_finished(#state{mode = GameMode, seats_num = SeatsNum,
                                                ChanakRefillingPoints, PointingRules, Chanak),
     PlayersAchsRecs = [{SeatNum, get_achivements_points(PointingRules, Achivements)}
                        || {SeatNum, Achivements} <- PlayersAchs],
-    RoundAchsPoints = merge_points(PlayersAchsRecs, ChanakWinPoints),
-    RoundScores = [{SeatNum, sum_achivements_points(AchPoints)}
-                   || {SeatNum, AchPoints} <- RoundAchsPoints],
+    RoundAchs = merge_points(PlayersAchsRecs, ChanakWinPoints),
+    RoundScore = [{SeatNum, sum_achivements_points(AchPoints)}
+                   || {SeatNum, AchPoints} <- RoundAchs],
     RoundNum = LastRoundNum + 1,
-    NewRoundsScores = [{RoundNum, RoundScores} | RoundsScores],
-    NewRoundsAchs = [{RoundNum, RoundAchsPoints} | RoundsAchs],
-    NewTable = table_add_delta(GameMode, Table, RoundNum, RoundScores),
-    NewRoundsFinishInfo = [{RoundNum, FinishInfo} | RoundsFinishInfo],
+    NewTotalScore = add_delta(GameMode, TotalScore, RoundScore),
     NewState = State#state{last_round_num = RoundNum,
-                           rounds_scores = NewRoundsScores,
-                           table = NewTable,
-                           rounds_achs = NewRoundsAchs,
-                           rounds_finish_info = NewRoundsFinishInfo,
+                           round_score = RoundScore,
+                           total_score = NewTotalScore,
+                           round_achs = RoundAchs,
+                           finish_info = FinishInfo,
                            chanak = NewChanak},
     {NewState, detect_game_finish(NewState)}.
 
@@ -224,10 +214,9 @@ is_chanak_winner(Achs) ->
 
 
 detect_game_finish(#state{mode = GameMode, last_round_num = RoundNum,
-                          rounds_num = MaxRoundNum, table = Table}) ->
-    TotalScores = proplists:get_value(RoundNum, Table),
+                          rounds_num = MaxRoundNum, total_score = TotalScore}) ->
     if GameMode == ?MODE_COUNTDOWN ->
-           lists:any(fun({_, Points}) -> Points =< 0 end, TotalScores);
+           lists:any(fun({_, Points}) -> Points =< 0 end, TotalScore);
        true ->
            RoundNum == MaxRoundNum
     end.
@@ -314,20 +303,17 @@ get_achivements_points(PointingRules, Achivements) ->
 sum_achivements_points(AchPoints) ->
     lists:foldl(fun({_, P}, Acc)-> Acc + P end, 0, AchPoints).
 
-%% @spec table_add_delta(GameMode, Table1, RoundNum, RoundScores) -> {TotalScores, Table2}
+%% @spec add_delta(GameMode, TotalScore, RoundScores) -> NewTotalScore
 %% @end
-table_add_delta(GameMode, Table, RoundNum, RoundScores) ->
-    {_, TotalScores} = lists:keyfind(RoundNum - 1, 1, Table),
-    NewTotalScores =
-        case GameMode of
-            ?MODE_COUNTDOWN ->
-                [{SeatNum, proplists:get_value(SeatNum, TotalScores) - Delta}
-                 || {SeatNum, Delta} <- RoundScores];
-            _ ->
-                [{SeatNum, proplists:get_value(SeatNum, TotalScores) + Delta}
-                 || {SeatNum, Delta} <- RoundScores]
-        end,
-    [{RoundNum, NewTotalScores} | Table].
+add_delta(GameMode, TotalScore, RoundScores) ->
+    case GameMode of
+        ?MODE_COUNTDOWN ->
+            [{SeatNum, proplists:get_value(SeatNum, TotalScore) - Delta}
+             || {SeatNum, Delta} <- RoundScores];
+        _ ->
+            [{SeatNum, proplists:get_value(SeatNum, TotalScore) + Delta}
+             || {SeatNum, Delta} <- RoundScores]
+    end.
 
 
 
@@ -485,7 +471,7 @@ get_pointing_rules(ScoringMode) ->
     {_, Rules} = lists:keyfind(ScoringMode, 1, points_matrix()),
     Rules.
 
-%% TODO: Fix table
+%% TODO: Check the table
 points_matrix() ->
     [%%          1   2   3   4   5   6   7   8   9  10  11  12  13  14  15 <--- achievement number
      {standard, [1,  3,  6,  6, 12,  0,  0,  0,  0,  0, -9,  3,  0, -1,  0]},
