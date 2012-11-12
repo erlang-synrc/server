@@ -141,7 +141,8 @@
           game_sub_type = null :: atom(), %% FIXME Deprecated
           next_turn_in  :: integer() | atom(),
           %% number of milliseconds until next turn or 'infinity'
-          paused = false :: boolean()
+          paused = false :: boolean(),
+          chanak_points  = 0 :: integer()
          }).
 
 -record(okey_next_turn, {
