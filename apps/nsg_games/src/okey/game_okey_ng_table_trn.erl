@@ -1217,7 +1217,7 @@ create_okey_turn_result(TurnNum, Results) ->
                    #okey_turn_record{player_id = UserId, place = Position, score = Score,
                                      status = Status}
                end || {UserId, Position, Score, Status} <- Results],
-    #okey_turn_result{num = TurnNum,
+    #okey_turn_result{turn_num = TurnNum,
                       records = Records}.
 
 create_okey_revealed(SeatNum, DiscardedTash, TashPlaces, Players) ->

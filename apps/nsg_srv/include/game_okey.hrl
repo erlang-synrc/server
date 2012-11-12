@@ -198,7 +198,7 @@
          }).
 
 -record(okey_turn_result, {
-          num              :: integer(),
+          turn_num         :: integer(),
           records          :: list(#okey_turn_record{})
          }).
 
