@@ -24,7 +24,7 @@ process_order("payments_get_items", Credits)->
     ItemId = binary_to_list(proplists:get_value(<<"item_id">>, Item#struct.list )),
     [#struct{list=[
 	{<<"title">>, list_to_binary(["Packet No ", integer_to_list(No)])},
-	{<<"price">>, round(Amount*nxs_otp:get_value(nsw_srv, tl_to_usd_rate, 0.5552)/0.1)},
+	{<<"price">>, round(Amount*nsx_opt:get_env(nsw_srv, tl_to_usd_rate, 0.5552)/0.1)},
 	{<<"image_url">>, <<"http:\/\/www.facebook.com\/images\/gifts\/21.png">>},
 	{<<"description">>, list_to_binary(
 	    ["Gift points :", integer_to_list(GiftPoints),
