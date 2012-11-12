@@ -106,8 +106,9 @@
           rounds :: integer(), %% number of rounds in this set
           mul_factor    :: pos_integer(),
           slang_flag    :: boolean(),
-          tournament_type = standalone :: tournament(),
-          observer_flag :: boolean()
+          observer_flag :: boolean(),
+          pause_enabled = true :: boolean(),
+          tournament_type = standalone :: tournament()
          }).
 -record(okey_player_ready, {
           player :: 'PlayerId'()

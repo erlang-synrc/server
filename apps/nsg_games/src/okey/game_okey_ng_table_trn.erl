@@ -919,7 +919,7 @@ create_okey_game_info(#state{table_name = TName, mult_factor = MulFactor,
                              ready_timeout = ReadyTimeout, game_type = GameType,
                              rounds = Rounds, players = Players,
                              gosterge_finish_allowed = GostergeFinish,
-                             tournament_type = TournamentType}) ->
+                             tournament_type = TournamentType, pause_mode = PauseMode}) ->
     PInfos = [case find_players_by_seat_num(SeatNum, Players) of
                   [#player{info = UserInfo}] -> UserInfo;
                   [] -> null
@@ -943,6 +943,7 @@ create_okey_game_info(#state{table_name = TName, mult_factor = MulFactor,
                     mul_factor = MulFactor,
                     slang_flag = SlangFlag,
                     observer_flag = ObserverFlag,
+                    pause_enabled = PauseMode == normal,
                     tournament_type = TournamentType}.
 
 
