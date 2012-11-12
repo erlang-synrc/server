@@ -66,6 +66,7 @@
          game_type            :: standard | color | evenodd | countdown,
          rounds               :: undefined | integer(), %% Not defined for countdown game type
          reveal_confirmation  :: boolean(),
+         next_series_confirmation :: boolean(),
          pause_mode           :: disabled | normal,
          gosterge_finish_allowed :: undefined | boolean(), %% Only defined for countdown game type
          %% Dynamic parameters
@@ -144,6 +145,7 @@ init([GameId, TableId, Params]) ->
     GameType = proplists:get_value(game_type, Params),
     Rounds = proplists:get_value(rounds, Params),
     RevealConfirmation = proplists:get_value(reveal_confirmation, Params),
+    NextSeriesConfirmation = proplists:get_value(next_series_confirmation, Params),
     PauseMode = proplists:get_value(pause_mode, Params),
     GostergeFinishAllowed = proplists:get_value(gosterge_finish_allowed, Params),
     %% Next two options will be passed on table respawn (after fail or service maintaince)
@@ -175,6 +177,7 @@ init([GameId, TableId, Params]) ->
                                           game_type = GameType,
                                           rounds = Rounds,
                                           reveal_confirmation = RevealConfirmation,
+                                          next_series_confirmation = NextSeriesConfirmation,
                                           pause_mode = PauseMode,
                                           gosterge_finish_allowed = GostergeFinishAllowed,
                                           players = Players,
@@ -340,8 +343,9 @@ handle_parent_message(show_round_result, ?STATE_FINISHED,
 
 %% Results = [{PlayerId, Position, Score, Status}] Status = winner | loser | eliminated | none
 handle_parent_message({show_series_result, Results}, ?STATE_FINISHED,
-                      #state{relay = Relay, players = Players} = StateData) ->
-    Msg = create_okey_series_ended(Results, Players),
+                      #state{relay = Relay, players = Players,
+                             next_series_confirmation = Confirm} = StateData) ->
+    Msg = create_okey_series_ended(Results, Players, Confirm),
     relay_publish_ge(Relay, Msg),
     {next_state, ?STATE_FINISHED, StateData#state{}};
 
@@ -1200,7 +1204,7 @@ create_okey_round_ended_gosterge_finish(Winner, RoundScore, TotalScore, PlayersA
                       results = Results,
                       next_action = next_round}. %%XXX
 
-create_okey_series_ended(Results, Players) ->
+create_okey_series_ended(Results, Players, Confirm) ->
     Standings = [begin
                      #player{user_id = UserId} = fetch_player(PlayerId, Players),
                      Winner = case Status of    %% TODO: Implement in the client support of all statuses
@@ -1210,7 +1214,11 @@ create_okey_series_ended(Results, Players) ->
                      #'OkeySeriesResult'{player_id = UserId, place = Position, score = Score,
                                          winner = Winner}
                  end || {PlayerId, Position, Score, Status} <- Results],
-    #okey_series_ended{standings = Standings}.
+    DialogType = if Confirm -> yes_no;
+                    true -> ok
+                 end,
+    #okey_series_ended{standings = Standings,
+                       dialog_type = DialogType}.
 
 create_okey_turn_result(TurnNum, Results) ->
     Records = [begin

@@ -187,7 +187,8 @@
          }).
 
 -record(okey_series_ended, {
-          standings :: list(#'OkeySeriesResult'{})
+          standings :: list(#'OkeySeriesResult'{}),
+          dialog_type = yes_no :: yes_no | ok
          }).
 
 -record(okey_turn_record, {
