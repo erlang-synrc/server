@@ -5267,3 +5267,8 @@ footer .lang img {
     font-weight:bold;
     font-size: 12px;
 }
+
+.history-list .pay_fb_btn{
+    width:42px;
+    float:right;
+}

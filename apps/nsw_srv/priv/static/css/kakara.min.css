@@ -5267,6 +5267,12 @@ footer .lang img {
     font-weight:bold;
     font-size: 12px;
 }
+
+.history-list .pay_fb_btn{
+    width:42px;
+    float:right;
+}
+
 /*
 * jQuery UI CSS Framework
 * Copyright (c) 2010 AUTHORS.txt (http://jqueryui.com/about)

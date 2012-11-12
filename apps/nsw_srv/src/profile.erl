@@ -916,6 +916,7 @@ inn_body() ->
 
 order_history(Orders) ->
     [
+	fb_utils:pay_dialog(),
         "<h2 class=\"ttl\"><span>"++?_T("My order history")++"</span></h2>",
         #list{class="history-list", id=orders_list, body =
             [order_list_item(MP) || MP <- Orders]},
@@ -940,16 +941,19 @@ order_list_item(#membership_purchase{membership_package = Package} = MP) ->
     {PurchaseDateRaw, _} = calendar:now_to_datetime(MP#membership_purchase.start_time),
     PurchaseDate = site_utils:date_to_text(PurchaseDateRaw),
     Button = case AvailableForSale of
-        true ->
-            Url = ?_U(lists:concat(["/buy/", PaymentType, "/package_id/", PackageId])),
-            [#link{class=btn, url=Url,  text=?_T("Buy it")}];
-        _ ->
-            []
+        true -> [buy_it_button(PaymentType, PackageId)];
+        _ -> []
     end,
     Text = ?_TS("Package $number$, $quota$ quotas, $date$",
         [{number, wf:to_list(No)}, {quota,  wf:to_list(Quota)}, {date, PurchaseDate}]),
 
     #listitem{body = [#span{text=Text} | Button]}.
+
+buy_it_button(facebook, PackageId)->
+    #link{class="pay_fb_btn", text=?_T("Buy it"), actions=#event{type=click, actions=#script{script="pay_with_fb(\""++ PackageId ++"\");"}}};
+buy_it_button(PaymentType, PackageId)->
+    Url = ?_U(lists:concat(["/buy/", PaymentType, "/package_id/", PackageId])),
+    #link{class=btn, url=Url,  text=?_T("Buy it")}.
 
 orders_more_button(Orders) ->
 %    ?PRINT({length(Orders), ?ORDERS_PER_PAGE}),
