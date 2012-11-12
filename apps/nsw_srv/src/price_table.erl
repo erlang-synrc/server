@@ -28,7 +28,9 @@ payment_types(false)->
         "<li>",                            #link{id=wire_transfer, ?INTERNAL_URL(wire_transfer), postback={payment_select, wire_transfer}, ?ACTIVATION_ACTION("wire_transfer")},"<span class=\"img\"><img class=\"png\" src=\"/images/ico-10.png\" alt=\"\" width=\"48\" height=\"56\" ><img class=\"png\" src=\"/images/ico-11.png\" alt=\"\" width=\"48\" height=\"56\" ></span><strong>",?_T("Wire"),"</strong></a></li>",
         "<li>",                            #link{id=mobile,        ?INTERNAL_URL(mobile),        postback={payment_select, mobile},        ?ACTIVATION_ACTION("mobile")},"<span class=\"img\"><img class=\"png\" src=\"/images/ico-12.png\" alt=\"\" width=\"31\" height=\"56\" ><img class=\"png\" src=\"/images/ico-13.png\" alt=\"\" width=\"31\" height=\"56\" ></span><strong>",?_T("Mobile"),"</strong></a></li>",
     "</ul>"];
-payment_types(true)-> fb_utils:pay_dialog().
+payment_types(true)-> 
+    wf:update(price_container, table(facebook)),
+    fb_utils:pay_dialog().
 
 -spec table()->#table{}.
 table()->
@@ -141,7 +143,8 @@ packet_price_element(Price)->
 buy_button_element(PackageId, PaymentType, false)->
     #link{class="btn", text=?_T("Buy"), postback={buy, PackageId, PaymentType}};
 buy_button_element(PackageId, _PaymentType, true)->
-    #link{class="pay_fb_btn", text=?_T("Buy"), actions=#event{type=click, actions=#script{script="pay_with_fb(\""++ PackageId ++ "\");"}}}.
+    #link{class="pay_fb_btn", text=?_T("Buy"), actions=#event{type=click,
+	actions=#script{script="pay_with_fb(\""++ PackageId ++"\");"}}}.
 
 odd_even("odd")-> "even";
 odd_even("even")-> "odd".
