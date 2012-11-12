@@ -639,8 +639,8 @@ handle_notice(["system", "use_invite"] = Route,
 handle_notice(["tournaments", "user", UId, "create_and_join"] = Route,
     Message, #state{owner = Owner, type =Type} = State) ->
     ?INFO("queue_action(~p): create_and_join: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),
-    {TourName, TourDesc, {Y,M,D}, MaxPlayers, Quota, Award, TourType, GameType} = Message,
-    case tournaments:create(UId, TourName, TourDesc, {Y,M,D}, MaxPlayers, Quota, Award, TourType, GameType) of
+    {TourName, TourDesc, {Y,M,D}, Time, MaxPlayers, Quota, Award, TourType, GameType} = Message,
+    case nsm_tournaments:create(UId, TourName, TourDesc, {Y,M,D}, Time, MaxPlayers, Quota, Award, TourType, GameType) of
         {error,X} -> ?ERROR("Error creating tournament: ~p", X);
         TId -> tournaments:join(UId, TId)
     end,

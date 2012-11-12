@@ -9,9 +9,10 @@ div.datepicker {
 	top: 0;
 	left: 0;
 	display: none;
+    border-radius: 4px 4px 4px 4px;
 }
 .datepickerContainer {
-	background: #e4f1fa;
+	background: #fff;
 	position: absolute;
 	top: 10px;
 	left: 10px;

@@ -261,18 +261,18 @@ main_authorized() ->
 
         <script>
         window.onload = function(){
-            $('#inputDate').DatePicker({
+            $('.wfid_tour_date').DatePicker({
 	            format:'d.m.Y',
-	            date: $('#inputDate').val(),
-	            current: $('#inputDate').val(),
+	            date: $('.wfid_tour_date').val(),
+	            current: $('.wfid_tour_date').val(),
 	            starts: 1,
 	            position: 'bottom',
 	            onBeforeShow: function(){
-		            $('#inputDate').DatePickerSetDate($('#inputDate').val(), true);
+		            $('.wfid_tour_date').DatePickerSetDate($('.wfid_tour_date').val(), true);
 	            },
 	            onChange: function(formated, dates){
-		            $('#inputDate').val(formated);
-		            $('#inputDate').DatePickerHide();
+		            $('.wfid_tour_date').val(formated);
+		            $('.wfid_tour_date').DatePickerHide();
 	            }
             });
         };
@@ -368,10 +368,14 @@ content() ->
                         #option { text="10" }
             ]},
             #label{style="position:absolute; left:265px; top:540px;", text="Tarih:"},
-            "<input type='text' id='inputDate' class='alltour_textbox' 
-                style='position:absolute; left:310px; top:532px; width:140px; height:28px; font-size:16px;
-                       background:url(/images/tournament/new_tournament/calendar_icon.png) no-repeat 118px 2px;' 
-                value='" ++ SD ++ "." ++ SM ++ "." ++ SY ++ "'/>",
+%            "<input type='text' id='inputDate' class='alltour_textbox' 
+%                style='position:absolute; left:310px; top:532px; width:140px; height:28px; font-size:16px;
+%                       background:url(/images/tournament/new_tournament/calendar_icon.png) no-repeat 118px 2px;' 
+%                value='" ++ SD ++ "." ++ SM ++ "." ++ SY ++ "'/>",
+            #textbox{id=tour_date, class="newtour_textbox",
+                style="position:absolute; left:310px; top:532px; width:140px; height:28px; font-size:16px;
+                       background:url(../images/tournament/new_tournament/calendar_icon.png) no-repeat 118px 2px;",
+                text= (SD ++ "." ++ SM ++ "." ++ SY)},
 
             #link{style="position:absolute; top:590px; left:36px;", class="alltour_btns_blue alltour_btn_blue_1", text="ARKADAŞLARIMA GÖRE", postback=btn_blue_1},
             #link{style="position:absolute; top:590px; left:245px;", class="alltour_btns_blue alltour_btn_blue_2", text="HEDİYEYE GÖRE", postback=btn_blue_2},

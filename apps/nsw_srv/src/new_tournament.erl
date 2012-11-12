@@ -80,21 +80,31 @@ main_authorized() ->
         <link rel='stylesheet' href='/nitrogen/datepicker/css/datepicker.css' type='text/css' />
 	    <script type='text/javascript' src='/nitrogen/datepicker/js/datepicker_tr.js'></script>
 
+        <link rel='stylesheet' href='/nitrogen/timepicker/jquery.ui.timepicker.css' type='text/css' />
+	    <script type='text/javascript' src='/nitrogen/timepicker/jquery.ui.timepicker.js'></script>
+
         <script>
         window.onload = function(){
-            $('#inputDate').DatePicker({
+            $('.wfid_tour_date').DatePicker({
 	            format:'d.m.Y',
-	            date: $('#inputDate').val(),
-	            current: $('#inputDate').val(),
+	            date: $('.wfid_tour_date').val(),
+	            current: $('.wfid_tour_date').val(),
 	            starts: 1,
 	            position: 'bottom',
 	            onBeforeShow: function(){
-		            $('#inputDate').DatePickerSetDate($('#inputDate').val(), true);
+		            $('.wfid_tour_date').DatePickerSetDate($('.wfid_tour_date').val(), true);
 	            },
 	            onChange: function(formated, dates){
-		            $('#inputDate').val(formated);
-		            $('#inputDate').DatePickerHide();
+		            $('.wfid_tour_date').val(formated);
+		            $('.wfid_tour_date').DatePickerHide();
 	            }
+            });
+            $('.wfid_tour_time').timepicker({
+                hourText: 'Saat',
+                minuteText: 'Dakika',
+                amPmText: ['AM', 'PM'],
+                timeSeparator: ':',
+                duration: 300
             });
         };
         new Image('../images/tournament/new_tournament/btn_big_orange_hover.png');
@@ -112,10 +122,12 @@ body() ->
     #template{file=code:priv_dir(nsw_srv)++"/templates/info_page.html"}.
 
 content() ->
-    {{Y, M, D}, _} = calendar:now_to_datetime(erlang:now()),
+    {{Y, M, D}, {H, _, _}} = calendar:local_time(),
     SY = integer_to_list(Y),
     SM = integer_to_list(M),
     SD = integer_to_list(D),
+    SNH = integer_to_list( (H+1) rem 24),
+    ?PRINT(H),
     [
         #panel{class="newtour_title", body=[
                 #label{class="newtour_title_label", body="TURNUVA YARAT"}
@@ -163,20 +175,21 @@ content() ->
                         #option { text="8" },
                         #option { text="10" }
             ]},
-            #label{style="position:absolute; left:242px; top:197px;", text="Turnuva Türü:"},
-            #dropdown {id=tour_type, style="position:absolute; left:346px; top:190px; width:100px; height:32px; font-size:16px; padding-top:2px;", options=[
+            #label{style="position:absolute; left:192px; top:197px;", text="Turnuva Türü:"},
+            #dropdown {id=tour_type, style="position:absolute; left:296px; top:190px; width:100px; height:32px; font-size:16px; padding-top:2px;", options=[
                         #option { text="Elemeli" },
                         #option { text="—" }
             ]},
-            #label{style="position:absolute; left:465px; top:197px;", text="Tarih:"},
-            "<input type='text' id='inputDate' class='newtour_textbox' 
-                style='position:absolute; left:510px; top:190px; width:140px; height:28px; font-size:16px;
-                       background:url(../images/tournament/new_tournament/calendar_icon.png) no-repeat 118px 2px;' 
-                value='" ++ SD ++ "." ++ SM ++ "." ++ SY ++ "'/>",
-%            #textbox{id=tour_date, class="newtour_textbox inputDate",
-%                style="position:absolute; left:510px; top:190px; width:140px; height:28px; font-size:16px;
-%                       background:url(../images/tournament/new_tournament/calendar_icon.png) no-repeat 118px 2px;",
-%                text= (SD ++ "." ++ SM ++ "." ++ SY)},
+            #label{style="position:absolute; left:415px; top:197px;", text="Tarih:"},
+            #textbox{id=tour_date, class="newtour_textbox",
+                style="position:absolute; left:460px; top:190px; width:140px; height:28px; font-size:16px;
+                       background:url(../images/tournament/new_tournament/calendar_icon.png) no-repeat 118px 2px;",
+                text= (SD ++ "." ++ SM ++ "." ++ SY)},
+
+            #textbox{id=tour_time, class="newtour_textbox",
+                style="position:absolute; left:610px; top:190px; width:80px; height:28px; font-size:16px;
+                       background:url(../images/tournament/new_tournament/calendar_icon.png) no-repeat 118px 2px;",
+                text= SNH ++ ":00"},
 
             #panel{style="height:1px; background-color:#c2c2c2; width:960px; margin-left:-25px; position:absolute; top:282px;", body=[]},
             #panel{class="newtour_title", style="top:257px;", body=[
@@ -222,7 +235,6 @@ product_list_paged(Page) ->
     MinPrice = wf:state(slider_min),
     MaxPrice = wf:state(slider_max),
     AllGiftsData = nsm_gifts_db:get_all_gifts(),
-%    FilteredGiftsData = lists:filter(fun(G) -> (G#gift.kakush_point >= MinPrice) and (G#gift.kakush_point =< MaxPrice) end, OnlyGiftsData),
     FilteredGiftsData = [Gift || {Gift, _Obj} <- AllGiftsData, Gift#gift.enabled_on_site, (Gift#gift.kakush_point >= MinPrice) and (Gift#gift.kakush_point =< MaxPrice)],
     PageGiftsData = lists:sublist( 
         lists:sort(
@@ -353,7 +365,14 @@ event(create_pressed) ->
         "Elemeli" -> pointing;
         _ -> unknown
     end,
-    TourDate = {2012, 11, 9},   % obvious mockup!
+    TourDateSource = wf:q(tour_date),
+    TourDateChunks = lists:reverse([list_to_integer(C) || C <- ling:split(TourDateSource, ".")]),
+    TourDate = list_to_tuple(TourDateChunks),
+
+    TourTimeSource = wf:q(tour_time),
+    TourTimeChunks = [list_to_integer(C) || C <- ling:split(TourTimeSource, ":")],
+    TourTime = list_to_tuple(TourTimeChunks ++ [0]),
+
     TourPlayers = list_to_integer(wf:q(tour_players)),
     TourQuota = list_to_integer(wf:q(tour_quota)),
     Prize1 = wf:state(prize_1),
@@ -367,8 +386,10 @@ event(create_pressed) ->
                 true -> 
                     wf:wire(#alert{text=?_T("Please, provide tournament name!")}); 
                 false ->
-                    TID = nsm_tournaments:create(wf:user(), TourName, TourDesc, TourDate, TourPlayers, TourQuota, [Prize1, Prize2, Prize3], TourType, TourGame),
+                    TID = nsm_tournaments:create(wf:user(), TourName, TourDesc, TourDate, TourTime, TourPlayers, TourQuota, [Prize1, Prize2, Prize3], TourType, TourGame),
                     nsm_srv_tournament_lobby_sup:start_lobby(TID),
+%                    nsx_util_notification:notify(["tournaments", "user", wf:user(), "create_and_join"], 
+%                        {TourName, TourDesc, TourDate, TourTime, TourPlayers, TourQuota, [Prize1, Prize2, Prize3], TourType, TourGame}),
                     wf:wire(#alert{text=?_T("New tournament created!")})
             end
     end;

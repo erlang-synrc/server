@@ -323,6 +323,8 @@ content() ->
     Date = integer_to_list(element(3, T#tournament.start_date)) ++ "." ++ 
            integer_to_list(element(2, T#tournament.start_date)) ++ "." ++ 
            integer_to_list(element(1, T#tournament.start_date)),
+    Time = integer_to_list(element(1, T#tournament.start_time)) ++ ":" ++ 
+           integer_to_list(element(2, T#tournament.start_time)),
     NPlayers = T#tournament.players_count,
     Quota = T#tournament.quota,
     Prizes = case is_list(T#tournament.awards) of
@@ -338,6 +340,13 @@ content() ->
     {PN1, PI1} = hd(Prizes),
     {PN2, PI2} = hd(tl(Prizes)),
     {PN3, PI3} = hd(tl(tl(Prizes))),
+
+    case nsm_tournaments:chat_history(Id) of
+        H when is_list(H) ->
+            add_chat_history(H);
+        _ ->
+            ok
+    end,
 
     [  
         #panel{class="tourlobby_title", body=[
@@ -393,7 +402,7 @@ content() ->
             #panel{class="tourlobby_blue_plask", body=[
                     #label{class="tourlobby_every_plask_title", body="KALAN ZAMAN"},
                     #br{},
-                    #label{class="tourlobby_every_plask_label", body="12:00"}
+                    #label{class="tourlobby_every_plask_label", body=Time}
                 ]
             },
 
