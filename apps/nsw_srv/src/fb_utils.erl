@@ -143,7 +143,7 @@ pay_dialog()->
 	"}",
     "};",
     "function pay_with_fb(package_id){",
-	"if(page.fbCheckLimits && page.fbCheckLimits(package_id)){",
+	%%"if(page.fbCheckLimits && page.fbCheckLimits(package_id)){",
 	"console.log(\"Call pay dialog for\" + package_id);"
 	"FB.ui({",
 	    "method:'pay',",
@@ -151,7 +151,7 @@ pay_dialog()->
 	    "order_info: {'item_id': package_id},",
 	    "dev_purchase_params: {'oscif':true} },",
 	    "callback);",
-	"}",
+	%%"}",
     "}",
     "</script>"].
 
