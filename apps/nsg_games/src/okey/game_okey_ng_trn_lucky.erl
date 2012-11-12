@@ -730,6 +730,7 @@ table_parameters(ParentMod, ParentPid) ->
      {game_type, standard},
      {rounds, undefined},
      {reveal_confirmation, true},
+     {next_series_confirmation, true},
      {pause_mode, normal}
     ].
 

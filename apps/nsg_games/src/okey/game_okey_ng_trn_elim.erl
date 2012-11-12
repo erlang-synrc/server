@@ -472,9 +472,13 @@ handle_client_request({join, User}, From, StateName,
             [#seat{table = TableId, registered_by_table = RegByTable}] = find_seats_by_player_id(PlayerId, Seats),
             case RegByTable of
                 false -> %% Store this request to the waiting pool
+                    ?INFO("OKEY_NG_TRN_ELIM <~p> User ~p not yet regirested by the table. "
+                          "Add the request to the waiting pool.", [GameId, UserId]),
                     NewRegRequests = dict:store(PlayerId, From, RegRequests),
                     {next_state, StateName, StateData#state{reg_requests = NewRegRequests}};
                 _ ->
+                    ?INFO("OKEY_NG_TRN_ELIM <~p> Return join response for player ~p immediately.",
+                          [GameId, UserId]),
                     #table{relay = Relay, pid = TPid} = fetch_table(TableId, Tables),
                     {reply, {ok, {PlayerId, Relay, {?TAB_MOD, TPid}}}, StateName, StateData}
             end;
@@ -923,6 +927,7 @@ table_parameters(ParentMod, ParentPid) ->
      {game_type, standard},
      {rounds, 10},
      {reveal_confirmation, true},
+     {next_series_confirmation, false},
      {pause_mode, normal}
     ].
 
