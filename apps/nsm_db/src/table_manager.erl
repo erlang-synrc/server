@@ -214,31 +214,32 @@ handle_call({create_table, User, S}, _From, State) ->
                                 pointing_rules_ex = PREx
                                },
 
-            case Table#game_table.game_type of
-                undefined ->
-                    {reply, {error, game_type_missing}, State};
-                _ ->
-                    Query = #game_table{name      = Table#game_table.name,
-                                        game_type = Table#game_table.game_type,
-                                        owner     = Table#game_table.owner,
-                                        _='_'},
-                    MatchSpec = [{Query, [], ['$_']}],
-                    Select = ets:select(Tables, MatchSpec),
-                    ?INFO("table:manager:select: ~p",[Select]),
-                    case Select of
-                        [_|_] ->
-                            ?INFO("LIST"),
-                            {reply, {error, table_name_conflict}, State};
-                        [] ->
-                            ?INFO("EMPTY"),
+            {reply, {ok, Table}, State}
+
+%            case Table#game_table.game_type of
+%                undefined ->
+%                    {reply, {error, game_type_missing}, State};
+%                _ ->
+%                    Query = #game_table{name      = Table#game_table.name,
+%                                        game_type = Table#game_table.game_type,
+%                                        owner     = Table#game_table.owner,
+%                                        _='_'},
+%                    MatchSpec = [{Query, [], ['$_']}],
+%                    Select = ets:select(Tables, MatchSpec),
+%                    ?INFO("table:manager:select: ~p",[Select]),
+%                    case Select of
+%                        [_|_] ->
+%                            ?INFO("LIST"),
+%                            {reply, {error, table_name_conflict}, State};
+%                        [] ->
+%                            ?INFO("EMPTY"),
 %                            ets:insert(Tables, Table),
-                            publish({create_table, User}, TableId),
-                             [ apply(Module, Function, [new_table, Table | Args])
-                                 || {Module, Function, Args} <- Callbacks ],
-                            {reply, {ok, Table}, State}
+%                            publish({create_table, User}, TableId),
+%                             [ apply(Module, Function, [new_table, Table | Args])
+%                                 || {Module, Function, Args} <- Callbacks ],
 %                            {reply, {ok, TableId}, State}
-                    end
-            end
+%                    end
+%            end
     end;
 
 handle_call({join_table, User, TableId, Options}, _From, State) ->
