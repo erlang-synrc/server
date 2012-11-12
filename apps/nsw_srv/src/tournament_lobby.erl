@@ -14,7 +14,7 @@
 -define(SLEEP, 5000). 
 -define(MAX_CHAT_LENGTH, 1024). % 1024 bytes
 -define(COMET_POOL, tournament_lobby).
-
+-define(MAX_USERS_TO_SWITH_MODE, 32).
 
 main() ->
     case wf:user() /= undefined of
@@ -42,7 +42,7 @@ main_authorized() ->
             .tourlobby_title {
                 width:250px; 
                 height:43px; 
-                background: url(images/tournament/lobby/top_plask.png);
+                background: url(/images/tournament/lobby/top_plask.png);
                 position:absolute; 
                 left:21px; 
                 top:-7px; 
@@ -272,8 +272,9 @@ main_authorized() ->
             }
 
             .tourlobby_table_panel {
-                width:958px; height:580px;
-                position:absolute; left:0px; top:610px;
+                width:958px;
+                margin-left:-24px;
+                margin-top:575px;
             }
 
             .tourlobby_table {
@@ -287,8 +288,21 @@ main_authorized() ->
             .tourlobby_table_head {
                 background-color:#a7b7b7; border-bottom:2px solid 8c8d8f; height:40px;
                 color:#fff;
-                font: 18px 'Gotham Rounded Bold','Trebuchet MS'; line-height:55px;
+                font:18px 'Gotham Rounded Bold','Trebuchet MS'; line-height:55px;
                 text-shadow:0 1px 1px #353535;
+            }
+
+            .tourlobby_view_mode_link {
+                float:right; 
+                text-decoration:none;
+                margin:10px;
+                font-size:16px;
+            }
+            .tourlobby_view_mode_link:hover {
+                text-decoration:none;
+            }
+            .tourlobby_view_mode_link:active {
+                text-decoration:none;
             }
         </style>
         <script>
@@ -324,7 +338,11 @@ content() ->
            integer_to_list(element(2, T#tournament.start_date)) ++ "." ++ 
            integer_to_list(element(1, T#tournament.start_date)),
     Time = integer_to_list(element(1, T#tournament.start_time)) ++ ":" ++ 
-           integer_to_list(element(2, T#tournament.start_time)),
+           integer_to_list(element(2, T#tournament.start_time)) ++
+           case element(2, T#tournament.start_time) of 
+                0 -> "0";
+                _ -> ""
+           end,
     NPlayers = T#tournament.players_count,
     Quota = T#tournament.quota,
     Prizes = case is_list(T#tournament.awards) of
@@ -350,161 +368,166 @@ content() ->
 
     [  
         #panel{class="tourlobby_title", body=[
-                #label{class="tourlobby_title_label", body="TURNUVA LOBY"}
+            #label{class="tourlobby_title_label", body="TURNUVA LOBY"}
+        ]},
+
+        % left top block
+        #panel{class="tourlobby_left_top_block", body=[
+                "<center>",
+                #label{class="tourlobby_left_top_block_label", body=Title},
+                #br{},
+                #image{image="/images/tournament/lobby/tour_avatar.png"},
+                #br{},
+                #br{},
+                #link{class="tourlobby_orange_button", text="TURNUVAYA KATIL", postback=join_tournament},
+                #br{},
+                #link{postback=red_button, class="tourlobby_red_button", text="TURNUVADAN AYRIL"},
+                #br{},
+                #link{postback=yellow_button, class="tourlobby_yellow_button", text="TURNUVADAN GİT"},
+                "</center>"
             ]
         },
 
-        #panel{id="inside", style="height:1188px;", body=[
+        %left bottom block
+        #panel{class="tourlobby_left_bottom_block", body=[
+                #br{},
+                #label{class="tourlobby_left_bottom_block_title", body="Turnuva Bilgileri"},
+                #br{},
+                #label{class="tourlobby_left_bottom_block_label", body="Oyun Türü: " ++ Game},
+                #br{},
+                #label{class="tourlobby_left_bottom_block_label", body="Kota: " ++ integer_to_list(Quota)}
+            ]
+         },
+    
+        %center - three panels with numbers
+        #panel{class="tourlobby_orange_plask", body=[
+                #label{class="tourlobby_every_plask_title", body="KATILIMCI SAYISI"},
+                #br{},
+                #label{class="tourlobby_every_plask_label", body=integer_to_list(NPlayers)}
+            ]
+        },
 
-            % left top block
-            #panel{class="tourlobby_left_top_block", body=[
-                    "<center>",
-                    #label{class="tourlobby_left_top_block_label", body=Title},
-                    #br{},
-                    #image{image="/images/tournament/lobby/tour_avatar.png"},
-                    #br{},
-                    #br{},
-                    #link{class="tourlobby_orange_button", text="TURNUVAYA KATIL", postback=join_tournament},
-                    #br{},
-                    #link{postback=red_button, class="tourlobby_red_button", text="TURNUVADAN AYRIL"},
-                    #br{},
-                    #link{postback=yellow_button, class="tourlobby_yellow_button", text="TURNUVADAN GİT"},
-                    "</center>"
-                ]
-            },
+        #panel{class="tourlobby_sky_plask", body=[
+                #label{class="tourlobby_every_plask_title", body="BAŞLAMA TARİHİ"},
+                #br{},
+                #label{class="tourlobby_every_plask_label", body=Date}
+            ]
+        },
 
-            %left bottom block
-            #panel{class="tourlobby_left_bottom_block", body=[
-                    #br{},
-                    #label{class="tourlobby_left_bottom_block_title", body="Turnuva Bilgileri"},
-                    #br{},
-                    #label{class="tourlobby_left_bottom_block_label", body="Oyun Türü: " ++ Game},
-                    #br{},
-                    #label{class="tourlobby_left_bottom_block_label", body="Kota: " ++ integer_to_list(Quota)}
-                ]
-             },
-        
-            %center - three panels with numbers
-            #panel{class="tourlobby_orange_plask", body=[
-                    #label{class="tourlobby_every_plask_title", body="KATILIMCI SAYISI"},
-                    #br{},
-                    #label{class="tourlobby_every_plask_label", body=integer_to_list(NPlayers)}
-                ]
-            },
+        #panel{class="tourlobby_blue_plask", body=[
+                #label{class="tourlobby_every_plask_title", body="KALAN ZAMAN"},
+                #br{},
+                #label{class="tourlobby_every_plask_label", body=Time}
+            ]
+        },
 
-            #panel{class="tourlobby_sky_plask", body=[
-                    #label{class="tourlobby_every_plask_title", body="BAŞLAMA TARİHİ"},
-                    #br{},
-                    #label{class="tourlobby_every_plask_label", body=Date}
-                ]
-            },
-
-            #panel{class="tourlobby_blue_plask", body=[
-                    #label{class="tourlobby_every_plask_title", body="KALAN ZAMAN"},
-                    #br{},
-                    #label{class="tourlobby_every_plask_label", body=Time}
-                ]
-            },
-
-            %prizes
-            #panel{class="tourlobby_prizes", body=[
-                    #panel{class="tourlobby_prize_1", body=[
-                            "<center>",
-                            #image{style="width:120px; height:130px;", image=PI1},
-                            #br{},
-                            #label{style="font-size:12px; color:#000;", body=PN1},
-                            "</center>",
-                            #panel{class="tourlobby_prize_star_1", body=
-                                #label{class="tourlobby_prize_star_text", body="1"}
-                            }
-                        ]
-                    },
-                    #panel{class="tourlobby_prize_2", body=[
-                            "<center>",
-                            #image{style="width:120px; height:130px;", image=PI2},
-                            #br{},
-                            #label{style="font-size:12px; color:#000;", body=PN2},
-                            "</center>",
-                            #panel{class="tourlobby_prize_star_2", body=
-                                #label{class="tourlobby_prize_star_text", body="2"}
-                            }
-                        ]
-                    },
-                    #panel{class="tourlobby_prize_3", body=[
-                            "<center>",
-                            #image{style="width:120px; height:130px;", image=PI3},
-                            #br{},
-                            #label{style="font-size:12px; color:#000;", body=PN3},
-                            "</center>",
-                            #panel{class="tourlobby_prize_star_3", body=
-                                #label{class="tourlobby_prize_star_text", body="3"}
-                            }
-                        ]
-                    }
-                ]
-             },
+        %prizes
+        #panel{class="tourlobby_prizes", body=[
+                #panel{class="tourlobby_prize_1", body=[
+                        "<center>",
+                        #image{style="width:120px; height:130px;", image=PI1},
+                        #br{},
+                        #label{style="font-size:12px; color:#000;", body=PN1},
+                        "</center>",
+                        #panel{class="tourlobby_prize_star_1", body=
+                            #label{class="tourlobby_prize_star_text", body="1"}
+                        }
+                    ]
+                },
+                #panel{class="tourlobby_prize_2", body=[
+                        "<center>",
+                        #image{style="width:120px; height:130px;", image=PI2},
+                        #br{},
+                        #label{style="font-size:12px; color:#000;", body=PN2},
+                        "</center>",
+                        #panel{class="tourlobby_prize_star_2", body=
+                            #label{class="tourlobby_prize_star_text", body="2"}
+                        }
+                    ]
+                },
+                #panel{class="tourlobby_prize_3", body=[
+                        "<center>",
+                        #image{style="width:120px; height:130px;", image=PI3},
+                        #br{},
+                        #label{style="font-size:12px; color:#000;", body=PN3},
+                        "</center>",
+                        #panel{class="tourlobby_prize_star_3", body=
+                            #label{class="tourlobby_prize_star_text", body="3"}
+                        }
+                    ]
+                }
+            ]
+         },
 
 
-            %chat
-            #panel{class="tourlobby_chat", body=[
-                    #panel{class="tourlobby_chat_panel", body=[
-                            #label{class="tourlobby_chat_title", body="CHAT"}
-                        ]
-                    },
-                    %chat window
-                    #panel{id=chat_history, class="tourlobby_chat_window", body=[
-                        ]
-                    },
-                    #textbox{id=message_text_box, class="tourlobby_chat_textarea"},
-                    #link{id=chat_send_button, class="tourlobby_chat_button", text="Gönder", postback=chat}
-                ]
-            },
+        %chat
+        #panel{class="tourlobby_chat", body=[
+                #panel{class="tourlobby_chat_panel", body=[
+                        #label{class="tourlobby_chat_title", body="CHAT"}
+                    ]
+                },
+                %chat window
+                #panel{id=chat_history, class="tourlobby_chat_window", body=[
+                    ]
+                },
+                #textbox{id=message_text_box, class="tourlobby_chat_textarea"},
+                #link{id=chat_send_button, class="tourlobby_chat_button", text="Gönder", postback=chat}
+            ]
 
-            %players table
-            #panel{id=players_table, class="tourlobby_table_panel", body=[
-                user_table(get_tour_user_list())
-            ]},
-            ""
-        ]}
+        },
+
+        %players table
+        #panel{id=players_table, class="tourlobby_table_panel", body=[
+            user_table(get_tour_user_list())
+        ]},
+        ""
     ].
 
 
 user_table(Users) ->
-    #table{class="tourlobby_table", rows=[
-        #tablerow{class="tourlobby_table_head", cells=[
-            #tableheader{style="padding-left:16px;", text="KULLANICHI"},
-            #tableheader{style="text-align:center;", text="TOPLAM PUAN"},
-            #tableheader{style="text-align:center;", text="YETENEK PUANI"},
-            #tableheader{style="text-align:center;", text="DURUM"}
-        ]},
-        #tablerow{cells=[
-            #tablecell{colspan=4, class="tourlobby_table_arrow", body=[
-                #link{postback=arrow_up, body=#image{image="/images/tournament/lobby/arrow_up.png"}}
-            ]}
-        ]},
-        [[
-            #tablerow{style="background-color:#888c8d; height:1px;", cells=[#tablecell{colspan=4, body=[]}]},
-            user_table_row(Name, Score1, Score2, Color)
-        ] || {Name, Score1, Score2, Color} <- Users],
+    case wf:session(tourlobby_view_mode) of
+        short ->
+            [#panel{style="font-size:16px; line-height:24px; margin-left:25px; margin-right:25px; text-align:justify;", body = [
+                [#span{style="font-size:24px; font-weight:bold;", body=[?_T("Players"), ": "]},
+                    [begin
+                        URL = site_utils:user_link(UId),
+                        #span{body=#link{url=URL, text=UId ++ " ",
+                            style = "font-weight:bold; margin-right:5px;" ++ case Color of
+                                yellow ->  "color:#938b03;";
+                                red -> "color:#c22323;";
+                                green -> "color:#5ba108;"
+                            end}
+                        }
+                    end
+                    || {UId, _S1, _S2, Color} <- Users]
+                ]
+            ]},
+            #link{class="tourlobby_view_mode_link", text=?_T("Full view"), postback={change_view, full}}];
+        _ ->
+            NdUsers = [{lists:nth(N, Users), N} || N <- lists:seq(1, length(Users))],
+            [#table{class="tourlobby_table", rows=[
+                #tablerow{class="tourlobby_table_head", cells=[
+                    #tableheader{style="padding-left:16px;", text="KULLANICHI"},
+                    #tableheader{style="text-align:center;", text="TOPLAM PUAN"},
+                    #tableheader{style="text-align:center;", text="YETENEK PUANI"},
+                    #tableheader{style="text-align:center;", text="DURUM"}
+                ]},
+                [[
+                    user_table_row(Name, Score1, Score2, Color, N)
+                ] || {{Name, Score1, Score2, Color}, N} <- NdUsers]
+            ]},
+            #link{class="tourlobby_view_mode_link", text=?_T("Short view"), postback={change_view, short}}]
+    end.
 
-        #tablerow{style="background-color:#888c8d; height:1px;", cells=[#tablecell{colspan=4, body=[]}]},
-
-        #tablerow{cells=[
-            #tablecell{colspan=4, class="tourlobby_table_arrow",  body=[
-                #link{postback=arrow_down, body=#image{image="/images/tournament/lobby/arrow_down.png"}}
-            ]}
-        ]}
-    ]}.
-
-user_table_row(UId, P1, P2, Color) ->
+user_table_row(UId, P1, P2, Color, N) ->
     RealName = nsm_users:user_realname(UId),
-    Avatar = avatar:get_avatar_by_username(UId, small),
+    Avatar = avatar:get_avatar_by_username(UId, tiny),
     URL = site_utils:user_link(UId),
 
     #tablerow{cells=[
         #tablecell{body=[
             #singlerow{cells=[
-                #tablecell{style="padding: 10px 16px 10px 16px;", body=#image{image=Avatar} },
+                #tablecell{style="padding: 5px 5px 5px 16px;", body=#image{image=Avatar} },
                 #tablecell{body=[
                     #link{style="font-weight:bold;", url=URL, text=UId},
                     " &mdash; ",
@@ -528,7 +551,10 @@ user_table_row(UId, P1, P2, Color) ->
                     #image{image="/images/tournament/lobby/yellow_bullet.png"}
             end
         ]}
-    ]}.
+    ], style = case N rem 2 of
+        0 -> "";
+        1 -> "background-color:#f5f5f5;"
+    end}.
 
 
 
@@ -623,6 +649,18 @@ comet_update(User, TournamentId) ->
     comet_update(User, TournamentId).
 
 
+get_tour_fake_user_list() ->
+    [begin
+        {ok, Score1} = nsm_accounts:balance(wf:user(), ?CURRENCY_GAME_POINTS),
+        {ok, Score2} = nsm_accounts:balance(wf:user(), ?CURRENCY_KAKUSH),
+        {UId, Score1, Score2, 
+        case length(UId) rem 3 of
+            0 -> red;
+            1 -> green;
+            2 -> yellow
+        end}
+    end || #user{username=UId} <- lists:flatten([nsm_db:all(user) || _N <- lists:seq(1, 3)])].
+
 get_tour_user_list() ->
     TID = wf:state(tournament_id),
     ActiveUsers       = nsm_tournaments:active_users(TID),
@@ -701,6 +739,10 @@ event(chat) ->
            end,
            wf:flush()
     end;
+
+event({change_view, Mode}) ->
+    wf:session(tourlobby_view_mode, Mode),
+    update_userlist();
 
 event(join_tournament) ->
     User = wf:user(),

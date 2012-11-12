@@ -636,13 +636,28 @@ handle_notice(["system", "use_invite"] = Route,
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% tournaments
 
+handle_notice(["tournaments", "user", UId, "create"] = Route,
+    Message, #state{owner = Owner, type =Type} = State) ->
+    ?INFO("queue_action(~p): create: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),
+    {TourName, TourDesc, {Y,M,D}, Time, MaxPlayers, Quota, Award, TourType, GameType} = Message,
+    case nsm_tournaments:create(UId, TourName, TourDesc, {Y,M,D}, Time, MaxPlayers, Quota, Award, TourType, GameType) of
+        {error,X} -> 
+            ?ERROR("Error creating tournament: ~p", X);
+        TId -> 
+            nsm_srv_tournament_lobby_sup:start_lobby(TId)
+    end,
+    {noreply, State};
+
 handle_notice(["tournaments", "user", UId, "create_and_join"] = Route,
     Message, #state{owner = Owner, type =Type} = State) ->
     ?INFO("queue_action(~p): create_and_join: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),
     {TourName, TourDesc, {Y,M,D}, Time, MaxPlayers, Quota, Award, TourType, GameType} = Message,
     case nsm_tournaments:create(UId, TourName, TourDesc, {Y,M,D}, Time, MaxPlayers, Quota, Award, TourType, GameType) of
-        {error,X} -> ?ERROR("Error creating tournament: ~p", X);
-        TId -> tournaments:join(UId, TId)
+        {error,X} -> 
+            ?ERROR("Error creating tournament: ~p", X);
+        TId -> 
+            nsm_srv_tournament_lobby_sup:start_lobby(TId),
+            tournaments:join(UId, TId)
     end,
     {noreply, State};
 

@@ -40,7 +40,7 @@ main_authorized() ->
 	     {account,	?_U("/profile/account"),?_T("Account")},
 	     {stats,	?_U("/profile/stats"), 	?_T("Stats")},
 	     {invite,	?_U("/profile/invite"), ?_T("Invite")},
-	     {tournament,?_U("/profile/tournament"), ?_T("New Tournament")},
+%	     {tournament,?_U("/profile/tournament"), ?_T("New Tournament")},
 %	     {tournament2,?_U("/create-tournament"), ?_T("// Tournament")},
 	     {user_tournaments,?_U("/profile/user-tournaments"), ?_T("Tournaments")}
 	    ],

@@ -9,7 +9,7 @@
 -include("common.hrl").
 -include("elements/records.hrl").
 
--define(TOURSPERTOURPAGE, 20).
+-define(TOURSPERTOURPAGE, 12).
 
 main() ->
     case wf:user() /= undefined of
@@ -273,6 +273,7 @@ main_authorized() ->
 	            onChange: function(formated, dates){
 		            $('.wfid_tour_date').val(formated);
 		            $('.wfid_tour_date').DatePickerHide();
+                    $('.wfid_tour_date_check').prop('checked', true);
 	            }
             });
         };
@@ -320,7 +321,7 @@ content() ->
                 #label{class="alltour_title_label", body="TURNUVALAR SAYFASI"}
             ]
         },
-        #panel{id=top_selectors, style="height:1820px; font-size:16px; ", body=[
+        #panel{id=top_selectors, style="height:700px; font-size:16px; ", body=[
             #panel{style="background-color:#e4e8e9;height:360px; margin-top:80px; margin-left:-25px; margin-right:-25px; width:960;", body=[]},
             #link{style="position:absolute; top:52px; left:-1px;", class="alltour_bars alltour_bar_1", text="ÖNE ÇIKANLAR", postback=bar1},
             #link{style="position:absolute; top:52px; left:149px;", class="alltour_bars alltour_bar_2", text="ZAMANI YAKLAŞANLAR", postback=bar2},
@@ -346,11 +347,13 @@ content() ->
             %filters
             #label{style="position:absolute; left:42px; top:540px;", text="Oyun Türü:"},
             #dropdown {style="position:absolute; left:126px; top:533px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
+                        #option { text="—" },
                         #option { text="OKEY" },
                         #option { text="TAVLA" }
             ]},
             #label{style="position:absolute; left:480px; top:540px;", text="Oyun Sayısı:"},
             #dropdown {style="position:absolute; left:576px; top:533px; width:160px; height:32px; font-size:16px; padding-top:2px;", options=[
+                        #option { text="—" },
                         #option { text="16" },
                         #option { text="32" },
                         #option { text="64" },
@@ -361,20 +364,18 @@ content() ->
             ]},
             #label{style="position:absolute; left:764px; top:540px;", text="Kota:"},
             #dropdown {style="position:absolute; left:807px; top:533px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
+                        #option { text="—" },
                         #option { text="2" },
                         #option { text="4" },
                         #option { text="6" },
                         #option { text="8" },
                         #option { text="10" }
             ]},
-            #label{style="position:absolute; left:265px; top:540px;", text="Tarih:"},
-%            "<input type='text' id='inputDate' class='alltour_textbox' 
-%                style='position:absolute; left:310px; top:532px; width:140px; height:28px; font-size:16px;
-%                       background:url(/images/tournament/new_tournament/calendar_icon.png) no-repeat 118px 2px;' 
-%                value='" ++ SD ++ "." ++ SM ++ "." ++ SY ++ "'/>",
-            #textbox{id=tour_date, class="newtour_textbox",
-                style="position:absolute; left:310px; top:532px; width:140px; height:28px; font-size:16px;
-                       background:url(../images/tournament/new_tournament/calendar_icon.png) no-repeat 118px 2px;",
+            #label{style="position:absolute; left:285px; top:540px;", text="Tarih:"},
+            #checkbox{id=tour_date_check, style="position:absolute; left:262px; top:536px; width:20px; height:20px;", checked=false},
+            #textbox{id=tour_date, class="alltour_textbox",
+                style="position:absolute; left:330px; top:532px; width:120px; height:28px; font-size:16px;
+                       background:url(../images/tournament/new_tournament/calendar_icon.png) no-repeat 98px 2px;",
                 text= (SD ++ "." ++ SM ++ "." ++ SY)},
 
             #link{style="position:absolute; top:590px; left:36px;", class="alltour_btns_blue alltour_btn_blue_1", text="ARKADAŞLARIMA GÖRE", postback=btn_blue_1},
@@ -400,66 +401,52 @@ content() ->
 
             #button{style="position:absolute; top:740px; left:650px;", text=?_T("New"), postback=new_pressed},
 
-            #panel{style="position:absolute; top:800px; left:0px; width:960px;", body=[
-                "<center>",
-                #panel{style="height:1px; background-color:#c2c2c2; width:700px;", body=[]},
-                [begin
-                    Id = T#tournament.id,
-                    Title = T#tournament.name,
-                    Game = case T#tournament.game_type of
-                        game_okey -> "OKEY";
-                        game_tavla -> "TAVLA";
-                        game_batak -> "BATAK";
-                        _ -> "WTF"
-                    end,
-                    Date = integer_to_list(element(3, T#tournament.start_date)) ++ "." ++ 
-                           integer_to_list(element(2, T#tournament.start_date)) ++ "." ++ 
-                           integer_to_list(element(1, T#tournament.start_date)),
-                    NPlayers = T#tournament.players_count,
-                    Quota = T#tournament.quota,
-                    Avatar = "/images/tournament/tournaments_page/tournament_default_avatar.png",
-                    Prizes = case is_list(T#tournament.awards) of
-                        true ->
-                            GOs = [nsm_gifts_db:get_gift(A) || A <- T#tournament.awards],
-                            [case GO of
-                                {error, notfound} -> "/images/tournament/new_tournament/question.png";
-                                {ok, {Gift, _}} -> Gift#gift.image_small_url
-                            end || GO <- GOs];
-                        false ->
-                            ["/images/tournament/new_tournament/question.png","/images/tournament/new_tournament/question.png","/images/tournament/new_tournament/question.png"]
-                    end,
-                    #panel{style="margin:16px; float:left", body=tourblock(Id, Title, Game, Date, NPlayers, Quota, Avatar, Prizes)}
-                end
-                || T <- nsm_db:all(tournament)],
-
-%                #table{rows=[
-%                    #tablerow{cells=[
-%                        #tablecell{body=#panel{style="margin:16px;", body=test_tourblock()}},
-%                        #tablecell{body=#panel{style="margin:16px;", body=test_tourblock()}},
-%                        #tablecell{body=#panel{style="margin:16px;", body=test_tourblock()}},
-%                        #tablecell{body=#panel{style="margin:16px;", body=test_tourblock()}}
-%                    ]},
-%                    #tablerow{cells=[
-%                        #tablecell{body=#panel{style="margin:16px;", body=test_tourblock()}},
-%                        #tablecell{body=#panel{style="margin:16px;", body=test_tourblock()}},
-%                        #tablecell{body=#panel{style="margin:16px;", body=test_tourblock()}},
-%                        #tablecell{body=#panel{style="margin:16px;", body=test_tourblock()}}
-%                    ]},
-%                    #tablerow{cells=[
-%                        #tablecell{body=#panel{style="margin:16px;", body=test_tourblock()}},
-%                        #tablecell{body=#panel{style="margin:16px;", body=test_tourblock()}},
-%                        #tablecell{body=#panel{style="margin:16px;", body=test_tourblock()}},
-%                        #tablecell{body=#panel{style="margin:16px;", body=test_tourblock()}}
-%                    ]}
-%                ]},
-%                buttons(1),            
-                "</center>"
-            ]},
-
             #link{style="position:absolute; top:268px; left:20px;", class="alltour_arrow_left", postback=arrow_left},
             #link{style="position:absolute; top:268px; left:925px;", class="alltour_arrow_right", postback=arrow_right},
             #link{} % this is WTF fix. Something with the Nitrogen I suppose. Delete it and the last link will appear twise on a page.
+        ]},
+        #panel{id=alltour_container, style="margin-top:5px; margin-left:-14px; width:960px;", body=[
+            all_tours(1)
         ]}
+    ].
+
+all_tours(Page) ->
+    AllTours = nsm_db:all(tournament),
+    PageTours = lists:sublist(AllTours, (Page-1)*?TOURSPERTOURPAGE+1, ?TOURSPERTOURPAGE),
+    [
+        "<center>",
+        #panel{style="height:1px; background-color:#c2c2c2; width:700px;", body=[]},
+        [begin
+            Id = T#tournament.id,
+            Title = T#tournament.name,
+            Game = case T#tournament.game_type of
+                game_okey -> "OKEY";
+                game_tavla -> "TAVLA";
+                game_batak -> "BATAK";
+                _ -> "WTF"
+            end,
+            Date = integer_to_list(element(3, T#tournament.start_date)) ++ "." ++ 
+                   integer_to_list(element(2, T#tournament.start_date)) ++ "." ++ 
+                   integer_to_list(element(1, T#tournament.start_date)),
+            NPlayers = T#tournament.players_count,
+            Quota = T#tournament.quota,
+            Avatar = "/images/tournament/tournaments_page/tournament_default_avatar.png",
+            Prizes = case is_list(T#tournament.awards) of
+                true ->
+                    GOs = [nsm_gifts_db:get_gift(A) || A <- T#tournament.awards],
+                    [case GO of
+                        {error, notfound} -> "/images/tournament/new_tournament/question.png";
+                        {ok, {Gift, _}} -> Gift#gift.image_small_url
+                    end || GO <- GOs];
+                false ->
+                    ["/images/tournament/new_tournament/question.png","/images/tournament/new_tournament/question.png","/images/tournament/new_tournament/question.png"]
+            end,
+            #panel{style="margin:16px; float:left", body=tourblock(Id, Title, Game, Date, NPlayers, Quota, Avatar, Prizes)}
+        end
+        || T <- PageTours],
+        #panel{style="display:block; height:100px;", body=[]},
+        buttons(Page, length(AllTours)),
+        "</center>"
     ].
 
 test_tourblock() ->
@@ -508,7 +495,7 @@ tourblock(Id, Title, Game, Date, NGames, Quota, Avatar, Prizes) ->
         ]}
     ]}.
 
-buttons(Page) ->
+buttons(Page, AllN) ->
     #panel{class="paging-2", style="padding: 10px 0px 0px 0px;", body=[
         #panel{class="center", body=[
             #list{body=[
@@ -521,8 +508,8 @@ buttons(Page) ->
                         style="color:#444444; font-weight:bold;"}};
                     _ -> #listitem{body=#link{text=integer_to_list(N), postback={page, N}}}
                 end
-                || N <- lists:seq(1, (300 - 1) div ?TOURSPERTOURPAGE + 1)],
-                case Page * ?TOURSPERTOURPAGE >= 300 of                 
+                || N <- lists:seq(1, AllN div ?TOURSPERTOURPAGE + 1)],
+                case Page * ?TOURSPERTOURPAGE >= AllN of                 
                     true -> #listitem{body=#link{text=">", postback={nothing}, class="inactive"}};
                     false -> #listitem{body=#link{text=">", postback={page, Page + 1}}}
                 end
@@ -530,6 +517,8 @@ buttons(Page) ->
        ]}
     ]}.
 
+event({page, Page}) ->
+    wf:update(alltour_container, all_tours(Page));
 
 event(new_pressed) ->
     wf:redirect(?_U("/new-tournament"));

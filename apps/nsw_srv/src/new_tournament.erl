@@ -103,6 +103,8 @@ main_authorized() ->
                 hourText: 'Saat',
                 minuteText: 'Dakika',
                 amPmText: ['AM', 'PM'],
+                closeButtonText: 'Tamam',
+                showCloseButton: true,
                 timeSeparator: ':',
                 duration: 300
             });
@@ -388,7 +390,7 @@ event(create_pressed) ->
                 false ->
                     TID = nsm_tournaments:create(wf:user(), TourName, TourDesc, TourDate, TourTime, TourPlayers, TourQuota, [Prize1, Prize2, Prize3], TourType, TourGame),
                     nsm_srv_tournament_lobby_sup:start_lobby(TID),
-%                    nsx_util_notification:notify(["tournaments", "user", wf:user(), "create_and_join"], 
+%                    nsx_util_notification:notify(["tournaments", "user", wf:user(), "create"], 
 %                        {TourName, TourDesc, TourDate, TourTime, TourPlayers, TourQuota, [Prize1, Prize2, Prize3], TourType, TourGame}),
                     wf:wire(#alert{text=?_T("New tournament created!")})
             end

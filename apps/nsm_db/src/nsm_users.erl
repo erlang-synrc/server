@@ -561,7 +561,8 @@ build_user_relations(User, Groups) ->
      rk( [transaction, user, User, add_transaction]),
 
      rk( [invite, user, User, add_invite_to_issuer]),
-    
+
+     rk( [tournaments, user, User, create]),
      rk( [tournaments, user, User, create_and_join]),
 
      %% system message format: feed.system.ElementType.Action
