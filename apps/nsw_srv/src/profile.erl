@@ -950,7 +950,13 @@ order_list_item(#membership_purchase{membership_package = Package} = MP) ->
     #listitem{body = [#span{text=Text} | Button]}.
 
 buy_it_button(facebook, PackageId)->
-    #link{class="pay_fb_btn", text=?_T("Buy it"), actions=#event{type=click, actions=#script{script="pay_with_fb(\""++ PackageId ++"\");"}}};
+    case wf:session(is_facebook) of
+	true ->
+	    #link{class="pay_fb_btn", text=?_T("Buy it"),
+		actions=#event{type=click, actions=#script{script="pay_with_fb(\""++ PackageId ++"\");"}}};
+	_ ->
+	    #link{class="pay_fb_stub",text=" ", url=""}
+    end;
 buy_it_button(PaymentType, PackageId)->
     Url = ?_U(lists:concat(["/buy/", PaymentType, "/package_id/", PackageId])),
     #link{class=btn, url=Url,  text=?_T("Buy it")}.

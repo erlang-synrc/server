@@ -128,6 +128,7 @@ add_service_btn()->
 
 pay_dialog()->
     wf:wire(#api{name=processOrder, tag=fb}),
+    wf:wire(#api{name=fbCheckLimits, tag=fb}),
     ["<script type=\"text/javascript\">",
     "var callback = function(data){",
 	"if(data['error_code']){",
@@ -142,6 +143,7 @@ pay_dialog()->
 	"}",
     "};",
     "function pay_with_fb(package_id){",
+	"if(page.fbCheckLimits && page.fbCheckLimits(package_id)){",
 	"console.log(\"Call pay dialog for\" + package_id);"
 	"FB.ui({",
 	    "method:'pay',",
@@ -149,6 +151,7 @@ pay_dialog()->
 	    "order_info: {'item_id': package_id},",
 	    "dev_purchase_params: {'oscif':true} },",
 	    "callback);",
+	"}",
     "}",
     "</script>"].
 
@@ -173,6 +176,13 @@ api_event(fbLogin, _, [Args])->
 	    end
     end;
 api_event(fbLogout, _, _Data)-> wf:session(fb_registration, undefined);
+api_event(fbCheckLimits, _, [PackageId])->
+    case nsm_membership_packages:check_limit_over(wf:user(), PackageId) of
+	true ->
+	    buy:over_limit_popup(nsm_membership_packages:get_monthly_purchase_limit()),
+	    false;
+	_ -> true
+    end;
 api_event(processOrder, _, [[{order_id, OrderId}, {status, Status}]])-> 
     ?INFO("Payment complete. Order:~p~n", [OrderId]),
     case nsm_membership_packages:get_purchase(integer_to_list(OrderId)) of
