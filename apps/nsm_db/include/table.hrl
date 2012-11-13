@@ -3,6 +3,7 @@
 -record(game_table, {id :: id_type() | '_', %% Dialyzer and record MatchSpec warnings http://j.mp/vZ8670
                      name,
                      gameid,
+                     trn_id,
                      game_type,
                      rounds :: integer() | 'undefined' | '_',
                      sets :: integer() | 'undefined' | '_',

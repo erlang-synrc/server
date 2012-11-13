@@ -759,3 +759,16 @@ event(join_tournament) ->
 event(Any)->
     webutils:event(Any).
 
+
+get_tournament(TrnId) ->
+    Check = fun(undefined, _Value) -> true;
+               (Param, Value) ->  Param == Value
+            end,
+    Cursor = fun() ->
+                     qlc:cursor(qlc:q([V || {{_,_,_K},_,V=#game_table{trn_id=TId}
+                                                <- gproc:table(props),
+                                            Check(TrnId, TId),
+             end,
+    Tables = qlc:next_answers(Cursor(), 1),
+    ?INFO("~w:get_tournament Table = ~p", [?MODULE, Tables]),
+    Tables.
