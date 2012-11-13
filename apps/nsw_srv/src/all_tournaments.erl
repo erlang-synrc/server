@@ -405,10 +405,10 @@ content() ->
                         #option { text="24 HEPSİ" }
             ]},
 
-            #link{style="position:absolute; top:726px; left:326px;", class="alltour_big_buttons alltour_orange_button", text="FILTRELE", postback=btn_orange},
-            #link{style="position:absolute; top:726px; left:492px;", class="alltour_big_buttons alltour_gray_button", text="SIFIRLA", postback=btn_gray},
-
-            #button{style="position:absolute; top:740px; left:650px;", text=?_T("New"), postback=new_pressed},
+            #link{style="position:absolute; top:726px; left:226px;", class="alltour_big_buttons alltour_gray_button", text="FILTRELE", postback=btn_orange},
+            #link{style="position:absolute; top:726px; left:392px;", class="alltour_big_buttons alltour_gray_button", text="SIFIRLA", postback=btn_gray},
+            #link{style="position:absolute; top:726px; left:558px;", class="alltour_big_buttons alltour_orange_button", text="NEW", postback=new_pressed},
+%            #button{style="position:absolute; top:740px; left:650px;", text=?_T("New"), postback=new_pressed},
 
             #link{style="position:absolute; top:268px; left:20px;", class="alltour_arrow_left", postback=arrow_left},
             #link{style="position:absolute; top:268px; left:925px;", class="alltour_arrow_right", postback=arrow_right},
