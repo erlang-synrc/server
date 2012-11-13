@@ -55,7 +55,8 @@ token() ->
 
         case wf:q(id) of
              undefined -> "";
-             Id ->        GameId = list_to_integer(wf:session(Id)),
+             Id ->        A = wf:session(Id),
+                          GameId = case A of undefined -> Id; _ -> list_to_integer(A) end,
                           io_lib:fwrite("flashvars.gameId = ~b;~n", [GameId])
         end
     ].
