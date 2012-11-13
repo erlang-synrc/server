@@ -642,7 +642,7 @@ comet_update(User, TournamentId) ->
             timer:apply_after(?SLEEP, erlang, send, [self(), update_userlist]);
 
         %% start game section
-        {delivery, ["tournament", TournamentId, User, "start_game"], Data}  ->
+        {delivery, ["tournament", TournamentId, "start"], Data}  ->
             TourId = get_tournament(TournamentId),
             wf:session(TourId,TourId),
             ?INFO(" +++ (in comet): start game TId: ~p, User: ~p, Data: ~p", [TournamentId, User, Data]),
