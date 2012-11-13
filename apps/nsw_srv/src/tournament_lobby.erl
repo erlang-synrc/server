@@ -6,6 +6,8 @@
 -include_lib("nsm_db/include/user.hrl").
 -include_lib("nsm_db/include/accounts.hrl").
 -include_lib("nsm_db/include/tournaments.hrl").
+-include_lib("nsm_db/include/table.hrl").
+-include_lib("stdlib/include/qlc.hrl").
 -include("setup.hrl").
 -include("common.hrl").
 
@@ -765,10 +767,9 @@ get_tournament(TrnId) ->
                (Param, Value) ->  Param == Value
             end,
     Cursor = fun() ->
-                     qlc:cursor(qlc:q([V || {{_,_,_K},_,V=#game_table{trn_id=TId}
-                                                <- gproc:table(props),
-                                            Check(TrnId, TId),
+                     qlc:cursor(qlc:q([V || {{_,_,_K},_, V = #game_table{trn_id=TId}} <- gproc:table(props),
+                                            Check(TrnId, TId)]))
              end,
-    Tables = qlc:next_answers(Cursor(), 1),
+    [Table] = qlc:next_answers(Cursor(), 1),
     ?INFO("~w:get_tournament Table = ~p", [?MODULE, Tables]),
-    Tables.
+    Table.

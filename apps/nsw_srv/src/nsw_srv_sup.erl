@@ -147,5 +147,4 @@ init([]) ->
     LuckyChild = {nsw_srv_lucky_sup,
                   {nsw_srv_lucky_sup, start_link, []},
                   permanent, 2000, supervisor, [nsw_srv_lucky_sup]},
-    {ok, { {one_for_one, 5, 10}, [DChild,LuckyChild]} }.
-
+    {ok, { {one_for_one, 5, 10}, [DChild, LuckyChild]} }.
