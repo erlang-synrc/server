@@ -976,12 +976,14 @@ create_okey_game_player_state(_PlayerId, ?STATE_WAITING_FOR_START,
                             current_round = CurRound,
                             next_turn_in = 0,
                             paused = false,
-                            chanak_points = Chanak};
+                            chanak_points = Chanak,
+                            round_timeout = null};
 
 create_okey_game_player_state(PlayerId, ?STATE_PLAYING,
                               #state{timeout_timer = TRef, cur_round = CurRound,
                                      players = Players, desk_state = DeskState,
-                                     scoring_state = ScoringState}) ->
+                                     scoring_state = ScoringState, round_timer = RoundTRef,
+                                     round_timeout = RoundTimeout1}) ->
     #player{seat_num = SeatNum} = fetch_player(PlayerId, Players),
     #desk_state{state = DeskStateName,
                 hands = Hands,
@@ -1003,6 +1005,12 @@ create_okey_game_player_state(PlayerId, ?STATE_PLAYING,
     {Piles, _} = lists:mapfoldl(F, prev_seat_num(SeatNum), lists:seq(1, ?SEATS_NUM)),
     GameState = statename_to_api_string(DeskStateName),
     Chanak = ?SCORING:chanak(ScoringState),
+    RoundTimeout = if RoundTimeout1 == infinity -> null;
+                      true -> case erlang:read_timer(RoundTRef) of
+                                  false -> 0;
+                                  T -> T
+                              end
+                   end,
     #okey_game_player_state{whos_move = CurUserId,
                             game_state = GameState,
                             piles = Piles,
@@ -1012,7 +1020,8 @@ create_okey_game_player_state(PlayerId, ?STATE_PLAYING,
                             current_round = CurRound,
                             next_turn_in = Timeout,
                             paused = false,
-                            chanak_points = Chanak};
+                            chanak_points = Chanak,
+                            round_timeout = RoundTimeout};
 
 create_okey_game_player_state(PlayerId, ?STATE_REVEAL_CONFIRMATION,
                               #state{timeout_timer = TRef, cur_round = CurRound,
@@ -1046,7 +1055,8 @@ create_okey_game_player_state(PlayerId, ?STATE_REVEAL_CONFIRMATION,
                             current_round = CurRound,
                             next_turn_in = Timeout,
                             paused = false,
-                            chanak_points = Chanak};
+                            chanak_points = Chanak,
+                            round_timeout = null};
 
 create_okey_game_player_state(_PlayerId, ?STATE_FINISHED,
                               #state{cur_round = CurRound, scoring_state = ScoringState}) ->
@@ -1060,7 +1070,8 @@ create_okey_game_player_state(_PlayerId, ?STATE_FINISHED,
                             current_round = CurRound,
                             next_turn_in = 0,
                             paused = false,
-                            chanak_points = Chanak};
+                            chanak_points = Chanak,
+                            round_timeout = null};
 
 create_okey_game_player_state(PlayerId, ?STATE_PAUSE,
                               #state{paused_statename = PausedStateName,
@@ -1071,19 +1082,24 @@ create_okey_game_player_state(PlayerId, ?STATE_PAUSE,
                                paused = true}.
 
 
-create_okey_game_started(SeatNum, DeskState, CurRound, #state{scoring_state = ScoringState}) ->
+create_okey_game_started(SeatNum, DeskState, CurRound, #state{scoring_state = ScoringState,
+                                                              round_timeout = RoundTimeout1}) ->
     Chanak = ?SCORING:chanak(ScoringState),
     #desk_state{hands = Hands,
                 gosterge = Gosterge,
                 deck = DeskDeck} = DeskState,
     {_, PlayerHand} = lists:keyfind(SeatNum, 1, Hands),
     Hand = [tash_to_ext(Tash) || Tash <- PlayerHand],
+    RoundTimeout = if RoundTimeout1 == infinity -> null;
+                      true -> RoundTimeout1
+                   end,
     #okey_game_started{tiles = Hand,
                        gosterge = tash_to_ext(Gosterge),
                        pile_height = length(DeskDeck),
                        current_round = CurRound,
                        current_set = 1,        %% XXX Concept of sets is deprecated
-                       chanak_points = Chanak}.
+                       chanak_points = Chanak,
+                       round_timeout = RoundTimeout}.
 
 
 create_okey_next_turn(CurSeat, Players) ->
