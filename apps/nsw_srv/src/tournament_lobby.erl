@@ -772,10 +772,10 @@ event({start_tour, Id, NPlayers}) ->
 
 event(attach) ->
     TourId = wf:state(tour_long_id),
-    ?INFO(" +++ attach! ~p", [TourId]),
     URL = lists:concat([?_U("/client"),"/","okey","/id/", TourId]),
-    ?INFO(" +++ url! ~p", [URL]),
-    webutils:new_window_js(URL);
+    StartClient = webutils:new_window_js(URL),
+    ?INFO(" +++ Start script: ~p", [StartClient]),
+    wf:wire(#script{script=StartClient});
 
 event(Any)->
     webutils:event(Any).
