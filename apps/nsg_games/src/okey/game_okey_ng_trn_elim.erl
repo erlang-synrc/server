@@ -37,6 +37,7 @@
 -record(state,
         {%% Static values
          game_id           :: pos_integer(),
+         trn_id            :: term(),
          params            :: proplists:proplist(),
          bots_params       :: proplists:proplist(),
          turns_plan        :: list(integer()), %% Defines how many players will be passed to a next turn
@@ -145,6 +146,7 @@ init([GameId, Params, _Manager]) ->
     Registrants = get_param(registrants, Params),
     KakushPerRound = get_param(kakush_per_round, Params),
     DemoMode = get_option(demo_mode, Params, false),
+    TrnId = get_option(trn_id, Params, undefined),
 
     RegistrantsNum = length(Registrants),
     {ok, TurnsPlan} = get_plan(KakushPerRound, RegistrantsNum),
@@ -158,6 +160,7 @@ init([GameId, Params, _Manager]) ->
 
     gen_fsm:send_all_state_event(self(), go),
     {ok, ?STATE_INIT, #state{game_id = GameId,
+                             trn_id = TrnId,
                              params = TableParams,
                              bots_params = BotsParams,
                              kakush_per_round = KakushPerRound,
@@ -169,12 +172,13 @@ init([GameId, Params, _Manager]) ->
                             }}.
 
 %%===================================================================
-handle_event(go, ?STATE_INIT, #state{game_id = GameId} = StateData) ->
+handle_event(go, ?STATE_INIT, #state{game_id = GameId, trn_id = TrnId} = StateData) ->
     ?INFO("OKEY_NG_TRN_ELIM <~p> Received a directive to starting the tournament.", [GameId]),
     GProcVal = #game_table{game_type = game_okey,
                            game_process = self(),
                            game_module = ?MODULE,
                            id = GameId,
+                           trn_id = TrnId,
                            age_limit = 100,
                            game_mode = undefined,
                            game_speed = undefined,
