@@ -170,15 +170,13 @@ start_tournament(TID, ListUsers) ->
     ok.
 
 handle_cast(start_tournament, State) ->
-%    PlayersCount = (State#state.tournament)#tournament.players_count,
-%    PlayersPerTable = case (State#state.tournament)#tournament.game_type of
-%        game_okey -> 4;
-%        _ -> 2
-%    end,
     Tour = State#state.tournament,
-    List = dict:to_list(State#state.active_users),
-    ListUsers = [ "kunthar","maxim","alice","kate"], %User#user.username || {_,User} <- List],
-    start_tournament(Tour#tournament.id,ListUsers),
+%    List = dict:to_list(State#state.active_users),
+%    ListUsers = [ "kunthar","maxim","alice","kate"], %User#user.username || {_,User} <- List],
+%    start_tournament(Tour#tournament.id,ListUsers),
+    NumberOfUsers = Tour#tournament.players_count,
+    TIDinDB = Tour#tournament.id,
+    nsw_srv_sup:start_tournament(TIDinDB, 1, NumberOfUsers),
     {noreply, State};
 
 handle_cast(heartbeat, State) ->

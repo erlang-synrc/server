@@ -392,12 +392,12 @@ content() ->
                 #br{},
                 #link{postback=red_button, class="tourlobby_red_button", text="TURNUVADAN AYRIL"},
                 #br{},
-                #link{postback=yellow_button, class="tourlobby_yellow_button", text="TURNUVADAN GİT"},
-                case TourId of
-                     [] -> "";
-                     _ ->
-                #br{},
-                #link{text=?_T("ATTACH"), actions=AttachTourAction}
+                #link{postback=yellow_button, class="tourlobby_yellow_button", text="ATTACH", actions=AttachTourAction},
+                case T#tournament.creator == wf:user() of
+                     true ->
+                        #br{},
+                        #link{text=?_T("Start tournament (for testing)"), postback={start_tour, Id, NPlayers}};
+                    _ -> ""
                 end,
                 "</center>"
             ]
@@ -644,8 +644,7 @@ comet_update(User, TournamentId) ->
         %% start game section
         {delivery, ["tournament", TournamentId, User, "start_game"], Data}  ->
             ?INFO(" +++ (in comet): start game TId: ~p, User: ~p, Data: ~p", [TournamentId, User, Data]),
-            Id = 10, % Game Id
-            Url = lists:concat([?_U("/client"), "/", ?_U("okey"), "/id/", Id]),
+            Url = lists:concat([?_U("/client"), "/", ?_U("okey"), "/id/", TournamentId]),
             StartClient = webutils:new_window_js(Url),
             wf:wire(#script{script=StartClient}),
             wf:flush();
@@ -764,6 +763,9 @@ event(join_tournament) ->
     TID = wf:state(tournament_id),
     nsm_tournaments:join(User, list_to_integer(TID)),
     update_userlist();    
+
+event({start_tour, Id, NPlayers}) ->
+    nsw_srv_sup:start_tournament(Id, 1, NPlayers);
 
 event(Any)->
     webutils:event(Any).

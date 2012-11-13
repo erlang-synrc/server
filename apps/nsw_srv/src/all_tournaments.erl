@@ -468,7 +468,7 @@ tourblock(Id) ->
     tourblock(Id, Title, Game, Date, NPlayers, Quota, Avatar, Prizes).
 
 tourblock(Id, Title, Game, Date, NGames, Quota, Avatar, Prizes) ->
-    #link{url=?_T("tournament/lobby/id/")++integer_to_list(Id), body=[
+    #link{url=?_U("tournament/lobby/id/")++integer_to_list(Id), body=[
         #panel{style="width:200px; height:308px; border:1px solid #adb1b0; background-color:#f6f9ff; position:relative;", body=[
             #panel{style="width:200px; height:28; position:absolute; left:-1px; top:-1px; 
                     font:14px 'Gotham Rounded Bold','Trebuchet MS'; color:#fff; text-shadow:0 1px 1px #353535; text-align:center; padding-top:6px;
