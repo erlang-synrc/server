@@ -11,6 +11,15 @@
 
 -define(TOURSPERTOURPAGE, 12).
 
+game_type_image(T,Prefix) ->
+   case T of
+       game_okey -> lists:concat([Prefix,"/slider_okey.png"]);
+       game_tavla -> lists:concat([Prefix,"/slider_tavla.png"]);
+       game_batak -> lists:concat([Prefix,"/slider_batak.png"]);
+       game_king -> lists:concat([Prefix,"/slider_king.png"]);
+       _ -> "/tournaments_page/tournament_default_avatar.png"
+   end.
+
 main() ->
     case wf:user() /= undefined of
         true  -> main_authorized();
@@ -454,7 +463,8 @@ tourblock(Id) ->
            integer_to_list(element(1, T#tournament.start_date)),
     NPlayers = T#tournament.players_count,
     Quota = T#tournament.quota,
-    Avatar = "/images/tournament/tournaments_page/tournament_default_avatar.png",
+    Avatar = game_type_image(T#tournament.game_type,"/images/tournament"),
+             %"/images/tournament/tournaments_page/tournament_default_avatar.png",
     Prizes = case is_list(T#tournament.awards) of
         true ->
             GOs = [nsm_gifts_db:get_gift(A) || A <- T#tournament.awards],
@@ -463,7 +473,9 @@ tourblock(Id) ->
                 {ok, {Gift, _}} -> Gift#gift.image_small_url
             end || GO <- GOs];
         false ->
-            ["/images/tournament/new_tournament/question.png","/images/tournament/new_tournament/question.png","/images/tournament/new_tournament/question.png"]
+            ["/images/tournament/new_tournament/question.png",
+             "/images/tournament/new_tournament/question.png",
+             "/images/tournament/new_tournament/question.png"]
     end,
     tourblock(Id, Title, Game, Date, NPlayers, Quota, Avatar, Prizes).
 
@@ -473,14 +485,15 @@ tourblock(Id, Title, Game, Date, NGames, Quota, Avatar, Prizes) ->
             #panel{style="width:200px; height:28; position:absolute; left:-1px; top:-1px; 
                     font:14px 'Gotham Rounded Bold','Trebuchet MS'; color:#fff; text-shadow:0 1px 1px #353535; text-align:center; padding-top:6px;
                     background-color:#595959; border:1px solid #adb1b0;", body=[Title]},
-            #image{image=Avatar, style="position:absolute; left:7px; top:34px;
+            #image{image=Avatar, style="width: 184px; position:absolute; left:7px; top:34px;
                     -moz-border-radius:2px;
                     -webkit-border-radius:2px;
                     border-radius:2px;
                     border:1px solid #7e7f83;"},
             #panel{style="width:200px; height:1px; position:absolute; left:0px; top:134px; background-color:#9c9da2;", body=[]},
             #panel{style="width:200px; height:1px; position:absolute; left:0px; top:198px; background-color:#9c9da2;", body=[]},
-            #label{style="position:absolute; left:9px; top:113px; color:#f67436; font-size:14px; font-weight:bold;", 
+ 																
+            #label{style="position:absolute; left:79px; top:177px; color:#f67436; font-size:12px; font-weight:bold;", 
                 body="Oyun Türü: <span style='color:#222; font-weight:normal;'>" ++ Game ++ "</span>" },
 
             #label{style="position:absolute; left:9px; top:143px; color:#f67436; font-size:12px; font-weight:bold;", 

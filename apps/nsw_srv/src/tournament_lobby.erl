@@ -394,10 +394,14 @@ content() ->
                 #link{class="tourlobby_yellow_button", text="ATTACH", postback=attach},
                 case T#tournament.creator == wf:user() of
                      true ->
+                        case TourId of
+                             [] ->
                         [
                             #br{},
-                            #link{class="alltour_btns_blue",text=?_T("MANUAL START"), postback={start_tour, Id, NPlayers}}
+                            #link{id=start_button,class="alltour_btns_blue",text=?_T("MANUAL START"), postback={start_tour, Id, NPlayers}}
                         ];
+                             _ -> ""
+                         end;
                     _ -> ""
                 end,
                 "</center>"
@@ -769,14 +773,21 @@ event(join_tournament) ->
 
 event({start_tour, Id, NPlayers}) ->
     TourId = nsw_srv_sup:start_tournament(Id, 1, NPlayers),
+    ?INFO("Start Button Pressed, Tour Created: ~p",[TourId]),
+    wf:update(start_button,""),
     wf:state(tour_long_id,TourId);
 
 event(attach) ->
     TourId = wf:state(tour_long_id),
+    ?INFO("TourId: ~p",[TourId]),
+    case TourId of 
+         [] ->  wf:wire(#alert{text=?_T("Please wait for Tournament start or Start it Mannually.")});
+         _ ->
     URL = lists:concat([?_U("/client"),"/","okey","/id/", TourId]),
     StartClient = webutils:new_window_js(URL),
     ?INFO(" +++ Start script: ~p", [StartClient]),
-    wf:wire(#script{script=StartClient});
+    wf:wire(#script{script=StartClient})
+    end;
 
 event(Any)->
     webutils:event(Any).
