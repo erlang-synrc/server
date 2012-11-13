@@ -642,10 +642,10 @@ comet_update(User, TournamentId) ->
             timer:apply_after(?SLEEP, erlang, send, [self(), update_userlist]);
 
         %% start game section
-        {delivery, ["tournament", TournamentId, "start"], Data}  ->
-            TourId = get_tournament(TournamentId),
+        {delivery, ["tournament", TournamentId, "start"], {TourId}}  ->
+%            TourId = get_tournament(TournamentId),
             wf:session(TourId,TourId),
-            ?INFO(" +++ (in comet): start game TId: ~p, User: ~p, Data: ~p", [TournamentId, User, Data]),
+            ?INFO(" +++ (in comet): start game TId: ~p, User: ~p, Data: ~p", [TournamentId, User, TourId]),
             Url = lists:concat([?_U("/client"), "/", ?_U("okey"), "/id/", TourId]),
             StartClient = webutils:new_window_js(Url),
             wf:wire(#script{script=StartClient}),

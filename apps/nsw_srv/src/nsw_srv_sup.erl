@@ -113,7 +113,8 @@ start_tournament(TourId,NumberOfTournaments, NumberOfPlayers) ->
          end || _ <-lists:seq(1,NumberOfTournaments)],
     [{ok,OP1,_}|_] = OkeyTournaments,
     [{ok,OP2,_}|_] = lists:reverse(OkeyTournaments),
-    ?INFO("Okey tournaments runned: ~p~n",[{OP1,OP2}]).
+    ?INFO("Okey tournaments runned: ~p~n",[{OP1,OP2}]),
+    OP1.
 
 
 

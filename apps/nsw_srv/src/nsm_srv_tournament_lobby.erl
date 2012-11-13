@@ -176,11 +176,11 @@ handle_cast(start_tournament, State) ->
 %    start_tournament(Tour#tournament.id,ListUsers),
     NumberOfUsers = Tour#tournament.players_count,
     TIDinDB = Tour#tournament.id,
-    nsw_srv_sup:start_tournament(TIDinDB, 1, NumberOfUsers),
+    TourId = nsw_srv_sup:start_tournament(TIDinDB, 1, NumberOfUsers),
 %    ListUsers = [UId || #user{username=UId} <- dict:to_list(State#state.active_users)],
 %    nsx_util_notification:notify_tournament_start_game(TIDinDB, ListUsers ,{"DATA"}),
     ?INFO(" +++ notifying ~p", [TIDinDB]),
-    nsx_util_notification:notify(["tournament", integer_to_list(TIDinDB), "start"], {}),
+    nsx_util_notification:notify(["tournament", integer_to_list(TIDinDB), "start"], {TourId}),
     {noreply, State};
 
 handle_cast(heartbeat, State) ->
