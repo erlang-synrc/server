@@ -113,7 +113,7 @@ section_body(profile) ->
 				   #panel{class=text,body=#textbox{id=profile_surname, text=User#user.surname}}]},
 	    #panel{class=row,body=[#label{text=?_T("E-mail")},
 				   #panel{class=text,body=#textbox{id=profile_email,text=User#user.email}}]},
-	    "<dl class=\"dlist-2\"><dt>"++?_T("Username")++"</dt><dd>"++site_utils:username_upper()++"</dd></dl>",
+	    "<dl class=\"dlist-2\"><dt>"++?_T("Username")++"</dt><dd>"++ wf:user() ++"</dd></dl>",
 	    #panel{class=row,body=[#label{text=?_T("New password")},#panel{class=text,body=#password{id=password1}}]},
 	    #panel{class=row,body=[#label{text=?_T("New password (again)")},#panel{class=text,body=#password{id=password2}}]},
 	    #panel{class=row,body=[#label{text=?_T("Date of Birth")++":"},

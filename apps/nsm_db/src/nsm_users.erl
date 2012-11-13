@@ -96,7 +96,7 @@ check_register_data_(#user{username = UserName,
 	true -> ok;
 	_ -> throw({error, username_too_short})
     end,
-    case re:run(UserName, "^([A-Za-z0-9_]*)$",[]) of %%"
+    case re:run(UserName, "^([A-Za-z0-9_\\.]*)$",[]) of %%"
 	{match, _} -> ok;
 	nomatch -> throw({error, wrong_username})
     end,
