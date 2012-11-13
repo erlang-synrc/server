@@ -61,7 +61,7 @@ heartbeat(Server) ->
 	gen_server:cast(Server, heartbeat).
 
 check_tournament_time(Server) ->
-    ?INFO("check tournament time~n"),
+%    ?INFO("check tournament time~n"),
 	gen_server:call(Server, check_tournament_time).
 
 start_tournament(Server) ->
@@ -134,7 +134,7 @@ handle_call(check_tournament_time, _From, State) ->
             start_tournament(self()),
             active;
         _ ->
-            ?INFO("Tournament idle: ~p ~p ~p", [(State#state.tournament)#tournament.id, State#state.start_time, time()]),
+%            ?INFO("Tournament idle: ~p ~p ~p", [(State#state.tournament)#tournament.id, State#state.start_time, time()]),
             timer:apply_after(30000, ?MODULE, check_tournament_time, [self()]),
             idle
     end,
