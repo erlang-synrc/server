@@ -392,7 +392,8 @@ event(create_pressed) ->
                     nsm_srv_tournament_lobby_sup:start_lobby(TID),
 %                    nsx_util_notification:notify(["tournaments", "user", wf:user(), "create"], 
 %                        {TourName, TourDesc, TourDate, TourTime, TourPlayers, TourQuota, [Prize1, Prize2, Prize3], TourType, TourGame}),
-                    wf:wire(#alert{text=?_T("New tournament created!")})
+                    wf:wire(#alert{text=?_T("New tournament created!")}),
+                    wf:redirect(?_U("tournament/lobby/id/")++integer_to_list(TID))
             end
     end;
 

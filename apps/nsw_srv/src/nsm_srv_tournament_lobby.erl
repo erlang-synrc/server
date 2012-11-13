@@ -37,7 +37,8 @@
 				tournament_id,
 				server,
 				chat_history,    %% place to store chart messages
-                                start_date,
+                start_date,
+                start_time,
 				tournament
 				}).
 
@@ -99,7 +100,7 @@ init([TID]) ->
 
     %% start heartbeat timer
     timer:apply_interval(?HEARTBEAT_INTERVAL, ?MODULE, heartbeat, [Server]),
-    timer:apply_after(timer:hms(H,M+1,S) - timer:hms(H,M,S), ?MODULE, check_tournament_time, [Server]),
+    timer:apply_after(30000, ?MODULE, check_tournament_time, [Server]),
 
     %% subscribe to heartbeat replies
     nsx_util_notification:subscribe_tournament_lobby(TID, {?MODULE, messages_callback}, Server),
@@ -114,7 +115,8 @@ init([TID]) ->
 				server = Server,
 				chat_history = queue:new(),
 				start_date = Tour#tournament.start_date,
-                                tournament = Tour
+				start_time = Tour#tournament.start_time,
+                tournament = Tour
 				}}.
 
 handle_call(active_users, _From, #state{active_users = AU} = State) ->
@@ -125,14 +127,15 @@ handle_call(active_users, _From, #state{active_users = AU} = State) ->
 
 handle_call(check_tournament_time, _From, State) ->
     StartDate = State#state.start_date,
-    Status = case date() of
-        StartDate ->
-            ?INFO("Tournament activated"),
+    {SH, SM, _} = State#state.start_time,
+    Status = case {date(), time()} of
+        {StartDate, {SH, SM, _}} ->
+            ?INFO(" +++ Tournament activated"),
             start_tournament(self()),
             active;
         _ ->
-            ?INFO("Tournament idle"),
-            timer:apply_interval({24,0,0},?MODULE,check_tournament_time,self()),
+            ?INFO("Tournament idle: ~p ~p ~p", [(State#state.tournament)#tournament.id, State#state.start_time, time()]),
+            timer:apply_after(30000, ?MODULE, check_tournament_time, [self()]),
             idle
     end,
     {reply, Status, State};
@@ -146,13 +149,13 @@ create_tables(List) ->
     Tables = dict:new(),
     ok.
 
-dump_tables(ArraysList, Check) -> lists:map(fun(A) -> ?INFO("~p",[A]) end, ArraysList).
+dump_tables(ArraysList, Check) -> lists:map(fun(A) -> ?INFO(" +++ tour table ~p",[A]) end, ArraysList).
 
 start_tournament(TID, ListUsers) ->
     ?INFO("Start Tournament ~p", [TID]),
     {C,Tables} = rpc:call(?GAMESRVR_NODE,shuffle,generate_tournament,[4,4]),
 
-    dump_tables(Tables,""),
+    dump_tables(Tables,""), % +++
 
 %    Tour = State#state.tournament,
 %    Teams = [ begin
@@ -168,9 +171,12 @@ start_tournament(TID, ListUsers) ->
 
 handle_cast(start_tournament, State) ->
     Tour = State#state.tournament,
-    List = dict:to_list(State#state.active_users),
-    ListUsers = [ "kunthar","maxim","alice","kate"], %User#user.username || {_,User} <- List],
-    start_tournament(Tour#tournament.id,ListUsers),
+%    List = dict:to_list(State#state.active_users),
+%    ListUsers = [ "kunthar","maxim","alice","kate"], %User#user.username || {_,User} <- List],
+%    start_tournament(Tour#tournament.id,ListUsers),
+    NumberOfUsers = Tour#tournament.players_count,
+    TIDinDB = Tour#tournament.id,
+    nsw_srv_sup:start_tournament(TIDinDB, 1, NumberOfUsers),
     {noreply, State};
 
 handle_cast(heartbeat, State) ->
