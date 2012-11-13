@@ -316,6 +316,7 @@ content() ->
     SY = integer_to_list(Y),
     SM = integer_to_list(M),
     SD = integer_to_list(D),
+    wf:state(alltour_arrow_shift, 0),
     [
         #panel{class="alltour_title", body=[
                 #label{class="alltour_title_label", body="TURNUVALAR SAYFASI"}
@@ -323,20 +324,19 @@ content() ->
         },
         #panel{id=top_selectors, style="height:700px; font-size:16px; ", body=[
             #panel{style="background-color:#e4e8e9;height:360px; margin-top:80px; margin-left:-25px; margin-right:-25px; width:960;", body=[]},
-            #link{style="position:absolute; top:52px; left:-1px;", class="alltour_bars alltour_bar_1", text="ÖNE ÇIKANLAR", postback=bar1},
-            #link{style="position:absolute; top:52px; left:149px;", class="alltour_bars alltour_bar_2", text="ZAMANI YAKLAŞANLAR", postback=bar2},
-            #link{style="position:absolute; top:52px; left:356px;", class="alltour_bars alltour_bar_3", text="DOLDU DOLACAKLAR", postback=bar3},
-            #link{style="position:absolute; top:52px; left:548px;", class="alltour_bars alltour_bar_4", text="KALABALIK TURNUVALAR", postback=bar4},
-            #link{style="position:absolute; top:52px; left:772px;", class="alltour_bars alltour_bar_5", text="KALLAVİ HEDIYELER", postback=bar5},
+            #link{style="position:absolute; top:52px; left:-1px;", class="alltour_bars alltour_bar_1", text="ÖNE ÇIKANLAR", postback=bar},
+            #link{style="position:absolute; top:52px; left:149px;", class="alltour_bars alltour_bar_2", text="ZAMANI YAKLAŞANLAR", postback=bar},
+            #link{style="position:absolute; top:52px; left:356px;", class="alltour_bars alltour_bar_3", text="DOLDU DOLACAKLAR", postback=bar},
+            #link{style="position:absolute; top:52px; left:548px;", class="alltour_bars alltour_bar_4", text="KALABALIK TURNUVALAR", postback=bar},
+            #link{style="position:absolute; top:52px; left:772px;", class="alltour_bars alltour_bar_5", text="KALLAVİ HEDIYELER", postback=bar},
             #image{image="/images/tournament/tournaments_page/bar_dividers.png", style="position:absolute; top:61px; left:148px;"},
             #image{image="/images/tournament/tournaments_page/bar_dividers.png", style="position:absolute; top:61px; left:355px;"},
             #image{image="/images/tournament/tournaments_page/bar_dividers.png", style="position:absolute; top:61px; left:547px;"},
             #image{image="/images/tournament/tournaments_page/bar_dividers.png", style="position:absolute; top:61px; left:771px;"},
-
-            #panel{style="position:absolute; top:123px; left:57px; width:200px; height:308px;", body=[test_tourblock()]},
-            #panel{style="position:absolute; top:123px; left:270px; width:200px; height:308px;", body=[test_tourblock()]},
-            #panel{style="position:absolute; top:123px; left:484px; width:200px; height:308px;", body=[test_tourblock()]},
-            #panel{style="position:absolute; top:123px; left:698px; width:200px; height:308px;", body=[test_tourblock()]},
+            
+            #panel{id=featured_tours, style="position:absolute; top:112px; left:43px; width:880px;", body=[
+                featured_tours()
+            ]},
 
             #panel{style="height:1px; background-color:#c2c2c2; width:960px; margin-left:-25px; position:absolute; top:482px;", body=[]},
             #panel{class="alltour_second_title", style="top:472px;", body=[
@@ -410,40 +410,24 @@ content() ->
         ]}
     ].
 
+featured_tours() ->
+    AllTours = nsm_db:all(tournament),
+    SortedTours = lists:sort(fun(#tournament{start_date=SD1, start_time=ST1, id=Id}, #tournament{start_date=SD2, start_time=ST2}) ->
+        {SD1, ST1, Id} > {SD2, ST2, Id} end, AllTours),
+    TourIds = [TId || #tournament{id=TId} <- SortedTours],
+    ShiftedTours = lists:sublist(TourIds, 1+wf:state(alltour_arrow_shift), 4),
+    [#panel{style="margin:8px; float:left", body=tourblock(Id)} || Id <- ShiftedTours].
+
 all_tours(Page) ->
     AllTours = nsm_db:all(tournament),
-    PageTours = lists:sublist(AllTours, (Page-1)*?TOURSPERTOURPAGE+1, ?TOURSPERTOURPAGE),
+    SortedTours = lists:sort(fun(#tournament{start_date=SD1, start_time=ST1}, #tournament{start_date=SD2, start_time=ST2}) ->
+        {SD1, ST1} > {SD2, ST2} end, AllTours),
+    TourIds = [TId || #tournament{id=TId} <- SortedTours],
+    PageTourIds = lists:sublist(TourIds, (Page-1)*?TOURSPERTOURPAGE+1, ?TOURSPERTOURPAGE),
     [
         "<center>",
         #panel{style="height:1px; background-color:#c2c2c2; width:700px;", body=[]},
-        [begin
-            Id = T#tournament.id,
-            Title = T#tournament.name,
-            Game = case T#tournament.game_type of
-                game_okey -> "OKEY";
-                game_tavla -> "TAVLA";
-                game_batak -> "BATAK";
-                _ -> "WTF"
-            end,
-            Date = integer_to_list(element(3, T#tournament.start_date)) ++ "." ++ 
-                   integer_to_list(element(2, T#tournament.start_date)) ++ "." ++ 
-                   integer_to_list(element(1, T#tournament.start_date)),
-            NPlayers = T#tournament.players_count,
-            Quota = T#tournament.quota,
-            Avatar = "/images/tournament/tournaments_page/tournament_default_avatar.png",
-            Prizes = case is_list(T#tournament.awards) of
-                true ->
-                    GOs = [nsm_gifts_db:get_gift(A) || A <- T#tournament.awards],
-                    [case GO of
-                        {error, notfound} -> "/images/tournament/new_tournament/question.png";
-                        {ok, {Gift, _}} -> Gift#gift.image_small_url
-                    end || GO <- GOs];
-                false ->
-                    ["/images/tournament/new_tournament/question.png","/images/tournament/new_tournament/question.png","/images/tournament/new_tournament/question.png"]
-            end,
-            #panel{style="margin:16px; float:left", body=tourblock(Id, Title, Game, Date, NPlayers, Quota, Avatar, Prizes)}
-        end
-        || T <- PageTours],
+        [#panel{style="margin:16px; float:left", body=tourblock(TId)} || TId <- PageTourIds],
         #panel{style="display:block; height:100px;", body=[]},
         buttons(Page, length(AllTours)),
         "</center>"
@@ -455,6 +439,33 @@ test_tourblock() ->
         ["http://www.enilginc.com/images/products/00/08/45/845_buyuk.jpg", 
          "http://www.enilginc.com/images/products/00/02/12/212_buyuk.jpg",
          "http://www.enilginc.com/images/products/00/07/31/731_buyuk.jpg"]).
+
+tourblock(Id) ->
+    {ok, T} = nsm_db:get(tournament, Id),
+    Title = T#tournament.name,
+    Game = case T#tournament.game_type of
+        game_okey -> "OKEY";
+        game_tavla -> "TAVLA";
+        game_batak -> "BATAK";
+        _ -> "WTF"
+    end,
+    Date = integer_to_list(element(3, T#tournament.start_date)) ++ "." ++ 
+           integer_to_list(element(2, T#tournament.start_date)) ++ "." ++ 
+           integer_to_list(element(1, T#tournament.start_date)),
+    NPlayers = T#tournament.players_count,
+    Quota = T#tournament.quota,
+    Avatar = "/images/tournament/tournaments_page/tournament_default_avatar.png",
+    Prizes = case is_list(T#tournament.awards) of
+        true ->
+            GOs = [nsm_gifts_db:get_gift(A) || A <- T#tournament.awards],
+            [case GO of
+                {error, notfound} -> "/images/tournament/new_tournament/question.png";
+                {ok, {Gift, _}} -> Gift#gift.image_small_url
+            end || GO <- GOs];
+        false ->
+            ["/images/tournament/new_tournament/question.png","/images/tournament/new_tournament/question.png","/images/tournament/new_tournament/question.png"]
+    end,
+    tourblock(Id, Title, Game, Date, NPlayers, Quota, Avatar, Prizes).
 
 tourblock(Id, Title, Game, Date, NGames, Quota, Avatar, Prizes) ->
     #link{url=?_T("tournament/lobby/id/")++integer_to_list(Id), body=[
@@ -496,29 +507,50 @@ tourblock(Id, Title, Game, Date, NGames, Quota, Avatar, Prizes) ->
     ]}.
 
 buttons(Page, AllN) ->
-    #panel{class="paging-2", style="padding: 10px 0px 0px 0px;", body=[
-        #panel{class="center", body=[
-            #list{body=[
-               case Page of
-                   1 -> #listitem{body=#link{text="<", postback={nothing}, class="inactive"}};
-                   _ -> #listitem{body=#link{text="<", postback={page, Page - 1}}}
-                end,
-                [case N of
-                    Page -> #listitem{body=#link{text=integer_to_list(N), postback={nothing}, class="inactive", 
-                        style="color:#444444; font-weight:bold;"}};
-                    _ -> #listitem{body=#link{text=integer_to_list(N), postback={page, N}}}
-                end
-                || N <- lists:seq(1, AllN div ?TOURSPERTOURPAGE + 1)],
-                case Page * ?TOURSPERTOURPAGE >= AllN of                 
-                    true -> #listitem{body=#link{text=">", postback={nothing}, class="inactive"}};
-                    false -> #listitem{body=#link{text=">", postback={page, Page + 1}}}
-                end
-           ]}
-       ]}
-    ]}.
+    case AllN =< ?TOURSPERTOURPAGE of
+        true -> "";
+        false ->
+            #panel{class="paging-2", style="padding: 10px 0px 0px 0px;", body=[
+                #panel{class="center", body=[
+                    #list{body=[
+                       case Page of
+                           1 -> #listitem{body=#link{text="<", postback={nothing}, class="inactive"}};
+                           _ -> #listitem{body=#link{text="<", postback={page, Page - 1}}}
+                        end,
+                        [case N of
+                            Page -> #listitem{body=#link{text=integer_to_list(N), postback={nothing}, class="inactive", 
+                                style="color:#444444; font-weight:bold;"}};
+                            _ -> #listitem{body=#link{text=integer_to_list(N), postback={page, N}}}
+                        end
+                        || N <- lists:seq(1, AllN div ?TOURSPERTOURPAGE + 1)],
+                        case Page * ?TOURSPERTOURPAGE >= AllN of                 
+                            true -> #listitem{body=#link{text=">", postback={nothing}, class="inactive"}};
+                            false -> #listitem{body=#link{text=">", postback={page, Page + 1}}}
+                        end
+                   ]}
+               ]}
+            ]}
+    end.
 
 event({page, Page}) ->
     wf:update(alltour_container, all_tours(Page));
+
+event(arrow_left) ->
+    Shift = wf:state(alltour_arrow_shift),
+    case Shift of
+        0 -> ok;
+        _ -> 
+            wf:state(alltour_arrow_shift, Shift-1),
+            wf:update(featured_tours, featured_tours())
+    end;
+
+event(arrow_right) ->
+    Shift = wf:state(alltour_arrow_shift),
+    wf:state(alltour_arrow_shift, Shift+1),
+    wf:update(featured_tours, featured_tours());
+
+event(bar) ->
+    wf:wire(#alert{text=?_T("Sorry, these filters are not yet implemented.")});
 
 event(new_pressed) ->
     wf:redirect(?_U("/new-tournament"));
