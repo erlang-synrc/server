@@ -730,7 +730,9 @@ show_table(Tables) ->
                         end;
                         "okey" -> Users 
                     end,
-                    TMode = matchmaker:game_mode_to_text(WholeTable#game_table.game_mode) ++ " {"++atom_to_list(WholeTable#game_table.tournament_type)++"} " ++ integer_to_list(TId),
+                    TMode = matchmaker:game_mode_to_text(WholeTable#game_table.game_mode) 
+                             ++ " {"++atom_to_list(WholeTable#game_table.tournament_type)++"} " 
+                             ++ integer_to_list(TId),
                     TSpeed = matchmaker:game_speed_to_text(WholeTable#game_table.game_speed),
                     TRoundsOrNot = case WholeTable#game_table.rounds of
                         undefined -> "";
@@ -1952,7 +1954,10 @@ game_mode_to_text(Type) ->
         "color" -> ?_T("Color");
         "countdown" -> ?_T("Countdown from 10");
         "paired" -> ?_T("Pair");
-        "kakaratavla" -> ?_T("Kakara Tavla")
+        "kakaratavla" -> ?_T("Kakara Tavla");
+        undefined -> ?_T("Unknown");
+        "undefined" -> ?_T("Unknown");
+        _ -> "?"
     end.
 
 game_speed_to_text(Speed) when is_atom(Speed) ->
@@ -1961,7 +1966,8 @@ game_speed_to_text(Speed) ->
     case Speed of 
         "fast" -> ?_T("Fast");
         "normal" -> ?_T("Normal");
-        "slow" -> ?_T("Slow")
+        "slow" -> ?_T("Slow");
+        _ -> ?_T("Unknown")
     end.
 
 % guiders scripts for matchmaker. I had to separate them into linear part and tab part.
