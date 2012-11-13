@@ -227,7 +227,7 @@ main_authorized() ->
             }
 
             .tourlobby_chat_window {
-                width:600px; height:100px; background-color:#fff;
+                width:640px; height:100px; background-color:#fff;
                 position:absolute; left:10px; top:36px;
                 font-size:14px; line-height:20px;
                 overflow:auto;
@@ -362,10 +362,9 @@ content() ->
     {PN3, PI3} = hd(tl(tl(Prizes))),
 
     TourId = get_tournament(Id),
-    ?INFO("TourId: ~p",[TourId]),
-    URL = lists:concat([?_U("/client"),"/","okey","/id/", TourId]),
     wf:session(TourId,TourId),
-    AttachTourAction = #event{type=click, actions=webutils:new_window_js(URL)},
+
+    wf:state(tour_long_id, TourId),
 
     case nsm_tournaments:chat_history(Id) of
         H when is_list(H) ->
@@ -392,11 +391,13 @@ content() ->
                 #br{},
                 #link{postback=red_button, class="tourlobby_red_button", text="TURNUVADAN AYRIL"},
                 #br{},
-                #link{postback=yellow_button, class="tourlobby_yellow_button", text="ATTACH", actions=AttachTourAction},
+                #link{class="tourlobby_yellow_button", text="ATTACH", postback=attach},
                 case T#tournament.creator == wf:user() of
                      true ->
-                        #br{},
-                        #link{text=?_T("Start tournament (for testing)"), postback={start_tour, Id, NPlayers}};
+                        [
+                            #br{},
+                            #link{text=?_T("Start tournament (for testing)"), postback={start_tour, Id, NPlayers}}
+                        ];
                     _ -> ""
                 end,
                 "</center>"
@@ -485,7 +486,7 @@ content() ->
                 #panel{id=chat_history, class="tourlobby_chat_window", body=[
                     ]
                 },
-                #textbox{id=message_text_box, class="tourlobby_chat_textarea"},
+                #textbox{id=message_text_box, class="tourlobby_chat_textarea", postback=chat},
                 #link{id=chat_send_button, class="tourlobby_chat_button", text="Gönder", postback=chat}
             ]
 
@@ -643,8 +644,8 @@ comet_update(User, TournamentId) ->
 
         %% start game section
         {delivery, ["tournament", TournamentId, "start"], {TourId}}  ->
-%            TourId = get_tournament(TournamentId),
             wf:session(TourId,TourId),
+            wf:state(tour_long_id, TourId),
             ?INFO(" +++ (in comet): start game TId: ~p, User: ~p, Data: ~p", [TournamentId, User, TourId]),
             Url = lists:concat([?_U("/client"), "/", ?_U("okey"), "/id/", TourId]),
             StartClient = webutils:new_window_js(Url),
@@ -768,6 +769,13 @@ event(join_tournament) ->
 
 event({start_tour, Id, NPlayers}) ->
     nsw_srv_sup:start_tournament(Id, 1, NPlayers);
+
+event(attach) ->
+    TourId = wf:state(tour_long_id),
+    ?INFO(" +++ attach! ~p", [TourId]),
+    URL = lists:concat([?_U("/client"),"/","okey","/id/", TourId]),
+    ?INFO(" +++ url! ~p", [URL]),
+    webutils:new_window_js(URL);
 
 event(Any)->
     webutils:event(Any).
