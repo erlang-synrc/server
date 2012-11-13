@@ -643,6 +643,8 @@ comet_update(User, TournamentId) ->
 
         %% start game section
         {delivery, ["tournament", TournamentId, User, "start_game"], Data}  ->
+            TourId = get_tournament(TournamentId),
+            wf:session(TourId,TourId),
             ?INFO(" +++ (in comet): start game TId: ~p, User: ~p, Data: ~p", [TournamentId, User, Data]),
             Url = lists:concat([?_U("/client"), "/", ?_U("okey"), "/id/", TournamentId]),
             StartClient = webutils:new_window_js(Url),
