@@ -312,9 +312,9 @@ add_sample_users() ->
     GId1  = nsm_groups:create_group_directly_to_db("ahmettez", "kakaranet", "Kakaranet", "Kakaranet'e Hoşgeldiniz", public),
     GId2  = nsm_groups:create_group_directly_to_db("ahmettez", "yeniler", "Yeniler", "So, you must be new here.", public),
 
-    T1 = nsm_tournaments:create("maxim","TAVLA", "Tavla Turnuvalar",  {2012,4,28},10,  10, undefined,pointing,game_tavla),
-    T2 = nsm_tournaments:create("maxim","BATAK", "Batak Challenge",   {2012,4,28},100, 50, undefined,pointing,game_batak),
-    T3 = nsm_tournaments:create("maxim","OKEY",  "OKEY Championship", {2012,4,28},1000,100,undefined,pointing,game_okey),
+    T1 = nsm_tournaments:create("maxim","TAVLA", "Tavla Turnuvalar",  {2012,4,28}, time(), 10,  10, undefined,pointing,game_tavla),
+    T2 = nsm_tournaments:create("maxim","BATAK", "Batak Challenge",   {2012,4,28}, time(), 100, 50, undefined,pointing,game_batak),
+    T3 = nsm_tournaments:create("maxim","OKEY",  "OKEY Championship", {2012,4,28}, time(), 1000,100,undefined,pointing,game_okey),
 
     ?INFO("adding users accounts"),
     [ begin
