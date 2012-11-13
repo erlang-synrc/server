@@ -179,13 +179,13 @@ handle_cast(heartbeat, State) ->
 
 	{ok, _} = timer:apply_after(?HEARTBEAT_TIMEOUT, ?MODULE, heartbeat_finish,
 					  [State#state.server]),
-	?DBG("heartbeat sent"),
+%	?DBG("heartbeat sent"),
     {noreply, State#state{heartbeat_users = dict:new()}};
 
 handle_cast(heartbeat_finish, #state{heartbeat_users = HU} = State) ->
 	%% move heratbeat users to active users. If we will get heartbeat reply
 	%% after this move - just add active user to active users list
-	?DBG("heartbeat results waiting finished. Users: ~p", [dict:size(HU)]),
+%	?DBG("heartbeat results waiting finished. Users: ~p", [dict:size(HU)]),
 	{noreply, State#state{active_users = HU, heartbeat_users = empty}};
 
 handle_cast({messages_callback, Envelope},

@@ -361,7 +361,10 @@ content() ->
     {PN2, PI2} = hd(tl(Prizes)),
     {PN3, PI3} = hd(tl(tl(Prizes))),
 
-    URL = lists:concat([?_U("/client"),"/","okey","/id/", get_tournament(Id)]),
+    TourId = get_tournament(Id),
+    ?INFO("TourId: ~p",[TourId]),
+    URL = lists:concat([?_U("/client"),"/","okey","/id/", TourId]),
+    wf:session(TourId,TourId),
     AttachTourAction = #event{type=click, actions=webutils:new_window_js(URL)},
 
     case nsm_tournaments:chat_history(Id) of
@@ -390,8 +393,12 @@ content() ->
                 #link{postback=red_button, class="tourlobby_red_button", text="TURNUVADAN AYRIL"},
                 #br{},
                 #link{postback=yellow_button, class="tourlobby_yellow_button", text="TURNUVADAN GİT"},
+                case TourId of
+                     [] -> "";
+                     _ ->
                 #br{},
-                #link{text=?_T("ATTACH"), actions=AttachTourAction},
+                #link{text=?_T("ATTACH"), actions=AttachTourAction}
+                end,
                 "</center>"
             ]
         },
@@ -770,6 +777,9 @@ get_tournament(TrnId) ->
                      qlc:cursor(qlc:q([V || {{_,_,_K},_, V = #game_table{trn_id=TId}} <- gproc:table(props),
                                             Check(TrnId, TId)]))
              end,
-    [Table] = qlc:next_answers(Cursor(), 1),
+    Table = case qlc:next_answers(Cursor(), 1) of
+                   [T] -> X = T#game_table.id, integer_to_list(X);
+                     _ -> []
+            end,
     ?INFO("~w:get_tournament Table = ~p", [?MODULE, Table]),
     Table.
