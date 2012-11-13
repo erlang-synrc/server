@@ -359,6 +359,9 @@ content() ->
     {PN2, PI2} = hd(tl(Prizes)),
     {PN3, PI3} = hd(tl(tl(Prizes))),
 
+    URL = lists:concat([?_U("/client"),"/","okey","/id/", Id]),
+    AttachTourAction = #event{type=click, actions=webutils:new_window_js(URL)},
+
     case nsm_tournaments:chat_history(Id) of
         H when is_list(H) ->
             add_chat_history(H);
@@ -370,6 +373,7 @@ content() ->
         #panel{class="tourlobby_title", body=[
             #label{class="tourlobby_title_label", body="TURNUVA LOBY"}
         ]},
+
 
         % left top block
         #panel{class="tourlobby_left_top_block", body=[
@@ -384,6 +388,8 @@ content() ->
                 #link{postback=red_button, class="tourlobby_red_button", text="TURNUVADAN AYRIL"},
                 #br{},
                 #link{postback=yellow_button, class="tourlobby_yellow_button", text="TURNUVADAN GİT"},
+                #br{},
+                #link{text=?_T("ATTACH"), actions=AttachTourAction},
                 "</center>"
             ]
         },

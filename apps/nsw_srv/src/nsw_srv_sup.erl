@@ -95,7 +95,9 @@ stress_test(NumberOfRooms) ->
 
 start_tournament(NumberOfTournaments, NumberOfPlayers) ->
     Registrants = [ erlang:list_to_binary([<<"trn_player">>, integer_to_list(N)])
-                      || N <- lists:seq(1, NumberOfPlayers)],
+                      || N <- lists:seq(1, NumberOfPlayers - 8)] ++
+ [<<"maxim">>,<<"sustel">>,<<"alice">>,<<"doxtop">>,
+  <<"kate">>,<<"ahmettez">>,<<"demo1">>,<<"serg">>],
     OkeyTournaments =
         [begin
              {ok,GameId,A} = rpc:call(?GAMESRVR_NODE,game_manager,create_game,
@@ -145,5 +147,5 @@ init([]) ->
     LuckyChild = {nsw_srv_lucky_sup,
                   {nsw_srv_lucky_sup, start_link, []},
                   permanent, 2000, supervisor, [nsw_srv_lucky_sup]},
-    {ok, { {one_for_one, 5, 10}, [DChild]} }.
+    {ok, { {one_for_one, 5, 10}, [DChild,LuckyChild]} }.
 
