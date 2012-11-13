@@ -361,7 +361,7 @@ content() ->
     {PN2, PI2} = hd(tl(Prizes)),
     {PN3, PI3} = hd(tl(tl(Prizes))),
 
-    URL = lists:concat([?_U("/client"),"/","okey","/id/", Id]),
+    URL = lists:concat([?_U("/client"),"/","okey","/id/", get_tournament(Id)]),
     AttachTourAction = #event{type=click, actions=webutils:new_window_js(URL)},
 
     case nsm_tournaments:chat_history(Id) of
@@ -771,5 +771,5 @@ get_tournament(TrnId) ->
                                             Check(TrnId, TId)]))
              end,
     [Table] = qlc:next_answers(Cursor(), 1),
-    ?INFO("~w:get_tournament Table = ~p", [?MODULE, Tables]),
+    ?INFO("~w:get_tournament Table = ~p", [?MODULE, Table]),
     Table.
