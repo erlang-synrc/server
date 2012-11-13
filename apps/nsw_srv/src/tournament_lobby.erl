@@ -396,7 +396,7 @@ content() ->
                      true ->
                         [
                             #br{},
-                            #link{text=?_T("Start tournament (for testing)"), postback={start_tour, Id, NPlayers}}
+                            #link{class="alltour_btns_blue",text=?_T("MANUAL START"), postback={start_tour, Id, NPlayers}}
                         ];
                     _ -> ""
                 end,
@@ -768,7 +768,8 @@ event(join_tournament) ->
     update_userlist();    
 
 event({start_tour, Id, NPlayers}) ->
-    nsw_srv_sup:start_tournament(Id, 1, NPlayers);
+    TourId = nsw_srv_sup:start_tournament(Id, 1, NPlayers),
+    wf:state(tour_long_id,TourId);
 
 event(attach) ->
     TourId = wf:state(tour_long_id),
