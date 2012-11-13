@@ -646,7 +646,7 @@ comet_update(User, TournamentId) ->
             TourId = get_tournament(TournamentId),
             wf:session(TourId,TourId),
             ?INFO(" +++ (in comet): start game TId: ~p, User: ~p, Data: ~p", [TournamentId, User, Data]),
-            Url = lists:concat([?_U("/client"), "/", ?_U("okey"), "/id/", TournamentId]),
+            Url = lists:concat([?_U("/client"), "/", ?_U("okey"), "/id/", TourId]),
             StartClient = webutils:new_window_js(Url),
             wf:wire(#script{script=StartClient}),
             wf:flush();
