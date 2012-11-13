@@ -151,7 +151,7 @@ create_tables(List) ->
 
 dump_tables(ArraysList, Check) -> lists:map(fun(A) -> ?INFO(" +++ tour table ~p",[A]) end, ArraysList).
 
-start_tournament(TID, ListUsers) ->
+start_tournament(TID, ListUsers) -> % this is some old mockup code
     ?INFO("Start Tournament ~p", [TID]),
     {C,Tables} = rpc:call(?GAMESRVR_NODE,shuffle,generate_tournament,[4,4]),
 
@@ -177,6 +177,8 @@ handle_cast(start_tournament, State) ->
     NumberOfUsers = Tour#tournament.players_count,
     TIDinDB = Tour#tournament.id,
     nsw_srv_sup:start_tournament(TIDinDB, 1, NumberOfUsers),
+    ListUsers = [UId || #user{username=UId} <- dict:to_list(State#state.active_users)],
+    nsx_util_notification:notify_tournament_start_game(TIDinDB, ListUsers ,{"DATA"}),
     {noreply, State};
 
 handle_cast(heartbeat, State) ->
