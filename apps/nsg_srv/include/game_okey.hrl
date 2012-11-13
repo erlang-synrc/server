@@ -82,6 +82,7 @@
           challenge = false :: boolean()
          }).
 -record(okey_i_saw_okey, {}).
+-record(okey_i_have_8_tashes, {}).
 
 -record('OkeyTimeouts', {
           speed             :: atom(),      %% [slow, normal, fast, blitz]
@@ -202,6 +203,11 @@
 -record(okey_turn_result, {
           turn_num         :: integer(),
           records          :: list(#okey_turn_record{})
+         }).
+
+-record(okey_player_has_8_tashes, {
+           player          :: 'PlayerId'(),
+           value           :: integer()   %% 1 - 13
          }).
 
 %%%%%

@@ -1,5 +1,5 @@
 %%% -------------------------------------------------------------------
-%%% Author  : Sergii Polkovnikov <serge.polkovnikov@gmail.com>
+%%% Author  : Sergei Polkovnikov <serge.polkovnikov@gmail.com>
 %%% Description : The desk-level logic for okey game.
 %%%
 %%% Created : Oct 8, 2012
@@ -8,7 +8,7 @@
 %% Parameters:
 %%  hands - contains tashes of players. A position of an element in the list
 %%        is a seat number of a player. Each element contain a list of tashes.
-%%        One of the element must contain 15 tashes and all other element must
+%%        One of the element must contain 15 tashes and all other elements must
 %%        contain 14 tashes per each.
 %%        Type: [Hand1, Hand2, Hand3, Hand4],
 %%              Hand1 = Hand2 = Hand3 = Hand4 = [tash()]
@@ -22,6 +22,8 @@
 %%  gosterge_finish_list - the list of players who allowed to do gosterge finish.
 %%        Type: [SeatNum]
 %%              SeatNum = 1 | 2 | 3 | 4
+%%  have_8_tashes_enabled - if true then users are allowed to show 8 tashes combination
+%%        Type: boolean()
 
 %% tash() = {Color, Value} | false_okey
 %%    Color = 1 - 4
@@ -29,6 +31,7 @@
 
 %%        Players actions:        ||      Errors:
 %%  i_have_gosterge               || action_disabled, no_gosterge
+%%  i_have_8_tashes               || action_disabled, no_8_tashes
 %%  see_okey                      || no_okey_discarded
 %%  take_from_discarded           || not_your_order, blocked, no_tash
 %%  take_from_table               || not_your_order, no_tash
@@ -37,6 +40,7 @@
 
 %% Outgoing events:
 %%  {has_gosterge, SeatNum}
+%%  {has_8_tashes, SeatNum, Value}
 %%  {saw_okey, SeatNum}
 %%  {taked_from_discarded, SeatNum, Tash}
 %%  {taked_from_table, SeatNum, Tash}
@@ -69,7 +73,9 @@
          get_gosterge/1,
          get_deck/1,
          get_hand/2,
-         get_discarded/2
+         get_discarded/2,
+         get_have_8_tashes/1,
+         get_has_gosterge/1
         ]).
 
 %% gen_fsm callbacks
@@ -83,6 +89,7 @@
          id                :: integer(),
          hand              :: deck:deck(),
          can_show_gosterge :: boolean(),
+         can_show_8_tashes :: boolean(),
          finished_by_okey  :: boolean(),
          discarded         :: deck:deck()
         }).
@@ -90,13 +97,15 @@
 -record(state,
         {
          gosterge_finish_list :: list(integer()), %% Seats nums of players which allowed to do gosterge finish
+         have_8_tashes_enabled :: boolean(),
          players           :: list(#player{}),
          cur_player        :: integer(),
          deck              :: deck:deck(),
          gosterge          :: tash(),
          okey              :: tash(),
          okey_blocked      :: boolean(),
-         has_gosterge      :: undefined | integer() %% Seat num of a player who has gosterge
+         has_gosterge      :: undefined | integer(), %% Seat num of a player who has gosterge
+         have_8_tashes_list :: list(integer())    %% Seats nums of players who collected 8 tashes combination
         }).
 
 
@@ -112,30 +121,26 @@ start(Params) -> gen_fsm:start(?MODULE, Params, []).
 player_action(Desk, SeatNum, Action) ->
     gen_fsm:sync_send_all_state_event(Desk, {player_action, SeatNum, Action}).
 
-stop(Desk) ->
-    gen_fsm:send_all_state_event(Desk, stop).
+stop(Desk) -> gen_fsm:send_all_state_event(Desk, stop).
 
 
-get_state_name(Desk) ->
-    gen_fsm:sync_send_all_state_event(Desk, get_state_name).
+get_state_name(Desk) ->  gen_fsm:sync_send_all_state_event(Desk, get_state_name).
 
-get_cur_seat(Desk) ->
-    gen_fsm:sync_send_all_state_event(Desk, get_cur_seat).
+get_cur_seat(Desk) -> gen_fsm:sync_send_all_state_event(Desk, get_cur_seat).
 
-get_seats_nums(Desk) ->
-    gen_fsm:sync_send_all_state_event(Desk, get_seats_nums).
+get_seats_nums(Desk) -> gen_fsm:sync_send_all_state_event(Desk, get_seats_nums).
 
-get_gosterge(Desk) ->
-    gen_fsm:sync_send_all_state_event(Desk, get_gosterge).
+get_gosterge(Desk) -> gen_fsm:sync_send_all_state_event(Desk, get_gosterge).
 
-get_deck(Desk) ->
-    gen_fsm:sync_send_all_state_event(Desk, get_deck).
+get_deck(Desk) -> gen_fsm:sync_send_all_state_event(Desk, get_deck).
 
-get_hand(Desk, SeatNum) ->
-    gen_fsm:sync_send_all_state_event(Desk, {get_hand, SeatNum}).
+get_hand(Desk, SeatNum) -> gen_fsm:sync_send_all_state_event(Desk, {get_hand, SeatNum}).
 
-get_discarded(Desk, SeatNum) ->
-    gen_fsm:sync_send_all_state_event(Desk, {get_discarded, SeatNum}).
+get_discarded(Desk, SeatNum) -> gen_fsm:sync_send_all_state_event(Desk, {get_discarded, SeatNum}).
+
+get_have_8_tashes(Desk) -> gen_fsm:sync_send_all_state_event(Desk, get_have_8_tashes).
+
+get_has_gosterge(Desk) -> gen_fsm:sync_send_all_state_event(Desk, get_has_gosterge).
 
 %% ====================================================================
 %% Server functions
@@ -147,17 +152,20 @@ init(Params) ->
     Gosterge = get_param(gosterge, Params),
     CurPlayer = get_param(cur_player, Params),
     GostFinishList = get_param(gosterge_finish_list, Params),
-    validate_params(Hands, Deck, Gosterge, CurPlayer, GostFinishList),
+    Have8TashesEnabled = get_param(have_8_tashes_enabled, Params),
+    validate_params(Hands, Deck, Gosterge, CurPlayer, GostFinishList, Have8TashesEnabled),
     Players = init_players(Hands),
     Okey = gosterge_to_okey(Gosterge),
     {ok, ?STATE_DISCARD, #state{players = Players,
                                 gosterge_finish_list = GostFinishList,
+                                have_8_tashes_enabled = Have8TashesEnabled,
                                 deck = deck:from_list(Deck),
                                 gosterge = Gosterge,
                                 okey = Okey,
                                 cur_player = CurPlayer,
                                 okey_blocked = false,
-                                has_gosterge = undefined}}.
+                                has_gosterge = undefined,
+                                have_8_tashes_list = []}}.
 
 %% --------------------------------------------------------------------
 handle_event(stop, _StateName, StateData) ->
@@ -206,9 +214,17 @@ handle_sync_event({get_discarded, SeatNum}, _From, StateName,
     #player{discarded = Discarded} = get_player(SeatNum, Players),
     {reply, deck:to_list(Discarded), StateName, StateData};
 
+handle_sync_event(get_have_8_tashes, _From, StateName,
+                  #state{have_8_tashes_list = Have8TashesList} = StateData) ->
+    {reply, Have8TashesList, StateName, StateData};
+
+handle_sync_event(get_has_gosterge, _From, StateName,
+                  #state{has_gosterge = HasGosterge} = StateData) ->
+    {reply, HasGosterge, StateName, StateData};
+
+
 handle_sync_event(_Event, _From, StateName, StateData) ->
-    Reply = ok,
-    {reply, Reply, StateName, StateData}.
+    {reply, {error, unknown_request}, StateName, StateData}.
 %% --------------------------------------------------------------------
 handle_info(_Info, StateName, StateData) ->
     {next_state, StateName, StateData}.
@@ -254,6 +270,30 @@ handle_player_action(PlayerId, i_have_gosterge, StateName,
                     {error, no_gosterge}
             end;
         #player{can_show_gosterge = false} ->
+            {error, action_disabled}
+    end;
+
+handle_player_action(PlayerId, i_have_8_tashes, StateName,
+                     #state{players = Players, have_8_tashes_enabled = Enabled,
+                            have_8_tashes_list = Have8TashesList
+                           } = StateData) when
+  StateName == ?STATE_TAKE;
+  StateName == ?STATE_DISCARD ->
+    case get_player(PlayerId, Players) of
+        #player{can_show_8_tashes = true,
+                hand = Hand} = Player when Enabled ->
+            case find_8_tashes(Hand) of
+                {ok, Value} ->
+                    NewPlayer = Player#player{can_show_8_tashes = false},
+                    NewPlayers = update_player(NewPlayer, Players),
+                    Events = [{has_8_tashes, PlayerId, Value}],
+                    {ok, Events, StateName,
+                     StateData#state{players = NewPlayers,
+                                     have_8_tashes_list = [PlayerId | Have8TashesList]}};
+                not_found ->
+                    {error, no_8_tashes}
+            end;
+        #player{} ->
             {error, action_disabled}
     end;
 
@@ -377,16 +417,17 @@ get_param(Id, Params) ->
 
 %% TODO: Implement the validator
 
-validate_params(_Hands, _Deck, _Gosterge, _CurPlayer, _GostFinishList) ->
+validate_params(_Hands, _Deck, _Gosterge, _CurPlayer, _GostFinishList, _Have8TashedEnabled) ->
     ok.
 
 init_players(Hands) ->
     F = fun(Hand, Id) ->
-                {#player{id = Id,
+                {#player{id = Id,      %% Seat num
                          hand = Hand,
                          discarded = deck:init_deck(empty),
                          finished_by_okey = false,
-                         can_show_gosterge = true},
+                         can_show_gosterge = true,
+                         can_show_8_tashes = true},
                  Id+1}
         end,
     {Players, _} = lists:mapfoldl(F, 1, Hands),
@@ -475,3 +516,15 @@ is_same_hands(Hand1, Hand2) ->
     L2 = lists:sort(deck:to_list(Hand2)),
     L1 == L2.
 
+%% find_8_tashes(Hand) -> {ok, Value} | not_found
+find_8_tashes(Hand) -> find_8_tashes2(deck:to_list(Hand)).
+
+find_8_tashes2(Hand) when length(Hand) < 8 -> not_found;
+find_8_tashes2([{_, Value} | Rest]) ->
+    case count_tashes_with_value(Value, Rest) of
+        7 -> {ok, Value};
+        _ -> find_8_tashes2(Rest)
+    end.
+
+count_tashes_with_value(Value, Tashes) ->
+    length([1 || {_, TVal} <- Tashes, TVal == Value]).

@@ -42,6 +42,7 @@
          cur_seat           :: integer(),
          gosterge           :: tash(),
          has_gosterge       :: undefined | integer(), %% Seat num of a player who has gosterge
+         have_8_tashes      :: list(integer()), %% Seats of players who show 8 tashes combination
          finish_reason      :: tashes_out | reveal | gosterge_finish, %% Defined only when state = state_finished
          finish_info        :: term()
         }).
@@ -290,11 +291,13 @@ handle_parent_message(start_round, StateName,
                             [SeatNum || {SeatNum, 1} <- Scores];
                         true -> []
                      end,
+    Have8TashesEnabled = GameMode == evenodd orelse GameMode == color,
     Params = [{hands, Hands},
               {deck, TablePile},
               {gosterge, Gosterge},
               {cur_player, StartSeat},
-              {gosterge_finish_list, GostFinishList}],
+              {gosterge_finish_list, GostFinishList},
+              {have_8_tashes_enabled, Have8TashesEnabled}],
     {ok, Desk} = ?DESK:start(Params),
     DeskState = init_desk_state(Desk),
     %% Send notifications to clients
@@ -498,6 +501,13 @@ do_action(_SeatNum, #okey_has_gosterge{}, _From, StateName, StateData) ->
     {reply, {error, message_not_valid_for_a_current_state}, StateName, StateData};
 
 
+do_action(SeatNum, #okey_i_have_8_tashes{}, From, ?STATE_PLAYING = StateName, StateData) ->
+    do_game_action(SeatNum, i_have_8_tashes, From, StateName, StateData);
+
+do_action(_SeatNum, #okey_i_have_8_tashes{}, _From, StateName, StateData) ->
+    {reply, {error, message_not_valid_for_a_current_state}, StateName, StateData};
+
+
 do_action(SeatNum, #okey_i_saw_okey{}, From, ?STATE_PLAYING = StateName, StateData) ->
     do_game_action(SeatNum, see_okey, From, StateName, StateData);
 
@@ -612,6 +622,8 @@ do_game_action(SeatNum, GameAction, From, StateName,
             Response = case GameAction of
                            i_have_gosterge ->
                                true;
+                           i_have_8_tashes ->
+                               true;
                            take_from_table ->
                                [Tash] = [Tash || {taked_from_table, S, Tash} <- Events, S==SeatNum],
                                tash_to_ext(Tash);
@@ -680,7 +692,8 @@ finalize_round(#state{desk_state = #desk_state{finish_reason = FinishReason,
                                                finish_info = FinishInfo,
                                                hands = Hands,
                                                gosterge = Gosterge,
-                                               has_gosterge = WhoHasGosterge},
+                                               has_gosterge = WhoHasGosterge,
+                                               have_8_tashes = Have8Tashes},
                       scoring_state = ScoringState,
                       reveal_confirmation = RevealConfirmation,
                       reveal_confirmation_list = CList,
@@ -697,9 +710,8 @@ finalize_round(#state{desk_state = #desk_state{finish_reason = FinishReason,
                  Winner = FinishInfo,
                  {gosterge_finish, Winner}
          end,
-    Has8Tashes = [], %% TODO: Implement "Have 8 Tashes"
     {NewScoringState, GameOver} = ?SCORING:round_finished(ScoringState, FR, Hands, Gosterge,
-                                                          WhoHasGosterge, Has8Tashes),
+                                                          WhoHasGosterge, Have8Tashes),
     {_, RoundScore, _, TotalScore} = ?SCORING:last_round_result(NewScoringState),
     RoundScorePl = [{get_player_id_by_seat_num(SeatNum, Players), Points} || {SeatNum, Points} <- RoundScore],
     TotalScorePl = [{get_player_id_by_seat_num(SeatNum, Players), Points} || {SeatNum, Points} <- TotalScore],
@@ -719,13 +731,18 @@ handle_desk_events([Event | Events], DeskState, Players, Relay) ->
     #desk_state{cur_seat = CurSeatNum,
                 hands = Hands,
                 discarded = Discarded,
-                deck = Deck} = DeskState,
+                deck = Deck,
+                have_8_tashes = Have8Tashes} = DeskState,
     NewDeskState =
         case Event of
             {has_gosterge, SeatNum} ->
                 Msg = create_okey_player_has_gosterge(SeatNum, Players),
                 relay_publish_ge(Relay, Msg),
                 DeskState#desk_state{has_gosterge = SeatNum};
+            {has_8_tashes, SeatNum, Value} ->
+                Msg = create_okey_player_has_8_tashes(SeatNum, Value, Players),
+                relay_publish_ge(Relay, Msg),
+                DeskState#desk_state{have_8_tashes = [SeatNum | Have8Tashes]};
             {saw_okey, SeatNum} ->
                 Msg = create_okey_disable_okey(SeatNum, CurSeatNum, Players),
                 relay_publish_ge(Relay, Msg),
@@ -1087,6 +1104,10 @@ create_okey_player_has_gosterge(SeatNum, Players) ->
     #player{user_id = UserId} = get_player_by_seat_num(SeatNum, Players),
     #okey_player_has_gosterge{player = UserId}.
 
+create_okey_player_has_8_tashes(SeatNum, Value, Players) ->
+    #player{user_id = UserId} = get_player_by_seat_num(SeatNum, Players),
+    #okey_player_has_8_tashes{player = UserId,
+                              value = Value}.
 
 create_okey_disable_okey(SeatNum, CurSeatNum, Players) ->
     #player{user_id = Who} = get_player_by_seat_num(SeatNum, Players),
@@ -1272,6 +1293,7 @@ statename_to_api_string(state_finished) ->  game_finished.
 
 desk_error_to_ext(action_disabled) -> false;
 desk_error_to_ext(no_gosterge) -> false;
+desk_error_to_ext(no_8_tashes) -> false;
 desk_error_to_ext(no_okey_discarded) -> {error, there_is_no_okey_there};
 desk_error_to_ext(not_your_order) -> {error, not_your_turn};
 desk_error_to_ext(blocked) -> {error, okey_is_blocked};
@@ -1321,7 +1343,9 @@ init_desk_state(Desk) ->
                 discarded = Discarded,
                 deck = ?DESK:get_deck(Desk),
                 cur_seat = ?DESK:get_cur_seat(Desk),
-                gosterge = ?DESK:get_gosterge(Desk)}.
+                gosterge = ?DESK:get_gosterge(Desk),
+                have_8_tashes = ?DESK:get_have_8_tashes(Desk),
+                has_gosterge = ?DESK:get_has_gosterge(Desk)}.
 
 %%===================================================================
 

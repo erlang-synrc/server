@@ -147,6 +147,8 @@ fields(okey_take) ->
     record_info(fields, okey_take);
 fields(okey_i_saw_okey) ->
     record_info(fields, okey_i_saw_okey);
+fields(okey_i_have_8_tashes) ->
+    record_info(fields, okey_i_have_8_tashes);
 fields(okey_challenge) ->
     record_info(fields, okey_challenge);
 fields(okey_game_info) ->
@@ -163,6 +165,8 @@ fields(okey_player_ready) ->
     record_info(fields, okey_player_ready);
 fields(okey_player_has_gosterge) ->
     record_info(fields, okey_player_has_gosterge);
+fields(okey_player_has_8_tashes) ->
+    record_info(fields, okey_player_has_8_tashes);
 fields(okey_next_turn) ->
     record_info(fields, okey_next_turn);
 fields(okey_tile_taken) ->
