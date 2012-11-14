@@ -1,6 +1,7 @@
 -module(nsw_srv_sup).
 -behaviour(supervisor).
 -export([start_link/0, init/1, create_tables/1,stress_test/1, start_tournament/3]).
+-include_lib("nsm_db/include/tournaments.hrl").
 -include("setup.hrl").
 -include("loger.hrl").
 
@@ -94,7 +95,7 @@ stress_test(NumberOfRooms) ->
     ?INFO("Okey bot rooms runned (STRESS): ~p~n",[{OP1,OP2}]).
 
 start_tournament(TourId,NumberOfTournaments, NumberOfPlayers) ->
-    RealPlayers = [ erlang:list_to_binary(U) || U <- nsm_tournaments:joined_users(TourId)],
+    RealPlayers = [ erlang:list_to_binary(U#play_record.who) || U <- nsm_tournaments:joined_users(TourId)],
     
     Registrants = case NumberOfPlayers > length(RealPlayers) of
                        true -> RealPlayers ++ 
