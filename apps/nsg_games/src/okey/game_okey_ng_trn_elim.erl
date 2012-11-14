@@ -104,7 +104,7 @@
 -define(TABLE_STATE_IN_PROGRESS, in_progress).
 -define(TABLE_STATE_FINISHED, finished).
 
--define(WAITING_PLAYERS_TIMEOUT, 15000). %% Time between all table was created and starting a turn
+-define(WAITING_PLAYERS_TIMEOUT, 3000) . %% Time between all table was created and starting a turn
 -define(REST_TIMEOUT, 5000).             %% Time between a round finish and start of a new one
 -define(SHOW_TURN_RESULT_TIMEOUT, 15000).%% Time between a turn finish and start of a new one
 -define(SHOW_TOURNAMENT_RESULT_TIMEOUT, 15000). %% Time between last tour result showing and the tournament finish
@@ -926,7 +926,8 @@ table_parameters(ParentMod, ParentPid) ->
      {slang_allowed, false},
      {observers_allowed, false},
      {tournament_type, elimination},
-     {round_timeout, 7*60*1000},
+%%     {round_timeout, 7*60*1000},
+     {round_timeout, 20*1000},
      {speed, normal},
      {game_type, standard},
      {rounds, 10},

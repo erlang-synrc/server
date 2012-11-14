@@ -60,6 +60,10 @@ do
 	    FBAPPID=$2;shift 2;;
 	-fb-app-secret)
 	    FBAPPSECRET=$2;shift 2;;
+	-tw-consumer-key)
+	    TWCONSUMERKEY=$2;shift 2;;
+	-tw-consumer-secret)
+	    TWCONSUMERSECRET=$2;shift 2;;
 	-jspack)
 	    JSPACK=$2;shift 2;;
         -csspack)
@@ -85,6 +89,8 @@ cat vm.args.template | sed "s#WEBSERVER_NODE#$WEBSERVER@$H#g" > vm.args
 ./config -file app.config nsw_srv fb_id -list "\"$FBAPPID\""
 ./config -file app.config nsw_srv fb_secret -list "\"$FBAPPSECRET\""
 ./config -file app.config nsw_srv fb_redirect_uri -list "\"http://$H:$WEBPORT\""
+./config -file app.config nsw_srv tw_consumer_key -list "\"$TWCONSUMERKEY\""
+./config -file app.config nsw_srv tw_consumer_secret -list "\"$TWCONSUMERSECRET\""
 ./config -file app.config nsw_srv jspack -list "\"$JSPACK\""
 ./config -file app.config nsw_srv csspack -list "\"$CSSPACK\""
 ./config -file app.config nsm_mq amqp_host -list "\"$MQ_HOST\""
