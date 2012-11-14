@@ -688,12 +688,12 @@ get_tour_user_list() ->
                {U,S1,S2,
                      case sets:is_element(U,JoinedUsers) of
                           false -> yellow;
-                          true -> case wf:user() == U of
+                          true -> case sets:is_element(U,ActiveUsers) orelse wf:user() == U of
                                         true -> green;
                                         false -> red
                                 end
                      end, nsm_users:user_realname(U)}
-    end || U <- sets:to_list(JoinedUsers) ++ 
+    end || U <- sets:to_list(sets:union(JoinedUsers,ActiveUsers)) ++ 
                 case sets:is_element(wf:user(),JoinedUsers) of true -> []; false -> [wf:user()] end],
     lists:usort(List).
 
