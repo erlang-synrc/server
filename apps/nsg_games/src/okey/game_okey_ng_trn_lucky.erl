@@ -731,7 +731,8 @@ table_parameters(ParentMod, ParentPid) ->
      {rounds, undefined},
      {reveal_confirmation, true},
      {next_series_confirmation, true},
-     {pause_mode, normal}
+     {pause_mode, normal},
+     {social_actions_enabled, true}
     ].
 
 %% bots_parameters() -> Proplist

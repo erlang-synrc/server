@@ -70,6 +70,7 @@
          next_series_confirmation :: boolean(),
          pause_mode           :: disabled | normal,
          gosterge_finish_allowed :: undefined | boolean(), %% Only defined for countdown game type
+         social_actions_enabled :: boolean(),
          %% Dynamic parameters
          desk_rule_pid        :: undefined | pid(),
          players,             %% The register of table players
@@ -149,6 +150,7 @@ init([GameId, TableId, Params]) ->
     NextSeriesConfirmation = proplists:get_value(next_series_confirmation, Params),
     PauseMode = proplists:get_value(pause_mode, Params),
     GostergeFinishAllowed = proplists:get_value(gosterge_finish_allowed, Params),
+    SocialActionsEnabled = proplists:get_value(social_actions_enabled, Params),
     %% Next two options will be passed on table respawn (after fail or service maintaince)
     ScoringState = proplists:get_value(scoring_state, Params, init_scoring(GameType, PlayersInfo, Rounds)),
     CurRound = proplists:get_value(cur_round, Params, 0),
@@ -181,6 +183,7 @@ init([GameId, TableId, Params]) ->
                                           next_series_confirmation = NextSeriesConfirmation,
                                           pause_mode = PauseMode,
                                           gosterge_finish_allowed = GostergeFinishAllowed,
+                                          social_actions_enabled = SocialActionsEnabled,
                                           players = Players,
                                           start_seat = 1,
                                           cur_round = CurRound,
@@ -941,7 +944,8 @@ create_okey_game_info(#state{table_name = TName, mult_factor = MulFactor,
                              ready_timeout = ReadyTimeout, game_type = GameType,
                              rounds = Rounds, players = Players,
                              gosterge_finish_allowed = GostergeFinish,
-                             tournament_type = TournamentType, pause_mode = PauseMode}) ->
+                             tournament_type = TournamentType, pause_mode = PauseMode,
+                             social_actions_enabled = SocialActionsEnabled}) ->
     PInfos = [case find_players_by_seat_num(SeatNum, Players) of
                   [#player{info = UserInfo}] -> UserInfo;
                   [] -> null
@@ -966,6 +970,7 @@ create_okey_game_info(#state{table_name = TName, mult_factor = MulFactor,
                     slang_flag = SlangFlag,
                     observer_flag = ObserverFlag,
                     pause_enabled = PauseMode == normal,
+                    social_actions_enabled = SocialActionsEnabled,
                     tournament_type = TournamentType}.
 
 
