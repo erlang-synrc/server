@@ -29,13 +29,17 @@ payment_types(false)->
         "<li>",                            #link{id=mobile,        ?INTERNAL_URL(mobile),        postback={payment_select, mobile},        ?ACTIVATION_ACTION("mobile")},"<span class=\"img\"><img class=\"png\" src=\"/images/ico-12.png\" alt=\"\" width=\"31\" height=\"56\" ><img class=\"png\" src=\"/images/ico-13.png\" alt=\"\" width=\"31\" height=\"56\" ></span><strong>",?_T("Mobile"),"</strong></a></li>",
     "</ul>"];
 payment_types(true)-> 
-    wf:update(price_container, table(facebook)),
     fb_utils:pay_dialog().
 
 -spec table()->#table{}.
 table()->
     %% add table to 'data' container
-    #panel{class=data, id=price_container, body=[table(credit_card)]}.
+    #panel{class=data, id=price_container, body=[
+	case wf:session(is_facebook) of
+	    true -> table(facebook);
+	    _ -> table(credit_card)
+	end 
+    ]}.
 
 -spec table(PaymentType::payment_type())->#table{}.
 table(PaymentType)->
@@ -63,7 +67,7 @@ table(PaymentType)->
           to_tl(P#membership_package.deducted_for_gifts),
           to_tl(P#membership_package.net_membership),
           wf:to_list(P#membership_package.quota),
-          buy_button_element(P#membership_package.id, PaymentType, wf:session(is_facebook))
+          buy_button_element(P#membership_package.id, PaymentType, nsm_membership_packages:check_limit_over(wf:user(), P#membership_package.id))
          ] || P <- PackagesSorted],
 
     % transform columns data to table rows
@@ -139,12 +143,10 @@ packet_price_element(Price)->
      "<em>TL</em>",
      "</span></span>"].
 
--spec buy_button_element(PackageId::any(), PaymentType::payment_type(), wf:session(is_facebook))-> #link{}.
-buy_button_element(PackageId, PaymentType, false)->
-    #link{class="btn", text=?_T("Buy"), postback={buy, PackageId, PaymentType}};
-buy_button_element(PackageId, _PaymentType, true)->
-    #link{class="pay_fb_btn", text=?_T("Buy"), actions=#event{type=click,
-	actions=#script{script="pay_with_fb(\""++ PackageId ++"\");"}}}.
+buy_button_element(PackageId, facebook, OverLimit)->
+    fb_utils:buy_button(PackageId, OverLimit);
+buy_button_element(PackageId, PaymentType, _)->
+    #link{class="btn", text=?_T("Buy"), postback={buy, PackageId, PaymentType}}.
 
 odd_even("odd")-> "even";
 odd_even("even")-> "odd".

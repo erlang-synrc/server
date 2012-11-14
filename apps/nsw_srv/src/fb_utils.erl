@@ -23,14 +23,6 @@ init()->
 	"xfbml: true,",
 	"oauth: true",
     "});",
-    "if(page.fbLogin) FB.Event.subscribe('auth.login', function(response){",
-	"if(response.authResponse){",
-	    "if(page.fbLogin){",
-		"FB.api(\"/me?fields=id,username,first_name,last_name,email,birthday\",",
-		"function(response){page.fbLogin(response);});",
-	    "}",
-	"}",
-    "});",
     "if(page.fbLogout) FB.Event.subscribe('auth.logout', function(response){",
 	"page.fbLogout(response);",
     "});",
@@ -63,10 +55,19 @@ init()->
 		"console.log(\"User connected to FB, check for registered account\");",
 		"if(page.fbLogin){",
 		    "FB.api(\"/me?fields=id,username,first_name,last_name,email,birthday\",",
-			"function(response){page.fbLogin(response);});",
+			"function(response){",
+			    "page.fbLogin(response);",
+			"});",
 		"}",
 	    "}else{",
-		"FB.login(function(r){},{scope: 'email,user_birthday'});",
+		"FB.login(function(r){",
+		    "if(r.authResponse){",
+			"if(page.fbLogin){",
+			    "FB.api(\"/me?fields=id,username,first_name,last_name,email,birthday\",",
+			    "function(response){page.fbLogin(response);});",
+			"}",
+		    "}",
+		"},{scope: 'email,user_birthday'});",
 	    "}",
 	"});",
     "}",
@@ -126,14 +127,19 @@ add_service_btn()->
 	actions=#event{type=click, actions=#script{script="add_fb_service()"}},
 	html_encode = false}].
 
+buy_button(PackageId, OverLimit) when is_atom(OverLimit)->
+    #link{class="pay_fb_btn", text=?_T("Buy"),
+    actions=#event{type=click, actions=#script{script="pay_with_fb("++ PackageId ++ "," ++ atom_to_list(OverLimit) ++");"}}}.
+
 pay_dialog()->
     wf:wire(#api{name=processOrder, tag=fb}),
-    wf:wire(#api{name=fbCheckLimits, tag=fb}),
+    wf:wire(#api{name=fbNotifyOverLimit, tag=fb}),
     ["<script type=\"text/javascript\">",
     "var callback = function(data){",
 	"if(data['error_code']){",
 	    "console.log(\"Code: \"+data['error_code'] + \" Message: \"+ data['error_message']);",
-	    "return false;}",
+	    "return false;",
+	"}",
 	"if(data['order_id']){",
 	    "console.log(\"Order:\" + data);",
 	    "if(page.processOrder){",
@@ -142,16 +148,17 @@ pay_dialog()->
 	    "return true;",
 	"}",
     "};",
-    "function pay_with_fb(package_id){",
-	%%"if(page.fbCheckLimits && page.fbCheckLimits(package_id)){",
-	"console.log(\"Call pay dialog for\" + package_id);"
-	"FB.ui({",
-	    "method:'pay',",
-	    "action:'buy_item',",
-	    "order_info: {'item_id': package_id},",
-	    "dev_purchase_params: {'oscif':true} },",
-	    "callback);",
-	%%"}",
+    "function pay_with_fb(package_id, overlimit){",
+	"if(overlimit && page.fbNotifyOverLimit){",
+	    "page.fbNotifyOverLimit();",
+	"} else {",
+	    "FB.ui({",
+		"method:'pay',",
+		"action:'buy_item',",
+		"order_info: {'item_id': package_id},",
+		"dev_purchase_params: {'oscif':true} },",
+		"callback);",
+	"}",
     "}",
     "</script>"].
 
@@ -176,13 +183,8 @@ api_event(fbLogin, _, [Args])->
 	    end
     end;
 api_event(fbLogout, _, _Data)-> wf:session(fb_registration, undefined);
-api_event(fbCheckLimits, _, [PackageId])->
-    case nsm_membership_packages:check_limit_over(wf:user(), PackageId) of
-	true ->
-	    buy:over_limit_popup(nsm_membership_packages:get_monthly_purchase_limit()),
-	    false;
-	_ -> true
-    end;
+api_event(fbNotifyOverLimit, _, _)->
+    buy:over_limit_popup(nsm_membership_packages:get_monthly_purchase_limit());
 api_event(processOrder, _, [[{order_id, OrderId}, {status, Status}]])-> 
     ?INFO("Payment complete. Order:~p~n", [OrderId]),
     case nsm_membership_packages:get_purchase(integer_to_list(OrderId)) of
