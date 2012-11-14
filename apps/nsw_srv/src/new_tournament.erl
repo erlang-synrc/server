@@ -162,7 +162,6 @@ content() ->
             #label{style="position:absolute; left:514px; top:145px;", text="Oyun Sayısı:"},
             #dropdown {id=tour_players, style="position:absolute; left:610px; top:138px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
                         #option { text="16" },
-                        #option { text="32" },
                         #option { text="64" },
                         #option { text="128" },
                         #option { text="256" },
