@@ -286,19 +286,23 @@ handle_call(#join_game{game = GameId}, _From, #state{user = User, rpc = RPC} = S
                                                   tab_module = TMod, tab_pid = TPid, role = player},
                             Res = #'TableInfo'{}, %relay:get_table_info(SecondLevelRelay),
                             {reply, Res, State#state{games = [Part | State#state.games]}};
+                        {error, finished} ->
+                            ?INFO("The game is finished: ~p.",[GameId]),
+                            maybe_send_message(RPC, #disconnect{reason = "The game is finished"}, State),
+                            {stop, normal, State};
                         {error, out} ->
                             ?INFO("Out of the game: ~p.",[GameId]),
                             maybe_send_message(RPC, #disconnect{reason = "You was disconnected from the game"}, State),
-                            {reply, ok, State};
+                            {stop, normal, State};
                         {error, not_allowed} ->
                             ?ERROR("Not allowed to connect: ~p.",[GameId]),
                             maybe_send_message(RPC, #disconnect{reason = "You are not allowed to connect to this game"}, State),
-                            {reply, ok, State}
+                            {stop, normal, State}
                     end;
                 undefined ->
                     ?ERROR("Game not found: ~p.",[GameId]),
                     maybe_send_message(RPC, #disconnect{reason = "The game you are trying to connect doesn't exist"}, State),
-                    {reply, ok, State}
+                    {stop, normal, State}
             end
     end;
 
@@ -372,6 +376,10 @@ handle_cast({rejoin, GameId} = Message, State = #state{user = User, games = Game
                                           tab_module = TMod, tab_pid = TPid, role = player},
                     NewGames = lists:keyreplace(GameId, #participation.game_id, Games, Part),
                     {noreply, State#state{games = NewGames}};
+                {error, finished} ->
+                    ?INFO("The game is finished: ~p.",[GameId]),
+                    maybe_send_message(RPC, #disconnect{reason = "The game is finished"}, State),
+                    {stop, normal, State};
                 {error, out} ->
                     ?INFO("Out of the game: ~p.",[GameId]),
                     maybe_send_message(RPC, #disconnect{reason = "You are kicked from the game"}, State),

@@ -262,7 +262,7 @@ handle_info({timeout, Magic}, ?STATE_SHOW_TURN_RESULT,
 handle_info({timeout, Magic}, ?STATE_FINISHED,
             #state{timer_magic = Magic, tables = Tables, game_id = GameId} = StateData) ->
     ?INFO("OKEY_NG_TRN_ELIM <~p> Time to stopping the tournament.", [GameId]),
-    finalize_tables_with_disconnect(Tables),
+    finalize_tables_with_rejoin(Tables),
     {stop, normal, StateData#state{tables = [], seats = []}};
 
 
@@ -469,31 +469,37 @@ handle_client_request({join, User}, From, StateName,
                              seats = Seats, players=Players, tables = Tables} = StateData) ->
     #'PlayerInfo'{id = UserId, robot = _IsBot} = User,
     ?INFO("OKEY_NG_TRN_ELIM <~p> The 'Join' request received from user: ~p.", [GameId, UserId]),
-    case get_player_by_user_id(UserId, Players) of
-        {ok, #player{status = active, id = PlayerId}} -> %% The user is an active member of the tournament.
-            ?INFO("OKEY_NG_TRN_ELIM <~p> User ~p is an active member of the tournament. "
-                      "Allow to join.", [GameId, UserId]),
-            [#seat{table = TableId, registered_by_table = RegByTable}] = find_seats_by_player_id(PlayerId, Seats),
-            case RegByTable of
-                false -> %% Store this request to the waiting pool
-                    ?INFO("OKEY_NG_TRN_ELIM <~p> User ~p not yet regirested by the table. "
-                          "Add the request to the waiting pool.", [GameId, UserId]),
-                    NewRegRequests = dict:store(PlayerId, From, RegRequests),
-                    {next_state, StateName, StateData#state{reg_requests = NewRegRequests}};
-                _ ->
-                    ?INFO("OKEY_NG_TRN_ELIM <~p> Return join response for player ~p immediately.",
-                          [GameId, UserId]),
-                    #table{relay = Relay, pid = TPid} = fetch_table(TableId, Tables),
-                    {reply, {ok, {PlayerId, Relay, {?TAB_MOD, TPid}}}, StateName, StateData}
-            end;
-        {ok, #player{status = eliminated}} ->
-            ?INFO("OKEY_NG_TRN_ELIM <~p> User ~p is member of the tournament but he was eliminated. "
-                      "Reject to join.", [GameId, UserId]),
-            {reply, {error, out}, StateName, StateData};
-        error -> %% Not a member
-            ?INFO("OKEY_NG_TRN_ELIM <~p> User ~p is not a member of the tournament. "
-                      "Reject to join.", [GameId, UserId]),
-            {reply, {error, not_allowed}, StateName, StateData}
+    if StateName == ?STATE_FINISHED ->
+           ?INFO("OKEY_NG_TRN_ELIM <~p> The tournament is finished. "
+                 "Reject to join user ~p.", [GameId, UserId]),
+           {reply, {error, finished}, StateName, StateData};
+       true ->
+           case get_player_by_user_id(UserId, Players) of
+               {ok, #player{status = active, id = PlayerId}} -> %% The user is an active member of the tournament.
+                   ?INFO("OKEY_NG_TRN_ELIM <~p> User ~p is an active member of the tournament. "
+                         "Allow to join.", [GameId, UserId]),
+                   [#seat{table = TableId, registered_by_table = RegByTable}] = find_seats_by_player_id(PlayerId, Seats),
+                   case RegByTable of
+                       false -> %% Store this request to the waiting pool
+                           ?INFO("OKEY_NG_TRN_ELIM <~p> User ~p not yet regirested by the table. "
+                                 "Add the request to the waiting pool.", [GameId, UserId]),
+                           NewRegRequests = dict:store(PlayerId, From, RegRequests),
+                           {next_state, StateName, StateData#state{reg_requests = NewRegRequests}};
+                       _ ->
+                           ?INFO("OKEY_NG_TRN_ELIM <~p> Return join response for player ~p immediately.",
+                                 [GameId, UserId]),
+                           #table{relay = Relay, pid = TPid} = fetch_table(TableId, Tables),
+                           {reply, {ok, {PlayerId, Relay, {?TAB_MOD, TPid}}}, StateName, StateData}
+                   end;
+               {ok, #player{status = eliminated}} ->
+                   ?INFO("OKEY_NG_TRN_ELIM <~p> User ~p is member of the tournament but he was eliminated. "
+                         "Reject to join.", [GameId, UserId]),
+                   {reply, {error, out}, StateName, StateData};
+               error -> %% Not a member
+                   ?INFO("OKEY_NG_TRN_ELIM <~p> User ~p is not a member of the tournament. "
+                         "Reject to join.", [GameId, UserId]),
+                   {reply, {error, not_allowed}, StateName, StateData}
+           end
     end;
 
 handle_client_request(Request, From, StateName, #state{game_id = GameId} = StateData) ->

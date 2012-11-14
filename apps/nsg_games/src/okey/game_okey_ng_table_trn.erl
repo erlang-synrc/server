@@ -376,7 +376,10 @@ handle_parent_message(disconnect_players, StateName,
     {next_state, StateName, StateData#state{players = players_init()}};
 
 
-handle_parent_message(stop, _StateName, StateData) ->
+handle_parent_message(stop, _StateName,
+                      #state{relay = Relay, players = Players} = StateData) ->
+    [relay_unregister_player(Relay, P#player.id) || P <- players_to_list(Players)],
+    relay_publish(Relay, {disconnect, table_closed}), %% XXX Looks like a hack... Should be sent personaly to players gamesessions
     {stop, normal, StateData};
 
 handle_parent_message(Message, StateName,
