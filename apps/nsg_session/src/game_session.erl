@@ -284,8 +284,8 @@ handle_call(#join_game{game = GameId}, _From, #state{user = User, rpc = RPC} = S
                             Part = #participation{ref = Ref, game_id = GameId, reg_num = RegNum,
                                                   rel_module = RMod, rel_pid = RPid,
                                                   tab_module = TMod, tab_pid = TPid, role = player},
-%%                            Res = #'TableInfo'{}, %relay:get_table_info(SecondLevelRelay),
-                            {reply, ok, State#state{games = [Part | State#state.games]}};
+                            Res = #'TableInfo'{}, %relay:get_table_info(SecondLevelRelay),
+                            {reply, Res, State#state{games = [Part | State#state.games]}};
                         {error, out} ->
                             ?INFO("Out of the game: ~p.",[GameId]),
                             maybe_send_message(RPC, #disconnect{reason = "You was disconnected from the game"}, State),
