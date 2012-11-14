@@ -458,10 +458,7 @@ content() ->
                      true ->
                         case TourId of
                             "" ->
-%                                case nsm_acl:check_access(User, {feature, admin}) of
-                                    allow -> #link{id=start_button, text=?_T("MANUAL START"), postback={start_tour, Id, NPlayers}};
-%                                    _ -> ""
-%                                end;
+                                #link{id=start_button, text=?_T("MANUAL START"), postback={start_tour, Id, NPlayers}};
                             _ -> ""
                         end;
                     _ -> ""
