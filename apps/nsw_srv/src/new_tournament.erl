@@ -390,7 +390,9 @@ event(create_pressed) ->
             case TourName == "" of
                 true -> 
                     wf:wire(#alert{text=?_T("Please, provide tournament name!")}); 
-                false ->
+                false -> % PLEASE MAKE THIS ASYC NON BLOCKING 
+                         % IN POPUP WINDOW WITH "CREATING ...." OR SMTH
+                    wf:wire(#alert{text=?_T("New tournament created!")}),
                     TID = nsm_tournaments:create(wf:user(), TourName, TourDesc, TourDate, TourTime, TourPlayers, TourQuota, [Prize1, Prize2, Prize3], TourType, TourGame),
                     AllowedUsers = ["doxtop","demo1","maxim","sustel","ahmettez",
                                     "kunthar","alice","kate","serg","imagia","willbe"],
@@ -399,7 +401,6 @@ event(create_pressed) ->
                            {error,_} -> ?INFO("TOURNAMENT DEFAULT USERS SKIP: ~p",[User])
                      end || User <- AllowedUsers],
                     nsm_srv_tournament_lobby_sup:start_lobby(TID),
-                    wf:wire(#alert{text=?_T("New tournament created!")}),
                     wf:redirect(?_U("tournament/lobby/id/")++integer_to_list(TID))
             end
     end;

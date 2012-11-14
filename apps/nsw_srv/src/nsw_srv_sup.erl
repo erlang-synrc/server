@@ -94,10 +94,15 @@ stress_test(NumberOfRooms) ->
     ?INFO("Okey bot rooms runned (STRESS): ~p~n",[{OP1,OP2}]).
 
 start_tournament(TourId,NumberOfTournaments, NumberOfPlayers) ->
-    Registrants = [ erlang:list_to_binary([<<"trn_player">>, integer_to_list(N)])
-                      || N <- lists:seq(1, NumberOfPlayers - 8)] ++
- [<<"maxim">>,<<"sustel">>,<<"alice">>,<<"doxtop">>,
-  <<"kate">>,<<"ahmettez">>,<<"demo1">>,<<"serg">>],
+    RealPlayers = [ erlang:list_to_binary(U) || U <- nsm_tournaments:joined_users(TourId)],
+    
+    Registrants = case NumberOfPlayers > length(RealPlayers) of
+                       true -> RealPlayers ++ 
+                                [ erlang:list_to_binary([<<"trn_player">>, integer_to_list(N)]) ||
+                                      N <- lists:seq(1, NumberOfPlayers - length(RealPlayers))];
+                       false -> RealPlayers
+                   end,
+
     OkeyTournaments =
         [begin
              {ok,GameId,A} = rpc:call(?GAMESRVR_NODE,game_manager,create_game,
