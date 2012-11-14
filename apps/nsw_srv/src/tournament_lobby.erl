@@ -77,6 +77,15 @@ main_authorized() ->
                 font-size:16px; color:#363638; line-height:42px;
             }
 
+            .tourlobby_orange_button_disabled {
+                display:block; width:190px; height:41px; background: url(/images/tournament/lobby/btn_orange_disabled.png);
+                font-size:16px; color:#363638; line-height:42px;
+            }
+
+            .tourlobby_orange_button_disabled:hover {
+                text-decoration:none;
+            }
+
             .tourlobby_orange_button:hover {
                 display:block; width:190px; height:41px; background: url(/images/tournament/lobby/btn_orange_hover.png);
                 font-size:16px; color:#363638; line-height:42px;
@@ -93,6 +102,15 @@ main_authorized() ->
                 font-size:16px; color:#121212; line-height:42px;
             }
 
+            .tourlobby_red_button_disabled {
+                display:block; width:190px; height:41px; background: url(/images/tournament/lobby/btn_red_disabled.png);
+                font-size:16px; color:#121212; line-height:42px;
+            }
+
+            .tourlobby_red_button_disabled:hover {
+                text-decoration:none;
+            }
+
             .tourlobby_red_button:hover {
                 display:block; width:190px; height:41px; background: url(/images/tournament/lobby/btn_red_hover.png);
                 font-size:16px; color:#121212; line-height:42px;
@@ -107,6 +125,16 @@ main_authorized() ->
             .tourlobby_yellow_button {
                 display:block; width:190px; height:41px; background: url(/images/tournament/lobby/btn_yellow_normal.png);
                 font-size:16px; color:#363638; line-height:42px;
+            }
+
+            .tourlobby_yellow_button_disabled {
+                display:block; width:190px; height:41px; background: url(/images/tournament/lobby/btn_yellow_disabled.png);
+                font-size:16px; color:#363638; line-height:42px;
+                text-decoration:none;
+            }
+
+            .tourlobby_yellow_button_disabled:hover {
+                text-decoration:none;
             }
 
             .tourlobby_yellow_button:hover {
@@ -373,6 +401,10 @@ content() ->
             ok
     end,
 
+    % is user joined already
+    JoinedList = [P#play_record.who || P <- nsm_tournaments:joined_users(Id)],
+    UserJoined = lists:member(wf:user(), JoinedList),
+
     [  
         #panel{class="tourlobby_title", body=[
             #label{class="tourlobby_title_label", body="TURNUVA LOBY"}
@@ -387,22 +419,25 @@ content() ->
                 #image{image="/images/tournament/lobby/tour_avatar.png"},
                 #br{},
                 #br{},
-                #link{class="tourlobby_orange_button", text="TURNUVAYA KATIL", postback=join_tournament},
+                case UserJoined of
+                    true ->
+                        #panel{id=join_button, class="tourlobby_orange_button_disabled", text="TURNUVAYA KATIL"};
+                    false ->
+                        #link{id=join_button, class="tourlobby_orange_button", text="TURNUVAYA KATIL", postback=join_tournament}
+                end,
                 #br{},
-                #link{postback=red_button, class="tourlobby_red_button", text="TURNUVADAN AYRIL"},
+                #panel{id=leave_button, class="tourlobby_red_button_disabled", text="TURNUVADAN AYRIL"},
                 #br{},
-                #link{class="tourlobby_yellow_button", text="ATTACH", postback=attach},
-                case T#tournament.creator == wf:user() of
-                     true ->
-                        case TourId of
-                             [] ->
-                        [
-                            #br{},
-                            #link{id=start_button,class="alltour_btns_blue",text=?_T("MANUAL START"), postback={start_tour, Id, NPlayers}}
-                        ];
-                             _ -> ""
-                         end;
-                    _ -> ""
+                case TourId of
+                    "" ->
+                        case T#tournament.creator == wf:user() of
+                             true ->
+                                #link{id=attach_button, class="tourlobby_yellow_button", text=?_T("MANUAL START"), postback={start_tour, Id, NPlayers}};
+                            _ -> 
+                                #panel{id=attach_button, class="tourlobby_yellow_button_disabled", text=?_T("TAKE MY SEAT")}
+                        end;
+                    _ ->
+                        #link{id=attach_button, class="tourlobby_yellow_button", text=?_T("TAKE MY SEAT"), postback=attach}
                 end,
                 "</center>"
             ]
@@ -519,7 +554,7 @@ user_table(Users) ->
                             end}
                         }
                     end
-                    || {UId, _S1, _S2, Color,RealName} <- Users]
+                    || {UId, _S1, _S2, Color, _} <- Users]
                 ]
             ]},
             #link{class="tourlobby_view_mode_link", text=?_T("Full view"), postback={change_view, full}}];
@@ -533,13 +568,13 @@ user_table(Users) ->
                     #tableheader{style="text-align:center;", text="DURUM"}
                 ]},
                 [[
-                    user_table_row(Name, Score1, Score2, Color, N,RealName)
-                ] || {{Name, Score1, Score2, Color,RealName}, N} <- NdUsers]
+                    user_table_row(Name, Score1, Score2, Color, N, RealName)
+                ] || {{Name, Score1, Score2, Color, RealName}, N} <- NdUsers]
             ]},
             #link{class="tourlobby_view_mode_link", text=?_T("Short view"), postback={change_view, short}}]
     end.
 
-user_table_row(UId, P1, P2, Color, N,RealName) ->
+user_table_row(UId, P1, P2, Color, N, RealName) ->
 %    RealName = nsm_users:user_realname(UId),
     Avatar = avatar:get_avatar_by_username(UId, tiny),
     URL = site_utils:user_link(UId),
@@ -650,7 +685,7 @@ comet_update(User, TournamentId) ->
         {delivery, ["tournament", TournamentId, "start"], {TourId}}  ->
             wf:session(TourId,TourId),
             wf:state(tour_long_id, TourId),
-            wf:update(start_button,""),
+            wf:replace(attach_button, #link{id=attach_button, class="tourlobby_yellow_button", text=?_T("TAKE MY SEAT"), postback=attach}),
             ?INFO(" +++ (in comet): start game TId: ~p, User: ~p, Data: ~p", [TournamentId, User, TourId]),
             Url = lists:concat([?_U("/client"), "/", ?_U("okey"), "/id/", TourId]),
             StartClient = webutils:new_window_js(Url),
@@ -725,25 +760,26 @@ event(join_tournament) ->
     User = wf:user(),
     TID = wf:state(tournament_id),
     nsm_tournaments:join(User, list_to_integer(TID)),
+    wf:replace(join_button, #panel{id=join_button, class="tourlobby_orange_button_disabled", text="TURNUVAYA KATIL"}),
     update_userlist();    
 
 event({start_tour, Id, NPlayers}) ->
     TourId = nsw_srv_sup:start_tournament(Id, 1, NPlayers),
-    ?INFO("Start Button Pressed, Tour Created: ~p",[TourId]),
-    wf:update(start_button,""),
+    wf:replace(attach_button, #link{id=attach_button, class="tourlobby_yellow_button", text=?_T("TAKE MY SEAT"), postback=attach}),
     wf:state(tour_long_id,TourId);
 
 event(attach) ->
     TourId = wf:state(tour_long_id),
     ?INFO("TourId: ~p",[TourId]),
     case TourId of 
-         [] ->  wf:wire(#alert{text=?_T("Please wait for Tournament start or Start it Mannually.")});
+         [] ->  
+            wf:wire(#alert{text=?_T("Please wait for Tournament start or Start it Mannually.")});
          _ ->
-    URL = lists:concat([?_U("/client"),"/","okey","/id/", TourId]),
-    StartClient = webutils:new_window_js(URL),
-    ?INFO(" +++ Start script: ~p", [StartClient]),
-    wf:wire(#script{script=StartClient})
+            URL = lists:concat([?_U("/client"),"/","okey","/id/", TourId]),
+            StartClient = webutils:new_window_js(URL),
+            wf:wire(#script{script=StartClient})
     end;
+
 
 event(Any)->
     webutils:event(Any).
