@@ -346,6 +346,16 @@ event({newtour_slider}) ->
     wf:state(slider_max, F + ((T-F) * Max1000) div 1000),
     wf:update(product_list, product_list_paged(1));
 
+
+%event({newtour_slider}) -> % all gifts hack
+%    Min1000 = list_to_integer(wf:q(newtour_slider_values_min)),
+%    Max1000 = list_to_integer(wf:q(newtour_slider_values_max)),
+%    F = wf:state(slider_min_value),
+%    T = wf:state(slider_max_value),
+%    wf:state(slider_min, 0),
+%    wf:state(slider_max, 50000),
+%    wf:update(product_list, product_list_paged(1));
+
 event({page, Page}) ->
     wf:update(product_list, product_list_paged(Page));
 
