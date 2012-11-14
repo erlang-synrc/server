@@ -34,6 +34,8 @@
 
 -export([table_message/3, client_message/2, client_request/2, client_request/3]).
 
+-export([get_prize_fund/2]).  % just passing info, not a gen_server part
+
 -record(state,
         {%% Static values
          game_id           :: pos_integer(),
@@ -970,6 +972,12 @@ get_plan(KakushPerRound, RegistrantsNum) ->
     case lists:keyfind({KakushPerRound, RegistrantsNum}, 1, tournament_matrix()) of
         false -> {error, no_such_plan};
         {_NQ,_K, Plan} -> {ok, Plan}
+    end.
+
+get_prize_fund(KakushPerRound, RegistrantsNum) ->
+    case lists:keyfind({KakushPerRound, RegistrantsNum}, 1, tournament_matrix()) of
+        false -> {error, no_such_plan};
+        {_NQ, K, _Plan} -> {ok, K}
     end.
 
 tournament_matrix() ->
