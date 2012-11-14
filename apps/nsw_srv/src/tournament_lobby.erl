@@ -355,6 +355,8 @@ body() ->
 
 
 content() ->
+    {ok, User} = nsm_users:get_user(wf:user()), % to check if admin  
+
     Id = list_to_integer(wf:q("id")),
     {ok, T} = nsm_db:get(tournament, Id),
     Title = T#tournament.name,
@@ -367,6 +369,23 @@ content() ->
     Date = integer_to_list(element(3, T#tournament.start_date)) ++ "." ++ 
            integer_to_list(element(2, T#tournament.start_date)) ++ "." ++ 
            integer_to_list(element(1, T#tournament.start_date)),
+
+    wf:state(tour_start_time, T#tournament.start_time),
+    Timer = case date() == T#tournament.start_date of
+        false ->
+            DDays = calendar:date_to_gregorian_days(T#tournament.start_date) - calendar:date_to_gregorian_days(date()),
+            case DDays of
+                1 -> "1 " ++ ?_T("day");
+                N -> 
+                    case N>0 of
+                        true -> integer_to_list(N) ++ " " ++ ?_T("days");
+                        false -> ?_T("FINISHED")
+                    end
+            end;
+        true ->
+            wf:wire(#event{type=timer, delay=1000, postback=change_timer}),
+            get_timer_for_now()
+    end,
     Time = integer_to_list(element(1, T#tournament.start_time)) ++ ":" ++ 
            integer_to_list(element(2, T#tournament.start_time)) ++
            case element(2, T#tournament.start_time) of 
@@ -430,14 +449,22 @@ content() ->
                 #br{},
                 case TourId of
                     "" ->
-                        case T#tournament.creator == wf:user() of
-                             true ->
-                                #link{id=attach_button, class="tourlobby_yellow_button", text=?_T("MANUAL START"), postback={start_tour, Id, NPlayers}};
-                            _ -> 
-                                #panel{id=attach_button, class="tourlobby_yellow_button_disabled", text=?_T("TAKE MY SEAT")}
-                        end;
+                        #panel{id=attach_button, class="tourlobby_yellow_button_disabled", text=?_T("TAKE MY SEAT")};
                     _ ->
                         #link{id=attach_button, class="tourlobby_yellow_button", text=?_T("TAKE MY SEAT"), postback=attach}
+                end,
+                #br{},
+                case T#tournament.creator == wf:user() of
+                     true ->
+                        case TourId of
+                            "" ->
+                                case nsm_acl:check_access(User, {feature, admin}) of
+                                    allow -> #link{id=start_button, text=?_T("MANUAL START"), postback={start_tour, Id, NPlayers}};
+                                    _ -> ""
+                                end;
+                            _ -> ""
+                        end;
+                    _ -> ""
                 end,
                 "</center>"
             ]
@@ -465,14 +492,14 @@ content() ->
         #panel{class="tourlobby_sky_plask", body=[
                 #label{class="tourlobby_every_plask_title", body="BAŞLAMA TARİHİ"},
                 #br{},
-                #label{class="tourlobby_every_plask_label", body=Date}
+                #link{body=#label{class="tourlobby_every_plask_label", body=Date}, style="text-decoration:none", title=Time}
             ]
         },
 
         #panel{class="tourlobby_blue_plask", body=[
                 #label{class="tourlobby_every_plask_title", body="KALAN ZAMAN"},
                 #br{},
-                #label{class="tourlobby_every_plask_label", body=Time}
+                #label{id=lobby_timer, class="tourlobby_every_plask_label", body=Timer}
             ]
         },
 
@@ -686,6 +713,7 @@ comet_update(User, TournamentId) ->
             wf:session(TourId,TourId),
             wf:state(tour_long_id, TourId),
             wf:replace(attach_button, #link{id=attach_button, class="tourlobby_yellow_button", text=?_T("TAKE MY SEAT"), postback=attach}),
+            wf:replace(start_button, ""),
             ?INFO(" +++ (in comet): start game TId: ~p, User: ~p, Data: ~p", [TournamentId, User, TourId]),
             Url = lists:concat([?_U("/client"), "/", ?_U("okey"), "/id/", TourId]),
             StartClient = webutils:new_window_js(Url),
@@ -766,6 +794,7 @@ event(join_tournament) ->
 event({start_tour, Id, NPlayers}) ->
     TourId = nsw_srv_sup:start_tournament(Id, 1, NPlayers),
     wf:replace(attach_button, #link{id=attach_button, class="tourlobby_yellow_button", text=?_T("TAKE MY SEAT"), postback=attach}),
+    wf:replace(start_button, ""),
     wf:state(tour_long_id,TourId);
 
 event(attach) ->
@@ -780,10 +809,32 @@ event(attach) ->
             wf:wire(#script{script=StartClient})
     end;
 
+event(change_timer) ->
+    wf:update(lobby_timer, get_timer_for_now()),
+    wf:wire(#event{type=timer, delay=1000, postback=change_timer});
 
 event(Any)->
     webutils:event(Any).
 
+str_plus_0(N) ->
+    case N<10 of
+        true ->
+            "0" ++ integer_to_list(N);
+        false ->
+            integer_to_list(N)
+    end.
+
+get_timer_for_now() ->
+    TourTime = wf:state(tour_start_time),
+    DTime = calendar:time_to_seconds(TourTime) - calendar:time_to_seconds(time()),
+    case DTime =< 0 of
+        true -> ?_T("NOW");
+        false ->
+            S = DTime rem 60,
+            M = (DTime div 60) rem 60,
+            H = (DTime div 3600),
+            integer_to_list(H) ++ ":" ++ str_plus_0(M) ++ ":" ++ str_plus_0(S)
+    end.
 
 get_tournament(TrnId) ->
     Check = fun(undefined, _Value) -> true;
