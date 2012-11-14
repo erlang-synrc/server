@@ -387,6 +387,12 @@ handle_cast({rejoin, GameId} = Message, State = #state{user = User, games = Game
             {stop, {error, game_not_found}, State}
     end;
 
+handle_cast({disconnect, table_closed} = Message, State = #state{rpc = RPC}) ->
+    ?INFO("Recived a notification from the table: ~p", [Message]),
+    maybe_send_message(RPC, #disconnect{reason = "The table you are sitting on has been just closed"}, State),
+    {stop, normal, State};
+
+
 handle_cast({bot_session_attach, UserInfo}, State = #state{user = undefined}) ->
 %    ?INFO("bot session attach", []),
     {noreply, State#state{user = UserInfo}};

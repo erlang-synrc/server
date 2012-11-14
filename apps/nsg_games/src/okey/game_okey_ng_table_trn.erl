@@ -363,14 +363,16 @@ handle_parent_message({turn_result, TurnNum, Results}, StateName,
 handle_parent_message(rejoin_players, StateName,
                       #state{game_id = GameId, relay = Relay,
                              players = Players} = StateData) ->
-    relay_publish(Relay, {rejoin, GameId}), %% XXX Looks like a hack...
     [relay_unregister_player(Relay, P#player.id) || P <- players_to_list(Players)],
+    relay_publish(Relay, {rejoin, GameId}), %% XXX Looks like a hack... Should be sent personaly to players gamesessions
     {next_state, StateName, StateData#state{players = players_init()}};
 
 
 handle_parent_message(disconnect_players, StateName,
                       #state{relay = Relay, players = Players} = StateData) ->
-    [relay_kick_player(Relay, P#player.id) || P <- players_to_list(Players)],
+    [relay_unregister_player(Relay, P#player.id) || P <- players_to_list(Players)],
+    relay_publish(Relay, {disconnect, table_closed}), %% XXX Looks like a hack... Should be sent personaly to players gamesessions
+%%    [relay_kick_player(Relay, P#player.id) || P <- players_to_list(Players)],
     {next_state, StateName, StateData#state{players = players_init()}};
 
 
