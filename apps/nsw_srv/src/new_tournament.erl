@@ -232,7 +232,7 @@ content() ->
         #br{},
         #br{},
         "<center>",
-        #button{class="newtour_orange_button", text="YARAT", id=create, postback=create_pressed},
+        #button{class="newtour_orange_button", text="YARAT", id=create_button, postback=create_pressed},
         "</center>"
     ].
 
@@ -390,23 +390,26 @@ event(create_pressed) ->
             case TourName == "" of
                 true -> 
                     wf:wire(#alert{text=?_T("Please, provide tournament name!")}); 
-                false -> % PLEASE MAKE THIS ASYC NON BLOCKING 
-                         % IN POPUP WINDOW WITH "CREATING ...." OR SMTH
-                    wf:wire(#alert{text=?_T("New tournament created!")}),
-                    TID = nsm_tournaments:create(wf:user(), TourName, TourDesc, TourDate, TourTime, TourPlayers, TourQuota, [Prize1, Prize2, Prize3], TourType, TourGame),
-                    AllowedUsers = ["doxtop","demo1","maxim","sustel","ahmettez",
-                                    "kunthar","alice","kate","serg","imagia","willbe"],
-                    [case nsm_db:get(user,User) of
-                           {ok,U} -> nsm_tournaments:join(User,TID);
-                           {error,_} -> ?INFO("TOURNAMENT DEFAULT USERS SKIP: ~p",[User])
-                     end || User <- AllowedUsers],
-                    nsm_srv_tournament_lobby_sup:start_lobby(TID),
-                    wf:redirect(?_U("tournament/lobby/id/")++integer_to_list(TID))
+                false ->
+                    wf:replace(create_button, #panel{class="view_media_other_attachment", style="float:none", body=#panel{class=loading_spiner}}),
+                    wf:wire(#event{postback={start_tournament, TourName, TourDesc, TourDate, TourTime, TourPlayers, TourQuota, Prize1, Prize2, Prize3, TourType, TourGame}})
             end
     end;
+
+event({start_tournament, TourName, TourDesc, TourDate, TourTime, TourPlayers, TourQuota, Prize1, Prize2, Prize3, TourType, TourGame}) ->
+    TID = nsm_tournaments:create(wf:user(), TourName, TourDesc, TourDate, TourTime, TourPlayers, TourQuota, [Prize1, Prize2, Prize3], TourType, TourGame),
+    AllowedUsers = ["doxtop","demo1","maxim","sustel","ahmettez",
+                    "kunthar","alice","kate","serg","imagia","willbe"],
+    [case nsm_db:get(user,User) of
+           {ok,U} -> nsm_tournaments:join(User,TID);
+           {error,_} -> ?INFO("TOURNAMENT DEFAULT USERS SKIP: ~p",[User])
+     end || User <- AllowedUsers],
+    nsm_srv_tournament_lobby_sup:start_lobby(TID),
+    wf:redirect(?_U("tournament/lobby/id/")++integer_to_list(TID));
 
 event(hide_details) ->
     wf:wire(simple_lightbox, #hide{});
 
 event(Any) ->
     webutils:event(Any).
+

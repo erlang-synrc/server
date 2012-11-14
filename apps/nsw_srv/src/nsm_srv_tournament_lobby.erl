@@ -130,7 +130,7 @@ handle_call(check_tournament_time, _From, State) ->
     {SH, SM, _} = State#state.start_time,
     Status = case {date(), time()} of
         {StartDate, {SH, SM, _}} ->
-            ?INFO(" +++ Tournament activated"),
+%            ?INFO(" +++ Tournament activated"),
             start_tournament(self()),
             active;
         _ ->
