@@ -87,6 +87,9 @@ fields(pause_game) ->
 fields(game_paused) ->
     record_info(fields, game_paused);
 
+fields(disconnect) ->
+    record_info(fields, disconnect);
+
 %%% packed into game_event
 fields(player_left) ->
     record_info(fields, player_left);

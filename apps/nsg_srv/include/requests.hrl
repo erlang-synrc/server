@@ -131,6 +131,10 @@
           retries :: integer()
          }).
 
+-record(disconnect, {
+          reason :: string()
+         }).
+
 %% packet as game_event:
 -record(player_left, {
           player :: 'PlayerId'(),
