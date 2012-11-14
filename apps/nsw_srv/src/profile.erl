@@ -17,6 +17,7 @@
 -define(ORDERS_PER_PAGE, 10).
 
 main() ->
+    tw_utils:app_callback(),
     webutils:add_script("/nitrogen/js/form.js"),
     webutils:add_script("/nitrogen/js/input-type-file.js"),
     webutils:add_script("/nitrogen/blockui.js"),
@@ -136,27 +137,12 @@ section_body(profile) ->
     ],
 
     AvatarP = avatar_update_box(User),
-    Services = [
-	%{"/images/img-51.png", "Facebook", add},
-	{"/images/img-52.png", "Twitter", add}
-	%{"/images/img-53.png", "Tumblr", del},
-	%{"/images/img-54.png", "Vimeo", add},
-	%{"/images/img-55.png", "RSS", add}
-    ],
-    ServicesP = #panel{class=cell,body=[
+
+    Services = #panel{class=cell,body=[
 	#h3{text=?_T("Services")},
 	#list{class="soc-list",body=[
 	    fb_utils:service_item(),
-	    [begin
-		#listitem{class=png, body=[#image{image=Img},#span{text=Text},
-		    case Butt of
-			add ->
-			    #link{class="btn", text=["<span>+</span>",?_T("Add")],
-			    html_encode = false, postback={service, Text}};
-			del ->
-			    #link{class="btn btn-2", text=?_T("Edit"), postback={service, Text}}
-		    end]}
-	    end || {Img, Text, Butt} <- Services]
+	    tw_utils:service_item()
 	]}
     ]},
     [
@@ -164,7 +150,7 @@ section_body(profile) ->
      #panel{id=profile_info},
      #panel{class="profile-info", body=[
 	    #panel{class="col-l",body=["<form>", ColL, "</form>"]},
-	    #panel{class="col-r",body= [AvatarP, ServicesP]}]}
+	    #panel{class="col-r",body= [AvatarP, Services]}]}
     ];
 section_body(gifts) ->
     AllGifts = lists:reverse(lists:sort(nsm_users:list_gifts_of(wf:user()))),
@@ -799,6 +785,9 @@ u_event({invite_resend, Mail}) ->
         wf:update(invite_list, invite_list())
     end;
 
+u_event({service, twitter})->
+    TweetResult = tw_utils:tweet("robotweet"),
+    wf:info("Tweet result:~p~n", [TweetResult]);
 u_event({service, _}) ->
     u_event(not_done_yet);
 
