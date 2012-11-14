@@ -1,5 +1,5 @@
-%% -*- mode: nitrogen -*-
 -module (tournament_lobby).
+-author('Alexander Kalenuk <akalenuk@synrc.com>').
 -compile(export_all).
 -include_lib("nitrogen_core/include/wf.hrl").
 -include_lib("nsm_db/include/common.hrl").
@@ -519,7 +519,7 @@ user_table(Users) ->
                             end}
                         }
                     end
-                    || {UId, _S1, _S2, Color} <- Users]
+                    || {UId, _S1, _S2, Color,RealName} <- Users]
                 ]
             ]},
             #link{class="tourlobby_view_mode_link", text=?_T("Full view"), postback={change_view, full}}];
@@ -533,14 +533,14 @@ user_table(Users) ->
                     #tableheader{style="text-align:center;", text="DURUM"}
                 ]},
                 [[
-                    user_table_row(Name, Score1, Score2, Color, N)
-                ] || {{Name, Score1, Score2, Color}, N} <- NdUsers]
+                    user_table_row(Name, Score1, Score2, Color, N,RealName)
+                ] || {{Name, Score1, Score2, Color,RealName}, N} <- NdUsers]
             ]},
             #link{class="tourlobby_view_mode_link", text=?_T("Short view"), postback={change_view, short}}]
     end.
 
-user_table_row(UId, P1, P2, Color, N) ->
-    RealName = nsm_users:user_realname(UId),
+user_table_row(UId, P1, P2, Color, N,RealName) ->
+%    RealName = nsm_users:user_realname(UId),
     Avatar = avatar:get_avatar_by_username(UId, tiny),
     URL = site_utils:user_link(UId),
 
@@ -669,78 +669,33 @@ comet_update(User, TournamentId) ->
     end,
     comet_update(User, TournamentId).
 
-
-get_tour_fake_user_list() ->
-    [begin
-        {ok, Score1} = nsm_accounts:balance(wf:user(), ?CURRENCY_GAME_POINTS),
-        {ok, Score2} = nsm_accounts:balance(wf:user(), ?CURRENCY_KAKUSH),
-        {UId, Score1, Score2, 
-        case length(UId) rem 3 of
-            0 -> red;
-            1 -> green;
-            2 -> yellow
-        end}
-    end || #user{username=UId} <- lists:flatten([nsm_db:all(user) || _N <- lists:seq(1, 3)])].
-
-get_tour_user_list() ->
-    TID = wf:state(tournament_id),
-    ActiveUsers       = nsm_tournaments:active_users(TID),
-    NotActiveUsers    = not_active_users(TID, ActiveUsers),
-    AUL = [
-        begin
-            {ok, Score1} = nsm_accounts:balance(UId, ?CURRENCY_GAME_POINTS),
-            {ok, Score2} = nsm_accounts:balance(UId, ?CURRENCY_KAKUSH),
-            {UId, Score1, Score2, green}
-        end
-    || #user{username=UId} <- ActiveUsers],
-    NUL = [
-        begin
-            {ok, Score1} = nsm_accounts:balance(UId, ?CURRENCY_GAME_POINTS),
-            {ok, Score2} = nsm_accounts:balance(UId, ?CURRENCY_KAKUSH),
-            {UId, Score1, Score2, red}
-        end
-    || #user{username=UId} <- NotActiveUsers],
-    case lists:sum([1 || {UId, _, _, _} <- AUL, UId == wf:user()] ++ [1 || {UId, _, _, _} <- NUL, UId == wf:user()]) of
-        0 ->
-            {ok, Score1} = nsm_accounts:balance(wf:user(), ?CURRENCY_GAME_POINTS),
-            {ok, Score2} = nsm_accounts:balance(wf:user(), ?CURRENCY_KAKUSH),
-            lists:usort(AUL++NUL++[{wf:user(), Score1, Score2, yellow}]);
-        _ ->
-            lists:usort(AUL++NUL)
-    end.
-
-
 update_userlist() ->
     wf:update(players_table, user_table(get_tour_user_list())),
     wf:flush().
 
-
-not_active_users(TID, ActiveUsers) ->
-    CurrentUser = wf:user(),
-    %% get play records for tournament
-    AllUsers = nsm_tournaments:joined_users(TID),
-
-    AllUsersCount = length(AllUsers),
-    wf:update(user_count, wf:to_list(AllUsersCount)),
-
-    ActiveKeysSet0 = sets:from_list([U#user.username    || U <- ActiveUsers]),
-    AllKeysSet     = sets:from_list([PR#play_record.who || PR <- AllUsers]),
-
-    %% add user to active list
-    ActiveKeysSet = sets:add_element(CurrentUser, ActiveKeysSet0),
-    NotActiveKeys = sets:subtract(AllKeysSet, ActiveKeysSet),
-
-    lists:foldl(
-        fun(User, Acc) ->
-            case nsm_users:get_user(User) of
-                {ok, U} ->
-                    [U | Acc];
-                _ ->
-                    ?WARNING("user not forund: ~p", [User]),
-                    Acc
-            end
-        end, [], sets:to_list(NotActiveKeys)).
-
+get_tour_user_list() ->
+    TID = wf:state(tournament_id),
+    ActiveUsers = sets:from_list([U#user.username || U <- nsm_tournaments:active_users(TID)]),
+    JoinedUsers = sets:from_list([U#play_record.who || U <- nsm_tournaments:joined_users(TID)]),
+    List = [begin 
+               S1 = case nsm_accounts:balance(U, ?CURRENCY_GAME_POINTS) of
+                         {ok,AS1} -> AS1;
+                         {error,_} -> 0 end,
+               S2 = case nsm_accounts:balance(U,  ?CURRENCY_KAKUSH) of
+                         {ok,AS2} -> AS2;
+                         {error,_} -> 0 end,
+               ?INFO("User: ~p",[U]),
+               {U,S1,S2,
+                     case sets:is_element(U,JoinedUsers) of
+                          false -> yellow;
+                          true -> case wf:user() == U of
+                                        true -> green;
+                                        false -> red
+                                end
+                     end, nsm_users:user_realname(U)}
+    end || U <- sets:to_list(JoinedUsers) ++ 
+                case sets:is_element(wf:user(),JoinedUsers) of true -> []; false -> [wf:user()] end],
+    lists:usort(List).
 
 event(chat) ->
     User = wf:user(),
