@@ -765,7 +765,7 @@ event(join_tournament) ->
 
 event({start_tour, Id, NPlayers}) ->
     TourId = nsw_srv_sup:start_tournament(Id, 1, NPlayers),
-    wf:replace(attach_button, #link{id=attach_button, class="tourlobby_yellow_button", text="ATTACH", postback=attach}),
+    wf:replace(attach_button, #link{id=attach_button, class="tourlobby_yellow_button", text=?_T("TAKE MY SEAT"), postback=attach}),
     wf:state(tour_long_id,TourId);
 
 event(attach) ->
