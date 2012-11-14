@@ -265,7 +265,7 @@ handle_call(#unsubscribe_player_rels{players = Players}, _From,
 %%     RequestRef = match_maker:match_me(GameModule), %% FIXME : not exists
 %%     {reply, RequestRef, State#state{match_request = RequestRef}};
 
-handle_call(#join_game{game = GameId}, _From, #state{user = User} = State) ->
+handle_call(#join_game{game = GameId}, _From, #state{user = User, rpc = RPC} = State) ->
     UserId = User#'PlayerInfo'.id,
     ?INFO("join game ~p user ~p from ~p", [GameId, UserId,_From]),
     case get_relay(GameId, State#state.games) of
@@ -284,15 +284,21 @@ handle_call(#join_game{game = GameId}, _From, #state{user = User} = State) ->
                             Part = #participation{ref = Ref, game_id = GameId, reg_num = RegNum,
                                                   rel_module = RMod, rel_pid = RPid,
                                                   tab_module = TMod, tab_pid = TPid, role = player},
-                            Res = #'TableInfo'{}, %relay:get_table_info(SecondLevelRelay),
-                            {reply, Res, State#state{games = [Part | State#state.games]}};
+%%                            Res = #'TableInfo'{}, %relay:get_table_info(SecondLevelRelay),
+                            {reply, ok, State#state{games = [Part | State#state.games]}};
+                        {error, out} ->
+                            ?INFO("Out of the game: ~p.",[GameId]),
+                            maybe_send_message(RPC, #disconnect{reason = "You was disconnected from the game"}, State),
+                            {reply, ok, State};
                         {error, not_allowed} ->
                             ?ERROR("Not allowed to connect: ~p.",[GameId]),
-                            {reply, {error, this_game_is_private}, State}
+                            maybe_send_message(RPC, #disconnect{reason = "You are not allowed to connect to this game"}, State),
+                            {reply, ok, State}
                     end;
                 undefined ->
                     ?ERROR("Game not found: ~p.",[GameId]),
-                    {reply, {error, game_not_found}, State}
+                    maybe_send_message(RPC, #disconnect{reason = "The game you are trying to connect doesn't exist"}, State),
+                    {reply, ok, State}
             end
     end;
 
@@ -350,7 +356,7 @@ handle_call(_Request, _From, State) ->
 
 %% The notification from the current table to rejoin to the game
 %% because the user for example was moved to another table.
-handle_cast({rejoin, GameId} = Message, State = #state{user = User, games = Games}) ->
+handle_cast({rejoin, GameId} = Message, State = #state{user = User, games = Games, rpc = RPC}) ->
     ?INFO("Recived a notification from the table: ~p", [Message]),
     ?INFO("Requesting main relay info...",[]),
     case game_manager:get_relay_mod_pid(GameId) of
@@ -367,11 +373,17 @@ handle_cast({rejoin, GameId} = Message, State = #state{user = User, games = Game
                     NewGames = lists:keyreplace(GameId, #participation.game_id, Games, Part),
                     {noreply, State#state{games = NewGames}};
                 {error, out} ->
+                    ?INFO("Out of the game: ~p.",[GameId]),
+                    maybe_send_message(RPC, #disconnect{reason = "You are kicked from the game"}, State),
                     {stop, normal, State};
                 {error, not_allowed} ->
+                    ?ERROR("Not allowed to connect: ~p.",[GameId]),
+                    maybe_send_message(RPC, #disconnect{reason = "You are not allowed to connect to this game"}, State),
                     {stop, {error, not_allowed_to_join}, State}
             end;
         undefined ->
+            ?ERROR("Game not found: ~p.",[GameId]),
+            maybe_send_message(RPC, #disconnect{reason = "The game you are trying to connect doesn't exist"}, State),
             {stop, {error, game_not_found}, State}
     end;
 
@@ -423,6 +435,11 @@ handle_cast(#social_action_msg{} = Msg, State) ->
     ?INFO("social action msg", []),
     RPC = State#state.rpc,
     maybe_send_message(RPC, Msg, State);
+
+ handle_cast(#disconnect{} = Msg, State) ->
+     ?INFO("disconnect", []),
+     RPC = State#state.rpc,
+     maybe_send_message(RPC, Msg, State);
 
 handle_cast(Msg, State) ->
     ?INFO("session: unrecognized cast: ~p", [Msg]),
