@@ -49,7 +49,7 @@
          user_by_verification_code/1, update_user_name/3,
          list_membership/1, list_group_users/1, list_membership_count/1,
          user_by_email/1, user_by_facebook_id/1, user_by_username/1, change_group_name/2,
-         membership/2, move_group_members/3, get_group_members_count/1, get_group_members/1,
+         membership/2, move_group_members/3, get_group_members_count/1, get_group_members/1, create_tour_users/2,
          get_save_tables/1, save_game_table_by_id/1, invite_code_by_issuer/1, add_invite_to_issuer/2,
          block_user/2, unblock_user/2, list_blocks/1, list_blocked_me/1, is_user_blocked/2,
          add_translations/0,
@@ -182,7 +182,7 @@ add_translations() ->
               ok
     end, ?URI_DICTIONARY).
 
-add_sample_users() ->
+create_tour_users(A,B) ->
     TourUsers =  [#user{username = "trn_player" ++ integer_to_list(N),
                             password="password",
                             feed = feed_create(),
@@ -191,7 +191,19 @@ add_sample_users() ->
                             status=ok,
                             age={1981,9,29},
                             register_date={1345,14071,852889}
-                           } || N <- lists:seq(1, 512)],
+                           } || N <- lists:seq(A, B)],
+    [ begin
+          nsm_accounts:create_account(Me#user.username),
+          nsm_accounts:transaction(Me#user.username, ?CURRENCY_QUOTA, db_opt:get_default_quota(), #ti_default_assignment{}),
+          nsm_db:put(Me#user{password = utils:sha(Me#user.password),
+                                starred = feed_create(),
+                                pinned = feed_create()})
+      end || Me <- TourUsers].
+
+add_sample_users() ->
+
+    create_tour_users(1,2048),
+
     UserList =
                     [#user{username = "demo1", password="kakara20",
                            name = "Demo", surname = "Nstration", feed = feed_create(),
@@ -323,7 +335,7 @@ add_sample_users() ->
           nsm_db:put(Me#user{password = utils:sha(Me#user.password),
                                 starred = feed_create(),
                                 pinned = feed_create()})
-      end || Me <- UserList ++ TourUsers],
+      end || Me <- UserList],
     ?INFO("adding users to groups"),
     [ begin
           nsm_users:init_mq(Me#user.username, [GId1, GId2]),
