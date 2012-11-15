@@ -9,7 +9,7 @@
 -include("elements/records.hrl").
 
 -define(GIFTSPERTOURPAGE, 20).
--define(MIN_PRIZE_PERCENT, 20).
+-define(MIN_PRIZE_PERCENT, 10).
 
 
 main() ->
