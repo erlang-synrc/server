@@ -329,7 +329,6 @@ reset_slider() ->
     wf:state(slider_max_value, Max),
     wf:update(slider_min_value, integer_to_list(Min)),
     wf:update(slider_max_value, integer_to_list(Max)),
-    wf:wire(#alert{text=integer_to_list(PrizeFund) ++ " " ++integer_to_list(Max)}),
     event({newtour_slider}).
 
 set_prize(No, Id, ImageUrl) ->
