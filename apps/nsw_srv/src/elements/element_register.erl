@@ -92,7 +92,7 @@ facebook()->
 	    UserName = proplists:get_value(username, RegArgs),
 	    [M,D,Y] = string:tokens(proplists:get_value(birthday, RegArgs, "1/1/1970"), "/"),
 	    wf:set(reg_email, proplists:get_value(email, RegArgs)),
-	    wf:set(reg_username, UserName),
+	    wf:set(reg_username, ling:replace(UserName,".","_")),
 	    wf:set(reg_month, string:tokens(M,"0")),
 	    wf:set(reg_day, D),
 	    wf:set(reg_year, Y),
