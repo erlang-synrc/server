@@ -25,8 +25,8 @@ create_team(Name) ->
     ok = nsm_db:put(Team = #team{id=TID,name=Name}),
     TID.
 
-create(UID, Name) -> create(UID, Name, "", date(), time(), 100, 100, undefined, pointing, game_okey, 8).
-create(UID, Name, Desc, Date, Time, Players, Quota, Awards, Type, Game, Tours) ->
+create(UID, Name) -> create(UID, Name, "", date(), time(), 100, 100, undefined, pointing, game_okey, 8, slow).
+create(UID, Name, Desc, Date, Time, Players, Quota, Awards, Type, Game, Tours, Speed) ->
     TID = nsm_db:next_id("tournament",1),
     CTime = erlang:now(),
     ok = nsm_db:put(#tournament{name = Name,
@@ -41,6 +41,7 @@ create(UID, Name, Desc, Date, Time, Players, Quota, Awards, Type, Game, Tours) -
                                    game_type = Game,
                                    type = Type,
                                    tours = Tours,
+                                   speed = Speed,
                                    start_time = Time,
                                    status = created,
                                    owner = UID}),
