@@ -1034,7 +1034,8 @@ create_okey_game_player_state(PlayerId, ?STATE_PLAYING,
     RoundTimeout = if RoundTimeout1 == infinity -> null;
                       true -> case erlang:read_timer(RoundTRef) of
                                   false -> 0;
-                                  T -> T
+                                  T when T < 2000 -> 0; %% Latency time compensation
+                                  T -> T - 2000
                               end
                    end,
     #okey_game_player_state{whos_move = CurUserId,
@@ -1117,7 +1118,8 @@ create_okey_game_started(SeatNum, DeskState, CurRound, #state{scoring_state = Sc
     {_, PlayerHand} = lists:keyfind(SeatNum, 1, Hands),
     Hand = [tash_to_ext(Tash) || Tash <- PlayerHand],
     RoundTimeout = if RoundTimeout1 == infinity -> null;
-                      true -> RoundTimeout1
+                      RoundTimeout1 < 2000 -> 0;   %% Latency time compensation
+                      true -> RoundTimeout1 - 2000
                    end,
     #okey_game_started{tiles = Hand,
                        gosterge = tash_to_ext(Gosterge),
