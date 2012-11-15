@@ -329,6 +329,15 @@ product_list_paged(Page) ->
         Buttons
     ].
 
+long_integer_to_list(N) ->
+    ?PRINT(N),
+    if 
+        N < 1000 -> integer_to_list(N);
+        N < 1000000 -> integer_to_list(N div 1000) ++ " " ++ integer_to_list(N rem 1000);
+        N < 1000000000 -> integer_to_list(N div 1000000) ++ " " ++ integer_to_list(N div 1000 rem 1000) ++ " " ++ integer_to_list(N rem 1000);
+        true -> integer_to_list(N)
+    end.
+
 reset_slider() ->
     PrizePrices = lists:sum([
     case Id of
@@ -362,8 +371,10 @@ reset_slider() ->
     end,
     wf:state(slider_min_value, Min),
     wf:state(slider_max_value, Max),
-    wf:update(slider_min_value, integer_to_list(Min)),
-    wf:update(slider_max_value, integer_to_list(Max)),
+    {KMin, _} = nsm_gifts_tools:convert_money_to_kakush(Min),
+    {KMax, _} = nsm_gifts_tools:convert_money_to_kakush(Max),
+    wf:update(slider_min_value, long_integer_to_list(KMin)),
+    wf:update(slider_max_value, long_integer_to_list(KMax)),
     event({newtour_slider}).
 
 set_prize(No, Id, ImageUrl) ->
@@ -450,6 +461,14 @@ event(create_pressed) ->
         "Elemeli" -> elimination;
         _ -> unknown
     end,
+    TFast = ?_T("Fast"),
+    TNormal = ?_T("Normal"),
+    TSlow = ?_T("Slow"),
+    TourSpeed = case wf:q(tour_speed) of
+         TFast -> fast;
+         TNormal -> normal;
+         TSlow -> slow
+    end,
     TourDateSource = wf:q(tour_date),
     TourDateChunks = lists:reverse([list_to_integer(C) || C <- ling:split(TourDateSource, ".")]),
     TourDate = list_to_tuple(TourDateChunks),
@@ -476,12 +495,12 @@ event(create_pressed) ->
                 false ->
                     wf:replace(create_button, #panel{class="view_media_other_attachment", style="float:none", body=#panel{class=loading_spiner}}),
                     wf:replace(create_button_top, #panel{class="view_media_other_attachment", style="float:none", body=#panel{class=loading_spiner}}),
-                    wf:wire(#event{postback={start_tournament, TourName, TourDesc, TourDate, TourTime, TourPlayers, TourQuota, Prize1, Prize2, Prize3, TourType, TourGame, Tours}})
+                    wf:wire(#event{postback={start_tournament, TourName, TourDesc, TourDate, TourTime, TourPlayers, TourQuota, Prize1, Prize2, Prize3, TourType, TourGame, Tours, TourSpeed}})
             end
     end;
 
-event({start_tournament, TourName, TourDesc, TourDate, TourTime, TourPlayers, TourQuota, Prize1, Prize2, Prize3, TourType, TourGame,Tours}) ->
-    TID = nsm_tournaments:create(wf:user(), TourName, TourDesc, TourDate, TourTime, TourPlayers, TourQuota, [Prize1, Prize2, Prize3], TourType, TourGame, Tours),
+event({start_tournament, TourName, TourDesc, TourDate, TourTime, TourPlayers, TourQuota, Prize1, Prize2, Prize3, TourType, TourGame, Tours, TourSpeed}) ->
+    TID = nsm_tournaments:create(wf:user(), TourName, TourDesc, TourDate, TourTime, TourPlayers, TourQuota, [Prize1, Prize2, Prize3], TourType, TourGame, Tours, TourSpeed),
     AllowedUsers = ["doxtop","demo1","maxim","sustel","ahmettez",
                     "kunthar","alice","kate","serg","imagia","willbe"],
     [case nsm_db:get(user,User) of
