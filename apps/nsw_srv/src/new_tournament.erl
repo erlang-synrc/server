@@ -162,7 +162,7 @@ content() ->
                         #option { text="—" }
             ]},
             #label{style="position:absolute; left:514px; top:145px;", text="Oyun Sayısı:"},
-            #dropdown {postback=prize_fund_changed, id=tour_players, style="position:absolute; left:610px; top:138px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
+            #dropdown {postback=prize_fund_and_tours_and_quota_changed, id=tour_players, style="position:absolute; left:610px; top:138px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
                         #option { text="1024" },
                         #option { text="512" },
                         #option { text="256" },
@@ -171,7 +171,7 @@ content() ->
                         #option { text="16" }
             ]},
             #label{style="position:absolute; left:764px; top:145px;", text="Kota:"},
-            #dropdown {postback=prize_fund_changed, id=tour_quota, style="position:absolute; left:807px; top:138px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
+            #dropdown {postback=prize_fund_and_tours_changed, id=tour_quota, style="position:absolute; left:807px; top:138px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
                         #option { text="10" },
                         #option { text="8" },
                         #option { text="6" },
@@ -202,8 +202,8 @@ content() ->
                        background:url(../images/tournament/new_tournament/calendar_icon.png) no-repeat 118px 2px;",
                 text= SNH ++ ":00"},
 
-            #label{style="position:absolute; left:722px; top:197px; width:100px; text-align:right;", text=?_T("Games")++":"},
-            #dropdown {id=tour_tours, style="position:absolute; left:827px; top:190px; width:90px; height:32px; font-size:16px; padding-top:2px;", options=[
+            #label{style="position:absolute; left:722px; top:197px; width:100px; text-align:right;", text=?_T("Tours")++":"},
+            #dropdown {postback=prize_fund_changed, id=tour_tours, style="position:absolute; left:827px; top:190px; width:90px; height:32px; font-size:16px; padding-top:2px;", options=[
                         #option { text="6" },
                         #option { text="8" }
             ]},
@@ -306,11 +306,11 @@ product_list_paged(Page) ->
                         },
                         #tablecell{
                             style="text-align:right; background:#9d9d9d; color:#fff; 
-                                   font-size:18px; padding-right:5px",
-                            body=[
-                                affiliates:kurus_to_string(OneGift#gift.our_price),
-                                #image{image="images/tl_white.svg", style="width:12px; height:16px; padding-left:3px;"}
-                            ]
+                                   font-size:18px; padding-right:5px"%,
+%                            body=[
+%                                affiliates:kurus_to_string(OneGift#gift.our_price),
+%                                #image{image="images/tl_white.svg", style="width:12px; height:16px; padding-left:3px;"}
+%                            ]
                         }
                     ]},
 					"<div class='img'>",
@@ -339,8 +339,21 @@ reset_slider() ->
     end || Id <- [wf:state(prize_1), wf:state(prize_2), wf:state(prize_3)]]),
 
     NPlayers = list_to_integer(wf:q(tour_players)),
-    Quota = list_to_integer(wf:q(tour_quota)),
-    {ok, PrizeFund} = game_okey_ng_trn_elim:get_prize_fund(Quota, NPlayers),
+    Quota = case wf:state(workaround_quota) of 
+        undefined -> 
+            list_to_integer(wf:q(tour_quota));
+        Q -> 
+            wf:state(workaround_quota, undefined),
+            Q
+    end,
+    Tours = case wf:state(workaround_tours) of
+        undefined ->
+            list_to_integer(wf:q(tour_tours));
+        T ->
+            wf:state(workaround_tours, undefined),
+            T
+    end,
+    {ok, PrizeFund} = game_okey_ng_trn_elim:get_prize_fund(Quota, NPlayers, Tours),
     MaxOrNot = PrizeFund - PrizePrices,
     Min = PrizeFund * ?MIN_PRIZE_PERCENT div 100,
     Max = case Min > MaxOrNot of
@@ -502,13 +515,15 @@ event({start_tournament, TourName, TourDesc, TourDate, TourTime, TourPlayers, To
     webutils:post_user_system_message(Desc),
     wf:redirect(URL);
 
-event(prize_fund_changed) ->
+event(prize_fund_and_tours_and_quota_changed) ->
     case wf:q(tour_players) of
-        "16" -> wf:replace(tour_quota, #dropdown {postback=prize_fund_changed, id=tour_quota, style="position:absolute; left:807px; top:138px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
+        "16" -> wf:state(workaround_quota, 10),
+            wf:replace(tour_quota, #dropdown {postback=prize_fund_and_tours_changed, id=tour_quota, style="position:absolute; left:807px; top:138px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
                 #option { text="10" },
                 #option { text="8" }
             ]});
-        _ -> wf:replace(tour_quota, #dropdown {postback=prize_fund_changed, id=tour_quota, style="position:absolute; left:807px; top:138px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
+        _ -> wf:state(workaround_quota, 10),
+            wf:replace(tour_quota, #dropdown {postback=prize_fund_and_tours_changed, id=tour_quota, style="position:absolute; left:807px; top:138px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
                 #option { text="10" },
                 #option { text="8" },
                 #option { text="6" },
@@ -516,10 +531,22 @@ event(prize_fund_changed) ->
                 #option { text="2" }
             ]})
     end,
+    event(prize_fund_and_tours_changed);
+
+event(prize_fund_and_tours_changed) ->
+    Tours = game_okey_ng_trn_elim:get_tours(list_to_integer(wf:q(tour_quota)), list_to_integer(wf:q(tour_players)) ),
+    wf:state(workaround_tours, hd(Tours)),
+    wf:replace(tour_tours, #dropdown {postback=prize_fund_changed, id=tour_tours, style="position:absolute; left:827px; top:190px; width:90px; height:32px; font-size:16px; padding-top:2px;", options=[
+         #option { text=integer_to_list(T) }
+    || T <- Tours]}),
+    event(prize_fund_changed);
+
+event(prize_fund_changed) ->
     set_prize(1, undefined, "/images/tournament/new_tournament/question.png"),
     set_prize(2, undefined, "/images/tournament/new_tournament/question.png"),
     set_prize(3, undefined, "/images/tournament/new_tournament/question.png"),
     reset_slider();
+%    ok;
 
 event(deselect_1_prize) ->
     set_prize(1, undefined, "/images/tournament/new_tournament/question.png"),
