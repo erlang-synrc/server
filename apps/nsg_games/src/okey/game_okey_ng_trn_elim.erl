@@ -43,7 +43,7 @@
          params            :: proplists:proplist(),
          bots_params       :: proplists:proplist(),
          turns_plan        :: list(integer()), %% Defines how many players will be passed to a next turn
-         kakush_per_round  :: integer(),
+         quota_per_round   :: integer(),
          demo_mode         :: boolean(), %% If true then results of turns will be generated randomly
          %% Dinamic values
          players,          %% The register of tournament players
@@ -146,13 +146,13 @@ client_request(Pid, Message, Timeout) ->
 init([GameId, Params, _Manager]) ->
     ?INFO("OKEY_NG_TRN_ELIM <~p> Init started",[GameId]),
     Registrants = get_param(registrants, Params),
-    KakushPerRound = get_param(kakush_per_round, Params),
+    QuotaPerRound = get_param(quota_per_round, Params),
     Tours = get_param(tours, Params),
     DemoMode = get_option(demo_mode, Params, false),
     TrnId = get_option(trn_id, Params, undefined),
 
     RegistrantsNum = length(Registrants),
-    {ok, TurnsPlan} = get_plan(KakushPerRound, RegistrantsNum, Tours),
+    {ok, TurnsPlan} = get_plan(QuotaPerRound, RegistrantsNum, Tours),
     TableParams = table_parameters(?MODULE, self()),
     BotsParams = bots_parameters(),
 
@@ -168,7 +168,7 @@ init([GameId, Params, _Manager]) ->
                              trn_id = TrnId,
                              params = TableParams,
                              bots_params = BotsParams,
-                             kakush_per_round = KakushPerRound,
+                             quota_per_round = QuotaPerRound,
                              turns_plan = TurnsPlan,
                              demo_mode = DemoMode,
                              players = Players,
