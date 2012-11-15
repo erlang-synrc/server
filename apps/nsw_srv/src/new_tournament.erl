@@ -355,7 +355,8 @@ reset_slider() ->
             T
     end,
     {ok, PrizeFund} = game_okey_ng_trn_elim:get_prize_fund(Quota, NPlayers, Tours),
-    MaxOrNot = (PrizeFund - PrizePrices) * 100,
+?PRINT({PrizeFund, PrizePrices}),
+    MaxOrNot = (100*PrizeFund - PrizePrices),
     Min = PrizeFund * ?MIN_PRIZE_PERCENT,
     Max = case Min > MaxOrNot of
         true -> Min;
