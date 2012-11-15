@@ -425,6 +425,7 @@ event(create_pressed) ->
 
     TourPlayers = list_to_integer(wf:q(tour_players)),
     TourQuota = list_to_integer(wf:q(tour_quota)),
+    Tours = list_to_integer(wf:q(tour_tours)),
     Prize1 = wf:state(prize_1),
     Prize2 = wf:state(prize_2),
     Prize3 = wf:state(prize_3),
@@ -444,7 +445,7 @@ event(create_pressed) ->
             end
     end;
 
-event({start_tournament, TourName, TourDesc, TourDate, TourTime, TourPlayers, TourQuota, Prize1, Prize2, Prize3, TourType, TourGame}) ->
+event({start_tournament, TourName, TourDesc, TourDate, TourTime, TourPlayers, TourQuota, Prize1, Prize2, Prize3, TourType, TourGame,Tours}) ->
     TID = nsm_tournaments:create(wf:user(), TourName, TourDesc, TourDate, TourTime, TourPlayers, TourQuota, [Prize1, Prize2, Prize3], TourType, TourGame, Tours),
     AllowedUsers = ["doxtop","demo1","maxim","sustel","ahmettez",
                     "kunthar","alice","kate","serg","imagia","willbe"],
