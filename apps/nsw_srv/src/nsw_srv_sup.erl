@@ -108,7 +108,7 @@ start_tournament(TourId,NumberOfTournaments,NumberOfPlayers,Quota,Tours,Speed) -
         [begin
              {ok,GameId,A} = rpc:call(?GAMESRVR_NODE,game_manager,create_game,
                                       [game_okey_ng_trn_elim, [{registrants, Registrants},
-                                                               {kakush_per_round, Quota},
+                                                               {quota_per_round, Quota},
                                                                {tours, Tours},
                                                                {speed, Speed},
                                                                {trn_id,TourId},
