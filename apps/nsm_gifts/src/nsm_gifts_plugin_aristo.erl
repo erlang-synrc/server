@@ -61,8 +61,8 @@ process(P_XML) ->
                        small_image_url = Image,
                        big_image_url = Image,
                        in_stock = true,
-                       retailer_price = RetailerPrice,
-                       user_price = UserPrice
+                       retailer_price = RetailerPrice * 100,
+                       user_price = UserPrice * 100
                       } || #product_aristo{no = ProductId, name = Name, brand = Category, model = CategoryName, 
                                     price = RetailerPrice, currency = Currency, tl_price = TL_Price, 
                                     count = Count, cargo = Cargo, fix = Fix, image = Image,
