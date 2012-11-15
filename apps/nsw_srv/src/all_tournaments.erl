@@ -150,8 +150,8 @@ main_authorized() ->
             }
 
             .alltour_btns_blue {
-                display:block; 
-                font-size:15px; color:#111;
+                display:block;
+                font-size:12px; font-weight:bold; color:#111;
                 border:0px; text-align:center; line-height:52px;
                 height:52px;
             }
@@ -328,16 +328,16 @@ content() ->
     wf:state(alltour_arrow_shift, 0),
     [
         #panel{class="alltour_title", body=[
-                #label{class="alltour_title_label", body="TURNUVALAR SAYFASI"}
+                #label{class="alltour_title_label", body=?_T("TOURNAMENTS PAGE")}
             ]
         },
         #panel{id=top_selectors, style="height:700px; font-size:16px; ", body=[
             #panel{style="background-color:#e4e8e9;height:360px; margin-top:80px; margin-left:-25px; margin-right:-25px; width:960;", body=[]},
-            #link{style="position:absolute; top:52px; left:-1px;", class="alltour_bars alltour_bar_1", text="ÖNE ÇIKANLAR", postback=bar},
-            #link{style="position:absolute; top:52px; left:149px;", class="alltour_bars alltour_bar_2", text="ZAMANI YAKLAŞANLAR", postback=bar},
-            #link{style="position:absolute; top:52px; left:356px;", class="alltour_bars alltour_bar_3", text="DOLDU DOLACAKLAR", postback=bar},
-            #link{style="position:absolute; top:52px; left:548px;", class="alltour_bars alltour_bar_4", text="KALABALIK TURNUVALAR", postback=bar},
-            #link{style="position:absolute; top:52px; left:772px;", class="alltour_bars alltour_bar_5", text="KALLAVİ HEDIYELER", postback=bar},
+            #link{style="position:absolute; top:52px; left:-1px;", class="alltour_bars alltour_bar_1", text=?_T("FEATURED"), postback=bar},
+            #link{style="position:absolute; top:52px; left:149px;", class="alltour_bars alltour_bar_2", text=?_T("TIME APPROACHING"), postback=bar},
+            #link{style="position:absolute; top:52px; left:356px;", class="alltour_bars alltour_bar_3", text=?_T("NOT FILL UP"), postback=bar},
+            #link{style="position:absolute; top:52px; left:548px;", class="alltour_bars alltour_bar_4", text=?_T("LARGE TOURNAMENTS"), postback=bar},
+            #link{style="position:absolute; top:52px; left:772px;", class="alltour_bars alltour_bar_5", text=?_T("KALLAVİ GIFTS"), postback=bar},
             #image{image="/images/tournament/tournaments_page/bar_dividers.png", style="position:absolute; top:61px; left:148px;"},
             #image{image="/images/tournament/tournaments_page/bar_dividers.png", style="position:absolute; top:61px; left:355px;"},
             #image{image="/images/tournament/tournaments_page/bar_dividers.png", style="position:absolute; top:61px; left:547px;"},
@@ -349,18 +349,18 @@ content() ->
 
             #panel{style="height:1px; background-color:#c2c2c2; width:960px; margin-left:-25px; position:absolute; top:482px;", body=[]},
             #panel{class="alltour_second_title", style="top:472px;", body=[
-                    #label{class="alltour_title_label", body="FILTRE"}
+                    #label{class="alltour_title_label", body=?_T("FILTER")}
                 ]
             },
 
             %filters
-            #label{style="position:absolute; left:42px; top:540px;", text="Oyun Türü:"},
+            #label{style="position:absolute; left:42px; top:540px;", text=?_T("Game Type:")},
             #dropdown {style="position:absolute; left:126px; top:533px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
                         #option { text="—" },
                         #option { text="OKEY" },
                         #option { text="TAVLA" }
             ]},
-            #label{style="position:absolute; left:480px; top:540px;", text="Oyun Sayısı:"},
+            #label{style="position:absolute; left:480px; top:540px;", text=?_T("Games Count:")},
             #dropdown {style="position:absolute; left:576px; top:533px; width:160px; height:32px; font-size:16px; padding-top:2px;", options=[
                         #option { text="—" },
                         #option { text="16" },
@@ -371,7 +371,7 @@ content() ->
                         #option { text="512" },
                         #option { text="1024" }
             ]},
-            #label{style="position:absolute; left:764px; top:540px;", text="Kota:"},
+            #label{style="position:absolute; left:764px; top:540px;", text=?_T("Quota:")},
             #dropdown {style="position:absolute; left:807px; top:533px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
                         #option { text="—" },
                         #option { text="2" },
@@ -380,34 +380,34 @@ content() ->
                         #option { text="8" },
                         #option { text="10" }
             ]},
-            #label{style="position:absolute; left:285px; top:540px;", text="Tarih:"},
+            #label{style="position:absolute; left:285px; top:540px;", text=?_T("Date:")},
             #checkbox{id=tour_date_check, style="position:absolute; left:262px; top:536px; width:20px; height:20px;", checked=false},
             #textbox{id=tour_date, class="alltour_textbox",
                 style="position:absolute; left:330px; top:532px; width:120px; height:28px; font-size:16px;
                        background:url(../images/tournament/new_tournament/calendar_icon.png) no-repeat 98px 2px;",
                 text= (SD ++ "." ++ SM ++ "." ++ SY)},
 
-            #link{style="position:absolute; top:590px; left:36px;", class="alltour_btns_blue alltour_btn_blue_1", text="ARKADAŞLARIMA GÖRE", postback=btn_blue_1},
-            #link{style="position:absolute; top:590px; left:245px;", class="alltour_btns_blue alltour_btn_blue_2", text="HEDİYEYE GÖRE", postback=btn_blue_2},
-            #link{style="position:absolute; top:590px; left:399px;", class="alltour_btns_blue alltour_btn_blue_3", text="KATILIM ORANINA GÖRE", postback=btn_blue_3},
-            #link{style="position:absolute; top:590px; left:613px;", class="alltour_btns_blue alltour_btn_blue_4", text="PUANIMA GÖRE", postback=btn_blue_4},
-            #link{style="position:absolute; top:590px; left:765px;", class="alltour_btns_blue alltour_btn_blue_5", text="KAKUŞUMA GÖRE", postback=btn_blue_5},
+            #link{style="position:absolute; top:590px; left:36px;", class="alltour_btns_blue alltour_btn_blue_1", text=?_T("ACCORDING TO FRIENDS"), postback=btn_blue_1},
+            #link{style="position:absolute; top:590px; left:245px;", class="alltour_btns_blue alltour_btn_blue_2", text=?_T("BY GIFTS"), postback=btn_blue_2},
+            #link{style="position:absolute; top:590px; left:399px;", class="alltour_btns_blue alltour_btn_blue_3", text=?_T("PARTICIPATION PERCENTAGE"), postback=btn_blue_3},
+            #link{style="position:absolute; top:590px; left:613px;", class="alltour_btns_blue alltour_btn_blue_4", text=?_T("BY PUANIMA"), postback=btn_blue_4},
+            #link{style="position:absolute; top:590px; left:765px;", class="alltour_btns_blue alltour_btn_blue_5", text=?_T("BY SUM OF KAKUSH"), postback=btn_blue_5},
 
-            #label{style="position:absolute; left:243px; top:674px;", text="Sıralama Şekli:"},
+            #label{style="position:absolute; left:243px; top:674px;", text=?_T("Sort by type:")},
             #dropdown {style="position:absolute; left:357px; top:667px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
-                        #option { text="AZALAN" },
-                        #option { text="ARTAN" }
+                        #option { text=?_T("DESC") },
+                        #option { text=?_T("ASC") }
             ]},
-            #label{style="position:absolute; left:490px; top:674px;", text="Görünüm:"},
+            #label{style="position:absolute; left:490px; top:674px;", text=?_T("View:")},
             #dropdown {style="position:absolute; left:567px; top:667px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
-                        #option { text="12 ADET" },
-                        #option { text="24 ADET" },
-                        #option { text="24 HEPSİ" }
+                        #option { text="12 " ++ ?_T("PCS") },
+                        #option { text="24 " ++ ?_T("PCS") },
+                        #option { text="24 " ++ ?_T("ALL") }
             ]},
 
-            #link{style="position:absolute; top:726px; left:226px;", class="alltour_big_buttons alltour_gray_button", text="FILTRELE", postback=btn_orange},
-            #link{style="position:absolute; top:726px; left:392px;", class="alltour_big_buttons alltour_gray_button", text="SIFIRLA", postback=btn_gray},
-            #link{style="position:absolute; top:726px; left:558px;", class="alltour_big_buttons alltour_orange_button", text="NEW", postback=new_pressed},
+            #link{style="position:absolute; top:726px; left:226px;", class="alltour_big_buttons alltour_gray_button", text=?_T("FILTER"), postback=btn_orange},
+            #link{style="position:absolute; top:726px; left:392px;", class="alltour_big_buttons alltour_gray_button", text=?_T("RESET"), postback=btn_gray},
+            #link{style="position:absolute; top:726px; left:558px;", class="alltour_big_buttons alltour_orange_button", text=?_T("NEW"), postback=new_pressed},
 %            #button{style="position:absolute; top:740px; left:650px;", text=?_T("New"), postback=new_pressed},
 
             #link{style="position:absolute; top:268px; left:20px;", class="alltour_arrow_left", postback=arrow_left},
@@ -570,3 +570,6 @@ event(new_pressed) ->
 
 event(Any) ->
     webutils:event(Any).
+
+api_event(Name, Tag, Data) ->
+    fb_utils:api_event(Name, Tag, Data).

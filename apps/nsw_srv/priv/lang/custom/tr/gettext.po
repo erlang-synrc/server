@@ -3,3094 +3,108 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: 0.2.9\n"
+"Project-Id-Version: PACKAGE VERSION\n"
 "POT-Creation-Date: 2006-07-01 16:45+0200\n"
-"PO-Revision-Date: 2012-09-03 16:42+0200\n"
-"Last-Translator: Kunthar <kunthar@gmail.com>\n"
-"Language-Team: Kakaranet Team <kunthar@gmail.com>\n"
+"PO-Revision-Date: 2006-07-01 16:45+0200\n"
+"Last-Translator: Gettext-POlish system>\n"
+"Language-Team: Team <info@team.com>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Poedit-Basepath: /Users/kunthar/work/sintez/repos/base/kakaranet/apps/"
-"nsw_srv/priv/lang/custom/tr\n"
-"Language: tr_TR\n"
-"X-Poedit-SearchPath-0: /Users/kunthar/work/sintez/repos/base/kakaranet/apps/"
-"nsw_srv/priv/lang/custom/tr\n"
-#
-msgid " or "
-msgstr "ya da"
-#
-msgid "$user$ invites you! - Kakaranet.com"
-msgstr "$user$ sizi davet ediyor."
-#
-msgid "$user$ is currently not in any group"
-msgstr "$user$ bu kullanıcı herhangi bir grupta değil"
-#
-msgid "$username$ table, $date$"
-msgstr "$username$ masası, $date$"
-#
-msgid "%user% is not subscribed to anyone"
-msgstr "%user% kullanıcı kimseye abone olmamış"
-#
-msgid "(VISA) Getaprovisionfrombank(VISA)"
-msgstr "Bankasından provizyon alınız (VISA)"
-#
-msgid "(original couldn't found)"
-msgstr "İptal yapılamadı. Orjinali bulunamadı."
-#
-msgid "2011 &copy; Kakaranet. All rights reserved."
-msgstr "2011 &copy; Kakaranet. Tüm hakları saklıdır."
-#
-msgid "3D Secure Error"
-msgstr "3D Güvenlik Hatası"
-#
-msgid "<< Back"
-msgstr "<< Geri"
-#
-msgid ""
-"<ul>\n"
-"<li>Keep connected without being disturbed by anyone</li>\n"
-"<li>Create your own world</li>\n"
-"<li>Share your thoughts, files or music with friends</li>\n"
-"<li>Create your own interest groups</li>\n"
-"<li>Create your own music channels<li>\n"
-"</ul>"
-msgstr ""
-"<ul>\n"
-"<li>Kimse tarafından rahatsız edilmeden oynayın</li>\n"
-"<li>Kendi dünyanızı yaratın</li>\n"
-"<li>Düşüncelerinizi, müziğinizi, dosyalarınızı arkadaşlarınızla paylaşın</"
-"li>\n"
-"<li>Kendi ilgi alanınıza göre gruplarınızı yaratın</li>\n"
-"<li>Kendi müzik kanalınızı yaratın<li>\n"
-"</ul>"
-#
-msgid "A not implemented"
-msgstr "Bu özellik henüz eklenmedi"
-#
-msgid ""
-"A tournament is a competition involving a relatively large number of "
-"competitors, all participating in a sport or game. More specifically, the "
-"term may be used in either of two overlapping senses. One or more "
-"competitions held at a single venue and concentrated into a relatively short "
-"time interval. A competition involving multiple matches, each involving a "
-"subset of the competitors, with the overall tournament winner determined "
-"based on the combined results of these individual matches. These are common "
-"in those sports and games where each match must involve a small number of "
-"competitors: often precisely two, as in most team sports, racket sports and "
-"combat sports, many card games and board games, and many forms of "
-"competitive debating. Such tournaments allow large numbers to compete "
-"against each other in spite of the restriction on numbers in a single match."
-msgstr "Turnuva açıklama  metnidir."
-#
-msgid "ADDRESS"
-msgstr "Adres"
-#
-msgid "About Us"
-msgstr "Hakkımızda"
-#
-msgid "Access denied!"
-msgstr "Erişime izin verilmedi!"
-#
-msgid "Account"
-msgstr "Hesap"
-#
-msgid "Account information"
-msgstr "Hesap bilgisi"
-#
-msgid "Account is not suficient"
-msgstr "Hesapta yeterli miktar yok"
-#
-msgid "Account status"
-msgstr "Hesap durumu"
-#
-msgid "Account undefined"
-msgstr "Hesap tanımsız"
-#
-msgid "Account verified"
-msgstr "Hesap onaylandı"
-#
-msgid "AccountBalanceNotAvailable."
-msgstr "Hesap miktarı uygun değil"
-#
-msgid "Actions"
-msgstr "İşlemler"
-#
-msgid "Active members"
-msgstr "Aktif üyeler"
-#
-msgid "Add"
-msgstr "Ekle"
-#
-msgid "Add attachment"
-msgstr "Dosya ekle"
-#
-msgid "Add new value"
-msgstr "Yeni bir değer ekle"
-#
-msgid "Add/Update variable"
-msgstr "Değişken ekle/güncelle"
-#
-msgid "Additional options"
-msgstr "Masa kurma seçenekleri"
-#
-msgid "Address"
-msgstr "Adres"
-#
-msgid "Admin"
-msgstr "Yönetici"
-#
-msgid "Age"
-msgstr "Yaş"
-#
-msgid "Age limit"
-msgstr "Yaş sınırı"
-#
-msgid "Age limit:"
-msgstr "Yaş sınırı:"
-#
-msgid "Age limit: "
-msgstr "Yaş sınırı:"
-#
-msgid "Age: $fromage$ - $toage$"
-msgstr "Yaş: $fromage$ - $toage$"
-#
-msgid "Age: $minage$ - $maxage$"
-msgstr "Yaş: $minage$ - $maxage$"
-#
-msgid "All members"
-msgstr "Tüm üyeler"
-#
-msgid "All subscribtions"
-msgstr "Tüm aboneler"
-#
-msgid "All your friends"
-msgstr "Abone olduğunuz kişiler"
-#
-msgid "All your own and your own posts. And your favourite groups' posts too."
-msgstr "Gönderdiğiniz bildirimler ve favori gruplarınızın bildirimleri."
-#
-msgid ""
-"Ancient latin doesn't have 'k', 'j', 'z' and 'w'. These are relatively new "
-"letters. And they also are the most problematic. 'W' - is the widest one, so "
-"if you want to check if say user name fits in a field, you should check for "
-"'Wwwwwwww', as it will be the longest possible. Small 'k' has the ascender "
-"and the arm. This is the only letter, which has both, it can be very "
-"noticable in a plain text. 'Z' tends to have black spots in corners and 'j' "
-"is mostly ok, except for it is basically 'i' with a descender, so you have "
-"to watch them to differ enough. Apart of that, 'lorem ipsum' doesn't have "
-"tirets, quotation marks, exclamation marks, question marks and everything "
-"else, which makes a real typography. So please don't use it as a mock-up "
-"text. Better use real quotations. It's much more reaistic and fun."
-msgstr "Statik sayfalar 1"
-#
-msgid "Application error. Please, try later"
-msgstr "Uygulama hatası lütfen daha sonra tekrar deneyin."
-#
-msgid "Approve"
-msgstr "Onayla"
-#
-msgid "Ara"
-msgstr "Ara"
-#
-msgid "Aramıza Katıl!"
-msgstr "Aramıza Katıl!"
-#
-msgid "Are you sure to leave this group?"
-msgstr "Bu gruptan ayrılıyorsunuz. Cidden mi?"
-#
-msgid "Ask from customer."
-msgstr "Müşteriden sorulacak"
-#
-msgid "Authentication error"
-msgstr "Yetkilendirme hatası"
-#
-msgid "Avatar"
-msgstr "Avatar"
-#
-msgid "Ayaklarinizi Uzatin!"
-msgstr "Ayaklarınızı Uzatın"
-#
-msgid "Ayaklarınızı Uzatın!"
-msgstr "Ayaklarınızı Uzatın!"
-#
-msgid "B.Sc."
-msgstr "Üniv."
-#
-msgid "Bad argument. May be you use wrong type."
-msgstr "Yanlış argüman. Belki de yanlış bir tip kullandınız?"
-#
-msgid "Bad captcha!"
-msgstr "Güvenlik kodu yanlış!"
-#
-msgid "Bad verification code!"
-msgstr "Yanlış doğrulama kodu!"
-#
-msgid "Bank account details:"
-msgstr "Banka hesap detayları:"
-#
-msgid "Bank is not registered to 3D (Cache)"
-msgstr "Banka 3D için kayıtlı değil"
-#
-msgid "Bank name couldn't be found"
-msgstr "Banka adı bulunamıyor"
-#
-msgid "Below is Your paypal transaction id."
-msgstr "Aşağıda paypal transaction id no yer alıyor."
-#
-msgid "Best of day"
-msgstr "Günün en iyisi"
-#
-msgid "Bir daha gosterme"
-msgstr "Bir daha gosterme"
-#
-msgid "Birth Date"
-msgstr "Doğum Günü"
-#
-msgid "Birth date: "
-msgstr "Doğum günü:"
-#
-msgid "Block this user"
-msgstr "Bu kullanıcıyı engelle"
-#
-msgid "Browse"
-msgstr "Gözden geçir"
-#
-msgid "Busy"
-msgstr "Meşgul"
-#
-msgid ""
-"But we are working on it. Wait for a while - it will all be here. Every kind "
-"of statistics with all that tables and diagrams. All that stuff smart people "
-"with glasses call 'information design'."
-msgstr ""
-"Bu alanda size ait detaylı oyun istatistik bilgisi ve her oyundaki en iyiler "
-"listesi yer alacaktır. "
-#
-msgid "Buy"
-msgstr "Satın Al"
-#
-msgid "Buy Now"
-msgstr "Şimdi Satın Al"
-#
-msgid "Buy it"
-msgstr "Satın al"
-#
-msgid "Buy with Credit Card"
-msgstr "Kredi kartı ile satın al"
-#
-msgid "Buy with Paypal"
-msgstr "Paypal ile satın al"
-#
-msgid "Buy with mobile"
-msgstr "Mobil ödeme ile satın al"
-#
-msgid "Buy with wire transfer"
-msgstr "Havale ile satın al"
-#
-msgid ""
-"By clicking on 'Register' above, you are agreeing to the $terms$ and the "
-"$privacy$."
-msgstr ""
-"Kaydol tuşuna basarak $terms$ ve $privacy$ konularında onay vermiş "
-"oluyorsunuz."
-#
-msgid "CREATE"
-msgstr "MASANI KUR"
-#
-msgid "Can't be reached to card owner's bank"
-msgstr "Kart sahibinin bankasına erişilemiyor"
-#
-msgid "Can't find anything matching your request"
-msgstr "Talebinize uyan bir şeyler bulamadık"
-#
-msgid "Cancel"
-msgstr "İptal"
-#
-msgid "Cancel the operation"
-msgstr "İşlemi iptal et"
-#
-msgid "Cannot be Verified, cardholder wants to register later"
-msgstr "Onaylanmadı, kart sahibi daha sonra kaydolmak istiyor"
-#
-msgid "Card No"
-msgstr "Kart No"
-#
-msgid "Card has expired! Seize the card."
-msgstr "Kartın süresi dolmuş. El koyun."
-#
-msgid "Card number is false"
-msgstr "Kart no hatalı"
-#
-msgid "Card or Bank is not 3D"
-msgstr "Kart ya da banka 3D değil"
-#
-msgid "Card owner can't do this operation"
-msgstr "Kart sahibi bu işlemi yapamaz"
-#
-msgid "Card settlement date expired"
-msgstr "Kart kullanma süresi dolmuş."
-#
-msgid "Cardholder name"
-msgstr "Kart sahibinin adı"
-#
-msgid "Change Avatar"
-msgstr "Avatar değiştir"
-#
-msgid "Change password"
-msgstr "Şifre değiştir"
-#
-msgid "Change password - success!"
-msgstr "Şifre değişikliği başarılı!"
-#
-msgid "Chat"
-msgstr "Mesajlaşma"
-#
-msgid "Check the identity and perform a transaction"
-msgstr "Kimliği kontrol et ve işlemi yap"
-#
-msgid "Check your e-mail for invitation"
-msgstr "Davetiye için lütfen eposta adresinizi kontrol ediniz."
-#
-msgid "Cheque account undefined"
-msgstr "Çek hesabı tanımsız"
-#
-msgid "City:"
-msgstr "Şehir:"
-#
-msgid "City: "
-msgstr "Şehir:"
-#
-msgid "City: $city$"
-msgstr "Şehir: $city$"
-#
-msgid "City: Not defined"
-msgstr "Şehir: Tanımsız"
-#
-msgid "Clicking here will remove an entry from your own and your friends feeds"
-msgstr "Buraya tıklayarak bildirimi silersiniz."
-#
-msgid "Close"
-msgstr "Kapat"
-#
-msgid "Close filter"
-msgstr "Filtreyi kapat"
-#
-msgid "color"
-msgstr "renk"
-#
-msgid "Color"
-msgstr "Renk"
-#
-msgid "Comment"
-msgstr "Yorum"
-#
-msgid "Confirm: "
-msgstr "Onay:"
-#
-msgid "Contact"
-msgstr "İletişim:"
-#
-msgid "Continue"
-msgstr "Devam et"
-#
-msgid "Continue login"
-msgstr "Girişe devam"
-#
-msgid "Continue login >>"
-msgstr "Girişe devam  >>"
-#
-msgid "Continue tour >>"
-msgstr "Tura devam et >>"
-#
-msgid "Countdown from 10"
-msgstr "10'dan düşmeli"
-#
-msgid "Coupled"
-msgstr "Eşli"
-#
-msgid "Coupled game"
-msgstr "Eşli oyun"
-#
-msgid "Create"
-msgstr "Başlat"
-#
-msgid "Create Tournament"
-msgstr "Turnuva Yarat"
-#
-msgid "Create Your Game"
-msgstr "Masanı Kur"
-#
-msgid "Create a game"
-msgstr "Oyun Yarat"
-#
-msgid "Create a group"
-msgstr "Grup yarat"
-#
-msgid "Create data"
-msgstr "Veri yarat"
-#
-msgid "Create invitation code"
-msgstr "Davetiye kodu yarat"
-#
-msgid "Create new"
-msgstr "Yeni yarat"
-#
-msgid "Created:"
-msgstr "Yaratılan:"
-#
-msgid "Creation data:"
-msgstr "Yaratım bilgisi:"
-#
-msgid "Credit account undefined"
-msgstr "Kredi hesabı tanımsız"
-#
-msgid "Credit card"
-msgstr "Kredi kartı"
-#
-msgid "Criteria"
-msgstr "Oyun seçenekleri"
-#
-msgid "Daily operation limit exceeded"
-msgstr "Günlük işlem limiti aşıldı"
-#
-msgid "Daily sum is false / Cancel rejected"
-msgstr "Günlük toplam hatalı / İptal reddedildi"
-#
-msgid "Date of Birth:"
-msgstr "Doğum Tarihi:"
-#
-msgid "Date of birth is incorrect."
-msgstr "Doğum tarihi hatalı"
-#
-msgid "Date of birth:"
-msgstr "Doğum Tarihi:"
-#
-msgid ""
-"Dear $invited_user_name$,\n"
-"\n"
-"Our user $inviter_name$, invited you to Kakaranet Social Game Zone.\n"
-"You can sign in by clicking the link above:\n"
-"\n"
-"$invitation_code_link$\n"
-"\n"
-"$inviter_note$\n"
-"\n"
-"Please note that we are in closed private beta.\n"
-"Most of functionality of the site is unfinished and heavily testing.\n"
-"\n"
-"Note: This email is sending by one of our users. We hate SPAM and never let "
-"it happens.\n"
-"If you don't know this user, someone probably mis-typed your email address. "
-"You can ignore this message, and we apologize for the inconvenience. \n"
-"\n"
-"\n"
-"Thank you for join in,\n"
-"Kakaranet Team\n"
-msgstr ""
-"Değerli kullancımız, $invited_user_name \n"
-" \n"
-"Kullanıcımız $user, sizi Kakaranet Sosyal Oyun Ortamı’na davet ediyor. "
-"Aşağıdaki linke tıklayarak giriş yapabilirsiniz. $invitation_code_link \n"
-"\n"
-"$inviter_note \n"
-"\n"
-"Olabildiğince eğlenceli ve gündelik hayatın dertlerini biraz olsun "
-"unutmanızı sağlayan bir alan yaratmaya çalıştık. Sitemiz \" beta\" olarak "
-"devreye alındı.\n"
-"\n"
-"Beta ne demektir? Öncelikle bu aşamada sitemiz tam olarak “bitmemiş” "
-"durumdadır. Hem hatalarımızı test etmek, hem de sizlerle tanışmak için bu "
-"aşamada sitemizi açtık. - Sitede olmasını istediğimiz özelliklerin tamamı "
-"bitirilmemiş haldedir. - Zaman zaman, hata oluşabilir, taş düşebilir, ayı "
-"çıkabilir :) Yani tam olarak bitmemiş, ancak yapım halinde bir inşaata "
-"girmiş oluyorsunuz.\n"
-"\n"
-"Bu yardımlarınızdan dolayı sizi unutmayacağımızı bilmenizi isteriz.\n"
-"\n"
-"Beta test yaptığınız için ne tür faydalar elde edeceksiniz? \n"
-"\n"
-"* 1000 kota veriyoruz. Bu hayli uzun bir zaman oynama şansına sahipsiniz "
-"demek. \n"
-"* Site açıldıktan sonra oynadığınız sürece, kazanacağınız kakara puanlarıyla "
-"hediyelerimizden alabileceksiniz. Unutmayın, başkaları bunun için üye olmak "
-"zorunda. \n"
-"* Ödüllü turnuvalarımıza katılabileceksiniz. Eğer kazanırsanız turnuva ödülü "
-"sizindir.\n"
-"* 300 kişi getirene 40 TL hediye puanı ve 1000 kota daha veriyoruz. \n"
-" * Getirdiklerinin 30 kişi getirenine  de 500 kota veriyoruz, hep birlikte "
-"oynayabilmeniz için! \n"
-"* Bunlardan başka, yepyeni bir düzenleme yapmaya başlıyoruz. En önce "
-"katıldığınız için çok büyük avantaj kazanacaksınız. Detaylarını size "
-"bildireceğiz.\n"
-"\n"
-"Sizden tek ricamız, bolca oyun oynamanız. Eğer bir hata görürseniz ya da "
-"bize ilham verecek bir fikriniz varsa, sitemizde solda görülen mavi "
-"kulakçığa tıklayın ve sadece e-posta adresinizi yazarak bizimle paylaşın. "
-"İsterseniz e-posta ile info@kakaranet.com adresinden bize ulaşabilirsiniz. "
-"Umarız ki burada oynarak keyfinize keyif katarsınız :) \n"
-"\n"
-"İyi ki geldiniz, Sağolun varolun Kakaranet Sosyal Oyun Ortamı\n"
-"\n"
-"Not: Eğer bu e-postayı yanlışlıkla aldığınızı düşünüyorsanız lütfen siliniz. "
-"Sitemize kaydolmuş üyelerimiz, bu davet mesajını doğrudan size "
-"göndermektedir. Hiç bir şekilde SPAM’ı desteklemiyor ve “asla” SPAM "
-"yapmıyoruz. E-posta bilgileriniz, siz üye olana dek sisteme kayıt "
-"“edilmemektedir”.\n"
-"\n"
-#
-msgid ""
-"Dear visitor, in case you want to be a member of us, we need to register you "
-"to our system."
-msgstr ""
-"Değerli ziyaretçimiz, lütfen sitemize kaydolunuz ki, önünüzde bambaşka bir "
-"dünyanın kapıları açılsın."
-#
-msgid ""
-"Dear, $name$, </br>\n"
-"        Your order number is <b>$order_id$</b><br/>\n"
-"        You have to do wire transfer in 3 days to our account.<br/>\n"
-"        You can login to our system and play games but you can't benefit <br/"
-">\n"
-"        from our kakush gifts service.<b/>\n"
-"        Also, we want to remind you that you can't participate to "
-"tournaments too.</br>\n"
-"        Please indicate your name,surname and order number when you do wire "
-"transfer thank you."
-msgstr ""
-"Sayın, $name$, </br>\n"
-"                Sipariş numaranız: <b>$order_id$</b><br/>\n"
-"        3 gün içinde verdiğimiz hesap numarasına havale yapmak suretiyle "
-"sistemimizin tüm özeeliklerini kullanabileceksiniz.<br/>\n"
-"        Şu andan itibaren sistemimize giriş yapabilir ancak hediye, kakuş "
-"puanı gibi güzelliklerimizden yararlanamayacaksınız <br/>\n"
-"        Ayrıca, Turnuvalara katılamayacağınızı de bildirmek istiyoruz. </"
-"br>\n"
-"        Havale yaparken mutlaka, sipariş no, adınız ve soyadınızı bildirmeyi "
-"unutmayınız. </br>\n"
-"        Teşekkür ederiz </br>\n"
-"        Kakaranet Ekibi"
-#
-msgid "Decide later"
-msgstr "Daha sonra karar ver"
-#
-msgid "Delete"
-msgstr "Sil"
-#
-msgid "Deny Robots"
-msgstr "Robotla oynamak istemiyorum"
-#
-msgid "Desc: "
-msgstr "Açıklama:"
-#
-msgid "Description"
-msgstr "Açıklama"
-#
-msgid "Description:"
-msgstr "Açıklama:"
-#
-msgid "Destek verdiginiz icin tesekkur ederiz."
-msgstr "Destek verdiğini için teşekkür ederiz."
-#
-msgid "Detailed Settings"
-msgstr "Detaylı Ayarlar"
-#
-msgid "Direct messages"
-msgstr "Özel mesajlarım"
-#
-msgid "Disallow robots"
-msgstr "Robota izin verme"
-#
-msgid "Do not try again."
-msgstr "Tekrar denemeyin."
-#
-msgid "Do you want to hide this entry?"
-msgstr "Bu bildirim saklansın mı?"
-#
-msgid "Do you want to remove this entry?"
-msgstr "Bu bildirim silinsin mi?"
-#
-msgid "Do you want to subscribe to '~s'?"
-msgstr "'~s' kullanıcısına üye olmak istiyor musunuz?"
-#
-msgid "Do you want to subscribe to group '~s'?"
-msgstr "'~s' grubuna üye olmak istiyor musunuz?"
-#
-msgid "Double game points"
-msgstr "oyun puanlarını ikiye katla"
-#
-msgid "Drag me to the left to select game mode!"
-msgstr "Drag me to the left to select game mode!"
-#
-msgid "Drag me to the left to select game speed!"
-msgstr "Drag me to the left to select game speed!"
-#
-msgid "Drag me to the left to select number of set!"
-msgstr "Drag me to the left to select number of set!"
-#
-msgid "DuplicateReversal."
-msgstr "Ödeme sorunu - DuplicateReversal"
-#
-msgid "DuplicateTransmission"
-msgstr "Ödeme sorunu - DuplicateTransmission"
-#
-msgid "E-mail"
-msgstr "E-posta"
-#
-msgid "Earlier"
-msgstr "Önceki kayıtlar"
-#
-msgid "Ebcryption error"
-msgstr "Şifreleme hatası"
-#
-msgid "Edit"
-msgstr "Düzenle"
-#
-msgid "Edit friends list"
-msgstr "Arkadaş listesini düzenle"
-#
-msgid "Edit groups list"
-msgstr "Grup listesini düzenle"
-#
-msgid "Edit tournaments list"
-msgstr "Turnuva listesini düzenle"
-#
-msgid "Education:"
-msgstr "Eğitim:"
-#
-msgid "Education: "
-msgstr "Eğitim: "
-#
-msgid "Election"
-msgstr "Elemeli"
-#
-msgid "Elementary School"
-msgstr "İlk Okul"
-#
-msgid "Email"
-msgstr "Eposta"
-#
-msgid "Email address is incorrect!"
-msgstr "Eposta adresi hatalı"
-#
-msgid "Email address must be verified!"
-msgstr "Eposta adresinin onaylanması gerekiyor."
-#
-msgid "Email is in wrong format."
-msgstr "Eposta biçimi yanlış. <isim@xxx.com> gibi olmalı"
-#
-msgid "Email is invalid"
-msgstr "Eposta geçersiz"
-#
-msgid "Email is not valid."
-msgstr "Eposta geçersiz."
-#
-msgid "Email: "
-msgstr "Eposta"
-#
-msgid "Encryption / Foreign network error"
-msgstr "Şifreleme / Yabancı network hatası"
-#
-msgid "End of day operations in progress"
-msgstr "Gün sonu işlemleri yapılıyor"
-#
-msgid "Enter a valid email."
-msgstr "Geçerli bir eposta adresi giriniz."
-#
-msgid "Enter his/her name"
-msgstr "Adını giriniz"
-#
-msgid "Enter his/her name: "
-msgstr "Adını giriniz:"
-#
-msgid "Enter optional message for this user: "
-msgstr "Bu kişiye gidecek ek mesajınız varsa yazınız."
-#
-msgid "Entry limit exceeded."
-msgstr "Giriş limiti aşıldı"
-#
-msgid "Error"
-msgstr "Hata"
-#
-msgid "Error in communication with game server"
-msgstr "Oyun sunucusu ile iletişim hatası"
-#
-msgid "Error, try again later"
-msgstr "Hata, lütfen tekrar deneyiniz"
-#
-msgid "Error: $error$ "
-msgstr "Hata: $error$ "
-#
-msgid "Error: Variable key is in wrong format."
-msgstr "Hata: Değişken anahtarı yanlış biçemli."
-#
-msgid "Error: user not found."
-msgstr "Hata: Kullanıcı bulunamadı."
-#
-msgid "even/odd"
-msgstr "tek/çift"
-#
-msgid "Even/Odd"
-msgstr "Tek/Çift"
-#
-msgid "Expiration Date"
-msgstr "Son kullanma tarihi"
-#
-msgid "Expire date"
-msgstr "Son kullanma tarihi"
-#
-msgid "FRIENDS"
-msgstr "ARKADAŞLARIM"
-#
-msgid "False date / Network error"
-msgstr "Yanlış tarih / Network hatası"
-#
-msgid "fast"
-msgstr "hızlı"
-#
-msgid "Fast"
-msgstr "Hızlı"
-#
-msgid "Female"
-msgstr "Bayan"
-#
-msgid "File should be less than $size$ bytes"
-msgstr "Dosya boyutu $size$ değerinden az olmalıdır. (byte olarak)"
-#
-msgid "Filter tables..."
-msgstr "Masaları filtrele..."
-#
-msgid "Find/invite friends"
-msgstr "Arkadaşlarını bul/davet et"
-#
-msgid "First and second"
-msgstr "Birinci ve ikinciler"
-#
-msgid "Forgot Password"
-msgstr "Şifremi unuttum"
-#
-msgid "Free for game"
-msgstr "Oyun için hazırım"
-#
-msgid "Friend Settings"
-msgstr "Arkadaş Ayarları"
-#
-msgid "Friend settings"
-msgstr "Arkadaş Ayarları"
-#
-msgid "Friends"
-msgstr "Arkadaşlar"
-#
-msgid "Friends only:"
-msgstr "Sadece arkadaşlar:"
-#
-msgid "GARANTİ BANKASI A.Ş"
-msgstr "GARANTİ BANKASI A.Ş"
-#
-msgid "GROUPS"
-msgstr "GRUPLAR"
-#
-msgid "Game Page"
-msgstr "Oyun Sayfası"
-#
-msgid "Game Points"
-msgstr "Oyun Puanları"
-#
-msgid "Game Rules"
-msgstr "Oyun Kuralları"
-#
-msgid "Game Settings"
-msgstr "Oyun Ayarları"
-#
-msgid "Game Speed"
-msgstr "Oyun Hızı"
-#
-msgid "Game Type"
-msgstr "Oyun Türü"
-#
-msgid "Game mode"
-msgstr "Oyun modu"
-#
-msgid "Game mode:"
-msgstr "Oyun modu:"
-#
-msgid "Game mode: "
-msgstr "Oyun modu:"
-#
-msgid "Game quota"
-msgstr "Oyun kotası"
-#
-msgid "Game settings"
-msgstr "Oyun ayarları"
-#
-msgid "Game speed"
-msgstr "Oyun hızı"
-#
-msgid "Game speed:"
-msgstr "Oyun hızı:"
-#
-msgid "Game speed: "
-msgstr "Oyun hızı:"
-#
-msgid "Game type"
-msgstr "Oyun türü"
-#
-msgid "Game type missing"
-msgstr "Oyun türü seçilmemiş"
-#
-msgid "Games"
-msgstr "Oyunlar"
-#
-msgid "Gender"
-msgstr "Cinsiyet"
-#
-msgid "Gender limit:"
-msgstr "Cinsiyet seçimi"
-#
-msgid "Gender:"
-msgstr "Cinsiyet:"
-#
-msgid "Generate $count$ code and send to address '$email$'."
-msgstr "$count$ adet kod üret ve  '$email$' bu epostaya gönder."
-#
-msgid "Generate link"
-msgstr "Link üret"
-#
-msgid "Get invite"
-msgstr "Davetiye al"
-#
-msgid "Getaprovisionfrombank"
-msgstr "Bankadan provizyon alınız"
-#
-msgid "Gift points (kakush) charge"
-msgstr "Hediye puanı (kakuş) miktarı"
-#
-msgid "Gift range"
-msgstr "Hediye aralığı"
-#
-msgid "Gifts"
-msgstr "Hediyeler"
-#
-msgid "Gifts..."
-msgstr "Hediyeler..."
-#
-msgid "Gizlilik Politikasi"
-msgstr "Gizlilik Politikasi"
-#
-msgid "Gosterge finish"
-msgstr "Göstermeyle bitme"
-#
-msgid "Group Settings"
-msgstr "Grup Ayarları"
-#
-msgid "Group description"
-msgstr "Grup açıklaması"
-#
-msgid "Group has been added"
-msgstr "Grup eklendi"
-#
-msgid "Group have no members"
-msgstr "Henüz bu grubun üyesi yok"
-#
-msgid "Group info"
-msgstr "Grup bilgisi"
-#
-msgid "Group info:"
-msgstr "Grup bilgisi:"
-#
-msgid "Group name"
-msgstr "Grup adı"
-#
-msgid "Group not found"
-msgstr "Grup bulunamadı"
-#
-msgid "Group owner"
-msgstr "Grup sahibi"
-#
-msgid "Group settings"
-msgstr "Grup ayarları"
-#
-msgid "Group username"
-msgstr "Grup kullanıcı adı"
-#
-msgid "Groups"
-msgstr "Gruplar"
-#
-msgid "Groups:"
-msgstr "Gruplar:"
-#
-msgid "Grup Kur!"
-msgstr "Grup Kur!"
-#
-msgid "HEMEN ÜYE OL!"
-msgstr "HEMEN ÜYE OL!"
-#
-msgid "Have no idea, what it is about"
-msgstr "Buradan kazandığınız hediyelerinizi görebilirsiniz."
-#
-msgid "Hediyenizi Kazanın!"
-msgstr "Hediyenizi Kazanın!"
-#
-msgid "Hello there..."
-msgstr "Merhaba..."
-#
-msgid ""
-"Hello.\n"
-"Click on the link:\n"
-"$link$"
-msgstr ""
-"Merhaba.\n"
-"Lütfen linke tıklayınız:\n"
-"$link$"
-#
-msgid "Help & Support"
-msgstr "Yardım & Destek"
-#
-msgid "Hey!"
-msgstr "Hey!"
-#
-msgid "Hide"
-msgstr "Gizle"
-#
-msgid "High School"
-msgstr "Lise"
-#
-msgid "I Am Feeling Lucky"
-msgstr "PUANSIZ OYUN"
-#
-msgid "I don't accept observers"
-msgstr "Seyirci kabul etmiyorum"
-#
-msgid "I forgot my password!"
-msgstr "Şifremi unuttum!"
-#
-msgid "I'm feeling lucky!"
-msgstr "Şanslıyım Gibi!"
-#
-msgid "IBAN NUMARASI"
-msgstr "IBAN NUMARASI"
-#
-msgid "Image, music, file"
-msgstr "resim, müzik, dosya"
-#
-msgid "In group: "
-msgstr "grupta: "
-#
-msgid ""
-"In some cultures, the role of the matchmaker was and is quite "
-"professionalized. The Ashkenazi Jewish shadchan, or the Hindu astrologer, "
-"were often thought to be essential advisors and also helped in finding right "
-"spouses as they had links and a relation of good faith with the families. In "
-"cultures where arranged marriages were the rule, the astrologer often "
-"claimed that the stars sanctified matches that both parents approved of, "
-"making it quite difficult for the possibly-hesitant children to easily "
-"object - and also making it easy for the astrologer to collect his fee. "
-"Tarot divination has also been employed by some matchmakers."
-msgstr ""
-"Bilmediğin, tanımadığın oyunculara mecbur değilsin artık.\n"
-"Herkese ulaşabileceğin gibi, oynamak istediğin rakiplerin özelliklerini "
-"kendin belirleyebilirsin.\n"
-"İster sadece arkadaşların,\n"
-"İster sadece ilgi duyduğun gruplar…"
-#
-msgid "Incompatible data has been taken with original"
-msgstr "Uyumsuz veri orjinalle birlikte alındı! "
-#
-msgid "Info"
-msgstr "Bilgi"
-#
-msgid "Instructions has been sent to your email!"
-msgstr "Ne yapacağınızı eposta adresinize gönderdik!"
-#
-msgid "Invalid amount"
-msgstr "Geçersiz miktar"
-#
-msgid "Invalid invitation code"
-msgstr "geçersiz davetiye kodu"
-#
-msgid "Invalid operation"
-msgstr "Geçersiz işlem"
-#
-msgid "Invisible"
-msgstr "Görünmez ol"
-#
-msgid "Invitation Code"
-msgstr "Davetiye Kodu"
-#
-msgid "Invitation code"
-msgstr "Davetiye kodu"
-#
-msgid "Invitation person"
-msgstr "Davet eden"
-#
-msgid "Invite"
-msgstr "Davet et"
-#
-msgid "Invite Buddy"
-msgstr "Arkadaşını davet et"
-#
-msgid "Invite URL"
-msgstr "Davet adresi"
-#
-msgid "Invite code URL"
-msgstr "Davet adresi"
-#
-msgid "Invite code URL: "
-msgstr "Davet adresi:"
-#
-msgid "Invite request from $user$"
-msgstr "$user$ kullanıcısından davet var"
-#
-msgid "Invite requests"
-msgstr "Davetiye talepleri"
-#
-msgid "Invite sent!"
-msgstr "Davetiye gönderildi!"
-#
-msgid "Invite to group"
-msgstr "Gruba davet et"
-#
-msgid "Invite users:"
-msgstr "Kullanıcıları davet et:"
-#
-msgid "Invites"
-msgstr "Davetler"
-#
-msgid "Invites was sent. Success: $num1$; Errors: $num2$."
-msgstr "Davetiyeler gönderildi: $num1$; Hatalı olanlar: $num2$."
-#
-msgid "Is required."
-msgstr "Gereklidir."
-#
-msgid "Issuer caouldn't replied."
-msgstr "Banka cevaplanamadı."
-#
-msgid "Issuersign is not on"
-msgstr "Veren kuruluş online değil"
-#
-msgid "JOIN"
-msgstr "MASAYA KATIL"
-#
-msgid "Join"
-msgstr "Katıl"
-#
-msgid "Join An Existing Game"
-msgstr "Mevcut Bir Masaya Katıl"
-#
-msgid "Join Now!"
-msgstr "Şimdi Katıl!"
-#
-msgid "Join it NOW!"
-msgstr "Şimdi Katıl!"
-#
-msgid "Kakara Tavla"
-msgstr "Kakara Tavla"
-#
-msgid "KakaraNet - Private Beta"
-msgstr "KakaraNet -  Beta"
-#
-msgid "Kakaranet Membership"
-msgstr "Kakaranet Üyelik"
-#
-msgid "Kakaranet is registered trademark of Paynet Inc."
-msgstr "Kakaranet, Paynet A.Ş. tescilli markasıdır."
-#
-msgid "Kakaranet membership verification"
-msgstr "Kakaranet üyelik doğrulaması"
-#
-msgid "Kakaranet system message"
-msgstr "Kakaranet sistem mesajı"
-#
-msgid "Kakaranet özellikler"
-msgstr "Kakaranet özellikler"
-#
-msgid "Kakaranet.com"
-msgstr "Kakaranet.com"
-#
-msgid "Kakush"
-msgstr "Kakuş"
-#
-msgid "Kapali beta asamasindaki simetize hos geldiniz."
-msgstr "Beta aşamasındaki sitemize hoş geldiniz."
-#
-msgid "Kapali beta asamasindaki sitemize hos geldiniz."
-msgstr "Beta aşamasındaki sitemize hoş geldiniz."
-#
-msgid "Kapali beta ne demektir?"
-msgstr "Beta ne demektir?"
-#
-msgid "Kapat"
-msgstr "Kapat"
-#
-msgid "Keep me logged in"
-msgstr "Siteye bağlı kalayım"
-#
-msgid "Kendi dunyanizi yaratin, rahatsiz edilmeden oynayin"
-msgstr "Kendi dunyanizi yaratin, rahatsiz edilmeden oynayin"
-#
-msgid "Kick from table"
-msgstr "Masadan at"
-#
-msgid "Kriterlerinizi Belirleyin"
-msgstr "Kriterlerinizi Belirleyin"
-#
-msgid "Kullanim sartlari"
-msgstr "Kullanim sartlari"
-#
-msgid "Last Name"
-msgstr "Soyadı"
-#
-msgid "Last login"
-msgstr "Son giriş"
-#
-msgid "Later"
-msgstr "Daha sonra"
-#
-msgid "Leave group"
-msgstr "Gruptan ayrıl"
-#
-msgid "Leave group $group$"
-msgstr "$group$ grubundan ayrıl"
-#
-msgid "Leave table"
-msgstr "Masadan ayrıl"
-#
-msgid "Legal Contact"
-msgstr "Yasal İletişim Bilgisi"
-#
-msgid "Let's Play!"
-msgstr "Haydi Oynayalım"
-#
-msgid "Like"
-msgstr "Sevdim"
-#
-msgid "Like this group? "
-msgstr "Bu grubu sevdiniz mi?"
-#
-msgid "Limited card!!! Seize the card."
-msgstr "Kart sınırlı. Karta el koyunuz."
-#
-msgid "Limited card/Only valid in customer country"
-msgstr "Kart sınırlı. Sadece kart sahibinin ülkesinde geçer. "
-#
-msgid "List all values"
-msgstr "Tüm değerleri listele"
-#
-msgid "List of all your groups"
-msgstr "Tüm gruplarınızı listeleyin"
-#
-msgid "List of invitation URLs"
-msgstr "Davetiye adresleri"
-#
-msgid "Location"
-msgstr "Konum"
-#
-msgid "Location:"
-msgstr "Konum:"
-#
-msgid "Login"
-msgstr "Giriş"
-#
-msgid "login"
-msgstr "giriş"
-#
-msgid "Login with facebook"
-msgstr "Facebook ile giriş"
-#
-msgid "Logout"
-msgstr "Çıkış"
-#
-msgid ""
-"Lorem it amet, consectetur adipiscing elitarel. Aliquam sed sed elitereberi "
-"interdum merase"
-msgstr "Non existing text"
-#
-msgid "Lost card!!! Seize the card."
-msgstr "Kayıp kart!!! Karta el koyunuz."
-#
-msgid "M.Sc."
-msgstr "Yük. Müh."
-#
-msgid "MEMBERS"
-msgstr "ÜYELER"
-#
-msgid "Main Page"
-msgstr "Ana Sayfa"
-#
-msgid "Male"
-msgstr "Erkek"
-#
-msgid "Matchmaker"
-msgstr "Oyunbulan"
-#
-msgid "Max num of players"
-msgstr "Max. oyuncu sayısı"
-#
-msgid "Member Login"
-msgstr "Üye Girişi"
-#
-msgid "MemberCOmpanyCategoryCodeFalse"
-msgstr "Banka hatası - MemberCOmpanyCategoryCodeFalse"
-#
-msgid "Members of $group$"
-msgstr "$group$ grubu üyeleri"
-#
-msgid "Membership package ~p"
-msgstr "Üyelik paketi ~p"
-#
-msgid "Membership packages"
-msgstr "Üyelik paketleri"
-#
-msgid "Message format is wrong"
-msgstr "Mesaj formatı hatalı"
-#
-msgid "Message too long."
-msgstr "Mesaj çok uzun."
-#
-msgid "Mobile"
-msgstr "Mobil"
-#
-msgid "Mobile payments. Cooming soon."
-msgstr "Mobil ödeme pek yakında sinemalarda."
-#
-msgid "More"
-msgstr "Daha Fazla Yorum Gör"
-#
-msgid "My Account"
-msgstr "Hesabım"
-#
-msgid "My Discussions"
-msgstr "Tartışmalarım"
-#
-msgid "My Feed"
-msgstr "Bildirimlerim"
-#
-msgid "My Gifts"
-msgstr "Hediyelerim"
-#
-msgid "My Page"
-msgstr "Benim Sayfam"
-#
-msgid "My Profile"
-msgstr "Profilim"
-#
-msgid "My accont"
-msgstr "Hesabım"
-#
-msgid "My order history"
-msgstr "Sipariş geçmişi"
-#
-msgid "Name"
-msgstr "Adı"
-#
-msgid "Name Surname"
-msgstr "Adı Soyadı"
-#
-msgid "Name:"
-msgstr "Adı:"
-#
-msgid "Name: "
-msgstr "Adı:"
-#
-msgid "Net membership fee"
-msgstr "Net üyelik bedeli"
-#
-msgid "New Tournament"
-msgstr "Yeni turnuva"
-#
-msgid "New friend list"
-msgstr "Yeni arkadaş listesi"
-#
-msgid "New game"
-msgstr "Yeni oyun"
-#
-msgid "New password"
-msgstr "Yeni şifre"
-#
-msgid "New password (again)"
-msgstr "Yeni şifre (tekrar)"
-#
-msgid "New password *:"
-msgstr "Yeni şifre * :"
-#
-msgid "New password: "
-msgstr "Yeni şifre:"
-#
-msgid "Nick:"
-msgstr "Kullanıcı adı:"
-#
-msgid "Nickname: "
-msgstr "Kullanıcı adı:"
-#
-msgid "No observers"
-msgstr "Seyircisiz oyun"
-#
-msgid "No, i'm staying"
-msgstr "Hayır, kalıyorum"
-#
-msgid "No. of players"
-msgstr "Oyuncu sayısı"
-#
-msgid "No. of quota"
-msgstr "Kota miktarı"
-#
-msgid "Normal"
-msgstr "Normal"
-#
-msgid "Not implemented"
-msgstr "Bu özellik eklenmedi"
-#
-msgid "Not implemented."
-msgstr "bu özellik eklenmedi."
-#
-msgid "Not supported"
-msgstr "Desteklenmiyor"
-#
-msgid "Nothing on this page"
-msgstr "Henüz arkadaşınız yok"
-#
-msgid "Notification options"
-msgstr "Bildirim seçenekleri"
-#
-msgid "Now you can create your game!"
-msgstr "Şimdi oyununuzu yaratabilirsiniz!"
-#
-msgid "Num"
-msgstr "Num"
-#
-msgid "Num of players"
-msgstr "Oyuncu sayısı"
-#
-msgid "OK"
-msgstr "TAMAM"
-#
-msgid "ORTAKLAR ŞUBESİ"
-msgstr "ORTAKLAR ŞUBESİ"
-#
-msgid "Observers are accepted"
-msgstr "Seyirci kabul ediyorum"
-#
-msgid "Offline"
-msgstr "Çevrim dışı"
-#
-msgid "Ok"
-msgstr "Tamam"
-#
-msgid "Okey"
-msgstr "Okey"
-#
-msgid ""
-"Oncelikle bu asamada sitemiz tam olarak 'bitmemis' durumdadir.Hem "
-"hatalarimizi test etmek, hem de sizlerle tanismak icin bu asamada sitemizi "
-"actik."
-msgstr ""
-"Oncelikle bu asamada sitemiz tam olarak 'bitmemis' durumdadir.Hem "
-"hatalarimizi test etmek, hem de sizlerle tanismak icin bu asamada sitemizi "
-"actik."
-#
-msgid "Online"
-msgstr "Burdayım"
-#
-msgid "Online Gamers"
-msgstr "Oynayanlar"
-#
-msgid "Only first"
-msgstr "Sadece birinci"
-#
-msgid "Only owner can do that."
-msgstr "Sadece masa sahibi bunu yapabilir"
-#
-msgid "Only owner can start the game"
-msgstr "Sadece masa sahibi oyunu başlatabilir."
-#
-msgid "Operation can't be directed to proper section"
-msgstr "Operasyon uygun bölüme yönlendirilemedi."
-#
-msgid "Operation cancelled"
-msgstr "İşlem iptal edildi"
-#
-msgid "Operation couldn't be cancelled"
-msgstr "İşlem iptal edilemedi"
-#
-msgid "Operation partially done"
-msgstr "İşlem kısmen yapıldı"
-#
-msgid "Optional settings"
-msgstr "Opsiyonel seçimler"
-#
-msgid "Options"
-msgstr "Seçenekler"
-#
-msgid ""
-"Or the real text. At least a draft of it. It is the absolutely number one "
-"choise anytime anywhere!"
-msgstr ""
-"Ya da gerçek yazı da olabilir. Ama en önemlisi, bunun nerde olduğunu "
-"bulmakta!"
-#
-msgid "Original rejected/File is out of service"
-msgstr "Orjinal reddedildi/Dosya servis dışı"
-#
-msgid "Others"
-msgstr "Diğerleri"
-#
-msgid ""
-"Our player $username$, has created '$tablename$' for $gametype$ game. Game "
-"specs: "
-msgstr ""
-"$username$, adlı kullanıcımız '$tablename$' adlı masada $gametype$ oyunu "
-"yarattı. Oyun özellikleri şöyle: "
-#
-msgid "Our player, $username$, has created "
-msgstr "$username$, adlı kullanıcımız "
-#
-msgid "for"
-msgstr "adlı"
-#
-msgid "game"
-msgstr "oyunu"
-#
-msgid "specs"
-msgstr "özellikleri şöyle"
-#
-msgid "Owner"
-msgstr "Sahibi"
-#
-msgid "Owner:"
-msgstr "Sahibi:"
-#
-msgid "PAYNET İNTERNET HİZMETLERİ A.Ş"
-msgstr "PAYNET İNTERNET HİZMETLERİ A.Ş"
-#
-msgid "PLAY"
-msgstr "HEMEN OYNA"
-#
-msgid "Package"
-msgstr "Paket"
-#
-msgid "Package $number$, $quota$ quotas, $date$"
-msgstr "Paket no $number$, $quota$ kota, tarih $date$"
-#
-msgid "Package number"
-msgstr "Paket nosu"
-#
-msgid "Packages"
-msgstr "Paketler"
-#
-msgid "Packet"
-msgstr "Paket"
-#
-msgid "Paid:"
-msgstr "Ödendi:"
-#
-msgid "pair"
-msgstr "eşli"
-#
-msgid "Pair"
-msgstr "Eşli"
-#
-msgid "Paired Game"
-msgstr "Eşli Oyun"
-#
-msgid "Password"
-msgstr "Şifre"
-#
-msgid "Password (again)"
-msgstr "Şifre (tekrar)"
-#
-msgid "Password can't be verified"
-msgstr "Şifre onaylanamadı"
-#
-msgid "Password different!"
-msgstr "Şifreler farklı"
-#
-msgid "Password entry limit exceeded!!! Seize the card."
-msgstr "Şifre giriş limiti aşıldı. Karta el koyun."
-#
-msgid "Password entry lmit exceeded"
-msgstr "Şifre girme limiti aşıldı. #minicakal detected."
-#
-msgid "Password is to short. Six letters needed."
-msgstr "Şifre çok kısa. En az 6 karakter olmalı. "
-#
-msgid "Password is too short."
-msgstr "Şifre çok kısa"
-#
-msgid "Password is wrong"
-msgstr "Şifre hatalı"
-#
-msgid "Passwords does not match."
-msgstr "Şifreler aynı değil."
-#
-msgid "Passwords don't match."
-msgstr "Şifreler aynı değil."
-#
-msgid "Passwords should match!"
-msgstr "Şifreler aynı olmalı!"
-#
-msgid "Payment failed"
-msgstr "Ödeme başarısız oldu"
-#
-msgid "Payments"
-msgstr "Ödemeler"
-#
-msgid "Paypal"
-msgstr "Paypal"
-#
-msgid "Paypal error"
-msgstr "Paypal hatası"
-#
-msgid "Paypal transaction Id"
-msgstr "Paypal transaction Id nosu"
-#
-msgid "Personal"
-msgstr "Kişisel"
-#
-msgid "Personal Settings"
-msgstr "Kişisel Ayarlar"
-#
-msgid "Personal settings"
-msgstr "Kişisel ayarlar"
-#
-msgid "Phd"
-msgstr "Doktora"
-#
-msgid "Player statistics"
-msgstr "Oyuncu istatistikleri"
-#
-msgid "Players:"
-msgstr "Oyuncular:"
-#
-msgid ""
-"Please become our member. You will start getting those gifts as soon as "
-"being our member."
-msgstr ""
-"Lütfen üyemiz olun. Üye olduğunuz an, hediyelerle dolu güzel günler sizi "
-"bekliyor olacak :)"
-#
-msgid "Please call bank security department"
-msgstr "HEMEN BANKA GÜVENLİK BİRİMİNİ ARAYIN!!!"
-#
-msgid "Please fill this field"
-msgstr "Lütfen bu alanı doldurunuz"
-#
-msgid "Please join"
-msgstr "Size uyan paketi seçin "
-#
-msgid "Please select a file"
-msgstr "Dosya seçiniz"
-#
-msgid "Please select game type."
-msgstr "Oyun türü seçiniz"
-#
-msgid "Please, register"
-msgstr "Lütfen kaydolun"
-#
-msgid "Pointing"
-msgstr "Puanlama"
-#
-msgid "Pointing System"
-msgstr "Puanlama sistemi"
-#
-msgid "Points"
-msgstr "Puanlar"
-#
-msgid "Popular groups"
-msgstr "Popili gruplar"
-#
-msgid "Possibly stolen card!!! Seize the card."
-msgstr "Muhtemelen çalıntı kart!!! Karta el koyun."
-#
-msgid "Post"
-msgstr "Gönder"
-#
-msgid "Price"
-msgstr "Fiyat"
-#
-msgid "Print"
-msgstr "Yazdır"
-#
-msgid "Privacy Policy"
-msgstr "Gizlilik Politikamız"
-#
-msgid "Private"
-msgstr "Gizli"
-#
-msgid "Private group"
-msgstr "Kapalı/Gizli grup"
-#
-msgid "Private table"
-msgstr "Özel masa"
-#
-msgid "Private table, only for invited friends."
-msgstr "Özel masa, sadece davetli arkadaşlar içindir."
-#
-msgid "Private table, only friends"
-msgstr "Özel masa, sadece davetli arkadaşlar için"
-#
-msgid "Process not confirmed"
-msgstr "İşlem onaylanmadı"
-#
-msgid "Profile"
-msgstr "Profil"
-#
-msgid "Profile Information"
-msgstr "Profil Bilgisi"
-#
-msgid "Public group"
-msgstr "Açık Grup"
-#
-msgid "Publicity"
-msgstr "Açık mı, Özel mi?"
-#
-msgid "Publicity:"
-msgstr "Durumu:"
-#
-msgid "Purchase details:"
-msgstr "Satınalma detayları:"
-#
-msgid "Purchases"
-msgstr "Siparişler"
-#
-msgid "Put your thoughts in here..."
-msgstr "Varsa sözünüz, buyrun burada söyleyin..."
-#
-msgid "Question"
-msgstr "Soru"
-#
-msgid "Question: "
-msgstr "Soru:"
-#
-msgid "Quota"
-msgstr "Kota"
-#
-msgid "Quota exceeded."
-msgstr "Kota aşıldı"
-#
-msgid "Quota hard limit reached"
-msgstr "Kota hard limiti aşıldı"
-#
-msgid "Quota is "
-msgstr "Kota"
-#
-msgid "Rakibinizi Siz Seçin!"
-msgstr "Rakibinizi Siz Seçin!"
-#
-msgid "Rakiplerinizi siz seçin"
-msgstr "Rakiplerinizi siz seçin"
-#
-msgid "Ready"
-msgstr "Hazır"
-#
-msgid "Recipient e-mail address"
-msgstr "Alıcı eposta adresi"
-#
-msgid "Recommend friends"
-msgstr "Arkadaşlarınıza tavsiye edin"
-#
-msgid "Register"
-msgstr "Kaydol"
-#
-msgid "Register data"
-msgstr "Kayıt bilgisi"
-#
-msgid "Register success"
-msgstr "Kayıt başarılı"
-#
-msgid "Reject"
-msgstr "Reddet"
-#
-msgid "Remaining Quota"
-msgstr "Kalan Kota"
-#
-msgid "Remove"
-msgstr "Kaldır"
-#
-msgid "Repeat password *:"
-msgstr "Şifre tekrarı *:"
-#
-msgid "Replay Guiders"
-msgstr "Açıklamaları Göster"
-#
-msgid "Reports"
-msgstr "Raporlar"
-#
-msgid "Request an invitation!"
-msgstr "Davetiye talep et!"
-#
-msgid "Request provision one more time."
-msgstr "Bir kere daha provizyon talep et"
-#
-msgid "Request sent."
-msgstr "Talep gönderildi."
-#
-msgid "Resend verification"
-msgstr "Onay kodunu tekrar gönder"
-#
-msgid "Revoke Access from Facebook"
-msgstr "Facebook erişimini kaldır"
-#
-msgid "Revoke failed! Please try again or notify the administrator"
-msgstr "Kaldırma işlemi başarısız oldu. Lütfen biraz sonra tekrar deneyiniz."
-#
-msgid "Revoke success!"
-msgstr "Kaldırma işlemi başarılı!"
-#
-msgid "Robot Player"
-msgstr "Robot Oyuncu"
-#
-msgid "Rounds"
-msgstr "El sayısı"
-#
-msgid "Running $type$ games: $count$ "
-msgstr "$type$ tür oyun oynanıyor: $count$ "
-#
-msgid "Save"
-msgstr "Kaydet"
-#
-msgid "Saved!"
-msgstr "Kaydedildi!"
-#
-msgid "Search"
-msgstr "Arama"
-#
-msgid "Search for a group:"
-msgstr "Grup içi arama:"
-#
-msgid "Search users:"
-msgstr "Kullanıcı arama:"
-#
-msgid "Seize the card!!!"
-msgstr "Karta el koyun!!!"
-#
-msgid "Select package"
-msgstr "Paket seçimi"
-#
-msgid "Send"
-msgstr "Gönder"
-#
-msgid "Send direct message"
-msgstr "Özel mesaj gönder"
-#
-msgid "Send to"
-msgstr "Kime"
-#
-msgid "Send to mail: "
-msgstr "Eposta adresi:"
-#
-msgid "Sende Bir"
-msgstr "Sende Bir"
-#
-msgid "Sende Hemen"
-msgstr "Sende Hemen"
-#
-msgid "Sent to"
-msgstr "Kime"
-#
-msgid "Services"
-msgstr "Servisler"
-#
-msgid "Set"
-msgstr "Değiştir"
-#
-msgid "Set: $setsize$"
-msgstr "El: $setsize$"
-#
-msgid "Sets"
-msgstr "Setler"
-#
-msgid "Sets:"
-msgstr "Setler:"
-#
-msgid "Settings"
-msgstr "Ayarlar"
-#
-msgid "Sex: "
-msgstr "Cinsiyet:"
-#
-msgid "Share"
-msgstr "Paylaş"
-#
-msgid "Sign Up"
-msgstr "Üye Ol"
-#
-msgid "sign up"
-msgstr "kayıt ol"
-#
-msgid "sign up with Facebook"
-msgstr "Facebook ile kaydol"
-#
-msgid "Signup"
-msgstr "Üye Ol"
-#
-msgid "Sitede olmasini istedigimiz ozelliklerin tamami bitirilmemis haldedir."
-msgstr "Sitede olmasını istediğimiz özelliklerin tamami bitirilmemiş haldedir."
-#
-msgid "Skill Points"
-msgstr "Yetenek Puanı"
-#
-msgid "Slang"
-msgstr "Argo"
-#
-msgid "Slang is accepted"
-msgstr "Argo/Küfür olabilir."
-#
-msgid "slow"
-msgstr "yavaş"
-#
-msgid "Slow"
-msgstr "Yavaş"
-#
-msgid "Social"
-msgstr "Sosyal"
-#
-msgid "Social Club of Pinkies"
-msgstr "Sinan Abi'nin Yeri"
-#
-msgid ""
-"Social dance, especially in frontier North America, the contra dance and "
-"square dance, has also been employed in matchmaking, usually informally. "
-"However, when farming families were widely separated and kept all children "
-"on the farm working, marriage-age children could often only meet in church "
-"or in such mandated social events. Matchmakers, acting as formal chaperones "
-"or as self-employed 'busybodies' serving less clear social purposes, would "
-"attend such events and advise families of any burgeoning romances before "
-"they went too far."
-msgstr ""
-"Burası sadece bir oyun ortamı değil.\n"
-"İstediğin her şeyi paylaşabileceğin bir platform.\n"
-"“Nasıl görünmek istiyorsan öyle ol”! ya da \n"
-"“Nasılsan öyle görün”!..\n"
-"Kendini ifade etmek için ne istiyorsan yap…\n"
-"Resimlerin, müziğin, felsefen, için, dışın hatta yanların…\n"
-"Bunları kiminle paylaşmak istiyorsan sen belirle.\n"
-"Kendi dünyanı kur…"
-#
-msgid ""
-"Socialization (or socialisation) is a term used by sociologists, social "
-"psychologists, anthropologists, political scientists and educationalists to "
-"refer to the lifelong process of inheriting and disseminating norms, customs "
-"and ideologies, providing an individual with the skills and habits necessary "
-"for participating within his or her own society. Socialization is thus ‘the "
-"means by which social and cultural continuity are attained."
-msgstr ""
-"Sohbet et, tartış, takıl, görüşlerini ilet, yada izle…\n"
-"Yorum yap, beğen, beğenil yada beğenilmeyip eleştiril…\n"
-"Nasıl istersen öyle… Ne verirsen onu alacağını unutma….!"
-#
-msgid ""
-"Socialization describes a process which may lead to desirable, or 'moral', "
-"outcomes. Individual views on certain issues, such as race or economics, may "
-"be socialized (and to that extent normalized) within a society. Many socio-"
-"political theories postulate that socialization provides only a partial "
-"explanation for human beliefs and behaviors, maintaining that agents are not "
-"'blank slates' predetermined by their environment."
-msgstr ""
-"Eski arkadaşların – yeni arkadaşların…\n"
-"Farklı gruplar, farklı insanlar…\n"
-" İfade özgürlüğü…(!)…(Yasaları zorlarsan birileri engeller elbet…)\n"
-"Oyun aleminde bulduğuna sıkışmak zorunda değilsin artık…\n"
-"Kendi dünyanı kendin yarat…"
-#
-msgid "Something:"
-msgstr "Something:"
-#
-msgid ""
-"Sorry, but you can't revoke access to FB if you haven't defined your "
-"password! Otherwise you wouldn't be able to log in!"
-msgstr ""
-"Şifre belirlemediyseniz Facebook çıkışı yapmanız zor görünüyor. Bir daha "
-"giriş yapamayabilirsiniz, haberiniz olsun."
-#
-msgid "Sorry, unknown error happened. Please try again"
-msgstr ""
-"Bilinmeyen bir hata oluştu ve özür diliyoruz. Nasıl olup ta bir hatanın "
-"bilinemediğini sonra konuşalım. Siz şimdi tekrar deneyiniz."
-#
-msgid "Sosyal Tesislerimizde"
-msgstr "Sosyal Tesislerimizde"
-#
-msgid "Speed"
-msgstr "Hız"
-#
-msgid "standard"
-msgstr "standart"
-#
-msgid "Standard"
-msgstr "Standart"
-#
-msgid "Start"
-msgstr "Başlama"
-#
-msgid "Start Date:"
-msgstr "Başlama Tarihi:"
-#
-msgid "Start date"
-msgstr "Başlama Tarihi"
-#
-msgid "Start game"
-msgstr "Oyuna başla"
-#
-msgid "Start sharing with others ..."
-msgstr "Paylaşmaya hemmen başlayın..."
-#
-msgid "Start to gain gift points right now. Join to an existing follow's game."
-msgstr "Kakuş kazanmaya başlamak için, bir oyuna katılabilirsiniz."
-#
-msgid "Starting date"
-msgstr "Başlama tarihi"
-#
-msgid "Statistics"
-msgstr "İstatistik"
-#
-msgid "Stats"
-msgstr "İstatistik"
-#
-msgid "Stats..."
-msgstr "İstatistik..."
-#
-msgid "Status"
-msgstr "Durum"
-#
-msgid "Stolen Card!!! Seize the card."
-msgstr "Çalıntı kart. Karta el koyun!!!"
-#
-msgid "Subscribe"
-msgstr "Abone ol"
-#
-msgid "Support desk link"
-msgstr "Destek birimi adresi"
-#
-msgid "Surname:"
-msgstr "Soyadı:"
-#
-msgid "Surname: "
-msgstr "Soyadı:"
-#
-msgid "System Error"
-msgstr "Sistem Hatası"
-#
-msgid "System Parameters"
-msgstr "Sistem Parametreleri"
-#
-msgid "System error"
-msgstr "Sistem hatası"
-#
-msgid "System message"
-msgstr "Sistem mesajı"
-#
-msgid "System parameters"
-msgstr "Sistem parametreleri"
-#
-msgid "TL"
-msgstr "TL"
-#
-msgid "TL HESABI"
-msgstr "TL HESABI"
-#
-msgid "TO"
-msgstr "Alıcı(lar)"
-#
-msgid "TOURNAMENTS"
-msgstr "TURNUVALAR"
-#
-msgid "TR82 0006 2000 3570 0006 2950 88"
-msgstr "TR82 0006 2000 3570 0006 2950 88"
-#
-msgid "Table Name"
-msgstr "< Adı"
-#
-msgid "Table can contain only players, not robots"
-msgstr "Masada sadece oyuncular olabilir, robotlar değil"
-#
-msgid "Table can contain only players, not robots."
-msgstr "Masada sadece oyuncular olabilir, robotlar değil."
-#
-msgid "Table name"
-msgstr "Masa Adı"
-#
-msgid "Table not found"
-msgstr "Masa bulunamadı"
-#
-msgid "Selected Option"
-msgstr "Oyun Tercihleri"
-#
-msgid "Take your seat"
-msgstr "Buyrun oturun"
-#
-msgid "Tavla"
-msgstr "Tavla"
-#
-msgid "Technical Contact"
-msgstr "Teknik İletişim"
-#
-msgid "Terms of Service"
-msgstr "Kullanım Şartları"
-#
-msgid "Terms of use"
-msgstr "Kullanım Şartları"
-#
-msgid "Thank you for buying our package."
-msgstr "Paket satın aldığınız için teşekkür ederiz."
-#
-msgid ""
-"Thank you for using Kakaranet Social Zone. \n"
-"\n"
-"Please find your registration details below:\n"
-"\n"
-"User name: $username$\n"
-"Password: $password$\n"
-"\n"
-"If you did not register for Kakaranet, then someone probably\n"
-"mis-typed their email address. You can ignore this message,\n"
-"and we apologize for the inconvenience.\n"
-"\n"
-"Happy Social Gaming,\n"
-"The Kakaranet team\n"
-msgstr ""
-"Kakaranet’e üye olduğunuz için teşekkür ederiz.\n"
-"\n"
-"Aşağıda kayıt bilgileriniz yer alıyor:\n"
-"Kullanıcı adınız: $username$\n"
-"Şifreniz: $password$\n"
-"\n"
-"*Beta süresinde üye olmanın avantajı?*\n"
-"\n"
-"* 1000 kotayı ücretsiz ve zahmetsiz kazandınız. Bu uzun bir süre oynama "
-"imkanınız var demektir.\n"
-"* Site açıldıktan sonra oynadığınız sürece, kazanacağınız kakara puanlarıyla "
-"hediyelerimizden   alabileceksiniz. \n"
-"Unutmayın, başkaları bunun için üyelik ücreti ödemek zorunda.\n"
-"* Ödüllü turnuvalarımıza katılabileceksiniz. Eğer kazanırsanız turnuva ödülü "
-"sizindir.\n"
-"* 300 kişi getirene 40 TL hediye puanı ve 1000 kota daha veriyoruz.\n"
-"* Getirdiklerinizden, 30 kişi getirenler de 500 kota kazanacaklar, hep "
-"birlikte oynayabilmeniz için!\n"
-"\n"
-"Sizden tek ricamız, bolca oyun oynamanız.\n"
-"Eğer bir hata görürseniz ya da bize ilham verecek bir fikriniz varsa, "
-"sitemizde solda görülen mavi kulakçığa tıklayın ve bizimle paylaşın.\n"
-"\n"
-"\n"
-"Eğer bu siteye hiç girmediğinizi düşünüyorsanız, muhtemelen bir başkası e-"
-"posta adresi olarak sizinkini, yanlışlıkla kullanmış olabilir. Bu mesajı "
-"görmezden gelmeniz yeterli olacaktır. Bu durumdan dolayı özür dileriz.\n"
-"\n"
-"Onaylama ile ilgili herhangi bir probleminiz olursa lütfen hem bizim hem de "
-"beta test kullanıcılarının kullandığı yardım merkezine başvurun. (http://"
-"kakaranet.uservoice.com)\n"
-"\n"
-" Eğlenceli ve dostluk dolu günler dileriz, \n"
-" Kakaranet Ekibi \n"
-#
-msgid ""
-"Thank you for using Kakaranet Social Zone. \n"
-"To complete the registration process,\n"
-"you need to confirm your email address ($email$)\n"
-"by clicking the link below: \n"
-"\n"
-"$verificationaddress$\n"
-"\n"
-"If you did not register for Kakaranet, then someone probably \n"
-"mis-typed their email address. You can ignore this message, \n"
-"and we apologize for the inconvenience.\n"
-"\n"
-"If you have any problems verifying your email address, \n"
-"you can get help from us and other Kakaranet users \n"
-"in the Kakaranet feedback group (http://kakaranet.uservoice.com)\n"
-"\n"
-"Happy Social Gaming,\n"
-"The Kakaranet team\n"
-msgstr ""
-"Kakaranet’e üye olduğunuz için teşekkür ederiz.\n"
-"Üyeliğinizi tamamlamak için eposta adresinizi ($email$) onaylamanız "
-"gerekiyor.\n"
-"Lütfen aşağıdaki linke tıklayarak onaylama işlemini gerçekleştiriniz.\n"
-"\n"
-"$verificationaddress$ \n"
-"\n"
-"*Beta süresinde üye olmanın avantajı?*\n"
-"\n"
-"* 1000 kotayı ücretsiz ve zahmetsiz kazandınız. Bu uzun bir süre oynama "
-"imkanınız var demektir.\n"
-"* Site açıldıktan sonra oynadığınız sürece, kazanacağınız kakara puanlarıyla "
-"hediyelerimizden   alabileceksiniz. \n"
-"Unutmayın, başkaları bunun için üyelik ücreti ödemek zorunda.\n"
-"* Ödüllü turnuvalarımıza katılabileceksiniz. Eğer kazanırsanız turnuva ödülü "
-"sizindir.\n"
-"* 300 kişi getirene 40 TL hediye puanı ve 1000 kota daha veriyoruz.\n"
-"* Getirdiklerinizden, 30 kişi getirenler de 500 kota kazanacaklar, hep "
-"birlikte oynayabilmeniz için!\n"
-"\n"
-"Sizden tek ricamız, bolca oyun oynamanız.\n"
-"Eğer bir hata görürseniz ya da bize ilham verecek bir fikriniz varsa, "
-"sitemizde solda görülen mavi kulakçığa tıklayın ve bizimle paylaşın.\n"
-"\n"
-"Not: Eğer bu e-postayı yanlışlıkla aldığınızı düşünüyorsanız lütfen "
-"siliniz.\n"
-"Hiç bir şekilde SPAM’ı desteklemiyor ve “asla” SPAM yapmıyoruz. E-posta "
-"bilgileriniz, siz üye olana dek sisteme kayıt “edilmemektedir”.\n"
-"Onaylama ile ilgili herhangi bir probleminiz olursa lütfen hem bizim, hem de "
-"beta test kullanıcılarının kullandığı yardım merkezine başvurun. (http://"
-"kakaranet.uservoice.com)\n"
-"\n"
-"Eğlenceli ve dostluk dolu günler dileriz, \n"
-"İyi ki geldiniz,\n"
-"Kakaranet Ekibi\n"
-#
-msgid "There are $number$ invites, and $numused$ of them not used."
-msgstr "$number$ adet davet var. $numused$ adedi kullanılmamış."
-#
-msgid "There are $number$ registered users"
-msgstr "Toplam $number$ adet kayıtlı kullanıcı var"
-#
-msgid "There are too many players."
-msgstr "Çok fazla oyuncu var"
-#
-msgid "There is no games right now."
-msgstr "Şu anda oyun yok"
-#
-msgid "There is no such kind of information"
-msgstr "Böyle bir bilgi yok"
-#
-msgid "There is nothing to send."
-msgstr "Gönderecek bir şey yok"
-#
-msgid ""
-"These two senses are distinct. All golf tournaments meet the first "
-"definition, but while match play tournaments meet the second, stroke play "
-"tournaments do not, since there are no distinct matches within the "
-"tournament. In contrast, football (soccer) leagues like the Premier League "
-"are tournaments in the second sense, but not the first, having matches "
-"spread across many stadia over a period of up to a year. Many tournaments "
-"meet both definitions; for example, the Wimbledon tennis championship."
-msgstr "Turnuvalar açıklama 1"
-#
-msgid "This card is not exist"
-msgstr "Bu kart mevcut değil"
-#
-msgid "This e-mail already taken by other user."
-msgstr "Bu eposta adresi daha önce alınmış."
-#
-msgid "This facebook account already used by some user."
-msgstr "Bu Facebook hesabı, daha önce alınmış"
-#
-msgid "This feature is not available in beta version"
-msgstr "Beta sürümünde bu özellik maalesef yok"
-#
-msgid "This feature is not yet available in beta."
-msgstr "Beta sürümünde bu özellik maalesef yok."
-#
-msgid "This invitiation code is expired. Please get new one."
-msgstr "Davetiye kodunun süresi bitmiş. Yenisini alınız."
-#
-msgid "This is private group, only members can see updates."
-msgstr "Bu kapalı ve özel bir gruptur, sadece üyeler içeriğini görebilir."
-#
-msgid "This name is exist"
-msgstr "Bu isim mevcut"
-#
-msgid "This table has been destroyed"
-msgstr "Bu masa kaldırıldı"
-#
-msgid "This table is full. Try another one."
-msgstr "Bu masa dolu, başka birini deneyiniz."
-#
-msgid ""
-"This would of been great, wouldn't it! But we don't have this yet. Wait for "
-"it. Coming real soon."
-msgstr ""
-"Olsa ne güzel olurdu değil mi? Ve fakat maalesef daha olmadı. Lütfen "
-"bekleyiniz, geliyoruz :)"
-#
-msgid "Time before table will be closed: $sec$"
-msgstr "Masa kapanmadan önceki zaman: $sec$"
-#
-msgid "Token expired"
-msgstr "Üzgünüm ama bu anahtar eskimiş ve bu kapıya olmaz artık"
-#
-msgid "Tournament description"
-msgstr "Turnuva açıklaması"
-#
-msgid "Tournament image"
-msgstr "Turnuva resmi"
-#
-msgid "Tournament name"
-msgstr "Turnuva adı"
-#
-msgid "Tournament type"
-msgstr "Turnuva türü"
-#
-msgid "Tournaments"
-msgstr "Turnuvalar"
-#
-msgid "Transaction done(VIP)"
-msgstr "İşlem tamam (VIP)"
-#
-msgid "Try again tomorrow."
-msgstr "Yarın tekrar deneyiniz."
-#
-msgid "Turnuva Keyfiyle"
-msgstr "Turnuva Keyfiyle"
-#
-msgid "Turnuva yaratın ve arkadaşlarinizia oynayin"
-msgstr "Turnuva yaratın ve arkadaşlarınızla oynayın"
-#
-msgid "USERINFO"
-msgstr "KULLANICI"
-#
-msgid "Unable to connect to bank server.<br/> Please try later."
-msgstr ""
-"Banka sunucusuna şu an bağlanamıyoruz.<br/> Lütfen 5 dakika bekleyip tekrar "
-"deneyiniz."
-#
-msgid "Unblock this user"
-msgstr "Bu kullanıcının engelini kaldır."
-#
-msgid "Unexpected application error. Please, try later."
-msgstr ""
-"Umulmadık uygulama hatası. Bunu hiç beklemiyorduk doğrusu. Lütfen biraz "
-"sonra tekrar deneyiniz."
-#
-msgid "Unknown Card No"
-msgstr "Bilinmeyen kart numarası"
-#
-msgid "Unsubscribe"
-msgstr "Abonelikten çık"
-#
-msgid "Update"
-msgstr "Güncelle"
-#
-msgid "Update settings"
-msgstr "Ayarları güncelle"
-#
-msgid "Used by"
-msgstr "Kullanan"
-#
-msgid "User"
-msgstr "Kullanıcı"
-#
-msgid "User $username$ connected."
-msgstr "$username$ bağlandı."
-#
-msgid "User $username$ has left."
-msgstr "$username$ ayrıldı."
-#
-msgid "User $username$ was appointed as the owner."
-msgstr "$username$ masa sahibi olarak atandı."
-#
-msgid "User ($user$) was kicked by table owner ($owner$)."
-msgstr "($user$) masa sahibi ($owner$) tarafından masadan atıldı."
-#
-msgid "User <b><i>'$username$'</i></b> exist!"
-msgstr "Kullanıcı <b><i>'$username$'</i></b> mevcut!"
-#
-msgid "User Avatar"
-msgstr "Kullanıcı Avatarı"
-#
-msgid "User List"
-msgstr "Kullanıcı Listesi"
-#
-msgid "User Name"
-msgstr "Kullanıcı Adı"
-#
-msgid "User count: "
-msgstr "Kullanıcı sayısı:"
-#
-msgid "User is not subscribed to anyone"
-msgstr "Henüz kimseye üye değil"
-#
-msgid "User not found!!"
-msgstr "Kullanıcı bulunamadı!"
-#
-msgid "Username"
-msgstr "Kullanıcı adı"
-#
-msgid "Username is in wrong format."
-msgstr "Kullanıcı adı yanlış biçimde."
-#
-msgid "Username is too short."
-msgstr "Kullanıcı adı çok kısa"
-#
-msgid "Users"
-msgstr "Kullanıcılar"
-#
-msgid "Users in this group:"
-msgstr "Bu gruptaki kullanıcılar:"
-#
-msgid "Users list"
-msgstr "Kullanıcı listesi"
-#
-msgid "VAT Included"
-msgstr "KDV eklenmiştir."
-#
-msgid "Value must be nonnegative integer"
-msgstr "Bu değer negatif olamaz"
-#
-msgid "Value of $key$ set to $value$"
-msgstr "Value of $key$ set to $value$"
-#
-msgid "Value successfully set."
-msgstr "Değer ayarlandı."
-#
-msgid "Variable key in format: $format$:"
-msgstr "Variable key in format: $format$:"
-#
-msgid "Variable value:"
-msgstr "Variable value:"
-#
-msgid "Varialbe type:"
-msgstr "Varialbe type:"
-#
-msgid "Verification account"
-msgstr "Hesap onayı"
-#
-msgid "Verification attempt"
-msgstr "Onaylama istemi"
-#
-msgid "Verification failure"
-msgstr "Onaylama hatası"
-#
-msgid "Very soon..."
-msgstr "Pek yakında..."
-#
-msgid "View"
-msgstr "Gözat"
-#
-msgid "Waiting Player"
-msgstr "Oyuncu bekleniyor"
-#
-msgid "Waiting queue have $num1$ invites, $num2$ of them need to be sent."
-msgstr ""
-"bekleme kuyruğunda $num1$ davet var, $num2$ tanesi gönderilmeyi bekliyor."
-#
-msgid "We could not find any groups matching the search"
-msgstr "Aramaya uyan bir grup bulamadık"
-#
-msgid "We could not find any users matching the search"
-msgstr "Aramaya uyan bir kullanıcı bulamadık"
-#
-msgid ""
-"We've got error from paypal. To get information, please, contact with "
-"administration."
-msgstr ""
-"Paypal tarafında hata oluştu. Beleyip biraz sonra tekrar deneyiniz. Gene "
-"sorun çıkarsa, lütfen bize destek sayfasından erişiniz."
-#
-msgid ""
-"Welcome email with confirmation link has been sent to your address ($usermail"
-"$). To complete registration, follow instructions in the email."
-msgstr ""
-"Hoşgeldiniz epostasını ($usermail$) adresinize gönderdik. Kayıt işlemini "
-"tamamlamak için epostadaki yönergeleri takip ediniz."
-#
-msgid "Welcome to Kakaranet"
-msgstr "Kakaranet Sosyal Oyun Ortamı'na hoş geldiniz."
-#
-msgid "Why are we asking for your birthday?"
-msgstr "Neden doğum gününüzü soruyoruz?"
-#
-msgid "Why asking for birthday?"
-msgstr "Neden doğum gününüzü soruyoruz?"
-#
-msgid "Wire"
-msgstr "Havale"
-#
-msgid "Withdrawal limit exceeded"
-msgstr "Hesaptaki miktar limiti aşıldı"
-#
-msgid "Write a comment..."
-msgstr "Bir yorum yapın."
-#
-msgid "Wrong e-mail"
-msgstr "Yanlış eposta"
-#
-msgid "Wrong username."
-msgstr "Yanlış kullanıcı adı"
-#
-msgid ""
-"Yani tam olarak bitmemis, ancak yapim halinde bir insaata girmis oluyorsunuz."
-msgstr ""
-"Yani tam olarak bitmemis, ancak yapim halinde bir insaata girmis oluyorsunuz."
-#
-msgid "Year"
-msgstr "Yıl"
-#
-msgid "Yes"
-msgstr "Evet"
-#
-msgid "Yes, i'm leaving"
-msgstr "Evet, ayrılıyorum"
-#
-msgid "Yeteneğinizi Konuşturun!"
-msgstr "Yeteneğinizi Konuşturun!"
-#
-msgid "You are already in queue. Be patient."
-msgstr "Şu anda sıradasınız. Lütfen bekleyiniz."
-#
-msgid "You are already in this table."
-msgstr ""
-"Şu anda bu masadasınız. Kopma olduğunda geri dönme üzerine çalışıyoruz. "
-"LÜtfen başka bir masa seçiniz."
-#
-msgid "You are currently not in any group"
-msgstr "Bu grupta değilsiniz."
-#
-msgid "You are member."
-msgstr "Üyesiniz."
-#
-msgid "You are not authorized to do this"
-msgstr "Bunu yapma yetkiniz yok"
-#
-msgid "You are not subscribed to anyone"
-msgstr "Henüz kimseye abone değilsiniz. Olsanız ne güzel olur :)"
-#
-msgid "You are now member of this group!"
-msgstr "Bu gruba üye oldunuz"
-#
-msgid "You are subscribed to:"
-msgstr "Abone olduklarınız:"
-#
-msgid "You can create a game or join a game"
-msgstr "Bir oyun kurabilir ya da mevcut bir oyuna katılabilirsiniz"
-#
-msgid "You can create your own table and start to earn gift points."
-msgstr "Kendi masanızı kurabilir ve kakuş kazanmaya başlayabilirsiniz."
-#
-msgid "You can join tournaments and show them all"
-msgstr "Turnuvalara katılarak yeteneğinizi konuşturabilirsiniz"
-#
-msgid "You can manage your groups settings here"
-msgstr "Grup ayarlarınızı buradan yönetebilirsiniz"
-#
-msgid "You can play games here"
-msgstr "Burada oyun oynayabilirsiniz"
-#
-msgid "You can send a message only this user will read"
-msgstr "Göndereceğiniz mesajı sadece gönderdiğiniz kişi/grup okuyabilir"
-#
-msgid "You can share information with others"
-msgstr "Diğerleriyle bilgi paylaşabilirsiniz"
-#
-msgid "You can start seeing this users posts in your feed"
-msgstr "Bu kullanıcının gönderimlerini görmeye başlayabilirsiniz"
-#
-msgid "You can stop seeing this users posts in your feed"
-msgstr "Bu kullanıcının gönderimlerini görmemek için"
-#
-msgid "You can unsubscribe a group from this list"
-msgstr "Bu listeden grubu çıkartabilirsiniz"
-#
-msgid "You can unsubscribe or write someone private message via this list"
-msgstr "Bu listeden abonelikten çıkabilir ya da özel mesaj yazabilirsiniz"
-#
-msgid "You can't kick yourself."
-msgstr "Kendi kendinizi atmanız pek akıllıca olur mu bilemiyoruz :)"
-#
-msgid "You can't start game with this number of users."
-msgstr "Oyuna başlamak için gereken oyuncu yok. "
-#
-msgid "You can't upload more than $number$ files at once"
-msgstr "$number$ adetten fazla dosya yükleyemezsiniz"
-#
-msgid "You can't upload more than $number$ files per day"
-msgstr "Günlük olarak, $number$ adetten fazla dosya yükleyemezsiniz"
-#
-msgid "You don't have access to do that."
-msgstr "Bunu yapma yetkiniz yok."
-#
-msgid "You don't have enough points to play!"
-msgstr "Oynamak için yeterli kotanız yok"
-#
-msgid "You don't let to do this operation"
-msgstr "Bunu yapma yetkiniz yok."
-#
-msgid "You have $point$ kakapoints"
-msgstr "$point$ adet kakuşunuz var"
-#
-msgid "You have alrady requested in past"
-msgstr "Bunu zaten talep etmiştiniz"
-#
-msgid "You have left from table"
-msgstr "Masadan ayrıldınız"
-#
-msgid "You have no chance to get any gift points. Fast game only."
-msgstr ""
-"Bu oyun şeklinde hediye puanı kazanma şansınız yok. Sadece hızlı oyun "
-"oynayabilirsiniz."
-#
-msgid "You have subscribed to '~s'."
-msgstr "'~s' kullanıcısına abone oldunuz."
-#
-msgid ""
-"You may unsubscribe from group messages this way. You can also subscribe "
-"back later if you wish"
-msgstr ""
-"Grup aboneliğinden çıkabilirsiniz. İsterseniz daha sonra tekrar abone "
-"olabilirsiniz."
-#
-msgid "You must be at least 18 to use this site."
-msgstr "Bu siteyi kullanabilmek için, kanunen 18 yaş üzeri olmanız gerekiyor."
-#
-msgid "You must be at least 18 years of age to use the site according to law."
-msgstr "Bu siteyi kullanabilmek için, kanunen 18 yaş üzeri olmanız gerekiyor."
-#
-msgid "You should click 'Allow' to continue!"
-msgstr "'İzin Ver' tuşu ile devam edin."
-#
-msgid "You subscribed to this group"
-msgstr "Bu gruba abone oldunuz"
-#
-msgid "You will see this part very soon."
-msgstr "Bu bölüm pek yakında gümbür gümbür geliyor."
-#
-msgid "You'll see a window shown here after clicking the continue login:"
-msgstr "Girişe devam ettiğinizde bu pencereyi göreceksiniz:"
-#
-msgid "You've already created table with that name."
-msgstr "Zaten bu isimle bir masa yarattınız."
-#
-msgid ""
-"Your account dashboard. You can find all details about your account here."
-msgstr ""
-"Sizin sayfanız. Sizinle ilgili tüm detayları bu sayfada bulabilirsiniz."
-#
-msgid "Your account has been activated. Now you can sign. Enjoy!"
-msgstr "Hesabınız etkinleştirildi. Şimdi giriş yapabilirsiniz. Teşekkürler!"
-#
-msgid "Your account is blocked. Please, contact with administration."
-msgstr ""
-"Hesabınız engellendi. Bunda bir hata var diyorsanız, lütfen bize iletişim ya "
-"da destek bölümünden erişiniz."
-#
-msgid ""
-"Your account is blocked.<br/> Reason: $reason$ <br/> Please, contact with "
-"administration to unblock account."
-msgstr ""
-"Hesabınız engellendi. <br/> Sebebi: $reason$ <br/> Bunda bir hata var "
-"diyorsanız, lütfen bize iletişim ya da destek bölümünden erişiniz."
-#
-msgid "Your e-mail was put into queue. Invite will be send later"
-msgstr "Talebiniz kuyrukta, davetiye gönderilecektir"
-#
-msgid "Your email *:"
-msgstr "Eposta adresiniz *:"
-#
-msgid "Your email is invalid, we can't send invite."
-msgstr "Eposta adresiniz geçersiz. Davetiye gönderemeyiz."
-#
-msgid "Your groups:"
-msgstr "Gruplarınız:"
-#
-msgid "Your own"
-msgstr "Sizinkiler"
-#
-msgid "Your private correspondence, no one other can read"
-msgstr "Özel mesajlarınız, başka kimse okuyamaz"
-#
-msgid "Your request is not accepted"
-msgstr "Talebiniz reddedildi"
-#
-msgid "Your transaction cancelled due to judicial reasons"
-msgstr "Mahkeme kararı nedeniyle işleminiz iptal edildi"
-#
-msgid "Zaman zaman hata olusabilir, tas dusebilir, ayi cikabilir :)"
-msgstr "Zaman zaman hata olusabilir, tas dusebilir, ayi cikabilir :)"
-#
-msgid "atom"
-msgstr "atom"
-#
-msgid "comments"
-msgstr "yorum"
-#
-msgid ""
-"consectetur adipiscing elitarel. Aliquam sed sed elitereberi interdum merase "
-"adipiscing."
-msgstr "non existing text"
-#
-msgid "edit"
-msgstr "düzenle"
-#
-msgid "error"
-msgstr "hata"
-#
-msgid "float"
-msgstr "float"
-#
-msgid "group!"
-msgstr "grup!"
-#
-msgid "integer"
-msgstr "integer"
-#
-msgid "likes"
-msgstr "sevdimler"
-#
-msgid "members"
-msgstr "üye"
-#
-msgid "or"
-msgstr "or"
-#
-msgid "robot"
-msgstr "robot"
-#
-msgid "starting game..."
-msgstr "oyun başlıyor..."
-#
-msgid "string"
-msgstr "string"
-#
-msgid "subscribers"
-msgstr "aboneler"
-#
-msgid "subscription"
-msgstr "abonelik"
-#
-msgid "thank you for buying our package"
-msgstr "paketimizi aldığınız için sağolun varolun"
-#
-msgid "~p not found~n"
-msgstr "~p bulunamadı ~n"
-#
-msgid "Üye Olduğunuz An"
-msgstr "Üye Olduğunuz An"
-#
-msgid "Üye Olduğunuz An Hediyenizi Kazanın!"
-msgstr "Üye Olduğunuz An Hediyenizi Kazanın!"
-#
-msgid "Üyelİk Yenİle"
-msgstr "Üyelİk Yenİle"
-#
-msgid "• Dilerseniz puan biriktrin ve daha güzel bir hedie alin"
-msgstr "• Dilerseniz puan biriktrin ve daha güzel bir hedie alin"
-#
-msgid "• Eğlenceli ve renkli hediyelerden istediğinizi seçin"
-msgstr "• Eğlenceli ve renkli hediyelerden istediğinizi seçin"
-#
-msgid "• Her konuda fikirlerinizi, dosyalarinizi, müziğinizi payalşin"
-msgstr "• Her konuda fikirlerinizi, dosyalarinizi, müziğinizi payalşin"
-#
-msgid "• Her konuda fikirlerinizi, dosyalarınızı, müziğinizi paylaşın"
-msgstr "• Her konuda fikirlerinizi, dosyalarınızı, müziğinizi paylaşın"
-#
-msgid "• Istediğiniz türde ve size uyan ortaklarla/oyuncularla oynayin"
-msgstr "• Istediğiniz türde ve size uyan ortaklarla/oyuncularla oynayin"
-#
-msgid "• Kalitesiz insanlarla oynamak zorunda değilsiniz"
-msgstr "• Kalitesiz insanlarla oynamak zorunda değilsiniz"
-#
-msgid "• Kendi dünayanizi yaratin, rahatsiz edilmeden oynayin"
-msgstr "• Kendi dünayanizi yaratin, rahatsiz edilmeden oynayin"
-#
-msgid "• Kendi dünyanızı yaratın, rahatsız edilmeden oynayın"
-msgstr "• Kendi dünyanızı yaratın, rahatsız edilmeden oynayın"
-#
-msgid "• Nasil oyuncularla oynamak istediğinizi kendiniz belirleyin"
-msgstr "• Nasil oyuncularla oynamak istediğinizi kendiniz belirleyin"
-#
-msgid "• Oyun kriterlerini kendiniz seçin"
-msgstr "• Oyun kriterlerini kendiniz seçin"
-#
-msgid "• Sadece istediğiniz üelerle temas kurun"
-msgstr "• Sadece istediğiniz üelerle temas kurun"
-#
-msgid "• Sadece istediğiniz üyelerle temas kurun"
-msgstr "• Sadece istediğiniz üyelerle temas kurun"
-#
-msgid "• Sitemiz kadinlar için pozitif ayrimcidir"
-msgstr "• Sitemiz kadinlar için pozitif ayrimcidir"
-#
-msgid "• Sitemiz kadınlar için pozitif ayrımcıdır"
-msgstr "• Sitemiz kadınlar için pozitif ayrımcıdır"
-#
-msgid "• Turnuva yaratın ve arkadaşlarinizla oynayin"
-msgstr "• Turnuva yaratın ve arkadaşlarinizla oynayin"
-#
-msgid "• Ödüllü olan turnuvularda büyük ödüllü kazanin!"
-msgstr "• Ödüllü olan turnuvularda büyük ödüllü kazanin!"
-#
-msgid "All functions are not completed yet."
-msgstr ""
-"Bazı özellikler üzerinde hala çalışıyoruz ve site tam olarak bitmiş değil."
-#
-msgid "BE A MEMBER NOW"
-msgstr "HEMEN ÜYE OL"
-#
-msgid "Choose your own game options"
-msgstr "• Oyun kriterlerini kendiniz seçin"
-#
-msgid "Collect your kakara points and get a bigger, nicer gift."
-msgstr "• Dilerseniz puan biriktirin ve daha güzel bir hediye alın"
-#
-msgid "Create tournaments, play with your friends"
-msgstr "• Kendi turnuvanızı yaratıp dostlarınızla oynayın"
-#
-msgid "Create your own gaming world"
-msgstr "• kendi oyun dünyanızı yaratın"
-#
-msgid "Create your own gaming world. Play without disturbed by anyone."
-msgstr "• Kimse tarafından rahatsız edilmeden oynayın"
-#
-msgid "Create your own tournaments"
-msgstr "Kendi turnuvanızı yaratın"
-#
-msgid "Define what kind of criteria you need for your opponents"
-msgstr "• Nasıl oyuncularla oynamak istediğinizi kendiniz belirleyin"
-#
-msgid "Define your own criteria"
-msgstr "• Oyun kriterlerini kendiniz seçin"
-#
-msgid "Don't show this again"
-msgstr "bunu bir daha bana gösterme"
-#
-msgid "Encryption error"
-msgstr "Şifreleme hatası"
-#
-msgid "Get a big prize in awarded tournaments"
-msgstr "• Ödüllü olan turnuvularda büyük ödülü kazanın!"
-#
-msgid "Get your gift"
-msgstr "• Hediyenizi alın"
-#
-msgid "Get your gift upon membership"
-msgstr "• Üye olduğunuz an hediyenizi kazanın!"
-#
-msgid "Get your gift upon membership!"
-msgstr "• Üye olduğunuz an hediyenizi kazanın!"
-#
-msgid "Gifts section explanation area 1."
-msgstr ""
-"Artık karşılıksız verme devri bitti\n"
-"Bundan sonra oynamaya ayırdığınız  zaman ve küçücük paralar size HEDİYE "
-"olarak geri dönüyor.\n"
-"ÜYELERİMİZ, hiçbir şarta bağlı olmadan hediye puanları kazanırlar. \n"
-"Kazanmak yada kaybetmek fark etmez. \n"
-"Oyun oynayan her oyuncu hediye puanı kazanır."
-#
-msgid "Gifts section explanation area 2"
-msgstr ""
-"Kaybeden de kazanır, kazanan daha da çok  kazanır.\n"
-"Hesabında biriken puanlar ile hediye  kataloğundan istediği hediyeyi "
-"alabilir.\n"
-"İsterse, puanlı üyelik paketi satın alarak daha çok puan kazanır.\n"
-"Sanal alemden satın alabileceğiniz çok geniş bir ürün yelpazesi sizi "
-"bekliyor…"
-#
-msgid "IBAN Number"
-msgstr "IBAN Nosu"
-#
-msgid "In Our Social Complex"
-msgstr "Sosyal Tesislerimizde"
-#
-msgid "In our social complex!"
-msgstr "Sosyal Tesislerimizde"
-#
-msgid "Interact with only people you've selected"
-msgstr "Nasıl oyuncularla oynamak istediğinizi kendiniz belirleyin"
-#
-msgid "Kakaranet gotchas"
-msgstr "Kakaranet neler sunuyor?"
-#
-msgid "Lay back and relax"
-msgstr "Uzanın ve rahat edin"
-#
-msgid "Lay back and relax!"
-msgstr "Uzanın ve rahat edin"
-#
-msgid "Let's rock this placetogether with you"
-msgstr "Geldiğinize çok memnun olduk :)"
-#
-msgid ""
-"Our site is 'not' completely functional at this stage We glad if you report "
-"our faults and also advise to us for new  future requests. We believe it "
-"will be cool to meet you"
-msgstr ""
-"Olabildiğince eğlenceli ve gündelik hayatın dertlerini biraz olsun "
-"unutmanızı sağlayan bir alan yaratmaya çalıştık. Sitemiz nihayet 'açık beta' "
-"olarak devreye alındı. Beta durumunda bazı özellikler çalışmıyor olacaktır. "
-"Lütfen kusurumuza bakmayın."
-#
-msgid "Play with your selected players, partners"
-msgstr "• Sadece istediğiniz üyelerle temas kurun"
-#
-msgid "Select your colorful, funny gift"
-msgstr "Yüzlerce hediye içinden istediğinizi seçin"
-#
-msgid "Select your opponent"
-msgstr "• Nasıl oyuncularla oynamak istediğinizi kendiniz belirleyin"
-#
-msgid "Select your opponents right a way"
-msgstr "• Nasıl oyuncularla oynamak istediğinizi kendiniz belirleyin"
-#
-msgid "Select your opponents right way"
-msgstr "• Nasıl oyuncularla oynamak istediğinizi kendiniz belirleyin"
-#
-msgid "Share your ideas, music, files about everything."
-msgstr "• Her konuda fikirlerinizi, dosyalarınızı, müziğinizi paylaşın"
-#
-msgid "Show your talent"
-msgstr "Yeteneğinizi konuşturun"
-#
-msgid ""
-"Since the site is half made you can say that you are in construction site."
-msgstr ""
-"Hala bitiremediğimiz için, bir nevi şantiyeye girmiş oluyorsunuz haliyle."
-#
-msgid ""
-"Socialization (or socialisation) is a term used by sociologists, social "
-"psychologists, anthropologists, political scientists and educationalists to "
-"refer to the lifelong process of inheriting and disseminating norms, customs "
-"and ideologies, providing an individual with the skills and habits necessary "
-"for participating within his or her own society. Socialization is thus the "
-"means by which social and cultural continuity are attained."
-msgstr ""
-"Burası sadece bir oyun ortamı değil, istediğin her şeyi paylaşabileceğin bir "
-"platform.\n"
-"“Nasıl görünmek istiyorsan öyle ol”! ya da  “Nasılsan öyle görün”!\n"
-"Kendini ifade etmek için ne istiyorsan yap…\n"
-"Resimlerin, müziğin, felsefen, için, dışın, hatta yan tarafların…\n"
-"Bunları kiminle paylaşmak istiyorsan sen belirle."
-#
-msgid "TL Account"
-msgstr "TL Hesabı"
-#
-msgid "Thank you very much for your kind support."
-msgstr "Verdiğiniz destek için çok çok teşekkür ederiz."
-#
-msgid "Usage Terms"
-msgstr "Kullanım Şartları"
-#
-msgid "We are positive discriminators for women"
-msgstr "Sitemiz kadınlar için pozitif ayrımcıdır."
-#
-msgid "We can have some problems like logouts, age changes etc. :)"
-msgstr "Bazı küçük sorunlar yaşama ihtimaliniz var elbette."
-#
-msgid "Wellcome to our open public site."
-msgstr "Beta aşamasındaki sitemize hoş geldiniz."
-#
-msgid "What s beta anyway?"
-msgstr "Beta ne demektir?"
-#
-msgid "When you be a member!"
-msgstr "Üye olduğunuzda"
-#
-msgid "Why don't you"
-msgstr "Haydi siz de"
-#
-msgid "With tournament challenge!"
-msgstr "Turnuva heyecanı"
-#
-msgid "You don't have to play with unknown players"
-msgstr "Bilmediğiniz oyuncularla oynamak zorunda değilsiniz"
-#
-msgid "join us :)"
-msgstr "bize katılın :)"
-#
-msgid "• Create your own gaming world. Play without disturbed by anyone."
-msgstr "• Create your own gaming world. Play without disturbed by anyone."
-#
-msgid "• Interact with only people you've selected"
-msgstr "• Interact with only people you've selected"
-#
-msgid "• Share your ideas, music, files about everything."
-msgstr "• Share your ideas, music, files about everything."
-#
-msgid "• We are positive discriminators for women"
-msgstr "• We are positive discriminators for women"
-#
-msgid "Let's rock this place together with you"
-msgstr "Geldiğinize çok memnun olduk :)"
-#
-msgid "Let's rock this place  together with you"
-msgstr "Geldiğinize çok memnun olduk :)"
-#
-msgid "Why don't you  "
-msgstr "Haydi siz de "
-#
-msgid "Why don't you "
-msgstr "Haydi siz de "
 #
 msgid " From this point you can:"
-msgstr " Bu sorun karşısında yapabilecekleriniz:"
+msgstr " From this point you can:"
 #
 msgid " for help;"
-msgstr " yardım için;"
+msgstr " for help;"
+#
+msgid " or "
+msgstr " or "
 #
 msgid "!"
 msgstr "!"
-#
-msgid "$number$ invites has been deleted!"
-msgstr "$number$ adet davetiye silindi!"
-#
-msgid "$username$ table, $date$ "
-msgstr "$username$ masası, $date$ "
-#
-msgid "All friends of "
-msgstr "Tüm arkadaşlar"
-#
-msgid ""
-"All your own and your friends posts. And your favourite groups' posts too."
-msgstr ""
-"Sizin ya da takip ettiğiniz kişilerin ve gruplarınızın girdileri/"
-"bildirimleri. "
-#
-msgid "BE A MEMBER"
-msgstr "ÜYE OLUN"
-#
-msgid "Change your status to show what are you up to"
-msgstr "Durum bilginizi değiştirebilirsiniz."
-#
-msgid ""
-"Click here to post your entry to the feed. You can still remove it anytime"
-msgstr ""
-"Buraya tıklayarak yeni bir gönderi girebilirsiniz. Merak etmeyin, "
-"istediğiniz zaman silebilirsiniz."
-#
-msgid "Comments:"
-msgstr "Yorumlar:"
-#
-msgid "Create your own group"
-msgstr "Kendi grubunuzu yaratın"
-#
-msgid "Delete expired invites"
-msgstr "Süresi dolan davetleri sil"
-#
-msgid "Entries:"
-msgstr "Girişler:"
-#
-msgid "Full name"
-msgstr "Ad soyad"
-#
-msgid ""
-"Group with this shortname already exists! Maybe, you should check it out."
-msgstr "Bu isimde bir grup var maalesef. Başka bir isim seçseniz?"
-#
-msgid "Internal Server Error!"
-msgstr "Çok acıklı bir sunucu hatası"
-#
-msgid "Issuer couldn't replied."
-msgstr "Ödeme sorunu - Banka cevap veremiyor"
-#
-msgid "Members:"
-msgstr "Üyeler:"
-#
-msgid "Mobile payments. Coming soon."
-msgstr "Mobil ödeme bölümü pek yakında"
-#
-msgid "My account"
-msgstr "Hesabım"
-#
-msgid "MyFeed"
-msgstr "Akış"
-#
-msgid "New direct message from "
-msgstr "Yeni doğrudan mesaj"
-#
-msgid ""
-"Once again, we are sorry. If you have some spare time, please tell us what "
-"caused this error, and we will make it right."
-msgstr ""
-"Bir kere daha özür diliyoruz. Eğer vaktiniz varsa lütfen bu hatayı, yardım "
-"merkemizde rapor ediniz."
-#
-msgid "Paired"
-msgstr "Eşli"
-#
-msgid "Password entry limit exceeded"
-msgstr "Şifre giriş sınırı aşıldı"
-#
-msgid "Public Beta from 20 Jul 2012"
-msgstr "Public Beta 20 Jul 2012"
-#
-msgid "Short name"
-msgstr "Kısa adı"
-#
-msgid "Something strange happend"
-msgstr "Sistemde bir gariplik oluştu"
-#
-msgid "Something strange happend, we are really sorry."
-msgstr "Sistemimizde cins bir durum oluştu. Gerçekten özür diliyoruz."
-#
-msgid "Something strange happend, we really sorry."
-msgstr "Sistemimizde cins bir durum oluştu. Gerçekten özür diliyoruz."
-#
-msgid "Sorry, $n$ Mbytes is the upload limit here"
-msgstr "Pardon ama en fazla, $n$ MB boyunda dosya yükleyebilirsiniz."
-#
-msgid "Sorry, can't upload binary files"
-msgstr "Maalesef bu türden dosyaların yüklenmesine izin veremiyoruz."
-#
-msgid "Subscribers:"
-msgstr "Aboneler:"
-#
-msgid "Subscriptions:"
-msgstr "Abonelikler:"
-#
-msgid "This would of been great, wouldn't it! Go on, try it!"
-msgstr "Harika olurdu değil mi? Haydi deneyin."
-#
-msgid "To:"
-msgstr "Kime:"
-#
-msgid "User ($user$) leaving"
-msgstr "($user$) kullanıcısı ayrılıyor"
-#
-msgid "User ($user$) was kicked by ($owner$)."
-msgstr ""
-"($user$) kullanıcısı masa sahibi ($owner$) tarafından masadan çıkartıldı."
-#
-msgid "Verification required"
-msgstr "Onaylama gerekiyor"
-#
-msgid "What it will be all about"
-msgstr "Nedir ne değildir?"
-#
-msgid "You can check your existing gifts"
-msgstr "Mevcut hediyelerinizi kontrol edebilirsiniz"
-#
-msgid "You have blocked"
-msgstr "Bloklandınız"
-#
-msgid "You where kicked."
-msgstr "Oyundan atıldınız."
-#
-msgid "back"
-msgstr "geri"
-#
-msgid "go to"
-msgstr "git"
-#
-msgid "hate letter"
-msgstr "sorunlarınızı bildirin"
-#
-msgid "not entered"
-msgstr "belirtilmedi"
-#
-msgid "or go"
-msgstr "ya da"
-#
-msgid "support site"
-msgstr "destek sitesi"
-#
-msgid "write us a"
-msgstr "bize yazın"
 #
 msgid ""
 "! We have a problem here. guiders-js does not work quite well with dynamic "
 "content. As you can see, we have no arrows. I will try to buid our guider "
 "scenario as this is how it should be."
-msgstr "Nerde olduğu meçhul bir girdidir kendisi."
+msgstr ""
+"! We have a problem here. guiders-js does not work quite well with dynamic "
+"content. As you can see, we have no arrows. I will try to buid our guider "
+"scenario as this is how it should be."
+#
+msgid ""
+"$desc$ in $game$ to be held $date$ $time$ for $players$ players with $quota$ "
+"per round quota."
+msgstr ""
+"$desc$ in $game$ to be held $date$ $time$ for $players$ players with $quota$ "
+"per round quota."
+#
+msgid "$id$ on $time$: $ammount$"
+msgstr "$id$ on $time$: $ammount$"
 #
 msgid "$mode$"
 msgstr "$mode$"
 #
+msgid "$number$ invites has been deleted!"
+msgstr "$number$ invites has been deleted!"
+#
 msgid "$speed$"
 msgstr "$speed$"
 #
+msgid "$user$ invites you! - Kakaranet.com"
+msgstr "$user$ invites you! - Kakaranet.com"
+#
+msgid "$user$ is currently not in any group"
+msgstr "$user$ is currently not in any group"
+#
+msgid "$username$ table, $date$"
+msgstr "$username$ table, $date$"
+#
+msgid "$username$ table, $date$ "
+msgstr "$username$ table, $date$ "
+#
+msgid "(VISA) Getaprovisionfrombank(VISA)"
+msgstr "(VISA) Getaprovisionfrombank(VISA)"
+#
+msgid "(original couldn't found)"
+msgstr "(original couldn't found)"
+#
+msgid "/login/register"
+msgstr "/login/register"
+#
+msgid "1-st prize"
+msgstr "1-st prize"
+#
+msgid "2-nd prize"
+msgstr "2-nd prize"
+#
+msgid "2011 &copy; Kakaranet. All rights reserved."
+msgstr "2011 &copy; Kakaranet. All rights reserved."
+#
+msgid "3-rd prize"
+msgstr "3-rd prize"
+#
+msgid "3D Secure Error"
+msgstr "3D Secure Error"
+#
+msgid "<< Back"
+msgstr "<< Back"
+#
+msgid "<b>Advertise it!</b>"
+msgstr "<b>Advertise it!</b>"
+#
 msgid "<b>Bu kadar...</b>"
 msgstr "<b>Bu kadar...</b>"
+#
+msgid "<b>Create your tournament!</b>"
+msgstr "<b>Create your tournament!</b>"
+#
+msgid "<b>Different</b> groups, <b>different</b> people."
+msgstr "<b>Different</b> groups, <b>different</b> people."
+#
+msgid "<b>Either</b> just <b>your friends</b>,"
+msgstr "<b>Either</b> just <b>your friends</b>,"
 #
 msgid "<b>Eski</b> arkadaşların – <b>Yeni</b> arkadaşların"
 msgstr "<b>Eski</b> arkadaşların – <b>Yeni</b> arkadaşların"
@@ -3098,22 +112,55 @@ msgstr "<b>Eski</b> arkadaşların – <b>Yeni</b> arkadaşların"
 msgid "<b>Farklı</b> gruplar, <b>Farklı</b> insanlar…"
 msgstr "<b>Farklı</b> gruplar, <b>Farklı</b> insanlar…"
 #
+msgid "<b>Join us in the Arena</b>"
+msgstr "<b>Join us in the Arena</b>"
+#
+msgid "<b>Or</b> just the players <b>who match the criteria you define!</b>"
+msgstr "<b>Or</b> just the players <b>who match the criteria you define!</b>"
+#
 msgid "<b>Oyun kriterlerini</b> de sen belirliyorsun. "
 msgstr "<b>Oyun kriterlerini</b> de sen belirliyorsun. "
+#
+msgid "<b>Play!</b>"
+msgstr "<b>Play!</b>"
 #
 msgid "<b>Tanıt!</b>"
 msgstr "<b>Tanıt!</b>"
 #
+msgid "<b>That's all!</b>"
+msgstr "<b>That's all!</b>"
+#
 msgid "<b>Turnuvanı Yarat!</b>"
 msgstr "<b>Turnuvanı Yarat!</b>"
 #
+msgid ""
+"<b>We worked hard</b>, and we are still <b>working really hard</b>.<br>With "
+"<b>your help</b>, our efforts will increasingly continue to <b>improve this "
+"community</b>!"
+msgstr ""
+"<b>We worked hard</b>, and we are still <b>working really hard</b>.<br>With "
+"<b>your help</b>, our efforts will increasingly continue to <b>improve this "
+"community</b>!"
+#
+msgid "<b>What's the prize?</b>"
+msgstr "<b>What's the prize?</b>"
+#
 msgid "<b>Yarış!</b>"
 msgstr "<b>Yarış!</b>"
+#
+msgid "<b>all available rooms</b> or even to <b>choose my own name</b>…"
+msgstr "<b>all available rooms</b> or even to <b>choose my own name</b>…"
 #
 msgid ""
 "<b>bulamadıklarını</b> düşünerek sadece kakaranet’e <b>özel</b> uygulamalar"
 msgstr ""
 "<b>bulamadıklarını</b> düşünerek sadece kakaranet’e <b>özel</b> uygulamalar"
+#
+msgid "<b>for my comfort</b>."
+msgstr "<b>for my comfort</b>."
+#
+msgid "<b>or</b> just <b>the groups you are interested in</b>."
+msgstr "<b>or</b> just <b>the groups you are interested in</b>."
 #
 msgid ""
 "<b>Çok kafa yorduk</b>, <b>çok uğraştık</b> ve bu çabamız <b>artarak</b> "
@@ -3229,12 +276,228 @@ msgid "<b>• Muhabbet etmek</b> istiyorum,"
 msgstr "<b>• Muhabbet etmek</b> istiyorum,"
 #
 msgid ""
+"<ul>\n"
+"<li>Keep connected without being disturbed by anyone</li>\n"
+"<li>Create your own world</li>\n"
+"<li>Share your thoughts, files or music with friends</li>\n"
+"<li>Create your own interest groups</li>\n"
+"<li>Create your own music channels<li>\n"
+"</ul>"
+msgstr ""
+"<ul>\n"
+"<li>Keep connected without being disturbed by anyone</li>\n"
+"<li>Create your own world</li>\n"
+"<li>Share your thoughts, files or music with friends</li>\n"
+"<li>Create your own interest groups</li>\n"
+"<li>Create your own music channels<li>\n"
+"</ul>"
+#
+msgid "A not implemented"
+msgstr "A not implemented"
+#
+msgid "A top level of competition will be awaiting for you!"
+msgstr "A top level of competition will be awaiting for you!"
+#
+msgid ""
+"A tournament is a competition involving a relatively large number of "
+"competitors, all participating in a sport or game. More specifically, the "
+"term may be used in either of two overlapping senses. One or more "
+"competitions held at a single venue and concentrated into a relatively short "
+"time interval. A competition involving multiple matches, each involving a "
+"subset of the competitors, with the overall tournament winner determined "
+"based on the combined results of these individual matches. These are common "
+"in those sports and games where each match must involve a small number of "
+"competitors: often precisely two, as in most team sports, racket sports and "
+"combat sports, many card games and board games, and many forms of "
+"competitive debating. Such tournaments allow large numbers to compete "
+"against each other in spite of the restriction on numbers in a single match."
+msgstr ""
+"A tournament is a competition involving a relatively large number of "
+"competitors, all participating in a sport or game. More specifically, the "
+"term may be used in either of two overlapping senses. One or more "
+"competitions held at a single venue and concentrated into a relatively short "
+"time interval. A competition involving multiple matches, each involving a "
+"subset of the competitors, with the overall tournament winner determined "
+"based on the combined results of these individual matches. These are common "
+"in those sports and games where each match must involve a small number of "
+"competitors: often precisely two, as in most team sports, racket sports and "
+"combat sports, many card games and board games, and many forms of "
+"competitive debating. Such tournaments allow large numbers to compete "
+"against each other in spite of the restriction on numbers in a single match."
+#
+msgid "ACCORDING TO FRIENDS"
+msgstr "ARKADAŞLARIMA GÖRE"
+#
+msgid "ADDRESS"
+msgstr "ADDRESS"
+#
+msgid "AFFILIATE"
+msgstr "AFFILIATE"
+#
+msgid "ALL"
+msgstr "HEPSİ"
+#
+msgid "ASC"
+msgstr "ARTAN"
+#
+msgid "About Us"
+msgstr "About Us"
+#
+msgid "Access denied!"
+msgstr "Access denied!"
+#
+msgid "Account"
+msgstr "Account"
+#
+msgid "Account information"
+msgstr "Account information"
+#
+msgid "Account is not suficient"
+msgstr "Account is not suficient"
+#
+msgid "Account status"
+msgstr "Account status"
+#
+msgid "Account undefined"
+msgstr "Account undefined"
+#
+msgid "Account verified"
+msgstr "Account verified"
+#
+msgid "AccountBalanceNotAvailable."
+msgstr "AccountBalanceNotAvailable."
+#
+msgid "Actions"
+msgstr "Actions"
+#
+msgid "Active members"
+msgstr "Active members"
+#
+msgid "Add"
+msgstr "Add"
+#
+msgid "Add attachment"
+msgstr "Add attachment"
+#
+msgid "Add new contract"
+msgstr "Add new contract"
+#
+msgid "Add new contract type"
+msgstr "Add new contract type"
+#
+msgid "Add new value"
+msgstr "Add new value"
+#
+msgid "Add/Update variable"
+msgstr "Add/Update variable"
+#
+msgid "Additional options"
+msgstr "Additional options"
+#
+msgid "Additional options description"
+msgstr "Additional options description"
+#
+msgid "Address"
+msgstr "Address"
+#
+msgid "Admin"
+msgstr "Admin"
+#
+msgid "Affiliate contracts"
+msgstr "Affiliate contracts"
+#
+msgid "Affiliate followers"
+msgstr "Affiliate followers"
+#
+msgid "Affiliates"
+msgstr "Affiliates"
+#
+msgid "Affiliates that can see payment details: "
+msgstr "Affiliates that can see payment details: "
+#
+msgid "Affiliates that can't: "
+msgstr "Affiliates that can't: "
+#
+msgid "After all it's your world!"
+msgstr "After all it's your world!"
+#
+msgid "Age"
+msgstr "Age"
+#
+msgid "Age limit"
+msgstr "Age limit"
+#
+msgid "Age limit:"
+msgstr "Age limit:"
+#
+msgid "Age limit: "
+msgstr "Age limit: "
+#
+msgid "Age: $fromage$ - $toage$"
+msgstr "Age: $fromage$ - $toage$"
+#
+msgid "Age: $minage$ - $maxage$"
+msgstr "Age: $minage$ - $maxage$"
+#
+msgid "All affiliate followers of"
+msgstr "All affiliate followers of"
+#
+msgid "All friends of "
+msgstr "All friends of "
+#
+msgid "All functions are not completed yet."
+msgstr "All functions are not completed yet."
+#
+msgid "All members"
+msgstr "All members"
+#
+msgid "All the people on kakaranet"
+msgstr "All the people on kakaranet"
+#
+msgid "All users of Kakaranet"
+msgstr "All users of Kakaranet"
+#
+msgid "All your affiliate followers"
+msgstr "All your affiliate followers"
+#
+msgid "All your friends"
+msgstr "All your friends"
+#
+msgid ""
+"All your own and your friends posts. And your favourite groups' posts too."
+msgstr ""
+"All your own and your friends posts. And your favourite groups' posts too."
+#
+msgid "All your own and your own posts. And your favourite groups' posts too."
+msgstr "All your own and your own posts. And your favourite groups' posts too."
+#
+msgid "Allow to see details"
+msgstr "Allow to see details"
+#
+msgid "Amount"
+msgstr "Amount"
+#
+msgid ""
 "And this is the text area for writing. You can also put youtube, vimeo or "
 "other links in here."
 msgstr ""
-"Bu alanda istediğiniz türden bir fikri ya da başka birinin dediklerini "
-"paylaşabilirsiniz. Ayrıca yazdığınıza video, müzik linkleri de ekleme "
-"şansınız var. Sadece kopyalayıp yapıştırın yeter."
+"And this is the text area for writing. You can also put youtube, vimeo or "
+"other links in here."
+#
+msgid "Announce it!"
+msgstr "Announce it!"
+#
+msgid "Appear as you are or be as you appear."
+msgstr "Appear as you are or be as you appear."
+#
+msgid "Application error. Please, try later"
+msgstr "Application error. Please, try later"
+#
+msgid "Approve"
+msgstr "Approve"
+#
+msgid "Are you sure to leave this group?"
+msgstr "Are you sure to leave this group?"
 #
 msgid "Artık karşılıksız verme devri bitti..."
 msgstr "Artık karşılıksız verme devri bitti..."
@@ -3244,18 +507,81 @@ msgid ""
 "friends with. In technical terms this means automatically showing what they "
 "are willing to share in your feed."
 msgstr ""
-"Oyun oynarken ya da diğer kişilerin sayfalarını gezerken, onlara abone olmak "
-"isteyebilirsiniz. Abone olduğunuz an, onların yazdıklarını kendi sayfanızdan "
-"takip etmeye başlarsınız."
+"As you play games or browse groups, you might find people you want to be "
+"friends with. In technical terms this means automatically showing what they "
+"are willing to share in your feed."
+#
+msgid "Ask from customer."
+msgstr "Ask from customer."
+#
+msgid "At the tip of your finger."
+msgstr "At the tip of your finger."
 #
 msgid "Attachment box"
-msgstr "Dosya ekleyin"
+msgstr "Attachment box"
 #
 msgid "Attributes"
-msgstr "Özellikler"
+msgstr "Attributes"
+#
+msgid "Attributes description."
+msgstr "Attributes description."
+#
+msgid "Authentication error"
+msgstr "Authentication error"
+#
+msgid "Avatar"
+msgstr "Avatar"
+#
+msgid "B.Sc."
+msgstr "B.Sc."
+#
+msgid "BE A MEMBER"
+msgstr "BE A MEMBER"
+#
+msgid "BE SOCIAL!"
+msgstr "BE SOCIAL!"
+#
+msgid "BY GIFTS"
+msgstr "HEDİYEYE GÖRE"
+#
+msgid "BY PUANIMA"
+msgstr "PUANIMA GÖRE"
+#
+msgid "Bad argument. May be you use wrong type."
+msgstr "Bad argument. May be you use wrong type."
+#
+msgid "Bad captcha!"
+msgstr "Bad captcha!"
+#
+msgid "Bad verification code!"
+msgstr "Bad verification code!"
+#
+msgid "Bank account details:"
+msgstr "Bank account details:"
+#
+msgid "Bank is not registered to 3D (Cache)"
+msgstr "Bank is not registered to 3D (Cache)"
+#
+msgid "Bank name couldn't be found"
+msgstr "Bank name couldn't be found"
+#
+msgid "Below is Your paypal transaction id."
+msgstr "Below is Your paypal transaction id."
 #
 msgid "Bilmediğin, tanımadığın oyunculara mecbur değilsin artık."
 msgstr "Bilmediğin, tanımadığın oyunculara mecbur değilsin artık."
+#
+msgid "Birth Date"
+msgstr "Birth Date"
+#
+msgid "Birth date: "
+msgstr "Birth date: "
+#
+msgid "Block this user"
+msgstr "Block this user"
+#
+msgid "Browse"
+msgstr "Browse"
 #
 msgid "Bu oyunlar ve içerikler başka yerde yok!"
 msgstr "Bu oyunlar ve içerikler başka yerde yok!"
@@ -3269,55 +595,937 @@ msgstr "Bunları kiminle paylaşmak istiyorsan sen belirle."
 msgid "Burası sadece bir oyun ortamı değil."
 msgstr "Burası sadece bir oyun ortamı değil."
 #
+msgid ""
+"But we are working on it. Wait for a while - it will all be here. Every kind "
+"of statistics with all that tables and diagrams. All that stuff smart people "
+"with glasses call 'information design'."
+msgstr ""
+"But we are working on it. Wait for a while - it will all be here. Every kind "
+"of statistics with all that tables and diagrams. All that stuff smart people "
+"with glasses call 'information design'."
+#
+msgid "Buy"
+msgstr "Buy"
+#
+msgid "Buy Now"
+msgstr "Buy Now"
+#
+msgid "Buy it"
+msgstr "Buy it"
+#
 msgid "Buy mobile fail"
-msgstr "Mobil satın alma başarısız"
+msgstr "Buy mobile fail"
 #
 msgid "Buy mobile success"
-msgstr "Mobil satın alma başarılı"
+msgstr "Buy mobile success"
+#
+msgid "Buy with Credit Card"
+msgstr "Buy with Credit Card"
+#
+msgid "Buy with Paypal"
+msgstr "Buy with Paypal"
+#
+msgid "Buy with mobile"
+msgstr "Buy with mobile"
+#
+msgid "Buy with wire transfer"
+msgstr "Buy with wire transfer"
+#
+msgid ""
+"By clicking on 'Register' above, you are agreeing to the $terms$ and the "
+"$privacy$."
+msgstr ""
+"By clicking on 'Register' above, you are agreeing to the $terms$ and the "
+"$privacy$."
+#
+msgid "CREATE"
+msgstr "CREATE"
+#
+msgid "Can't be reached to card owner's bank"
+msgstr "Can't be reached to card owner's bank"
+#
+msgid "Can't find anything matching your request"
+msgstr "Can't find anything matching your request"
+#
+msgid "Cancel"
+msgstr "Cancel"
+#
+msgid "Cancel the operation"
+msgstr "Cancel the operation"
+#
+msgid "Cannot be Verified, cardholder wants to register later"
+msgstr "Cannot be Verified, cardholder wants to register later"
+#
+msgid "Card No"
+msgstr "Card No"
+#
+msgid "Card has expired! Seize the card."
+msgstr "Card has expired! Seize the card."
+#
+msgid "Card number is false"
+msgstr "Card number is false"
+#
+msgid "Card or Bank is not 3D"
+msgstr "Card or Bank is not 3D"
+#
+msgid "Card owner can't do this operation"
+msgstr "Card owner can't do this operation"
+#
+msgid "Card settlement date expired"
+msgstr "Card settlement date expired"
+#
+msgid "Cardholder name"
+msgstr "Cardholder name"
+#
+msgid "Change Avatar"
+msgstr "Change Avatar"
+#
+msgid "Change password"
+msgstr "Change password"
+#
+msgid "Change password - success!"
+msgstr "Change password - success!"
+#
+msgid "Change your status to show what are you up to"
+msgstr "Change your status to show what are you up to"
+#
+msgid "Chat"
+msgstr "Chat"
+#
+msgid "Check it in your profile!"
+msgstr "Check it in your profile!"
+#
+msgid "Check the identity and perform a transaction"
+msgstr "Check the identity and perform a transaction"
+#
+msgid "Check your e-mail for invitation"
+msgstr "Check your e-mail for invitation"
+#
+msgid "Cheque account undefined"
+msgstr "Cheque account undefined"
+#
+msgid "Choose your own game options"
+msgstr "Choose your own game options"
 #
 msgid "City"
-msgstr "Şehir"
+msgstr "City"
+#
+msgid "City:"
+msgstr "City:"
+#
+msgid "City: "
+msgstr "City: "
+#
+msgid "City: $city$"
+msgstr "City: $city$"
+#
+msgid "City: Not defined"
+msgstr "City: Not defined"
+#
+msgid "Claim your prize right at"
+msgstr "Claim your prize right at"
+#
+msgid "Clear Options"
+msgstr "Clear Options"
+#
+msgid "Clear selection"
+msgstr "Clear selection"
+#
+msgid ""
+"Click here to post your entry to the feed. You can still remove it anytime"
+msgstr ""
+"Click here to post your entry to the feed. You can still remove it anytime"
+#
+msgid "Clicking here will remove an entry from your own and your friends feeds"
+msgstr ""
+"Clicking here will remove an entry from your own and your friends feeds"
+#
+msgid "Close"
+msgstr "Close"
+#
+msgid "Close filter"
+msgstr "Close filter"
+#
+msgid "Collect your kakara points and get a bigger, nicer gift."
+msgstr "Collect your kakara points and get a bigger, nicer gift."
+#
+msgid "Color"
+msgstr "Color"
+#
+msgid "Comission"
+msgstr "Comission"
+#
+msgid "Comission total"
+msgstr "Comission total"
+#
+msgid "Comment"
+msgstr "Comment"
+#
+msgid "Comments"
+msgstr "Comments"
+#
+msgid "Comments:"
+msgstr "Comments:"
+#
+msgid "Commission (%)"
+msgstr "Commission (%)"
+#
+msgid "Confirm: "
+msgstr "Confirm: "
+#
+msgid "Contact"
+msgstr "Contact"
+#
+msgid "Continue"
+msgstr "Continue"
+#
+msgid "Continue login"
+msgstr "Continue login"
+#
+msgid "Continue login >>"
+msgstr "Continue login >>"
+#
+msgid "Continue tour >>"
+msgstr "Continue tour >>"
+#
+msgid "Contract type"
+msgstr "Contract type"
+#
+msgid "Contracts"
+msgstr "Contracts"
+#
+msgid "Conversate, debate, hang out, comment or just spectate…"
+msgstr "Conversate, debate, hang out, comment or just spectate…"
+#
+msgid "Convert"
+msgstr "Convert"
+#
+msgid "Convert kakush to quota"
+msgstr "Convert kakush to quota"
+#
+msgid "Countdown from 10"
+msgstr "Countdown from 10"
+#
+msgid "Coupled"
+msgstr "Coupled"
+#
+msgid "Coupled game"
+msgstr "Coupled game"
+#
+msgid "Create"
+msgstr "Create"
+#
+msgid "Create Tournament"
+msgstr "Create Tournament"
+#
+msgid "Create YOUR OWN world."
+msgstr "Create YOUR OWN world."
+#
+msgid "Create Your Game"
+msgstr "Create Your Game"
+#
+msgid "Create a game"
+msgstr "Create a game"
+#
+msgid "Create a group"
+msgstr "Create a group"
 #
 msgid "Create button"
-msgstr "Masanı kur"
+msgstr "Create button"
+#
+msgid "Create button description."
+msgstr "Create button description."
+#
+msgid "Create data"
+msgstr "Create data"
+#
+msgid "Create description."
+msgstr "Create description."
+#
+msgid "Create invitation code"
+msgstr "Create invitation code"
+#
+msgid "Create new"
+msgstr "Create new"
+#
+msgid "Create new type"
+msgstr "Create new type"
+#
+msgid "Create tournaments, play with your friends"
+msgstr "Create tournaments, play with your friends"
+#
+msgid "Create your own gaming world"
+msgstr "Create your own gaming world"
+#
+msgid "Create your own gaming world. Play without disturbed by anyone."
+msgstr "Create your own gaming world. Play without disturbed by anyone."
+#
+msgid "Create your own group"
+msgstr "Create your own group"
+#
+msgid "Create your own tournaments"
+msgstr "Create your own tournaments"
+#
+msgid "Create your world and only share with the people YOU want…"
+msgstr "Create your world and only share with the people YOU want…"
+#
+msgid "Created"
+msgstr "Created"
+#
+msgid "Created:"
+msgstr "Created:"
+#
+msgid "Credit account undefined"
+msgstr "Credit account undefined"
+#
+msgid "Credit card"
+msgstr "Credit card"
+#
+msgid "Criteria"
+msgstr "Criteria"
+#
+msgid "Criteria description"
+msgstr "Criteria description"
+#
+msgid "DESC"
+msgstr "AZALAN"
+#
+msgid "DISCOVER!"
+msgstr "DISCOVER!"
 #
 msgid "Daha başka şeyler arıyorum!"
 msgstr "Daha başka şeyler arıyorum!"
 #
+msgid "Daily operation limit exceeded"
+msgstr "Daily operation limit exceeded"
+#
+msgid "Daily sum is false / Cancel rejected"
+msgstr "Daily sum is false / Cancel rejected"
+#
 msgid "Dandik oyun puanları ile <b>iyi oyuncu</b> havalarına <b>SON</b>!"
 msgstr "Dandik oyun puanları ile <b>iyi oyuncu</b> havalarına <b>SON</b>!"
 #
+msgid "Date"
+msgstr "Date"
+#
+msgid "Date of Birth"
+msgstr "Date of Birth"
+#
+msgid "Date of Birth:"
+msgstr "Date of Birth:"
+#
+msgid "Date of birth"
+msgstr "Date of birth"
+#
+msgid "Date of birth is incorrect."
+msgstr "Date of birth is incorrect."
+#
+msgid "Date of birth:"
+msgstr "Date of birth:"
+#
+msgid "Date:"
+msgstr "Tarih:"
+#
 msgid "Day"
-msgstr "Gün"
+msgstr "Day"
+#
+msgid ""
+"Dear $invited_user_name$,\n"
+"\n"
+"Our user $inviter_name$, invited you to Kakaranet Social Game Zone.\n"
+"You can sign in by clicking the link above:\n"
+"\n"
+"$invitation_code_link$\n"
+"\n"
+"$inviter_note$\n"
+"\n"
+"Please note that we are in closed private beta.\n"
+"Most of functionality of the site is unfinished and heavily testing.\n"
+"\n"
+"Note: This email is sending by one of our users. We hate SPAM and never let "
+"it happens.\n"
+"If you don't know this user, someone probably mis-typed your email address. "
+"You can ignore this message, and we apologize for the inconvenience. \n"
+"\n"
+"\n"
+"Thank you for join in,\n"
+"Kakaranet Team\n"
+msgstr ""
+"Dear $invited_user_name$,\n"
+"\n"
+"Our user $inviter_name$, invited you to Kakaranet Social Game Zone.\n"
+"You can sign in by clicking the link above:\n"
+"\n"
+"$invitation_code_link$\n"
+"\n"
+"$inviter_note$\n"
+"\n"
+"Please note that we are in closed private beta.\n"
+"Most of functionality of the site is unfinished and heavily testing.\n"
+"\n"
+"Note: This email is sending by one of our users. We hate SPAM and never let "
+"it happens.\n"
+"If you don't know this user, someone probably mis-typed your email address. "
+"You can ignore this message, and we apologize for the inconvenience. \n"
+"\n"
+"\n"
+"Thank you for join in,\n"
+"Kakaranet Team\n"
+#
+msgid ""
+"Dear visitor, in case you want to be a member of us, we need to register you "
+"to our system."
+msgstr ""
+"Dear visitor, in case you want to be a member of us, we need to register you "
+"to our system."
+#
+msgid ""
+"Dear visitor, we respect your enthusiasm, but we can't sell more then $limit"
+"$ TL worth packages a month to a single person. Sorry."
+msgstr ""
+"Dear visitor, we respect your enthusiasm, but we can't sell more then $limit"
+"$ TL worth packages a month to a single person. Sorry."
+#
+msgid ""
+"Dear, $name$, </br>\n"
+"        Your order number is <b>$order_id$</b><br/>\n"
+"        You have to do wire transfer in 3 days to our account.<br/>\n"
+"        You can login to our system and play games but you can't benefit <br/"
+">\n"
+"        from our kakush gifts service.<b/>\n"
+"        Also, we want to remind you that you can't participate to "
+"tournaments too.</br>\n"
+"        Please indicate your name,surname and order number when you do wire "
+"transfer thank you."
+msgstr ""
+"Dear, $name$, </br>\n"
+"        Your order number is <b>$order_id$</b><br/>\n"
+"        You have to do wire transfer in 3 days to our account.<br/>\n"
+"        You can login to our system and play games but you can't benefit <br/"
+">\n"
+"        from our kakush gifts service.<b/>\n"
+"        Also, we want to remind you that you can't participate to "
+"tournaments too.</br>\n"
+"        Please indicate your name,surname and order number when you do wire "
+"transfer thank you."
+#
+msgid "Decide later"
+msgstr "Decide later"
+#
+msgid "Define what kind of criteria you need for your opponents"
+msgstr "Define what kind of criteria you need for your opponents"
+#
+msgid "Define your own criteria"
+msgstr "Define your own criteria"
+#
+msgid "Delete expired invites"
+msgstr "Delete expired invites"
+#
+msgid "Deliver"
+msgstr "Deliver"
+#
+msgid "Deny Robots"
+msgstr "Deny Robots"
+#
+msgid "Desc: "
+msgstr "Desc: "
+#
+msgid "Description"
+msgstr "Description"
+#
+msgid "Detailed Settings"
+msgstr "Detailed Settings"
+#
+msgid "Detailed game speed"
+msgstr "Detailed game speed"
+#
+msgid "Detailed game speed description"
+msgstr "Detailed game speed description"
+#
+msgid "Detailed game type"
+msgstr "Detailed game type"
+#
+msgid "Detailed game type description"
+msgstr "Detailed game type description"
+#
+msgid "Detailed paired"
+msgstr "Detailed paired"
+#
+msgid "Detailed paired description"
+msgstr "Detailed paired description"
+#
+msgid "Detailed rounds"
+msgstr "Detailed rounds"
+#
+msgid "Detailed rounds description"
+msgstr "Detailed rounds description"
 #
 msgid "Detailed settings"
-msgstr "Detaylı seçenekler"
+msgstr "Detailed settings"
+#
+msgid "Detailed settings create"
+msgstr "Detailed settings create"
+#
+msgid "Detailed settings create description"
+msgstr "Detailed settings create description"
+#
+msgid "Detailed settings description."
+msgstr "Detailed settings description."
+#
+msgid "Direct messages"
+msgstr "Direct messages"
+#
+msgid "Disable"
+msgstr "Disable"
+#
+msgid "Disable old contract type"
+msgstr "Disable old contract type"
+#
+msgid "Disallow robots"
+msgstr "Disallow robots"
+#
+msgid "Disallow that"
+msgstr "Disallow that"
 #
 msgid "District"
-msgstr "Semt"
+msgstr "District"
 #
 msgid "Diyorsan…"
 msgstr "Diyorsan…"
 #
+msgid "Do not try again."
+msgstr "Do not try again."
+#
+msgid "Do you want to hide this entry?"
+msgstr "Do you want to hide this entry?"
+#
+msgid "Do you want to remove this entry?"
+msgstr "Do you want to remove this entry?"
+#
+msgid "Do you want to subscribe to '~s'?"
+msgstr "Do you want to subscribe to '~s'?"
+#
+msgid "Do you want to subscribe to group '~s'?"
+msgstr "Do you want to subscribe to group '~s'?"
+#
+msgid "Don't break the rules though, you will be prevented"
+msgstr "Don't break the rules though, you will be prevented"
+#
+msgid "Don't show this again"
+msgstr "Don't show this again"
+#
+msgid "Double game points"
+msgstr "Double game points"
+#
+msgid "Double quota"
+msgstr "Double quota"
+#
+msgid "Double quota description"
+msgstr "Double quota description"
+#
+msgid "Double quota, kakush and game points to"
+msgstr "Double quota, kakush and game points to"
+#
+msgid "Drag me to the left to select game mode!"
+msgstr "Drag me to the left to select game mode!"
+#
+msgid "Drag me to the left to select game speed!"
+msgstr "Drag me to the left to select game speed!"
+#
+msgid "Drag me to the left to select number of set!"
+msgstr "Drag me to the left to select number of set!"
+#
+msgid "DuplicateReversal."
+msgstr "DuplicateReversal."
+#
+msgid "DuplicateTransmission"
+msgstr "DuplicateTransmission"
+#
+msgid "Duration"
+msgstr "Duration"
+#
 msgid "Duyur!"
 msgstr "Duyur!"
 #
+msgid "E-mail"
+msgstr "E-mail"
+#
+msgid "Earlier"
+msgstr "Earlier"
+#
+msgid "Edit"
+msgstr "Edit"
+#
+msgid "Edit tournaments list"
+msgstr "Edit tournaments list"
+#
+msgid "Education:"
+msgstr "Education:"
+#
+msgid "Education: "
+msgstr "Education: "
+#
+msgid "Either a <b>fast</b> gameplay or <b>slow</b>…"
+msgstr "Either a <b>fast</b> gameplay or <b>slow</b>…"
+#
+msgid "Either join the tournament, or select the"
+msgstr "Either join the tournament, or select the"
+#
+msgid "Either play a <b>standart game</b>… or <b>customize it</b>!"
+msgstr "Either play a <b>standart game</b>… or <b>customize it</b>!"
+#
+msgid "Election"
+msgstr "Election"
+#
+msgid "Elementary School"
+msgstr "Elementary School"
+#
+msgid "Email"
+msgstr "Email"
+#
+msgid "Email address is incorrect!"
+msgstr "Email address is incorrect!"
+#
+msgid "Email address must be verified!"
+msgstr "Email address must be verified!"
+#
+msgid "Email is in wrong format."
+msgstr "Email is in wrong format."
+#
+msgid "Email is invalid"
+msgstr "Email is invalid"
+#
+msgid "Email is not valid."
+msgstr "Email is not valid."
+#
+msgid "Email: "
+msgstr "Email: "
+#
+msgid "Encryption / Foreign network error"
+msgstr "Encryption / Foreign network error"
+#
+msgid "Encryption error"
+msgstr "Encryption error"
+#
+msgid "End of day operations in progress"
+msgstr "End of day operations in progress"
+#
+msgid "Enjoy the thrill of our games"
+msgstr "Enjoy the thrill of our games"
+#
+msgid "Enjoy your prize, look for a new tourney…"
+msgstr "Enjoy your prize, look for a new tourney…"
+#
+msgid "Enter a valid email."
+msgstr "Enter a valid email."
+#
+msgid "Enter his/her name"
+msgstr "Enter his/her name"
+#
+msgid "Enter his/her name: "
+msgstr "Enter his/her name: "
+#
+msgid "Enter optional message for this user: "
+msgstr "Enter optional message for this user: "
+#
+msgid "Entries"
+msgstr "Entries"
+#
+msgid "Entries:"
+msgstr "Entries:"
+#
+msgid "Entry limit exceeded."
+msgstr "Entry limit exceeded."
+#
+msgid "Error"
+msgstr "Error"
+#
+msgid "Error - $something$!"
+msgstr "Error - $something$!"
+#
 msgid "Error for unknown reason!"
-msgstr ""
-"Bilinmeyen bir sebeple hata oluştu. Bu hatayı bilemediğimize göre Osman Abi "
-"haklı, limon satmaya başlamamızın zamanı gelmiş."
+msgstr "Error for unknown reason!"
+#
+msgid "Error in communication with game server"
+msgstr "Error in communication with game server"
+#
+msgid "Error, try again later"
+msgstr "Error, try again later"
+#
+msgid "Error: $error$ "
+msgstr "Error: $error$ "
 #
 msgid "Error: '$reason$'!"
-msgstr "Hata: '$reason$'!"
+msgstr "Error: '$reason$'!"
+#
+msgid "Error: Variable key is in wrong format."
+msgstr "Error: Variable key is in wrong format."
+#
+msgid "Error: user not found."
+msgstr "Error: user not found."
+#
+msgid "Even/Odd"
+msgstr "Even/Odd"
+#
+msgid "Expiration Date"
+msgstr "Expiration Date"
+#
+msgid "Expire date"
+msgstr "Expire date"
 #
 msgid "Eğlence ve heyecan seni bekliyor!"
 msgstr "Eğlence ve heyecan seni bekliyor!"
 #
+msgid "FEATURED"
+msgstr "ÖNE ÇIKANLAR"
+#
+msgid "FILTER"
+msgstr "FILTRE"
+#
+msgid "FINISHED"
+msgstr "FINISHED"
+#
+msgid "FRIENDS"
+msgstr "FRIENDS"
+#
+msgid "False date / Network error"
+msgstr "False date / Network error"
+#
+msgid "Fast"
+msgstr "Fast"
+#
 msgid "Felsefen"
 msgstr "Felsefen"
 #
+msgid "Female"
+msgstr "Female"
+#
+msgid "File should be less than $size$ bytes"
+msgstr "File should be less than $size$ bytes"
+#
+msgid "Filter tables..."
+msgstr "Filter tables..."
+#
+msgid "Financial"
+msgstr "Financial"
+#
+msgid "Find someone!"
+msgstr "Find someone!"
+#
+msgid "First and second"
+msgstr "First and second"
+#
+msgid "Forgot Password"
+msgstr "Forgot Password"
+#
+msgid "Freedom of speech!"
+msgstr "Freedom of speech!"
+#
+msgid "Friend Settings"
+msgstr "Friend Settings"
+#
+msgid "Friend settings"
+msgstr "Friend settings"
+#
+msgid "Friend settings description."
+msgstr "Friend settings description."
+#
+msgid "Friends"
+msgstr "Friends"
+#
+msgid "Friends only"
+msgstr "Friends only"
+#
+msgid "Friends only:"
+msgstr "Friends only:"
+#
+msgid "Full name"
+msgstr "Full name"
+#
+msgid "Full view"
+msgstr "Full view"
+#
+msgid "GARANTİ BANKASI A.Ş"
+msgstr "GARANTİ BANKASI A.Ş"
+#
+msgid "GIFTS"
+msgstr "GIFTS"
+#
+msgid "GROUPS"
+msgstr "GROUPS"
+#
 msgid "Game"
-msgstr "Oyun"
+msgstr "Game"
+#
+msgid "Game Page"
+msgstr "Game Page"
+#
+msgid "Game Points"
+msgstr "Game Points"
+#
+msgid "Game Rules"
+msgstr "Game Rules"
+#
+msgid "Game Settings"
+msgstr "Game Settings"
+#
+msgid "Game Speed"
+msgstr "Game Speed"
+#
+msgid "Game Type"
+msgstr "Game Type"
+#
+msgid "Game Type:"
+msgstr "Oyun Türü:"
+#
+msgid "Game mode"
+msgstr "Game mode"
+#
+msgid "Game mode:"
+msgstr "Game mode:"
+#
+msgid "Game mode: "
+msgstr "Game mode: "
+#
+msgid "Game quota"
+msgstr "Game quota"
+#
+msgid "Game settings"
+msgstr "Game settings"
+#
+msgid "Game speed"
+msgstr "Game speed"
+#
+msgid "Game speed description."
+msgstr "Game speed description."
+#
+msgid "Game speed:"
+msgstr "Game speed:"
+#
+msgid "Game speed: "
+msgstr "Game speed: "
+#
+msgid "Game type"
+msgstr "Game type"
+#
+msgid "Game type description."
+msgstr "Game type description."
+#
+msgid "Game type missing"
+msgstr "Game type missing"
+#
+msgid "Gamer"
+msgstr "Gamer"
+#
+msgid "Games"
+msgstr "Games"
+#
+msgid "Games,"
+msgstr "Games,"
+#
+msgid "Gather the competitors!"
+msgstr "Gather the competitors!"
+#
+msgid "Gender"
+msgstr "Gender"
+#
+msgid "Gender limit"
+msgstr "Gender limit"
+#
+msgid "Gender limit:"
+msgstr "Gender limit:"
+#
+msgid "Gender:"
+msgstr "Gender:"
+#
+msgid "Generate $count$ code and send to address '$email$'."
+msgstr "Generate $count$ code and send to address '$email$'."
+#
+msgid "Generate link"
+msgstr "Generate link"
+#
+msgid "Get a big prize in awarded tournaments"
+msgstr "Get a big prize in awarded tournaments"
+#
+msgid "Get invite"
+msgstr "Get invite"
+#
+msgid "Get your gift"
+msgstr "Get your gift"
+#
+msgid "Get your gift upon membership"
+msgstr "Get your gift upon membership"
+#
+msgid "Getaprovisionfrombank"
+msgstr "Getaprovisionfrombank"
+#
+msgid "Gift points (kakush) charge"
+msgstr "Gift points (kakush) charge"
+#
+msgid "Gift range"
+msgstr "Gift range"
+#
+msgid "Gifts"
+msgstr "Gifts"
+#
+msgid "Gifts List"
+msgstr "Gifts List"
+#
+msgid "Gifts section explanation area 1."
+msgstr "Gifts section explanation area 1."
+#
+msgid "Gifts section explanation area 2"
+msgstr "Gifts section explanation area 2"
+#
+msgid "Gifts..."
+msgstr "Gifts..."
+#
+msgid "Gosterge finish"
+msgstr "Gosterge finish"
+#
+msgid "Group Settings"
+msgstr "Group Settings"
+#
+msgid "Group description"
+msgstr "Group description"
+#
+msgid "Group has been added"
+msgstr "Group has been added"
+#
+msgid "Group have no members"
+msgstr "Group have no members"
+#
+msgid "Group info"
+msgstr "Group info"
+#
+msgid "Group name"
+msgstr "Group name"
+#
+msgid "Group not found"
+msgstr "Group not found"
+#
+msgid "Group owner"
+msgstr "Group owner"
+#
+msgid "Group settings"
+msgstr "Group settings"
+#
+msgid "Group settings description."
+msgstr "Group settings description."
+#
+msgid "Group should have some kind of shortname"
+msgstr "Group should have some kind of shortname"
+#
+msgid "Group username"
+msgstr "Group username"
+#
+msgid ""
+"Group with this shortname already exists! Maybe, you should check it out."
+msgstr ""
+"Group with this shortname already exists! Maybe, you should check it out."
+#
+msgid "Groups"
+msgstr "Groups"
 #
 msgid ""
 "Groups are communities of people with common interests. Groups can be public "
@@ -3325,25 +1533,55 @@ msgid ""
 "feed. You need an invitation to join someones private group though. And also "
 "you can create your own group if you like to."
 msgstr ""
-"Gruplar, ortak bir konuda bir araya gelen kişiler içindir. İstediğiniz bir "
-"gruba, eğer \" Özel \" bir grup değilse bağlanabilirsiniz. Eğer isterseniz, "
-"kendi gurubunuzu da yaratabilirsiniz. Abone olduğunuz gruplardaki yazılar da "
-"sizin sayfanızdan takip edilebilir."
+"Groups are communities of people with common interests. Groups can be public "
+"and private. You can join any public group and see its entry right in your "
+"feed. You need an invitation to join someones private group though. And also "
+"you can create your own group if you like to."
+#
+msgid "Groups:"
+msgstr "Groups:"
+#
+msgid "Grup Kur!"
+msgstr "Grup Kur!"
+#
+msgid "Guns and Butter"
+msgstr "Guns and Butter"
+#
+msgid "Guns, butter, everything in between"
+msgstr "Guns, butter, everything in between"
 #
 msgid "HEDİYELER"
 msgstr "HEDİYELER"
 #
+msgid "Have no idea, what it is about"
+msgstr "Have no idea, what it is about"
+#
 msgid "Hediyenizi Alın!"
 msgstr "Hediyenizi Alın!"
+#
+msgid "Hello there..."
+msgstr "Hello there..."
+#
+msgid ""
+"Hello.\n"
+"Click on the link:\n"
+"$link$"
+msgstr ""
+"Hello.\n"
+"Click on the link:\n"
+"$link$"
+#
+msgid "Help & Support"
+msgstr "Help & Support"
 #
 msgid ""
 "Here you can share your thoughts, interesting links, music and pictures with "
 "the public. You can make friends, join different groups or even create your "
 "own group. Here, let us show you everything in detail."
 msgstr ""
-"Burada düşüncelerinizi paylaşabilir, ilginç linkleri, müziği ve resimleri "
-"paylaşabilirsiniz. Arkadaş bulabilir, değişik gruplara bağlanabilir ve hatta "
-"kendi grubunuzu yaratabilirsiniz. "
+"Here you can share your thoughts, interesting links, music and pictures with "
+"the public. You can make friends, join different groups or even create your "
+"own group. Here, let us show you everything in detail."
 #
 msgid "Herkese ulaşabileceğin gibi,"
 msgstr "Herkese ulaşabileceğin gibi,"
@@ -3351,8 +1589,262 @@ msgstr "Herkese ulaşabileceğin gibi,"
 msgid "Hesabında biriken puanlar ile"
 msgstr "Hesabında biriken puanlar ile"
 #
+msgid "Hey!"
+msgstr "Hey!"
+#
+msgid "Hide"
+msgstr "Hide"
+#
+msgid "Hide button description"
+msgstr "Hide button description"
+#
+msgid "Hide button options"
+msgstr "Hide button options"
+#
+msgid "Hide details"
+msgstr "Hide details"
+#
+msgid "High School"
+msgstr "High School"
+#
+msgid "Hmm, but why should I purchase"
+msgstr "Hmm, but why should I purchase"
+#
+msgid "Hundreds of prizes in our catalogue waiting to be claimed"
+msgstr "Hundreds of prizes in our catalogue waiting to be claimed"
+#
+msgid "I <b>REALLY ENJOY</b> playing."
+msgstr "I <b>REALLY ENJOY</b> playing."
+#
+msgid "I Am Feeling Lucky"
+msgstr "I Am Feeling Lucky"
+#
+msgid "I don't accept observers"
+msgstr "I don't accept observers"
+#
+msgid "I don't want to be harrased and do nothing about it."
+msgstr "I don't want to be harrased and do nothing about it."
+#
+msgid ""
+"I don't want to pay for features like <b>uploading my own profile</b> or "
+"entering"
+msgstr ""
+"I don't want to pay for features like <b>uploading my own profile</b> or "
+"entering"
+#
+msgid "I don't want unfinished games."
+msgstr "I don't want unfinished games."
+#
+msgid "I enjoy playing against <b>competition</b>."
+msgstr "I enjoy playing against <b>competition</b>."
+#
+msgid "I forgot my password!"
+msgstr "I forgot my password!"
+#
+msgid "I need a new enviroment where I can better <b>express myself</b>."
+msgstr "I need a new enviroment where I can better <b>express myself</b>."
+#
+msgid "I want my time and efforts to <b>have a return</b> in some way."
+msgstr "I want my time and efforts to <b>have a return</b> in some way."
+#
+msgid "I want to <b>conversate</b>."
+msgstr "I want to <b>conversate</b>."
+#
+msgid "I want to <b>explore</b> new achievments."
+msgstr "I want to <b>explore</b> new achievments."
+#
+msgid "I want to <b>have fun</b> and spend some time."
+msgstr "I want to <b>have fun</b> and spend some time."
+#
+msgid "I want to hang out and <b>meet new people</b>."
+msgstr "I want to hang out and <b>meet new people</b>."
+#
+msgid "I want to let everyone post to my group"
+msgstr "I want to let everyone post to my group"
+#
+msgid "I want to see that I get a <b>response for what I expect</b> and also."
+msgstr "I want to see that I get a <b>response for what I expect</b> and also."
+#
+msgid "I'm bored of just clicking around when playing games."
+msgstr "I'm bored of just clicking around when playing games."
+#
+msgid "I'm feeling lucky!"
+msgstr "I'm feeling lucky!"
+#
+msgid "I'm looking for much more!"
+msgstr "I'm looking for much more!"
+#
+msgid "I'm not a chicken to be plucked!"
+msgstr "I'm not a chicken to be plucked!"
+#
+msgid "I'm tired of people who hide behind the invisible walls of the internet"
+msgstr ""
+"I'm tired of people who hide behind the invisible walls of the internet"
+#
+msgid "IBAN Number"
+msgstr "IBAN Number"
+#
+msgid "If you wish you can purchase a membership with"
+msgstr "If you wish you can purchase a membership with"
+#
+msgid "Image, music, file"
+msgstr "Image, music, file"
+#
+msgid "In Our Social Complex"
+msgstr "In Our Social Complex"
+#
+msgid "In group"
+msgstr "In group"
+#
+msgid "In group: "
+msgstr "In group: "
+#
+msgid "In our social complex!"
+msgstr "In our social complex!"
+#
+msgid ""
+"In some cultures, the role of the matchmaker was and is quite "
+"professionalized. The Ashkenazi Jewish shadchan, or the Hindu astrologer, "
+"were often thought to be essential advisors and also helped in finding right "
+"spouses as they had links and a relation of good faith with the families. In "
+"cultures where arranged marriages were the rule, the astrologer often "
+"claimed that the stars sanctified matches that both parents approved of, "
+"making it quite difficult for the possibly-hesitant children to easily "
+"object - and also making it easy for the astrologer to collect his fee. "
+"Tarot divination has also been employed by some matchmakers."
+msgstr ""
+"In some cultures, the role of the matchmaker was and is quite "
+"professionalized. The Ashkenazi Jewish shadchan, or the Hindu astrologer, "
+"were often thought to be essential advisors and also helped in finding right "
+"spouses as they had links and a relation of good faith with the families. In "
+"cultures where arranged marriages were the rule, the astrologer often "
+"claimed that the stars sanctified matches that both parents approved of, "
+"making it quite difficult for the possibly-hesitant children to easily "
+"object - and also making it easy for the astrologer to collect his fee. "
+"Tarot divination has also been employed by some matchmakers."
+#
+msgid "Incompatible data has been taken with original"
+msgstr "Incompatible data has been taken with original"
+#
+msgid "Info"
+msgstr "Info"
+#
+msgid "Inside and out!"
+msgstr "Inside and out!"
+#
+msgid "Instructions has been sent to your email!"
+msgstr "Instructions has been sent to your email!"
+#
+msgid "Interact with only people you've selected"
+msgstr "Interact with only people you've selected"
+#
+msgid "Internal Server Error!"
+msgstr "Internal Server Error!"
+#
+msgid "Invalid amount"
+msgstr "Invalid amount"
+#
+msgid "Invalid invitation code"
+msgstr "Invalid invitation code"
+#
+msgid "Invalid operation"
+msgstr "Invalid operation"
+#
+msgid "Invitation Code"
+msgstr "Invitation Code"
+#
+msgid "Invitation code"
+msgstr "Invitation code"
+#
+msgid "Invitation person"
+msgstr "Invitation person"
+#
+msgid "Invite"
+msgstr "Invite"
+#
+msgid "Invite Buddy"
+msgstr "Invite Buddy"
+#
+msgid "Invite URL"
+msgstr "Invite URL"
+#
+msgid "Invite code URL"
+msgstr "Invite code URL"
+#
+msgid "Invite code URL: "
+msgstr "Invite code URL: "
+#
+msgid "Invite request from $user$"
+msgstr "Invite request from $user$"
+#
+msgid "Invite requests"
+msgstr "Invite requests"
+#
+msgid "Invite sent!"
+msgstr "Invite sent!"
+#
+msgid "Invite sent! (this still need some tuning)"
+msgstr "Invite sent! (this still need some tuning)"
+#
+msgid "Invite to group"
+msgstr "Invite to group"
+#
+msgid "Invite users"
+msgstr "Invite users"
+#
+msgid "Invite users:"
+msgstr "Invite users:"
+#
+msgid "Invited"
+msgstr "Invited"
+#
+msgid "Invites"
+msgstr "Invites"
+#
+msgid "Invites was sent. Success: $num1$; Errors: $num2$."
+msgstr "Invites was sent. Success: $num1$; Errors: $num2$."
+#
+msgid "Is required."
+msgstr "Is required."
+#
+msgid "Issuer couldn't replied."
+msgstr "Issuer couldn't replied."
+#
+msgid "Issuersign is not on"
+msgstr "Issuersign is not on"
+#
+msgid "It goes however you want it."
+msgstr "It goes however you want it."
+#
+msgid "It is however you want it to be."
+msgstr "It is however you want it to be."
+#
+msgid "It's a platform where you can share anything you like!"
+msgstr "It's a platform where you can share anything you like!"
+#
+msgid "JOIN"
+msgstr "JOIN"
+#
+msgid "Join"
+msgstr "Join"
+#
+msgid "Join An Existing Game"
+msgstr "Join An Existing Game"
+#
+msgid "Join Now!"
+msgstr "Join Now!"
+#
+msgid "Join description."
+msgstr "Join description."
+#
+msgid "Join it NOW!"
+msgstr "Join it NOW!"
+#
 msgid "KAKARANET üyesi olmalısın!"
 msgstr "KAKARANET üyesi olmalısın!"
+#
+msgid "KALLAVİ GIFTS"
+msgstr "KALLAVİ HEDIYELER"
 #
 msgid "KENDİ DÜNYAN"
 msgstr "KENDİ DÜNYAN"
@@ -3360,8 +1852,57 @@ msgstr "KENDİ DÜNYAN"
 msgid "KEŞFET!"
 msgstr "KEŞFET!"
 #
+msgid "Kakara Tavla"
+msgstr "Kakara Tavla"
+#
+msgid "KakaraNet - Private Beta"
+msgstr "KakaraNet - Private Beta"
+#
 msgid "KakaraNet - Public Beta"
 msgstr "KakaraNet - Public Beta"
+#
+msgid "Kakaranet Membership"
+msgstr "Kakaranet Membership"
+#
+msgid "Kakaranet gotchas"
+msgstr "Kakaranet gotchas"
+#
+msgid "Kakaranet is registered trademark of Paynet Inc."
+msgstr "Kakaranet is registered trademark of Paynet Inc."
+#
+msgid "Kakaranet membership verification"
+msgstr "Kakaranet membership verification"
+#
+msgid "Kakaranet system message"
+msgstr "Kakaranet system message"
+#
+msgid ""
+"Kakaranet users will benefit from the <b>customized user preferences</"
+"b><br>that <b>do not exist anywhere else</b>."
+msgstr ""
+"Kakaranet users will benefit from the <b>customized user preferences</"
+"b><br>that <b>do not exist anywhere else</b>."
+#
+msgid "Kakaranet.com"
+msgstr "Kakaranet.com"
+#
+msgid "Kakaush"
+msgstr "Kakaush"
+#
+msgid "Kakush"
+msgstr "Kakush"
+#
+msgid "Kakush Currency"
+msgstr "Kakush Currency"
+#
+msgid "Kakush Points"
+msgstr "Kakush Points"
+#
+msgid "Kakuş"
+msgstr "Kakuş"
+#
+msgid "Kapali beta asamasindaki simetize hos geldiniz."
+msgstr "Kapali beta asamasindaki simetize hos geldiniz."
 #
 msgid "Kaybeden de kazanır, kazanan daha da çok kazanır."
 msgstr "Kaybeden de kazanır, kazanan daha da çok kazanır."
@@ -3372,6 +1913,12 @@ msgstr "Kazan!"
 msgid "Kazanmak yada kaybetmek fark etmez."
 msgstr "Kazanmak yada kaybetmek fark etmez."
 #
+msgid "Keep in mind!"
+msgstr "Keep in mind!"
+#
+msgid "Keep me logged in"
+msgstr "Keep me logged in"
+#
 msgid "Kendi dünyanı kendin yarat…"
 msgstr "Kendi dünyanı kendin yarat…"
 #
@@ -3381,14 +1928,224 @@ msgstr "Kendi dünyanı kur!"
 msgid "Kendini ifade etmek için ne istiyorsan yap!"
 msgstr "Kendini ifade etmek için ne istiyorsan yap!"
 #
+msgid "Key"
+msgstr "Key"
+#
+msgid "Kick from table"
+msgstr "Kick from table"
+#
+msgid "LARGE TOURNAMENTS"
+msgstr "KALABALIK TURNUVALAR"
+#
+msgid "Last Name"
+msgstr "Last Name"
+#
+msgid "Last login"
+msgstr "Last login"
+#
+msgid "Later"
+msgstr "Later"
+#
+msgid "Lay back and relax"
+msgstr "Lay back and relax"
+#
+msgid "Lay back and relax!"
+msgstr "Lay back and relax!"
+#
+msgid "Leave group"
+msgstr "Leave group"
+#
+msgid "Leave group $group$"
+msgstr "Leave group $group$"
+#
+msgid "Leave table"
+msgstr "Leave table"
+#
+msgid "Legal Contact"
+msgstr "Legal Contact"
+#
+msgid "Let's Play!"
+msgstr "Let's Play!"
+#
+msgid "Let's rock this place together with you"
+msgstr "Let's rock this place together with you"
+#
+msgid "Like"
+msgstr "Like"
+#
+msgid "Like this group? "
+msgstr "Like this group? "
+#
+msgid "Like, be liked or be disliked."
+msgstr "Like, be liked or be disliked."
+#
+msgid "Likes"
+msgstr "Likes"
+#
+msgid "Likes:"
+msgstr "Likes:"
+#
+msgid "Limit"
+msgstr "Limit"
+#
+msgid "Limited card!!! Seize the card."
+msgstr "Limited card!!! Seize the card."
+#
+msgid "Limited card/Only valid in customer country"
+msgstr "Limited card/Only valid in customer country"
+#
+msgid "List all values"
+msgstr "List all values"
+#
+msgid "List of all groups on kakaranet"
+msgstr "List of all groups on kakaranet"
+#
+msgid "List of all your groups"
+msgstr "List of all your groups"
+#
+msgid "List of invitation URLs"
+msgstr "List of invitation URLs"
+#
 msgid "Loading..."
-msgstr "Yükleniyor..."
+msgstr "Loading..."
+#
+msgid "Location"
+msgstr "Location"
+#
+msgid "Location:"
+msgstr "Location:"
+#
+msgid "Login"
+msgstr "Login"
+#
+msgid "Logout"
+msgstr "Logout"
+#
+msgid "Lost card!!! Seize the card."
+msgstr "Lost card!!! Seize the card."
+#
+msgid "M.Sc."
+msgstr "M.Sc."
+#
+msgid "MANUAL START"
+msgstr "MANUAL START"
+#
+msgid "MATCHMAKER"
+msgstr "MATCHMAKER"
+#
+msgid "MEMBERS"
+msgstr "MEMBERS"
+#
+msgid "MEMBERSHIP"
+msgstr "MEMBERSHIP"
+#
+msgid "Main Page"
+msgstr "Main Page"
+#
+msgid "Make new friends on kakaranet."
+msgstr "Make new friends on kakaranet."
+#
+msgid "Make this user affiliate"
+msgstr "Make this user affiliate"
+#
+msgid "Male"
+msgstr "Male"
+#
+msgid "Matchmaker"
+msgstr "Matchmaker"
+#
+msgid "Max num of players"
+msgstr "Max num of players"
+#
+msgid "Member Login"
+msgstr "Member Login"
+#
+msgid "MemberCOmpanyCategoryCodeFalse"
+msgstr "MemberCOmpanyCategoryCodeFalse"
+#
+msgid "Members"
+msgstr "Members"
+#
+msgid "Members of $group$"
+msgstr "Members of $group$"
+#
+msgid "Members:"
+msgstr "Members:"
+#
+msgid "Membership package ~p"
+msgstr "Membership package ~p"
+#
+msgid "Membership packages"
+msgstr "Membership packages"
+#
+msgid "Message format is wrong"
+msgstr "Message format is wrong"
+#
+msgid "Message too long."
+msgstr "Message too long."
+#
+msgid "Mobile"
+msgstr "Mobile"
+#
+msgid "Mobile payments. Coming soon."
+msgstr "Mobile payments. Coming soon."
 #
 msgid "Month"
-msgstr "Ay"
+msgstr "Month"
+#
+msgid "More"
+msgstr "More"
+#
+msgid "My Account"
+msgstr "My Account"
+#
+msgid "My Feed"
+msgstr "My Feed"
+#
+msgid "My Gifts"
+msgstr "My Gifts"
+#
+msgid "My Page"
+msgstr "My Page"
+#
+msgid "My Profile"
+msgstr "My Profile"
+#
+msgid "My accont"
+msgstr "My accont"
+#
+msgid "My account"
+msgstr "My account"
+#
+msgid "My order history"
+msgstr "My order history"
+#
+msgid "MyFeed"
+msgstr "MyFeed"
 #
 msgid "Müziğin"
 msgstr "Müziğin"
+#
+msgid "NEW"
+msgstr "NEW"
+#
+msgid "NOT FILL UP"
+msgstr "DOLDU DOLACAKLAR"
+#
+msgid "NOW"
+msgstr "NOW"
+#
+msgid "Name"
+msgstr "Name"
+#
+msgid "Name Surname"
+msgstr "Name Surname"
+#
+msgid "Name:"
+msgstr "Name:"
+#
+msgid "Name: "
+msgstr "Name: "
 #
 msgid "Nasıl istersen öyle!"
 msgstr "Nasıl istersen öyle!"
@@ -3402,11 +2159,214 @@ msgstr "Ne verirsen onu alacağını unutma!"
 msgid "Neden Üyelik Paketi"
 msgstr "Neden Üyelik Paketi"
 #
+msgid "Net membership fee"
+msgstr "Net membership fee"
+#
+msgid "New Table"
+msgstr "New Table"
+#
+msgid "New Tournament"
+msgstr "New Tournament"
+#
+msgid "New contract"
+msgstr "New contract"
+#
+msgid "New direct message from "
+msgstr "New direct message from "
+#
+msgid "New game"
+msgstr "New game"
+#
+msgid "New group created!"
+msgstr "New group created!"
+#
+msgid "New password"
+msgstr "New password"
+#
+msgid "New password (again)"
+msgstr "New password (again)"
+#
+msgid "New password *:"
+msgstr "New password *:"
+#
+msgid "New password: "
+msgstr "New password: "
+#
+msgid "New tournament"
+msgstr "New tournament"
+#
+msgid "Nick:"
+msgstr "Nick:"
+#
+msgid "Nickname: "
+msgstr "Nickname: "
+#
 msgid "Niçin Oyun Oynuyorsun?"
 msgstr "Niçin Oyun Oynuyorsun?"
 #
+msgid "No contracts yet."
+msgstr "No contracts yet."
+#
+msgid "No matter if you win or lose, you will EARN the"
+msgstr "No matter if you win or lose, you will EARN the"
+#
+msgid "No more depositing with no results."
+msgstr "No more depositing with no results."
+#
+msgid "No observers"
+msgstr "No observers"
+#
+msgid "No one bought anything yet under this contract."
+msgstr "No one bought anything yet under this contract."
+#
+msgid "No, i'm staying"
+msgstr "No, i'm staying"
+#
 msgid "No, thanks"
-msgstr "Yok, kalsın"
+msgstr "No, thanks"
+#
+msgid "No."
+msgstr "No."
+#
+msgid "No. of players"
+msgstr "No. of players"
+#
+msgid "No. of quota"
+msgstr "No. of quota"
+#
+msgid "Normal"
+msgstr "Normal"
+#
+msgid "Not implemented"
+msgstr "Not implemented"
+#
+msgid "Not implemented."
+msgstr "Not implemented."
+#
+msgid "Not ready yet."
+msgstr "Not ready yet."
+#
+msgid "Not supported"
+msgstr "Not supported"
+#
+msgid "Nothing on this page"
+msgstr "Nothing on this page"
+#
+msgid "Notification options"
+msgstr "Notification options"
+#
+msgid "Now you can create your game!"
+msgstr "Now you can create your game!"
+#
+msgid "Num"
+msgstr "Num"
+#
+msgid "Num of players"
+msgstr "Num of players"
+#
+msgid "Number of Games:"
+msgstr "Oyun Sayısı:"
+#
+msgid "OK"
+msgstr "OK"
+#
+msgid "OKEY"
+msgstr "OKEY"
+#
+msgid "ORTAKLAR ŞUBESİ"
+msgstr "ORTAKLAR ŞUBESİ"
+#
+msgid "Observers are accepted"
+msgstr "Observers are accepted"
+#
+msgid "Ok"
+msgstr "Ok"
+#
+msgid "Okey"
+msgstr "Okey"
+#
+msgid ""
+"Once again, we are sorry. If you have some spare time, please tell us what "
+"caused this error, and we will make it right."
+msgstr ""
+"Once again, we are sorry. If you have some spare time, please tell us what "
+"caused this error, and we will make it right."
+#
+msgid "Online"
+msgstr "Online"
+#
+msgid "Online Gamers"
+msgstr "Online Gamers"
+#
+msgid "Only first"
+msgstr "Only first"
+#
+msgid "Only owner can do that."
+msgstr "Only owner can do that."
+#
+msgid "Only owner can start the game"
+msgstr "Only owner can start the game"
+#
+msgid "Operation can't be directed to proper section"
+msgstr "Operation can't be directed to proper section"
+#
+msgid "Operation cancelled"
+msgstr "Operation cancelled"
+#
+msgid "Operation couldn't be cancelled"
+msgstr "Operation couldn't be cancelled"
+#
+msgid "Operation partially done"
+msgstr "Operation partially done"
+#
+msgid "Optional settings"
+msgstr "Optional settings"
+#
+msgid "Options"
+msgstr "Options"
+#
+msgid "Original rejected/File is out of service"
+msgstr "Original rejected/File is out of service"
+#
+msgid "Other players"
+msgstr "Other players"
+#
+msgid "Others"
+msgstr "Others"
+#
+msgid "Our Price"
+msgstr "Our Price"
+#
+msgid "Our player $username$, has created "
+msgstr "Our player $username$, has created "
+#
+msgid ""
+"Our player $username$, has created '$tablename$' for $gametype$ game. Game "
+"specs: "
+msgstr ""
+"Our player $username$, has created '$tablename$' for $gametype$ game. Game "
+"specs: "
+#
+msgid "Our player, $username$, has created "
+msgstr "Our player, $username$, has created "
+#
+msgid "Our player, $username$, has created $type$ tournament: "
+msgstr "Our player, $username$, has created $type$ tournament: "
+#
+msgid ""
+"Our site is 'not' completely functional at this stage We glad if you report "
+"our faults and also advise to us for new  future requests. We believe it "
+"will be cool to meet you"
+msgstr ""
+"Our site is 'not' completely functional at this stage We glad if you report "
+"our faults and also advise to us for new  future requests. We believe it "
+"will be cool to meet you"
+#
+msgid "Owner"
+msgstr "Owner"
+#
+msgid "Owner:"
+msgstr "Owner:"
 #
 msgid "Oyun aleminde bulduğuna sıkışmak zorunda değilsin artık…"
 msgstr "Oyun aleminde bulduğuna sıkışmak zorunda değilsin artık…"
@@ -3434,23 +2394,384 @@ msgstr "Oyuncunun iyisi turnuvada belli olur. "
 msgid "Oyunlar ise her yerde oynayabildiklerinden değil."
 msgstr "Oyunlar ise her yerde oynayabildiklerinden değil."
 #
+msgid "PAYNET İNTERNET HİZMETLERİ A.Ş"
+msgstr "PAYNET İNTERNET HİZMETLERİ A.Ş"
+#
+msgid "PCS"
+msgstr "ADET"
+#
+msgid "PLAY"
+msgstr "PLAY"
+#
+msgid "Package"
+msgstr "Package"
+#
+msgid "Package $number$, $quota$ quotas, $date$"
+msgstr "Package $number$, $quota$ quotas, $date$"
+#
+msgid "Package fee"
+msgstr "Package fee"
+#
+msgid "Package number"
+msgstr "Package number"
+#
+msgid "Packages"
+msgstr "Packages"
+#
+msgid "Packet"
+msgstr "Packet"
+#
+msgid "Paid:"
+msgstr "Paid:"
+#
+msgid "Pair"
+msgstr "Pair"
+#
+msgid "Paired"
+msgstr "Paired"
+#
+msgid "Paired Game"
+msgstr "Paired Game"
+#
+msgid "Password"
+msgstr "Password"
+#
+msgid "Password (again)"
+msgstr "Password (again)"
+#
+msgid "Password can't be verified"
+msgstr "Password can't be verified"
+#
+msgid "Password different!"
+msgstr "Password different!"
+#
+msgid "Password entry limit exceeded"
+msgstr "Password entry limit exceeded"
+#
+msgid "Password entry limit exceeded!!! Seize the card."
+msgstr "Password entry limit exceeded!!! Seize the card."
+#
+msgid "Password is to short. Six letters needed."
+msgstr "Password is to short. Six letters needed."
+#
+msgid "Password is too short."
+msgstr "Password is too short."
+#
+msgid "Password is wrong"
+msgstr "Password is wrong"
+#
+msgid "Passwords does not match."
+msgstr "Passwords does not match."
+#
+msgid "Passwords don't match."
+msgstr "Passwords don't match."
+#
+msgid "Passwords should match!"
+msgstr "Passwords should match!"
+#
+msgid "Payment Type"
+msgstr "Payment Type"
+#
+msgid "Payment failed"
+msgstr "Payment failed"
+#
+msgid "Payment type"
+msgstr "Payment type"
+#
+msgid "Payments"
+msgstr "Payments"
+#
+msgid "Paypal"
+msgstr "Paypal"
+#
+msgid "Paypal error"
+msgstr "Paypal error"
+#
+msgid "Paypal transaction Id"
+msgstr "Paypal transaction Id"
+#
+msgid "Personal Settings"
+msgstr "Personal Settings"
+#
+msgid "Personal settings"
+msgstr "Personal settings"
+#
+msgid "Personal settings description."
+msgstr "Personal settings description."
+#
+msgid "Phd"
+msgstr "Phd"
+#
 msgid "Play"
-msgstr "Oyna"
+msgstr "Play"
+#
+msgid "Play description."
+msgstr "Play description."
+#
+msgid "Play with your selected players, partners"
+msgstr "Play with your selected players, partners"
+#
+msgid "Player statistics"
+msgstr "Player statistics"
+#
+msgid "Players"
+msgstr "Players"
+#
+msgid "Players can create their own tournaments and set the"
+msgstr "Players can create their own tournaments and set the"
+#
+msgid "Players:"
+msgstr "Players:"
+#
+msgid ""
+"Please become our member. You will start getting those gifts as soon as "
+"being our member."
+msgstr ""
+"Please become our member. You will start getting those gifts as soon as "
+"being our member."
+#
+msgid "Please call bank security department"
+msgstr "Please call bank security department"
 #
 msgid "Please check your mailbox."
-msgstr "Özel mesajlarınızı kontrol ediniz."
+msgstr "Please check your mailbox."
+#
+msgid "Please fill this field"
+msgstr "Please fill this field"
+#
+msgid "Please join"
+msgstr "Please join"
+#
+msgid "Please select a file"
+msgstr "Please select a file"
+#
+msgid "Please select game type."
+msgstr "Please select game type."
+#
+msgid "Please wait for Tournament start or Start it Mannually."
+msgstr "Please wait for Tournament start or Start it Mannually."
+#
+msgid "Please wait..."
+msgstr "Please wait..."
+#
+msgid "Please, choose at least the main prize!"
+msgstr "Please, choose at least the main prize!"
+#
+msgid "Please, choose second prize!"
+msgstr "Please, choose second prize!"
+#
+msgid "Please, provide tournament name!"
+msgstr "Please, provide tournament name!"
+#
+msgid "Please, register"
+msgstr "Please, register"
+#
+msgid "Please, try next month"
+msgstr "Please, try next month"
+#
+msgid "Please, write only digits."
+msgstr "Please, write only digits."
+#
+msgid "Pointing"
+msgstr "Pointing"
+#
+msgid "Pointing System"
+msgstr "Pointing System"
+#
+msgid "Points"
+msgstr "Points"
+#
+msgid "Popular groups"
+msgstr "Popular groups"
+#
+msgid "Possibly stolen card!!! Seize the card."
+msgstr "Possibly stolen card!!! Seize the card."
+#
+msgid "Post"
+msgstr "Post"
 #
 msgid "Postal code"
-msgstr "Posta kodu "
+msgstr "Postal code"
+#
+msgid "Price"
+msgstr "Price"
+#
+msgid "Print"
+msgstr "Print"
+#
+msgid "Privacy Policy"
+msgstr "Privacy Policy"
+#
+msgid "Private"
+msgstr "Private"
+#
+msgid "Private group"
+msgstr "Private group"
+#
+msgid "Private table"
+msgstr "Private table"
+#
+msgid "Private table, only for invited friends."
+msgstr "Private table, only for invited friends."
+#
+msgid "Private table, only friends"
+msgstr "Private table, only friends"
+#
+msgid "Process not confirmed"
+msgstr "Process not confirmed"
+#
+msgid "Profile"
+msgstr "Profile"
+#
+msgid "Profile Information"
+msgstr "Profile Information"
+#
+msgid "Prove your skills among many competitors!"
+msgstr "Prove your skills among many competitors!"
 #
 msgid "Public Beta - 10 Aug 2012"
-msgstr "Public Beta - 17 Aug 2012"
+msgstr "Public Beta - 10 Aug 2012"
+#
+msgid "Public Beta from 20 Jul 2012"
+msgstr "Public Beta from 20 Jul 2012"
+#
+msgid "Public group"
+msgstr "Public group"
+#
+msgid "Publicity"
+msgstr "Publicity"
+#
+msgid "Publicity:"
+msgstr "Publicity:"
+#
+msgid "Purchase details"
+msgstr "Purchase details"
+#
+msgid "Purchase details:"
+msgstr "Purchase details:"
+#
+msgid "Purchase limit"
+msgstr "Purchase limit"
+#
+msgid "Purchases"
+msgstr "Purchases"
+#
+msgid "Purchases total"
+msgstr "Purchases total"
+#
+msgid "Put your thoughts in here..."
+msgstr "Put your thoughts in here..."
+#
+msgid "Question"
+msgstr "Question"
+#
+msgid "Question: "
+msgstr "Question: "
+#
+msgid "Quota"
+msgstr "Quota"
+#
+msgid "Quota exceeded."
+msgstr "Quota exceeded."
+#
+msgid "Quota hard limit reached"
+msgstr "Quota hard limit reached"
+#
+msgid "Quota is "
+msgstr "Quota is "
+#
+msgid "Quota:"
+msgstr "Kota:"
+#
+msgid "RESET"
+msgstr "SIFIRLA"
+#
+msgid "Ready"
+msgstr "Ready"
+#
+msgid "Real Price"
+msgstr "Real Price"
+#
+msgid "Recipient e-mail address"
+msgstr "Recipient e-mail address"
+#
+msgid "Register"
+msgstr "Register"
+#
+msgid "Register data"
+msgstr "Register data"
+#
+msgid "Register success"
+msgstr "Register success"
+#
+msgid "Reject"
+msgstr "Reject"
+#
+msgid "Remaining Quota"
+msgstr "Remaining Quota"
+#
+msgid "Remove"
+msgstr "Remove"
+#
+msgid "Repeat password *:"
+msgstr "Repeat password *:"
+#
+msgid "Replay Guiders"
+msgstr "Replay Guiders"
+#
+msgid "Reports"
+msgstr "Reports"
+#
+msgid "Request an invitation!"
+msgstr "Request an invitation!"
+#
+msgid "Request provision one more time."
+msgstr "Request provision one more time."
+#
+msgid "Request sent."
+msgstr "Request sent."
+#
+msgid "Resend"
+msgstr "Resend"
+#
+msgid "Resend verification"
+msgstr "Resend verification"
 #
 msgid "Resimlerin"
 msgstr "Resimlerin"
 #
+msgid "Retailer Price"
+msgstr "Retailer Price"
+#
+msgid "Revoke Access from Facebook"
+msgstr "Revoke Access from Facebook"
+#
+msgid "Revoke failed! Please try again or notify the administrator"
+msgstr "Revoke failed! Please try again or notify the administrator"
+#
+msgid "Revoke success!"
+msgstr "Revoke success!"
+#
+msgid "Robot Player"
+msgstr "Robot Player"
+#
+msgid "Rounds"
+msgstr "Rounds"
+#
+msgid "Rounds description."
+msgstr "Rounds description."
+#
+msgid "Running $type$ games: $count$ "
+msgstr "Running $type$ games: $count$ "
+#
+msgid "SIGNUP!"
+msgstr "SIGNUP!"
+#
 msgid "SOSYALLEŞMEK"
 msgstr "SOSYALLEŞMEK"
+#
+msgid "STATISTICS"
+msgstr "STATISTICS"
 #
 msgid "Sana kalmış"
 msgstr "Sana kalmış"
@@ -3464,95 +2785,983 @@ msgstr "Sanal alemden satın alabileceğiniz"
 msgid "Satın Almalıyım?"
 msgstr "Satın Almalıyım?"
 #
+msgid "Save"
+msgstr "Save"
+#
+msgid "Saved!"
+msgstr "Saved!"
+#
+msgid "Scores"
+msgstr "Scores"
+#
+msgid "Search for a group:"
+msgstr "Search for a group:"
+#
+msgid "Search users"
+msgstr "Search users"
+#
+msgid "Search users:"
+msgstr "Search users:"
+#
+msgid "Seize the card!!!"
+msgstr "Seize the card!!!"
+#
+msgid "Select package"
+msgstr "Select package"
+#
+msgid "Select your colorful, funny gift"
+msgstr "Select your colorful, funny gift"
+#
+msgid "Select your opponent"
+msgstr "Select your opponent"
+#
+msgid "Select your opponents right a way"
+msgstr "Select your opponents right a way"
+#
+msgid "Selected Option"
+msgstr "Selected Option"
+#
+msgid "Send"
+msgstr "Send"
+#
+msgid "Send direct message"
+msgstr "Send direct message"
+#
+msgid "Send to"
+msgstr "Send to"
+#
+msgid "Send to mail: "
+msgstr "Send to mail: "
+#
+msgid "Sende Bir"
+msgstr "Sende Bir"
+#
+msgid "Sent invites"
+msgstr "Sent invites"
+#
+msgid "Sent to"
+msgstr "Sent to"
+#
+msgid "Services"
+msgstr "Services"
+#
+msgid "Set"
+msgstr "Set"
+#
+msgid "Set: $setsize$"
+msgstr "Set: $setsize$"
+#
+msgid "Sets"
+msgstr "Sets"
+#
+msgid "Sets:"
+msgstr "Sets:"
+#
+msgid "Settings"
+msgstr "Settings"
+#
+msgid "Sex: "
+msgstr "Sex: "
+#
 msgid "Seçimlerin <b>sadece</b> oyuncular ile sınırlı da değil,"
 msgstr "Seçimlerin <b>sadece</b> oyuncular ile sınırlı da değil,"
 #
+msgid "Share"
+msgstr "Share"
+#
 msgid "Share button"
-msgstr "Paylaşmaya hazır mısın?"
+msgstr "Share button"
+#
+msgid "Share your ideas, music, files about everything."
+msgstr "Share your ideas, music, files about everything."
+#
+msgid "Short name"
+msgstr "Short name"
+#
+msgid "Short view"
+msgstr "Short view"
+#
+msgid "Show your talent"
+msgstr "Show your talent"
+#
+msgid "Sign Up"
+msgstr "Sign Up"
+#
+msgid "Signup"
+msgstr "Signup"
+#
+msgid ""
+"Since the site is half made you can say that you are in construction site."
+msgstr ""
+"Since the site is half made you can say that you are in construction site."
 #
 msgid "Siz <b>Arkadaş – Oyundaş</b> üyelerimizin desteği ile..."
 msgstr "Siz <b>Arkadaş – Oyundaş</b> üyelerimizin desteği ile..."
 #
+msgid "Skill Points"
+msgstr "Skill Points"
+#
+msgid "Slang"
+msgstr "Slang"
+#
+msgid "Slang is accepted"
+msgstr "Slang is accepted"
+#
+msgid "Slow"
+msgstr "Slow"
+#
+msgid "So. You say you have skills?"
+msgstr "So. You say you have skills?"
+#
+msgid "Social"
+msgstr "Social"
+#
+msgid "Social Club of Pinkies"
+msgstr "Social Club of Pinkies"
+#
+msgid ""
+"Social dance, especially in frontier North America, the contra dance and "
+"square dance, has also been employed in matchmaking, usually informally. "
+"However, when farming families were widely separated and kept all children "
+"on the farm working, marriage-age children could often only meet in church "
+"or in such mandated social events. Matchmakers, acting as formal chaperones "
+"or as self-employed 'busybodies' serving less clear social purposes, would "
+"attend such events and advise families of any burgeoning romances before "
+"they went too far."
+msgstr ""
+"Social dance, especially in frontier North America, the contra dance and "
+"square dance, has also been employed in matchmaking, usually informally. "
+"However, when farming families were widely separated and kept all children "
+"on the farm working, marriage-age children could often only meet in church "
+"or in such mandated social events. Matchmakers, acting as formal chaperones "
+"or as self-employed 'busybodies' serving less clear social purposes, would "
+"attend such events and advise families of any burgeoning romances before "
+"they went too far."
+#
+msgid ""
+"Socialization (or socialisation) is a term used by sociologists, social "
+"psychologists, anthropologists, political scientists and educationalists to "
+"refer to the lifelong process of inheriting and disseminating norms, customs "
+"and ideologies, providing an individual with the skills and habits necessary "
+"for participating within his or her own society. Socialization is thus the "
+"means by which social and cultural continuity are attained."
+msgstr ""
+"Socialization (or socialisation) is a term used by sociologists, social "
+"psychologists, anthropologists, political scientists and educationalists to "
+"refer to the lifelong process of inheriting and disseminating norms, customs "
+"and ideologies, providing an individual with the skills and habits necessary "
+"for participating within his or her own society. Socialization is thus the "
+"means by which social and cultural continuity are attained."
+#
+msgid ""
+"Socialization describes a process which may lead to desirable, or 'moral', "
+"outcomes. Individual views on certain issues, such as race or economics, may "
+"be socialized (and to that extent normalized) within a society. Many socio-"
+"political theories postulate that socialization provides only a partial "
+"explanation for human beliefs and behaviors, maintaining that agents are not "
+"'blank slates' predetermined by their environment."
+msgstr ""
+"Socialization describes a process which may lead to desirable, or 'moral', "
+"outcomes. Individual views on certain issues, such as race or economics, may "
+"be socialized (and to that extent normalized) within a society. Many socio-"
+"political theories postulate that socialization provides only a partial "
+"explanation for human beliefs and behaviors, maintaining that agents are not "
+"'blank slates' predetermined by their environment."
+#
+msgid "Socialize"
+msgstr "Socialize"
+#
 msgid "Sohbet et, tartış, takıl, görüşlerini ilet, yada izle..."
 msgstr "Sohbet et, tartış, takıl, görüşlerini ilet, yada izle..."
+#
+msgid "Something"
+msgstr "Something"
+#
+msgid "Something strange happend"
+msgstr "Something strange happend"
+#
+msgid "Something strange happend, we are really sorry."
+msgstr "Something strange happend, we are really sorry."
+#
+msgid "Something strange happend, we really sorry."
+msgstr "Something strange happend, we really sorry."
+#
+msgid "Something:"
+msgstr "Something:"
 #
 msgid ""
 "Sometimes you might want to have a private conversations with someone. "
 "Direct messages are the right tool for this. They do not go in anyones feed, "
 "instead they are only available from here."
 msgstr ""
-"Doğrudan mesajlaşma ile size abone olmuş ve sizin de abone olduğunuz "
-"arkadaşlarınızla birebir mesajlaşabilirsiniz."
+"Sometimes you might want to have a private conversations with someone. "
+"Direct messages are the right tool for this. They do not go in anyones feed, "
+"instead they are only available from here."
+#
+msgid "Sorry"
+msgstr "Sorry"
+#
+msgid "Sorry, $n$ Mbytes is the upload limit here"
+msgstr "Sorry, $n$ Mbytes is the upload limit here"
+#
+msgid "Sorry, all tables are full, you can create one youself!"
+msgstr "Sorry, all tables are full, you can create one youself!"
+#
+msgid ""
+"Sorry, but you can't revoke access to FB if you haven't defined your "
+"password! Otherwise you wouldn't be able to log in!"
+msgstr ""
+"Sorry, but you can't revoke access to FB if you haven't defined your "
+"password! Otherwise you wouldn't be able to log in!"
+#
+msgid "Sorry, can't upload binary files"
+msgstr "Sorry, can't upload binary files"
+#
+msgid "Sorry, these filters are not yet implemented."
+msgstr "Üzgünüm, bu filtreler henüz uygulanmadı."
+#
+msgid "Sorry, unknown error happened. Please try again"
+msgstr "Sorry, unknown error happened. Please try again"
+#
+msgid "Sorry, you don't have enough kakush to buy it yet."
+msgstr "Sorry, you don't have enough kakush to buy it yet."
+#
+msgid "Sorry, you don't have that much kakush."
+msgstr "Sorry, you don't have that much kakush."
+#
+msgid "Sort by type:"
+msgstr "Sıralama Şekli:"
+#
+msgid "Speed"
+msgstr "Speed"
+#
+msgid "Standard"
+msgstr "Standard"
+#
+msgid "Start"
+msgstr "Start"
+#
+msgid "Start Date:"
+msgstr "Start Date:"
+#
+msgid "Start date"
+msgstr "Start date"
+#
+msgid "Start game"
+msgstr "Start game"
+#
+msgid "Start to gain gift points right now. Join to an existing follow's game."
+msgstr ""
+"Start to gain gift points right now. Join to an existing follow's game."
+#
+msgid "Starting"
+msgstr "Starting"
+#
+msgid "Starting date"
+msgstr "Starting date"
+#
+msgid "Statistics"
+msgstr "Statistics"
+#
+msgid "Stats"
+msgstr "Stats"
+#
+msgid "Stats..."
+msgstr "Stats..."
+#
+msgid "Status"
+msgstr "Status"
+#
+msgid "Stolen Card!!! Seize the card."
+msgstr "Stolen Card!!! Seize the card."
+#
+msgid "Subscribe"
+msgstr "Subscribe"
+#
+msgid "Subscribers"
+msgstr "Subscribers"
+#
+msgid "Subscribers:"
+msgstr "Subscribers:"
+#
+msgid "Subscriptions"
+msgstr "Subscriptions"
+#
+msgid "Subscriptions:"
+msgstr "Subscriptions:"
+#
+msgid "Support desk link"
+msgstr "Support desk link"
+#
+msgid "Surname"
+msgstr "Surname"
+#
+msgid "Surname:"
+msgstr "Surname:"
+#
+msgid "Surname: "
+msgstr "Surname: "
+#
+msgid "System Error"
+msgstr "System Error"
+#
+msgid "System Parameters"
+msgstr "System Parameters"
+#
+msgid "System error"
+msgstr "System error"
+#
+msgid "System message"
+msgstr "System message"
+#
+msgid "System parameters"
+msgstr "System parameters"
+#
+msgid "TAKE MY SEAT"
+msgstr "TAKE MY SEAT"
+#
+msgid "TAVLA"
+msgstr "TAVLA"
+#
+msgid "TIME APPROACHING"
+msgstr "ZAMANI YAKLAŞANLAR"
+#
+msgid "TL"
+msgstr "TL"
+#
+msgid "TL Account"
+msgstr "TL Account"
+#
+msgid "TO"
+msgstr "TO"
+#
+msgid "TOURNAMENTS"
+msgstr "TOURNAMENTS"
+#
+msgid "TOURNAMENTS PAGE"
+msgstr "TURNUVALAR SAYFASI"
+#
+msgid "TR82 0006 2000 3570 0006 2950 88"
+msgstr "TR82 0006 2000 3570 0006 2950 88"
 #
 msgid "TURNUVALAR"
 msgstr "TURNUVALAR"
 #
+msgid "Table Name"
+msgstr "Table Name"
+#
+msgid "Table can contain only players, not robots"
+msgstr "Table can contain only players, not robots"
+#
+msgid "Table can contain only players, not robots."
+msgstr "Table can contain only players, not robots."
+#
+msgid "Table name"
+msgstr "Table name"
+#
+msgid "Table name description"
+msgstr "Table name description"
+#
+msgid "Table name set"
+msgstr "Table name set"
+#
+msgid "Table name set description"
+msgstr "Table name set description"
+#
+msgid "Table not found"
+msgstr "Table not found"
+#
+msgid "Tables"
+msgstr "Tables"
+#
+msgid "Take your seat"
+msgstr "Take your seat"
+#
+msgid "Tavla"
+msgstr "Tavla"
+#
+msgid "Technical Contact"
+msgstr "Technical Contact"
+#
+msgid "Terms of Service"
+msgstr "Terms of Service"
+#
+msgid "Terms of use"
+msgstr "Terms of use"
+#
+msgid "Test"
+msgstr "Test"
+#
 msgid "Text area"
-msgstr "Yazı alanı"
+msgstr "Text area"
+#
+msgid "Thank you for buying our package."
+msgstr "Thank you for buying our package."
 #
 msgid ""
 "Thank you for going through this guide. Hope this was helpful. If you have "
 "any problem, feel free to use our support service."
 msgstr ""
-"Umarız ki, anlattıklarımızla daha kolaylaşır hayatınız :) Herhangi bir "
-"konuda sorunuz olursa, en altta yer alan yardım ve destek bölümüne alenen "
-"ulaşabilirsiniz."
+"Thank you for going through this guide. Hope this was helpful. If you have "
+"any problem, feel free to use our support service."
+#
+msgid ""
+"Thank you for using Kakaranet Social Zone. \n"
+"\n"
+"Please find your registration details below:\n"
+"\n"
+"User name: $username$\n"
+"Password: $password$\n"
+"\n"
+"If you did not register for Kakaranet, then someone probably\n"
+"mis-typed their email address. You can ignore this message,\n"
+"and we apologize for the inconvenience.\n"
+"\n"
+"Happy Social Gaming,\n"
+"The Kakaranet team\n"
+msgstr ""
+"Thank you for using Kakaranet Social Zone. \n"
+"\n"
+"Please find your registration details below:\n"
+"\n"
+"User name: $username$\n"
+"Password: $password$\n"
+"\n"
+"If you did not register for Kakaranet, then someone probably\n"
+"mis-typed their email address. You can ignore this message,\n"
+"and we apologize for the inconvenience.\n"
+"\n"
+"Happy Social Gaming,\n"
+"The Kakaranet team\n"
+#
+msgid ""
+"Thank you for using Kakaranet Social Zone. \n"
+"To complete the registration process,\n"
+"you need to confirm your email address ($email$)\n"
+"by clicking the link below: \n"
+"\n"
+"$verificationaddress$\n"
+"\n"
+"If you did not register for Kakaranet, then someone probably \n"
+"mis-typed their email address. You can ignore this message, \n"
+"and we apologize for the inconvenience.\n"
+"\n"
+"If you have any problems verifying your email address, \n"
+"you can get help from us and other Kakaranet users \n"
+"in the Kakaranet feedback group (http://kakaranet.uservoice.com)\n"
+"\n"
+"Happy Social Gaming,\n"
+"The Kakaranet team\n"
+msgstr ""
+"Thank you for using Kakaranet Social Zone. \n"
+"To complete the registration process,\n"
+"you need to confirm your email address ($email$)\n"
+"by clicking the link below: \n"
+"\n"
+"$verificationaddress$\n"
+"\n"
+"If you did not register for Kakaranet, then someone probably \n"
+"mis-typed their email address. You can ignore this message, \n"
+"and we apologize for the inconvenience.\n"
+"\n"
+"If you have any problems verifying your email address, \n"
+"you can get help from us and other Kakaranet users \n"
+"in the Kakaranet feedback group (http://kakaranet.uservoice.com)\n"
+"\n"
+"Happy Social Gaming,\n"
+"The Kakaranet team\n"
+#
+msgid "Thank you very much for your kind support."
+msgstr "Thank you very much for your kind support."
 #
 msgid "Thank you!"
-msgstr "Teşekkür ederiz."
+msgstr "Thank you!"
+#
+msgid "The source codes for every game belongs to us."
+msgstr "The source codes for every game belongs to us."
+#
+msgid "There are $number$ invites, and $numused$ of them not used."
+msgstr "There are $number$ invites, and $numused$ of them not used."
+#
+msgid "There are $number$ registered users"
+msgstr "There are $number$ registered users"
+#
+msgid "There are too many players."
+msgstr "There are too many players."
+#
+msgid "There is"
+msgstr "There is"
+#
+msgid "There is no games right now."
+msgstr "There is no games right now."
+#
+msgid "There is no such kind of information"
+msgstr "There is no such kind of information"
+#
+msgid "There is nothing to send."
+msgstr "There is nothing to send."
+#
+msgid ""
+"These two senses are distinct. All golf tournaments meet the first "
+"definition, but while match play tournaments meet the second, stroke play "
+"tournaments do not, since there are no distinct matches within the "
+"tournament. In contrast, football (soccer) leagues like the Premier League "
+"are tournaments in the second sense, but not the first, having matches "
+"spread across many stadia over a period of up to a year. Many tournaments "
+"meet both definitions; for example, the Wimbledon tennis championship."
+msgstr ""
+"These two senses are distinct. All golf tournaments meet the first "
+"definition, but while match play tournaments meet the second, stroke play "
+"tournaments do not, since there are no distinct matches within the "
+"tournament. In contrast, football (soccer) leagues like the Premier League "
+"are tournaments in the second sense, but not the first, having matches "
+"spread across many stadia over a period of up to a year. Many tournaments "
+"meet both definitions; for example, the Wimbledon tennis championship."
+#
+msgid "This card is not exist"
+msgstr "This card is not exist"
+#
+msgid "This e-mail already taken by other user."
+msgstr "This e-mail already taken by other user."
+#
+msgid "This facebook account already used by some user."
+msgstr "This facebook account already used by some user."
+#
+msgid "This feature is not available in beta version"
+msgstr "This feature is not available in beta version"
+#
+msgid "This feature is not yet available in beta."
+msgstr "This feature is not yet available in beta."
+#
+msgid "This invitiation code is expired. Please get new one."
+msgstr "This invitiation code is expired. Please get new one."
+#
+msgid "This is not like any other place where you can just play a game."
+msgstr "This is not like any other place where you can just play a game."
 #
 msgid ""
 "This is not the real text for the quider. I just want it to look real, so I "
 "can play with paddings, fonts, colors etc."
 msgstr ""
-"Oyun bulan alanına hoşgeldiniz. Bu sayfadan istediğiniz türde oyun "
-"oluşturabilir ya da mevcut masalara katılabilirsiniz."
+"This is not the real text for the quider. I just want it to look real, so I "
+"can play with paddings, fonts, colors etc."
+#
+msgid "This is private group, only members can see updates."
+msgstr "This is private group, only members can see updates."
 #
 msgid ""
 "This is the main share button. You press it and all you have written in a "
 "text area will be sent to your friends dashboards. Along with the "
 "attachments of course."
 msgstr ""
-"Paylaşmak istediğiniz fikri yazdıktan ve varsa başka internet sitelerinden "
-"link ekledikten sonra, eğer dosya ekleyecekseniz onu da ekledikten sonra, "
-"nihayet hazırsınız. Gönderin gelsin, sevenleriniz artsın, düşmanlarınız "
-"çatlasın :) "
+"This is the main share button. You press it and all you have written in a "
+"text area will be sent to your friends dashboards. Along with the "
+"attachments of course."
+#
+msgid "This name is exist"
+msgstr "This name is exist"
 #
 msgid "This shoud be a general note, as we do not have arrows for tabs."
-msgstr "Oyun bulan açıklama 3"
+msgstr "This shoud be a general note, as we do not have arrows for tabs."
 #
 msgid ""
 "This shows your activity on Kakaranet. It does not mean much, but it still "
 "good to know, how much people are reading you."
 msgstr ""
-"Buradan da Kakaranet üzerindeki aktivitenizi görebilirsiniz. Ayrıca sizi "
-"okuyanları da görebilirsiniz."
+"This shows your activity on Kakaranet. It does not mean much, but it still "
+"good to know, how much people are reading you."
+#
+msgid "This table has been destroyed"
+msgstr "This table has been destroyed"
+#
+msgid "This table is full. Try another one."
+msgstr "This table is full. Try another one."
+#
+msgid "This user haven't bought any package yet."
+msgstr "This user haven't bought any package yet."
+#
+msgid "This user is an affiliate"
+msgstr "This user is an affiliate"
+#
+msgid ""
+"This would of been great, wouldn't it! But we don't have this yet. Wait for "
+"it. Coming real soon."
+msgstr ""
+"This would of been great, wouldn't it! But we don't have this yet. Wait for "
+"it. Coming real soon."
+#
+msgid "This would of been great, wouldn't it! Go on, try it!"
+msgstr "This would of been great, wouldn't it! Go on, try it!"
+#
+msgid "Time and date"
+msgstr "Time and date"
+#
+msgid "Time before table will be closed: $sec$"
+msgstr "Time before table will be closed: $sec$"
+#
+msgid "To"
+msgstr "To"
+#
+msgid "To:"
+msgstr "To:"
+#
+msgid "Token expired"
+msgstr "Token expired"
+#
+msgid "Total"
+msgstr "Total"
+#
+msgid "Total:"
+msgstr "Total:"
+#
+msgid "Tournament description"
+msgstr "Tournament description"
+#
+msgid "Tournament image"
+msgstr "Tournament image"
+#
+msgid "Tournament name"
+msgstr "Tournament name"
+#
+msgid "Tournament type"
+msgstr "Tournament type"
+#
+msgid "Tournaments"
+msgstr "Tournaments"
+#
+msgid "Tourneys and Prizes!"
+msgstr "Tourneys and Prizes!"
+#
+msgid "Tours"
+msgstr "Tours"
+#
+msgid "Transaction done(VIP)"
+msgstr "Transaction done(VIP)"
+#
+msgid "Try again tomorrow."
+msgstr "Try again tomorrow."
 #
 msgid "Turnuva kazan, Ödül kazan…"
 msgstr "Turnuva kazan, Ödül kazan…"
 #
+msgid "Type name"
+msgstr "Type name"
+#
+msgid "UP TO YOU!"
+msgstr "UP TO YOU!"
+#
+msgid "USERINFO"
+msgstr "USERINFO"
+#
+msgid "Unable to connect to bank server.<br/> Please try later."
+msgstr "Unable to connect to bank server.<br/> Please try later."
+#
+msgid "Unblock this user"
+msgstr "Unblock this user"
+#
+msgid "Unexpected application error. Please, try later."
+msgstr "Unexpected application error. Please, try later."
+#
+msgid "Unknown"
+msgstr "Unknown"
+#
+msgid "Unknown Card No"
+msgstr "Unknown Card No"
+#
 msgid "Unknown User"
-msgstr "Bilinmeyen Kullanıcı"
+msgstr "Unknown User"
+#
+msgid "Unsubscribe"
+msgstr "Unsubscribe"
+#
+msgid "Update"
+msgstr "Update"
+#
+msgid "Update settings"
+msgstr "Update settings"
+#
+msgid "Usage Terms"
+msgstr "Usage Terms"
+#
+msgid "Used by"
+msgstr "Used by"
+#
+msgid "User"
+msgstr "User"
+#
+msgid "User $username$ connected."
+msgstr "User $username$ connected."
+#
+msgid "User $username$ has left."
+msgstr "User $username$ has left."
+#
+msgid "User $username$ was appointed as the owner."
+msgstr "User $username$ was appointed as the owner."
+#
+msgid "User '$username$' already has contract for this time!"
+msgstr "User '$username$' already has contract for this time!"
+#
+msgid "User '$username$' can no longer see own contracts now!"
+msgstr "User '$username$' can no longer see own contracts now!"
+#
+msgid "User '$username$' can see own contracts now!"
+msgstr "User '$username$' can see own contracts now!"
 #
 msgid "User '$username$' does not exist!"
-msgstr "Bu kullanıcı '$username$' kayıtlı değil"
+msgstr "User '$username$' does not exist!"
 #
 msgid "User '$username$' exist!"
-msgstr "'$username$' bu kullanıcı adı sistemimizde kayıtlı."
+msgstr "User '$username$' exist!"
+#
+msgid "User '$username$' has new contract: '$contract$'!"
+msgstr "User '$username$' has new contract: '$contract$'!"
+#
+msgid "User '$username$' is an affiliate now!"
+msgstr "User '$username$' is an affiliate now!"
+#
+msgid "User '$username$' is no longer an affiliate!"
+msgstr "User '$username$' is no longer an affiliate!"
+#
+msgid "User '$username$' is not an affiliate!"
+msgstr "User '$username$' is not an affiliate!"
+#
+msgid "User ($user$) leaving"
+msgstr "User ($user$) leaving"
+#
+msgid "User ($user$) was kicked by ($owner$)."
+msgstr "User ($user$) was kicked by ($owner$)."
+#
+msgid "User ($user$) was kicked by table owner ($owner$)."
+msgstr "User ($user$) was kicked by table owner ($owner$)."
+#
+msgid "User <b><i>'$username$'</i></b> exist!"
+msgstr "User <b><i>'$username$'</i></b> exist!"
+#
+msgid "User Avatar"
+msgstr "User Avatar"
+#
+msgid "User List"
+msgstr "User List"
+#
+msgid "User Name"
+msgstr "User Name"
+#
+msgid "User count"
+msgstr "User count"
+#
+msgid "User count: "
+msgstr "User count: "
+#
+msgid ""
+"User is not an affiliate! Do you want to make '$username$' an affiliate now "
+"and give him a contract?"
+msgstr ""
+"User is not an affiliate! Do you want to make '$username$' an affiliate now "
+"and give him a contract?"
+#
+msgid "User is not subscribed to anyone"
+msgstr "User is not subscribed to anyone"
+#
+msgid "User not found!!"
+msgstr "User not found!!"
+#
+msgid "Username"
+msgstr "Username"
+#
+msgid "Username is in wrong format."
+msgstr "Username is in wrong format."
+#
+msgid "Username is too short."
+msgstr "Username is too short."
+#
+msgid "Users"
+msgstr "Users"
+#
+msgid "Users in this group:"
+msgstr "Users in this group:"
+#
+msgid "Users list"
+msgstr "Users list"
+#
+msgid "VAT Included"
+msgstr "VAT Included"
+#
+msgid "Value"
+msgstr "Value"
+#
+msgid "Value must be nonnegative integer"
+msgstr "Value must be nonnegative integer"
+#
+msgid "Value of $key$ set to $value$"
+msgstr "Value of $key$ set to $value$"
+#
+msgid "Value successfully set."
+msgstr "Value successfully set."
+#
+msgid "Variable key in format: $format$:"
+msgstr "Variable key in format: $format$:"
+#
+msgid "Variable value:"
+msgstr "Variable value:"
+#
+msgid "Varialbe type:"
+msgstr "Varialbe type:"
+#
+msgid "Verification account"
+msgstr "Verification account"
+#
+msgid "Verification attempt"
+msgstr "Verification attempt"
+#
+msgid "Verification failure"
+msgstr "Verification failure"
 #
 msgid "Verification letter sent"
-msgstr "Onaylama mektubu gönderildi"
+msgstr "Verification letter sent"
+#
+msgid "Verification required"
+msgstr "Verification required"
+#
+msgid "Very soon..."
+msgstr "Very soon..."
+#
+msgid "View:"
+msgstr "Görünüm:"
+#
+msgid "Waiting Player"
+msgstr "Waiting Player"
+#
+msgid "Waiting queue have $num1$ invites, $num2$ of them need to be sent."
+msgstr "Waiting queue have $num1$ invites, $num2$ of them need to be sent."
 #
 msgid ""
 "We also have a bunch of detailed settings here. Click the link and you will "
 "see."
-msgstr "Pek çok detaylı ayar göreceksiniz."
+msgstr ""
+"We also have a bunch of detailed settings here. Click the link and you will "
+"see."
+#
+msgid "We are positive discriminators for women"
+msgstr "We are positive discriminators for women"
+#
+msgid "We can have some problems like logouts, age changes etc. :)"
+msgstr "We can have some problems like logouts, age changes etc. :)"
+#
+msgid "We could not find any groups matching the search"
+msgstr "We could not find any groups matching the search"
+#
+msgid "We could not find any users matching the search"
+msgstr "We could not find any users matching the search"
+#
+msgid ""
+"We have designed everything so our <b>players can enjoy</b> their envi-"
+"<br>roment, <b>make new friends</b> and basically <b>have a nice time</b>."
+msgstr ""
+"We have designed everything so our <b>players can enjoy</b> their envi-"
+"<br>roment, <b>make new friends</b> and basically <b>have a nice time</b>."
+#
+msgid ""
+"We have implemented technologies, <b>not yet existing in our country</b>."
+msgstr ""
+"We have implemented technologies, <b>not yet existing in our country</b>."
+#
+msgid "We haven't implemented it yet."
+msgstr "We haven't implemented it yet."
+#
+msgid ""
+"We've got error from paypal. To get information, please, contact with "
+"administration."
+msgstr ""
+"We've got error from paypal. To get information, please, contact with "
+"administration."
+#
+msgid ""
+"Welcome email with confirmation link has been sent to your address ($usermail"
+"$). To complete registration, follow instructions in the email."
+msgstr ""
+"Welcome email with confirmation link has been sent to your address ($usermail"
+"$). To complete registration, follow instructions in the email."
+#
+msgid "Welcome to Kakaranet"
+msgstr "Welcome to Kakaranet"
 #
 msgid "Welcome to Kakaranet dashboard"
-msgstr "Size özel sayfanıza hoş geldiniz."
+msgstr "Welcome to Kakaranet dashboard"
 #
 msgid "Welcome to Kakaranet matchmaker"
-msgstr "Oyun bulan sayfasına hoş geldiniz."
+msgstr "Welcome to Kakaranet matchmaker"
+#
+msgid "Welcome to matchmaker notice."
+msgstr "Welcome to matchmaker notice."
+#
+msgid "Welcome, and enjoy!"
+msgstr "Welcome, and enjoy!"
+#
+msgid "Wellcome to our open public site."
+msgstr "Wellcome to our open public site."
+#
+msgid "Well… Up to you!"
+msgstr "Well… Up to you!"
+#
+msgid "What <b>goes</b> around – <b>comes</b> around!"
+msgstr "What <b>goes</b> around – <b>comes</b> around!"
+#
+msgid "What are you playing the game for?"
+msgstr "What are you playing the game for?"
+#
+msgid "What it will be all about"
+msgstr "What it will be all about"
+#
+msgid "What s beta anyway?"
+msgstr "What s beta anyway?"
+#
+msgid "What you have here, it is not like any other game you play."
+msgstr "What you have here, it is not like any other game you play."
+#
+msgid "Whatever you need to describe yourself, do so…"
+msgstr "Whatever you need to describe yourself, do so…"
+#
+msgid "When"
+msgstr "When"
+#
+msgid "When you be a member!"
+msgstr "When you be a member!"
+#
+msgid "Why are we asking for your birthday?"
+msgstr "Why are we asking for your birthday?"
+#
+msgid "Why asking for birthday?"
+msgstr "Why asking for birthday?"
+#
+msgid "Why don't you "
+msgstr "Why don't you "
+#
+msgid "Why?"
+msgstr "Why?"
+#
+msgid "Win the tourney, claim your prize"
+msgstr "Win the tourney, claim your prize"
+#
+msgid "Win!"
+msgstr "Win!"
+#
+msgid "Wire"
+msgstr "Wire"
+#
+msgid "With tournament challenge!"
+msgstr "With tournament challenge!"
+#
+msgid "Withdrawal limit exceeded"
+msgstr "Withdrawal limit exceeded"
+#
+msgid "Write a comment..."
+msgstr "Write a comment..."
+#
+msgid "Wrong e-mail"
+msgstr "Wrong e-mail"
+#
+msgid "Wrong username."
+msgstr "Wrong username."
 #
 msgid "Yarışma ve Ödül…"
 msgstr "Yarışma ve Ödül…"
@@ -3560,35 +3769,313 @@ msgstr "Yarışma ve Ödül…"
 msgid "Yasaları zorlarsan birileri engeller elbet..."
 msgstr "Yasaları zorlarsan birileri engeller elbet..."
 #
+msgid "Year"
+msgstr "Year"
+#
+msgid "Yes"
+msgstr "Yes"
+#
+msgid "Yes, i'm leaving"
+msgstr "Yes, i'm leaving"
+#
 msgid "Yorum yap, beğen, beğenil yada beğenilmeyip eleştiril..."
 msgstr "Yorum yap, beğen, beğenil yada beğenilmeyip eleştiril..."
 #
+msgid "You"
+msgstr "You"
+#
+msgid "You are already in queue. Be patient."
+msgstr "You are already in queue. Be patient."
+#
+msgid "You are already in this table."
+msgstr "You are already in this table."
+#
+msgid "You are currently not in any group"
+msgstr "You are currently not in any group"
+#
+msgid "You are member."
+msgstr "You are member."
+#
+msgid "You are not authorized to do this"
+msgstr "You are not authorized to do this"
+#
+msgid "You are not restricted to what you find in the game enviroment"
+msgstr "You are not restricted to what you find in the game enviroment"
+#
+msgid "You are not subscribed to anyone"
+msgstr "You are not subscribed to anyone"
+#
+msgid "You are now member of this group!"
+msgstr "You are now member of this group!"
+#
+msgid "You are subscribed to:"
+msgstr "You are subscribed to:"
+#
 msgid "You are welcome"
-msgstr "Hoş geldiniz."
+msgstr "You are welcome"
+#
+msgid "You are welcome here!"
+msgstr "You are welcome here!"
 #
 msgid ""
 "You can also add files to your entry. Right now the limit is 3 files and 30 "
 "Mbytes per post. And yes, uploading big files might take a little lime, so "
 "please be patient with this."
 msgstr ""
-"Ayrıca girdiğiniz bildirime dosya da ekleyebilirsiniz. mp3, pdf, v.b. pek "
-"çok belge türünü kabul ediyoruz. Her biri 30MB olan dosyalardan en fazla 3 "
-"kez koyabiliyorsunuz şimdilik. Yükleme zaman alabilir lütfen sabırlı olun."
+"You can also add files to your entry. Right now the limit is 3 files and 30 "
+"Mbytes per post. And yes, uploading big files might take a little lime, so "
+"please be patient with this."
+#
+msgid "You can check your existing gifts"
+msgstr "You can check your existing gifts"
+#
+msgid "You can claim the prize you desire"
+msgstr "You can claim the prize you desire"
+#
+msgid "You can create a game or join a game"
+msgstr "You can create a game or join a game"
+#
+msgid "You can create your own table and start to earn gift points."
+msgstr "You can create your own table and start to earn gift points."
+#
+msgid "You can define the type of players that you wish to play with."
+msgstr "You can define the type of players that you wish to play with."
+#
+msgid "You can join tournaments and show them all"
+msgstr "You can join tournaments and show them all"
+#
+msgid "You can manage your groups settings here"
+msgstr "You can manage your groups settings here"
+#
+msgid "You can not find the same games and contents anywhere else!"
+msgstr "You can not find the same games and contents anywhere else!"
+#
+msgid "You can play games here"
+msgstr "You can play games here"
+#
+msgid "You can send a message only this user will read"
+msgstr "You can send a message only this user will read"
+#
+msgid "You can share information with others"
+msgstr "You can share information with others"
+#
+msgid "You can start seeing this users posts in your feed"
+msgstr "You can start seeing this users posts in your feed"
+#
+msgid "You can stop seeing this users posts in your feed"
+msgstr "You can stop seeing this users posts in your feed"
+#
+msgid "You can subscribe to any group from this list"
+msgstr "You can subscribe to any group from this list"
+#
+msgid "You can unsubscribe a group from this list"
+msgstr "You can unsubscribe a group from this list"
+#
+msgid "You can unsubscribe or write someone private message via this list"
+msgstr "You can unsubscribe or write someone private message via this list"
+#
+msgid "You can't kick yourself."
+msgstr "You can't kick yourself."
+#
+msgid "You can't start game with this number of users."
+msgstr "You can't start game with this number of users."
+#
+msgid "You can't upload more than $number$ files at once"
+msgstr "You can't upload more than $number$ files at once"
+#
+msgid "You can't upload more than $number$ files per day"
+msgstr "You can't upload more than $number$ files per day"
+#
+msgid "You define <b>the rules of the game</b>!"
+msgstr "You define <b>the rules of the game</b>!"
+#
+msgid "You define for <b>how much points</b> you want to play."
+msgstr "You define for <b>how much points</b> you want to play."
+#
+msgid "You don't have access to do that."
+msgstr "You don't have access to do that."
+#
+msgid "You don't have enough points to play!"
+msgstr "You don't have enough points to play!"
+#
+msgid "You don't have to play with unknown players"
+msgstr "You don't have to play with unknown players"
+#
+msgid "You don't let to do this operation"
+msgstr "You don't let to do this operation"
+#
+msgid "You have $point$ kakapoints"
+msgstr "You have $point$ kakapoints"
+#
+msgid "You have alrady requested in past"
+msgstr "You have alrady requested in past"
+#
+msgid "You have blocked"
+msgstr "You have blocked"
+#
+msgid "You have left from table"
+msgstr "You have left from table"
+#
+msgid "You have no chance to get any gift points. Fast game only."
+msgstr "You have no chance to get any gift points. Fast game only."
+#
+msgid "You have subscribed to '~s'."
+msgstr "You have subscribed to '~s'."
+#
+msgid "You haven't played any games yet."
+msgstr "You haven't played any games yet."
+#
+msgid ""
+"You may unsubscribe from group messages this way. \n"
+"                                            You can also subscribe back "
+"later if you wish"
+msgstr ""
+"You may unsubscribe from group messages this way. \n"
+"                                            You can also subscribe back "
+"later if you wish"
+#
+msgid ""
+"You may unsubscribe from group messages this way. \n"
+"                                    You can also subscribe back later if you "
+"wish"
+msgstr ""
+"You may unsubscribe from group messages this way. \n"
+"                                    You can also subscribe back later if you "
+"wish"
+#
+msgid ""
+"You may unsubscribe from group messages this way. You can also subscribe "
+"back later if you wish"
+msgstr ""
+"You may unsubscribe from group messages this way. You can also subscribe "
+"back later if you wish"
+#
+msgid "You must be at least 18 to use this site."
+msgstr "You must be at least 18 to use this site."
+#
+msgid "You must be at least 18 years of age to use the site according to law."
+msgstr "You must be at least 18 years of age to use the site according to law."
+#
+msgid "You no longer have to play with players that you don't know."
+msgstr "You no longer have to play with players that you don't know."
+#
+msgid "You should click 'Allow' to continue!"
+msgstr "You should click 'Allow' to continue!"
+#
+msgid ""
+"You still earn points when you lose a game, but earn much more if you win "
+"one."
+msgstr ""
+"You still earn points when you lose a game, but earn much more if you win "
+"one."
+#
+msgid "You subscribed to this group"
+msgstr "You subscribed to this group"
+#
+msgid "You where kicked."
+msgstr "You where kicked."
+#
+msgid "You will see this part very soon."
+msgstr "You will see this part very soon."
+#
+msgid "You'll see a window shown here after clicking the continue login:"
+msgstr "You'll see a window shown here after clicking the continue login:"
+#
+msgid "You've already created table with that name."
+msgstr "You've already created table with that name."
+#
+msgid "Your <b>choices</b> are not limited with the players!"
+msgstr "Your <b>choices</b> are not limited with the players!"
+#
+msgid ""
+"Your account dashboard. You can find all details about your account here."
+msgstr ""
+"Your account dashboard. You can find all details about your account here."
+#
+msgid "Your account has been activated. Now you can sign. Enjoy!"
+msgstr "Your account has been activated. Now you can sign. Enjoy!"
+#
+msgid "Your account is blocked. Please, contact with administration."
+msgstr "Your account is blocked. Please, contact with administration."
+#
+msgid ""
+"Your account is blocked.<br/> Reason: $reason$ <br/> Please, contact with "
+"administration to unblock account."
+msgstr ""
+"Your account is blocked.<br/> Reason: $reason$ <br/> Please, contact with "
+"administration to unblock account."
+#
+msgid "Your e-mail was put into queue. Invite will be send later"
+msgstr "Your e-mail was put into queue. Invite will be send later"
+#
+msgid "Your email *:"
+msgstr "Your email *:"
+#
+msgid "Your email is invalid, we can't send invite."
+msgstr "Your email is invalid, we can't send invite."
 #
 msgid "Your feed"
-msgstr "Akış"
+msgstr "Your feed"
 #
 msgid ""
 "Your feed combines all the messages from your friends, groups along with "
 "your own entries. Also, when you press small \"share\" button on some other "
 "entry, it also goes to your feed"
 msgstr ""
-"Akış denen hadise ile arkadaşlarınızın ve abone olduğunuz grupların tüm "
-"girişlerini görebilirsiniz. Ayrıca Paylaş tuşuna basarsanız, bu gördüğünüz "
-"girişi siz de paylaşmış olursunuz."
+"Your feed combines all the messages from your friends, groups along with "
+"your own entries. Also, when you press small \"share\" button on some other "
+"entry, it also goes to your feed"
+#
+msgid "Your groups:"
+msgstr "Your groups:"
+#
+msgid "Your music,"
+msgstr "Your music,"
+#
+msgid "Your old mates, new buddies…"
+msgstr "Your old mates, new buddies…"
+#
+msgid "Your own"
+msgstr "Your own"
+#
+msgid "Your private correspondence, no one other can read"
+msgstr "Your private correspondence, no one other can read"
+#
+msgid "Your request is not accepted"
+msgstr "Your request is not accepted"
+#
+msgid "Your time spent and purchases will"
+msgstr "Your time spent and purchases will"
+#
+msgid "Your transaction cancelled due to judicial reasons"
+msgstr "Your transaction cancelled due to judicial reasons"
+#
+msgid "a membership pack?"
+msgstr "a membership pack?"
 #
 msgid "adı altında haybeden para ödemek istemiyorum,"
 msgstr "adı altında haybeden para ödemek istemiyorum,"
+#
+msgid "and"
+msgstr "and"
+#
+msgid "and mess with anyone as they like."
+msgstr "and mess with anyone as they like."
+#
+msgid "anymore…"
+msgstr "anymore…"
+#
+msgid "anyone"
+msgstr "anyone"
+#
+msgid "atom"
+msgstr "atom"
+#
+msgid "back"
+msgstr "back"
+#
+msgid "became"
+msgstr "became"
 #
 msgid "bulaşanlardan ve <b>yarım kalan</b> oyunlardan sıkıldım,"
 msgstr "bulaşanlardan ve <b>yarım kalan</b> oyunlardan sıkıldım,"
@@ -3596,14 +4083,56 @@ msgstr "bulaşanlardan ve <b>yarım kalan</b> oyunlardan sıkıldım,"
 msgid "bulup, <b>zevkle</b> vakit geçirebileceği ortamı yaratabilmek için"
 msgstr "bulup, <b>zevkle</b> vakit geçirebileceği ortamı yaratabilmek için"
 #
+msgid "come back to you as prizes!"
+msgstr "come back to you as prizes!"
+#
+msgid "comments"
+msgstr "comments"
+#
+msgid "create your own!"
+msgstr "create your own!"
+#
 msgid "daha çok <b>puan</b> kazanır."
 msgstr "daha çok <b>puan</b> kazanır."
+#
+msgid "day"
+msgstr "day"
+#
+msgid "days"
+msgstr "days"
+#
+msgid "elimination"
+msgstr "elimination"
+#
+msgid "error"
+msgstr "error"
 #
 msgid "fazla puan kazanma gibi her yerde ancak verebildikleri <b>“paran"
 msgstr "fazla puan kazanma gibi her yerde ancak verebildikleri <b>“paran"
 #
+msgid "float"
+msgstr "float"
+#
+msgid "for"
+msgstr "for"
+#
+msgid "game"
+msgstr "game"
+#
+msgid "go to"
+msgstr "go to"
+#
+msgid "group!"
+msgstr "group!"
+#
+msgid "gunsandbutter"
+msgstr "gunsandbutter"
+#
 msgid "görmek istiyorum,"
 msgstr "görmek istiyorum,"
+#
+msgid "hate letter"
+msgstr "hate letter"
 #
 msgid "hazırladık."
 msgstr "hazırladık."
@@ -3614,8 +4143,20 @@ msgstr "hediye kataloğundan <b>istediği</b> hediyeyi alabilir."
 msgid "hoşlanmıyorum,"
 msgstr "hoşlanmıyorum,"
 #
+msgid "if that's what you think,"
+msgstr "if that's what you think,"
+#
+msgid "if you do."
+msgstr "if you do."
+#
 msgid "ile caka satmak”</b> babından özelliklere “bilmem ne üyeliği”"
 msgstr "ile caka satmak”</b> babından özelliklere “bilmem ne üyeliği”"
+#
+msgid "in a random web site!"
+msgstr "in a random web site!"
+#
+msgid "integer"
+msgstr "integer"
 #
 msgid ""
 "ister katalogdan <b>istediğin ödülü seç</b> ve <b>kendi turnuvanı</b> yarat."
@@ -3628,8 +4169,29 @@ msgstr "istiyorum,"
 msgid "için, dışın…"
 msgstr "için, dışın…"
 #
+msgid "join us :)"
+msgstr "join us :)"
+#
+msgid "kakush"
+msgstr "kakush"
+#
+msgid "like this."
+msgstr "like this."
+#
+msgid "likes"
+msgstr "likes"
+#
+msgid "likes this."
+msgstr "likes this."
+#
+msgid "members"
+msgstr "members"
+#
 msgid "mode"
-msgstr "oyun türü"
+msgstr "mode"
+#
+msgid "not entered"
+msgstr "not entered"
 #
 msgid "odalara girebilme ayrıcalığı, ne işe yaradığı kendinden menkul"
 msgstr "odalara girebilme ayrıcalığı, ne işe yaradığı kendinden menkul"
@@ -3643,32 +4205,116 @@ msgstr "olmaktan sıkıldım."
 msgid "olsun istiyorum,"
 msgstr "olsun istiyorum,"
 #
+msgid "on Kakaranet"
+msgstr "on Kakaranet"
+#
+msgid "or"
+msgstr "or"
+#
+msgid "or go"
+msgstr "or go"
+#
 msgid "ortamdan <b>keyif alarak</b> kendine yeni arkadaşlar, uğraşlar"
 msgstr "ortamdan <b>keyif alarak</b> kendine yeni arkadaşlar, uğraşlar"
 #
 msgid "oynamak istediğin rakiplerin özelliklerini kendin belirleyebilirsin."
 msgstr "oynamak istediğin rakiplerin özelliklerini kendin belirleyebilirsin."
 #
+msgid "people"
+msgstr "people"
+#
+msgid "people here!"
+msgstr "people here!"
+#
+msgid "points to claim the prize you want."
+msgstr "points to claim the prize you want."
+#
+msgid "prize points and achieve your goal faster!"
+msgstr "prize points and achieve your goal faster!"
+#
+msgid "prize they desire."
+msgstr "prize they desire."
+#
+msgid "prize you want from out catalogue and"
+msgstr "prize you want from out catalogue and"
+#
+msgid "purchases"
+msgstr "purchases"
+#
+msgid "robot"
+msgstr "robot"
+#
 msgid "rounds"
-msgstr "el sayısı"
+msgstr "rounds"
+#
+msgid "shared by"
+msgstr "shared by"
 #
 msgid "size <b>hediye</b> olarak geri dönüyor. "
 msgstr "size <b>hediye</b> olarak geri dönüyor. "
 #
+msgid "specs"
+msgstr "specs"
+#
 msgid "speed"
-msgstr "hız"
+msgstr "speed"
+#
+msgid "starting game..."
+msgstr "starting game..."
+#
+msgid "string"
+msgstr "string"
+#
+msgid "subscribers"
+msgstr "subscribers"
+#
+msgid "subscription"
+msgstr "subscription"
+#
+msgid "support site"
+msgstr "support site"
 #
 msgid "tasarladık."
 msgstr "tasarladık."
 #
+msgid "the moment you register!"
+msgstr "the moment you register!"
+#
+msgid "username..."
+msgstr "username..."
+#
+msgid "with the points in your account"
+msgstr "with the points in your account"
+#
+msgid "with the points you have won!"
+msgstr "with the points you have won!"
+#
+msgid "worth"
+msgstr "worth"
+#
+msgid "write us a"
+msgstr "write us a"
+#
+msgid "you should register to KAKARANET!"
+msgstr "you should register to KAKARANET!"
+#
+msgid "your ideas,"
+msgstr "your ideas,"
+#
+msgid "your photos!"
+msgstr "your photos!"
+#
 msgid "zaman ve yaptığınız harcamalar"
 msgstr "zaman ve yaptığınız harcamalar"
+#
+msgid "~p not found~n"
+msgstr "~p not found~n"
 #
 msgid "Çünkü tüm oyunların <b>kaynak kodları bize ait</b>."
 msgstr "Çünkü tüm oyunların <b>kaynak kodları bize ait</b>."
 #
 msgid "Ödülü al. Yürü git. Yenisine bak."
-msgstr "Ödülü al. Yenisine bak."
+msgstr "Ödülü al. Yürü git. Yenisine bak."
 #
 msgid "ÜYE OL!"
 msgstr "ÜYE OL!"
@@ -3676,8 +4322,14 @@ msgstr "ÜYE OL!"
 msgid "ÜYELIK PAKETİ"
 msgstr "ÜYELIK PAKETİ"
 #
+msgid "Üye Olduğunuz An"
+msgstr "Üye Olduğunuz An"
+#
 msgid "Üyelerimiz, hiçbir şarta bağlı"
 msgstr "Üyelerimiz, hiçbir şarta bağlı"
+#
+msgid "Üyelİk Yenİle"
+msgstr "Üyelİk Yenİle"
 #
 msgid "İfade Özgürlüğü!"
 msgstr "İfade Özgürlüğü!"
@@ -3709,548 +4361,23 @@ msgstr "“<b>Er Meydanı Turnuva</b>”"
 msgid "“Nasılsan öyle görün”!"
 msgstr "“Nasılsan öyle görün”!"
 #
-msgid "$id$ on $time$: $ammount$"
-msgstr "$id$ on $time$: $ammount$"
+msgid "• Create your own gaming world. Play without disturbed by anyone."
+msgstr "• Create your own gaming world. Play without disturbed by anyone."
 #
-msgid "AFFILIATE"
-msgstr "Bayiiler"
+msgid "• Interact with only people you've selected"
+msgstr "• Interact with only people you've selected"
 #
-msgid "Affiliate followers"
-msgstr "Bayii takipçileri"
+msgid "• Share your ideas, music, files about everything."
+msgstr "• Share your ideas, music, files about everything."
 #
-msgid "Affiliates"
-msgstr "Bayiiler"
+msgid "• We are positive discriminators for women"
+msgstr "• We are positive discriminators for women"
 #
-msgid "Affiliates that can see payment details: "
-msgstr "Ödeme detaylarını görebilecek bayiiler"
+msgid "BY SUM OF KAKUSH"
+msgstr "KAKUŞUMA GÖRE"
 #
-msgid "Affiliates that can't: "
-msgstr "Satış detayı görmeyecek olanlar: "
+msgid "Games Count:"
+msgstr "Oyun Sayısı:"
 #
-msgid "All affiliate followers of"
-msgstr "Bu kişinin tüm takipçileri"
-#
-msgid "All your affiliate followers"
-msgstr "Size bağlı olanlar"
-#
-msgid "Allow to see details"
-msgstr "Detayları görmesine izin ver"
-#
-msgid "Disallow that"
-msgstr "Buna izin verme"
-#
-msgid "STATISTICS"
-msgstr "İstatistik"
-#
-msgid "User '$username$' is not an affiliate!"
-msgstr "Kullanıcı '$username$' bir bayii değil"
-#
-msgid "username..."
-msgstr "kullanıcıadı..."
-#
-msgid "Date"
-msgstr "Tarih"
-#
-msgid "Payment Type"
-msgstr "Ödeme tipi"
-#
-msgid "This user haven't bought any package yet."
-msgstr "Bu kullanıcı, henüz bir paket satın almadı."
-#
-msgid "Total:"
-msgstr "Toplam:"
-#
-msgid "Guns and Butter"
-msgstr "Grup Açıklaması"
-#
-msgid "Guns, butter, everything in between"
-msgstr "Grup hakkında açıklamayı buraya yazın"
-#
-msgid "I want to let everyone post to my group"
-msgstr "Bu gruba herkes yorum yazabilir"
-#
-msgid "Likes:"
-msgstr "Sevdikleri:"
-#
-msgid "New Table"
-msgstr "Yeni Masa Uyarısı"
-#
-msgid "Unknown"
-msgstr "Bilinmiyor"
-#
-msgid "You"
-msgstr "Siz"
-#
-msgid "and"
-msgstr "ve"
-#
-msgid "gunsandbutter"
-msgstr "grup kısa adını yazın"
-#
-msgid "like this."
-msgstr "seven kişiler."
-#
-msgid "likes this."
-msgstr "bunu sevdi"
-#
-msgid "people"
-msgstr "kişi"
-#
-msgid "Comments"
-msgstr "Yorumlar"
-#
-msgid "Created"
-msgstr "Yaratılma tarihi"
-#
-msgid "Date of Birth"
-msgstr "Doğum tarihi"
-#
-msgid "Date of birth"
-msgstr "Doğum tarihi"
-#
-msgid "Entries"
-msgstr "Bildirimler"
-#
-msgid "Friends only"
-msgstr "Sadece arkadaşlarım"
-#
-msgid "Gender limit"
-msgstr "Cinsiyet"
-#
-msgid "In group"
-msgstr "Grubunda"
-#
-msgid "Invite users"
-msgstr "Davet et"
-#
-msgid "Likes"
-msgstr "Sevdiklerim"
-#
-msgid "Members"
-msgstr "Üyeler"
-#
-msgid "Players"
-msgstr "Oyuncular"
-#
-msgid "Purchase details"
-msgstr "Satınalma detayları"
-#
-msgid "Search users"
-msgstr "Kullanıcı Ara"
-#
-msgid "Something"
-msgstr "Seçim"
-#
-msgid "Subscribers"
-msgstr "Abone sayısı"
-#
-msgid "Subscriptions"
-msgstr "Abonelik sayısı"
-#
-msgid "Surname"
-msgstr "Soyadı"
-#
-msgid "To"
-msgstr "Kime"
-#
-msgid "User count"
-msgstr "Kullanıcı sayısı"
-#
-msgid "Double quota, kakush and game points to"
-msgstr "Kota, kakuş ve oyun puanlarını katla"
-#
-msgid "Add new contract"
-msgstr "Yeni bayii ekle"
-#
-msgid "Add new contract type"
-msgstr "Yeni bayilik tipi ekle"
-#
-msgid "Additional options description"
-msgstr ""
-"Robot isteyip istemediğinizi, argo/küfür tercihinizi, özel masa durumunu, "
-"seyirci kabul edip etmediğinizi burada ayarlama şansınız var."
-#
-msgid "Affiliate contracts"
-msgstr "Bayii tipleri"
-#
-msgid "Attributes description."
-msgstr ""
-"Her oyuna göre bazı seçenekleriniz mevcut. Mesela eşli oyun, göstermeyle "
-"bitme gibi. Eşli oyunlarda eş seçmeniz gerekiyor. "
-#
-msgid "Comission"
-msgstr "Komisyon"
-#
-msgid "Comission total"
-msgstr "Komisyon toplam"
-#
-msgid "Commission (%)"
-msgstr "Komisyon (%)"
-#
-msgid "Contract type"
-msgstr "Kontrat türü"
-#
-msgid "Contracts"
-msgstr "Kontratlar"
-#
-msgid "Create button description."
-msgstr ""
-"Oyun seçeneklerini ayarladıktan sonra, masanızı kurabilirsiniz. İsterseniz, "
-"\"Detaylı Ayarlar\" bölümünden, tamamen  kafanıza göre bir masa "
-"kurabilirsiniz."
-#
-msgid "Create description."
-msgstr ""
-"Masa kurmak için buraya tıklayın. Kolayca masanızı kurun ve oyuncular sizi "
-"bulsun."
-#
-msgid "Create new type"
-msgstr "Yeni bir tür yarat"
-#
-msgid "Criteria description"
-msgstr "Oyun tercihleri alanı"
-#
-msgid "Detailed game speed"
-msgstr "Oyun hızı seçimi"
-#
-msgid "Detailed game speed description"
-msgstr "Oyun hızı seçimi."
-#
-msgid "Detailed game type"
-msgstr "Oyun türü seçimi"
-#
-msgid "Detailed game type description"
-msgstr ""
-"Oyun türü seçimi. Seçtiğiniz oyun türüne göre, gelen seçenekleri "
-"inceleyiniz. Ayrıca hemen alttaki linki takip ederek, her oyun için oyun "
-"türü, kota ve kakuş bilgisi alabilirsiniz."
-#
-msgid "Detailed paired"
-msgstr "Oyun özellik seçimi"
-#
-msgid "Detailed paired description"
-msgstr ""
-"Oyunlarda yer alan, eşli, göstermeyle bitme v.b. seçenekleri, seçtiğiniz "
-"oyun türüne göre seçebilirsiniz."
-#
-msgid "Detailed rounds"
-msgstr "El sayısı seçimi"
-#
-msgid "Detailed rounds description"
-msgstr ""
-"El sayısını vaktinize göre yapmanızı tavsiye ediyoruz. Vaktiniz azsa 10-20 "
-"el arası iyidir. Uzun oynarım, kakuş severim diyorsanız daha çok el oynamak "
-"iyidir."
-#
-msgid "Detailed settings create"
-msgstr "Detaylı ayarlar"
-#
-msgid "Detailed settings create description"
-msgstr "Detaylı ayarlar bölümü"
-#
-msgid "Detailed settings description."
-msgstr ""
-"Bu bölümde masa kurarken size lazım olabilecek ince ayarlarımız mevcut. "
-"Mutlaka bir göz atın."
-#
-msgid "Disable"
-msgstr "Etkisiz kıl"
-#
-msgid "Disable old contract type"
-msgstr "eski kontrat türünü etkisiz kıl"
-#
-msgid "Double quota"
-msgstr "Katlama seçeneği"
-#
-msgid "Double quota description"
-msgstr ""
-"İstediğiniz oyunda, katlama seçeneğini kullanabilirsiniz. Kaç ile "
-"katlarsanız, herkesten o derecede kota kesintisi yapılır. 2 ila 10 katı "
-"diyebilirsiniz. Böylece rakiplerinize hodri meydan demiş olursunuz."
-#
-msgid "Duration"
-msgstr "Süre"
-#
-msgid "Error - $something$!"
-msgstr "Hata - $something$!"
-#
-msgid "Friend settings description."
-msgstr ""
-"Size abone olmuş, ya da sizin abone olduğunuz arkadaşlarınız seçerek, sadece "
-"onlarla oynayabilirsiniz. Bu listede yer almayanlar oyuna davet "
-"edilmeyecektir."
-#
-msgid "Game speed description."
-msgstr ""
-"Hız tipleri: Hızlı, Normal, Yavaş. İşi acele olanlar, sürat sevenler için "
-"Hızlı oyun. Acelem yok kardeşim diyenler için Normal hız. Sindire sindire "
-"oynarım diyenler için Yavaş hız."
-#
-msgid "Game type description."
-msgstr ""
-"Buradan oynamak istediğiniz oyunun türünü seçebilirsiniz. Okey için geniş "
-"seçeneklerimiz var. Standart, Renk, Tek/Çift ve 10'dan düşmeli."
-#
-msgid "Group settings description."
-msgstr ""
-"Sadece seçtiğiniz gruplardan oyuncu katılmasını sağlayabilirsiniz. Sadece, "
-"burada seçtiğiniz gruplara abone olanlar kurduğunuz masayı görebilirler."
-#
-msgid "Hide button description"
-msgstr ""
-"Detaylı ayarları buradan gizleyebilirsiniz. Unutmayın, istediğiniz zaman "
-"tekrar açabilirsiniz."
-#
-msgid "Hide button options"
-msgstr "Gizle"
-#
-msgid "Hide details"
-msgstr "Detayları gizle"
-#
-msgid "Join description."
-msgstr ""
-"Masa filan kuramam, birine ekleşeyim diyorsanız boyle buyrun. Hızlıca kurulu "
-"bir masaya katılabilirsiniz."
-#
-msgid "Limit"
-msgstr "Limit"
-#
-msgid "New contract"
-msgstr "Yeni kontrat"
-#
-msgid "No contracts yet."
-msgstr "Henüz bir bayii yok"
-#
-msgid "No one bought anything yet under this contract."
-msgstr "Size bağlı hiç kimse, henüz satın alma yapmamış."
-#
-msgid "Payment type"
-msgstr "Ödeme tipi"
-#
-msgid "Personal settings description."
-msgstr ""
-"Bu alanda, üyelerimiz arasında, bilgilerini doldurmuş olanlar içinden daha "
-"detaylı bir seçim yapabilirsiniz.  "
-#
-msgid "Play description."
-msgstr ""
-"Bu bölümde kakuş kazanma şansınız yok. Her zaman oyuncu da olmayabilir. "
-"Sizden başka herkes kakuş kazanıyor olacak :)"
-#
-msgid "Purchase limit"
-msgstr "Satın alma limiti"
-#
-msgid "Purchases total"
-msgstr "Toplam satınalma"
-#
-msgid "Rounds description."
-msgstr "İstediğiniz kadar el oynama şansınız var. Buradan seçebilirsiniz."
-#
-msgid "Starting"
-msgstr "Başlama"
-#
-msgid "Table name description"
-msgstr ""
-"Masanıza güzel bir isim vererek öne listede öne çıkabilirsiniz. Unutmayın, "
-"kurduğunuz masayı kaydederek, geri geldiğinizde hiç uğraşmadan "
-"başlatabilirsiniz."
-#
-msgid "Table name set"
-msgstr "Masa adını kaydet"
-#
-msgid "Table name set description"
-msgstr ""
-"Masa adını ayarlamak için kullanılır. Bastıktan sonra yeni masa adınız "
-"hayırlı olsun."
-#
-msgid "Time and date"
-msgstr "Tarih, saat"
-#
-msgid "Total"
-msgstr "Toplam"
-#
-msgid "Type name"
-msgstr "Tip adı"
-#
-msgid "User '$username$' already has contract for this time!"
-msgstr "Kullanıcı '$username$' zaten bir kontrata bağlı!"
-#
-msgid "User '$username$' has new contract: '$contract$'!"
-msgstr "Kullanıcı '$username$' yeni bir kontrata sahip: '$contract$'!"
-#
-msgid "Welcome to matchmaker notice."
-msgstr ""
-"Oyun bulan alanına hoşgeldiniz. Bu sayfadan istediğiniz türde oyun "
-"oluşturabilir ya da mevcut masalara katılabilirsiniz."
-#
-msgid "days"
-msgstr "gün"
-#
-msgid "purchases"
-msgstr "satın almalar"
-#
-msgid "All the people on kakaranet"
-msgstr "tüm kakaranet üyelerini gör"
-#
-msgid "All users of Kakaranet"
-msgstr "Tüm Kakaranet insanları"
-#
-msgid "Find someone!"
-msgstr "Buyrun arayın"
-#
-msgid "Make new friends on kakaranet."
-msgstr "Oyuncu mu, arkadaş mı arıyorsunuz?"
-#
-msgid "Package fee"
-msgstr "Paket ücreti"
-#
-msgid "There is"
-msgstr "Toplam "
-#
-msgid "people here!"
-msgstr "Kakaracı burada!"
-#
-msgid "Make this user affiliate"
-msgstr "Bu kullanıcıyı bayii yap"
-#
-msgid "This user is an affiliate"
-msgstr "Bu kullanici bayiidir."
-#
-msgid ""
-"User is not an affiliate! Do you want to make '$username$' an affiliate now "
-"and give him a contract?"
-msgstr ""
-"Bu kullanıcı bayii değil. '$username$' adlı kullanıcıyı bayii yapacak "
-"mısınız?"
-#
-msgid ""
-"You may unsubscribe from group messages this way. \n"
-"                                    You can also subscribe back later if you "
-"wish"
-msgstr ""
-"Grup aboneliğinden çıkıyorsunuz. \n"
-"                                    İstediğiniz zaman tekrar abone "
-"olabilirsiniz."
-#
-msgid "Tables"
-msgstr "Tables"
-#
-msgid "Sorry, all tables are full, you can create one youself!"
-msgstr "Sorry, all tables are full, you can create one youself!"
-#
-msgid "Clear Options"
-msgstr "Seçimleri Temizle"
-#
-msgid "Our player $username$, has created "
-msgstr "Our player $username$, has created "
-#
-msgid "Kakaush"
-msgstr "Kakuş"
-#
-msgid "Kakuş"
-msgstr "Kakuş"
-#
-msgid "Other players"
-msgstr "Other players"
-#
-msgid "Scores"
-msgstr "Scores"
-#
-msgid "We haven't implemented it yet."
-msgstr "We haven't implemented it yet."
-#
-msgid "When"
-msgstr "When"
-#
-msgid "You haven't played any games yet."
-msgstr "You haven't played any games yet."
-#
-msgid "Clear selection"
-msgstr "Clear selection"
-#
-msgid "Amount"
-msgstr "Amount"
-#
-msgid "Check it in your profile!"
-msgstr "Check it in your profile!"
-#
-msgid "Convert"
-msgstr "Convert"
-#
-msgid "Convert kakush to quota"
-msgstr "Convert kakush to quota"
-#
-msgid "Deliver"
-msgstr "Deliver"
-#
-msgid "Financial"
-msgstr "Financial"
-#
-msgid "Gamer"
-msgstr "Gamer"
-#
-msgid "Gifts List"
-msgstr "Gifts List"
-#
-msgid "Invite sent! (this still need some tuning)"
-msgstr "Invite sent! (this still need some tuning)"
-#
-msgid "Invited"
-msgstr "Invited"
-#
-msgid "Kakush Currency"
-msgstr "Kakush Currency"
-#
-msgid "Kakush Points"
-msgstr "Kakush Points"
-#
-msgid "Key"
-msgstr "Key"
-#
-msgid "No."
-msgstr "No."
-#
-msgid "Our Price"
-msgstr "Our Price"
-#
-msgid "Please, write only digits."
-msgstr "Please, write only digits."
-#
-msgid "Real Price"
-msgstr "Real Price"
-#
-msgid "Resend"
-msgstr "Resend"
-#
-msgid "Retailer Price"
-msgstr "Retailer Price"
-#
-msgid "Sent invites"
-msgstr "Sent invites"
-#
-msgid "Sorry"
-msgstr "Sorry"
-#
-msgid "Sorry, you don't have enough kakush to buy it yet."
-msgstr "Sorry, you don't have enough kakush to buy it yet."
-#
-msgid "Sorry, you don't have that much kakush."
-msgstr "Sorry, you don't have that much kakush."
-#
-msgid "Value"
-msgstr "Value"
-#
-msgid "anyone"
-msgstr "anyone"
-#
-msgid "became"
-msgstr "became"
-#
-msgid "kakush"
-msgstr "kakush"
-#
-msgid "on Kakaranet"
-msgstr "on Kakaranet"
-#
-msgid "worth"
-msgstr "worth"
+msgid "PARTICIPATION PERCENTAGE"
+msgstr "KATILIM ORANINA GÖRE"
