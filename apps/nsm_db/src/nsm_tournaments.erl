@@ -16,7 +16,7 @@
          get/1,                  % { get tournament from db }
          user_is_team_creator/2, % { if user have team creator priority }
          create_team/1,
-         user_joined/2].          % { if user is already joined the tournament }
+         user_joined/2]).          % { if user is already joined the tournament }
 %         active_users/1,         % { list of active users (ready and on lobby page) }
 %         chat_history/1]).       % { tournament chat history }
 
