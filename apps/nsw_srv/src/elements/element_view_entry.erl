@@ -130,9 +130,23 @@ entry_element(E, Comments, Avatar, {MediaThumb, MediaLists0}, _TargetMedia, Anch
                         true -> ?SYSTEM_MESSAGE_STAYS_FOR_READING;
                         _ -> TimeLeft
                     end,
-                    Title_URL_Desc = string:tokens(E#entry.description, "|"),
+                    Title_URL_Desc = ling:split(E#entry.description, "|"),
                     case Title_URL_Desc of
-                        [URL, UId, TableName, GameType, Rounds, Speed, Mode] ->
+                        [URL, UId, TourName, TourDesc, STourDate, STourTime, STourPlayers, STourQuota, STourType, STourGame] -> % new tournament
+                            Title = ?_T("New tournament"),
+                            #notice{type=system_message, position=left,
+                                title=#link{url=URL, text=Title},
+                                body=[
+                                    "<-- message: "++integer_to_list(MessageSecs)++"   now:"++integer_to_list(NowSecs)++" -->",
+                                    ?_TS("Our player, $username$, has created $type$ tournament: ", [{username, UId}, {type, STourType}]),
+                                    #link{style="font-weight:bold;", url=URL, text=TourName},
+                                    ?_TS("$desc$ in $game$ to be held $date$ $time$ for $players$ players with $quota$ per round quota.",
+                                        [{desc, TourDesc}, {game, STourGame}, {date, STourDate}, {time, STourTime}, {players, STourPlayers}, {quota, STourQuota}])
+                                ],
+                                delay = TimeLeftAndSomeMore * 1000
+                            };
+                            
+                        [URL, UId, TableName, GameType, Rounds, Speed, Mode] -> % new table
                             Title = ?_T("New Table"),
                             Desc1 = ?_TS("Our player, $username$, has created ", [{username, UId}]),
                             Link = TableName,
@@ -143,6 +157,7 @@ entry_element(E, Comments, Avatar, {MediaThumb, MediaLists0}, _TargetMedia, Anch
                             #notice{type=system_message, position=left,
                                 title=#link{url=URL, text=Title},
                                 body=[
+                                    "<-- message: "++integer_to_list(MessageSecs)++"   now:"++integer_to_list(NowSecs)++" -->",
                                     Desc1, 
                                     #link{style="font-weight:bold;", url=URL, text=Link},
                                     ling:replace(Desc2, ?_T("Game"), "<br/>" ++ ?_T("Game") )  
