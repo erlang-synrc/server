@@ -32,10 +32,7 @@ main_authorized0() ->
         <link href='/nitrogen/guiders-js/guiders-1.2.8.css' rel='stylesheet'>
         <script src='/nitrogen/guiders-js/guiders-1.2.8.js'></script>
     "),
-    case wf:q(style) of
-	"fb" ->  #template { file=code:priv_dir(nsw_srv)++"/templates/facebook.html" };
-	_ ->     #template { file=code:priv_dir(nsw_srv)++"/templates/bare.html" }
-    end.
+     #template { file=code:priv_dir(nsw_srv)++"/templates/bare.html" }.
 
 title() -> ?_T("Matchmaker").
 
@@ -110,8 +107,7 @@ check_requirements() ->
     case wf:q(csid) of
 	undefined ->
 	    {_, _, C} = now(),
-	    throw({redirect, lists:concat([?_U("/matchmaker"), "/", ?_U(q_game_type()), "/csid/", C,
-					   case wf:q(style) of "fb" -> "/style/fb";_->"" end])});
+	    throw({redirect, lists:concat([?_U("/matchmaker"), "/", ?_U(q_game_type()), "/csid/", C, ""])});
 	Sid ->
 	    wf:state(session_id, Sid)
     end,

@@ -201,36 +201,6 @@ footer_box() ->
             ]
     end.
 
-facebook_footer_box() ->
-    LangFooter = ["<footer>",language(),"</footer>"],
-    case wf_context:page_module() of
-	    facebook ->
-	        [facebook_counter_box(), LangFooter];
-	    view_table ->
-	        #panel{style="border-top: solid 1px #b4d7ed", body=" "};
-	    _ ->
-	        #panel{style="border-top: solid 1px #b4d7ed", body=LangFooter}
-    end.
-
-facebook_counter_box() ->
-    #panel{class="footer",body=[
-    	"<strong class=\"online\">",?_T("Online Gamers"),": ",#span{text=webutils:user_count()},"</strong>",
-    	#list{class="like-list", body=[
-    		[
-                #listitem{body=[
-                    #link{url="", body=#span{text=Text}},
-                    "<strong>"++user_count(Atom)++"</strong>"
-                ]}," "
-            ]
-            || {Atom, Text} <- [
-                {game_okey,  "Okey" },
-		        {game_tavla, "Tavla"},
-		        {game_king,  "King" },
-		        {game_batak, "Batak"},
-		        {game_sobri, "Sorbi"}
-            ]
-	    ]}
-    ]}.
 
 event({error, Msg}) ->
     wf:wire(#alert{text=Msg});
@@ -519,7 +489,7 @@ save_facebook_id(UserName, FBID, undefined) ->
     ok;
 save_facebook_id(UserName, FBID, FbToken) ->
     ?PRINT(FbToken),
-    case erlfb:get_user_info(FbToken) of
+    case fb_utils:get_user_info(FbToken) of
         {ok, {struct, Response}} ->
             case wf:to_list(proplists:get_value(<<"id">>, Response)) of
                 FBID ->

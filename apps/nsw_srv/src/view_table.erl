@@ -90,10 +90,7 @@ main_authorized() ->
     end.
 
 main_template() ->
-    case wf:q(style) of
-	"fb" ->  #template { file=code:priv_dir(nsw_srv)++"/templates/facebook.html" };
-           _ ->  #template { file=code:priv_dir(nsw_srv)++"/templates/700.html" }
-    end.
+    #template { file=code:priv_dir(nsw_srv)++"/templates/700.html" }.
 
 title() -> ?_T("Game Page").
 
@@ -105,12 +102,10 @@ body() ->
 	            {ok, Table} when not is_list(Table) -> Table#game_table.name;
 		    _ -> ?_T("Error") end
     end,
-    case wf:q(style) of
-	"fb" -> [];
-	_ -> ["<header><div class=\"block\">"
-		"<strong class=\"logo vcard\">", webutils:logo(), "</strong>"
-	      "</div></header>"]
-    end ++
+    ["<header><div class=\"block\">"
+	"<strong class=\"logo vcard\">", webutils:logo(), "</strong>"
+     "</div></header>"]
+    ++
     [ #section{ body=[ #h3{class="table-name", text=PageTitle},
 		       table_box(),
                        #lightbox{id=lightbox, style="display: none;", body=delete_table_info() } ]} ].
@@ -546,10 +541,7 @@ leave_table(User, Id) ->
     end
     end || T <- Tables ],
 %    MyUser = get(user),
-    case wf:q(style) of
-	"fb" -> wf:redirect("/facebook/");
-	_    -> wf:wire("window.close();")
-    end.
+    wf:wire("window.close();").
 
 join_user(User,Table) ->
     ?INFO("Comet Join: ~p",[{User#user.username,Table#game_table.id,Table#game_table.creator,Table#game_table.owner}]),

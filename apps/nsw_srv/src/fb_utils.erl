@@ -6,7 +6,6 @@
 -include("elements/records.hrl").
 -compile(export_all).
 
-% demo_id 176025532423202, kakaranet_id 154227314626053
 init()->
     wf:wire(#api{name=setFbIframe, tag=fb}),
     wf:wire(#api{name=fbLogin, tag=fb}),
@@ -233,3 +232,21 @@ check_permissions([{_P,_V}|Perms]) -> check_permissions(Perms).
 same_or_undefined(undefined, _) -> true;
 same_or_undefined(User, FbUser) when User =:= FbUser -> true;
 same_or_undefined(_,_) -> false.
+
+get_user_info(FbToken) when is_list(FbToken) ->
+    FbUrl = "https://graph.facebook.com",
+    Uri = FbUrl++"/me?access_token="++FbToken,
+    catch send_request(Uri);
+get_user_info(_) ->
+    {error, {fb_user_info, "string expected"}}.
+
+send_request(Uri) ->
+    ?INFO("send_request(~p)~n~n", [Uri]),
+    case httpc:request(Uri) of
+	{ok, {_, Header, Data}} ->
+            case string:tokens(proplists:get_value("content-type", Header), ";") of
+		["text/javascript" | _Rest] -> {ok, mochijson2:decode(Data)};
+		[Type | _Rest] -> wf:info("Type:~p~n", [Type]), {ok, Data}
+            end;
+        {error, _} = E -> E
+    end.
