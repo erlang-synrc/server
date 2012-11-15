@@ -3,7 +3,7 @@
 -include("user.hrl").
 -include("tournaments.hrl").
 
--export([create/2,create/11,     % { create the tournament }
+-export([create/2,create/12,     % { create the tournament }
          destroy/1,              % { purge tournament with all team placeholders and played games }
          join/2,                 % { put users in waiting queue }
          waiting_player/1,       % { dequeue first waiting_player }
