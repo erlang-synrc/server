@@ -43,7 +43,7 @@ init([]) ->
          {ok, true} -> ok;
          _ -> case nsx_opt:get_env(nsw_srv,create_tables,true) of 
                    false -> ok;
-                   true -> game_manager:create_tables(100)
+                   true -> skip % TODO: still need to call from web game_manager:create_tables(10)
               end
     end,
 
