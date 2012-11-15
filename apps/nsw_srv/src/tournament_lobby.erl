@@ -395,6 +395,7 @@ content() ->
            end,
     NPlayers = T#tournament.players_count,
     Quota = T#tournament.quota,
+    Speed = T#tournament.speed,
     Prizes = case is_list(T#tournament.awards) of
         true ->
             GOs = [nsm_gifts_db:get_gift(A) || A <- T#tournament.awards],
@@ -459,7 +460,7 @@ content() ->
                      true ->
                         case TourId of
                             "" ->
-                                #link{id=start_button, text=?_T("MANUAL START"), postback={start_tour, Id, NPlayers,Quota,Tours}};
+                                #link{id=start_button, text=?_T("MANUAL START"), postback={start_tour, Id, NPlayers,Quota,Tours,Speed}};
                             _ -> ""
                         end;
                     _ -> ""
@@ -789,8 +790,8 @@ event(join_tournament) ->
     wf:replace(join_button, #panel{id=join_button, class="tourlobby_orange_button_disabled", text="TURNUVAYA KATIL"}),
     update_userlist();    
 
-event({start_tour, Id, NPlayers,Q,T}) ->
-    TourId = nsw_srv_sup:start_tournament(Id, 1, NPlayers,Q,T),
+event({start_tour, Id, NPlayers,Q,T,S}) ->
+    TourId = nsw_srv_sup:start_tournament(Id, 1, NPlayers,Q,T,S),
     wf:replace(attach_button, #link{id=attach_button, class="tourlobby_yellow_button", text=?_T("TAKE MY SEAT"), postback=attach}),
     wf:replace(start_button, ""),
     wf:state(tour_long_id,TourId);
