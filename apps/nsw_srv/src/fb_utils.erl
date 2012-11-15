@@ -129,7 +129,7 @@ add_service_btn()->
 
 buy_button(PackageId, OverLimit) when is_atom(OverLimit)->
     #link{class="pay_fb_btn", text=?_T("Buy"),
-    actions=#event{type=click, actions=#script{script="pay_with_fb("++ PackageId ++ "," ++ atom_to_list(OverLimit) ++");"}}}.
+    actions=#event{type=click, actions=#script{script="pay_with_fb(\""++ PackageId ++ "\"," ++ atom_to_list(OverLimit) ++");"}}}.
 
 pay_dialog()->
     wf:wire(#api{name=processOrder, tag=fb}),
