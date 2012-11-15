@@ -100,6 +100,16 @@ init()->
 	    console.log(\"Response revoke:\" + response);
 	}); 
     };",
+    "function fb_feed(Msg){",
+	"FB.api('/me/feed', 'post', { message: Msg },",
+	"function(response) {",
+	    "if (!response || response.error) {",
+		"console.log(\"Error occured\");",
+	    "} else {",
+	        "console.log(\"Post ID: \" + response.id);",
+	    "}",
+	"});",
+    "};",
     "(function(d){",
     "var js, id = 'facebook-jssdk', ref = d.getElementsByTagName('script')[0];",
     "if (d.getElementById(id)) {return;}",
@@ -210,8 +220,10 @@ check_permissions([{publish_stream, 1}|_Rest])->
     wf:update(fbServiceButton, [
 	#image{image="/images/img-51.png"},
 	#span{text="Facebook"},
-	#link{class="btn", text=["<span>-</span>",?_T("Del")],
-	actions=#event{type=click, actions=#script{script="del_fb_service()"}},
+	#link{class="btn", text=["<span>-</span>",?_T("Test")],
+	%#link{class="btn", text=["<span>-</span>",?_T("Del")],
+	%actions=#event{type=click, actions=#script{script="del_fb_service()"}},
+	actions=#event{type=click, actions=#script{script="fb_feed(\"Test feed\")"}},
 	html_encode = false}
     ]);
 check_permissions("publish_stream") -> check_permissions([{publish_stream, 1}]);
