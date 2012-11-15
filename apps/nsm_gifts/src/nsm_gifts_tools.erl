@@ -6,23 +6,9 @@
 %% Created: Sep 7, 2012
 %%----------------------------------------------------------------------
 -module(nsm_gifts_tools).
-
-%%
-%% Include files
-%%
-
+-compile(export_all).
 -include("common.hrl").
 -include_lib("nsx_config/include/log.hrl").
-
-%%
-%% Exported Functions
-%%
--export([
-         show/1,
-         dumb_store/1
-        ]).
-
-
 -define(FIXED_CURRENCY_AMOUNT, 5).
 -define(HACKED_PRICE, 5.2).
 
@@ -85,6 +71,16 @@ show(List) ->
 %% Stores products information to the DB. For demo only.
 %% FIXME: The procedure should be processed by admin using some UI.
 %% @end
+
+convert_money_to_kakush(UserPrice) ->
+    {A, B, C, D} = nsm_gifts_db:get_factors(),
+    OurPrice = round(UserPrice * A),
+    KakushCurrencyPre = round(OurPrice * D / 100),
+%    {KakushCurrency, KakushPoints} =
+    if KakushCurrencyPre < ?FIXED_CURRENCY_AMOUNT ->
+        {?FIXED_CURRENCY_AMOUNT, round(B * C * (?HACKED_PRICE - ?FIXED_CURRENCY_AMOUNT))};
+        true -> {KakushCurrencyPre, round(B * C * (OurPrice / 100 - KakushCurrencyPre))}
+    end.
 
 dumb_store(List) ->
     nsm_gifts_db:clear_gifts(),
