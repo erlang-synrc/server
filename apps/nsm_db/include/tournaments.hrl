@@ -16,6 +16,7 @@
          end_date,
          status, % { activated, ongoing, finished }
          quota,
+         tours,
          awards, 
          teams :: list(#team{}), % { bulk list of fixed teams/placeholders created on tournament start from waiting_queue }
          waiting_queue, % { play_record, added here when user wants to join tournament }

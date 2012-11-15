@@ -360,6 +360,7 @@ content() ->
     Id = list_to_integer(wf:q("id")),
     {ok, T} = nsm_db:get(tournament, Id),
     Title = T#tournament.name,
+    Tours = T#tournament.tours,
     Game = case T#tournament.game_type of
         game_okey -> "OKEY";
         game_tavla -> "TAVLA";
@@ -458,7 +459,7 @@ content() ->
                      true ->
                         case TourId of
                             "" ->
-                                #link{id=start_button, text=?_T("MANUAL START"), postback={start_tour, Id, NPlayers}};
+                                #link{id=start_button, text=?_T("MANUAL START"), postback={start_tour, Id, NPlayers,Quota,Tours}};
                             _ -> ""
                         end;
                     _ -> ""
@@ -788,8 +789,8 @@ event(join_tournament) ->
     wf:replace(join_button, #panel{id=join_button, class="tourlobby_orange_button_disabled", text="TURNUVAYA KATIL"}),
     update_userlist();    
 
-event({start_tour, Id, NPlayers}) ->
-    TourId = nsw_srv_sup:start_tournament(Id, 1, NPlayers),
+event({start_tour, Id, NPlayers,Q,T}) ->
+    TourId = nsw_srv_sup:start_tournament(Id, 1, NPlayers,Q,T),
     wf:replace(attach_button, #link{id=attach_button, class="tourlobby_yellow_button", text=?_T("TAKE MY SEAT"), postback=attach}),
     wf:replace(start_button, ""),
     wf:state(tour_long_id,TourId);

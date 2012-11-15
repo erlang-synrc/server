@@ -1,6 +1,6 @@
 -module(nsw_srv_sup).
 -behaviour(supervisor).
--export([start_link/0, init/1, create_tables/1,stress_test/1, start_tournament/3]).
+-export([start_link/0, init/1, create_tables/1,stress_test/1, start_tournament/5]).
 -include_lib("nsm_db/include/tournaments.hrl").
 -include("setup.hrl").
 -include("loger.hrl").
@@ -94,7 +94,7 @@ stress_test(NumberOfRooms) ->
     [{ok,OP2,_}|_] = lists:reverse(OkeyPlayers),
     ?INFO("Okey bot rooms runned (STRESS): ~p~n",[{OP1,OP2}]).
 
-start_tournament(TourId,NumberOfTournaments, NumberOfPlayers) ->
+start_tournament(TourId,NumberOfTournaments,NumberOfPlayers,Quota,Tours) ->
     RealPlayers = [ erlang:list_to_binary(U#play_record.who) || U <- nsm_tournaments:joined_users(TourId)],
     
     Registrants = case NumberOfPlayers > length(RealPlayers) of
@@ -108,7 +108,8 @@ start_tournament(TourId,NumberOfTournaments, NumberOfPlayers) ->
         [begin
              {ok,GameId,A} = rpc:call(?GAMESRVR_NODE,game_manager,create_game,
                                       [game_okey_ng_trn_elim, [{registrants, Registrants},
-                                                               {kakush_per_round, 8},
+                                                               {kakush_per_round, Quota},
+                                                               {tours, Tours},
                                                                {trn_id,TourId},
                                                                {demo_mode, true}]]),
              [ proc_lib:spawn_link(fun() ->

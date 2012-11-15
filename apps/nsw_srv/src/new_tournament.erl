@@ -441,12 +441,12 @@ event(create_pressed) ->
                 false ->
                     wf:replace(create_button, #panel{class="view_media_other_attachment", style="float:none", body=#panel{class=loading_spiner}}),
                     wf:replace(create_button_top, #panel{class="view_media_other_attachment", style="float:none", body=#panel{class=loading_spiner}}),
-                    wf:wire(#event{postback={start_tournament, TourName, TourDesc, TourDate, TourTime, TourPlayers, TourQuota, Prize1, Prize2, Prize3, TourType, TourGame}})
+                    wf:wire(#event{postback={start_tournament, TourName, TourDesc, TourDate, TourTime, TourPlayers, TourQuota, Prize1, Prize2, Prize3, TourType, TourGame, Tours}})
             end
     end;
 
 event({start_tournament, TourName, TourDesc, TourDate, TourTime, TourPlayers, TourQuota, Prize1, Prize2, Prize3, TourType, TourGame}) ->
-    TID = nsm_tournaments:create(wf:user(), TourName, TourDesc, TourDate, TourTime, TourPlayers, TourQuota, [Prize1, Prize2, Prize3], TourType, TourGame),
+    TID = nsm_tournaments:create(wf:user(), TourName, TourDesc, TourDate, TourTime, TourPlayers, TourQuota, [Prize1, Prize2, Prize3], TourType, TourGame, Tours),
     AllowedUsers = ["doxtop","demo1","maxim","sustel","ahmettez",
                     "kunthar","alice","kate","serg","imagia","willbe"],
     [case nsm_db:get(user,User) of

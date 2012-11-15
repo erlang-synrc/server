@@ -34,7 +34,7 @@
 
 -export([table_message/3, client_message/2, client_request/2, client_request/3]).
 
--export([get_prize_fund/2]).  % just passing info, not a gen_server part
+-export([get_prize_fund/3]).  % just passing info, not a gen_server part
 
 -record(state,
         {%% Static values
@@ -147,11 +147,12 @@ init([GameId, Params, _Manager]) ->
     ?INFO("OKEY_NG_TRN_ELIM <~p> Init started",[GameId]),
     Registrants = get_param(registrants, Params),
     KakushPerRound = get_param(kakush_per_round, Params),
+    Tours = get_param(tours, Params),
     DemoMode = get_option(demo_mode, Params, false),
     TrnId = get_option(trn_id, Params, undefined),
 
     RegistrantsNum = length(Registrants),
-    {ok, TurnsPlan} = get_plan(KakushPerRound, RegistrantsNum),
+    {ok, TurnsPlan} = get_plan(KakushPerRound, RegistrantsNum, Tours),
     TableParams = table_parameters(?MODULE, self()),
     BotsParams = bots_parameters(),
 
@@ -969,68 +970,68 @@ get_param(ParamId, Params) ->
 get_option(OptionId, Params, DefValue) ->
     proplists:get_value(OptionId, Params, DefValue).
 
-get_plan(KakushPerRound, RegistrantsNum) ->
-    case lists:keyfind({KakushPerRound, RegistrantsNum}, 1, tournament_matrix()) of
+get_plan(KakushPerRound, RegistrantsNum,Tours) ->
+    case lists:keyfind({KakushPerRound, RegistrantsNum,Tours}, 1, tournament_matrix()) of
         false -> {error, no_such_plan};
         {_NQ,_K, Plan} -> {ok, Plan}
     end.
 
-get_prize_fund(KakushPerRound, RegistrantsNum) ->
-    case lists:keyfind({KakushPerRound, RegistrantsNum}, 1, tournament_matrix()) of
+get_prize_fund(KakushPerRound, RegistrantsNum,Tours) ->
+    case lists:keyfind({KakushPerRound, RegistrantsNum,Tours}, 1, tournament_matrix()) of
         false -> {error, no_such_plan};
         {_NQ, K, _Plan} -> {ok, K}
     end.
 
 tournament_matrix() ->
-    [%% Kakush Pl.No       1        2         3         4         5         6         7         8
-     { {  8,   16}, 54,   [ne      , {ce,  4}, {te,  1}                                                  ]},
-     { { 10,   16}, 72,   [ne      , {ce,  4}, {te,  1}                                                  ]},
-     { {  2,   64}, 80,   [ne      , {ce, 16}, {te,  1}, {te,  1}                                        ]},
-     { {  4,   64}, 98,   [ne      , {ce, 16}, {te,  1}, {te,  1}                                        ]},
-     { {  6,   64}, 158,  [ne      , {ce, 16}, {te,  1}, {te,  1}                                        ]},
-     { {  8,   64}, 223,  [ne      , {ce, 16}, {te,  1}, {te,  1}                                        ]},
-     { { 10,   64}, 295,  [ne      , {ce, 16}, {te,  1}, {te,  1}                                        ]},
-     { {  2,  128}, 81,   [{te,  2}, {te,  2}, {te,  2}, {te,  1}, {te,  1}                              ]},
-     { {  4,  128}, 162,  [{te,  2}, {te,  2}, {te,  2}, {te,  1}, {te,  1}                              ]},
-     { {  6,  128}, 260,  [{te,  2}, {te,  2}, {te,  2}, {te,  1}, {te,  1}                              ]},
-     { {  8,  128}, 368,  [{te,  2}, {te,  2}, {te,  2}, {te,  1}, {te,  1}                              ]},
-     { { 10,  128}, 487,  [{te,  2}, {te,  2}, {te,  2}, {te,  1}, {te,  1}                              ]},
-     { {  2,  256}, 198,  [ne      , {ce, 64}, {te,  1}, {te,  1}, {te,  1}                              ]},
-     { {  4,  256}, 397,  [ne      , {ce, 64}, {te,  1}, {te,  1}, {te,  1}                              ]},
-     { {  6,  256}, 635,  [ne      , {ce, 64}, {te,  1}, {te,  1}, {te,  1}                              ]},
-     { {  8,  256}, 899,  [ne      , {ce, 64}, {te,  1}, {te,  1}, {te,  1}                              ]},
-     { { 10,  256}, 1190, [ne      , {ce, 64}, {te,  1}, {te,  1}, {te,  1}                              ]},
-     { {  2,  256}, 283,  [ne      , {ce,128}, ne      , {ce, 64}, {te,  1}, {te,  1}, {te,   1}         ]},
-     { {  4,  256}, 566,  [ne      , {ce,128}, ne      , {ce, 64}, {te,  1}, {te,  1}, {te,   1}         ]},
-     { {  6,  256}, 907,  [ne      , {ce,128}, ne      , {ce, 64}, {te,  1}, {te,  1}, {te,   1}         ]},
-     { {  8,  256}, 1285, [ne      , {ce,128}, ne      , {ce, 64}, {te,  1}, {te,  1}, {te,   1}         ]},
-     { { 10,  256}, 1701, [ne      , {ce,128}, ne      , {ce, 64}, {te,  1}, {te,  1}, {te,   1}         ]},
-     { {  2,  512}, 326,  [{te,  2}, {te,  2}, {te,  2}, {te,  1}, {te,  1}, {te,  1}                    ]},
-     { {  4,  512}, 652,  [{te,  2}, {te,  2}, {te,  2}, {te,  1}, {te,  1}, {te,  1}                    ]},
-     { {  6,  512}, 1043, [{te,  2}, {te,  2}, {te,  2}, {te,  1}, {te,  1}, {te,  1}                    ]},
-     { {  8,  512}, 1478, [{te,  2}, {te,  2}, {te,  2}, {te,  1}, {te,  1}, {te,  1}                    ]},
-     { { 10,  512}, 1957, [{te,  2}, {te,  2}, {te,  2}, {te,  1}, {te,  1}, {te,  1}                    ]},
-     { {  2,  512}, 582,  [ne      , {ce,256}, ne      , {ce,128}, {te,  2}, {te,  1}, {te,  1}, {te,  1}]},
-     { {  4,  512}, 1163, [ne      , {ce,256}, ne      , {ce,128}, {te,  2}, {te,  1}, {te,  1}, {te,  1}]},
-     { {  6,  512}, 1861, [ne      , {ce,256}, ne      , {ce,128}, {te,  2}, {te,  1}, {te,  1}, {te,  1}]},
-     { {  8,  512}, 2637, [ne      , {ce,256}, ne      , {ce,128}, {te,  2}, {te,  1}, {te,  1}, {te,  1}]},
-     { { 10,  512}, 3490, [ne      , {ce,256}, ne      , {ce,128}, {te,  2}, {te,  1}, {te,  1}, {te,  1}]},
-     { {  2, 1024}, 795,  [ne      , {ce,256}, {te,  1}, {te,  1}, {te,  1}, {te,  1}                    ]},
-     { {  4, 1024}, 1589, [ne      , {ce,256}, {te,  1}, {te,  1}, {te,  1}, {te,  1}                    ]},
-     { {  6, 1024}, 2543, [ne      , {ce,256}, {te,  1}, {te,  1}, {te,  1}, {te,  1}                    ]},
-     { {  8, 1024}, 3602, [ne      , {ce,256}, {te,  1}, {te,  1}, {te,  1}, {te,  1}                    ]},
-     { { 10, 1024}, 4767, [ne      , {ce,256}, {te,  1}, {te,  1}, {te,  1}, {te,  1}                    ]},
-     { {  2, 1024}, 1135, [ne      , {ce,512}, ne      , {ce,256}, {te,  1}, {te,  1}, {te,  1}, {te,  1}]},
-     { {  4, 1024}, 2271, [ne      , {ce,512}, ne      , {ce,256}, {te,  1}, {te,  1}, {te,  1}, {te,  1}]},
-     { {  6, 1024}, 3633, [ne      , {ce,512}, ne      , {ce,256}, {te,  1}, {te,  1}, {te,  1}, {te,  1}]},
-     { {  8, 1024}, 5147, [ne      , {ce,512}, ne      , {ce,256}, {te,  1}, {te,  1}, {te,  1}, {te,  1}]},
-     { { 10, 1024}, 6812, [ne      , {ce,512}, ne      , {ce,256}, {te,  1}, {te,  1}, {te,  1}, {te,  1}]},
-     { {  2, 2048}, 1135, [{te,  2}, {te,  1}, {te,  1}, {te,  1}, {te,  1}, {te,  1}                    ]},
-     { {  4, 2048}, 2271, [{te,  2}, {te,  1}, {te,  1}, {te,  1}, {te,  1}, {te,  1}                    ]},
-     { {  6, 2048}, 3633, [{te,  2}, {te,  1}, {te,  1}, {te,  1}, {te,  1}, {te,  1}                    ]},
-     { {  8, 2048}, 5147, [{te,  2}, {te,  1}, {te,  1}, {te,  1}, {te,  1}, {te,  1}                    ]},
-     { { 10, 2048}, 6812, [{te,  2}, {te,  1}, {te,  1}, {te,  1}, {te,  1}, {te,  1}                    ]},
-     { {  2, 2048}, 1987, [ne      , {ce,1024},{te,  2}, {te,  2}, {te,  1}, {te,  1}, {te,  1}, {te,  1}]},
-     { {  4, 2048}, 3974, [ne      , {ce,1024},{te,  2}, {te,  2}, {te,  1}, {te,  1}, {te,  1}, {te,  1}]},
-     { {  6, 2048}, 6359, [ne      , {ce,1024},{te,  2}, {te,  2}, {te,  1}, {te,  1}, {te,  1}, {te,  1}]}
+    [%% Kakush Pl.No         1          2         3         4         5         6         7         8
+     { {  8,   16,3}, 54,   [ne      , {ce,  4}, {te,  1}                                                  ]},
+     { { 10,   16,3}, 72,   [ne      , {ce,  4}, {te,  1}                                                  ]},
+     { {  2,   64,4}, 80,   [ne      , {ce, 16}, {te,  1}, {te,  1}                                        ]},
+     { {  4,   64,4}, 98,   [ne      , {ce, 16}, {te,  1}, {te,  1}                                        ]},
+     { {  6,   64,4}, 158,  [ne      , {ce, 16}, {te,  1}, {te,  1}                                        ]},
+     { {  8,   64,4}, 223,  [ne      , {ce, 16}, {te,  1}, {te,  1}                                        ]},
+     { { 10,   64,4}, 295,  [ne      , {ce, 16}, {te,  1}, {te,  1}                                        ]},
+     { {  2,  128,5}, 81,   [{te,  2}, {te,  2}, {te,  2}, {te,  1}, {te,  1}                              ]},
+     { {  4,  128,5}, 162,  [{te,  2}, {te,  2}, {te,  2}, {te,  1}, {te,  1}                              ]},
+     { {  6,  128,5}, 260,  [{te,  2}, {te,  2}, {te,  2}, {te,  1}, {te,  1}                              ]},
+     { {  8,  128,5}, 368,  [{te,  2}, {te,  2}, {te,  2}, {te,  1}, {te,  1}                              ]},
+     { { 10,  128,5}, 487,  [{te,  2}, {te,  2}, {te,  2}, {te,  1}, {te,  1}                              ]},
+     { {  2,  256,5}, 198,  [ne      , {ce, 64}, {te,  1}, {te,  1}, {te,  1}                              ]},
+     { {  4,  256,5}, 397,  [ne      , {ce, 64}, {te,  1}, {te,  1}, {te,  1}                              ]},
+     { {  6,  256,5}, 635,  [ne      , {ce, 64}, {te,  1}, {te,  1}, {te,  1}                              ]},
+     { {  8,  256,5}, 899,  [ne      , {ce, 64}, {te,  1}, {te,  1}, {te,  1}                              ]},
+     { { 10,  256,5}, 1190, [ne      , {ce, 64}, {te,  1}, {te,  1}, {te,  1}                              ]},
+     { {  2,  256,7}, 283,  [ne      , {ce,128}, ne      , {ce, 64}, {te,  1}, {te,  1}, {te,   1}         ]},
+     { {  4,  256,7}, 566,  [ne      , {ce,128}, ne      , {ce, 64}, {te,  1}, {te,  1}, {te,   1}         ]},
+     { {  6,  256,7}, 907,  [ne      , {ce,128}, ne      , {ce, 64}, {te,  1}, {te,  1}, {te,   1}         ]},
+     { {  8,  256,7}, 1285, [ne      , {ce,128}, ne      , {ce, 64}, {te,  1}, {te,  1}, {te,   1}         ]},
+     { { 10,  256,7}, 1701, [ne      , {ce,128}, ne      , {ce, 64}, {te,  1}, {te,  1}, {te,   1}         ]},
+     { {  2,  512,6}, 326,  [{te,  2}, {te,  2}, {te,  2}, {te,  1}, {te,  1}, {te,  1}                    ]},
+     { {  4,  512,6}, 652,  [{te,  2}, {te,  2}, {te,  2}, {te,  1}, {te,  1}, {te,  1}                    ]},
+     { {  6,  512,6}, 1043, [{te,  2}, {te,  2}, {te,  2}, {te,  1}, {te,  1}, {te,  1}                    ]},
+     { {  8,  512,6}, 1478, [{te,  2}, {te,  2}, {te,  2}, {te,  1}, {te,  1}, {te,  1}                    ]},
+     { { 10,  512,6}, 1957, [{te,  2}, {te,  2}, {te,  2}, {te,  1}, {te,  1}, {te,  1}                    ]},
+     { {  2,  512,8}, 582,  [ne      , {ce,256}, ne      , {ce,128}, {te,  2}, {te,  1}, {te,  1}, {te,  1}]},
+     { {  4,  512,8}, 1163, [ne      , {ce,256}, ne      , {ce,128}, {te,  2}, {te,  1}, {te,  1}, {te,  1}]},
+     { {  6,  512,8}, 1861, [ne      , {ce,256}, ne      , {ce,128}, {te,  2}, {te,  1}, {te,  1}, {te,  1}]},
+     { {  8,  512,8}, 2637, [ne      , {ce,256}, ne      , {ce,128}, {te,  2}, {te,  1}, {te,  1}, {te,  1}]},
+     { { 10,  512,8}, 3490, [ne      , {ce,256}, ne      , {ce,128}, {te,  2}, {te,  1}, {te,  1}, {te,  1}]},
+     { {  2, 1024,6}, 795,  [ne      , {ce,256}, {te,  1}, {te,  1}, {te,  1}, {te,  1}                    ]},
+     { {  4, 1024,6}, 1589, [ne      , {ce,256}, {te,  1}, {te,  1}, {te,  1}, {te,  1}                    ]},
+     { {  6, 1024,6}, 2543, [ne      , {ce,256}, {te,  1}, {te,  1}, {te,  1}, {te,  1}                    ]},
+     { {  8, 1024,6}, 3602, [ne      , {ce,256}, {te,  1}, {te,  1}, {te,  1}, {te,  1}                    ]},
+     { { 10, 1024,6}, 4767, [ne      , {ce,256}, {te,  1}, {te,  1}, {te,  1}, {te,  1}                    ]},
+     { {  2, 1024,8}, 1135, [ne      , {ce,512}, ne      , {ce,256}, {te,  1}, {te,  1}, {te,  1}, {te,  1}]},
+     { {  4, 1024,8}, 2271, [ne      , {ce,512}, ne      , {ce,256}, {te,  1}, {te,  1}, {te,  1}, {te,  1}]},
+     { {  6, 1024,8}, 3633, [ne      , {ce,512}, ne      , {ce,256}, {te,  1}, {te,  1}, {te,  1}, {te,  1}]},
+     { {  8, 1024,8}, 5147, [ne      , {ce,512}, ne      , {ce,256}, {te,  1}, {te,  1}, {te,  1}, {te,  1}]},
+     { { 10, 1024,8}, 6812, [ne      , {ce,512}, ne      , {ce,256}, {te,  1}, {te,  1}, {te,  1}, {te,  1}]},
+     { {  2, 2048,6}, 1135, [{te,  2}, {te,  1}, {te,  1}, {te,  1}, {te,  1}, {te,  1}                    ]},
+     { {  4, 2048,6}, 2271, [{te,  2}, {te,  1}, {te,  1}, {te,  1}, {te,  1}, {te,  1}                    ]},
+     { {  6, 2048,6}, 3633, [{te,  2}, {te,  1}, {te,  1}, {te,  1}, {te,  1}, {te,  1}                    ]},
+     { {  8, 2048,6}, 5147, [{te,  2}, {te,  1}, {te,  1}, {te,  1}, {te,  1}, {te,  1}                    ]},
+     { { 10, 2048,6}, 6812, [{te,  2}, {te,  1}, {te,  1}, {te,  1}, {te,  1}, {te,  1}                    ]},
+     { {  2, 2048,8}, 1987, [ne      , {ce,1024},{te,  2}, {te,  2}, {te,  1}, {te,  1}, {te,  1}, {te,  1}]},
+     { {  4, 2048,8}, 3974, [ne      , {ce,1024},{te,  2}, {te,  2}, {te,  1}, {te,  1}, {te,  1}, {te,  1}]},
+     { {  6, 2048,8}, 6359, [ne      , {ce,1024},{te,  2}, {te,  2}, {te,  1}, {te,  1}, {te,  1}, {te,  1}]}
   ].
