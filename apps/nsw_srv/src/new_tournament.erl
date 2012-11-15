@@ -329,6 +329,7 @@ reset_slider() ->
     wf:state(slider_max_value, Max),
     wf:update(slider_min_value, integer_to_list(Min)),
     wf:update(slider_max_value, integer_to_list(Max)),
+    wf:wire(#alert{text=integer_to_list(PrizeFund) ++ " " ++integer_to_list(Max)}),
     event({newtour_slider}).
 
 set_prize(No, Id, ImageUrl) ->
@@ -453,7 +454,31 @@ event({start_tournament, TourName, TourDesc, TourDate, TourTime, TourPlayers, To
            {error, _} -> ?INFO("TOURNAMENT DEFAULT USERS SKIP: ~p",[User])
      end || User <- AllowedUsers],
     nsm_srv_tournament_lobby_sup:start_lobby(TID),
-    wf:redirect(?_U("tournament/lobby/id/")++integer_to_list(TID));
+    URL = ?_U("tournament/lobby/id/")++integer_to_list(TID),
+
+    % notification via text messaging
+    {TY, TM, TD} = TourDate,
+    {Th, Tm, _} = TourTime,
+    STourDesc = case TourDesc of
+        "" -> "";
+        _ -> " ("++TourDesc++")"
+    end,
+    STourDate = integer_to_list(TY) ++ "." ++ integer_to_list(TM) ++ "." ++ integer_to_list(TD),
+    STourTime = integer_to_list(Th) ++ ":" ++ case Tm<10 of true -> "0"++integer_to_list(Tm); false -> integer_to_list(Tm) end,
+    STourPlayers = integer_to_list(TourPlayers),
+    STourQuota = integer_to_list(TourQuota),
+    STourGame = case TourGame of
+        game_okey -> ?_T("OKEY");
+        game_tavla -> ?_T("TAVLA");
+        _ -> "?"
+    end,
+    STourType = case TourType of
+        elimination -> ?_T("elimination");
+        _ -> "?"
+    end,
+    Desc = lists:flatten( URL ++ "|" ++ wf:user() ++ "|" ++ TourName ++ "|" ++ STourDesc ++ "|" ++ STourDate ++ "|" ++ STourTime ++ "|" ++ STourPlayers ++ "|" ++ STourQuota ++ "|" ++ STourType ++ "|" ++ STourGame),
+    webutils:post_user_system_message(Desc),
+    wf:redirect(URL);
 
 event(prize_fund_changed) ->
     case wf:q(tour_players) of
