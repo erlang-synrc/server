@@ -9,6 +9,7 @@ start_gproc() -> application:start(gproc).
 stop_gproc() -> application:stop(gproc).
 
 start(_StartType, _StartArgs) ->
+    nsm_srv_tournament_lobby_sup:start_link(),
     nsg_srv_sup:start_link().
 
 stop(_State) ->

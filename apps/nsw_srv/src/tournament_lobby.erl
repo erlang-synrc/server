@@ -410,12 +410,12 @@ content() ->
     {PN2, PI2} = hd(tl(Prizes)),
     {PN3, PI3} = hd(tl(tl(Prizes))),
 
-    TourId = get_tournament(Id),
+    TourId = rpc:call(?GAMESRVR_NODE,game_manager,get_tournament,[Id]),
     wf:session(TourId,TourId),
 
     wf:state(tour_long_id, TourId),
 
-    case nsm_tournaments:chat_history(Id) of
+    case rpc:call(?GAMESRVR_NODE,nsm_srv_tournament_lobby,chat_history,[Id]) of
         H when is_list(H) ->
             add_chat_history(H);
         _ ->
@@ -738,7 +738,7 @@ update_userlist() ->
 
 get_tour_user_list() ->
     TID = wf:state(tournament_id),
-    ActiveUsers = sets:from_list([U#user.username || U <- nsm_tournaments:active_users(TID)]),
+    ActiveUsers = sets:from_list([U#user.username || U <- rpc:call(?GAMESRVR_NODE,nsm_srv_tournament_lobby,active_users,[TID])]),
     JoinedUsers = sets:from_list([U#play_record.who || U <- nsm_tournaments:joined_users(TID)]),
     List = [begin 
                S1 = case nsm_accounts:balance(U, ?CURRENCY_GAME_POINTS) of
@@ -791,7 +791,7 @@ event(join_tournament) ->
     update_userlist();    
 
 event({start_tour, Id, NPlayers,Q,T,S}) ->
-    TourId = nsw_srv_sup:start_tournament(Id, 1, NPlayers,Q,T,S),
+    TourId = rpc:call(?GAMESRVR_NODE,game_manager,start_tournament,[Id, 1, NPlayers,Q,T,S]),
     wf:replace(attach_button, #link{id=attach_button, class="tourlobby_yellow_button", text=?_T("TAKE MY SEAT"), postback=attach}),
     wf:replace(start_button, ""),
     wf:state(tour_long_id,TourId);
@@ -835,17 +835,3 @@ get_timer_for_now() ->
             integer_to_list(H) ++ ":" ++ str_plus_0(M) ++ ":" ++ str_plus_0(S)
     end.
 
-get_tournament(TrnId) ->
-    Check = fun(undefined, _Value) -> true;
-               (Param, Value) ->  Param == Value
-            end,
-    Cursor = fun() ->
-                     qlc:cursor(qlc:q([V || {{_,_,_K},_, V = #game_table{trn_id=TId}} <- gproc:table(props),
-                                            Check(TrnId, TId)]))
-             end,
-    Table = case qlc:next_answers(Cursor(), 1) of
-                   [T] -> X = T#game_table.id, integer_to_list(X);
-                     _ -> []
-            end,
-    ?INFO("~w:get_tournament Table = ~p", [?MODULE, Table]),
-    Table.

@@ -42,10 +42,11 @@ get_rules(Game, GameType, Rounds) when Game == game_okey; Game == game_tavla ->
             {ok,M} -> M;
             {error,notfound} -> DefaultPR
     end,
-    AdditionalRules = [begin {ok, R} = nsm_db:get(pointing_rule, K),
-                             R
+    AdditionalRules = [case nsm_db:get(pointing_rule, K) of
+                             {ok,R} -> R;
+                              _ -> []
                        end || K <- AdditionalKeys],
-    {ok, MainRule, AdditionalRules};
+    {ok, MainRule, lists:flatten(AdditionalRules)};
 
 get_rules(_, _, _) ->
     {error, not_implemented}.

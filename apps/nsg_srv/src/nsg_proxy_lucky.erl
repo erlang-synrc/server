@@ -4,7 +4,7 @@
 %%%
 %%% Created : Oct 5, 2012
 %%% -------------------------------------------------------------------
--module(nsw_proxy_lucky).
+-module(nsg_proxy_lucky).
 
 -behaviour(gen_server).
 %% --------------------------------------------------------------------
@@ -42,8 +42,8 @@ start_link(Game, Params) -> gen_server:start_link(?MODULE, [Game, Params], []).
 init([Game, Params]) ->
     {ok, _, Pid} =
         case Game of
-            tavla -> rpc:call(?GAMESRVR_NODE, game_manager, create_game, [fl_lucky, Params]);
-            okey -> rpc:call(?GAMESRVR_NODE, game_manager, create_game, [game_okey_ng_trn_lucky, Params])
+            tavla -> game_manager:create_game(fl_lucky, Params);
+            okey ->  game_manager:create_game(game_okey_ng_trn_lucky, Params)
         end,
     link(Pid),
     {ok, #state{}}.

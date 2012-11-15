@@ -179,8 +179,8 @@ matchmaker_submenu() ->
 el_inside_play() ->
      Settings = wf:session({q_game_type(), wf:user()}),
      Game = proplists:get_value(game, Settings),
-      LuckyAction =
-         case get_lucky_table(Game) of
+     LuckyAction =
+         case rpc:call(?GAMESRVR_NODE,game_manager,get_lucky_table,[Game]) of
              [#game_table{id = GaId}] ->
                  IdStr = integer_to_list(GaId),
                  wf:session(IdStr, IdStr),
@@ -473,7 +473,11 @@ retrieve_tables(Setting, UId, GameType,Convert) ->
     receive {Pid,Msg} -> Msg end.
 
 process_tables(Setting, UId,GameType,Convert) ->
-    receive {From, get} -> From ! {self(),matchmaker:get_tables2(Setting,UId,GameType,Convert)},stop end.
+    receive
+         {From, get} -> 
+              Tables = rpc:call(?GAMESRVR_NODE,game_manager,get_single_tables,[Setting,UId,GameType,Convert]),
+              Filtered = filter_tables(Tables,UId,GameType,Setting,Convert),
+              From ! {self(), Filtered},stop end. 
 
 get_tables() -> get_tables(convert).
 
@@ -627,9 +631,30 @@ get_tables2(Setting,UId,GameFSM,Convert) ->
           TwoLeftListOwn ++ TwoLeftListOther ++
           ThreeLeftListOwn ++ ThreeLeftListOther ++
           MoreLeftListOwn ++ MoreLeftListOther ++
-          NoMoreLeftListOwn ++ NoMoreLeftListOther,
+          NoMoreLeftListOwn ++ NoMoreLeftListOther.
 
 %    ?INFO("~w:get_tables2 QLC = ~w", [?MODULE, QLC]), 
+
+
+filter_tables(QLC,UId,GameFSM,Setting,Convert) ->
+
+    GetPropList = fun(Key,Setngs) -> 
+                   case Setngs of
+                        undefined -> undefined;
+                        _Else -> proplists:get_value(Key, Setngs)
+                   end end,
+
+    FilterAllUsers = case GetPropList(users, Setting) of
+        undefined -> [];
+        {multiple, ManyUsers} -> ManyUsers;
+        SingleUser -> [SingleUser]
+    end,
+
+    FilterAnyUser = case GetPropList(group, Setting) of
+        undefined -> [];
+        GroupId -> 
+            [UId || UId <- nsm_groups:list_group_members(GroupId)]
+    end,
 
     FilteredQLC1 = lists:filter(
         fun(OneTable) ->

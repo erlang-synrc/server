@@ -2,6 +2,7 @@
 -behaviour(application).
 -include_lib("nsx_config/include/log.hrl").
 -include_lib("nsm_db/include/tournaments.hrl").
+-include("setup.hrl").
 -export([start/2, stop/1]).
 
 start_cowboy(HttpOpts) ->
@@ -21,10 +22,12 @@ start(_StartType, _StartArgs) ->
                   {['...'],cowboy_http_static,[{directory,{priv_dir,nsw_srv,[]},{mimetypes,mime()}}]} ] }],
     HttpOpts = [{dispatch, Dispatch}],
     start_cowboy(HttpOpts),
-    nsm_srv_tournament_lobby_sup:start_link(),
-    [ nsm_srv_tournament_lobby_sup:start_lobby(erlang:integer_to_list(Tour#tournament.id)) || Tour <- nsm_tournaments:all() ],
     case nsw_srv_sup:start_link() of
                  {ok, Pid} -> 
+                %              nsm_srv_tournament_lobby_sup:start_link(),
+    [ rpc:call(?GAMESRVR_NODE,nsm_srv_tournament_lobby_sup,start_lobby,[erlang:integer_to_list(Tour#tournament.id)])
+                                     || Tour <- nsm_tournaments:all() ],
+
                               io:format("Web Started OK\n."), {ok, Pid};
          {error, shutdown} -> {ok, Port} = application:get_env(webmachine, port),
                               io:format("Nnitrogen_sup can't start. Tried port ~p\n", [Port]),
