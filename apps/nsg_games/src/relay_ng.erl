@@ -16,7 +16,7 @@
 %% --------------------------------------------------------------------
 %% External exports
 -export([start/1, table_message/2, table_request/2]).
--export([stop/1, subscribe/4, publish/2]).
+-export([stop/1, subscribe/4, unsubscribe/2, publish/2]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
@@ -53,6 +53,9 @@ stop(Relay) ->
 
 subscribe(Relay, SessionPid, User, RegNum) ->
     client_request(Relay, {subscribe, SessionPid, User, RegNum}).
+
+unsubscribe(Relay, SessionPid) ->
+    client_request(Relay, {unsubscribe, SessionPid}).
 
 publish(Relay, Message) ->
     client_message(Relay, {publish, Message}).
@@ -177,6 +180,21 @@ handle_client_request({subscribe, Pid, #'PlayerInfo'{id = UserId}, PlayerId}, _F
             {reply, {error, not_player_id_owner}, State};
         error ->
             {reply, {error, unknown_player_id}, State}
+    end;
+
+
+handle_client_request({unsubscribe, Pid}, _From,
+                      #state{subscribers = Subscribers} = State) ->
+    case find_subscribers_by_pid(Pid, Subscribers) of
+        [] ->
+            {reply, {error, not_subscribed}, State};
+        List ->
+            F = fun(#subscriber{mon_ref = MonRef}, Acc) ->
+                        erlang:demonitor(MonRef, [flush]),
+                        del_subscriber(Pid, Acc)
+                end,
+            NewSubscribers = lists:foldl(F, Subscribers, List),
+            {reply, ok, State#state{subscribers = NewSubscribers}}
     end;
 
 
@@ -308,6 +326,9 @@ find_subscriber(Pid, Subscribers) ->
 
 find_subscribers_by_player_id(PlayerId, Subscribers) ->
     midict:geti(PlayerId, player_id, Subscribers).
+
+find_subscribers_by_pid(Pid, Subscribers) ->
+    midict:geti(Pid, pid, Subscribers).
 
 subscribers_to_list(Subscribers) ->
     midict:all_values(Subscribers).
