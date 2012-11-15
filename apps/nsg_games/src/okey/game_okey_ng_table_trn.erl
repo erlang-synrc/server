@@ -71,6 +71,7 @@
          pause_mode           :: disabled | normal,
          gosterge_finish_allowed :: undefined | boolean(), %% Only defined for countdown game type
          social_actions_enabled :: boolean(),
+         tour                 :: undefined | integer(),
          %% Dynamic parameters
          desk_rule_pid        :: undefined | pid(),
          players,             %% The register of table players
@@ -153,6 +154,7 @@ init([GameId, TableId, Params]) ->
     GostergeFinishAllowed = proplists:get_value(gosterge_finish_allowed, Params),
     SocialActionsEnabled = proplists:get_value(social_actions_enabled, Params),
     TTable = proplists:get_value(ttable, Params),
+    Tour = proplists:get_value(tour, Params),
     %% Next two options will be passed on table respawn (after fail or service maintaince)
     ScoringState = proplists:get_value(scoring_state, Params, init_scoring(GameType, PlayersInfo, Rounds)),
     CurRound = proplists:get_value(cur_round, Params, 0),
@@ -174,6 +176,7 @@ init([GameId, TableId, Params]) ->
                                           slang_flag = SlangFlag,
                                           observer_flag = ObserversFlag,
                                           tournament_type = TournamentType,
+                                          tour = Tour,
                                           speed = Speed,
                                           turn_timeout = get_timeout(turn, Speed),
                                           reveal_confirmation_timeout = get_timeout(challenge, Speed),
@@ -952,7 +955,7 @@ create_okey_game_info(#state{table_name = TName, mult_factor = MulFactor,
                              speed = Speed, turn_timeout = TurnTimeout,
                              reveal_confirmation_timeout = RevealConfirmationTimeout,
                              ready_timeout = ReadyTimeout, game_type = GameType,
-                             rounds = Rounds, players = Players,
+                             rounds = Rounds, players = Players, tour = Tour,
                              gosterge_finish_allowed = GostergeFinish,
                              tournament_type = TournamentType, pause_mode = PauseMode,
                              social_actions_enabled = SocialActionsEnabled}) ->
@@ -965,6 +968,9 @@ create_okey_game_info(#state{table_name = TName, mult_factor = MulFactor,
                                challenge_timeout = RevealConfirmationTimeout,
                                ready_timeout = ReadyTimeout,
                                rematch_timeout = ?REMATCH_TIMEOUT},
+    SetNo = if Tour == undefined -> null;
+               true -> Tour
+            end,
     #okey_game_info{table_name = TName,
                     players = PInfos,
                     timeouts = Timeouts,
@@ -975,7 +981,7 @@ create_okey_game_info(#state{table_name = TName, mult_factor = MulFactor,
                                  RM -> RM
                              end,
                     sets = -1,     %% XXX Concept of sets is deprecated
-                    set_no = 1,    %% XXX Concept of sets is deprecated
+                    set_no = SetNo,
                     mul_factor = MulFactor,
                     slang_flag = SlangFlag,
                     observer_flag = ObserverFlag,
@@ -1028,7 +1034,8 @@ create_okey_game_player_state(PlayerId, ?STATE_PLAYING,
     RoundTimeout = if RoundTimeout1 == infinity -> null;
                       true -> case erlang:read_timer(RoundTRef) of
                                   false -> 0;
-                                  T -> T
+                                  T when T < 2000 -> 0; %% Latency time compensation
+                                  T -> T - 2000
                               end
                    end,
     #okey_game_player_state{whos_move = CurUserId,
@@ -1111,7 +1118,8 @@ create_okey_game_started(SeatNum, DeskState, CurRound, #state{scoring_state = Sc
     {_, PlayerHand} = lists:keyfind(SeatNum, 1, Hands),
     Hand = [tash_to_ext(Tash) || Tash <- PlayerHand],
     RoundTimeout = if RoundTimeout1 == infinity -> null;
-                      true -> RoundTimeout1
+                      RoundTimeout1 < 2000 -> 0;   %% Latency time compensation
+                      true -> RoundTimeout1 - 2000
                    end,
     #okey_game_started{tiles = Hand,
                        gosterge = tash_to_ext(Gosterge),

@@ -44,6 +44,7 @@
          bots_params       :: proplists:proplist(),
          turns_plan        :: list(integer()), %% Defines how many players will be passed to a next turn
          quota_per_round   :: integer(),
+         speed             :: fast | normal,
          demo_mode         :: boolean(), %% If true then results of turns will be generated randomly
          %% Dinamic values
          players,          %% The register of tournament players
@@ -51,7 +52,7 @@
          seats,            %% Stores relation between players and tables seats
          tournament_table  :: list(), %% [{TurnNum, TurnRes}], TurnRes = [{PlayerId, CommonPos, Points, Status}]
          table_id_counter  :: pos_integer(),
-         turn              :: pos_integer(),
+         tour              :: pos_integer(),
          cr_tab_requests   :: dict(),  %% {TableId, PlayersIds}
          reg_requests      :: dict(),  %% {PlayerId, From}
          tab_requests      :: dict(),  %% {RequestId, RequestContext}
@@ -148,12 +149,13 @@ init([GameId, Params, _Manager]) ->
     Registrants = get_param(registrants, Params),
     QuotaPerRound = get_param(quota_per_round, Params),
     Tours = get_param(tours, Params),
+    Speed = get_param(speed, Params),
     DemoMode = get_option(demo_mode, Params, false),
     TrnId = get_option(trn_id, Params, undefined),
 
     RegistrantsNum = length(Registrants),
     {ok, TurnsPlan} = get_plan(QuotaPerRound, RegistrantsNum, Tours),
-    TableParams = table_parameters(?MODULE, self()),
+    TableParams = table_parameters(?MODULE, self(), Speed),
     BotsParams = bots_parameters(),
 
     Players = setup_players(Registrants),
@@ -170,6 +172,7 @@ init([GameId, Params, _Manager]) ->
                              bots_params = BotsParams,
                              quota_per_round = QuotaPerRound,
                              turns_plan = TurnsPlan,
+                             speed = Speed,
                              demo_mode = DemoMode,
                              players = Players,
                              tournament_table = TTable,
@@ -197,7 +200,7 @@ handle_event(go, ?STATE_INIT, #state{game_id = GameId, trn_id = TrnId} = StateDa
                            name = "Okey Elimination Tournament - " ++ erlang:integer_to_list(GameId) ++ " "
                           },
     gproc:reg({p,g,self()}, GProcVal),
-    init_turn(1, StateData);
+    init_tour(1, StateData);
 
 handle_event({client_message, Message}, StateName, #state{game_id = GameId} = StateData) ->
     ?INFO("OKEY_NG_TRN_ELIM <~p> Received the message from a client: ~p.", [GameId, Message]),
@@ -252,22 +255,22 @@ handle_info({timeout, Magic}, ?STATE_WAITING_FOR_PLAYERS,
 
 
 handle_info({timeout, Magic}, ?STATE_SHOW_TURN_RESULT,
-            #state{timer_magic = Magic, turn = Turn,
+            #state{timer_magic = Magic, tour = Tour,
                    turns_plan = Plan, game_id = GameId} = StateData) ->
-    if Turn == length(Plan) ->
+    if Tour == length(Plan) ->
            ?INFO("OKEY_NG_TRN_ELIM <~p> Time to finalize the tournament.", [GameId]),
            finalize_tournament(StateData);
        true ->
-           NewTurn = Turn + 1,
-           ?INFO("OKEY_NG_TRN_ELIM <~p> Time to initialize turn <~p>.", [GameId, NewTurn]),
-           init_turn(NewTurn, StateData)
+           NewTour = Tour + 1,
+           ?INFO("OKEY_NG_TRN_ELIM <~p> Time to initialize tour <~p>.", [GameId, NewTour]),
+           init_tour(NewTour, StateData)
     end;
 
 
 handle_info({timeout, Magic}, ?STATE_FINISHED,
             #state{timer_magic = Magic, tables = Tables, game_id = GameId} = StateData) ->
     ?INFO("OKEY_NG_TRN_ELIM <~p> Time to stopping the tournament.", [GameId]),
-    finalize_tables_with_rejoin(Tables),
+    finalize_tables_with_disconnect(Tables),
     {stop, normal, StateData#state{tables = [], seats = []}};
 
 
@@ -387,10 +390,10 @@ handle_table_message(TableId, {game_finished, TableContext, _RoundScore, TotalSc
     NewTable = Table#table{context = TableContext, state = ?TABLE_STATE_FINISHED},
     NewTables = store_table(NewTable, Tables),
     send_to_table(TablePid, show_round_result),
-    %% TODO: Send to table "Waiting for the end of the turn"
+    %% TODO: Send to table "Waiting for the end of the tour"
     NewWL = lists:delete(TableId, WL),
     if NewWL == [] ->
-           process_turn_result(StateData#state{tables = NewTables,
+           process_tour_result(StateData#state{tables = NewTables,
                                                tables_results = NewTablesResults,
                                                tables_wl = []});
        true ->
@@ -513,24 +516,24 @@ handle_client_request(Request, From, StateName, #state{game_id = GameId} = State
    {reply, {error, unexpected_request}, StateName, StateData}.
 
 %%===================================================================
-init_turn(Turn, #state{game_id = GameId, turns_plan = Plan, tournament_table = TTable,
+init_tour(Tour, #state{game_id = GameId, turns_plan = Plan, tournament_table = TTable,
                        params = TableParams, players = Players,
                        table_id_counter = TableIdCounter, tables = OldTables} = StateData) ->
-    ?INFO("OKEY_NG_TRN_ELIM <~p> Initializing turn <~p>...", [GameId, Turn]),
-    PlayersList = prepare_players_for_new_turn(Turn, TTable, Plan, Players),
+    ?INFO("OKEY_NG_TRN_ELIM <~p> Initializing tour <~p>...", [GameId, Tour]),
+    PlayersList = prepare_players_for_new_tour(Tour, TTable, Plan, Players),
     PrepTTable = prepare_ttable_for_tables(TTable, Players),
     {NewTables, Seats, NewTableIdCounter, CrRequests} =
-        setup_tables(PlayersList, PrepTTable, TableIdCounter, GameId, TableParams),
-    if Turn > 1 -> finalize_tables_with_rejoin(OldTables);
+        setup_tables(PlayersList, PrepTTable, Tour, TableIdCounter, GameId, TableParams),
+    if Tour > 1 -> finalize_tables_with_rejoin(OldTables);
        true -> do_nothing
     end,
-    ?INFO("OKEY_NG_TRN_ELIM <~p> Initializing of turn <~p> is finished. "
-          "Waiting creating confirmations from the turns' tables...",
-          [GameId, Turn]),
+    ?INFO("OKEY_NG_TRN_ELIM <~p> Initializing of tour <~p> is finished. "
+          "Waiting creating confirmations from the tours' tables...",
+          [GameId, Tour]),
     {next_state, ?STATE_WAITING_FOR_TABLES, StateData#state{tables = NewTables,
                                                             seats = Seats,
                                                             table_id_counter = NewTableIdCounter,
-                                                            turn = Turn,
+                                                            tour = Tour,
                                                             cr_tab_requests = CrRequests,
                                                             reg_requests = dict:new(),
                                                             tab_requests = dict:new(),
@@ -538,8 +541,8 @@ init_turn(Turn, #state{game_id = GameId, turns_plan = Plan, tournament_table = T
                                                            }}.
 
 
-start_turn(#state{game_id = GameId, turn = Turn, tables = Tables} = StateData) ->
-    ?INFO("OKEY_NG_TRN_ELIM <~p> Starting turn <~p>...", [GameId, Turn]),
+start_turn(#state{game_id = GameId, tour = Tour, tables = Tables} = StateData) ->
+    ?INFO("OKEY_NG_TRN_ELIM <~p> Starting tour <~p>...", [GameId, Tour]),
     TablesList = tables_to_list(Tables),
     [send_to_table(Pid, start_round) || #table{pid = Pid} <- TablesList],
     F = fun(Table, Acc) ->
@@ -547,40 +550,40 @@ start_turn(#state{game_id = GameId, turn = Turn, tables = Tables} = StateData) -
         end,
     NewTables = lists:foldl(F, Tables, TablesList),
     WL = [T#table.id || T <- TablesList],
-    ?INFO("OKEY_NG_TRN_ELIM <~p> Turn <~p> is started. Processing...",
-          [GameId, Turn]),
+    ?INFO("OKEY_NG_TRN_ELIM <~p> Tour <~p> is started. Processing...",
+          [GameId, Tour]),
     {next_state, ?STATE_TURN_PROCESSING, StateData#state{tables = NewTables,
                                                          tables_wl = WL}}.
 
 
-process_turn_result(#state{game_id = GameId, tournament_table = TTable,
-                           turns_plan = Plan, turn = Turn, tables_results = TablesResults,
+process_tour_result(#state{game_id = GameId, tournament_table = TTable,
+                           turns_plan = Plan, tour = Tour, tables_results = TablesResults,
                            players = Players, tables = Tables} = StateData) ->
-    ?INFO("OKEY_NG_TRN_ELIM <~p> Turn <~p> is completed. Starting results processing...", [GameId, Turn]),
-    TurnType = lists:nth(Turn, Plan),
-    TurnResult1 = case TurnType of
+    ?INFO("OKEY_NG_TRN_ELIM <~p> Tour <~p> is completed. Starting results processing...", [GameId, Tour]),
+    TourType = lists:nth(Tour, Plan),
+    TourResult1 = case TourType of
                      ne -> turn_result_all(TablesResults);
                      {te, Limit} -> turn_result_per_table(Limit, TablesResults);
                      {ce, Limit} -> turn_result_overall(Limit, TablesResults)
                  end,
-    TurnResult = set_turn_results_position(TurnResult1), %% [{PlayerId, CommonPos, Points, Status}]
-    NewTTable = ttable_store_turn_result(Turn, TurnResult, TTable),
+    TourResult = set_turn_results_position(TourResult1), %% [{PlayerId, CommonPos, Points, Status}]
+    NewTTable = ttable_store_turn_result(Tour, TourResult, TTable),
     F = fun({PlayerId, _, _, eliminated}, Acc) -> set_player_status(PlayerId, eliminated, Acc);
            (_, Acc) -> Acc
         end,
-    NewPlayers = lists:foldl(F, Players, TurnResult),
+    NewPlayers = lists:foldl(F, Players, TourResult),
     TurnResultWithUserId = [{get_user_id(PlayerId, Players), Position, Points, Status}
-                            || {PlayerId, Position, Points, Status} <- TurnResult],
-    TablesResultsWithPos = set_tables_results_position(TablesResults, TurnResult),
-    [send_to_table(TablePid, {turn_result, Turn, TurnResultWithUserId})
+                            || {PlayerId, Position, Points, Status} <- TourResult],
+    TablesResultsWithPos = set_tables_results_position(TablesResults, TourResult),
+    [send_to_table(TablePid, {turn_result, Tour, TurnResultWithUserId})
        || #table{pid = TablePid} <- tables_to_list(Tables)],
     [send_to_table(get_table_pid(TableId, Tables),
-                   {show_series_result, subs_status(TableResultWithPos, Turn, Plan)})
+                   {show_series_result, subs_status(TableResultWithPos, Tour, Plan)})
        || {TableId, TableResultWithPos} <- TablesResultsWithPos],
     {TRef, Magic} = start_timer(?SHOW_TURN_RESULT_TIMEOUT),
-    ?INFO("OKEY_NG_TRN_ELIM <~p> Results processing of turn <~p> is finished. "
+    ?INFO("OKEY_NG_TRN_ELIM <~p> Results processing of tour <~p> is finished. "
           "Waiting some time (~p secs) before continue...",
-          [GameId, Turn, ?SHOW_TURN_RESULT_TIMEOUT div 1000]),
+          [GameId, Tour, ?SHOW_TURN_RESULT_TIMEOUT div 1000]),
     {next_state, ?STATE_SHOW_TURN_RESULT, StateData#state{timer = TRef, timer_magic = Magic,
                                                           tournament_table = NewTTable,
                                                           players = NewPlayers}}.
@@ -701,15 +704,15 @@ sort_results2(Results) ->
 
 
 
-%% prepare_players_for_new_turn(Turn, TTable, TurnsPlan, Players) -> [{PlayerId, UserInfo, Points}]
-prepare_players_for_new_turn(Turn, TTable, TurnsPlan, Players) ->
-    PrevTurn = Turn - 1,
-    TResult = ttable_get_turn_result(PrevTurn, TTable),
-    if Turn == 1 ->
+%% prepare_players_for_new_tour(Tour, TTable, ToursPlan, Players) -> [{PlayerId, UserInfo, Points}]
+prepare_players_for_new_tour(Tour, TTable, ToursPlan, Players) ->
+    PrevTour = Tour - 1,
+    TResult = ttable_get_turn_result(PrevTour, TTable),
+    if Tour == 1 ->
            [{PlayerId, get_user_info(PlayerId, Players), _Points = 0}
             || {PlayerId, _, _, active} <- TResult];
        true ->
-           case lists:nth(PrevTurn, TurnsPlan) of
+           case lists:nth(PrevTour, ToursPlan) of
                ne -> %% No one was eliminated => using the prev turn points
                    [{PlayerId, get_user_info(PlayerId, Players), Points}
                     || {PlayerId, _, Points, active} <- TResult];
@@ -721,22 +724,22 @@ prepare_players_for_new_turn(Turn, TTable, TurnsPlan, Players) ->
 
 
 prepare_ttable_for_tables(TTable, Players) ->
-    [{Turn, [{get_user_id(PlayerId, Players), Place, Score, Status}
+    [{Tour, [{get_user_id(PlayerId, Players), Place, Score, Status}
              || {PlayerId, Place, Score, Status} <- Results]}
-     || {Turn, Results} <- TTable].
+     || {Tour, Results} <- TTable].
 
 %% setup_tables(Players, TTable, TableIdCounter, GameId, TableParams) ->
 %%                              {Tables, Seats, NewTableIdCounter, CrRequests}
 %% Types: Players = {PlayerId, UserInfo, Points}
-%%        TTable = [{Turn, [{UserId, CommonPos, Score, Status}]}]
-setup_tables(Players, TTable, TableIdCounter, GameId, TableParams) ->
+%%        TTable = [{Tour, [{UserId, CommonPos, Score, Status}]}]
+setup_tables(Players, TTable, Tour, TableIdCounter, GameId, TableParams) ->
     SPlayers = shuffle(Players),
     Groups = split_by_num(?SEATS_NUM, SPlayers),
     F = fun(Group, {TAcc, SAcc, TableId, TCrRequestsAcc}) ->
                 {TPlayers, _} = lists:mapfoldl(fun({PlayerId, UserInfo, Points}, SeatNum) ->
                                                        {{PlayerId, UserInfo, SeatNum, Points}, SeatNum+1}
                                                end, 1, Group),
-                TableParams2 = [{players, TPlayers}, {ttable, TTable} | TableParams],
+                TableParams2 = [{players, TPlayers}, {ttable, TTable}, {tour, Tour} | TableParams],
                 {ok, TabPid} = spawn_table(GameId, TableId, TableParams2),
                 MonRef = erlang:monitor(process, TabPid),
                 NewTAcc = reg_table(TableId, TabPid, MonRef, _GlTableId = 0, _Context = undefined, TAcc),
@@ -933,8 +936,8 @@ spawn_table(GameId, TableId, Params) -> ?TAB_MOD:start(GameId, TableId, Params).
 
 send_to_table(TabPid, Message) -> ?TAB_MOD:parent_message(TabPid, Message).
 
-%% table_parameters(ParentMod, ParentPid) -> Proplist
-table_parameters(ParentMod, ParentPid) ->
+%% table_parameters(ParentMod, ParentPid, Speed) -> Proplist
+table_parameters(ParentMod, ParentPid, Speed) ->
     [
      {parent, {ParentMod, ParentPid}},
      {seats_num, 4},
@@ -944,9 +947,9 @@ table_parameters(ParentMod, ParentPid) ->
      {slang_allowed, false},
      {observers_allowed, false},
      {tournament_type, elimination},
-%%     {round_timeout, 7*60*1000},
+%%     {round_timeout, get_round_timeout(Speed)},
      {round_timeout, 20*1000},
-     {speed, normal},
+     {speed, Speed},
      {game_type, standard},
      {rounds, 10},
      {reveal_confirmation, true},
@@ -1047,3 +1050,13 @@ tournament_matrix() ->
      { {  4, 2048,8}, 3974, [ne      , {ce,1024},{te,  2}, {te,  2}, {te,  1}, {te,  1}, {te,  1}, {te,  1}]},
      { {  6, 2048,8}, 6359, [ne      , {ce,1024},{te,  2}, {te,  2}, {te,  1}, {te,  1}, {te,  1}, {te,  1}]}
   ].
+
+get_round_timeout(Speed) ->
+    {_, Timeout} = lists:keyfind(Speed, 1, round_timeout_matrix()),
+    Timeout.
+
+round_timeout_matrix() ->
+    [
+     {fast,   5*60*1000},
+     {normal, 7*60*1000}
+    ].
