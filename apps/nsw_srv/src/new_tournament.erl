@@ -329,13 +329,6 @@ product_list_paged(Page) ->
         Buttons
     ].
 
-long_integer_to_list(N) ->
-    if 
-        N < 1000 -> integer_to_list(N);
-        N < 1000000 -> integer_to_list(N div 1000) ++ " " ++ integer_to_list(N rem 1000);
-        N < 1000000000 -> integer_to_list(N div 1000000) ++ " " ++ integer_to_list(N div 1000 rem 1000) ++ " " ++ integer_to_list(N rem 1000);
-        true -> integer_to_list(N)
-    end.
 
 reset_slider() ->
     PrizePrices = lists:sum([
@@ -372,8 +365,8 @@ reset_slider() ->
     wf:state(slider_max_value, Max div 100),
     {KMin, _} = nsm_gifts_tools:convert_money_to_kakush(Min),
     {KMax, _} = nsm_gifts_tools:convert_money_to_kakush(Max),
-    wf:update(slider_min_value, long_integer_to_list(KMin)),
-    wf:update(slider_max_value, long_integer_to_list(KMax)),
+    wf:update(slider_min_value, integer_to_list(KMin)),
+    wf:update(slider_max_value, integer_to_list(KMax)),
     event({newtour_slider}).
 
 set_prize(No, Id, ImageUrl) ->
