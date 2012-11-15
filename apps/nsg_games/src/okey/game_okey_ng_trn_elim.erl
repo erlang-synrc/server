@@ -49,7 +49,7 @@
          players,          %% The register of tournament players
          tables,           %% The register of tournament tables
          seats,            %% Stores relation between players and tables seats
-         tournament_table  :: list(), %% [{TurnNum, TurnRes}], TurnRes = [{PlayerId, Points, Status}]
+         tournament_table  :: list(), %% [{TurnNum, TurnRes}], TurnRes = [{PlayerId, CommonPos, Points, Status}]
          table_id_counter  :: pos_integer(),
          turn              :: pos_integer(),
          cr_tab_requests   :: dict(),  %% {TableId, PlayersIds}
@@ -159,7 +159,9 @@ init([GameId, Params, _Manager]) ->
     Players = setup_players(Registrants),
     PlayersIds = get_players_ids(Players),
     TTable = ttable_init(PlayersIds),
-    ?INFO("OKEY_NG_TRN_ELIM <~p> started.  Pid:~p",[GameId, self()]),
+
+    ?INFO("OKEY_NG_TRN_ELIM <~p> TTable: ~p", [GameId, TTable]),
+    ?INFO("OKEY_NG_TRN_ELIM <~p> started.  Pid:~p", [GameId, self()]),
 
     gen_fsm:send_all_state_event(self(), go),
     {ok, ?STATE_INIT, #state{game_id = GameId,
@@ -516,8 +518,9 @@ init_turn(Turn, #state{game_id = GameId, turns_plan = Plan, tournament_table = T
                        table_id_counter = TableIdCounter, tables = OldTables} = StateData) ->
     ?INFO("OKEY_NG_TRN_ELIM <~p> Initializing turn <~p>...", [GameId, Turn]),
     PlayersList = prepare_players_for_new_turn(Turn, TTable, Plan, Players),
+    PrepTTable = prepare_ttable_for_tables(TTable, Players),
     {NewTables, Seats, NewTableIdCounter, CrRequests} =
-        setup_tables(PlayersList, TableIdCounter, GameId, TableParams),
+        setup_tables(PlayersList, PrepTTable, TableIdCounter, GameId, TableParams),
     if Turn > 1 -> finalize_tables_with_rejoin(OldTables);
        true -> do_nothing
     end,
@@ -555,19 +558,19 @@ process_turn_result(#state{game_id = GameId, tournament_table = TTable,
                            players = Players, tables = Tables} = StateData) ->
     ?INFO("OKEY_NG_TRN_ELIM <~p> Turn <~p> is completed. Starting results processing...", [GameId, Turn]),
     TurnType = lists:nth(Turn, Plan),
-    TurnResult = case TurnType of
+    TurnResult1 = case TurnType of
                      ne -> turn_result_all(TablesResults);
                      {te, Limit} -> turn_result_per_table(Limit, TablesResults);
                      {ce, Limit} -> turn_result_overall(Limit, TablesResults)
                  end,
+    TurnResult = set_turn_results_position(TurnResult1), %% [{PlayerId, CommonPos, Points, Status}]
     NewTTable = ttable_store_turn_result(Turn, TurnResult, TTable),
-    F = fun({PlayerId, _, eliminated}, Acc) -> set_player_status(PlayerId, eliminated, Acc);
+    F = fun({PlayerId, _, _, eliminated}, Acc) -> set_player_status(PlayerId, eliminated, Acc);
            (_, Acc) -> Acc
         end,
     NewPlayers = lists:foldl(F, Players, TurnResult),
-    TurnResultWithPos = set_turn_results_position(TurnResult), %% [{PlayerId, Position, Points, Status}]
     TurnResultWithUserId = [{get_user_id(PlayerId, Players), Position, Points, Status}
-                            || {PlayerId, Position, Points, Status} <- TurnResultWithPos],
+                            || {PlayerId, Position, Points, Status} <- TurnResult],
     TablesResultsWithPos = set_tables_results_position(TablesResults, TurnResult),
     [send_to_table(TablePid, {turn_result, Turn, TurnResultWithUserId})
        || #table{pid = TablePid} <- tables_to_list(Tables)],
@@ -636,12 +639,12 @@ set_tables_results_position(TablesResults, TurnResult) ->
          {TableId, set_table_results_position(TabResWithStatus)}
      end || {TableId, TableResult} <- TablesResults].
 
-%% set_table_results_position([{PlayerId, Points, Status}]) -> [{PlayerId, Pos, Points, Status}]
+%% set_table_results_position([{PlayerId, CommonPos, Points, Status}]) -> [{PlayerId, TabPos, Points, Status}]
 set_table_results_position(TableResult) ->
-    F = fun({PlayerId, Points, Status}, Pos) ->
+    F = fun({PlayerId, _, Points, Status}, Pos) ->
                 {{PlayerId, Pos, Points, Status}, Pos + 1}
         end,
-    {TurnResultsWithPos, _} = lists:mapfoldl(F, 1, sort_results2(TableResult)),
+    {TurnResultsWithPos, _} = lists:mapfoldl(F, 1, lists:keysort(2, TableResult)),
     TurnResultsWithPos.
 
 subs_status(TableResultWithPos, Turn, Plan) ->
@@ -704,30 +707,36 @@ prepare_players_for_new_turn(Turn, TTable, TurnsPlan, Players) ->
     TResult = ttable_get_turn_result(PrevTurn, TTable),
     if Turn == 1 ->
            [{PlayerId, get_user_info(PlayerId, Players), _Points = 0}
-            || {PlayerId, _, active} <- TResult];
+            || {PlayerId, _, _, active} <- TResult];
        true ->
            case lists:nth(PrevTurn, TurnsPlan) of
                ne -> %% No one was eliminated => using the prev turn points
                    [{PlayerId, get_user_info(PlayerId, Players), Points}
-                    || {PlayerId, Points, active} <- TResult];
+                    || {PlayerId, _, Points, active} <- TResult];
                _ ->
                    [{PlayerId, get_user_info(PlayerId, Players), _Points = 0}
-                    || {PlayerId, _, active} <- TResult]
+                    || {PlayerId, _, _, active} <- TResult]
            end
     end.
 
 
-%% setup_tables(Players, TableIdCounter, GameId, TableParams) ->
+prepare_ttable_for_tables(TTable, Players) ->
+    [{Turn, [{get_user_id(PlayerId, Players), Place, Score, Status}
+             || {PlayerId, Place, Score, Status} <- Results]}
+     || {Turn, Results} <- TTable].
+
+%% setup_tables(Players, TTable, TableIdCounter, GameId, TableParams) ->
 %%                              {Tables, Seats, NewTableIdCounter, CrRequests}
 %% Types: Players = {PlayerId, UserInfo, Points}
-setup_tables(Players, TableIdCounter, GameId, TableParams) ->
+%%        TTable = [{Turn, [{UserId, CommonPos, Score, Status}]}]
+setup_tables(Players, TTable, TableIdCounter, GameId, TableParams) ->
     SPlayers = shuffle(Players),
     Groups = split_by_num(?SEATS_NUM, SPlayers),
     F = fun(Group, {TAcc, SAcc, TableId, TCrRequestsAcc}) ->
                 {TPlayers, _} = lists:mapfoldl(fun({PlayerId, UserInfo, Points}, SeatNum) ->
                                                        {{PlayerId, UserInfo, SeatNum, Points}, SeatNum+1}
                                                end, 1, Group),
-                TableParams2 = [{players, TPlayers} | TableParams],
+                TableParams2 = [{players, TPlayers}, {ttable, TTable} | TableParams],
                 {ok, TabPid} = spawn_table(GameId, TableId, TableParams2),
                 MonRef = erlang:monitor(process, TabPid),
                 NewTAcc = reg_table(TableId, TabPid, MonRef, _GlTableId = 0, _Context = undefined, TAcc),
@@ -775,10 +784,10 @@ finalize_tables_with_disconnect(Tables) ->
 
 %% ttable_init(PlayersIds) -> TTable
 %% Types: TTable = [{Turn, TurnResult}]
-ttable_init(PlayersIds) -> [{0, [{Id, 0, active} || Id <- PlayersIds]}].
+ttable_init(PlayersIds) -> [{0, [{Id, Id, 0, active} || Id <- PlayersIds]}].
 
 %% ttable_get_turn_result(Turn, TTable) -> undefined | TurnResult
-%% Types: TurnResult = [{PlayerId, Points, PlayerState}]
+%% Types: TurnResult = [{PlayerId, CommonPos, Points, PlayerState}]
 %%          PlayerState = undefined | active | eliminated
 ttable_get_turn_result(Turn, TTable) ->
     proplists:get_value(Turn, TTable).

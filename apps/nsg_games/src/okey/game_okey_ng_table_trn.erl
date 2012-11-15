@@ -74,6 +74,7 @@
          %% Dynamic parameters
          desk_rule_pid        :: undefined | pid(),
          players,             %% The register of table players
+         tournament_table     :: list(), %% [{TurnNum, TurnRes}], TurnRes = [{PlayerId, Points, Status}]
          start_seat           :: integer(), %% The player who moves first
          cur_round            :: integer(),
          desk_state           :: #desk_state{}, %% For tracking current state of a game on the table
@@ -151,6 +152,7 @@ init([GameId, TableId, Params]) ->
     PauseMode = proplists:get_value(pause_mode, Params),
     GostergeFinishAllowed = proplists:get_value(gosterge_finish_allowed, Params),
     SocialActionsEnabled = proplists:get_value(social_actions_enabled, Params),
+    TTable = proplists:get_value(ttable, Params),
     %% Next two options will be passed on table respawn (after fail or service maintaince)
     ScoringState = proplists:get_value(scoring_state, Params, init_scoring(GameType, PlayersInfo, Rounds)),
     CurRound = proplists:get_value(cur_round, Params, 0),
@@ -187,7 +189,8 @@ init([GameId, TableId, Params]) ->
                                           players = Players,
                                           start_seat = 1,
                                           cur_round = CurRound,
-                                          scoring_state = ScoringState
+                                          scoring_state = ScoringState,
+                                          tournament_table = TTable
                                          }}.
 
 handle_event({parent_message, Message}, StateName,
@@ -357,10 +360,11 @@ handle_parent_message({show_series_result, Results}, ?STATE_FINISHED,
 
 %% Results = [{UserId, Position, Score, Status}] Status = active | eliminated
 handle_parent_message({turn_result, TurnNum, Results}, StateName,
-                      #state{relay = Relay} = StateData) ->
+                      #state{relay = Relay, tournament_type = TTable} = StateData) ->
+    NewTTable = [{TurnNum, Results} | TTable],
     Msg = create_okey_turn_result(TurnNum, Results),
     relay_publish_ge(Relay, Msg),
-    {next_state, StateName, StateData#state{}};
+    {next_state, StateName, StateData#state{tournament_table = NewTTable}};
 
 
 handle_parent_message(rejoin_players, StateName,
@@ -382,7 +386,7 @@ handle_parent_message(disconnect_players, StateName,
 handle_parent_message(stop, _StateName,
                       #state{relay = Relay, players = Players} = StateData) ->
     [relay_unregister_player(Relay, P#player.id) || P <- players_to_list(Players)],
-    relay_publish(Relay, {disconnect, table_closed}), %% XXX Looks like a hack... Should be sent personaly to players gamesessions
+%%    relay_publish(Relay, {disconnect, table_closed}), %% XXX Looks like a hack... Should be sent personaly to players gamesessions
     {stop, normal, StateData};
 
 handle_parent_message(Message, StateName,
@@ -398,11 +402,17 @@ handle_parent_message(Message, StateName,
 
 handle_relay_message({player_connected, PlayerId}, StateName,
                      #state{relay = Relay, parent = Parent,
-                            table_id = TableId} = StateData) ->
+                            table_id = TableId, tournament_table = TTable
+                           } = StateData) ->
     GI = create_okey_game_info(StateData),
     PlState = create_okey_game_player_state(PlayerId, StateName, StateData),
     send_to_client_ge(Relay, PlayerId, GI),
     send_to_client_ge(Relay, PlayerId, PlState),
+    if TTable =/= undefined ->
+           [send_to_client_ge(Relay, PlayerId, create_okey_turn_result(TurnNum, Results))
+              || {TurnNum, Results} <- lists:sort(TTable)];
+       true -> do_nothing
+    end,
     parent_send_player_connected(Parent, TableId, PlayerId),
     {next_state, StateName, StateData};
 
