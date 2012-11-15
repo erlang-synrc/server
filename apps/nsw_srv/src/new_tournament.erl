@@ -241,13 +241,13 @@ product_list_paged(Page) ->
     MinPrice = wf:state(slider_min),
     MaxPrice = wf:state(slider_max),
     AllGiftsData = nsm_gifts_db:get_all_gifts(),
-    FilteredGiftsData = [Gift || {Gift, _Obj} <- AllGiftsData, Gift#gift.enabled_on_site, (Gift#gift.kakush_currency >= MinPrice) and (Gift#gift.kakush_currency =< MaxPrice)],
+    FilteredGiftsData = [Gift || {Gift, _Obj} <- AllGiftsData, Gift#gift.enabled_on_site, (Gift#gift.our_price / 100 >= MinPrice) and (Gift#gift.our_price / 100 =< MaxPrice)],
     PageGiftsData = lists:sublist( 
         lists:sort(
             fun(A, B) -> 
                 if
-                    A#gift.kakush_point < B#gift.kakush_currency -> true;
-                    A#gift.kakush_point == B#gift.kakush_currency -> A#gift.id =< B#gift.id;
+                    A#gift.our_price < B#gift.our_price -> true;
+                    A#gift.our_price == B#gift.our_price -> A#gift.id =< B#gift.id;
                     true -> false
                 end
             end,
@@ -313,7 +313,7 @@ reset_slider() ->
         undefined -> 0;
         _ -> 
             {ok, {Gift, _}} = nsm_gifts_db:get_gift(Id),
-            Gift#gift.kakush_currency
+            Gift#gift.our_price
     end || Id <- [wf:state(prize_1), wf:state(prize_2), wf:state(prize_3)]]),
 
     NPlayers = list_to_integer(wf:q(tour_players)),
