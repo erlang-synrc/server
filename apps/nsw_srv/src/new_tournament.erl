@@ -162,7 +162,7 @@ content() ->
                         #option { text="—" }
             ]},
             #label{style="position:absolute; left:514px; top:145px;", text="Oyun Sayısı:"},
-            #dropdown {postback=prize_fund_changed, id=tour_players, style="position:absolute; left:610px; top:138px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
+            #dropdown {postback=prize_fund_and_tours_and_quota_changed, id=tour_players, style="position:absolute; left:610px; top:138px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
                         #option { text="1024" },
                         #option { text="512" },
                         #option { text="256" },
@@ -171,28 +171,42 @@ content() ->
                         #option { text="16" }
             ]},
             #label{style="position:absolute; left:764px; top:145px;", text="Kota:"},
-            #dropdown {postback=prize_fund_changed, id=tour_quota, style="position:absolute; left:807px; top:138px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
+            #dropdown {postback=prize_fund_and_tours_changed, id=tour_quota, style="position:absolute; left:807px; top:138px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
                         #option { text="10" },
                         #option { text="8" },
                         #option { text="6" },
                         #option { text="4" },
                         #option { text="2" }
             ]},
-            #label{style="position:absolute; left:192px; top:197px;", text="Turnuva Türü:"},
-            #dropdown {id=tour_type, style="position:absolute; left:296px; top:190px; width:100px; height:32px; font-size:16px; padding-top:2px;", options=[
+
+            #label{style="position:absolute; left:42px; top:197px;", text="Turnuva Türü:"},
+            #dropdown {id=tour_type, style="position:absolute; left:146px; top:190px; width:90px; height:32px; font-size:16px; padding-top:2px;", options=[
                         #option { text="Elemeli" },
                         #option { text="—" }
             ]},
-            #label{style="position:absolute; left:415px; top:197px;", text="Tarih:"},
+
+            #label{style="position:absolute; left:232px; top:197px; width:100px; text-align:right;", text=?_T("Game Speed")++":"},
+            #dropdown {id=tour_speed, style="position:absolute; left:336px; top:190px; width:90px; height:32px; font-size:16px; padding-top:2px;", options=[
+                        #option { text=?_T("Fast") },
+                        #option { text=?_T("Normal") },
+                        #option { text=?_T("Slow") }
+            ]},
+
+            #label{style="position:absolute; left:450px; top:197px;", text="Tarih:"},
             #textbox{id=tour_date, class="newtour_textbox",
-                style="position:absolute; left:460px; top:190px; width:140px; height:28px; font-size:16px;
+                style="position:absolute; left:495px; top:190px; width:140px; height:28px; font-size:16px;
                        background:url(../images/tournament/new_tournament/calendar_icon.png) no-repeat 118px 2px;",
                 text= (SD ++ "." ++ SM ++ "." ++ SY)},
-
             #textbox{id=tour_time, class="newtour_textbox",
-                style="position:absolute; left:610px; top:190px; width:80px; height:28px; font-size:16px;
+                style="position:absolute; left:645px; top:190px; width:80px; height:28px; font-size:16px;
                        background:url(../images/tournament/new_tournament/calendar_icon.png) no-repeat 118px 2px;",
                 text= SNH ++ ":00"},
+
+            #label{style="position:absolute; left:722px; top:197px; width:100px; text-align:right;", text=?_T("Tours")++":"},
+            #dropdown {postback=prize_fund_changed, id=tour_tours, style="position:absolute; left:827px; top:190px; width:90px; height:32px; font-size:16px; padding-top:2px;", options=[
+                        #option { text="6" },
+                        #option { text="8" }
+            ]},
 
             #panel{style="height:1px; background-color:#c2c2c2; width:960px; margin-left:-25px; position:absolute; top:282px;", body=[]},
             #panel{class="newtour_title", style="top:257px;", body=[
@@ -289,6 +303,14 @@ product_list_paged(Page) ->
                         #tablecell{body=
         					"<h2 class='head'>"++ ?_T("Price") ++ ":&nbsp;" ++ integer_to_list(OneGift#gift.kakush_currency) ++ "<br>" 
                             ++ ?_T("Kakuş") ++ ":&nbsp;" ++ integer_to_list(OneGift#gift.kakush_point) ++ "</h2>"
+                        },
+                        #tablecell{
+                            style="text-align:right; background:#9d9d9d; color:#fff; 
+                                   font-size:18px; padding-right:5px"%,
+%                            body=[
+%                                affiliates:kurus_to_string(OneGift#gift.our_price),
+%                                #image{image="images/tl_white.svg", style="width:12px; height:16px; padding-left:3px;"}
+%                            ]
                         }
                     ]},
 					"<div class='img'>",
@@ -307,6 +329,15 @@ product_list_paged(Page) ->
         Buttons
     ].
 
+long_integer_to_list(N) ->
+    ?PRINT(N),
+    if 
+        N < 1000 -> integer_to_list(N);
+        N < 1000000 -> integer_to_list(N div 1000) ++ " " ++ integer_to_list(N rem 1000);
+        N < 1000000000 -> integer_to_list(N div 1000000) ++ " " ++ integer_to_list(N div 1000 rem 1000) ++ " " ++ integer_to_list(N rem 1000);
+        true -> integer_to_list(N)
+    end.
+
 reset_slider() ->
     PrizePrices = lists:sum([
     case Id of
@@ -317,8 +348,21 @@ reset_slider() ->
     end || Id <- [wf:state(prize_1), wf:state(prize_2), wf:state(prize_3)]]),
 
     NPlayers = list_to_integer(wf:q(tour_players)),
-    Quota = list_to_integer(wf:q(tour_quota)),
-    {ok, PrizeFund} = game_okey_ng_trn_elim:get_prize_fund(Quota, NPlayers),
+    Quota = case wf:state(workaround_quota) of 
+        undefined -> 
+            list_to_integer(wf:q(tour_quota));
+        Q -> 
+            wf:state(workaround_quota, undefined),
+            Q
+    end,
+    Tours = case wf:state(workaround_tours) of
+        undefined ->
+            list_to_integer(wf:q(tour_tours));
+        T ->
+            wf:state(workaround_tours, undefined),
+            T
+    end,
+    {ok, PrizeFund} = game_okey_ng_trn_elim:get_prize_fund(Quota, NPlayers, Tours),
     MaxOrNot = PrizeFund - PrizePrices,
     Min = PrizeFund * ?MIN_PRIZE_PERCENT div 100,
     Max = case Min > MaxOrNot of
@@ -327,8 +371,10 @@ reset_slider() ->
     end,
     wf:state(slider_min_value, Min),
     wf:state(slider_max_value, Max),
-    wf:update(slider_min_value, integer_to_list(Min)),
-    wf:update(slider_max_value, integer_to_list(Max)),
+    {KMin, _} = nsm_gifts_tools:convert_money_to_kakush(Min),
+    {KMax, _} = nsm_gifts_tools:convert_money_to_kakush(Max),
+    wf:update(slider_min_value, long_integer_to_list(KMin)),
+    wf:update(slider_max_value, long_integer_to_list(KMax)),
     event({newtour_slider}).
 
 set_prize(No, Id, ImageUrl) ->
@@ -415,6 +461,14 @@ event(create_pressed) ->
         "Elemeli" -> elimination;
         _ -> unknown
     end,
+    TFast = ?_T("Fast"),
+    TNormal = ?_T("Normal"),
+    TSlow = ?_T("Slow"),
+    TourSpeed = case wf:q(tour_speed) of
+         TFast -> fast;
+         TNormal -> normal;
+         TSlow -> slow
+    end,
     TourDateSource = wf:q(tour_date),
     TourDateChunks = lists:reverse([list_to_integer(C) || C <- ling:split(TourDateSource, ".")]),
     TourDate = list_to_tuple(TourDateChunks),
@@ -441,12 +495,12 @@ event(create_pressed) ->
                 false ->
                     wf:replace(create_button, #panel{class="view_media_other_attachment", style="float:none", body=#panel{class=loading_spiner}}),
                     wf:replace(create_button_top, #panel{class="view_media_other_attachment", style="float:none", body=#panel{class=loading_spiner}}),
-                    wf:wire(#event{postback={start_tournament, TourName, TourDesc, TourDate, TourTime, TourPlayers, TourQuota, Prize1, Prize2, Prize3, TourType, TourGame, Tours}})
+                    wf:wire(#event{postback={start_tournament, TourName, TourDesc, TourDate, TourTime, TourPlayers, TourQuota, Prize1, Prize2, Prize3, TourType, TourGame, Tours, TourSpeed}})
             end
     end;
 
-event({start_tournament, TourName, TourDesc, TourDate, TourTime, TourPlayers, TourQuota, Prize1, Prize2, Prize3, TourType, TourGame,Tours}) ->
-    TID = nsm_tournaments:create(wf:user(), TourName, TourDesc, TourDate, TourTime, TourPlayers, TourQuota, [Prize1, Prize2, Prize3], TourType, TourGame, Tours),
+event({start_tournament, TourName, TourDesc, TourDate, TourTime, TourPlayers, TourQuota, Prize1, Prize2, Prize3, TourType, TourGame, Tours, TourSpeed}) ->
+    TID = nsm_tournaments:create(wf:user(), TourName, TourDesc, TourDate, TourTime, TourPlayers, TourQuota, [Prize1, Prize2, Prize3], TourType, TourGame, Tours, TourSpeed),
     AllowedUsers = ["doxtop","demo1","maxim","sustel","ahmettez",
                     "kunthar","alice","kate","serg","imagia","willbe"],
     [case nsm_db:get(user,User) of
@@ -480,13 +534,15 @@ event({start_tournament, TourName, TourDesc, TourDate, TourTime, TourPlayers, To
     webutils:post_user_system_message(Desc),
     wf:redirect(URL);
 
-event(prize_fund_changed) ->
+event(prize_fund_and_tours_and_quota_changed) ->
     case wf:q(tour_players) of
-        "16" -> wf:replace(tour_quota, #dropdown {postback=prize_fund_changed, id=tour_quota, style="position:absolute; left:807px; top:138px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
+        "16" -> wf:state(workaround_quota, 10),
+            wf:replace(tour_quota, #dropdown {postback=prize_fund_and_tours_changed, id=tour_quota, style="position:absolute; left:807px; top:138px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
                 #option { text="10" },
                 #option { text="8" }
             ]});
-        _ -> wf:replace(tour_quota, #dropdown {postback=prize_fund_changed, id=tour_quota, style="position:absolute; left:807px; top:138px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
+        _ -> wf:state(workaround_quota, 10),
+            wf:replace(tour_quota, #dropdown {postback=prize_fund_and_tours_changed, id=tour_quota, style="position:absolute; left:807px; top:138px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
                 #option { text="10" },
                 #option { text="8" },
                 #option { text="6" },
@@ -494,10 +550,22 @@ event(prize_fund_changed) ->
                 #option { text="2" }
             ]})
     end,
+    event(prize_fund_and_tours_changed);
+
+event(prize_fund_and_tours_changed) ->
+    Tours = game_okey_ng_trn_elim:get_tours(list_to_integer(wf:q(tour_quota)), list_to_integer(wf:q(tour_players)) ),
+    wf:state(workaround_tours, hd(Tours)),
+    wf:replace(tour_tours, #dropdown {postback=prize_fund_changed, id=tour_tours, style="position:absolute; left:827px; top:190px; width:90px; height:32px; font-size:16px; padding-top:2px;", options=[
+         #option { text=integer_to_list(T) }
+    || T <- Tours]}),
+    event(prize_fund_changed);
+
+event(prize_fund_changed) ->
     set_prize(1, undefined, "/images/tournament/new_tournament/question.png"),
     set_prize(2, undefined, "/images/tournament/new_tournament/question.png"),
     set_prize(3, undefined, "/images/tournament/new_tournament/question.png"),
     reset_slider();
+%    ok;
 
 event(deselect_1_prize) ->
     set_prize(1, undefined, "/images/tournament/new_tournament/question.png"),

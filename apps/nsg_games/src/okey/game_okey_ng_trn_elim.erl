@@ -34,7 +34,7 @@
 
 -export([table_message/3, client_message/2, client_request/2, client_request/3]).
 
--export([get_prize_fund/3]).  % just passing info, not a gen_server part
+-export([get_prize_fund/3, get_tours/2]).  % just passing info, not a gen_server part
 
 -record(state,
         {%% Static values
@@ -976,11 +976,14 @@ get_plan(KakushPerRound, RegistrantsNum,Tours) ->
         {_NQ,_K, Plan} -> {ok, Plan}
     end.
 
-get_prize_fund(KakushPerRound, RegistrantsNum,Tours) ->
+get_prize_fund(KakushPerRound, RegistrantsNum, Tours) ->
     case lists:keyfind({KakushPerRound, RegistrantsNum,Tours}, 1, tournament_matrix()) of
         false -> {error, no_such_plan};
         {_NQ, K, _Plan} -> {ok, K}
     end.
+
+get_tours(KakushPerRound, RegistrantsNum) ->
+    [T || {{Q, N, T}, _, _} <- tournament_matrix(), Q==KakushPerRound, N==RegistrantsNum].
 
 tournament_matrix() ->
     [%% Kakush Pl.No         1          2         3         4         5         6         7         8
