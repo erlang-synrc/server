@@ -270,7 +270,7 @@ handle_info({timeout, Magic}, ?STATE_SHOW_TURN_RESULT,
 handle_info({timeout, Magic}, ?STATE_FINISHED,
             #state{timer_magic = Magic, tables = Tables, game_id = GameId} = StateData) ->
     ?INFO("OKEY_NG_TRN_ELIM <~p> Time to stopping the tournament.", [GameId]),
-    finalize_tables_with_rejoin(Tables),
+    finalize_tables_with_disconnect(Tables),
     {stop, normal, StateData#state{tables = [], seats = []}};
 
 
