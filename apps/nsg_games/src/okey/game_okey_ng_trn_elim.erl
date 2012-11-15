@@ -44,6 +44,7 @@
          bots_params       :: proplists:proplist(),
          turns_plan        :: list(integer()), %% Defines how many players will be passed to a next turn
          quota_per_round   :: integer(),
+         speed             :: fast | normal,
          demo_mode         :: boolean(), %% If true then results of turns will be generated randomly
          %% Dinamic values
          players,          %% The register of tournament players
@@ -148,12 +149,13 @@ init([GameId, Params, _Manager]) ->
     Registrants = get_param(registrants, Params),
     QuotaPerRound = get_param(quota_per_round, Params),
     Tours = get_param(tours, Params),
+    Speed = get_param(speed, Params),
     DemoMode = get_option(demo_mode, Params, false),
     TrnId = get_option(trn_id, Params, undefined),
 
     RegistrantsNum = length(Registrants),
     {ok, TurnsPlan} = get_plan(QuotaPerRound, RegistrantsNum, Tours),
-    TableParams = table_parameters(?MODULE, self()),
+    TableParams = table_parameters(?MODULE, self(), Speed),
     BotsParams = bots_parameters(),
 
     Players = setup_players(Registrants),
@@ -170,6 +172,7 @@ init([GameId, Params, _Manager]) ->
                              bots_params = BotsParams,
                              quota_per_round = QuotaPerRound,
                              turns_plan = TurnsPlan,
+                             speed = Speed,
                              demo_mode = DemoMode,
                              players = Players,
                              tournament_table = TTable,
@@ -933,8 +936,8 @@ spawn_table(GameId, TableId, Params) -> ?TAB_MOD:start(GameId, TableId, Params).
 
 send_to_table(TabPid, Message) -> ?TAB_MOD:parent_message(TabPid, Message).
 
-%% table_parameters(ParentMod, ParentPid) -> Proplist
-table_parameters(ParentMod, ParentPid) ->
+%% table_parameters(ParentMod, ParentPid, Speed) -> Proplist
+table_parameters(ParentMod, ParentPid, Speed) ->
     [
      {parent, {ParentMod, ParentPid}},
      {seats_num, 4},
@@ -944,9 +947,9 @@ table_parameters(ParentMod, ParentPid) ->
      {slang_allowed, false},
      {observers_allowed, false},
      {tournament_type, elimination},
-%%     {round_timeout, 7*60*1000},
+%%     {round_timeout, get_round_timeout(Speed)},
      {round_timeout, 20*1000},
-     {speed, normal},
+     {speed, Speed},
      {game_type, standard},
      {rounds, 10},
      {reveal_confirmation, true},
@@ -1047,3 +1050,13 @@ tournament_matrix() ->
      { {  4, 2048,8}, 3974, [ne      , {ce,1024},{te,  2}, {te,  2}, {te,  1}, {te,  1}, {te,  1}, {te,  1}]},
      { {  6, 2048,8}, 6359, [ne      , {ce,1024},{te,  2}, {te,  2}, {te,  1}, {te,  1}, {te,  1}, {te,  1}]}
   ].
+
+get_round_timeout(Speed) ->
+    {_, Timeout} = lists:keyfind(Speed, 1, round_timeout_matrix()),
+    Timeout.
+
+round_timeout_matrix() ->
+    [
+     {fast,   5*60*1000},
+     {normal, 7*60*1000}
+    ].
