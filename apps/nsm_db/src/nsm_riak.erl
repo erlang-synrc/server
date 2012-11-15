@@ -836,8 +836,7 @@ do_feed_add_entry(FId, User, To, EntryId, Desc, Medias, Type, SharedBy) ->
                X ->
                    case nsm_db:get(entry, X) of
                        {ok, TopEntry} ->
-                           EditedEntry = TopEntry#entry{created_time = now(),
-                                                        next = Id},
+                           EditedEntry = TopEntry#entry{next = Id},
                            % update prev entry
                            nsm_db:put(EditedEntry),
                            TopEntry#entry.id;
