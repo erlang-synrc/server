@@ -178,21 +178,35 @@ content() ->
                         #option { text="4" },
                         #option { text="2" }
             ]},
-            #label{style="position:absolute; left:192px; top:197px;", text="Turnuva Türü:"},
-            #dropdown {id=tour_type, style="position:absolute; left:296px; top:190px; width:100px; height:32px; font-size:16px; padding-top:2px;", options=[
+
+            #label{style="position:absolute; left:42px; top:197px;", text="Turnuva Türü:"},
+            #dropdown {id=tour_type, style="position:absolute; left:146px; top:190px; width:90px; height:32px; font-size:16px; padding-top:2px;", options=[
                         #option { text="Elemeli" },
                         #option { text="—" }
             ]},
-            #label{style="position:absolute; left:415px; top:197px;", text="Tarih:"},
+
+            #label{style="position:absolute; left:232px; top:197px; width:100px; text-align:right;", text=?_T("Game Speed")++":"},
+            #dropdown {id=tour_speed, style="position:absolute; left:336px; top:190px; width:90px; height:32px; font-size:16px; padding-top:2px;", options=[
+                        #option { text=?_T("Fast") },
+                        #option { text=?_T("Normal") },
+                        #option { text=?_T("Slow") }
+            ]},
+
+            #label{style="position:absolute; left:450px; top:197px;", text="Tarih:"},
             #textbox{id=tour_date, class="newtour_textbox",
-                style="position:absolute; left:460px; top:190px; width:140px; height:28px; font-size:16px;
+                style="position:absolute; left:495px; top:190px; width:140px; height:28px; font-size:16px;
                        background:url(../images/tournament/new_tournament/calendar_icon.png) no-repeat 118px 2px;",
                 text= (SD ++ "." ++ SM ++ "." ++ SY)},
-
             #textbox{id=tour_time, class="newtour_textbox",
-                style="position:absolute; left:610px; top:190px; width:80px; height:28px; font-size:16px;
+                style="position:absolute; left:645px; top:190px; width:80px; height:28px; font-size:16px;
                        background:url(../images/tournament/new_tournament/calendar_icon.png) no-repeat 118px 2px;",
                 text= SNH ++ ":00"},
+
+            #label{style="position:absolute; left:722px; top:197px; width:100px; text-align:right;", text=?_T("Games")++":"},
+            #dropdown {id=tour_tours, style="position:absolute; left:827px; top:190px; width:90px; height:32px; font-size:16px; padding-top:2px;", options=[
+                        #option { text="6" },
+                        #option { text="8" }
+            ]},
 
             #panel{style="height:1px; background-color:#c2c2c2; width:960px; margin-left:-25px; position:absolute; top:282px;", body=[]},
             #panel{class="newtour_title", style="top:257px;", body=[
@@ -289,6 +303,14 @@ product_list_paged(Page) ->
                         #tablecell{body=
         					"<h2 class='head'>"++ ?_T("Price") ++ ":&nbsp;" ++ integer_to_list(OneGift#gift.kakush_currency) ++ "<br>" 
                             ++ ?_T("Kakuş") ++ ":&nbsp;" ++ integer_to_list(OneGift#gift.kakush_point) ++ "</h2>"
+                        },
+                        #tablecell{
+                            style="text-align:right; background:#9d9d9d; color:#fff; 
+                                   font-size:18px; padding-right:5px",
+                            body=[
+                                affiliates:kurus_to_string(OneGift#gift.our_price),
+                                #image{image="images/tl_white.svg", style="width:12px; height:16px; padding-left:3px;"}
+                            ]
                         }
                     ]},
 					"<div class='img'>",
