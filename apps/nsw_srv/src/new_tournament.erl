@@ -330,7 +330,6 @@ product_list_paged(Page) ->
     ].
 
 long_integer_to_list(N) ->
-    ?PRINT(N),
     if 
         N < 1000 -> integer_to_list(N);
         N < 1000000 -> integer_to_list(N div 1000) ++ " " ++ integer_to_list(N rem 1000);
@@ -363,14 +362,14 @@ reset_slider() ->
             T
     end,
     {ok, PrizeFund} = game_okey_ng_trn_elim:get_prize_fund(Quota, NPlayers, Tours),
-    MaxOrNot = PrizeFund - PrizePrices,
-    Min = PrizeFund * ?MIN_PRIZE_PERCENT div 100,
+    MaxOrNot = (PrizeFund - PrizePrices) * 100,
+    Min = PrizeFund * ?MIN_PRIZE_PERCENT,
     Max = case Min > MaxOrNot of
         true -> Min;
         _ -> MaxOrNot
     end,
-    wf:state(slider_min_value, Min),
-    wf:state(slider_max_value, Max),
+    wf:state(slider_min_value, Min div 100),
+    wf:state(slider_max_value, Max div 100),
     {KMin, _} = nsm_gifts_tools:convert_money_to_kakush(Min),
     {KMax, _} = nsm_gifts_tools:convert_money_to_kakush(Max),
     wf:update(slider_min_value, long_integer_to_list(KMin)),
