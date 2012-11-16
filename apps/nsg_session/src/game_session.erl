@@ -289,20 +289,20 @@ handle_call(#join_game{game = GameId}, _From, #state{user = User, rpc = RPC} = S
                         {error, finished} ->
                             ?INFO("The game is finished: ~p.",[GameId]),
                             maybe_send_message(RPC, #disconnect{reason = <<"The game is finished">>}, State),
-                            {stop, normal, State};
+                            {reply, {error, finished}, State};
                         {error, out} ->
                             ?INFO("Out of the game: ~p.",[GameId]),
                             maybe_send_message(RPC, #disconnect{reason = <<"You was disconnected from the game">>}, State),
-                            {stop, normal, State};
+                            {reply, {error, out}, State};
                         {error, not_allowed} ->
                             ?ERROR("Not allowed to connect: ~p.",[GameId]),
                             maybe_send_message(RPC, #disconnect{reason = <<"You are not allowed to connect to this game">>}, State),
-                            {stop, normal, State}
+                            {reply, {error, out}, State}
                     end;
                 undefined ->
                     ?ERROR("Game not found: ~p.",[GameId]),
                     maybe_send_message(RPC, #disconnect{reason = <<"The game you are trying to connect doesn't exist">>}, State),
-                    {stop, normal, State}
+                    {rely, {error, not_exits}, State}
             end
     end;
 
