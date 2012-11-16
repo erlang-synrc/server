@@ -40,7 +40,7 @@ get_rules(Game, GameType, Rounds) when Game == game_okey; Game == game_tavla ->
 
     MainRule = case nsm_db:get(pointing_rule, Key) of
             {ok,M} -> M;
-            {error,notfound} -> DefaultPR
+            _ -> DefaultPR
     end,
     AdditionalRules = [case nsm_db:get(pointing_rule, K) of
                              {ok,R} -> R;

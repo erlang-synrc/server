@@ -3,7 +3,7 @@
 -include_lib("nsx_config/include/log.hrl").
 -include_lib("nsm_db/include/tournaments.hrl").
 -include("setup.hrl").
--export([start/2, stop/1]).
+-compile(export_all).
 
 start_cowboy(HttpOpts) ->
     application:load(webmachine),
@@ -24,16 +24,17 @@ start(_StartType, _StartArgs) ->
     start_cowboy(HttpOpts),
     case nsw_srv_sup:start_link() of
                  {ok, Pid} -> 
-                %              nsm_srv_tournament_lobby_sup:start_link(),
     [ rpc:call(?GAMESRVR_NODE,nsm_srv_tournament_lobby_sup,start_lobby,[erlang:integer_to_list(Tour#tournament.id)])
                                      || Tour <- nsm_tournaments:all() ],
-
+                spawn(nsw_srv_app,spawn_tables,[]),
                               io:format("Web Started OK\n."), {ok, Pid};
          {error, shutdown} -> {ok, Port} = application:get_env(webmachine, port),
                               io:format("Nnitrogen_sup can't start. Tried port ~p\n", [Port]),
                               erlang:halt(1);
                          X -> io:format("Error ~p",[X]), erlang:halt(1)
     end.
+
+spawn_tables() -> timer:sleep(5000), rpc:call(?GAMESRVR_NODE,game_manager,create_tables,[100]).
 
 mime() ->
     [

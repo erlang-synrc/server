@@ -16,11 +16,11 @@ init([]) ->
     net_kernel:connect(?APPSERVER_NODE),
     net_kernel:connect(?GAMESRVR_NODE),
 
-    rpc:call(?GAMESRVR_NODE,nsg_srv_app,stop_gproc,[]),
-    application:stop(gproc),
+%    rpc:call(?GAMESRVR_NODE,nsg_srv_app,stop_gproc,[]),
+%    application:stop(gproc),
 
     rpc:call(?APPSERVER_NODE,nsm_srv_app,start_gproc,[]),
-    rpc:call(?GAMESRVR_NODE,nsg_srv_app,start_gproc,[]),
+%    rpc:call(?GAMESRVR_NODE,nsg_srv_app,start_gproc,[]),
     application:start(gproc),
 
     Restart = permanent,

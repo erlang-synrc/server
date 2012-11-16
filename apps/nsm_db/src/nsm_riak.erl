@@ -30,7 +30,6 @@ initialize() ->
     C = riak:client_connect(?RIAKSERVER),
     ets:new(config, [named_table,{keypos,#config.key}]),
     ets:insert(config, #config{ key = "riak_client", value = C}),
-    timer:sleep(10),
     ok.
 
 

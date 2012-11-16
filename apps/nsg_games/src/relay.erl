@@ -95,14 +95,18 @@ init([Topic, {lobby, GameFSM}, Params0, PlayerIds, Manager]) ->
     ParentRelay = proplists:get_value(parent_relay, Settings, {?MODULE, self()}),
     GameMode = proplists:get_value(game_mode, Settings, standard),
     GameSpeed = proplists:get_value(speed, Settings, normal),
+    DPR = proplists:get_value(default_pr, Settings, no),
     Owner = proplists:get_value(owner, Settings, "maxim"), %% FIXME
-    {Params,P,PE} = case pointing_rules:get_rules(GameFSM, GameMode, Rounds) of
-                        {ok, PR, PREx} -> {Params0 ++ [{pointing_rules, PR},{pointing_rules_ex, PREx}],PR,PREx};
-                        _ -> {Params0,#pointing_rule{rounds=1, game = game(GameFSM),
+  
+    {Params,P,PE} = case DPR of
+                       no ->  {ok, PR, PREx} = pointing_rules:get_rules(GameFSM, GameMode, Rounds),
+                              {Params0 ++ [{pointing_rules, PR},{pointing_rules_ex, PREx}],PR,PREx};
+                        _ ->  {Params0,#pointing_rule{rounds=1, game = game(GameFSM),
                                                      kakush_winner = 1, kakush_other = 1, quota = 1},
                               [#pointing_rule{rounds=1, game = game(GameFSM),
                                               kakush_winner = 1, kakush_other = 1, quota = 1}]}
                     end,
+                
     FeelLucky = proplists:get_value(feel_lucky, Settings, false),
     ?INFO("Parent relay: ~p", [ParentRelay]),
 

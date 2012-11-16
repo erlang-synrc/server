@@ -18,19 +18,18 @@ wait_vnodes() ->
 
 start(_StartType, _StartArgs) ->
     nsm_db:start(),
-    nsm_db:initialize(),
     ?INFO("Waiting for Riak to Initialize...."),
     wait_vnodes(),
+    nsm_db:initialize(),
     nsm_db:init_indexes(),
-    case db_opt:get_pass_init_db() of 
-         false -> nsm_db:init_db();
-         true -> pass
-    end,
     case nsx_opt:get_env(nsm_db,sync_nodes,false) of
          true -> [ ?INFO("Joined: ~p ~p~n", [N, riak_core:join(N)]) || N <- nsx_opt:get_env(nsm_db, nodes, []) -- [node()] ];
          false -> skip
     end,
-%    zealot_auth:start_link(),
+    case db_opt:get_pass_init_db() of 
+         false -> nsm_db:init_db();
+         true -> pass
+    end,
     nsm_db_sup:start_link().
 
 stop(_State) ->
