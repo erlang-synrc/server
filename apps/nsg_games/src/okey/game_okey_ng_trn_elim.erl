@@ -24,6 +24,7 @@
 -include_lib("nsx_config/include/log.hrl").
 -include_lib("nsg_srv/include/basic_types.hrl").
 -include_lib("nsm_db/include/table.hrl").
+-include_lib("nsm_db/include/accounts.hrl").
 
 %% --------------------------------------------------------------------
 %% External exports
@@ -113,7 +114,7 @@
 -define(SHOW_TOURNAMENT_RESULT_TIMEOUT, 15000). %% Time between last tour result showing and the tournament finish
 
 -define(SEATS_NUM, 4). %% TODO: Define this by a parameter. Number of seats per table
-
+-define(ROUNDS_PER_TOUR, 10).
 %% ====================================================================
 %% External functions
 %% ====================================================================
@@ -517,11 +518,13 @@ handle_client_request(Request, From, StateName, #state{game_id = GameId} = State
 
 %%===================================================================
 init_tour(Tour, #state{game_id = GameId, turns_plan = Plan, tournament_table = TTable,
-                       params = TableParams, players = Players,
+                       params = TableParams, players = Players, quota_per_round = QuotaPerRound,
                        table_id_counter = TableIdCounter, tables = OldTables} = StateData) ->
     ?INFO("OKEY_NG_TRN_ELIM <~p> Initializing tour <~p>...", [GameId, Tour]),
     PlayersList = prepare_players_for_new_tour(Tour, TTable, Plan, Players),
     PrepTTable = prepare_ttable_for_tables(TTable, Players),
+    UsersIds = [UserId || {_, #'PlayerInfo'{id = UserId}, _} <- PlayersList],
+    deduct_quota(GameId, QuotaPerRound*?ROUNDS_PER_TOUR, UsersIds),
     {NewTables, Seats, NewTableIdCounter, CrRequests} =
         setup_tables(PlayersList, PrepTTable, Tour, TableIdCounter, GameId, TableParams),
     if Tour > 1 -> finalize_tables_with_rejoin(OldTables);
@@ -539,7 +542,6 @@ init_tour(Tour, #state{game_id = GameId, turns_plan = Plan, tournament_table = T
                                                             tab_requests = dict:new(),
                                                             tables_results = []
                                                            }}.
-
 
 start_turn(#state{game_id = GameId, tour = Tour, tables = Tables} = StateData) ->
     ?INFO("OKEY_NG_TRN_ELIM <~p> Starting tour <~p>...", [GameId, Tour]),
@@ -596,6 +598,18 @@ finalize_tournament(#state{game_id = GameId} = StateData) ->
           "Waiting some time (~p secs) before continue...",
           [GameId, ?SHOW_TOURNAMENT_RESULT_TIMEOUT div 1000]),
     {next_state, ?STATE_FINISHED, StateData#state{timer = TRef, timer_magic = Magic}}.
+
+deduct_quota(GameId, Amount, UsersIds) ->
+    [begin
+         TI = #ti_game_event{id = GameId,
+                             type = start_tour,
+                             tournament_type = elimination,
+                             game_name = okey,       %% FIXME: hardcoded
+                             game_mode = standard,   %% FIXME: hardcoded
+                             double_points = 1},
+         nsm_accounts:transaction(binary_to_list(UserId), ?CURRENCY_QUOTA, -Amount, TI)
+     end
+     || UserId <- UsersIds].
 
 
 turn_result_all(TablesResults) ->
@@ -951,7 +965,7 @@ table_parameters(ParentMod, ParentPid, Speed) ->
      {round_timeout, 20*1000},
      {speed, Speed},
      {game_type, standard},
-     {rounds, 10},
+     {rounds, ?ROUNDS_PER_TOUR},
      {reveal_confirmation, true},
      {next_series_confirmation, false},
      {pause_mode, disabled},
@@ -965,7 +979,7 @@ bots_parameters() ->
      {game_mode, standard},
      {lucky, true},
      {speed, normal},
-     {rounds, 10}
+     {rounds, ?ROUNDS_PER_TOUR}
     ].
 
 seats_num(TableParams) -> proplists:get_value(seats_num, TableParams).
