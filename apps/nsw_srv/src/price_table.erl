@@ -21,6 +21,8 @@ body() -> #template{file=code:priv_dir(nsw_srv)++"/templates/price_table.html"}.
 
 payment_type_selector()-> payment_types(wf:session(is_facebook)).
 
+payment_types(undefined)->payment_types(false);
+
 payment_types(false)->
     ["<ul class=\"tabset\" id=\"tabset\">",
         "<li class=\""++?ACTIVE_CLS++"\">",#link{id=credit_card,   ?INTERNAL_URL(credit_card),   postback={payment_select, credit_card},   ?ACTIVATION_ACTION("credit_card")},"<span class=\"img\"><img class=\"png\" src=\"/images/ico-06.png\" alt=\"\" width=\"48\" height=\"56\" ><img class=\"png\" src=\"/images/ico-08.png\" alt=\"\" width=\"48\" height=\"56\" ></span><strong>",?_T("Credit card"),"</strong></a></li>",
