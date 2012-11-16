@@ -468,22 +468,26 @@ show_row(Label, Info) ->
               body=[#h5 {text=Label},
                      #panel {body=Info}]}.
 
-get_tables(Id) -> rpc:call(?GAMESRVR_NODE,game_manager,get_tables,[Id]).
- %  qlc:e(qlc:q([Val || {{_,_,_Key},_,Val=#game_table{id = _Id}}
-%                <- gproc:table(props), Id == _Id ])).
+get_tables(Id) -> rpc:call(?GAMESRVR_NODE,game_manager,get_tables,[Id]) ++
+  qlc:e(qlc:q([Val || {{_,_,_Key},_,Val=#game_table{id = _Id}}
+                <- gproc:table(props), Id == _Id ])).
 
-%qlc_id(Id) ->
- %   qlc:e(qlc:q([Val || {{_,_,_Key},_,Val=#game_table{gameid = _GameId, id = _Id, 
- %                           owner = _Owner, creator = _Creator}} <- 
- %            gproc:table(props), Id == _Id])).
+qlc_id(Id) ->
+    qlc:e(qlc:q([Val || {{_,_,_Key},_,Val=#game_table{gameid = _GameId, id = _Id, 
+                            owner = _Owner, creator = _Creator}} <- 
+             gproc:table(props), Id == _Id])).
 
-%qlc_id_creator(Id,Creator,Owner) ->
-%    qlc:e(qlc:q([Val || {{_,_,_Key},_,Val=#game_table{gameid = _GameId, id = _Id, 
-%                            owner = _Owner, creator = _Creator}} <- 
-%             gproc:table(props), Id == _Id, Creator == _Creator, Owner ==_Owner])).
+qlc_id_creator(Id,Creator,Owner) ->
+    qlc:e(qlc:q([Val || {{_,_,_Key},_,Val=#game_table{gameid = _GameId, id = _Id, 
+                            owner = _Owner, creator = _Creator}} <- 
+             gproc:table(props), Id == _Id, Creator == _Creator, Owner ==_Owner])).
 
-get_table(Id) -> get_table_raw(Id, rpc:call(?GAMESRVR_NODE,game_manager,qlc_id,[Id]), wf:state(table)).
-get_table(Id, Creator,Owner) -> get_table_raw(Id, rpc:call(?GAMESRVR_NODE,game_manager,qlc_id_creator,[Id,Creator,Owner]), undefined).
+get_table(Id) -> get_table_raw(Id, qlc_id(Id) ++ rpc:call(?GAMESRVR_NODE,game_manager,qlc_id,[Id]), wf:state(table)).
+get_table(Id, Creator,Owner) -> get_table_raw(Id, qlc_id_creator(Id,Creator,Owner) ++
+           rpc:call(?GAMESRVR_NODE,game_manager,qlc_id_creator,[Id,Creator,Owner]), undefined).
+
+%get_table(Id) -> get_table_raw(Id, rpc:call(?GAMESRVR_NODE,game_manager,qlc_id,[Id]), wf:state(table)).
+%get_table(Id, Creator,Owner) -> get_table_raw(Id, rpc:call(?GAMESRVR_NODE,game_manager,qlc_id_creator,[Id,Creator,Owner]), undefined).
 
 get_table_raw(_Id, QLC,StateTab) ->
     Tables = case StateTab  of
