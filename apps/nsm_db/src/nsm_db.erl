@@ -152,7 +152,7 @@ add_translations() ->
               ok
     end, ?URI_DICTIONARY).
 
-create_tour_users(A,B) ->
+create_tour_users(A,B,Groups) ->
     TourUsers =  [#user{username = "trn_player" ++ integer_to_list(N),
                             password="password",
                             feed = feed_create(),
@@ -163,6 +163,7 @@ create_tour_users(A,B) ->
                             register_date={1345,14071,852889}
                            } || N <- lists:seq(A, B)],
     [ begin
+          nsm_users:init_mq(Me#user.username, Groups),
           nsm_accounts:create_account(Me#user.username),
           nsm_accounts:transaction(Me#user.username, ?CURRENCY_QUOTA, db_opt:get_default_quota(), #ti_default_assignment{}),
           nsm_db:put(Me#user{password = utils:sha(Me#user.password),
@@ -172,7 +173,6 @@ create_tour_users(A,B) ->
 
 add_sample_users() ->
 
-    create_tour_users(1,2048),
 
     UserList =
                     [#user{username = "demo1", password="kakara20",
@@ -293,6 +293,8 @@ add_sample_users() ->
 
     GId1  = nsm_groups:create_group_directly_to_db("ahmettez", "kakaranet", "Kakaranet", "Kakaranet'e Hoşgeldiniz", public),
     GId2  = nsm_groups:create_group_directly_to_db("ahmettez", "yeniler", "Yeniler", "So, you must be new here.", public),
+
+    create_tour_users(1,2048,[GId1,GId2]),
 
     ?INFO("adding users accounts"),
     [ begin
