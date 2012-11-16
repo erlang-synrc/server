@@ -64,7 +64,7 @@
           observer_flag     :: boolean(),
           pause_enabled = true :: boolean(),
           social_actions_enabled = true :: boolean(),
-          tournament_type = standalone :: tournament()
+          tournament_type = standalone :: atom() %% standalone | elimination | pointing | lucky
                          }).
 
 -record(tavla_color_info, {
