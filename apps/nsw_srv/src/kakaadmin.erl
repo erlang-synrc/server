@@ -575,10 +575,6 @@ gifts_list_table_view(Items) ->
                                               #tablecell{id=gift_list_points},
                                               #tablecell{id=gift_list_currency}    ]}    ]}    ]}.
 
-
-payments_list() ->
-	#purchases_grid{}.
-
 %% Affiliates
 affiliates_submenu() ->
 	[{?_T("Affiliates"), {show, affiliates}},
@@ -763,6 +759,8 @@ create_new_contract_from_form() ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%% EVENT %%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+api_event(Name, Tag, Args)->
+    fb_utils:api_event(Name, Tag, Args).
 
 event(add_new_contract) ->
     UserId = wf:q(contract_new_user),
@@ -944,32 +942,32 @@ u_event({gift_list, N, MaxPage}) ->
     wf:update(view_box, view_gift_list(Result, N, MaxPage));
 
 u_event({show, Page}) ->
-	wf:wire("objs('.admin-submenu .link').removeClass('active');"
-				"objs('me').addClass('active');"),
-	case Page of
-		invite ->
-			wf:update(view_box, invite());
-		users_list ->
-			wf:update(view_box, users_list());
-		config_new ->
-			wf:update(view_box, config_new());
-		config_list ->
-			wf:update(view_box, config());
-		%% Others pages
-		packages_list ->
-			wf:update(view_box, packages_list());
-		gifts_list ->
-			wf:update(view_box, gifts_list());
-		payments_list ->
-			wf:update(view_box, payments_list());
+    wf:wire("objs('.admin-submenu .link').removeClass('active');"
+        "objs('me').addClass('active');"),
+    case Page of
+        invite ->
+            wf:update(view_box, invite());
+        users_list ->
+            wf:update(view_box, users_list());
+        config_new ->
+            wf:update(view_box, config_new());
+        config_list ->
+            wf:update(view_box, config());
+        %% Others pages
+        packages_list ->
+            wf:update(view_box, packages_list());
+        gifts_list ->
+            wf:update(view_box, gifts_list());
+        payments_list ->
+            wf:update(view_box, #purchases_grid{});
         %% Affiliates
-		affiliates ->
-			wf:update(view_box, affiliates_body());
-		affiliates_contracts ->
-			wf:update(view_box, affiliates_contracts_body());
-		_ ->
-			wf:update(view_box, ?_T("A not implemented"))
-	end;
+        affiliates ->
+            wf:update(view_box, affiliates_body());
+        affiliates_contracts ->
+            wf:update(view_box, affiliates_contracts_body());
+        _ ->
+            wf:update(view_box, ?_T("A not implemented"))
+    end;
 
 u_event({load_config, Id, Branch}) ->
     wf:update(Id, get_tree_box(Branch));
@@ -1036,17 +1034,11 @@ u_event(generate_invite) ->
     Data = invite:convert_data(nsm_invite:get_all_code()),
     NewBox = table_code_view(Data),
     flash(invites_flash, info, ?_TS("Generate $count$ code and send to address '$email$'.",
-		  [{count, Count}, {email, Email}])),
+        [{count, Count}, {email, Email}])),
     wf:update(invite_table, NewBox);
 
 u_event(Any) ->
     webutils:event(Any).
-
-
-
-%%%%%%%%%%%%%% END EVNET %%%%%%%%%%%%%%%
-
-
 
 -spec str_to_key(string()) -> {ok, list()} | {error, format}.
 %% @doc
@@ -1072,11 +1064,7 @@ str_to_key([H|Tail], E_Acc, Acc) ->
 	false -> {error, format}
     end.
 
-
-
 %%%%%% internals
-
-
 create_message(#user{username = UId}, Url) ->
     create_message(UId, Url);
 create_message(UId, Url) ->
@@ -1084,7 +1072,6 @@ create_message(UId, Url) ->
     Content = ?_TS("Hello.\nClick on the link:\n$link$", [{link, Url}]),
 
     {Subject, Content}.
-
 
 record_to_web(Rec) when is_tuple(Rec) ->
     [Atom | List0] = tuple_to_list(Rec),
@@ -1094,15 +1081,11 @@ record_to_web(Rec) when is_tuple(Rec) ->
 f({_A, _B, _C} = Time) ->
     L = calendar:now_to_local_time(Time),
     site_utils:local_time_to_text(L);
-f(undefined) ->
-    "";
-f(Else) ->
-    Else.
-
+f(undefined) -> "";
+f(Else) -> Else.
 
 add_stylesheet(Path) ->
-	webutils:add_raw("<link rel=\"stylesheet\" type=\"text/css\" href=\""++Path++"\" media=\"all\" />").
-
+    webutils:add_raw("<link rel=\"stylesheet\" type=\"text/css\" href=\""++Path++"\" media=\"all\" />").
 
 flash(Id, Type, Text) ->
     wf:update(Id, #notice{type=Type, delay=3000, body=Text}).
