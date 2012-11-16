@@ -20,8 +20,6 @@
 -include_lib("nsm_db/include/membership_packages.hrl").
 -include_lib("nsm_db/include/user.hrl").
 
-
-
 reflect() -> record_info(fields, purchases_grid).
 
 render_element(_Record = #purchases_grid{}) ->
@@ -33,19 +31,14 @@ render_element(_Record = #purchases_grid{}) ->
 
     [#panel{id=Id}].
 
-
-%%
-%% Local Functions
-%%
-
 grid_script(Id) ->
     %% create api action, save id in tag to have access later
     APISave   = #api{anchor = Id, tag = Id,  name = saveData, delegate = ?MODULE},
-	%% API to anable grid reload data
-	APILoadData = #api{anchor = Id, tag = Id, name = loadData, delegate = ?MODULE},
+    %% API to anable grid reload data
+    APILoadData = #api{anchor = Id, tag = Id, name = loadData, delegate = ?MODULE},
 
     wf:wire(APISave),
-	wf:wire(APILoadData),
+    wf:wire(APILoadData),
 
     %% fields, columns and logic is in admin-lib.js file
     %% create 'grid' field in anchor object to have access later
@@ -56,61 +49,48 @@ grid_script(Id) ->
         ",renderTo: '~s'"
         %% here grid will call to our api and then will be updated with new data
         %% async
-		",loadDataRequest: function(){~s}"
+        ",loadDataRequest: function(){~s}"
         %% call nitrogen api to send data
         ",onSave: function(data){ ~s }"
         "});",
 
-	wf:f(ScriptTemplate, [Id, ?_T("Purchases"), Id,
-						  callback(APILoadData, ""),
-						  callback(APISave, "data")
-						  ]).
-
+    wf:f(ScriptTemplate, [Id, ?_T("Purchases"), Id,
+        callback(APILoadData, ""), 
+        callback(APISave, "data") ]).
 
 callback(#api{anchor = Id, name = Name}, DataVar) ->
     wf:f("obj('~s').~p(~s)", [Id, Name, DataVar]).
 
-
 api_event(saveData, Anchor, [Data]) ->
     ?DBG("Got SAVE event: Anchor: ~p, Data: ~p", [Anchor, Data]),
-	ok;
+    ok;
 
 api_event(loadData, Anchor, []) ->
-	?DBG("Got LOAD event: Anchor: ~p", [Anchor]),
-	Purchases = nsm_membership_packages:list_purchases(),
-	%%?DBG("Purchases: ~p", [Purchases]),
+    ?DBG("Got LOAD event: Anchor: ~p", [Anchor]),
+    Purchases = nsm_membership_packages:list_purchases(),
+    JSON = site_utils:base64_encode_to_url(mochijson2:encode([purchase_to_json(P) || P <- Purchases])),
+    wf:wire(wf:f("obj('~s').grid.updateData('~s')", [Anchor, JSON])).
 
-	JSON = purchases_to_json(Purchases),
-	%?DBG("Reply: Purchases: ~p, json: ~p", [Purchases, JSON]),
-	%% update grid with new data
-	wf:wire(wf:f("obj('~s').grid.updateData('~s')",
-				 [Anchor, JSON])).
+purchase_to_json(#membership_purchase{} = I)->
+    P = I#membership_purchase.membership_package,
+    {struct, [
+        {<<"id">>, list_to_binary(I#membership_purchase.id)},
+        {<<"external_id">>, list_to_binary(to_list(I#membership_purchase.external_id))},
+        {<<"user_name">>, list_to_binary(to_list(I#membership_purchase.user_id))},
+        {<<"user_info">>, list_to_binary("{}")},
+        {<<"state">>, list_to_binary(to_list(I#membership_purchase.state))},
+        {<<"m_package">>, {struct, [
+            {<<"payment_type">>, list_to_binary(to_list(P#membership_package.payment_type))},
+            {<<"amount">>, list_to_binary(to_list(P#membership_package.amount))}
+            ]}
+        },
+        {<<"start_time">>, list_to_binary(convert_time(I#membership_purchase.start_time))},
+        {<<"end_time">>, list_to_binary(convert_time(I#membership_purchase.end_time))},
+        {<<"info">>, list_to_binary(to_list(I#membership_purchase.info))},
+        {<<"state_log">>, []}
+    ]};
+purchase_to_json(_)-> {}.
 
-
-purchases_to_json(Purchases) ->
-    Items = [begin
-        Package =  I#membership_purchase.membership_package,
-        [
-            {id, I#membership_purchase.id},
-            {external_id, to_list(I#membership_purchase.external_id)},
-            {username, to_list(I#membership_purchase.user_id)},
-            {state, I#membership_purchase.state},
-            {package, [
-                {payment_type, Package#membership_package.payment_type},
-                {amount, Package#membership_package.amount}]
-            },
-            {start_time, convert_time(I#membership_purchase.start_time)},
-            {end_time,   convert_time(I#membership_purchase.end_time)},
-            {info,       to_list(I#membership_purchase.info)}]
-    end || I <- Purchases],
-
-    {ok, JSON} = element_purchases_grid_dtl:render([{items, Items}]),
-    FlatJson = lists:flatten(binary_to_list(iolist_to_binary(JSON))),
-    site_utils:base64_encode_to_url(FlatJson).
-
-
-
-%% convert to list
 to_list(undefined)         -> "";
 to_list(L) when is_list(L) -> L;
 to_list(Other)             -> wf:f("~p", [Other]).
