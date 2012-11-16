@@ -1,45 +1,5 @@
 -module(feed).
-
--export([create/0,
-         add_entry/4,
-         add_entry/5,
-         add_entry/7,
-         add_shared_entry/8,
-         add_like/3,
-         broadcast/2,
-         multi_broadcast/2,
-         get_entries_in_feed/1,
-         get_entries_in_feed/2,
-         get_entries_in_feed/3,
-         get_entries_in_feed/4,        
-         get_feed/1,
-         get_entries_likes/1,
-         get_entries_likes_count/1,
-         get_user_likes/1,
-         get_user_likes/2,
-         get_user_likes_count/1,
-         get_entries_count/1,
-         get_comments_count/1,
-         remove_entry/2,
-         edit_entry/3,
-         add_direct_message/4,
-         add_direct_message/6,
-         entry_add_comment/7,
-         get_direct_messages/2,
-         get_direct_messages/3,
-         is_subscribed_user/2,
-         user_friends_count/1,
-         user_subscription_count/1,
-         get_comments_entries/4,
-         get_my_discussions/4,
-         get_feed_by_user_or_group/1,
-         add_group_entry/5,
-         add_group_entry/7,
-         remove_entry_comments/2,
-         
-         test_likes/0
-         ]).
-
+-compile(export_all).
 
 -include("feed.hrl").
 -include_lib("nsm_db/include/table.hrl").
@@ -55,24 +15,14 @@ create() ->
     ok = nsm_db:put(#feed{id = FId} ),
     FId.
 
-add_direct_message(FId, User, EntryId, Desc) ->
-    add_direct_message(FId, User, undefined, EntryId, Desc, []).
-add_direct_message(FId, User, To, EntryId, Desc, Medias) ->
-    nsm_db:feed_add_direct_message(FId, User, To, EntryId, Desc, Medias).
-
-add_group_entry(FId, User, EntryId, Desc, Medias) ->
-    nsm_db:feed_add_entry(FId, User, EntryId, Desc, Medias).
-add_group_entry(FId, User, To, EntryId, Desc, Medias, Type) ->
-    nsm_db:feed_add_entry(FId, User, To, EntryId, Desc, Medias, Type).
-
-add_entry(FId, User, EntryId, Desc) ->
-    add_entry(FId, User, EntryId, Desc, []).
-add_entry(FId, User, EntryId, Desc, Medias) ->
-    nsm_db:feed_add_entry(FId, User, EntryId, Desc, Medias).
-add_entry(FId, User, To, EntryId, Desc, Medias, Type) ->
-    nsm_db:feed_add_entry(FId, User, To, EntryId, Desc, Medias, Type, "").
-add_shared_entry(FId, User, To, EntryId, Desc, Medias, Type, SharedBy) ->
-    nsm_db:feed_add_entry(FId, User, To, EntryId, Desc, Medias, Type, SharedBy).
+add_direct_message(FId, User, EntryId, Desc) -> add_direct_message(FId, User, undefined, EntryId, Desc, []).
+add_direct_message(FId, User, To, EntryId, Desc, Medias) -> nsm_db:feed_add_direct_message(FId, User, To, EntryId, Desc, Medias).
+add_group_entry(FId, User, EntryId, Desc, Medias) -> nsm_db:feed_add_entry(FId, User, EntryId, Desc, Medias).
+add_group_entry(FId, User, To, EntryId, Desc, Medias, Type) -> nsm_db:feed_add_entry(FId, User, To, EntryId, Desc, Medias, Type).
+add_entry(FId, User, EntryId, Desc) -> add_entry(FId, User, EntryId, Desc, []).
+add_entry(FId, User, EntryId, Desc, Medias) -> nsm_db:feed_add_entry(FId, User, EntryId, Desc, Medias).
+add_entry(FId, User, To, EntryId, Desc, Medias, Type) -> nsm_db:feed_add_entry(FId, User, To, EntryId, Desc, Medias, Type, "").
+add_shared_entry(FId, User, To, EntryId, Desc, Medias, Type, SharedBy) -> nsm_db:feed_add_entry(FId, User, To, EntryId, Desc, Medias, Type, SharedBy).
 
 add_like(Fid, Eid, Uid) ->
     Write_one_like = fun(Next) ->
@@ -164,25 +114,14 @@ multi_broadcast(Users, #entry{entry_id=EId} = Entry) ->
     ok.
 
 
-get_feed(FId) ->
-    nsm_db:get(feed, FId).
-
-get_entries_in_feed(FId) ->
-    nsm_db:entries_in_feed(FId).
-get_entries_in_feed(FId, Count) ->
-    nsm_db:entries_in_feed(FId, Count).
-get_entries_in_feed(FId, StartFrom, Count) ->
-    nsm_db:entries_in_feed(FId, StartFrom, Count).
-
-get_direct_messages(FId, Count) ->
-    nsm_db:entries_in_feed(FId, undefined, Count).
-
-get_direct_messages(FId, StartFrom, Count) ->
-    nsm_db:entries_in_feed(FId, StartFrom, Count).
-
-get_entries_in_feed(FId, StartFrom, Count, FromUserId)->
-	Entries = nsm_db:entries_in_feed(FId, StartFrom, Count),
-	[E || #entry{from = From} = E <- Entries, From == FromUserId].
+get_feed(FId) -> nsm_db:get(feed, FId).
+get_entries_in_feed(FId) -> nsm_db:entries_in_feed(FId).
+get_entries_in_feed(FId, Count) -> nsm_db:entries_in_feed(FId, Count).
+get_entries_in_feed(FId, StartFrom, Count) -> nsm_db:entries_in_feed(FId, StartFrom, Count).
+get_direct_messages(FId, Count) -> nsm_db:entries_in_feed(FId, undefined, Count).
+get_direct_messages(FId, StartFrom, Count) -> nsm_db:entries_in_feed(FId, StartFrom, Count).
+get_entries_in_feed(FId, StartFrom, Count, FromUserId)-> Entries = nsm_db:entries_in_feed(FId, StartFrom, Count),
+    [E || #entry{from = From} = E <- Entries, From == FromUserId].
 
 create_message(Table) ->
     EId = nsm_db:next_id("entry", 1),
@@ -201,34 +140,22 @@ remove_entry(FeedId, EId) ->
         {ok, #entry{prev = Prev, next = Next}}->
             ?INFO("P: ~p, N: ~p", [Prev, Next]),
             case nsm_db:get(entry, Next) of
-                {ok, NE} ->
-                    nsm_db:put(NE#entry{prev = Prev});
-                _ ->
-                    ok
+                {ok, NE} -> nsm_db:put(NE#entry{prev = Prev});
+                _ -> ok
             end,
             case nsm_db:get(entry, Prev) of
-                {ok, PE} ->
-                    nsm_db:put(PE#entry{next = Next});
-                _ ->
-                    ok
+                {ok, PE} -> nsm_db:put(PE#entry{next = Next});
+                _ -> ok
             end,
 
             case TopId of
-                {EId, FeedId} ->
-                    nsm_db:put(Feed#feed{top = Prev});
-                _ ->
-                    ok
+                {EId, FeedId} -> nsm_db:put(Feed#feed{top = Prev});
+                _ -> ok
             end;
-
-        {error, notfound} ->
-            ?INFO("Not found"),
-            ok
+        {error, notfound} -> ?INFO("Not found"), ok
     end,
-
     nsm_db:delete(entry, {EId, FeedId}).
 
-
-% edit
 edit_entry(FeedId, EId, NewDescription) ->
     case nsm_db:entry_by_id({EId, FeedId}) of
         {ok, OldEntry} ->
@@ -239,7 +166,6 @@ edit_entry(FeedId, EId, NewDescription) ->
         {error, notfound}->
             {error, notfound}
     end.
-
 
 remove_entry_comments(FId, EId) ->
     AllComments = nsm_db:comments_by_entry(FId, EId),
@@ -257,24 +183,14 @@ entry_add_comment(FId, User, EntryId, ParentComment, CommentId, Content, Medias)
      end.
 
 remove_media([]) -> ok;
-remove_media([#media{url=undefined, thumbnail_url=undefined}|T]) ->
-    remove_media(T);
-remove_media([#media{url=undefined, thumbnail_url=TUrl}|T])      ->
-    file:delete(?ROOT ++ TUrl),
-    remove_media(T);
-remove_media([#media{url=Url, thumbnail_url=undefined}|T])       ->
-    file:delete(?ROOT ++ Url),
-    remove_media(T);
-remove_media([#media{url=Url, thumbnail_url=TUrl}|T])            ->
-    file:delete(?ROOT ++ Url),file:delete(?ROOT ++ TUrl),
-    remove_media(T).
+remove_media([#media{url=undefined, thumbnail_url=undefined}|T]) -> remove_media(T);
+remove_media([#media{url=undefined, thumbnail_url=TUrl}|T]) -> file:delete(?ROOT ++ TUrl), remove_media(T);
+remove_media([#media{url=Url, thumbnail_url=undefined}|T]) -> file:delete(?ROOT ++ Url), remove_media(T);
+remove_media([#media{url=Url, thumbnail_url=TUrl}|T]) -> file:delete(?ROOT ++ Url),file:delete(?ROOT ++ TUrl), remove_media(T).
 
 
-% likes
-get_one_like_list(undefined) ->
-    [];
-get_one_like_list(Id) ->
-    {ok, OneLike} = nsm_db:get(one_like, Id),
+get_one_like_list(undefined) -> [];
+get_one_like_list(Id) -> {ok, OneLike} = nsm_db:get(one_like, Id),
     [OneLike] ++ get_one_like_list(OneLike#one_like.next).
 
 get_entries_likes(Entry_id) ->
@@ -302,12 +218,9 @@ get_user_likes(UserId) ->
         {error, notfound} -> []
     end.
 
-get_one_like_list(undefined, _) ->
-    [];
-get_one_like_list(_, 0) ->
-    [];
-get_one_like_list(Id, N) ->
-    {ok, OneLike} = nsm_db:get(one_like, Id),
+get_one_like_list(undefined, _) -> [];
+get_one_like_list(_, 0) -> [];
+get_one_like_list(Id, N) -> {ok, OneLike} = nsm_db:get(one_like, Id),
     [OneLike] ++ get_one_like_list(OneLike#one_like.next, N-1).
 
 get_user_likes(UserId, {Page, PageAmount}) ->
@@ -317,14 +230,9 @@ get_user_likes(UserId, {Page, PageAmount}) ->
     end.
 
 % we have same in nsm_user? Why?
-is_subscribed_user(UserUidWho, UserUidWhom) ->
-    nsm_users:is_user_subscr(UserUidWho, UserUidWhom).
-
-user_subscription_count(UserUid) ->
-    length(nsm_users:list_subscr(UserUid)).
-
-user_friends_count(UserUid) ->
-    length(nsm_users:list_subscr_me(UserUid)).
+is_subscribed_user(UserUidWho, UserUidWhom) -> nsm_users:is_user_subscr(UserUidWho, UserUidWhom).
+user_subscription_count(UserUid) -> length(nsm_users:list_subscr(UserUid)).
+user_friends_count(UserUid) -> length(nsm_users:list_subscr_me(UserUid)).
 
 get_comments_entries(UserUid, _, _Page, _PageAmount) ->
     Pids = [Eid || #comment{entry_id=Eid} <- nsm_db:select(comment,

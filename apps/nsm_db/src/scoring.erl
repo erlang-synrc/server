@@ -1,5 +1,5 @@
 -module(scoring).
-
+-author('Maxim Sokhatsky <maxim@synrc.com>').
 -include("user.hrl").
 -include("scoring.hrl").
 -include_lib("nsx_config/include/log.hrl").

@@ -8,15 +8,11 @@
 -include("feed.hrl").
 
 
-define_access(default  = Accessor, Resource, Action) ->
-    do_define_access(Accessor, Resource, Action);
-define_access({user, _Username} = Accessor, Resource, Action) ->
-    do_define_access(Accessor, Resource, Action);
-define_access({user_type, _Usertype} = Accessor, Resource, Action) ->
-    do_define_access(Accessor, Resource, Action);
-define_access({ip, _Ip} = Accessor, Resource, Action) ->
-    do_define_access(Accessor, Resource, Action).
-
+define_access(default  = Accessor, Resource, Action) -> do_define_access(Accessor, Resource, Action);
+define_access({user, _Username} = Accessor, Resource, Action) -> do_define_access(Accessor, Resource, Action);
+define_access({user_type, _Usertype} = Accessor, Resource, Action) -> do_define_access(Accessor, Resource, Action);
+define_access({ip, _Ip} = Accessor, Resource, Action) -> do_define_access(Accessor, Resource, Action).
+do_define_access(Accessor, Resource, Action) -> nsm_db:acl_add_entry(select_type(Resource), Accessor, Action).
 
 check_access(#user{username = UId, type = UType}, #feed{id = FId}) ->
     Feed = {feed, FId},
@@ -88,23 +84,10 @@ check(Keys) ->
             Action
     end.
 
-%%--------------------------------------------------------------------
-%%% Internal functions
-%%--------------------------------------------------------------------
-do_define_access(Accessor, Resource, Action) ->
-    nsm_db:acl_add_entry(select_type(Resource), Accessor, Action).
-
-select_type(#user{username = UId}) ->
-    {user, UId};
-select_type(#group{username = GId}) ->
-    {group, GId};
-select_type(#feed{id = FId}) ->
-    {feed, FId};
-select_type({user, UId}) ->
-    {user, UId};
-select_type({group, name = GId}) ->
-    {group, GId};
-select_type({feed, FId}) ->
-    {feed, FId};
-select_type({feature, Feature}) ->
-    {feature, Feature}.
+select_type(#user{username = UId}) -> {user, UId};
+select_type(#group{username = GId}) -> {group, GId};
+select_type(#feed{id = FId}) -> {feed, FId};
+select_type({user, UId}) -> {user, UId};
+select_type({group, name = GId}) -> {group, GId};
+select_type({feed, FId}) -> {feed, FId};
+select_type({feature, Feature}) ->  {feature, Feature}.

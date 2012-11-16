@@ -15,7 +15,6 @@
 %    - Mnesia
 %    - Riak
 
-
 -module(nsm_db).
 -author('Maxim Sokhatsky <maxim@synrc.com>').
 
@@ -35,36 +34,7 @@
 -include("membership_packages.hrl").
 -include_lib("stdlib/include/qlc.hrl").
 -include_lib("nsx_config/include/log.hrl").
-
--export([start/0, stop/0, initialize/0, delete/0, init_indexes/0,
-         init_db/0, put/1, count/1, get/2, get/3, feed_create/0, create_team/1,
-         all/1, all_by_index/3, next_id/1, next_id/2, delete/1, delete/2, delete_by_index/3,
-         put_if_none_match/1, update/2, get_for_update/2,
-         delete_browser_counter_older_than/1,browser_counter_by_game/1,
-         unused_invites/0, get_word/1, acl_add_entry/3, acl_entries/1,
-         feed_add_entry/5, feed_add_entry/8, feed_add_direct_message/6,
-         entries_in_feed/1, entries_in_feed/2, entries_in_feed/3, add_transaction_to_user/2,
-         entry_by_id/1, comment_by_id/1, comments_by_entry/1, feed_direct_messages/3,
-         add_comment/7, dir/0, purchases/1, transactions/1,
-         user_by_verification_code/1, update_user_name/3,
-         list_membership/1, list_group_users/1, list_membership_count/1,
-         user_by_email/1, user_by_facebook_id/1, user_by_username/1, change_group_name/2,
-         membership/2, move_group_members/3, get_group_members_count/1, get_group_members/1, create_tour_users/2,
-         get_save_tables/1, save_game_table_by_id/1, invite_code_by_issuer/1, add_invite_to_issuer/2,
-         block_user/2, unblock_user/2, list_blocks/1, list_blocked_me/1, is_user_blocked/2,
-         add_translations/0,
-         select/2, multi_select/2, version/0,
-         invite_code_by_user/1, get_translation/1, add_purchases/0,
-         tournament_waiting_queue/1, join_tournament/2, tournament_pop_waiting_player/1,
-         play_record_add_entry/4,user_tournaments/1, make_rich/1,
-         subscriptions_to_subs/0, groups_184_update/0, subscriptions_update/0, fast_timeouts/0, make_admin/1]).
-
--export([get_purchases_by_user/3, get_purchases_by_user/4,
-         put_into_invitation_tree/3, invitation_tree/2]).
-
--export([add_configs/0]).
-
--export([save_db/1, load_db/1]).
+-compile(export_all).
 
 start() -> DBA = ?DBA, DBA:start().
 dir() -> DBA = ?DBA, DBA:dir().
