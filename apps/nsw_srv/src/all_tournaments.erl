@@ -9,8 +9,6 @@
 -include("common.hrl").
 -include("elements/records.hrl").
 
--define(TOURSPERTOURPAGE, 12).
-
 game_type_image(T,Prefix) ->
    case T of
        game_okey -> lists:concat([Prefix,"/slider_okey.png"]);
@@ -326,6 +324,8 @@ content() ->
     SM = integer_to_list(M),
     SD = integer_to_list(D),
     wf:state(alltour_arrow_shift, 0),
+    wf:state(sort_order, descend),
+    wf:state(per_page, 12),
     [
         #panel{class="alltour_title", body=[
                 #label{class="alltour_title_label", body=?_T("TOURNAMENTS PAGE")}
@@ -355,13 +355,13 @@ content() ->
 
             %filters
             #label{style="position:absolute; left:42px; top:540px;", text=?_T("Game Type:")},
-            #dropdown {style="position:absolute; left:126px; top:533px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
+            #dropdown {id=tour_game, style="position:absolute; left:126px; top:533px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
                         #option { text="—" },
                         #option { text="OKEY" },
                         #option { text="TAVLA" }
             ]},
             #label{style="position:absolute; left:480px; top:540px;", text=?_T("Games Count:")},
-            #dropdown {style="position:absolute; left:576px; top:533px; width:160px; height:32px; font-size:16px; padding-top:2px;", options=[
+            #dropdown {id=tour_players, style="position:absolute; left:576px; top:533px; width:160px; height:32px; font-size:16px; padding-top:2px;", options=[
                         #option { text="—" },
                         #option { text="16" },
                         #option { text="32" },
@@ -372,7 +372,7 @@ content() ->
                         #option { text="1024" }
             ]},
             #label{style="position:absolute; left:764px; top:540px;", text=?_T("Quota:")},
-            #dropdown {style="position:absolute; left:807px; top:533px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
+            #dropdown {id=tour_quota, style="position:absolute; left:807px; top:533px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
                         #option { text="—" },
                         #option { text="2" },
                         #option { text="4" },
@@ -387,28 +387,25 @@ content() ->
                        background:url(../images/tournament/new_tournament/calendar_icon.png) no-repeat 98px 2px;",
                 text= (SD ++ "." ++ SM ++ "." ++ SY)},
 
-            #link{style="position:absolute; top:590px; left:36px;", class="alltour_btns_blue alltour_btn_blue_1", text=?_T("ACCORDING TO FRIENDS"), postback=btn_blue_1},
-            #link{style="position:absolute; top:590px; left:245px;", class="alltour_btns_blue alltour_btn_blue_2", text=?_T("BY GIFTS"), postback=btn_blue_2},
-            #link{style="position:absolute; top:590px; left:399px;", class="alltour_btns_blue alltour_btn_blue_3", text=?_T("PARTICIPATION PERCENTAGE"), postback=btn_blue_3},
-            #link{style="position:absolute; top:590px; left:613px;", class="alltour_btns_blue alltour_btn_blue_4", text=?_T("BY PUANIMA"), postback=btn_blue_4},
-            #link{style="position:absolute; top:590px; left:765px;", class="alltour_btns_blue alltour_btn_blue_5", text=?_T("BY SUM OF KAKUSH"), postback=btn_blue_5},
+            #link{style="position:absolute; top:590px; left:136px;", class="alltour_btns_blue alltour_btn_blue_1", text=?_T("ACCORDING TO FRIENDS"), postback={sort_by, friends}},
+            #link{style="position:absolute; top:590px; left:405px;", class="alltour_btns_blue alltour_btn_blue_2", text=?_T("BY GIFTS"), postback={sort_by, gifts}},
+            #link{style="position:absolute; top:590px; left:619px;", class="alltour_btns_blue alltour_btn_blue_3", text=?_T("PARTICIPATION PERCENTAGE"), postback={sort_by, participation}},
 
             #label{style="position:absolute; left:243px; top:674px;", text=?_T("Sort by type:")},
-            #dropdown {style="position:absolute; left:357px; top:667px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
+            #dropdown {postback=sort_order_set, id=sort_order, style="position:absolute; left:357px; top:667px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
                         #option { text=?_T("DESC") },
                         #option { text=?_T("ASC") }
             ]},
             #label{style="position:absolute; left:490px; top:674px;", text=?_T("View:")},
-            #dropdown {style="position:absolute; left:567px; top:667px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
+            #dropdown {postback=per_page_set, id=per_page, style="position:absolute; left:567px; top:667px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
                         #option { text="12 " ++ ?_T("PCS") },
                         #option { text="24 " ++ ?_T("PCS") },
                         #option { text="24 " ++ ?_T("ALL") }
             ]},
 
-            #link{style="position:absolute; top:726px; left:226px;", class="alltour_big_buttons alltour_gray_button", text=?_T("FILTER"), postback=btn_orange},
-            #link{style="position:absolute; top:726px; left:392px;", class="alltour_big_buttons alltour_gray_button", text=?_T("RESET"), postback=btn_gray},
+            #link{style="position:absolute; top:726px; left:226px;", class="alltour_big_buttons alltour_gray_button", text=?_T("FILTER"), postback=filter_pressed},
+            #link{style="position:absolute; top:726px; left:392px;", class="alltour_big_buttons alltour_gray_button", text=?_T("RESET"), postback=clean_filter_pressed},
             #link{style="position:absolute; top:726px; left:558px;", class="alltour_big_buttons alltour_orange_button", text=?_T("NEW"), postback=new_pressed},
-%            #button{style="position:absolute; top:740px; left:650px;", text=?_T("New"), postback=new_pressed},
 
             #link{style="position:absolute; top:268px; left:20px;", class="alltour_arrow_left", postback=arrow_left},
             #link{style="position:absolute; top:268px; left:925px;", class="alltour_arrow_right", postback=arrow_right},
@@ -421,18 +418,82 @@ content() ->
 
 featured_tours() ->
     AllTours = nsm_db:all(tournament),
-    SortedTours = lists:sort(fun(#tournament{start_date=SD1, start_time=ST1, id=Id}, #tournament{start_date=SD2, start_time=ST2}) ->
-        {SD1, ST1, Id} > {SD2, ST2, Id} end, AllTours),
+    SortedTours = lists:sort(fun(#tournament{start_date=SD1, start_time=ST1, id=Id1}, #tournament{start_date=SD2, start_time=ST2, id=Id2}) ->
+        {SD1, ST1, Id1} > {SD2, ST2, Id2} end, AllTours),
     TourIds = [TId || #tournament{id=TId} <- SortedTours],
     ShiftedTours = lists:sublist(TourIds, 1+wf:state(alltour_arrow_shift), 4),
     [#panel{style="margin:8px; float:left", body=tourblock(Id)} || Id <- ShiftedTours].
 
 all_tours(Page) ->
+    ToursPerPage = wf:state(per_page),
     AllTours = nsm_db:all(tournament),
-    SortedTours = lists:sort(fun(#tournament{start_date=SD1, start_time=ST1}, #tournament{start_date=SD2, start_time=ST2}) ->
-        {SD1, ST1} > {SD2, ST2} end, AllTours),
-    TourIds = [TId || #tournament{id=TId} <- SortedTours],
-    PageTourIds = lists:sublist(TourIds, (Page-1)*?TOURSPERTOURPAGE+1, ?TOURSPERTOURPAGE),
+    PreSortedTours = case wf:state(sort_by) of
+        friends ->
+            Friends = [UId || {_, _, UId} <- nsm_users:list_subscr(wf:user())],
+            PreSortedToursFriends = [
+                begin
+                    U = [UId || #play_record{who=UId} <- nsm_tournaments:joined_users(Id)],
+                    F = lists:sum([1 || F <- Friends, lists:member(F, U)]),
+                    {T, F, Id}
+                end
+            || T=#tournament{id=Id} <- AllTours],
+            [T || {T, _, _} <- lists:sort(fun({_, F1, Id1}, {_, F2, Id2}) ->
+                {F1, Id1} > {F2, Id2}
+            end, PreSortedToursFriends)];
+        gifts ->
+            PreSortedToursGifts = [
+                begin
+                    G = new_tournament:get_prizes_total(A),
+                    {T, G, Id}
+                end
+            || T=#tournament{awards=A, id=Id} <- AllTours],
+            [T || {T, _, _} <- lists:sort(fun({_, G1, Id1}, {_, G2, Id2}) ->
+                {G1, Id1} > {G2, Id2}
+            end, PreSortedToursGifts)];
+        participation ->
+            PreSortedToursPart = [
+                begin
+                    JUC = length(nsm_tournaments:joined_users(Id)),
+                    P = JUC/PC,
+                    {T, P, Id}
+                end
+            || T=#tournament{id=Id, players_count=PC} <- AllTours],
+            [T || {T, _, _} <- lists:sort(fun({_, P1, Id1}, {_, P2, Id2}) ->
+                {P1, Id1} > {P2, Id2}
+            end, PreSortedToursPart)];
+        _ ->
+            lists:sort(fun(#tournament{start_date=SD1, start_time=ST1, id=Id1}, #tournament{start_date=SD2, start_time=ST2, id=Id2}) ->
+                {SD1, ST1, Id1} > {SD2, ST2, Id2} 
+            end, AllTours)
+    end,
+
+    SortedTours = case wf:state(sort_order) of
+        descend -> PreSortedTours;
+        _ -> lists:reverse(PreSortedTours)
+    end,
+
+    FilteredTours1 = case wf:state(game_filter) of
+        undefined -> SortedTours;
+        Game -> [T || T = #tournament{game_type=G} <- SortedTours, G==Game]
+    end,
+
+    FilteredTours2 = case wf:state(players_filter) of
+        undefined -> FilteredTours1;
+        Players -> [T || T = #tournament{players_count=P} <- FilteredTours1, P==Players]
+    end,
+
+    FilteredTours3 = case wf:state(quota_filter) of
+        undefined -> FilteredTours2;
+        Quota -> [T || T = #tournament{quota=Q} <- FilteredTours2, Q==Quota]
+    end,
+
+    FilteredTours4 = case wf:state(date_filter) of
+        undefined -> FilteredTours3;
+        Date -> [T || T = #tournament{start_date=D} <- FilteredTours3, D==Date]
+    end,
+
+    TourIds = [TId || #tournament{id=TId} <- FilteredTours4],
+    PageTourIds = lists:sublist(TourIds, (Page-1)*ToursPerPage+1, ToursPerPage),
     [
         "<center>",
         #panel{style="height:1px; background-color:#c2c2c2; width:700px;", body=[]},
@@ -469,7 +530,7 @@ tourblock(Id) ->
         true ->
             GOs = [nsm_gifts_db:get_gift(A) || A <- T#tournament.awards],
             [case GO of
-                {error, notfound} -> "/images/tournament/new_tournament/question.png";
+                {error, notfound} -> "/images/tournament/nothing.png";
                 {ok, {Gift, _}} -> Gift#gift.image_small_url
             end || GO <- GOs];
         false ->
@@ -507,20 +568,21 @@ tourblock(Id, Title, Game, Date, NGames, Quota, Avatar, Prizes) ->
 
             #label{style="position:absolute; left:34px; top:224px; color:#222; font-size:14px;", text="1"},
             #panel{style="position:absolute; left:9px; top:240px; background-color:#9c9da2; width:55px; height:1px;", body=[]},
-            #image{style="position:absolute; left:9px; top:246px; width:55px; border:1px solid #ccd0d3;", image=lists:nth(1, Prizes)},
+            #image{style="position:absolute; left:9px; top:246px; width:55px; height:55px; border:1px solid #ccd0d3;", image=lists:nth(1, Prizes)},
 
             #label{style="position:absolute; left:97px; top:224px; color:#222; font-size:14px;", text="2"},
             #panel{style="position:absolute; left:72px; top:240px; background-color:#9c9da2; width:55px; height:1px;", body=[]},
-            #image{style="position:absolute; left:72px; top:246px; width:55px; border:1px solid #ccd0d3;", image=lists:nth(2, Prizes)},
+            #image{style="position:absolute; left:72px; top:246px; width:55px; height:55px; border:1px solid #ccd0d3;", image=lists:nth(2, Prizes)},
 
             #label{style="position:absolute; left:159px; top:224px; color:#222; font-size:14px;", text="3"},
             #panel{style="position:absolute; left:135px; top:240px; background-color:#9c9da2; width:55px; height:1px;", body=[]},
-            #image{style="position:absolute; left:135px; top:246px; width:55px; border:1px solid #ccd0d3;", image=lists:nth(3, Prizes)}
+            #image{style="position:absolute; left:135px; top:246px; width:55px; height:55px; border:1px solid #ccd0d3;", image=lists:nth(3, Prizes)}
         ]}
     ]}.
 
 buttons(Page, AllN) ->
-    case AllN =< ?TOURSPERTOURPAGE of
+    ToursPerPage = wf:state(per_page),
+    case AllN =< ToursPerPage of
         true -> "";
         false ->
             #panel{class="paging-2", style="padding: 10px 0px 0px 0px;", body=[
@@ -535,8 +597,8 @@ buttons(Page, AllN) ->
                                 style="color:#444444; font-weight:bold;"}};
                             _ -> #listitem{body=#link{text=integer_to_list(N), postback={page, N}}}
                         end
-                        || N <- lists:seq(1, AllN div ?TOURSPERTOURPAGE + 1)],
-                        case Page * ?TOURSPERTOURPAGE >= AllN of                 
+                        || N <- lists:seq(1, AllN div ToursPerPage + 1)],
+                        case Page * ToursPerPage >= AllN of                 
                             true -> #listitem{body=#link{text=">", postback={nothing}, class="inactive"}};
                             false -> #listitem{body=#link{text=">", postback={page, Page + 1}}}
                         end
@@ -567,6 +629,63 @@ event(bar) ->
 
 event(new_pressed) ->
     wf:redirect(?_U("/new-tournament"));
+
+event(filter_pressed) ->
+    Game = case wf:q(tour_game) of
+        "—" -> undefined;
+        "OKEY" -> game_okey;
+        "TAVLA" -> game_tavla
+    end,
+    Players = case wf:q(tour_players) of
+        "—" -> undefined;
+        SN -> list_to_integer(SN)
+    end,
+    Quota = case wf:q(tour_quota) of
+        "—" -> undefined;
+        SQ -> list_to_integer(SQ)
+    end,
+    Date = case wf:q(tour_date_check) of
+        undefined -> undefined;
+        _ -> 
+            SDate = wf:q(tour_date),
+            list_to_tuple([list_to_integer(N) || N <- lists:reverse(ling:split(SDate, "."))])
+    end,
+    wf:state(game_filter, Game),
+    wf:state(players_filter, Players),
+    wf:state(quota_filter, Quota),
+    wf:state(date_filter, Date),
+    event({page, 1});
+
+event(clean_filter_pressed) ->
+    wf:set(tour_game, "—"),
+    wf:set(tour_players, "—"),
+    wf:set(tour_quota, "—"),
+    wf:replace(tour_date_check, #checkbox{id=tour_date_check, style="position:absolute; left:262px; top:536px; width:20px; height:20px;", checked=false}),
+    wf:state(game_filter, undefined),
+    wf:state(players_filter, undefined),
+    wf:state(quota_filter, undefined),
+    wf:state(date_filter, undefined),
+    wf:state(sort_by, undefined),
+    event({page, 1});
+
+event(sort_order_set) ->
+    wf:state(sort_order, case wf:q(sort_order) of
+        "AZALAN" -> descend;
+        _ -> ascend
+    end),
+    event({page, 1});
+
+event(per_page_set) ->
+    wf:state(per_page, case wf:q(per_page) of
+        "12 ADET" -> 12;
+        "24 ADET" -> 24;
+        _ -> 480    % all can hang up a machine while rendering and 480 is dohuya enough
+    end),
+    event({page, 1});
+
+event({sort_by, C}) ->
+    wf:state(sort_by, C),
+    event({page, 1});
 
 event(Any) ->
     webutils:event(Any).

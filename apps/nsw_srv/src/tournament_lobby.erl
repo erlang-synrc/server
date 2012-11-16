@@ -400,7 +400,7 @@ content() ->
         true ->
             GOs = [nsm_gifts_db:get_gift(A) || A <- T#tournament.awards],
             [case GO of
-                {error, notfound} -> {"?", "/images/tournament/new_tournament/question.png"};
+                {error, notfound} -> {"", "/images/tournament/nothing.png"};
                 {ok, {Gift, _}} -> {gifts:decode_letters(Gift#gift.gift_name), Gift#gift.image_small_url}
             end || GO <- GOs];
         false ->
@@ -506,7 +506,7 @@ content() ->
         #panel{class="tourlobby_prizes", body=[
                 #panel{class="tourlobby_prize_1", body=[
                         "<center>",
-                        #image{style="width:120px; height:130px;", image=PI1},
+                        #image{style="width:130px; height:130px;", image=PI1},
                         #br{},
                         #label{style="font-size:12px; color:#000;", body=PN1},
                         "</center>",
@@ -517,7 +517,7 @@ content() ->
                 },
                 #panel{class="tourlobby_prize_2", body=[
                         "<center>",
-                        #image{style="width:120px; height:130px;", image=PI2},
+                        #image{style="width:130px; height:130px;", image=PI2},
                         #br{},
                         #label{style="font-size:12px; color:#000;", body=PN2},
                         "</center>",
@@ -528,7 +528,7 @@ content() ->
                 },
                 #panel{class="tourlobby_prize_3", body=[
                         "<center>",
-                        #image{style="width:120px; height:130px;", image=PI3},
+                        #image{style="width:130px; height:130px;", image=PI3},
                         #br{},
                         #label{style="font-size:12px; color:#000;", body=PN3},
                         "</center>",
