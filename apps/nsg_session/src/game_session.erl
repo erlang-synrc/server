@@ -302,7 +302,7 @@ handle_call(#join_game{game = GameId}, _From, #state{user = User, rpc = RPC} = S
                 undefined ->
                     ?ERROR("Game not found: ~p.",[GameId]),
                     maybe_send_message(RPC, #disconnect{reason = <<"The game you are trying to connect doesn't exist">>}, State),
-                    {rely, {error, not_exits}, State}
+                    {reply, {error, not_exits}, State}
             end
     end;
 
