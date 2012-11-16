@@ -283,7 +283,7 @@ handle_call({join_table, User, TableId, Options}, _From, State) ->
                                               users_options = [{User#user.username, Options}|UserOptions]},
 %                    ets:insert(Tables, Table2),
                     ?INFO("GProc registration in JOIN"),
-                    publish({join, User}, TableId),
+%                    publish({join, User}, TableId),
                     {reply, ok, State}
             end
     end;
@@ -291,7 +291,7 @@ handle_call({join_table, User, TableId, Options}, _From, State) ->
 handle_call({delete_table, TableId}, _From, State) ->
     #state{tables = Tables} = State,
     ets:delete(Tables, TableId),
-    publish(delete_table, TableId),
+%    publish(delete_table, TableId),
     {reply, ok, State};
 
 handle_call({delete_table_per_gameid, GameId}, _From, State) ->
@@ -324,21 +324,21 @@ handle_call({leave_table, User, TableId}, _From, State) ->
                     case lists:filter(fun(E) -> E/=robot end, NewUsers) of
                         [] -> % delete table if it's empty or contain only robots
                             ets:delete_object(Tables, Table),
-                            publish({leave_table, User}, TableId),
+%                            publish({leave_table, User}, TableId),
                             {reply, ok, State};
                         [NewOwner | _] ->
                             CurrentOwner = Table#game_table.owner,
                             Table2 =
                             case User#user.username of
                                 CurrentOwner ->
-                                    publish({change_owner, NewOwner}, TableId),
+%                                    publish({change_owner, NewOwner}, TableId),
                                     Table#game_table{owner = NewOwner};
                                 _ -> Table
                             end,
 
                             Table3 = Table2#game_table{users = NewUsers},
                             ets:insert(Tables, Table3),
-                            publish({leave_table, User}, TableId),
+%                            publish({leave_table, User}, TableId),
                             {reply, ok, State}
                     end
             end
@@ -364,7 +364,7 @@ handle_call({update_table, NewData}, _From, State) ->
         [] ->
             {reply, {error, table_not_found}, State};
         [_Table] ->
-            publish({update_table, NewData}, TableId),
+%            publish({update_table, NewData}, TableId),
             ets:insert(Tables, NewData),
             {reply, ok, State}
     end;
@@ -454,7 +454,7 @@ handle_info({'DOWN', Ref, _, _, _}, #state{} = State) ->
     MatchSpec = [{Query, [], ['$_']}],
     [#game_table{users = Users,
                  id = TableId} = Table] = ets:select(Tables, MatchSpec),
-    [ publish({leave_table, User}, TableId) || User <- Users ],
+%    [ publish({leave_table, User}, TableId) || User <- Users ],
     ets:delete_object(Tables, Table),
     {noreply, State};
 handle_info(_Info, State) ->

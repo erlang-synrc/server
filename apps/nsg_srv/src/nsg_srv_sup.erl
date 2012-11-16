@@ -27,7 +27,7 @@ init([]) ->
          permanent, %% Restart
          2000,      %% Shutdown timeout
          worker,    %% Process type
-         [nsw_proxy_lucky]
+         [nsg_proxy_lucky]
         },
     TavlaLucky =
         {tavla_lucky, %% Id
@@ -36,16 +36,8 @@ init([]) ->
          permanent, %% Restart
          2000,      %% Shutdown timeout
          worker,    %% Process type
-         [nsw_proxy_lucky]
+         [nsg_proxy_lucky]
         },
-
-    case nsm_db:get(config, "debug/production", false) of
-         {ok, true} -> ok;
-         _ -> case nsx_opt:get_env(nsw_srv,create_tables,true) of 
-                   false -> ok;
-                   true -> skip % TODO: still need to call from web game_manager:create_tables(10)
-              end
-    end,
 
     {ok, { SupFlags, [OkeyLucky, TavlaLucky]} }.
 
