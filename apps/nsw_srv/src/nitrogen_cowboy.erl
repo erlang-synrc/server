@@ -14,6 +14,8 @@ init({_Transport, http}, Req, Opts) ->
 handle(Req, _Opts) ->
     RequestBridge = simple_bridge:make_request(cowboy_request_bridge, {Req,code:priv_dir(nsw_srv)++"/static/"}), 
     ResponseBridge = simple_bridge:make_response(cowboy_response_bridge, RequestBridge),
+%    ?INFO("Request: ~p:~s",[inet_parse:ntoa(RequestBridge:peer_ip()),RequestBridge:path()]),
+                                                                   %,RequestBridge:header(user_agent)]),
     nitrogen:init_request(RequestBridge, ResponseBridge),
     nitrogen:handler(path_query_handler, []),
 %   nitrogen:handler(dynamic_route_handler, []),

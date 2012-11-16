@@ -12,10 +12,41 @@
           finish/2
          ]).
 
-%% @doc
-%% i18n_route_handler works exactly as nitrogen's {@link dynamic_router_hanlder} except that it
-%% translates the path to english before routing.
-%% @end
+-define(REGEXP_TO_PLATFORM, [
+        {"iPod"              , "iPod"},
+        {"iPad"              , "iPad"},
+        {"iPhone"            , "iPhone"},
+        {"Windows"           , "Windows"},
+        {"OS X \\d+[._]\\d+" , "OS X"},
+        {"Android"           , "Android"},
+        {"Linux"             , "Linux"}
+    ]).
+
+-define(REGEXP_TO_BROWSER, [
+        {"Konqueror" , "Konqueror"},
+        {"Chrome"    , "Chrome"},
+        {"Safari"    , "Safari"},
+        {"MSIE"      , "IE"},
+        {"Opera"     , "Opera"},
+        {"Firefox"   , "Firefox"}
+    ]).
+
+browser(UA) -> browser(?REGEXP_TO_BROWSER,UA).
+browser([],UA) -> undefined;
+browser([{Regexp, Browser}|T],UA) ->
+    case re:run(UA, Regexp, [global, caseless]) of
+        {match, _A} -> Browser;
+        _          -> browser(T,UA)
+    end.
+
+platform(UA) -> platform(?REGEXP_TO_PLATFORM,UA).
+platform([],UA) -> undefined;
+platform([{Regexp, OS}|T],UA) ->
+    case re:run(UA, Regexp, [global, caseless]) of
+        {match, _} -> OS;
+        _          -> platform(T,UA)
+    end.
+
 
 init(_Config, State) ->
     % Get the path...
@@ -33,13 +64,13 @@ init(_Config, State) ->
                 "404" %% It should lead to a 404
         end,
 
-%    ?DBG("User: ~p~nBasePath: ~p~nPath: ~p~n",
-%            [wf:user(), BasePath, Path]),
+%    ?DBG("User: ~p~nBasePath: ~p~nPath: ~p~n", [wf:user(), BasePath, Path]),
 
     % Convert the path to a module. If there are no routes defined, then just
     % convert everything without an extension to a module.
     % Otherwise, look through all routes for the first matching route.
-    {Module, PathInfo} = route(re:replace(Path, "-", "_", [{return, list}, global])),
+%    {Module, PathInfo} = route(re:replace(Path, "-", "_", [{return, list}, global])),
+    {Module, PathInfo} = route(ling:replace(Path, "-", "_")),
     {Module1, PathInfo1} = check_for_404(Module, PathInfo, Path),
     % ?PRINT({BasePath, {Module, PathInfo}, {Module1, PathInfo1}}),
 
@@ -61,6 +92,7 @@ route("/") ->
 
 route(Path) ->
     IsStatic = (filename:extension(Path) /= []),
+    RequestBridge = wf_context:request_bridge(),
     case IsStatic of
         true ->
             % Serve this up as a static file.
@@ -72,6 +104,10 @@ route(Path) ->
             % Check for a loaded module. If not found, then try to load it.
             case try_load_module(Tokens) of
                 {Module, PathInfo} ->
+                    UA = RequestBridge:header(user_agent),
+                    OS = platform(UA),
+                    HC = browser(UA),
+                     ?INFO("URLPATH: ~s:~s:~s:~s",[inet_parse:ntoa(RequestBridge:peer_ip()),Path,OS,HC]),
                     {Module, PathInfo};
                 undefined ->
                     {web_404, Path1}

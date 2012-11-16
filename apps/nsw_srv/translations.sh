@@ -28,6 +28,6 @@ mv translations/lang/kakaweb/en/gettext.po translations/lang/kakaweb/en/gettext.
 sed -e s/charset=iso-8859-1/charset=UTF-8/ translations/lang/kakaweb/en/gettext.po.iso > translations/lang/kakaweb/en/gettext.po
 rm -rf .gettexttmp
 
-#(cd priv/lang/custom/tr/; ./update.sh)
+# cd priv/lang/custom/tr/ ; ./update.sh
 #echo "Now you can run 'poedit priv/lang/custom/tr/gettext.po'"
 #echo "And then './gettext_refresh.sh'"
