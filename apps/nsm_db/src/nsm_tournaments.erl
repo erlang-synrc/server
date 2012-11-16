@@ -17,8 +17,6 @@
          user_is_team_creator/2, % { if user have team creator priority }
          create_team/1,
          user_joined/2]).          % { if user is already joined the tournament }
-%         active_users/1,         % { list of active users (ready and on lobby page) }
-%         chat_history/1]).       % { tournament chat history }
 
 create_team(Name) ->
     TID = nsm_db:next_id("team",1),
@@ -63,8 +61,6 @@ waiting_player(TID) -> nsm_db:tournament_pop_waiting_player(TID).
 joined_users(TID) -> nsm_db:tournament_waiting_queue(TID).
 user_tournaments(UID) -> nsm_db:user_tournaments(UID).
 user_joined(TID, UID) -> {error, notfound} =/= nsm_db:membership(UID, TID).
-%active_users(TID) -> nsm_srv_tournament_lobby:active_users(TID).
-%chat_history(TID) -> nsm_srv_tournament_lobby:chat_history(TID).
 all() -> nsm_db:all(tournament).
 user_is_team_creator(_UID, _TID) -> true.
 list_users_per_team(_TeamID) -> [].
