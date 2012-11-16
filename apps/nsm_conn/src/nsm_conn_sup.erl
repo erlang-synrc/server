@@ -1,11 +1,3 @@
-%%%-------------------------------------------------------------------
-%%% @author Paul Peregud <pawel@saturn.lan>
-%%% @copyright (C) 2011, Paul Peregud
-%%% @doc
-%%%
-%%% @end
-%%% Created : 10 Jan 2011 by Paul Peregud <pawel@saturn.lan>
-%%%-------------------------------------------------------------------
 -module(nsm_conn_sup).
 -behaviour(supervisor).
 
@@ -13,17 +5,11 @@
 -export([init/1]).
 
 -include_lib("nsg_srv/include/conf.hrl").
-
 -define(SERVER, ?MODULE).
 
-start_link() ->
-    supervisor:start_link({local, ?SERVER}, ?MODULE, []).
-
-stop() ->
-    exit(?SERVER, shutdown).
-
-get_free_port() ->
-    ?LISTEN_PORT.
+start_link() -> supervisor:start_link({local, ?SERVER}, ?MODULE, []).
+stop() -> exit(?SERVER, shutdown).
+get_free_port() -> ?LISTEN_PORT.
 
 init([]) ->
     RestartStrategy = one_for_one,
@@ -43,20 +29,3 @@ init([]) ->
 
 
     {ok, {SupFlags, [WorkerSup, Listener]}}.
-
-is_port_busy(Port) ->
-    case gen_tcp:connect("localhost", Port, []) of
-        {ok, Socket} ->
-            gen_tcp:close(Socket),
-            true;
-        _ ->
-            false
-    end.
-
-get_free_port(Port) ->
-    case is_port_busy(Port) of
-        false ->
-            Port;
-        true ->
-            get_free_port(Port+1)
-    end.
