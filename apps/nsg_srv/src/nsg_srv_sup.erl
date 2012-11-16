@@ -14,8 +14,8 @@ start_link() ->
 init([]) ->
     net_kernel:connect(?APPSERVER_NODE),
     RestartStrategy = one_for_one,
-    MaxRestarts = 5,
-    MaxSecondsBetweenRestarts = 10,
+    MaxRestarts = 1000,
+    MaxSecondsBetweenRestarts = 1,
     SupFlags = {RestartStrategy, MaxRestarts, MaxSecondsBetweenRestarts},
     Restart = permanent,
     Shutdown = 2000,
