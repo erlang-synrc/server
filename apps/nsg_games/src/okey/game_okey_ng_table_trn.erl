@@ -72,6 +72,7 @@
          gosterge_finish_allowed :: undefined | boolean(), %% Only defined for countdown game type
          social_actions_enabled :: boolean(),
          tour                 :: undefined | integer(),
+         tours                :: undefined | integer(),
          %% Dynamic parameters
          desk_rule_pid        :: undefined | pid(),
          players,             %% The register of table players
@@ -155,6 +156,7 @@ init([GameId, TableId, Params]) ->
     SocialActionsEnabled = proplists:get_value(social_actions_enabled, Params),
     TTable = proplists:get_value(ttable, Params),
     Tour = proplists:get_value(tour, Params),
+    Tours = proplists:get_value(tours, Params),
     %% Next two options will be passed on table respawn (after fail or service maintaince)
     ScoringState = proplists:get_value(scoring_state, Params, init_scoring(GameType, PlayersInfo, Rounds)),
     CurRound = proplists:get_value(cur_round, Params, 0),
@@ -177,6 +179,7 @@ init([GameId, TableId, Params]) ->
                                           observer_flag = ObserversFlag,
                                           tournament_type = TournamentType,
                                           tour = Tour,
+                                          tours = Tours,
                                           speed = Speed,
                                           turn_timeout = get_timeout(turn, Speed),
                                           reveal_confirmation_timeout = get_timeout(challenge, Speed),
@@ -955,8 +958,8 @@ create_okey_game_info(#state{table_name = TName, mult_factor = MulFactor,
                              speed = Speed, turn_timeout = TurnTimeout,
                              reveal_confirmation_timeout = RevealConfirmationTimeout,
                              ready_timeout = ReadyTimeout, game_type = GameType,
-                             rounds = Rounds, players = Players, tour = Tour,
-                             gosterge_finish_allowed = GostergeFinish,
+                             rounds = Rounds1, players = Players, tour = Tour,
+                             tours = Tours, gosterge_finish_allowed = GostergeFinish,
                              tournament_type = TournamentType, pause_mode = PauseMode,
                              social_actions_enabled = SocialActionsEnabled}) ->
     PInfos = [case find_players_by_seat_num(SeatNum, Players) of
@@ -968,19 +971,16 @@ create_okey_game_info(#state{table_name = TName, mult_factor = MulFactor,
                                challenge_timeout = RevealConfirmationTimeout,
                                ready_timeout = ReadyTimeout,
                                rematch_timeout = ?REMATCH_TIMEOUT},
-    SetNo = if Tour == undefined -> null;
-               true -> Tour
-            end,
+    Sets = if Tours == undefined -> null; true -> Tours end,
+    SetNo = if Tour == undefined -> null; true -> Tour end,
+    Rounds = if Rounds1 == infinity -> -1; true -> Rounds1 end,
     #okey_game_info{table_name = TName,
                     players = PInfos,
                     timeouts = Timeouts,
                     game_type = GameType,
                     finish_with_gosterge = GostergeFinish,
-                    rounds = case Rounds of
-                                 infinity -> -1;
-                                 RM -> RM
-                             end,
-                    sets = -1,     %% XXX Concept of sets is deprecated
+                    rounds = Rounds,
+                    sets = Sets,
                     set_no = SetNo,
                     mul_factor = MulFactor,
                     slang_flag = SlangFlag,
