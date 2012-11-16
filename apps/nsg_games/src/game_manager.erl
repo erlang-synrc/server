@@ -22,7 +22,6 @@ create_table(GameFSM, Params, PlayerIds) ->
     {ok, Pid} = gen_server:call(?MODULE, {create_table, GameFSM, Params, GameId, PlayerIds}),
     {ok, GameId, Pid}.
 
-get_tables(GameId) -> qlc:e(qlc:q([Val || {{_,_,_Key},_,Val=#game_table{id = Id}} <- gproc:table(props), GameId == Id ])).
 get_relay_pid(GameId) -> case get_tables(GameId) of [] -> undefined;
     [#game_table{game_process = P} | _] -> ?INFO("GameRelay: ~p",[P]), P end.
 get_relay_mod_pid(GameId) -> case get_tables(GameId) of [] -> undefined;
@@ -349,3 +348,19 @@ start_tournament(TourId,NumberOfTournaments,NumberOfPlayers,Quota,Tours,Speed) -
     [{ok,OP2,_}|_] = lists:reverse(OkeyTournaments),
     ?INFO("Okey tournaments runned: ~p~n",[{OP1,OP2}]),
     OP1.
+
+%get_tables(GameId) -> 
+%    qlc:e(qlc:q([Val || {{_,_,_Key},_,Val=#game_table{id = Id}} <- gproc:table(props), GameId == Id ])).
+
+get_tables(Id) ->
+   qlc:e(qlc:q([Val || {{_,_,_Key},_,Val=#game_table{id = _Id}} <- gproc:table(props), Id == _Id ])).
+
+qlc_id(Id) ->
+    qlc:e(qlc:q([Val || {{_,_,_Key},_,Val=#game_table{gameid = _GameId, id = _Id, 
+                            owner = _Owner, creator = _Creator}} <- 
+             gproc:table(props), Id == _Id])).
+
+qlc_id_creator(Id,Creator,Owner) ->
+    qlc:e(qlc:q([Val || {{_,_,_Key},_,Val=#game_table{gameid = _GameId, id = _Id, 
+                            owner = _Owner, creator = _Creator}} <- 
+             gproc:table(props), Id == _Id, Creator == _Creator, Owner ==_Owner])).

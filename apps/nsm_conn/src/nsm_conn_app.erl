@@ -1,13 +1,11 @@
 -module(nsm_conn_app).
 -behaviour(application).
-
--export([start/0, start/2, stop/0, stop/1]).
--export([start_client/0, get_clients/0]).
+-compile(export_all).
 
 -include_lib("eunit/include/eunit.hrl").
 -include_lib("nsg_srv/include/conf.hrl").
 
-start() -> application:start(conn).
+start() -> application:start(nsm_conn).
 start(_StartType, _StartArgs) -> nsm_conn_sup:start_link().
 stop() -> stop([]).
 stop(_State) -> nsm_conn_sup:stop().

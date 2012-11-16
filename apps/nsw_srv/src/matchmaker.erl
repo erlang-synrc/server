@@ -180,7 +180,7 @@ el_inside_play() ->
              [#game_table{id = GaId}] ->
                  IdStr = integer_to_list(GaId),
                  wf:session(IdStr, IdStr),
-                 URL = lists:concat([?_U("/client"),"/","tavla","/id/", GaId]),
+                 URL = lists:concat([?_U("/client"),"/","okey","/id/", GaId]),
                  #event{type=click, actions=webutils:new_window_js(URL)};
              [] ->
                  []
@@ -543,24 +543,6 @@ convert_to_map(Data,_Setting,UId,GameFSM) ->
                           game_process = ProcId,
                           owner = _Owner,
                           creator = Owner} = _Tab <- Data ].
-
-
-
-get_lucky_table(Game) ->
-    Lucky = true,
-    Check = fun(undefined, _Value) -> true;
-               (Param, Value) ->  Param == Value
-            end,
-    Cursor = fun() ->
-                     qlc:cursor(qlc:q([V || {{_,_,_K},_,V=#game_table{game_type=G,
-                                                                      feel_lucky = L}}
-                                                <- gproc:table(props),
-                                            Check(Game, G),
-                                            Check(Lucky, L)]))
-             end,
-    Tables = qlc:next_answers(Cursor(), 1),
-    ?INFO("~w:get_lucky_table Table = ~p", [?MODULE, Tables]),
-    Tables.
 
 
 

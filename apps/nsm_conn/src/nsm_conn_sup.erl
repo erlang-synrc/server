@@ -1,8 +1,6 @@
 -module(nsm_conn_sup).
 -behaviour(supervisor).
-
--export([start_link/0, stop/0]).
--export([init/1]).
+-compile(export_all).
 
 -include_lib("nsg_srv/include/conf.hrl").
 -define(SERVER, ?MODULE).
@@ -14,7 +12,7 @@ get_free_port() -> ?LISTEN_PORT.
 init([]) ->
     RestartStrategy = one_for_one,
     MaxRestarts = 1000,
-    MaxSecondsBetweenRestarts = 3600,
+    MaxSecondsBetweenRestarts = 1,
 
     SupFlags = {RestartStrategy, MaxRestarts, MaxSecondsBetweenRestarts},
 
