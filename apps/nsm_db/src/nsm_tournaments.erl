@@ -3,20 +3,20 @@
 -include("user.hrl").
 -include("tournaments.hrl").
 
--export([create/2,create/12,     % { create the tournament }
-         destroy/1,              % { purge tournament with all team placeholders and played games }
-         join/2,                 % { put users in waiting queue }
-         waiting_player/1,       % { dequeue first waiting_player }
-         start/1,                % { move users from wating queue to teams }
-         remove/2,               % { unsubscribe user from tournaments in all sences }
-         all/0,                  % { return all registered tournaments }
-         joined_users/1,         % { all wating and active (if tournament started) users }
-         user_tournaments/1,     % { all tournaments in which user participates }
-         list_users_per_team/1,  % { list of played games of a team with all user replacements }
-         get/1,                  % { get tournament from db }
-         user_is_team_creator/2, % { if user have team creator priority }
+-export([create/2,create/12,     % create the tournament
+         destroy/1,              % purge tournament with all team placeholders and played games
+         join/2,                 % put users in waiting queue
+         waiting_player/1,       % dequeue first waiting_player
+         start/1,                % move users from wating queue to teams
+         remove/2,               % unsubscribe user from tournaments in all sences
+         all/0,                  % return all registered tournaments
+         joined_users/1,         % all wating and active (if tournament started) users
+         user_tournaments/1,     % all tournaments in which user participates
+         list_users_per_team/1,  % list of played games of a team with all user replacements
+         get/1,                  % get tournament from db
+         user_is_team_creator/2, % if user have team creator priority
          create_team/1,
-         user_joined/2]).          % { if user is already joined the tournament }
+         user_joined/2]).        % if user is already joined the tournament
 
 create_team(Name) ->
     TID = nsm_db:next_id("team",1),
