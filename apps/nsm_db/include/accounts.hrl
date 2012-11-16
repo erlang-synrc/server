@@ -11,9 +11,10 @@
 
 -type currency()         :: kakaush | quota | game_point | money.
 %% game events when points affected
--type game_event_type()  :: round_start | round_end | game_start | game_end.
+-type game_event_type()  :: round_start | round_end | game_start | game_end | tour_start.
+-type tournament_type()  :: standalone | elimination | pointing | lucky. %% FIXME: Copypasted from game_okey.hrl
 -type game_name()        :: okey | tavla. %% TODO: add other game names
--type game_type()        :: standard | evenodd | color | countdown | feellucky |
+-type game_mode()        :: standard | evenodd | color | countdown | feellucky |
                             esli | kakara. %%  TODO: add other game types
 -type account_id()       :: {string(), currency()}. %% {username, currency}.
 -type transaction_id()   :: string().
@@ -51,13 +52,14 @@
 %% values in #transaction.info. 'ti' prefix = 'transaction info'.
 
 -record(ti_game_event,
-		{
-         id                         :: integer(),
-         type                       :: game_event_type(),
-         game_name                  :: game_name(),
-         game_mode		            :: game_type(),
-         double_points              :: integer()
-		 }).
+        {
+         id                           :: integer(),         %% GameId
+         type                         :: game_event_type(),
+         game_name                    :: game_name(),
+         game_mode                    :: game_mode(),
+         double_points                :: integer(),
+         tournament_type = standalone :: tournament_type()
+        }).
 
 -record(ti_payment,
 		{

@@ -24,6 +24,7 @@
 -include_lib("nsx_config/include/log.hrl").
 -include_lib("nsg_srv/include/basic_types.hrl").
 -include_lib("nsm_db/include/table.hrl").
+-include_lib("nsm_db/include/accounts.hrl").
 
 %% --------------------------------------------------------------------
 %% External exports
@@ -42,7 +43,8 @@
          trn_id            :: term(),
          params            :: proplists:proplist(),
          bots_params       :: proplists:proplist(),
-         turns_plan        :: list(integer()), %% Defines how many players will be passed to a next turn
+         tours_plan        :: list(integer()), %% Defines how many players will be passed to a next tour
+         tours             :: integer(),
          quota_per_round   :: integer(),
          speed             :: fast | normal,
          demo_mode         :: boolean(), %% If true then results of turns will be generated randomly
@@ -113,7 +115,7 @@
 -define(SHOW_TOURNAMENT_RESULT_TIMEOUT, 15000). %% Time between last tour result showing and the tournament finish
 
 -define(SEATS_NUM, 4). %% TODO: Define this by a parameter. Number of seats per table
-
+-define(ROUNDS_PER_TOUR, 10).
 %% ====================================================================
 %% External functions
 %% ====================================================================
@@ -171,7 +173,8 @@ init([GameId, Params, _Manager]) ->
                              params = TableParams,
                              bots_params = BotsParams,
                              quota_per_round = QuotaPerRound,
-                             turns_plan = TurnsPlan,
+                             tours_plan = TurnsPlan,
+                             tours = Tours,
                              speed = Speed,
                              demo_mode = DemoMode,
                              players = Players,
@@ -255,9 +258,9 @@ handle_info({timeout, Magic}, ?STATE_WAITING_FOR_PLAYERS,
 
 
 handle_info({timeout, Magic}, ?STATE_SHOW_TURN_RESULT,
-            #state{timer_magic = Magic, tour = Tour,
-                   turns_plan = Plan, game_id = GameId} = StateData) ->
-    if Tour == length(Plan) ->
+            #state{timer_magic = Magic, tour = Tour, tours = Tours,
+                   game_id = GameId} = StateData) ->
+    if Tour == Tours ->
            ?INFO("OKEY_NG_TRN_ELIM <~p> Time to finalize the tournament.", [GameId]),
            finalize_tournament(StateData);
        true ->
@@ -516,14 +519,17 @@ handle_client_request(Request, From, StateName, #state{game_id = GameId} = State
    {reply, {error, unexpected_request}, StateName, StateData}.
 
 %%===================================================================
-init_tour(Tour, #state{game_id = GameId, turns_plan = Plan, tournament_table = TTable,
-                       params = TableParams, players = Players,
-                       table_id_counter = TableIdCounter, tables = OldTables} = StateData) ->
+init_tour(Tour, #state{game_id = GameId, tours_plan = Plan, tournament_table = TTable,
+                       params = TableParams, players = Players, quota_per_round = QuotaPerRound,
+                       table_id_counter = TableIdCounter, tables = OldTables, tours = Tours
+                      } = StateData) ->
     ?INFO("OKEY_NG_TRN_ELIM <~p> Initializing tour <~p>...", [GameId, Tour]),
     PlayersList = prepare_players_for_new_tour(Tour, TTable, Plan, Players),
     PrepTTable = prepare_ttable_for_tables(TTable, Players),
+    UsersIds = [UserId || {_, #'PlayerInfo'{id = UserId}, _} <- PlayersList],
+    deduct_quota(GameId, QuotaPerRound*?ROUNDS_PER_TOUR, UsersIds),
     {NewTables, Seats, NewTableIdCounter, CrRequests} =
-        setup_tables(PlayersList, PrepTTable, Tour, TableIdCounter, GameId, TableParams),
+        setup_tables(PlayersList, PrepTTable, Tour, Tours, TableIdCounter, GameId, TableParams),
     if Tour > 1 -> finalize_tables_with_rejoin(OldTables);
        true -> do_nothing
     end,
@@ -539,7 +545,6 @@ init_tour(Tour, #state{game_id = GameId, turns_plan = Plan, tournament_table = T
                                                             tab_requests = dict:new(),
                                                             tables_results = []
                                                            }}.
-
 
 start_turn(#state{game_id = GameId, tour = Tour, tables = Tables} = StateData) ->
     ?INFO("OKEY_NG_TRN_ELIM <~p> Starting tour <~p>...", [GameId, Tour]),
@@ -557,7 +562,7 @@ start_turn(#state{game_id = GameId, tour = Tour, tables = Tables} = StateData) -
 
 
 process_tour_result(#state{game_id = GameId, tournament_table = TTable,
-                           turns_plan = Plan, tour = Tour, tables_results = TablesResults,
+                           tours_plan = Plan, tour = Tour, tables_results = TablesResults,
                            players = Players, tables = Tables} = StateData) ->
     ?INFO("OKEY_NG_TRN_ELIM <~p> Tour <~p> is completed. Starting results processing...", [GameId, Tour]),
     TourType = lists:nth(Tour, Plan),
@@ -596,6 +601,18 @@ finalize_tournament(#state{game_id = GameId} = StateData) ->
           "Waiting some time (~p secs) before continue...",
           [GameId, ?SHOW_TOURNAMENT_RESULT_TIMEOUT div 1000]),
     {next_state, ?STATE_FINISHED, StateData#state{timer = TRef, timer_magic = Magic}}.
+
+deduct_quota(GameId, Amount, UsersIds) ->
+    [begin
+         TI = #ti_game_event{id = GameId,
+                             type = start_tour,
+                             tournament_type = elimination,
+                             game_name = okey,       %% FIXME: hardcoded
+                             game_mode = standard,   %% FIXME: hardcoded
+                             double_points = 1},
+         nsm_accounts:transaction(binary_to_list(UserId), ?CURRENCY_QUOTA, -Amount, TI)
+     end
+     || UserId <- UsersIds].
 
 
 turn_result_all(TablesResults) ->
@@ -732,14 +749,14 @@ prepare_ttable_for_tables(TTable, Players) ->
 %%                              {Tables, Seats, NewTableIdCounter, CrRequests}
 %% Types: Players = {PlayerId, UserInfo, Points}
 %%        TTable = [{Tour, [{UserId, CommonPos, Score, Status}]}]
-setup_tables(Players, TTable, Tour, TableIdCounter, GameId, TableParams) ->
+setup_tables(Players, TTable, Tour, Tours, TableIdCounter, GameId, TableParams) ->
     SPlayers = shuffle(Players),
     Groups = split_by_num(?SEATS_NUM, SPlayers),
     F = fun(Group, {TAcc, SAcc, TableId, TCrRequestsAcc}) ->
                 {TPlayers, _} = lists:mapfoldl(fun({PlayerId, UserInfo, Points}, SeatNum) ->
                                                        {{PlayerId, UserInfo, SeatNum, Points}, SeatNum+1}
                                                end, 1, Group),
-                TableParams2 = [{players, TPlayers}, {ttable, TTable}, {tour, Tour} | TableParams],
+                TableParams2 = [{players, TPlayers}, {ttable, TTable}, {tour, Tour}, {tours, Tours} | TableParams],
                 {ok, TabPid} = spawn_table(GameId, TableId, TableParams2),
                 MonRef = erlang:monitor(process, TabPid),
                 NewTAcc = reg_table(TableId, TabPid, MonRef, _GlTableId = 0, _Context = undefined, TAcc),
@@ -951,7 +968,7 @@ table_parameters(ParentMod, ParentPid, Speed) ->
      {round_timeout, 20*1000},
      {speed, Speed},
      {game_type, standard},
-     {rounds, 10},
+     {rounds, ?ROUNDS_PER_TOUR},
      {reveal_confirmation, true},
      {next_series_confirmation, false},
      {pause_mode, disabled},
@@ -965,7 +982,7 @@ bots_parameters() ->
      {game_mode, standard},
      {lucky, true},
      {speed, normal},
-     {rounds, 10}
+     {rounds, ?ROUNDS_PER_TOUR}
     ].
 
 seats_num(TableParams) -> proplists:get_value(seats_num, TableParams).

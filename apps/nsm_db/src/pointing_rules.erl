@@ -29,7 +29,7 @@
 -type external_game_name() :: game_okey | game_tavla.
 
 %% @doc Common getter for rules.
--spec get_rules(external_game_name(), game_type(), Rounds::integer()) ->
+-spec get_rules(external_game_name(), game_mode(), Rounds::integer()) ->
           {ok, #pointing_rule{}, AdditionalRules::list(#pointing_rule{})} | {error, any()}.
 
 get_rules(Game, GameType, Rounds) when Game == game_okey; Game == game_tavla ->

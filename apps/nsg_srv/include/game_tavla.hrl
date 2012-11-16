@@ -61,8 +61,11 @@
           timeout :: integer(),   %% timeout value for player turn
           mul_factor        :: pos_integer(),
           slang_flag        :: boolean(),
-          observer_flag     :: boolean()
-                     }).
+          observer_flag     :: boolean(),
+          pause_enabled = true :: boolean(),
+          social_actions_enabled = true :: boolean(),
+          tournament_type = standalone :: tournament()
+                         }).
 
 -record(tavla_color_info, {
           name :: any(),

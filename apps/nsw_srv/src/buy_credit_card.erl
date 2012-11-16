@@ -26,6 +26,7 @@
 -define(CC_FAILURE_URL, "https://kakaranet.com/buy/credit_card/result/failure").
 
 -define(gv, proplists:get_value).
+-define(xml_prolog, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>").
 
 %% record to temporary store card info in session
 -record(card_info, {no,
@@ -396,6 +397,61 @@ construct_provision_xml() ->
     SecurityData = utils:sha_upper(ProvisionPassword++add_zeros(9, TerminalId)),
     HashData = utils:sha_upper(OrderId++TerminalId++Amount++SecurityData),
 
+    Terminal = {'Terminal', [
+      {'ProvUserId', [ProvUserId]},
+      {'HashData', [HashData]},
+      {'UserID', [UserId]},
+      {'ID', [TerminalId]},
+      {'MerchantId', [MerchantId]} ]},
+
+    Order = {'Order', [
+      {'OrderID', [OrderId]},
+      {'GroupID', [""]},
+      {'AddressList', [
+        {'Address', [
+          {'Type', ["B"]},
+          {'Name', [""]},
+          {'LastName', [""]},
+          {'Company', [""]},
+          {'Text', [""]},
+          {'District', [""]},
+          {'City', [""]},
+          {'PostalCode', [""]},
+          {'Country', [""]},
+          {'PhoneNumber', [""]}]} 
+      ]}]},
+
+    Transaction = {'Transaction', [
+      {'Type', [TxnType]},
+      {'InstallmentCnt', [InstallmentCount]},
+      {'Amount', [Amount]},
+      {'CurrencyCode', [CurrencyCode]},
+      {'CardholderPresentCode', [""]},
+      {'MotoInd', [""]},
+      {'Secure3D', [
+        {'AuthenticationCode', [AuthCode]},
+        {'SecurityLevel', [SecurityLevel]},
+        {'TxnID', [TxnId]},
+        {'Md', [MD]} 
+      ]}]},
+
+    Customer = {'Customer', [{'IPAddress', [IP]}, {'EmailAddress', [Email]}]},
+    Card = {'Card', [{'Number', [""]}, {'ExpireDate', [""]}, {'CVV2', [""]}]},
+
+    GVPSRequest = {'GVPSRequest', [], [
+      {'Mode', [Mode]},
+      {'Version', [Version]},
+      {'ChannelCode', [""]},
+      Terminal,
+      Customer,
+      Card,
+      Order,
+      Transaction]},
+
+    XML_X = xmerl:export_simple([GVPSRequest], xmerl_xml, [{prolog, ?xml_prolog}]),
+    Resp = unicode:characters_to_binary(XML_X),
+    wf:info("Provision XML - xmerl", [[Resp]]),
+
     TplParams = [
         {mode, Mode},
         {version, Version},
@@ -416,14 +472,11 @@ construct_provision_xml() ->
         {md, MD},
         {txn_id, TxnId}
     ],
-
     {ok, XML} = '3D_inquiry_request_dtl':render(TplParams),
+    wf:info("Provision XML - DTL", [XML]),
     {ok, XML}.
 
-
-%%
 %% Events
-%%
 
 event({credit_card_clicked, PurchaseId}) ->
     Package = buy:package(),
