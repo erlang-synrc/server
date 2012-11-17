@@ -36,15 +36,13 @@ body() ->
 main_authorized() ->
     Col = #panel{class=col, body=section_body(get_current_section())},
     PreLinks = [
-	     {profile,	?_U("/profile"), 	?_T("Profile")},
-	     {gifts,	?_U("/profile/gifts"), 	?_T("Gifts")},
-	     {account,	?_U("/profile/account"),?_T("Account")},
-	     {stats,	?_U("/profile/stats"), 	?_T("Stats")},
-	     {invite,	?_U("/profile/invite"), ?_T("Invite")},
-%	     {tournament,?_U("/profile/tournament"), ?_T("New Tournament")},
-%	     {tournament2,?_U("/create-tournament"), ?_T("// Tournament")},
-	     {user_tournaments,?_U("/profile/user-tournaments"), ?_T("Tournaments")}
-	    ],
+       {profile,         ?_U("/profile"),                  ?_T("Profile")},
+       {gifts,           ?_U("/profile/gifts"),            ?_T("Gifts")},
+       {account,         ?_U("/profile/account"),          ?_T("Account")},
+       {stats,           ?_U("/profile/stats"),            ?_T("Stats")},
+       {invite,          ?_U("/profile/invite"),           ?_T("Invite")},
+       {user_tournaments,?_U("/profile/user-tournaments"), ?_T("Tournaments")}
+    ],
     Links = case nsm_affiliates:is_existing_affiliate(wf:user()) of 
         true ->
             case nsm_affiliates:is_able_to_look_details(wf:user()) of
@@ -355,134 +353,6 @@ section_body(invite) ->
     #panel{id=invite_list, body=invite_list()}
     ];
 
-section_body(tournament) ->
-
-    User0 = webutils:user_info(),
-    User = undef_to_empty_str(User0),
-
-    CityList = webutils:city_list(),
-    _City = webutils:list_to_options(CityList, User#user.location),
-
-    EduOptions = [{"school",	?_T("Elementary School")},
-		  {"highschool",?_T("High School")},
-                  {"bsc",	?_T("B.Sc.")},
-                  {"msc",	?_T("M.Sc.")},
-                  {"phd",	?_T("Phd")}],
-    _Edu = webutils:list_to_options(EduOptions, User#user.education),
-
-    GenderOption = [{"male",	?_T("Male")},
-		    {"female",	?_T("Female")}],
-    _Gender = webutils:list_to_options(GenderOption, User#user.sex),
-
-    {Year0, Month0, Day0} =
-        case User#user.age of
-            {_, _, _} = D ->
-                D;
-            _ ->
-                {undefined, undefined, undefined}
-        end,
-
-    {Y0, _,_} = erlang:date(),
-    ViewYear = Y0,
-
-    Day = webutils:create_option_with_number({1,31}, Day0),
-    Month = webutils:create_option_with_number({1,12}, Month0),
-    Year = webutils:create_option_with_number({ViewYear+2,ViewYear}, Year0),
-
-    Tourn = [#option{value=pointing, text=?_T("Pointing"), selected=true},
-                   #option{value=election, text=?_T("Election")}],
-%    Tourn = webutils:list_to_options(TournOption),
-    Tour = #tournament{name="",description="",quota=100,start_date=date(),type=election,players_count=100},
-
-    Games = [#option{value=game_okey, text=?_T("Okey"), selected=true},
-                   #option{value=game_tavla, text=?_T("Tavla")}],
-%    Games = webutils:list_to_options(GameOption),
-
-    {Y11,M1,D1} = date(),
-
-    ColL = [
-            #panel{class=row,body=[
-	        #panel{class="row", body=[
-		    #label{text=?_T("Game type")},
-                    #panel{class="sel", body=#dropdown{class="cs-1 selectArea", options=Games, id=game_type, value=game_okey}}
-		]},
-	        #panel{class="row", body=[
-	            #label{text=?_T("Name")},
-		    #panel{class=text,body=#textbox{id=tournament_name, text=Tour#tournament.name}}
-		]},
-	        #panel{class="row", body=[
-	            #label{text=?_T("Description")},
-		    #panel{class=text,body=#textbox{id=tournament_description, text=Tour#tournament.description}}
-		]},
-	        #panel{class="row", body=[
-	            #label{text=?_T("Quota")},
-		    #panel{class=text,body=#textbox{id=tournament_quota, text=Tour#tournament.quota}}
-		]},
-                #panel{class=row,body=[#label{text=?_T("Start Date:")},
-				   #panel{class=sel,body=#dropdown{class="cs-1", options=Day, id=tournament_day,value=D1}},
-				   #panel{class=sel,body=#dropdown{class="cs-1", options=Month, id=tournament_month,value=M1}},
-				   #panel{class=sel,body=#dropdown{class="cs-1", options=Year, id=tournament_year,value=Y11}}
-				   ]},
-	        #panel{class="row", body=[
-		    #label{text=?_T("Tournament type")},
-                    #panel{class="sel", body=#dropdown{class="cs-1 selectArea", options=Tourn, id=tournament_type,value=pointing}}
-		]},
-	        #panel{class="row", body=[
-                    #label{text=?_T("No. of players")},
-                    #panel{class=text,body=#textbox{id=max_players}}
-		]},
-
-	        #panel{class="row", body=[
-                    #panel{class="btn-holder", body=[
-                         #panel{class="ar", body=[
-                              #panel{ class="publish-fb", body=[#checkbox{id=checkbox_fb, text="Publish to Facebook", checked=true}]},
-                              #panel{body=[#button{class="btn-reset", text="Cancel", postback=cancel_tournament},
-                              #button{class="btn-submit", text="Create", postback=create_tournament}]}
-                         ]}
-                    ]}
-        	]}
-	    ]}
-    ],
-
-    _AvatarP = avatar_update_box(User),
-
-    ColR = [  ],
-    [
-%    "<div class='for_blocking'>",
-     #h1{text=?_T("Create Tournament")},
-     #panel{id=create_tour_info},
-     #panel{class="profile-info", body=[#panel{class="col-l",body=["<form>", ColL, "</form>"]},
-					#panel{class="col-r",body=ColR}
-				       ]},
-
-	#br{},
-	"<h2 class=\"ttl\"><span>Gifts</span></h2>"
-		"<ul class=\"prod-list\">
-		<li>
-			<div class=\"box\">
-				<h2 class=\"head\">Points: 35.000</h2>
-				<div class=\"img\"><a href=\"#\"><img src=\"/images/img-41.jpg\" alt=\"\" width=\"118\" height=\"140\"></a></div>
-			</div>
-			<strong class=\"prod-name\"><a href=\"#\">Samsung Galaxy Gio S5660<br>2 Gb Hafıza Kartı...</a></strong>
-		</li><li>
-			<div class=\"box\">
-				<h2 class=\"head\">Points: 25.000</h2>
-				<div class=\"img\"><a href=\"#\"><img src=\"/images/img-45.jpg\" alt=\"\" width=\"148\" height=\"120\"></a></div>
-			</div>
-			<strong class=\"prod-name\"><a href=\"#\">Fujifilm AV150 14.0MP<br>2.7\"LCD Dijital Fotoğraf...</a></strong>
-		</li>
-	</ul>
-    </div>
-    <script>
-        $('div.for_blocking').block({
-            message: '<h1>" ++ ?_T("This feature is not yet available in beta.") ++
-                "</h1><h2>" ++ ?_T("You will see this part very soon.") ++ "</h2>',
-            css: { border: '3px solid #a00' }
-        });
-    </script>"
-    ];
-%    create_tour_body()];
-
 section_body(affiliates) ->
     #panel{id=page_content, body=[
         affiliates:paged_content(wf:user())
@@ -535,12 +405,7 @@ section_body(_) ->
                         ]
                     ]}
                 ]}
-        end        
-%        #panel{class="inform-block", style="width:490px; ", body=
-%        "<h1>"++?_T("This feature is not available in beta version")++"</h1>
-%         <h2>"++?_T("But we are working on it. Wait for a while - it will all be here. Every kind of statistics with all that tables and diagrams. All that stuff smart people with glasses call 'information design'.")++"</h2>
-%        "}
-        
+        end
     ].
 
 % invite list separated for easy update
