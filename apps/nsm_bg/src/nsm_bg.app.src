@@ -1,15 +1,6 @@
-{application, nsm_bg,
- [
-  {description, "Notifications sending processor"},
-  {vsn, "1"},
-  {registered, []},
-  {applications, [
-                  kernel,
-                  gproc,
-                  stdlib,
-                  nsm_db,
-                  nsm_mq
-                 ]},
-  {mod, { nsm_bg_app, []}},
-  {env, []}
- ]}.
+{application, nsm_bg, [{description, "Message Bus Consumers"},
+                       {vsn, "1"},
+                       {registered, []},
+                       {applications, [kernel, gproc, stdlib, nsm_db, nsm_mq]},
+                       {mod, { nsm_bg_app, []}},
+                       {env, []}]}.

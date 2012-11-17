@@ -1,58 +1,23 @@
-%%----------------------------------------------------------------------
-%% @author Vladimir Baranov <baranoff.vladimir@gmail.com>
-%% @copyright Paynet Internet ve Bilisim Hizmetleri A.S. All Rights Reserved.
-%% @doc
-%%    Email worker
-%% @end
-%%--------------------------------------------------------------------
--module(nsm_bg_worker_email).
-
--behaviour(nsm_bg_gen_worker).
-
-%% --------------------------------------------------------------------
-%% Include files
-%% --------------------------------------------------------------------
+-module(nsm_mailer).
+-behaviour(nsm_consumer).
 -include_lib("nsx_config/include/log.hrl").
 -include_lib("nsm_db/include/membership_packages.hrl").
 -include_lib("nsm_db/include/config.hrl").
-%% --------------------------------------------------------------------
-%% External exports
-%% --------------------------------------------------------------------
--export([]).
-
-%% nsm_bg_gen_worker callbacks
 -export([init/1, handle_notice/3, get_opts/1, handle_info/2]).
-
 -record(state, {smtp_options = []}).
 
-%% ====================================================================
-%% External functions
-%% ====================================================================
-
-
-%% ====================================================================
-%% Server functions
-%% ====================================================================
-
 init([]) ->
-    %% store smtp options in worker state
     SMTPOptions = read_smtp_options(),
     {ok, #state{smtp_options = SMTPOptions}}.
 
-
-
-handle_notice(["email", "send"], {Subject, Content, To},
-              #state{smtp_options = Options} = State) ->
-    ?INFO("email(~p): send email to ~s. Subject:~s",
-          [self(), To, Subject]),
+handle_notice(["email", "send"], {Subject, Content, To}, #state{smtp_options = Options} = State) ->
+    ?INFO("email(~p): send email to ~s. Subject:~s", [self(), To, Subject]),
     mail:send(Subject, Content, To, Options),
     {noreply, State};
 
-%% send multipart
 handle_notice(["email", "send"], {Subject, TextContent, HTMLContent, To},
               #state{smtp_options = Options} = State) ->
-    ?INFO("email(~p): send multipart email to ~s. Subject:~s",
-          [self(), To, Subject]),
+    ?INFO("email(~p): send multipart email to ~s. Subject:~s", [self(), To, Subject]),
     mail:send_multipart(Subject, TextContent, HTMLContent, To, Options),
     {noreply, State};
 
@@ -96,10 +61,6 @@ get_opts(_State) ->
      {queue, <<"notice.email.1">>},
      {queue_options, [auto_delete]}].
 
-%% --------------------------------------------------------------------
-%%% Internal functions
-%% --------------------------------------------------------------------
-%% FIXME: read options from db
 read_smtp_options() -> [].
 %% read_smtp_options() ->
 %%     {ok, User}    = nsm_db:get(config, "smtp/user",     "noreply@kakaranet.com"),

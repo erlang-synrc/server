@@ -1,41 +1,11 @@
-%%----------------------------------------------------------------------
-%% @author Vladimir Baranov <baranoff.vladimir@gmail.com>
-%% @copyright Paynet Internet ve Bilisim Hizmetleri A.S. All Rights Reserved.
-%% @doc
-%%   Feed worker
-%% @end
-%%--------------------------------------------------------------------
--module(nsm_bg_worker_feed).
-
--behaviour(nsm_bg_gen_worker).
-%% --------------------------------------------------------------------
-%% Include files
-%% --------------------------------------------------------------------
+-module(nsm_writer).
+-behaviour(nsm_consumer).
 -include_lib("nsx_config/include/log.hrl").
 -include_lib("nsm_db/include/feed.hrl").
 -include_lib("nsm_db/include/user.hrl").
 -include("nsm_bg.hrl").
-%% --------------------------------------------------------------------
-%% External exports
-%% --------------------------------------------------------------------
--export([]).
-
-%% gen_worker callbacks
 -export([init/1, handle_notice/3, get_opts/1, handle_info/2]).
-
--record(state, {owner = "",   %% id of the owner (user or group)
-                type,         %% user | group
-                feed,         %% link to the feed
-                direct        %% link to the dorect feed
-               }).
-
-%% ====================================================================
-%% External functions
-%% ====================================================================
-
-%% ====================================================================
-%% Server functions
-%% ====================================================================
+-record(state, {owner = "", type :: user | group, feed, direct }).
 
 init(Params) ->
     Owner = ?gv(owner, Params),
@@ -77,7 +47,6 @@ handle_notice(["feed", "delete", Owner] = Route, Message,
           [self(), Owner, Route, Message]),
     {stop, normal, State};
 
-%% message added to group, add it to feed
 handle_notice(["feed", "group", GroupId, "entry", EntryId, "add"] = Route,
               [From|_] = Message,
               #state{owner = Owner, feed = Feed} = State) ->
@@ -152,10 +121,8 @@ handle_notice(["feed", "group", _Group, "entry", EntryId, "delete_system"] = Rou
     feed:remove_entry(Feed, EntryId),
     {noreply, State};
 
-
-%% share entry
 handle_notice(["feed", _, WhoShares, "entry", NewEntryId, "share"],
-              #entry{entry_id = EntryId, raw_description = Desc, media = Medias,
+              #entry{entry_id = _EntryId, raw_description = Desc, media = Medias,
                      to = Destinations, from = From} = E,
               #state{feed = Feed, type = user} = State) ->
     %% FIXME: sharing is like posting to the wall
@@ -164,7 +131,6 @@ handle_notice(["feed", _, WhoShares, "entry", NewEntryId, "share"],
     feed:add_shared_entry(Feed, From, Destinations, NewEntryId, Desc, Medias, {user, normal}, WhoShares),
     {noreply, State};
 
-%% delete entry from feed
 handle_notice(["feed", "group", _Group, "entry", EntryId, "delete"] = Route,
               Message,
               #state{owner = Owner, feed = Feed} = State) ->
@@ -217,9 +183,6 @@ handle_notice(["feed", _Type, _EntryOwner, "comment", CommentId, "add"] = Route,
                 CommentId, Content, Medias),
     {noreply, State};
 
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% statistics
-
 handle_notice(["feed", "user", UId, "scores", _Null, "add"] = Route,
     Message, #state{owner = Owner, type =Type} = State) ->
     ?INFO("queue_action(~p): score statistics put: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),
@@ -265,9 +228,6 @@ handle_notice(["feed", "user", UId, "count_comment_in_statistics"] = Route,
     end,
     {noreply, State};
 
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% nsm calls
-
 handle_notice(["db", "group", Owner, "put"] = Route, 
     Message, #state{owner = Owner, type =Type} = State) ->
     ?INFO("queue_action(~p): group put: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),
@@ -292,9 +252,6 @@ handle_notice(["system", "delete"] = Route,
     {Where, What} = Message,
     nsm_db:delete(Where, What),
     {noreply, State};
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% groups
 
 handle_notice(["system", "create_group"] = Route, 
     Message, #state{owner = Owner, type =Type} = State) ->
@@ -412,11 +369,7 @@ handle_notice(["db", "group", GId, "remove_group"] = Route,
     Routes = nsm_users:rk_group_feed(GId),
     nsm_users:unbind_group_exchange(Channel, GId, Routes),
     nsm_mq_channel:close(Channel),
-
     {noreply, State};
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% user-group subscription
 
 handle_notice(["subscription", "user", UId, "add_to_group"] = Route,
     Message, #state{owner = Owner, type =Type} = State) ->
@@ -505,9 +458,6 @@ handle_notice(["subscription", "user", UId, "leave_group"] = Route,
     end,
     {noreply, State};
 
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% user-user subscription
-
 handle_notice(["subscription", "user", UId, "subscribe_user"] = Route,
     Message, #state{owner = Owner, type =Type} = State) ->
     ?INFO(" queue_action(~p): subscribe_user: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),
@@ -591,9 +541,6 @@ handle_notice(["subscription", "user", Who, "unblock_user"] = Route,
     nsx_util_notification:notify_user_unblock(Who, Whom),
     {noreply, State};
 
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% login
-
 handle_notice(["login", "user", UId, "update_after_login"] = Route,
     Message, #state{owner = Owner, type =Type} = State) ->
     ?INFO("queue_action(~p): update_after_login: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),    
@@ -616,9 +563,6 @@ handle_notice(["login", "user", UId, "update_after_login"] = Route,
     end,
     {noreply, State};
 
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% invites
-
 handle_notice(["invite", "user", UId, "add_invite_to_issuer"] = Route,
     Message, #state{owner = Owner, type =Type} = State) ->
     ?INFO("queue_action(~p): add_invite_to_issuer: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),
@@ -632,9 +576,6 @@ handle_notice(["system", "use_invite"] = Route,
     {Code, UId} = Message,
     invite:use_code(Code, UId),
     {noreply, State};
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% tournaments
 
 handle_notice(["tournaments", "user", UId, "create"] = Route,
     Message, #state{owner = Owner, type =Type} = State) ->
@@ -661,9 +602,6 @@ handle_notice(["tournaments", "user", UId, "create_and_join"] = Route,
     end,
     {noreply, State};
 
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% likes
-
 handle_notice(["likes", "user", UId, "add_like"] = Route,
     Message, #state{owner = Owner, type =Type} = State) ->
     ?INFO("queue_action(~p): add_like: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),
@@ -671,10 +609,6 @@ handle_notice(["likes", "user", UId, "add_like"] = Route,
     feed:add_like(Fid, Eid, UId),
     {noreply, State};
 
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% affiliates
-
-%% general
 handle_notice(["system", "create_contract"] = Route,
     Message, #state{owner = Owner, type =Type} = State) ->
     ?INFO("queue_action(~p): create_contract: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),    
@@ -699,7 +633,6 @@ handle_notice(["system", "disable_contract_type"] = Route,
     nsm_affiliates:disable_contract_type(Id),
     {noreply, State};
 
-%% users
 handle_notice(["affiliates", "user", UId, "create_affiliate"] = Route,
     Message, #state{owner = Owner, type =Type} = State) ->
     ?INFO("queue_action(~p): create_affiliate: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),   
@@ -723,9 +656,6 @@ handle_notice(["affiliates", "user", UId, "disable_to_look_details"] = Route,
     ?INFO("queue_action(~p): disable_to_look_details: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),
     nsm_affiliates:disable_to_look_details(UId),
     {noreply, State};
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% membership_packages
 
 handle_notice(["system", "add_package"] = Route,
     Message, #state{owner = Owner, type =Type} = State) ->
@@ -774,16 +704,10 @@ handle_notice(["purchase", "user", _, "set_purchase_info"] = Route,
     nsm_membership_packages:set_purchase_info(OrderId, Info),
     {noreply, State};
 
-
-%% for copypasting :-)   --    nsx_util_notification:notify(["", "", , ""], {}),
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% unexpected
 handle_notice(Route, Message, #state{owner = User} = State) ->
     ?DBG("feed(~p): unexpected notification received: User=~p, "
               "Route=~p, Message=~p", [self(), User, Route, Message]),
     {noreply, State}.
-
 
 handle_info(_Info, State) ->
     {noreply, State}.
@@ -833,10 +757,6 @@ get_opts(#state{type = system, owner = Owner}) ->
      {queue, QueueName},
      {queue_options, queue_options()}].
 
-%% --------------------------------------------------------------------
-%%% Internal functions
-%% --------------------------------------------------------------------
-
 coalesce(undefined, B) -> B;
 coalesce(A, _) -> A.
 
@@ -849,7 +769,6 @@ queue_options() ->
      {auto_delete, false},
      {dead_letter_exchange, ?DEAD_LETTER_EXCHANGE}].
 
-%% remove entry from all owners feeds
 remove_entry(#state{feed = Feed, direct = Direct}, EntryId) ->
     [feed:remove_entry(FId, EntryId) || FId <- [Feed, Direct]].
 
