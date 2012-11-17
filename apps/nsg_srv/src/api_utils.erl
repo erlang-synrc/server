@@ -5,47 +5,21 @@
 -include_lib("nsx_config/include/log.hrl").
 
 -export([to_known_record/2]).
-
 -export([members/1, members/2, name/1]).
-
 -export([gametype_to_atom/1, gametype_to_binary/1,
          gamemodule_to_gametype/1, gametype_to_gamemodule/1]).
 
--define(L_TO_A(X),
-        list_to_atom(X)).
+gametype_to_atom(<<"okey">>) -> okey;
+gametype_to_atom(<<"king">>) -> king;
+gametype_to_atom(<<"tavla">>) -> tavla;
+gametype_to_atom(A) when is_atom(A) -> A.
 
+gamemodule_to_gametype(Atom) -> "game_" ++ X = atom_to_list(Atom), list_to_atom(X).
+gametype_to_gamemodule(Atom) -> list_to_atom("game_" ++ atom_to_list(Atom)).
+gametype_to_binary(GT) -> atom_to_binary(GT, latin1).
 
-gametype_to_atom(<<"okey">>) ->
-    okey;
-gametype_to_atom(<<"king">>) ->
-    king;
-gametype_to_atom(<<"tavla">>) ->
-    tavla;
-gametype_to_atom(A) when is_atom(A) ->
-    A.
-
-gamemodule_to_gametype(Atom) ->
-    "game_" ++ X = atom_to_list(Atom),
-    list_to_atom(X).
-
-gametype_to_gamemodule(Atom) ->
-    list_to_atom("game_" ++ atom_to_list(Atom)).
-
-gametype_to_binary(GT) ->
-    atom_to_binary(GT, latin1).
-
-
-%%%
-%%% returns members of record as proplist
-%%% Note: recrunt:fields(record_name) should
-%%% be defined first
-%%%
-members(T) ->
-    members(T, recrunt).
-members(T, recrunt) ->
-    Keys = recrunt:fields(T),
-    Values = tl(tuple_to_list(T)),
-    lists:zip(Keys, Values);
+members(T) -> members(T, recrunt).
+members(T, recrunt) -> Keys = recrunt:fields(T), Values = tl(tuple_to_list(T)), lists:zip(Keys, Values);
 members(T, Module) ->
     try
         Keys = Module:fields(T),
@@ -55,14 +29,11 @@ members(T, Module) ->
             members(T, recrunt)
     end.
 
-name(T) ->
-    element(1, T).
+name(T) -> element(1, T).
 
-%%FIX: why defensive programming? Should be rewritten for success case
-%%only
 to_known_record(Bin, Members) when is_binary(Bin) ->
     Tag = try
-              T = ?L_TO_A(binary_to_list(Bin)),
+              T = list_to_atom(binary_to_list(Bin)),
               recrunt:fields(T),
               T
           catch
@@ -91,12 +62,7 @@ to_known_record(Tag, Members0) when is_atom(Tag) ->
             erlang:error(api_error_wrong_params)
     end.
 
-%%%%%%%% internal functions
-to_proper_proplists([{A, _} | _] = List) when is_binary(A)->
-    to_proper_proplists(List, []);
-to_proper_proplists(List) ->
-    List.
-to_proper_proplists([], Acc) ->
-    lists:reverse(Acc);
-to_proper_proplists([{A, B} | R], Acc) when is_binary(A)->
-    to_proper_proplists(R, [{?L_TO_A(binary_to_list(A)), B} | Acc]).
+to_proper_proplists([{A, _} | _] = List) when is_binary(A)-> to_proper_proplists(List, []);
+to_proper_proplists(List) -> List.
+to_proper_proplists([], Acc) -> lists:reverse(Acc);
+to_proper_proplists([{A, B} | R], Acc) when is_binary(A)-> to_proper_proplists(R, [{list_to_atom(binary_to_list(A)), B} | Acc]).
