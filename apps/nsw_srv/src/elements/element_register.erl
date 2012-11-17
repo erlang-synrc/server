@@ -193,6 +193,7 @@ finish_register_(Invite) ->
         name = Name,
         surname = Surname,
         facebook_id = FbId,
+        team = nsm_db:create_team("team"),
         verification_code = VerificationCode,
         age = BirthDay,
         register_date = erlang:now(),
