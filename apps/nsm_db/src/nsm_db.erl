@@ -163,7 +163,7 @@ create_tour_users(A,B,Groups) ->
                             register_date={1345,14071,852889}
                            } || N <- lists:seq(A, B)],
     [ begin
-          nsm_users:init_mq(Me#user.username, Groups),
+%          nsm_users:init_mq(Me#user.username, Groups),
           nsm_accounts:create_account(Me#user.username),
           nsm_accounts:transaction(Me#user.username, ?CURRENCY_QUOTA, db_opt:get_default_quota(), #ti_default_assignment{}),
           nsm_db:put(Me#user{password = utils:sha(Me#user.password),
