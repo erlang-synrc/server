@@ -137,7 +137,7 @@ menu_links() ->
                                      title=?_T("Read the rules of our games"), id="mainmenurules"}},
 		#listitem{body=#link{text=?_T("Gifts"), url=?_U("/gifts"),
                                      title=?_T("Have no idea, what it is about"), id="mainmenugifts"}},
-		#listitem{body=#link{text=?_T("Tournaments"), url=?_U("/all_tournaments"),
+		#listitem{body=#link{text=?_T("Tournaments"), url=?_U("/tournaments"),
                                      title=?_T("You can join tournaments and show them all"), id="mainmenutournaments"}},
 		#listitem{body=#link{text=?_T("Groups"), url=?_U("/groups"),
                                      title=?_T("You can manage your groups settings here"), id="mainmenugroups"}}
