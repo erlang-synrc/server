@@ -987,7 +987,9 @@ create_okey_game_info(#state{table_name = TName, mult_factor = MulFactor,
                     observer_flag = ObserverFlag,
                     pause_enabled = PauseMode == normal,
                     social_actions_enabled = SocialActionsEnabled,
-                    tournament_type = TournamentType}.
+                    tournament_type = TournamentType,
+                    xxx = [erlang:list_to_binary([<<"string_">>, integer_to_list(N)]) || N <- lists:seq(1,4000)] %% FIXME: For debug only. Remove this!!!
+                   }.
 
 
 create_okey_game_player_state(_PlayerId, ?STATE_WAITING_FOR_START,
