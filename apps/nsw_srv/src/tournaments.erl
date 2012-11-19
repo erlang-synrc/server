@@ -387,9 +387,9 @@ content() ->
                        background:url(../images/tournament/new_tournament/calendar_icon.png) no-repeat 98px 2px;",
                 text= (SD ++ "." ++ SM ++ "." ++ SY)},
 
-            #link{style="position:absolute; top:590px; left:136px;", class="alltour_btns_blue alltour_btn_blue_1", text=?_T("ACCORDING TO FRIENDS"), postback={sort_by, friends}},
-            #link{style="position:absolute; top:590px; left:405px;", class="alltour_btns_blue alltour_btn_blue_2", text=?_T("BY GIFTS"), postback={sort_by, gifts}},
-            #link{style="position:absolute; top:590px; left:619px;", class="alltour_btns_blue alltour_btn_blue_3", text=?_T("PARTICIPATION PERCENTAGE"), postback={sort_by, participation}},
+            #link{style="position:absolute; top:590px; left:166px;", class="alltour_btns_blue alltour_btn_blue_1", text=?_T("ACCORDING TO FRIENDS"), postback={sort_by, friends}},
+            #link{style="position:absolute; top:590px; left:392px;", class="alltour_btns_blue alltour_btn_blue_2", text=?_T("BY GIFTS"), postback={sort_by, gifts}},
+            #link{style="position:absolute; top:590px; left:564px;", class="alltour_btns_blue alltour_btn_blue_3", text=?_T("PARTICIPATION PERCENTAGE"), postback={sort_by, participation}},
 
             #label{style="position:absolute; left:243px; top:674px;", text=?_T("Sort by type:")},
             #dropdown {postback=sort_order_set, id=sort_order, style="position:absolute; left:357px; top:667px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
