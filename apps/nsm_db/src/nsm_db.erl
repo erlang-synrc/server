@@ -91,7 +91,7 @@ add_contracts() ->
     CurDateDays = calendar:date_to_gregorian_days(CurDate),
     StartDate = calendar:gregorian_days_to_date(CurDateDays - 15),
     FinishDate = calendar:gregorian_days_to_date(CurDateDays + 15),
-    ok = nsm_affiliates:create_contract("kunthar", "Test contract", % THIS BROKES CONSISTENCY ON BOOT
+    catch nsm_affiliates:create_contract("kunthar", "Test contract", % THIS BROKES CONSISTENCY ON BOOT
                                          StartDate, FinishDate,
                                          2, 10.2),
    ?INFO("~w:add_contracts/0 Finished", [?MODULE]),
