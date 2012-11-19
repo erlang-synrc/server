@@ -131,7 +131,7 @@ menu_links() ->
 	 #list{body=[
 		#listitem{body=#link{text=?_T("Main Page"), url=?_U("/"),
                                      title=?_T("You can play games here"), id="mainmenumainpage"}},
-		#listitem{body=#link{text=?_T("My Page"), url=?_U("/dashboard"),
+		#listitem{body=#link{text=?_T("Dashboard"), url=?_U("/dashboard"),
                                      title=?_T("You can share information with others"), id="mainmenumypage"}},
 		#listitem{body=#link{text=?_T("Rules"), url=?_U("/rules-okey"),
                                      title=?_T("Read the rules of our games"), id="mainmenurules"}},

@@ -4837,3 +4837,6 @@ msgstr "ARKADAŞLARIMA GÖRE"
 #
 msgid "Read the rules of our games"
 msgstr "Read the rules of our games"
+#
+msgid "Dashboard"
+msgstr "Paneli"
