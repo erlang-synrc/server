@@ -151,14 +151,14 @@ check_quota(User) ->
 -spec check_quota(User::string(), Amount::integer()) -> ok | {error, soft_limit} | {error, hard_limit}.
 
 check_quota(User, Amount) ->
-    SoftLimit = db_opt:get_quota_limit_soft(),
+    SoftLimit = nsm_db:get_config("accounts/quota_limit/soft",  -20),
     {ok, Balance} = balance(User, quota),
     BalanceAfterChange = Balance - Amount,
     if
         BalanceAfterChange > SoftLimit ->
             ok;
         true ->
-            HardLimit = db_opt:get_quota_limit_hard(),
+            HardLimit = nsm_db:get(config, "accounts/quota_limit/hard",  -100),
             if
                 BalanceAfterChange =< HardLimit ->
                     {error, hard_limit};

@@ -165,7 +165,10 @@ create_tour_users(A,B,Groups) ->
     [ begin
 %          nsm_users:init_mq(Me#user.username, Groups),
           nsm_accounts:create_account(Me#user.username),
-          nsm_accounts:transaction(Me#user.username, ?CURRENCY_QUOTA, db_opt:get_default_quota(), #ti_default_assignment{}),
+          nsm_accounts:transaction(Me#user.username,
+                                   ?CURRENCY_QUOTA,
+                                   nsm_db:get_config("accounts/default_quota",  300),
+                                   #ti_default_assignment{}),
           nsm_db:put(Me#user{password = utils:sha(Me#user.password),
                                 starred = feed_create(),
                                 pinned = feed_create()})
@@ -299,7 +302,7 @@ add_sample_users() ->
     ?INFO("adding users accounts"),
     [ begin
           nsm_accounts:create_account(Me#user.username),
-          nsm_accounts:transaction(Me#user.username, ?CURRENCY_QUOTA, db_opt:get_default_quota(), #ti_default_assignment{}),
+          nsm_accounts:transaction(Me#user.username, ?CURRENCY_QUOTA, nsm_db:get(config, "accounts/default_quota",  300), #ti_default_assignment{}),
           nsm_db:put(Me#user{password = utils:sha(Me#user.password),
                                 starred = feed_create(),
                                 pinned = feed_create()})
@@ -568,7 +571,7 @@ make_admin(User) ->
     {ok,U} = nsm_db:get(User),
     nsm_db:put(U#user{type = admin}).
 
-make_rich(User) -> nsm_accounts:transaction(User, ?CURRENCY_QUOTA, db_opt:get_default_quota() * 100, #ti_default_assignment{}).
+make_rich(User) -> nsm_accounts:transaction(User, ?CURRENCY_QUOTA, nsm_db:get(config, "accounts/default_quota",  300) * 100, #ti_default_assignment{}).
 
 feed_create() ->
     FId = nsm_db:next_id("feed", 1),
