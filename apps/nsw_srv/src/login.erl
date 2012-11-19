@@ -400,4 +400,5 @@ login_user(UserName) ->
     wf:user(UserName),
     wf:cookie("lang", site_utils:detect_language(), "/", 100*24*60), %% 100 days
     wf:config_default(session_timeout, 120),    % setting nitrogen session to 2 hours
-    wf:redirect_from_login(?_U("/dashboard")).
+    webutils:redirect_to_tcp(?_U("/dashboard")).
+%    wf:redirect_from_login(?_U("/dashboard")).
