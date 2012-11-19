@@ -1,10 +1,3 @@
-%%----------------------------------------------------------------------
-%% @author Vladimir Baranov <baranoff.vladimir@gmail.com>
-%% @copyright Paynet Internet ve Bilisim Hizmetleri A.S. All Rights Reserved.
-%% @doc
-%%     FIXME: add description to module login
-%% @end
-%%-------------------------------------------------------------------
 -module(login).
 
 -include_lib("nitrogen_core/include/wf.hrl").
@@ -17,6 +10,7 @@
 -compile(export_all).
 
 main() ->
+    webutils:redirect_to_ssl("login"),
     #template { file = code:priv_dir(nsw_srv)++"/templates/bare.html" }.
 
 body()->

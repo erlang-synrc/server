@@ -18,6 +18,18 @@
 
 -define(GROUPS_ON_DASHBOARD, 10).
 
+redirect_to_ssl(Page) ->
+    Req = wf_context:request_bridge(),
+    Port = Req:peer_port(),
+    Host = hd(ling:split(proplists:get_value(host, wf_context:headers()), ":")),
+    ?INFO("Req ~p Port ~p Host ~p",[Req,Port,Host]),
+    case Port of
+        443 ->
+            no_redirect;
+        _ ->
+            wf:redirect(["https://",Host,"/",Page])
+    end.
+
 main() -> [].
 
 user_info() ->
