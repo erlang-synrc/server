@@ -1,5 +1,5 @@
 %% -*- mode: nitrogen -*-
--module(all_tournaments).
+-module(tournaments).
 -compile(export_all).
 
 -include_lib("nitrogen_core/include/wf.hrl").
