@@ -121,6 +121,8 @@ menu_links() ->
                                      title=?_T("You can play games here"), id="mainmenumainpage"}},
 		#listitem{body=#link{text=?_T("My Page"), url=?_U("/dashboard"),
                                      title=?_T("You can share information with others"), id="mainmenumypage"}},
+		#listitem{body=#link{text=?_T("Rules"), url=?_U("/rules-okey"),
+                                     title=?_T("Read the rules of our games"), id="mainmenurules"}},
 		#listitem{body=#link{text=?_T("Gifts"), url=?_U("/gifts"),
                                      title=?_T("Have no idea, what it is about"), id="mainmenugifts"}},
 		#listitem{body=#link{text=?_T("Tournaments"), url=?_U("/all_tournaments"),

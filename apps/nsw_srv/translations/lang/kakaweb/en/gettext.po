@@ -3210,6 +3210,11 @@ msgstr ""
 "RESET"
 
 msgid ""
+"Read the rules of our games"
+msgstr ""
+"Read the rules of our games"
+
+msgid ""
 "Ready"
 msgstr ""
 "Ready"
@@ -3313,6 +3318,11 @@ msgid ""
 "Rounds"
 msgstr ""
 "Rounds"
+
+msgid ""
+"Rules"
+msgstr ""
+"Rules"
 
 msgid ""
 "SIGNUP!"
