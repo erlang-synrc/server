@@ -18,7 +18,7 @@ create() ->
 add_direct_message(FId, User, EntryId, Desc) -> add_direct_message(FId, User, undefined, EntryId, Desc, []).
 add_direct_message(FId, User, To, EntryId, Desc, Medias) -> nsm_db:feed_add_direct_message(FId, User, To, EntryId, Desc, Medias).
 add_group_entry(FId, User, EntryId, Desc, Medias) -> nsm_db:feed_add_entry(FId, User, EntryId, Desc, Medias).
-add_group_entry(FId, User, To, EntryId, Desc, Medias, Type) -> nsm_db:feed_add_entry(FId, User, To, EntryId, Desc, Medias, Type).
+add_group_entry(FId, User, To, EntryId, Desc, Medias, Type) -> nsm_db:feed_add_entry(FId, User, To, EntryId, Desc, Medias, Type, "").
 add_entry(FId, User, EntryId, Desc) -> add_entry(FId, User, EntryId, Desc, []).
 add_entry(FId, User, EntryId, Desc, Medias) -> nsm_db:feed_add_entry(FId, User, EntryId, Desc, Medias).
 add_entry(FId, User, To, EntryId, Desc, Medias, Type) -> nsm_db:feed_add_entry(FId, User, To, EntryId, Desc, Medias, Type, "").
