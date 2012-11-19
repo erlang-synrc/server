@@ -412,7 +412,7 @@ get(RecordName, Key, Default) ->
 	    {ok,Default}
     end.
 
-
+get_config(Key, Default) -> {ok, Value} = get(config, Key, Default), Value.
 get_word(Word) -> get(ut_word,Word).
 get_translation({Lang,Word}) -> DBA=?DBA, DBA:get_translation({Lang,Word}).
 
