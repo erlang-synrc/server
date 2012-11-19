@@ -183,7 +183,7 @@ handle_info({'DOWN', MonRef, process, _Pid, _}, StateName,
     case get_table_by_mon_ref(MonRef, Tables) of
         #table{id = TabId, timer = TRef} ->
             ?INFO("OKEY_NG_TRN_LUCKY <~p> Table <~p> is down. Cleaning up registeres.", [GameId, TabId]),
-            erlang:cancel_timer(TRef),
+            case TRef == undefined of false -> erlang:cancel_timer(TRef); true -> skip end,
             PlayersIds =
                 [PlayerId || #seat{player_id = PlayerId} <- find_seats_with_players_for_table_id(TabId, Seats)],
             NewTables = del_table(TabId, Tables),
