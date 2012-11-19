@@ -329,16 +329,18 @@ product_list_paged(Page) ->
         Buttons
     ].
 
+get_prizes_total(Prizes) ->
+    lists:sum([
+        case Id of
+            undefined -> 0;
+            _ -> 
+                {ok, {Gift, _}} = nsm_gifts_db:get_gift(Id),
+                Gift#gift.our_price
+        end 
+    || Id <- Prizes]).
 
 reset_slider() ->
-    PrizePrices = lists:sum([
-    case Id of
-        undefined -> 0;
-        _ -> 
-            {ok, {Gift, _}} = nsm_gifts_db:get_gift(Id),
-            Gift#gift.our_price
-    end || Id <- [wf:state(prize_1), wf:state(prize_2), wf:state(prize_3)]]),
-
+    PrizePrices = get_prizes_total([wf:state(prize_1), wf:state(prize_2), wf:state(prize_3)]),
     NPlayers = list_to_integer(wf:q(tour_players)),
     Quota = case wf:state(workaround_quota) of 
         undefined -> 
@@ -355,7 +357,6 @@ reset_slider() ->
             T
     end,
     {ok, PrizeFund} = game_okey_ng_trn_elim:get_prize_fund(Quota, NPlayers, Tours),
-?PRINT({PrizeFund, PrizePrices}),
     MaxOrNot = (100*PrizeFund - PrizePrices),
     Min = PrizeFund * ?MIN_PRIZE_PERCENT,
     Max = case Min > MaxOrNot of
