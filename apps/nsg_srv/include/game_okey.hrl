@@ -110,8 +110,7 @@
           observer_flag :: boolean(),
           pause_enabled = true :: boolean(),
           social_actions_enabled = true :: boolean(),
-          tournament_type = standalone :: tournament(),
-          xxx           :: term() %% For test propouses only. Remove This!!!
+          tournament_type = standalone :: tournament()
          }).
 -record(okey_player_ready, {
           player :: 'PlayerId'()
