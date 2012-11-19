@@ -365,7 +365,7 @@ is_set(Set) ->
 
 %% @spec is_run(Set) -> boolean()
 %% @end
-is_run(Set) when length(Set) < 4 -> false;
+is_run(Set) when length(Set) < 3 -> false;
 is_run(Set) ->
     {Okeys, Normals} = lists:partition(fun(X)-> X == okey end, Set),
     {Color, _} = hd(Normals),
@@ -562,10 +562,10 @@ test_test_() ->
        ?_assertEqual(false, is_run([{2,2}, {2,3}])),
        ?_assertEqual(false, is_run([okey, {2,3}])),
        ?_assertEqual(false, is_run([{4,1}, {2,3}])),
-       ?_assertEqual(false, is_run([{4,4}, {4,6}, {4,5}])),
-       ?_assertEqual(false, is_run([okey, {4,6}, {4,5}])),
-       ?_assertEqual(false, is_run([okey, {4,6}, okey])),
-       ?_assertEqual(false, is_run([{1,12}, {1,1}, {1,13}])),
+       ?_assertEqual(true,  is_run([{4,4}, {4,6}, {4,5}])),
+       ?_assertEqual(true,  is_run([okey, {4,6}, {4,5}])),
+       ?_assertEqual(true,  is_run([okey, {4,6}, okey])),
+       ?_assertEqual(true,  is_run([{1,12}, {1,1}, {1,13}])),
        ?_assertEqual(true,  is_run([{1,12}, {1,1}, {1,11}, {1,13}])),
        ?_assertEqual(true,  is_run([{2,4}, {2,6}, {2,7}, {2,5}])),
        ?_assertEqual(false, is_run([{2,4}, {1,6}, {2,7}, {2,5}])),
