@@ -189,9 +189,8 @@ footer_box() ->
                         #listitem{body=wf_tags:emit_tag(a, ?_T("Help & Support"),
                                     [{href, "http://kakaranet.uservoice.com/"},{target,"_blank"}])},
                         #listitem{body=#link{url=?_U("/contact"), text=?_T("Contact")}},
-                        #listitem{body=[?_T("2011 &copy; Kakaranet. All rights reserved."),"<br />",
-                                    ?_T("Kakaranet is registered trademark of Paynet Inc."),"<br/>",
-                                    ?_T("Public Beta - 10 Aug 2012")]},
+                        #listitem{body=[?_T("2011 &copy; Kakaranet. All rights reserved."),"<br/>",
+                                    ?_T("Kakaranet is registered trademark of Paynet Inc."),"<br/>"]},
                         #listitem{body=[#checkbox { id=replay_guiders, text=?_T("Replay Guiders"), postback=replay_guiders_changed,
                                     checked=(wf:cookie("replayguiders")=="yes") }]}
                        ],
