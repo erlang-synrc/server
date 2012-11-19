@@ -158,7 +158,7 @@ assign_points(#'GameResults'{results = Results}, GameInfo) ->
                     timestamp = erlang:now()
                 },
                 Route = [feed, user, UId, scores, 0, add],  % maybe it would require separate worker for this
-                nsx_util_notification:notify(Route, [SR]);
+                nsx_msg:notify(Route, [SR]);
             false ->
                 ok  % no statistics for robots
         end,

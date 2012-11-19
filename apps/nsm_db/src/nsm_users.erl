@@ -114,7 +114,7 @@ register(#user{username=U, email=Email, facebook_id=FBId} = RegisterData0) ->
                                               starred  = nsm_db:feed_create(),
                                               password = HashedPassword},
 		    %ok = nsm_db:put(RegisterData),
-            nsx_util_notification:notify(["system", "put"], RegisterData),
+            nsx_msg:notify(["system", "put"], RegisterData),
 			nsm_accounts:create_account(U),
 			%% assign quota
             {ok, DefaultQuota} = nsm_db:get(config, "accounts/default_quota",  300),
@@ -146,7 +146,7 @@ delete_user(UserName) ->
 	{ok, User} ->
 	   %% remove from all groups
        GIds = nsm_groups:list_groups_per_user(UserName),
-       [nsx_util_notification:notify(["subscription", "user", UserName, "remove_from_group"], {GId}) || GId <- GIds],
+       [nsx_msg:notify(["subscription", "user", UserName, "remove_from_group"], {GId}) || GId <- GIds],
 	   %% remove from subcribtions
 	   S = list_subscr(User),
 	   F2U = [ {MeId, FrId} || #subscription{who = MeId, whom = FrId} <- S ],
@@ -310,12 +310,12 @@ block_user(Who, Whom) ->
     ?INFO("~w:block_user/2 Who=~p Whom=~p", [?MODULE, Who, Whom]),
     unsubscr_user(Who, Whom),
     nsm_db:block_user(Who, Whom),
-    nsx_util_notification:notify_user_block(Who, Whom).
+    nsx_msg:notify_user_block(Who, Whom).
 
 unblock_user(Who, Whom) ->
     ?INFO("~w:unblock_user/2 Who=~p Whom=~p", [?MODULE, Who, Whom]),
     nsm_db:unblock_user(Who, Whom),
-    nsx_util_notification:notify_user_unblock(Who, Whom).
+    nsx_msg:notify_user_unblock(Who, Whom).
 
 get_blocked_users(UserId) ->
     nsm_db:list_blocks(UserId).
@@ -420,7 +420,7 @@ user_realname(UId) ->
 %% This function will be called from nsm_auth, after successfull login.
 login_posthook(User) ->
     %% send notification about user initialization.
-    nsx_util_notification:notify([user, init], User).
+    nsx_msg:notify([user, init], User).
 
 subscribe_user_mq(Type, MeId, ToId) ->
     process_subscription_mq(Type, add, MeId, ToId).

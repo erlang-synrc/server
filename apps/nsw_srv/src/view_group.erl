@@ -326,14 +326,14 @@ event(hide_group) ->
 event({approve, Who}) ->
     GId = wf:q(id),
     User = wf:user(),
-    nsx_util_notification:notify(["subscription", "user", User, "invite_to_group"], {GId, Who}),
+    nsx_msg:notify(["subscription", "user", User, "invite_to_group"], {GId, Who}),
     wf:replace(incoming_invites, incoming_invites()),
     wf:wire(simple_lightbox, #hide{});
 
 event({reject, Who}) ->
     GId = wf:q(id),
     User = wf:user(),
-    nsx_util_notification:notify(["subscription", "user", User, "reject_invite_to_group"], {GId, Who, ?_T("Sorry")}),
+    nsx_msg:notify(["subscription", "user", User, "reject_invite_to_group"], {GId, Who, ?_T("Sorry")}),
     wf:replace(incoming_invites, incoming_invites()),
     wf:wire(simple_lightbox, #hide{});
 
@@ -346,7 +346,7 @@ event(update_group) ->
     NewPublicity = wf:q(group_publicity),
     case nsm_users:get_user({username, NewOwner}) of
         {ok, _} ->
-            nsx_util_notification:notify(["db", "group", GId, "update_group"], 
+            nsx_msg:notify(["db", "group", GId, "update_group"], 
                 {wf:user(), NewUId, NewName, NewDesc, NewOwner, NewPublicity}),          
             wf:update(group_info_name, wf:q(group_name)),
             wf:update(group_info_publicity, wf:q(group_publicity)),
@@ -382,7 +382,7 @@ event({leave_group, Group}) when is_record(Group, group) ->
 
 event({do_leave, GId}) ->
     User = wf:user(),
-    nsx_util_notification:notify(["subscription", "user", User, "leave_group"], {GId}),
+    nsx_msg:notify(["subscription", "user", User, "leave_group"], {GId}),
     wf:wire(simple_lightbox, #hide{}),
     wf:redirect(?_U("/dashboard"));
 

@@ -37,7 +37,7 @@ init([TID]) ->
     Server = self(),
     timer:apply_interval(?HEARTBEAT_INTERVAL, ?MODULE, heartbeat, [Server]),
     timer:apply_after(30000, ?MODULE, check_tournament_time, [Server]),
-    nsx_util_notification:subscribe_tournament_lobby(TID, {?MODULE, messages_callback}, Server),
+    nsx_msg:subscribe_tournament_lobby(TID, {?MODULE, messages_callback}, Server),
     ?MODULE:heartbeat(Server),
     ?INFO("~w: started", [Server]),
     {ok, #state{tournament_id = TID, active_users = dict:new(), heartbeat_users = empty,
@@ -79,12 +79,12 @@ handle_cast(start_tournament, State) ->
     Speed = Tour#tournament.speed,
     TourId = nsw_srv_sup:start_tournament(TIDinDB,1,NumberOfUsers,Quota,Tours,Speed),
     ?INFO(" +++ notifying ~p", [TIDinDB]),
-    nsx_util_notification:notify(["tournament", integer_to_list(TIDinDB), "start"], {TourId}),
+    nsx_msg:notify(["tournament", integer_to_list(TIDinDB), "start"], {TourId}),
     {noreply, State};
 
 handle_cast(heartbeat, State) ->
     TID = State#state.tournament_id,
-    nsx_util_notification:notify_tournament_heartbeat_request(TID),
+    nsx_msg:notify_tournament_heartbeat_request(TID),
 
     {ok, _} = timer:apply_after(?HEARTBEAT_TIMEOUT, ?MODULE, heartbeat_finish,  [State#state.server]),
     {noreply, State#state{heartbeat_users = dict:new()}};

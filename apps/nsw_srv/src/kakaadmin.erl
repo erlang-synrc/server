@@ -747,7 +747,7 @@ create_new_contract_from_form() ->
         {error, AnythingElse} ->
             wf:wire(#alert{text=?_TS("Error - $something$!", [{something, AnythingElse}]) });
         _ ->
-            nsx_util_notification:notify(["system", "create_contract"], {
+            nsx_msg:notify(["system", "create_contract"], {
                 UserId, Name, 
                 calendar:gregorian_days_to_date(GregDays), 
                 calendar:gregorian_days_to_date(GregDays+Duration), 
@@ -781,7 +781,7 @@ event({make_affiliate_and_add_contract, UserId}) ->
     case nsm_users:get_user({username, UserId}) of
         {ok, _} ->
 %            rpc:call(?apSERVER_NODE,nsm_affiliates, create_affiliate,[UserId]);
-            nsx_util_notification:notify(["affiliates", "user", UserId, "create_affiliate"], {});
+            nsx_msg:notify(["affiliates", "user", UserId, "create_affiliate"], {});
         _ -> 
             wf:wire(#alert{text=?_TS("User '$username$' does not exist!", [{username, UserId}]) })
     end,
@@ -792,12 +792,12 @@ event(add_new_contract_type) ->
     Duration = list_to_integer(wf:q(contract_type_duration)),
     Limit = list_to_integer(wf:q(contract_type_limit)),
     Commission = str_to_num(wf:q(contract_type_commission)),
-    nsx_util_notification:notify(["system", "create_contract_type"], {Name, Duration, Limit, Commission}),
+    nsx_msg:notify(["system", "create_contract_type"], {Name, Duration, Limit, Commission}),
     wf:replace(affiliates_contracts, affiliates_contracts_body());
 
 event(disable_old_contract_type) ->
     Id = wf:q(old_contract_type),
-    nsx_util_notification:notify(["system", "disable_contract_type"], {Id}),
+    nsx_msg:notify(["system", "disable_contract_type"], {Id}),
     wf:replace(affiliates_contracts, affiliates_contracts_body());
 
 event(affiliate_textbox_changed) ->
@@ -812,7 +812,7 @@ event(add_affiliate) ->
     AffiliateUsername=wf:q(affiliate_username),
     case nsm_users:get_user({username, AffiliateUsername}) of
         {ok, _} ->
-            nsx_util_notification:notify(["affiliates", "user", AffiliateUsername, "create_affiliate"], {}),
+            nsx_msg:notify(["affiliates", "user", AffiliateUsername, "create_affiliate"], {}),
             wf:wire(#alert{text=?_TS("User '$username$' is an affiliate now!", [{username, AffiliateUsername}]) }),
             wf:update(affiliates_list, affiliates_list());
         _ -> 
@@ -823,7 +823,7 @@ event(remove_affiliate) ->
     AffiliateUsername=wf:q(affiliate_username),
     case lists:member(AffiliateUsername, real_affiliates_list()) of
         true ->
-            nsx_util_notification:notify(["affiliates", "user", AffiliateUsername, "delete_affiliate"], {}),
+            nsx_msg:notify(["affiliates", "user", AffiliateUsername, "delete_affiliate"], {}),
             wf:wire(#alert{text=?_TS("User '$username$' is no longer an affiliate!", [{username, AffiliateUsername}]) }),
             wf:update(affiliates_list, affiliates_list());
         false ->
@@ -834,7 +834,7 @@ event(allow_details_affiliate) ->
     AffiliateUsername=wf:q(affiliate_username),
     case lists:member(AffiliateUsername, real_affiliates_list()) of
         true ->
-            nsx_util_notification:notify(["affiliates", "user", AffiliateUsername, "enable_to_look_details"], {}),
+            nsx_msg:notify(["affiliates", "user", AffiliateUsername, "enable_to_look_details"], {}),
             wf:wire(#alert{text=?_TS("User '$username$' can see own contracts now!", [{username, AffiliateUsername}]) }),
             wf:update(affiliates_list, affiliates_list());
         false ->
@@ -845,7 +845,7 @@ event(disallow_details_affiliate) ->
     AffiliateUsername=wf:q(affiliate_username),
     case lists:member(AffiliateUsername, real_affiliates_list()) of
         true ->
-            nsx_util_notification:notify(["affiliates", "user", AffiliateUsername, "disable_to_look_details"], {}),
+            nsx_msg:notify(["affiliates", "user", AffiliateUsername, "disable_to_look_details"], {}),
             wf:wire(#alert{text=?_TS("User '$username$' can no longer see own contracts now!", [{username, AffiliateUsername}]) }),
             wf:update(affiliates_list, affiliates_list());
         false ->
@@ -875,7 +875,7 @@ u_event(delete_old_invites) ->
 
             case {CUser, Expired > 0} of
                 {undefined, true} ->
-                    nsx_util_notification:notify(["system", "delete"], {invite_code, Code}),
+                    nsx_msg:notify(["system", "delete"], {invite_code, Code}),
                     {Counter + 1, Acc};
                 _ ->
                     {Counter, [I|Acc]}
@@ -1011,7 +1011,7 @@ u_event(config_save_new) ->
                           _ -> skip
                      end,
 
-            nsx_util_notification:notify(["system", "put"], #config{key = Key,value=NewValue}),
+            nsx_msg:notify(["system", "put"], #config{key = Key,value=NewValue}),
 %		    wf:flash(?_TS("Value of $key$ set to $value$",[{key,wf:f("~w",[Key])},{value,NewValue}])); %% "
 		    wf:flash(?_TS("Value of $key$ set to $value$",[{key,Key},{value,NewValue}])); %% "
 		{msg, Msg} ->
@@ -1029,7 +1029,7 @@ u_event(generate_invite) ->
     Subject = ?_T("List of invitation URLs"),
     Text = [ io_lib:fwrite("~s~n", [site_utils:create_url_invite(Code)]) || Code <- InvList ],
     Email = webutils:user_info(email),
-    nsx_util_notification:notify_email(Subject, lists:flatten(Text), Email),
+    nsx_msg:notify_email(Subject, lists:flatten(Text), Email),
 
     Data = invite:convert_data(nsm_invite:get_all_code()),
     NewBox = table_code_view(Data),

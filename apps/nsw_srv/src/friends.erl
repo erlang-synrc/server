@@ -295,7 +295,7 @@ inner_event(view_sub, _) ->
 
 inner_event({subscription, FrId}, _) ->
     UId = wf:user(),
-    nsx_util_notification:notify(["subscription", "user", UId, "subscribe_user"], {FrId}),
+    nsx_msg:notify(["subscription", "user", UId, "subscribe_user"], {FrId}),
     wf:update(main_area, subscribe()),
     Msg = io_lib:fwrite(?_T("You have subscribed to '~s'."), [FrId]),
     wf:flash(Msg);
@@ -319,7 +319,7 @@ inner_event({page, N}, _) ->
 
 
 inner_event({unsubscribe, _, Who, SUId}, User1) ->
-    nsx_util_notification:notify(["subscription", "user", User1, "remove_subscribe"], {Who}),
+    nsx_msg:notify(["subscription", "user", User1, "remove_subscribe"], {Who}),
     wf:update(SUId,
        #link{url="javascript:void(0)", text=?_T("Subscribe"), title=?_T("You can start seeing this users posts in your feed"),
             actions=#event{type=click, postback={subscribe, User1, Who, SUId}}}),
@@ -328,7 +328,7 @@ inner_event({unsubscribe, _, Who, SUId}, User1) ->
 
 
 inner_event({subscribe, _, Who, SUId}, User1)   ->
-    nsx_util_notification:notify(["subscription", "user", User1, "subscribe_user"], {Who}),
+    nsx_msg:notify(["subscription", "user", User1, "subscribe_user"], {Who}),
     wf:update(SUId,
         #link{url="javascript:void(0)", text=?_T("Unsubscribe"), title=?_T("You can stop seeing this users posts in your feed"),
             actions= #event{type=click, postback={unsubscribe, User1, Who, SUId}}}),

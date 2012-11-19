@@ -394,7 +394,7 @@ inner_event({add_entry, _}, User) ->
 
             post_entry(DashboardOwner, Desc, Medias),
 
-            nsx_util_notification:notify(["feed", "user", wf:user(), "count_entry_in_statistics"], {}),  
+            nsx_msg:notify(["feed", "user", wf:user(), "count_entry_in_statistics"], {}),  
 
             wf:session(autocomplete_list_values, []),
             wf:update(text_length, ""),
@@ -422,8 +422,8 @@ inner_event({comment_entry, EntryTrueId, _CommentsPanelId, SourceElementId, _Vie
                 Other -> lists:reverse(Other)
             end,
             wf:state(MSI, []),
-            nsx_util_notification:notify(["feed", "user", wf:user(), "count_comment_in_statistics"], {}),  
-            nsx_util_notification:notify([feed, OwnerType, DashboardOwner, comment, utils:uuid_ex(), add],
+            nsx_msg:notify(["feed", "user", wf:user(), "count_comment_in_statistics"], {}),  
+            nsx_msg:notify([feed, OwnerType, DashboardOwner, comment, utils:uuid_ex(), add],
                 [User, EntryTrueId, undefined, Value, Medias])
     end;
 
@@ -440,7 +440,7 @@ inner_event({remove_entry, EId, _PanelId, _ETo, From, true}, _) ->
         _ ->
             {user, wf:user()}
     end,
-    nsx_util_notification:notify([feed, Type, Owner, entry, EId, delete], [From]);
+    nsx_msg:notify([feed, Type, Owner, entry, EId, delete], [From]);
 
 inner_event({hide_entry, EId, PanelId}, _) ->
     wf:wire(#confirm { text=?_T("Do you want to hide this entry?"),
@@ -455,7 +455,7 @@ inner_event({like_entry, E, LikeBtnId}, User) ->
     UserInfo = webutils:user_info(),
     Eid = E#entry.entry_id,
     Fid = UserInfo#user.feed,
-    nsx_util_notification:notify(["likes", "user", User, "add_like"], {Fid, Eid}),
+    nsx_msg:notify(["likes", "user", User, "add_like"], {Fid, Eid}),
     
     wf:replace(LikeBtnId, []);
 
@@ -467,42 +467,42 @@ inner_event({share_entry, Entry}, User) ->
         _ ->
             {user, User}
     end,
-    nsx_util_notification:notify([feed, Type, User, entry, utils:uuid_ex(), share], Entry); % it is not good design to issue id in web part, but we need it both in comet and db
+    nsx_msg:notify([feed, Type, User, entry, utils:uuid_ex(), share], Entry); % it is not good design to issue id in web part, but we need it both in comet and db
 
 inner_event({comment_entry, _EId, _PanelId}, _) ->
     ?PRINT({comment,event,button});
 
 inner_event({unsubscribe, UserUid}, User) ->
-    nsx_util_notification:notify(["subscription", "user", User, "remove_subscribe"], {UserUid}),
+    nsx_msg:notify(["subscription", "user", User, "remove_subscribe"], {UserUid}),
     wf:wire("location.reload(true);");
 
 inner_event({subscribe, UserUid}, User) ->
-    nsx_util_notification:notify(["subscription", "user", User, "subscribe_user"], {UserUid}),
+    nsx_msg:notify(["subscription", "user", User, "subscribe_user"], {UserUid}),
     wf:wire("location.reload(true);");
 
 inner_event({set_user_status, Status}, User) ->
-    nsx_util_notification:notify(["subscription", "user", User, "set_user_game_status"], {Status});
+    nsx_msg:notify(["subscription", "user", User, "set_user_game_status"], {Status});
 
 inner_event({set_user_status}, User) ->
-    nsx_util_notification:notify(["subscription", "user", User, "set_user_game_status"], {wf:q(user_status)});
+    nsx_msg:notify(["subscription", "user", User, "set_user_game_status"], {wf:q(user_status)});
 
 inner_event({direct_message_to, CheckedUser}, _) ->
     autocomplete_select_event({struct, [{<<"id">>, CheckedUser},{<<"value">>, CheckedUser}]} , CheckedUser),
     wf:wire("set_focus_to_search()");
 
 inner_event({block, CheckedUser}, User) ->
-    nsx_util_notification:notify(["subscription", "user", User, "block_user"], {CheckedUser}),
+    nsx_msg:notify(["subscription", "user", User, "block_user"], {CheckedUser}),
     wf:update(blockunblock, #link{text=?_T("Unblock this user"), url="javascript:void(0)", postback={unblock, CheckedUser}}),
     wf:update(feed, user_blocked_message(CheckedUser));
 
 inner_event({unblock, CheckedUser}, User) ->
-    nsx_util_notification:notify(["subscription", "user", User, "unblock_user"], {CheckedUser}),
+    nsx_msg:notify(["subscription", "user", User, "unblock_user"], {CheckedUser}),
     Feeds = view_feed(undefined),
     wf:update(blockunblock, #link{text=?_T("Block this user"), url="javascript:void(0)", postback={block, CheckedUser}}),
     wf:update(feed, Feeds);
 
 inner_event({unblock_load, CheckedUser, Offset}, User) ->
-    nsx_util_notification:notify(["subscription", "user", User, "unblock_user"], {CheckedUser}),
+    nsx_msg:notify(["subscription", "user", User, "unblock_user"], {CheckedUser}),
     Feeds = view_feed(Offset),
     wf:update(blockunblock, #link{text=?_T("Block this user"), url="javascript:void(0)", postback={block, CheckedUser}}),
     wf:update(feed, Feeds);
@@ -531,7 +531,7 @@ inner_event(notice_resend, _User) ->
     Mail = UserInfo#user.email,
     VerificationCode = UserInfo#user.verification_code,
     {Subject, PlpainText} = mail_construction:verification(Mail, VerificationCode),
-    nsx_util_notification:notify_email(Subject, PlpainText, Mail),
+    nsx_msg:notify_email(Subject, PlpainText, Mail),
     wf:update(notification_area, [#notice{type=message, title=?_T("Verification letter sent"),
                         body = ?_T("Please check your mailbox."), delay=2000}]);
 
@@ -638,7 +638,7 @@ inplace_textbox_event(_, Value, {undefined, undefined}) ->
 inplace_textbox_event(_, Value, {EntryId, _FeedId}) ->
     Route = [feed, user, wf:user(), entry, EntryId, edit],
     ?PRINT({wf:user(), Route, nsm_mq_lib:list_to_key(Route)}),
-    nsx_util_notification:notify(Route, [Value]),
+    nsx_msg:notify(Route, [Value]),
     Value.
 
 attachment_error(Text) ->
@@ -749,7 +749,7 @@ post_entry(DashboardOwner, Desc, Medias) ->
     [begin
         Route = [feed, Type, To, entry, utils:uuid_ex(), add],
         ?PRINT({To, Route, nsm_mq_lib:list_to_key(Route)}),
-        nsx_util_notification:notify(Route, [User, Destinations, Desc, Medias])
+        nsx_msg:notify(Route, [User, Destinations, Desc, Medias])
     end || {To, Type} <- Destinations2].
 
 %% @doc Decode/encode term to/from base64 string

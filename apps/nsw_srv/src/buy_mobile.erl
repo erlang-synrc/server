@@ -59,7 +59,7 @@ process_result(success) ->
     case ((Site =:= "www.mikro-odeme.com") orelse true) of
          true -> case nsm_membership_packages:get_purchase(PurchaseId) of
                 {ok, Purchase} ->
-                    nsx_util_notification:notify(["purchase", "user", wf:user(), "set_purchase_state"], {element(2,Purchase), done, mobile}),                           
+                    nsx_msg:notify(["purchase", "user", wf:user(), "set_purchase_state"], {element(2,Purchase), done, mobile}),                           
                     wf:redirect("/profile/account");
 
                 _ -> "Purchase Not Found"
@@ -113,7 +113,7 @@ event({buy_clicked, PurchaseId}) ->
         info = mobile
     },
 
-    nsx_util_notification:notify(["purchase", "user", wf:user(), "add_purchase"], {MP}),
+    nsx_msg:notify(["purchase", "user", wf:user(), "add_purchase"], {MP}),
 
     wf:redirect("http://www.mikro-odeme.com/sale-api/tr/step1.aspx?partner=17121&product=" ++ 
         wf:to_list(Product)++ "&mpay=" ++ PurchaseId);

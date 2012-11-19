@@ -185,7 +185,7 @@ event({unsubscribe,_,_,_}=Event) ->
     friends:event(Event);
 
 event({make_affiliate, User}) ->
-    nsx_util_notification:notify(["affiliates", "user", User, "create_affiliate"], {}),
+    nsx_msg:notify(["affiliates", "user", User, "create_affiliate"], {}),
     wf:redirect("");
 
 event(Other) ->

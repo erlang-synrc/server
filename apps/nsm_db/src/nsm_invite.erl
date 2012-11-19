@@ -33,7 +33,7 @@ generate_code(User, Mail) when is_list(User);
                        recipient = Mail,
                        issuer = User},
     %nsm_db:put(Rec),
-    nsx_util_notification:notify(["invite", "user", User, "add_invite_to_issuer"], {Rec}),
+    nsx_msg:notify(["invite", "user", User, "add_invite_to_issuer"], {Rec}),
     {ok, Code}.
 
 check_code(Code) ->
@@ -103,7 +103,7 @@ send_invite_email(User, Email, UserName, Text, Lang) ->
 				   undefined -> ?TXT2("'kakaranet robot'", Lang)
 			       end,
 		    {Subject, Content} = rpc:call(?WEBSERVER_NODE,site_utils,invite_message,[FromUser, Url, Text, UserName, Lang]),
-                    nsx_util_notification:notify_email(Subject, Content, Email),
+                    nsx_msg:notify_email(Subject, Content, Email),
 		    {ok, InviteCode};
 		_ ->
 		    {error, wrong_username}

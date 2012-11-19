@@ -69,7 +69,7 @@ event({buy_clicked, PurchaseId}) ->
           [PurchaseId, Package#membership_package.id]),
 
     %% purchase will have state 'started'
-    nsx_util_notification:notify(["purchase", "user", wf:user(), "add_purchase"], {MP}), 
+    nsx_msg:notify(["purchase", "user", wf:user(), "add_purchase"], {MP}), 
     OrderForm = order_form(PurchaseId),
 
     wf:update(form_holder, OrderForm);

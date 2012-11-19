@@ -105,7 +105,7 @@ api_event(savePackage, Anchor, [Data]) ->
                 {error,notfound} -> 0;
             	{ok,{id_seq, _, DBId}} -> DBId
             end,
-            nsx_util_notification:notify(["system", "add_package"], {MP}),
+            nsx_msg:notify(["system", "add_package"], {MP}),
             wf:wire(wf:f("obj('~s').grid.updateId('~p')", [Anchor, Id]));   
 
         %% for already defined packages only available_for_sale property

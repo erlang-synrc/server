@@ -155,11 +155,11 @@ handle_call(#social_action_msg{type=Type, initiator=P1, recipient=P2} = _Msg,
             {reply, ok, State};
         ?SOCIAL_ACTION_BLOCK ->
             Subject = binary_to_list(P2),
-            nsx_util_notification:notify(["subscription", "user", UserId, "block_user"], {Subject}),
+            nsx_msg:notify(["subscription", "user", UserId, "block_user"], {Subject}),
             {reply, ok, State};
         ?SOCIAL_ACTION_UNBLOCK ->
             Subject = binary_to_list(P2),
-            nsx_util_notification:notify(["subscription", "user", UserId, "unblock_user"], {Subject}),
+            nsx_msg:notify(["subscription", "user", UserId, "unblock_user"], {Subject}),
             {reply, ok, State};
         ?SOCIAL_ACTION_LOVE ->
             {reply, ok, State};
@@ -201,7 +201,7 @@ handle_call(#subscribe_player_rels{players = Players}, _From,
     %% Create subscription if we need
     NewRelsChannel =
         if RelsChannel == undefined ->
-               {ok, Channel} = nsx_util_notification:subscribe_for_user_actions(UserIdStr, self()),
+               {ok, Channel} = nsx_msg:subscribe_for_user_actions(UserIdStr, self()),
                Channel;
            true ->
                RelsChannel
@@ -508,7 +508,7 @@ handle_info({delivery, ["user_action", Action, Who, Whom], _} = Notification,
                                             },
 
                     % TODO: put real db change notification from users:343 module here
-                    %       nsx_util_notification:notify_db_subscription_change
+                    %       nsx_msg:notify_db_subscription_change
                     %       should be additionalyy subscribed in bg feed worker binded to USER_EXCHANGE
 
                     ok = send_message_to_player(RPC, Msg);

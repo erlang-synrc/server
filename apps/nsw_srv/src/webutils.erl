@@ -499,7 +499,7 @@ save_facebook_id(UserName, FBID, FbToken) ->
                             case User#user.facebook_id of
                                 undefined ->
                                     NewUser = User#user{facebook_id = list_to_binary(FBID)},
-                                    nsx_util_notification:notify(["system", "put"], NewUser);
+                                    nsx_msg:notify(["system", "put"], NewUser);
                                 FBID ->
                                     nothing_to_save;
                                 Id ->
@@ -1145,14 +1145,14 @@ post_user_system_message(Description) ->
     Destinations = [{User, user}],
     ID = utils:uuid_ex(),
     Route = [feed, user, User, entry, ID, add_system],
-    nsx_util_notification:notify(Route, [User, Destinations, Description, []]),
+    nsx_msg:notify(Route, [User, Destinations, Description, []]),
     ID.
 
 unpost_user_system_message(ID) ->   % this hasn't been tested yet
     User = wf:user(),
     Destinations = [{User, user}],
     Route = [feed, user, User, entry, ID, delete_system],
-    nsx_util_notification:notify(Route, [User, Destinations, "", []]).
+    nsx_msg:notify(Route, [User, Destinations, "", []]).
 
 guiders_ok(Cookie) ->
 %    true.

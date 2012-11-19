@@ -42,7 +42,7 @@ create_group_directly_to_db(UId, GId, Name, Desc, Publicity) ->
     GId.
 
 add_to_group(UId, GId, Type) -> % for internal use only
-    nsx_util_notification:notify(["subscription", "user", UId, "add_to_group"], {GId, Type}).
+    nsx_msg:notify(["subscription", "user", UId, "add_to_group"], {GId, Type}).
 
 add_to_group_directly_to_db(UId, GId, Type) ->
     nsm_db:put(#group_subs{user_id=UId, group_id=GId, user_type=Type}),
@@ -106,7 +106,7 @@ join_group(GId, User) ->
     end.
 
 change_group_user_type(UId, GId, Type) ->
-    nsx_util_notification:notify(["subscription", "user", UId, "add_to_group"], {GId, Type}).
+    nsx_msg:notify(["subscription", "user", UId, "add_to_group"], {GId, Type}).
 
 group_exists(GId) ->
     {_, Group} = get_group(GId),

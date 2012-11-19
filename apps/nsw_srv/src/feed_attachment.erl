@@ -264,7 +264,7 @@ increment_num_uploads(UserId) ->
 
 increment_num_uploads(UserId, Date) ->
     Counter = get_num_uploads(UserId),
-    nsx_util_notification:notify(["db", "user", UserId, "put"], #uploads{key={UserId, Date}, counter=Counter + 1}).
+    nsx_msg:notify(["db", "user", UserId, "put"], #uploads{key={UserId, Date}, counter=Counter + 1}).
 %    rpc:call(?APSERVER_NODE,nsm_db,put,[#uploads{key={UserId, Date}, counter=Counter + 1}]).
 
 

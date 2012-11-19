@@ -198,7 +198,7 @@ api_event(processOrder, _, [[{order_id, OrderId}, {status, Status}]])->
     ?INFO("Payment complete. Order:~p~n", [OrderId]),
     case nsm_membership_packages:get_purchase(integer_to_list(OrderId)) of
 	{ok, Purchase} when Status =:= "settled" ->
-	    nsx_util_notification:notify(["purchase", "user", wf:user(), "set_purchase_state"], {element(2,Purchase), done, facebook}),
+	    nsx_msg:notify(["purchase", "user", wf:user(), "set_purchase_state"], {element(2,Purchase), done, facebook}),
 	    wf:redirect("/profile/account");
 	_ -> wf:info("Purchase Not Found")
     end;

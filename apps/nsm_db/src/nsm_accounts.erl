@@ -176,16 +176,16 @@ commit_transaction(#transaction{remitter = R, acceptor = A,  currency = Currency
 								amount = Amount} = TX) ->
 	case change_accounts(R, A, Currency, Amount) of
 		ok ->
-                    nsx_util_notification:notify_transaction(R,TX),
-                    nsx_util_notification:notify_transaction(A,TX);
+                    nsx_msg:notify_transaction(R,TX),
+                    nsx_msg:notify_transaction(A,TX);
                     %nsm_db:add_transaction_to_user(A,TX);
 		Error ->
             %% in case of game events it is possible to assign points to undefined
             %% accounts when robots play game. System account will not be changed
             case TX#transaction.info of
                 #ti_game_event{} ->
-                    nsx_util_notification:notify_transaction(R,TX),
-                    nsx_util_notification:notify_transaction(A,TX);
+                    nsx_msg:notify_transaction(R,TX),
+                    nsx_msg:notify_transaction(A,TX);
                     %nsm_db:add_transaction_to_user(A,TX);
                 _ ->
                     ?ERROR("commit transaction error: change accounts ~p", Error),

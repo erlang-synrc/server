@@ -21,9 +21,9 @@ start(Type, FeedId, FeedOwner, CurrentUser) ->
         ?INFO("(in comet):start ~p feed comet for =~p. Pid=~p ", [Type, FeedOwner, self()]),
         case Type of
             user ->
-                nsx_util_notification:subscribe_user(FeedOwner, self());
+                nsx_msg:subscribe_user(FeedOwner, self());
             group ->
-                nsx_util_notification:subscribe_group(FeedOwner, self())
+                nsx_msg:subscribe_group(FeedOwner, self())
         end,
         comet_update(Type, FeedId, FeedOwner, CurrentUser)
     end,  ?COMET_POOL).

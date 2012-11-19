@@ -30,7 +30,7 @@ main_authorized() ->
     wf:state(tournament_id, TournamentId),
 
     %% user became ready automatically
-%    nsx_util_notification:notify_tournament_user_ready(TournamentId, UserInfo),
+%    nsx_msg:notify_tournament_user_ready(TournamentId, UserInfo),
 
     TournamentInfo = nsm_tournaments:get(TournamentId),
     wf:state(tournament, TournamentInfo),
@@ -690,7 +690,7 @@ start_comet() ->
         CometProcess = self(),
 
         %% TODO: error handling when unable to subscribe
-        (catch nsx_util_notification:subscribe_for_tournament(TournamentId, User, CometProcess)),
+        (catch nsx_msg:subscribe_for_tournament(TournamentId, User, CometProcess)),
         comet_update(wf:user(), wf:state(tournament_id))
     end,  ?COMET_POOL),
     wf:state(comet_pid, Pid).
@@ -701,7 +701,7 @@ comet_update(User, TournamentId) ->
         {delivery, _, tournament_heartbeat} ->
             UserRecord = webutils:user_info(),
 
-            nsx_util_notification:notify_tournament_heartbeat_reply(
+            nsx_msg:notify_tournament_heartbeat_reply(
                 TournamentId, UserRecord),
 
             %% afer sleep send update userlist message to self
@@ -774,7 +774,7 @@ event(chat) ->
                 false ->
                     wf:set(message_text_box, ""),
                     wf:wire("obj('message_text_box').focus();"),
-                    nsx_util_notification:notify_tournament_chat(TID, "message", User, Msg)
+                    nsx_msg:notify_tournament_chat(TID, "message", User, Msg)
            end,
            wf:flush()
     end;

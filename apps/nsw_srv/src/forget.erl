@@ -22,8 +22,8 @@ init_forget(User) ->
                               create = Time},
 
 %    ok = rpc:call(?APSERVER_NODE,nsm_db,put,[Record]),
-    nsx_util_notification:notify(["db", "user", UId, "put"], Record),
-    nsx_util_notification:notify_email(Subject, Content, Mail).
+    nsx_msg:notify(["db", "user", UId, "put"], Record),
+    nsx_msg:notify_email(Subject, Content, Mail).
 
 
 -spec check_token(string()) -> {'error', atom()} | {ok, string()}.

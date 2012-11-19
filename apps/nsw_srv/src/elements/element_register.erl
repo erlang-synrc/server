@@ -224,19 +224,19 @@ finish_register_(Invite) ->
 		{ok, register} ->
                     case  Invite of
                         #invite_code{code = Code} ->
-                            nsx_util_notification:notify(["system", "use_invite"], {Code, User});
+                            nsx_msg:notify(["system", "use_invite"], {Code, User});
                         %% we skip inventation code when register without code
                         _ ->
                             ok
                     end,
                     {Subject, PlpainText} = mail_construction:welcome(User, Password, Mail),
-                    nsx_util_notification:notify_email(Subject, PlpainText, Mail),
+                    nsx_msg:notify_email(Subject, PlpainText, Mail),
 
                     case Status of
                         %% if email isn't verified, send verification message
                         not_verified ->
                             {VSubject, VPlpainText} = mail_construction:verification(Mail, VerificationCode),
-                            nsx_util_notification:notify_email(VSubject, VPlpainText, Mail);
+                            nsx_msg:notify_email(VSubject, VPlpainText, Mail);
                         _ ->
                             ok
                     end,
@@ -270,8 +270,8 @@ event({birthday_changed}) ->
 event({register_success, User}) ->
     wf:session(fb_registration, undefined),
     timer:sleep(200),   % rarely, but sometimes it simply can't find new user with login:login_user, so I put a delay here
-    nsx_util_notification:notify(["subscription", "user", User, "add_to_group"], {"kakaranet", member}),
-    nsx_util_notification:notify(["subscription", "user", User, "add_to_group"], {"yeniler", member}),
+    nsx_msg:notify(["subscription", "user", User, "add_to_group"], {"kakaranet", member}),
+    nsx_msg:notify(["subscription", "user", User, "add_to_group"], {"yeniler", member}),
     timer:sleep(300),    % and this for group subscription
     login:login_user(User);
 

@@ -268,9 +268,9 @@ handle_notice(["system", "create_group"] = Route,
                               created = CTime,
                               owner = UId,
                               feed = FId}),
-    nsx_util_notification:notify([group, init], {GId, FId}),
+    nsx_msg:notify([group, init], {GId, FId}),
     nsm_users:init_mq_for_group(GId),
-    nsx_util_notification:notify(["subscription", "user", UId, "add_to_group"], {GId, admin}),
+    nsx_msg:notify(["subscription", "user", UId, "add_to_group"], {GId, admin}),
     {noreply, State};
 
 handle_notice(["db", "group", GroupId, "update_group"] = Route, 
@@ -341,7 +341,7 @@ handle_notice(["db", "group", GroupId, "update_group"] = Route,
 handle_notice(["db", "group", GId, "remove_group"] = Route, 
     Message, #state{owner = Owner, type =Type} = State) ->
     ?INFO("queue_action(~p): remove_group: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),
-    nsx_util_notification:notify([feed, delete, GId], empty),
+    nsx_msg:notify([feed, delete, GId], empty),
     Group = nsm_groups:get_group(GId),
     lists:foreach(
         fun(#entry{feed_id=F,entry_id=E})-> feed:remove_entry(F, E) end,
@@ -395,14 +395,14 @@ handle_notice(["subscription", "user", UId, "invite_to_group"] = Route,
     {GId, Invited} = Message,
     case nsm_groups:group_user_type(Invited, GId) of
         req -> % User requested in past; just join him
-            nsx_util_notification:notify(["subscription", "user", Invited, "add_to_group"], {GId, member});
+            nsx_msg:notify(["subscription", "user", Invited, "add_to_group"], {GId, member});
         invsent -> % Invite already sent in past
             ?ERROR("Invite to user ~p already sent!", [Invited]);
         _ ->
             case nsm_users:get_user(Invited) of
                 {ok, #user{feed=Feed}} ->
                     feed:add_direct_message(Feed, UId, "Let's join us in group!"),
-                    nsx_util_notification:notify(["subscription", "user", Invited, "add_to_group"], {GId, invsent});
+                    nsx_msg:notify(["subscription", "user", Invited, "add_to_group"], {GId, invsent});
                 _ ->
                     ?ERROR("Invitation error: user ~p not found!", [Invited])
             end
@@ -418,12 +418,12 @@ handle_notice(["subscription", "user", UId, "reject_invite_to_group"] = Route,
             case nsm_users:get_user(Invited) of
                 {ok, #user{feed=Feed}} ->
                     feed:add_direct_message(Feed, UId, "Invite rejected: " ++ Reason),
-                    nsx_util_notification:notify(["subscription", "user", Invited, "add_to_group"], {GId, rejected});
+                    nsx_msg:notify(["subscription", "user", Invited, "add_to_group"], {GId, rejected});
                 _ ->
                     ?ERROR("Invitation error: user ~p not found!", [Invited])
             end;
         invsent -> % Invite was sent to user -- just remove invite
-            nsx_util_notification:notify(["subscription", "user", Invited, "add_to_group"], {GId, rejected});
+            nsx_msg:notify(["subscription", "user", Invited, "add_to_group"], {GId, rejected});
         _ ->
             ?ERROR("Invitation error: user ~p has no request!", [Invited])
     end,
@@ -445,16 +445,16 @@ handle_notice(["subscription", "user", UId, "leave_group"] = Route,
                             NewOwner = Who,
                             ok = add_to_group(NewOwner, GId, admin),
                             ok = nsm_db:put(Group#group{owner = NewOwner}),
-                            nsx_util_notification:notify(["subscription", "user", UId, "remove_from_group"], {GId});
+                            nsx_msg:notify(["subscription", "user", UId, "remove_from_group"], {GId});
                         [] ->
                             % Nobody left in group, remove group at all
-                            nsx_util_notification:notify([db, group, GId, remove_group], [])
+                            nsx_msg:notify([db, group, GId, remove_group], [])
                     end;
                 _ -> % Plain user removes -- just remove it
-                    nsx_util_notification:notify(["subscription", "user", UId, "remove_from_group"], {GId})
+                    nsx_msg:notify(["subscription", "user", UId, "remove_from_group"], {GId})
             end;
         _ -> % user is just someone, remove it
-            nsx_util_notification:notify(["subscription", "user", UId, "remove_from_group"], {GId})
+            nsx_msg:notify(["subscription", "user", UId, "remove_from_group"], {GId})
     end,
     {noreply, State};
 
@@ -505,17 +505,17 @@ handle_notice(["subscription", "user", Who, "block_user"] = Route,
     end,
     case nsm_db:get(user_ignores_rev, Whom) of
         {error,notfound} ->
-            nsx_util_notification:notify(["db", "user", Whom, "put"], #user_ignores_rev{whom=Whom, who=[Who]});
+            nsx_msg:notify(["db", "user", Whom, "put"], #user_ignores_rev{whom=Whom, who=[Who]});
         {ok,#user_ignores_rev{who=RevList}} ->
             case lists:member(Who, RevList) of
                 false ->
                     NewRevList = [Who | RevList],
-                    nsx_util_notification:notify(["db", "user", Whom, "put"], #user_ignores_rev{whom=Whom, who=NewRevList});
+                    nsx_msg:notify(["db", "user", Whom, "put"], #user_ignores_rev{whom=Whom, who=NewRevList});
                 true ->
                     do_nothing
             end
     end,
-    nsx_util_notification:notify_user_block(Who, Whom),
+    nsx_msg:notify_user_block(Who, Whom),
     {noreply, State};
 
 handle_notice(["subscription", "user", Who, "unblock_user"] = Route,
@@ -534,11 +534,11 @@ handle_notice(["subscription", "user", Who, "unblock_user"] = Route,
     case lists:member(Who, List2) of
         true ->
             NewRevList = [ UID || UID <- List2, UID =/= Who ],
-            nsx_util_notification:notify(["db", "user", Whom, "put"], #user_ignores_rev{whom = Whom, who = NewRevList});
+            nsx_msg:notify(["db", "user", Whom, "put"], #user_ignores_rev{whom = Whom, who = NewRevList});
         false ->
             do_nothing
     end,
-    nsx_util_notification:notify_user_unblock(Who, Whom),
+    nsx_msg:notify_user_unblock(Who, Whom),
     {noreply, State};
 
 handle_notice(["login", "user", UId, "update_after_login"] = Route,

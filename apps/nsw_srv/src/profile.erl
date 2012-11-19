@@ -475,7 +475,7 @@ finish_upload_event(_Tag, OrigFile, LocalFile, _Node) ->
                        #panel { id=avatarholder, class=photo,
                                 body=#image{image=avatar:get_avatar(Avatar, big)} }),
             UserWithAvatar = User#user{avatar = Avatar},
-            nsx_util_notification:notify(["db", "user", User#user.username, "put"], UserWithAvatar)
+            nsx_msg:notify(["db", "user", User#user.username, "put"], UserWithAvatar)
     end.
 
 %%%% end update avatar %%%%
@@ -562,7 +562,7 @@ u_event(profile_save) ->
       #user{} = NewUser ->
 	  ?PRINT({NewUser}),
 	  wf:session(user_info, NewUser),
-      nsx_util_notification:notify(["subscription", "user", NewUser#user.username, "update_user"], {NewUser}),
+      nsx_msg:notify(["subscription", "user", NewUser#user.username, "update_user"], {NewUser}),
 	  flash(info, profile_info, ?_T("Saved!"))
     catch
       {error, Error} ->
@@ -597,7 +597,7 @@ u_event(create_tournament) ->
     M = site_utils:element_value(tournament_month, integer),
     D = site_utils:element_value(tournament_day, integer),
     
-    nsx_util_notification:notify(["tournaments", "user", User#user.username, "create_and_join"], {
+    nsx_msg:notify(["tournaments", "user", User#user.username, "create_and_join"], {
         TourName,
         TourDesc,
         {Y,M,D},

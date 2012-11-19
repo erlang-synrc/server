@@ -55,7 +55,7 @@ order_status(<<"placed">>, OrderDetails)->
 	info = facebook
     },
     wf:info("Process purchase: ~p~n ", [Purchase]),
-    nsx_util_notification:notify(["purchase", "user", User, "add_purchase"], {Purchase}),
+    nsx_msg:notify(["purchase", "user", User, "add_purchase"], {Purchase}),
     NextStatus = <<"settled">>, % <<"canceled">>
     #struct{list=[{<<"status">>, NextStatus}, {<<"order_id">>, OrderId}]};
 order_status(<<"disputed">>, _OrderDetails)->

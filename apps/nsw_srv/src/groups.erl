@@ -376,7 +376,7 @@ event(create_new_group) ->
                         {ok, _} ->
                             wf:wire(#alert{text=?_TS("User '$username$' exist!", [{username, GId}]) });
                         {error, _} ->
-                            nsx_util_notification:notify(["system", "create_group"], {wf:user(), GId, GName, GDesc, GPublicity}),
+                            nsx_msg:notify(["system", "create_group"], {wf:user(), GId, GName, GDesc, GPublicity}),
                             wf:wire(#alert{text=?_T("New group created!")}),
                             wf:redirect("")
                     end
@@ -411,11 +411,11 @@ inner_event({page, N}, _) ->
 %    wf:update(groups_content, Searched);
 
 inner_event({subscribe, User1, GName, SUId}, _User) ->
-    nsx_util_notification:notify(["subscription", "user", User1, "add_to_group"], {GName, user}),
+    nsx_msg:notify(["subscription", "user", User1, "add_to_group"], {GName, user}),
     wf:update(SUId, #link{url="javascript:void(0)", text=?_T("Unsubscribe"), postback={unsubscribe, User1, GName, SUId}});
 
 inner_event({unsubscribe, User1, GName, SUId}, _User) ->
-    nsx_util_notification:notify(["subscription", "user", User1, "remove_from_group"], {GName}),
+    nsx_msg:notify(["subscription", "user", User1, "remove_from_group"], {GName}),
     wf:update(SUId, #link{url="javascript:void(0)", text=?_T("Subscribe"), postback={subscribe, User1, GName, SUId}});
 
 
@@ -425,7 +425,7 @@ inner_event({delete, GName}, User) ->
     case Group#group.creator =:= User of
         false -> ok
         ;_    ->
-            nsx_util_notification:notify([db, group, GName, remove_group], []),
+            nsx_msg:notify([db, group, GName, remove_group], []),
             wf:wire("reload_current_content();")
     end;
 

@@ -99,7 +99,7 @@ start_local_if_not_started(Type, Name) ->
     start_worker(Type, Name, Action).
 
 start_global_if_not_started(Type, Name) ->
-    Action = fun() -> nsx_util_notification:notify([Type, init], Name) end,
+    Action = fun() -> nsx_msg:notify([Type, init], Name) end,
     start_worker(Type, Name, Action).
 
 start_worker(Type, Name, Action) ->
