@@ -14,23 +14,18 @@ main() ->"
 <!DOCTYPE html>
 <html xmlns='http://www.w3.org/1999/xhtml' xml:lang='en' lang='en'>
 <head>
-"
-++
-%    <meta http-equiv='cache-control' content='max-age=0' />
-%    <meta http-equiv='X-UA-Compatible' content='IE=8,IE=9,IE=10' />
-%    <meta http-equiv='cache-control' content='no-cache' />
-%    <meta http-equiv='expires' content='0' />
-%    <meta http-equiv='expires' content='Tue, 01 Jan 1980 1:00:00 GMT' />
-%    <meta http-equiv='pragma' content='no-cache' />
-"
+    <meta http-equiv='cache-control' content='max-age=0' />
+    <meta http-equiv='X-UA-Compatible' content='IE=8,IE=9,IE=10' />
+    <meta http-equiv='cache-control' content='no-cache' />
+    <meta http-equiv='expires' content='0' />
+    <meta http-equiv='expires' content='Tue, 01 Jan 1980 1:00:00 GMT' />
+    <meta http-equiv='pragma' content='no-cache' />
+
 	<meta http-equiv='Content-Type' content='text/html; charset=utf-8' />
 	<title></title>
-"
-++
-%	<link rel='stylesheet' type='text/css' href='/css/kakara.full.css' media='all' />
-%	<link rel='stylesheet' href='/css/en.css' />
-%	<script src='/js/kakara.full.js' type='text/javascript' charset='utf-8'></script>
-"
+    <link rel='stylesheet' type='text/css' href='/css/kakara.full.css' media='all' />
+	<link rel='stylesheet' href='/css/en.css' />
+	<script src='/js/kakara.full.js' type='text/javascript' charset='utf-8'></script>
 	<!--[if IE]>
 		<link rel='stylesheet' type='text/css' href='/css/ie.css' media='all'/>
 	<![endif]-->
@@ -50,40 +45,37 @@ main() ->"
 
 </head>
 <body class='test_iebug'>
-"
-++
-%<div id=fb-root></div><script>window.fbAsyncInit = function() {FB.init({ appId: '154227314626053',channelUrl: 'https://srv5.kakaranet.com/channel.html',status: true,cookie: true,xfbml: true,oauth: true});if(page.fbLogout) FB.Event.subscribe('auth.logout', function(response){page.fbLogout(response);});FB.getLoginStatus(function(response) {if(page.setFbIframe){console.log('Set FB application flag: '+ (top!=self));page.setFbIframe(top!=self);}if (response.status === 'connected') {var uid = response.authResponse.userID;console.log('User is connected: ' + uid);if(page.fbCheckPermissions){
-%		FB.api('/me/permissions', function(response){
-%		    var perms = response.data[0];
-%		    console.log('Permissions: '+perms);
-%		    page.fbCheckPermissions(perms);
-%		});
-%	    }else{console.log('No fbCheckPermissions')}} else if (response.status === 'not_authorized') {console.log('Not authenticated the app');} else {console.log('User isn't logged in');}});};function fb_login(){FB.getLoginStatus(function(response){if(response.status == 'connected'){console.log('User connected to FB, check for registered account');if(page.fbLogin){FB.api('/me?fields=id,username,first_name,last_name,email,birthday',function(response){page.fbLogin(response);});}}else{FB.login(function(r){if(r.authResponse){if(page.fbLogin){FB.api('/me?fields=id,username,first_name,last_name,email,birthday',function(response){page.fbLogin(response);});}}},{scope: 'email,user_birthday'});}});}function add_fb_service(){FB.ui({
-%	method: 'permissions.request',
-%	perms: 'publish_stream',
-%	display: 'popup'},
-%	function(response){
-%	    if(response && response.perms){
-%		console.log('Permissions granted: '+response.perms);if(page.fbCheckPermissions){
-%		    page.fbCheckPermissions(response.perms);
-%		}}else if(!response.perms){
-%		console.log('User did't grant permission.');
-%	    }
-%	});};
-%    function del_fb_service(){
-%	console.log('Todo: revoke fb permission.');
-%	FB.api({
-%	    method: 'auth.revokeExtendedPermission',
-%	    perm: 'publish_stream'
-%	},
-%	function(response) {
-%	    if(page.fbRemovePermissions){
-%		page.fbRemovePermissions(response);
-%	    }
-%	    console.log('Response revoke:' + response);
-%	}); 
-%    };function fb_feed(Msg){FB.api('/me/feed', 'post', { message: Msg },function(response) {if (!response || response.error) {console.log('Error occured');} else {console.log('Post ID: ' + response.id);}});};(function(d){var js, id = 'facebook-jssdk', ref = d.getElementsByTagName('script')[0];if (d.getElementById(id)) {return;}js = d.createElement('script');js.id = id;js.async = true;js.src = '//connect.facebook.net/en_US/all.js';ref.parentNode.insertBefore(js, ref);}(document));</script>
-"
+<div id=fb-root></div><script>window.fbAsyncInit = function() {FB.init({ appId: '154227314626053',channelUrl: 'https://srv5.kakaranet.com/channel.html',status: true,cookie: true,xfbml: true,oauth: true});if(page.fbLogout) FB.Event.subscribe('auth.logout', function(response){page.fbLogout(response);});FB.getLoginStatus(function(response) {if(page.setFbIframe){console.log('Set FB application flag: '+ (top!=self));page.setFbIframe(top!=self);}if (response.status === 'connected') {var uid = response.authResponse.userID;console.log('User is connected: ' + uid);if(page.fbCheckPermissions){
+		FB.api('/me/permissions', function(response){
+		    var perms = response.data[0];
+		    console.log('Permissions: '+perms);
+		    page.fbCheckPermissions(perms);
+		});
+	    }else{console.log('No fbCheckPermissions')}} else if (response.status === 'not_authorized') {console.log('Not authenticated the app');} else {console.log('User isn't logged in');}});};function fb_login(){FB.getLoginStatus(function(response){if(response.status == 'connected'){console.log('User connected to FB, check for registered account');if(page.fbLogin){FB.api('/me?fields=id,username,first_name,last_name,email,birthday',function(response){page.fbLogin(response);});}}else{FB.login(function(r){if(r.authResponse){if(page.fbLogin){FB.api('/me?fields=id,username,first_name,last_name,email,birthday',function(response){page.fbLogin(response);});}}},{scope: 'email,user_birthday'});}});}function add_fb_service(){FB.ui({
+	method: 'permissions.request',
+	perms: 'publish_stream',
+	display: 'popup'},
+	function(response){
+	    if(response && response.perms){
+		console.log('Permissions granted: '+response.perms);if(page.fbCheckPermissions){
+		    page.fbCheckPermissions(response.perms);
+		}}else if(!response.perms){
+		console.log('User did't grant permission.');
+	    }
+	});};
+    function del_fb_service(){
+	console.log('Todo: revoke fb permission.');
+	FB.api({
+	    method: 'auth.revokeExtendedPermission',
+	    perm: 'publish_stream'
+	},
+	function(response) {
+	    if(page.fbRemovePermissions){
+		page.fbRemovePermissions(response);
+	    }
+	    console.log('Response revoke:' + response);
+	}); 
+    };function fb_feed(Msg){FB.api('/me/feed', 'post', { message: Msg },function(response) {if (!response || response.error) {console.log('Error occured');} else {console.log('Post ID: ' + response.id);}});};(function(d){var js, id = 'facebook-jssdk', ref = d.getElementsByTagName('script')[0];if (d.getElementById(id)) {return;}js = d.createElement('script');js.id = id;js.async = true;js.src = '//connect.facebook.net/en_US/all.js';ref.parentNode.insertBefore(js, ref);}(document));</script>
 <section class='wrapper'>
 "
 ++
