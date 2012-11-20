@@ -1,14 +1,8 @@
 -module(feedformat).
-
 -compile(export_all).
-
 -include_lib("nsm_db/include/feed.hrl").
-
--export([format/1]).
-
 -include_lib("nsx_config/include/log.hrl").
 
-%PUBLIC BETA we have to turn &amp; into & and %27 to '
 replace(String, Dirt, Icecream) ->
     Pos = string:str(String, Dirt),
     case Pos of

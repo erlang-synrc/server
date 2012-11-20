@@ -4,18 +4,6 @@
 -include("user.hrl").
 -include_lib("nsx_config/include/log.hrl").
 
-%-define(SERVER, ?MODULE).
-%-record(state, {}).
-%-define(REGISTER_TIMEOUT, 10000).
-
-%start_link() -> gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
-%generate_token(U) -> gen_server:call(?SERVER, {generate_token, U}).
-%get_user_info(UserId) -> gen_server:call(?SERVER, {get_user_info, UserId}).
-%update_gamestate(GaId, State) -> gen_server:cast(?SERVER, {update_gamestate, GaId, State}).
-%login(Credentials) -> gen_server:call(?SERVER, {login, Credentials}).
-%login_fb(Credentials) -> gen_server:call(?SERVER, {login_fb, Credentials}).
-%init([]) -> ?INFO("Zealot AUTH started"), {ok, #state{}}.
-
 register(#user{} = RegisterData) ->
     case nsm_users:register(RegisterData) of
                  {ok, register} -> {ok, register};

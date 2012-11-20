@@ -1,14 +1,18 @@
 % This is database handling application that hides database access
 % and provides high-level rich API to stored data:
 %
-%    - users and groups
-%    - search
+%    - acl
+%    - affiliates
+%    - users
+%    - groups
 %    - subscriptions
-%    - feeds and comments
+%    - feeds
 %    - invites
 %    - translations
-%    - tournaments, teams and play records
-%    - table manager
+%    - accounts
+%    - tournaments
+%    - payments
+%    - scoring
 %
 % Currently nsm_db supports following store backends:
 %
