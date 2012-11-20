@@ -123,7 +123,7 @@ store_token(E, Token, UserId) ->
     ets:insert(E, Data).
 
 user_info(UserId) ->
-    case zealot_auth:get_user_info(UserId) of
+    case nsm_auth:get_user_info(UserId) of
         {ok, UserData} ->
             {ok, #'PlayerInfo'{id = list_to_binary(UserData#user_info.username),
                                login = list_to_binary(UserData#user_info.username),

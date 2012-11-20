@@ -114,7 +114,7 @@ account_menu() ->
 					    allow -> [{?_U("/kakaadmin"), ?_T("Admin")}];
 					    _ -> []
 					end ]},
-		    {ok,#user_info{username=Username,avatar_url = AvatarUrl}} = zealot_auth:get_user_info(webutils:user_info(username)),
+		    {ok,#user_info{username=Username,avatar_url = AvatarUrl}} = nsm_auth:get_user_info(webutils:user_info(username)),
 		    {ok, Quota}  = nsm_accounts:balance(Username, ?CURRENCY_QUOTA),
 		    {ok, Kakush} = nsm_accounts:balance(Username, ?CURRENCY_KAKUSH),
 		    #list{class="user-menu", body=[
@@ -495,7 +495,7 @@ login(UserField, PassField, MsgBox)->
     User = wf:q(UserField),
     Password = wf:q(PassField),
 
-    case zealot_auth:login([{username, User},{password, Password}]) of
+    case nsm_auth:login([{username, User},{password, Password}]) of
         {ok, User} ->
             login:login_user(User);
         {error, user_not_found} ->
