@@ -25,10 +25,8 @@ redirect_to_ssl(Page) ->
     Host = hd(ling:split(proplists:get_value(host, wf_context:headers()), ":")),
     ?INFO("Req ~p Port ~p Host ~p",[Req,Port,Host]),
     case Port of
-        443 ->
-            no_redirect;
-        _ ->
-            wf:redirect(["https://",Host,"/",Page])
+        443 -> ok;
+        _ -> wf:redirect(["https://",Host,"/",Page])
     end.
 
 redirect_to_tcp(Page) ->
