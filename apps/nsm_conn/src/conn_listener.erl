@@ -3,7 +3,7 @@
 -behaviour(gen_server).
 -compile(export_all).
 -include_lib("nsx_config/include/log.hrl").
--include_lib("nsg_srv/include/conf.hrl").
+-include_lib("nsm_db/include/config.hrl").
 -define(SERVER, ?MODULE).
 -define(TCP_OPTS, [binary, {packet, raw}, {nodelay, true}, {reuseaddr, true}, {active, false}]).
 -record(state, {port, listener, acceptor}).

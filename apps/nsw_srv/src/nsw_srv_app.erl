@@ -1,6 +1,7 @@
 -module(nsw_srv_app).
 -behaviour(application).
 -include_lib("nsx_config/include/log.hrl").
+-include_lib("nsm_db/include/config.hrl").
 -include_lib("nsm_db/include/tournaments.hrl").
 -include("setup.hrl").
 -compile(export_all).
@@ -34,7 +35,7 @@ start(_StartType, _StartArgs) ->
                          X -> io:format("Error ~p",[X]), erlang:halt(1)
     end.
 
-spawn_tables() -> timer:sleep(42000), rpc:call(?GAMESRVR_NODE,game_manager,create_tables,[100]).
+spawn_tables() -> timer:sleep(42000), rpc:call(?GAMESRVR_NODE,game_manager,create_tables,[42]).
 
 mime() ->
     [

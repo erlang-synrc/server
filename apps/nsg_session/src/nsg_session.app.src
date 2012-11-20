@@ -6,9 +6,9 @@
   {applications, [
                   kernel,
                   stdlib,
-		  nsx_idgen,
-		  nsm_auth,
-		  nsx_utils
+                  nsx_idgen,
+                  nsm_auth,
+                  nsx_utils
                  ]},
   {mod, { nsg_session_app, []}},
   {env, []}

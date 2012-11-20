@@ -183,12 +183,13 @@ api_event(fbLogin, _, [Args])->
 		    true ->
 			login:login_user(User#user.username),
 			wf:session(logged_with_fb, true),
-			wf:redirect_from_login(?_U("/dashboard"));
+			%wf:redirect_from_login(?_U("/dashboard"));
+                        webutils:redirect_to_tcp(?_U("dashboard"));
 		    _ -> fb_user_not_match
 		end;
 	    _ ->
 	        wf:session(fb_registration, Args),
-		wf:redirect(?_U("/login/register"))
+		wf:redirect([?HTTP_ADDRESS,?_U("/login/register")])
 	    end
     end;
 api_event(fbLogout, _, _Data)-> wf:session(fb_registration, undefined);

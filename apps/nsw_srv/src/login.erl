@@ -1,10 +1,3 @@
-%%----------------------------------------------------------------------
-%% @author Vladimir Baranov <baranoff.vladimir@gmail.com>
-%% @copyright Paynet Internet ve Bilisim Hizmetleri A.S. All Rights Reserved.
-%% @doc
-%%     FIXME: add description to module login
-%% @end
-%%-------------------------------------------------------------------
 -module(login).
 
 -include_lib("nitrogen_core/include/wf.hrl").
@@ -17,6 +10,7 @@
 -compile(export_all).
 
 main() ->
+    webutils:redirect_to_ssl("login"),
     #template { file = code:priv_dir(nsw_srv)++"/templates/bare.html" }.
 
 body()->
@@ -406,4 +400,5 @@ login_user(UserName) ->
     wf:user(UserName),
     wf:cookie("lang", site_utils:detect_language(), "/", 100*24*60), %% 100 days
     wf:config_default(session_timeout, 120),    % setting nitrogen session to 2 hours
-    wf:redirect_from_login(?_U("/dashboard")).
+    webutils:redirect_to_tcp(?_U("/dashboard")).
+%    wf:redirect_from_login(?_U("/dashboard")).

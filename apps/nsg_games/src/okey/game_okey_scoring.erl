@@ -20,7 +20,7 @@
 -include_lib("nsg_srv/include/requests.hrl").
 -include_lib("nsg_srv/include/game_okey.hrl").
 -include_lib("nsg_srv/include/basic_types.hrl").
--include_lib("nsg_srv/include/setup.hrl").
+-include_lib("nsm_db/include/config.hrl").
 -include_lib("nsm_db/include/accounts.hrl").
 -include_lib("eunit/include/eunit.hrl").
 -include_lib("nsg_srv/include/game_tavla.hrl").

@@ -6,6 +6,7 @@
 
 -include_lib("nitrogen_core/include/wf.hrl").
 -include_lib("nsm_db/include/user.hrl").
+-include_lib("nsm_db/include/config.hrl").
 -include_lib("nsm_db/include/tournaments.hrl").
 -include_lib("nsm_db/include/feed.hrl").
 -include_lib("nsm_db/include/table.hrl").
@@ -17,6 +18,33 @@
 -define(TOOLTIP_TIMEOUT, "1500").
 
 -define(GROUPS_ON_DASHBOARD, 10).
+
+redirect_to_ssl(Page) ->
+    Req = wf_context:request_bridge(),
+    Port = Req:peer_port(),
+    Host = hd(ling:split(proplists:get_value(host, wf_context:headers()), ":")),
+    ?INFO("Req ~p Port ~p Host ~p",[Req,Port,Host]),
+    case Port of
+        443 ->
+            no_redirect;
+        _ ->
+            wf:redirect(["https://",Host,"/",Page])
+    end.
+
+redirect_to_tcp(Page) ->
+    Req = wf_context:request_bridge(),
+    Port = Req:peer_port(),
+    Host = hd(ling:split(proplists:get_value(host, wf_context:headers()), ":")),
+    ?INFO("Req ~p Port ~p Host ~p",[Req,Port,Host]),
+    case Port of
+        80 -> no_redirect;
+        8000 -> no_redirect;
+        _ ->
+            case Host == "kakaranet.com" of
+                 true ->  wf:redirect(["http://",Host,"/",Page]);
+                 false ->  wf:redirect(["http://",Host,":8000/",Page])
+            end 
+    end.
 
 main() -> [].
 
@@ -87,7 +115,7 @@ account_menu() ->
 					    allow -> [{?_U("/kakaadmin"), ?_T("Admin")}];
 					    _ -> []
 					end ]},
-		    {ok,#user_info{username=Username,avatar_url = AvatarUrl}} = zealot_auth:get_user_info(webutils:user_info(username)),
+		    {ok,#user_info{username=Username,avatar_url = AvatarUrl}} = nsm_auth:get_user_info(webutils:user_info(username)),
 		    {ok, Quota}  = nsm_accounts:balance(Username, ?CURRENCY_QUOTA),
 		    {ok, Kakush} = nsm_accounts:balance(Username, ?CURRENCY_KAKUSH),
 		    #list{class="user-menu", body=[
@@ -108,7 +136,7 @@ account_menu() ->
 	_UserLoggedIn ->
 	    [#list{class="user-menu", body=[
 		#listitem{body=fb_utils:login_btn()},
-		#listitem{body=#link{class=login, text=?_T("Login"), url=?_U("/login")}},
+		#listitem{body=#link{class=login, text=?_T("Login"), url=[?HTTP_ADDRESS,?_U("/login")]}},
 		#listitem{body=#link{class=signup, text=?_T("Signup"), postback=register}}
 	    ]}]
 	end,
@@ -119,11 +147,13 @@ menu_links() ->
 	 #list{body=[
 		#listitem{body=#link{text=?_T("Main Page"), url=?_U("/"),
                                      title=?_T("You can play games here"), id="mainmenumainpage"}},
-		#listitem{body=#link{text=?_T("My Page"), url=?_U("/dashboard"),
+		#listitem{body=#link{text=?_T("Dashboard"), url=?_U("/dashboard"),
                                      title=?_T("You can share information with others"), id="mainmenumypage"}},
+		#listitem{body=#link{text=?_T("Rules"), url=?_U("/rules-okey"),
+                                     title=?_T("Read the rules of our games"), id="mainmenurules"}},
 		#listitem{body=#link{text=?_T("Gifts"), url=?_U("/gifts"),
                                      title=?_T("Have no idea, what it is about"), id="mainmenugifts"}},
-		#listitem{body=#link{text=?_T("Tournaments"), url=?_U("/all_tournaments"),
+		#listitem{body=#link{text=?_T("Tournaments"), url=?_U("/tournaments"),
                                      title=?_T("You can join tournaments and show them all"), id="mainmenutournaments"}},
 		#listitem{body=#link{text=?_T("Groups"), url=?_U("/groups"),
                                      title=?_T("You can manage your groups settings here"), id="mainmenugroups"}}
@@ -187,9 +217,8 @@ footer_box() ->
                         #listitem{body=wf_tags:emit_tag(a, ?_T("Help & Support"),
                                     [{href, "http://kakaranet.uservoice.com/"},{target,"_blank"}])},
                         #listitem{body=#link{url=?_U("/contact"), text=?_T("Contact")}},
-                        #listitem{body=[?_T("2011 &copy; Kakaranet. All rights reserved."),"<br />",
-                                    ?_T("Kakaranet is registered trademark of Paynet Inc."),"<br/>",
-                                    ?_T("Public Beta - 10 Aug 2012")]},
+                        #listitem{body=[?_T("2011 &copy; Kakaranet. All rights reserved."),"<br/>",
+                                    ?_T("Kakaranet is registered trademark of Paynet Inc."),"<br/>"]},
                         #listitem{body=[#checkbox { id=replay_guiders, text=?_T("Replay Guiders"), postback=replay_guiders_changed,
                                     checked=(wf:cookie("replayguiders")=="yes") }]}
                        ],
@@ -209,7 +238,7 @@ event(login) ->
     login(login,password,login_hintbox);
 event(register)->
     wf:session(fb_registration, undefined),
-    wf:redirect(?_T("/login/register"));
+    wf:redirect([?HTTP_ADDRESS,?_T("/login/register")]);
 event(logout) ->
     %wf:clear_session(),
     wf:logout(),
@@ -467,7 +496,7 @@ login(UserField, PassField, MsgBox)->
     User = wf:q(UserField),
     Password = wf:q(PassField),
 
-    case zealot_auth:login([{username, User},{password, Password}]) of
+    case nsm_auth:login([{username, User},{password, Password}]) of
         {ok, User} ->
             login:login_user(User);
         {error, user_not_found} ->

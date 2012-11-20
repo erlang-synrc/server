@@ -27,7 +27,7 @@ start() -> ok.
 stop() -> stopped.
 
 initialize() ->
-    C = riak:client_connect(?RIAKSERVER),
+    C = riak:client_connect(?RIAKSERVER_NODE),
     ets:new(config, [named_table,{keypos,#config.key}]),
     ets:insert(config, #config{ key = "riak_client", value = C}),
     ok.

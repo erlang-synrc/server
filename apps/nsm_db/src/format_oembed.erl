@@ -1,12 +1,6 @@
 -module(format_oembed).
-
 -include_lib("nsm_db/include/feed.hrl").
-
 -compile(export_all).
-
--export([search/1,
-         format/2,
-         regex_test/0]).
 
 -spec search(iolist()) -> list().
 search(T) ->
@@ -31,9 +25,7 @@ format(Url, #entry{media=Media} = Entry) ->
     MyMedia0 = oembed(Url),
     MyMedia = lists:flatten([MyMedia0 | Media]),
     NewEntry = Entry#entry{media = lists:reverse(MyMedia)},
-    
     {lists:flatten(NewElement), NewEntry}.
-       
 
 -spec oembed(string()) -> string().
 oembed(Url) ->

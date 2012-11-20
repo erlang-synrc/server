@@ -1,14 +1,18 @@
 % This is database handling application that hides database access
 % and provides high-level rich API to stored data:
 %
-%    - users and groups
-%    - search
+%    - acl
+%    - affiliates
+%    - users
+%    - groups
 %    - subscriptions
-%    - feeds and comments
+%    - feeds
 %    - invites
 %    - translations
-%    - tournaments, teams and play records
-%    - table manager
+%    - accounts
+%    - tournaments
+%    - payments
+%    - scoring
 %
 % Currently nsm_db supports following store backends:
 %
@@ -91,7 +95,7 @@ add_contracts() ->
     CurDateDays = calendar:date_to_gregorian_days(CurDate),
     StartDate = calendar:gregorian_days_to_date(CurDateDays - 15),
     FinishDate = calendar:gregorian_days_to_date(CurDateDays + 15),
-    ok = nsm_affiliates:create_contract("kunthar", "Test contract", % THIS BROKES CONSISTENCY ON BOOT
+    catch nsm_affiliates:create_contract("kunthar", "Test contract", % THIS BROKES CONSISTENCY ON BOOT
                                          StartDate, FinishDate,
                                          2, 10.2),
    ?INFO("~w:add_contracts/0 Finished", [?MODULE]),
@@ -165,7 +169,10 @@ create_tour_users(A,B,Groups) ->
     [ begin
 %          nsm_users:init_mq(Me#user.username, Groups),
           nsm_accounts:create_account(Me#user.username),
-          nsm_accounts:transaction(Me#user.username, ?CURRENCY_QUOTA, db_opt:get_default_quota(), #ti_default_assignment{}),
+          nsm_accounts:transaction(Me#user.username,
+                                   ?CURRENCY_QUOTA,
+                                   nsm_db:get_config("accounts/default_quota",  300),
+                                   #ti_default_assignment{}),
           nsm_db:put(Me#user{password = utils:sha(Me#user.password),
                                 starred = feed_create(),
                                 pinned = feed_create()})
@@ -299,7 +306,7 @@ add_sample_users() ->
     ?INFO("adding users accounts"),
     [ begin
           nsm_accounts:create_account(Me#user.username),
-          nsm_accounts:transaction(Me#user.username, ?CURRENCY_QUOTA, db_opt:get_default_quota(), #ti_default_assignment{}),
+          nsm_accounts:transaction(Me#user.username, ?CURRENCY_QUOTA, nsm_db:get(config, "accounts/default_quota",  300), #ti_default_assignment{}),
           nsm_db:put(Me#user{password = utils:sha(Me#user.password),
                                 starred = feed_create(),
                                 pinned = feed_create()})
@@ -412,7 +419,7 @@ get(RecordName, Key, Default) ->
 	    {ok,Default}
     end.
 
-
+get_config(Key, Default) -> {ok, Value} = get(config, Key, Default), Value.
 get_word(Word) -> get(ut_word,Word).
 get_translation({Lang,Word}) -> DBA=?DBA, DBA:get_translation({Lang,Word}).
 
@@ -568,7 +575,7 @@ make_admin(User) ->
     {ok,U} = nsm_db:get(User),
     nsm_db:put(U#user{type = admin}).
 
-make_rich(User) -> nsm_accounts:transaction(User, ?CURRENCY_QUOTA, db_opt:get_default_quota() * 100, #ti_default_assignment{}).
+make_rich(User) -> nsm_accounts:transaction(User, ?CURRENCY_QUOTA, nsm_db:get(config, "accounts/default_quota",  300) * 100, #ti_default_assignment{}).
 
 feed_create() ->
     FId = nsm_db:next_id("feed", 1),

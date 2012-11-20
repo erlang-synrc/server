@@ -42,10 +42,6 @@ do
 	    WEBSERVER=$2;shift 2;;
 	-web-port)
 	    WEBPORT=$2;shift 2;;
-        # full url of the server, with protocol.
-        # example: http://kakaranet.com
-        -web-adress)
-            WEBADRESS=$2;shift 2;;
 	-mq-host)
 	    MQ_HOST=$2;shift 2;;
 	-mq-port)
@@ -78,12 +74,10 @@ echo "Web Server $SERVERHOST ($HIPS:$WEBPORT) will use $FBAPPID FB id"
 
 cat vm.args.template | sed "s#WEBSERVER_NODE#$WEBSERVER@$H#g" > vm.args
 
-./config -file app.config nsw_srv app_srv_node -atom $APPSERVER
-./config -file app.config nsw_srv game_srv_node -atom $GAMESERVER@$H
-./config -file app.config nsw_srv web_srv_node -atom $WEBSERVER@$H
 ./config -file app.config nsm_db app_srv_node -atom $APPSERVER
 ./config -file app.config nsm_db game_srv_node -atom $GAMESERVER@$H
 ./config -file app.config nsm_db web_srv_node -atom $WEBSERVER@$H
+./config -file app.config nsm_db riak_srv_node -atom $WEBSERVER@$H
 ./config -file app.config nsw_srv game_srv_port -integer $SERVERPORT
 ./config -file app.config nsw_srv game_srv_host -list "\"$GAMESERVERHOST\""
 ./config -file app.config nsw_srv fb_id -list "\"$FBAPPID\""
@@ -101,12 +95,7 @@ cat vm.args.template | sed "s#WEBSERVER_NODE#$WEBSERVER@$H#g" > vm.args
 ./config -file app.config nsx_utils app_srv_node -atom $APPSERVER
 ./config -file app.config nsm_db sync_nodes -atom $SYNC
 ./config -file app.config nsm_db nodes -list [app@$H,game@$H,web@$H]
-
-if [ -z "${WEBADRESS+xxx}" ]; then
-    ./config -file app.config nsw_srv http_address -list "\"http://$SERVERHOST:$WEBPORT\""
-else
-    ./config -file app.config nsw_srv http_address -list "\"$WEBADRESS\""
-fi
+./config -file app.config nsw_srv http_address -list "\"https://$H\""
 
 echo "
 [{webmachine, [

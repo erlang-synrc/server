@@ -3,11 +3,7 @@
   {description, "Distributed Unique Identificators"},
   {vsn, "1"},
   {registered, []},
-  {applications, [
-                  kernel,
-                  stdlib,
-                  crypto
-                 ]},
+  {applications, [kernel, stdlib, crypto]},
   {mod, { nsx_idgen_app, []}},
   {env, []}
  ]}.

@@ -7,6 +7,7 @@
 -include_lib("nsm_db/include/accounts.hrl").
 -include_lib("nsm_db/include/tournaments.hrl").
 -include_lib("nsm_db/include/table.hrl").
+-include_lib("nsm_db/include/config.hrl").
 -include_lib("stdlib/include/qlc.hrl").
 -include("setup.hrl").
 -include("common.hrl").

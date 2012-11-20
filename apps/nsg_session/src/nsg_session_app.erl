@@ -6,12 +6,6 @@
 -include_lib("eunit/include/eunit.hrl").
 -include_lib("nsg_srv/include/conf.hrl").
 
-start(_StartType, _StartArgs) ->
-    nsg_session_sup:start_link().
-
-stop() ->
-    stop([]).
-
-stop(_State) ->
-    nsg_session_sup:stop().
-
+start(_StartType, _StartArgs) -> nsg_session_sup:start_link().
+stop() -> stop([]).
+stop(_State) -> nsg_session_sup:stop().

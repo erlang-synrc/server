@@ -220,7 +220,7 @@ finish_register_(Invite) ->
 
     case Password of
 	CPassword when Password /= "" ->
-	    case zealot_auth:register(RegData) of
+	    case nsm_auth:register(RegData) of
 		{ok, register} ->
                     case  Invite of
                         #invite_code{code = Code} ->

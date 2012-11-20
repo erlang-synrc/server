@@ -264,7 +264,7 @@ section_body(account) ->
 	    <dt>"++ ?_T("Remaining Quota") ++":</dt>
 	    <dd>"++wf:to_list(Quota)++"</dd>
 	    </dl>",
-	    #link{class=btn, url=?_U("/price-table"), text=?_T("Üyelİk Yenİle")}
+	    #link{class=btn, url=[?HTTP_ADDRESS,?_U("/price-table")], text=?_T("Üyelİk Yenİle")}
 	]},
 	#panel{class="profile-info", body = [
 	    #panel{class="col-l",body=[

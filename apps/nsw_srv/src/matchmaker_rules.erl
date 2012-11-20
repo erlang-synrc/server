@@ -168,146 +168,8 @@ okey_rules() ->
 
                     #panel{style="padding:10px 30px;", text="Oyun ve puanlama seçenekleri masa açılışında set edilir. Masa açılışında herhangi bir oyun seçilmez ise standart oyun yüklenir."},
 
-                    #table { rows=[
-                        #tablerow { cells=[
-                            #tableheader { style="padding:5px;", text="" },
-                            #tableheader { style="padding:5px;", text="" },
-                            #tableheader { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="Tek-çift", colspan=2 },
-                            #tableheader { style="padding:5px; background-color:#ddbbff; text-align:center;", text="Renkli", colspan=2 },
-                            #tableheader { style="padding:5px;", text="" },
-                            #tableheader { style="padding:5px;", text="" }
-                        ]},
-                        #tablerow { cells=[
-                            #tableheader { style="padding:5px;", text="" },
-                            #tableheader { style="padding:5px; background-color:#ddddff; text-align:center;", text="standart" },
-                            #tableheader { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="tek" },
-                            #tableheader { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="çift" },
-                            #tableheader { style="padding:5px; background-color:#ddbbff; text-align:center;", body=["sarı-mavi ÇİFT", #br{}, "siyah-kırmızı TEK"] },
-                            #tableheader { style="padding:5px; background-color:#ddbbff; text-align:center;", text="Siyah kırmızı ÇİFT" },
-                            #tableheader { style="padding:5px; background-color:#ddffdd; text-align:center;", text="10'dan düşmeli" },
-                            #tableheader { style="padding:5px; text-align:center;", text="Çanakta biriken" }
-                        ]},
-                        #tablerow { cells=[
-                            #tableheader { style="padding:5px;", text="Gösterme" },
-                            #tablecell { style="padding:5px; background-color:#ddddff; text-align:center;", text="1" },
-                            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="1" },
-                            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="2" },
-                            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="2" },
-                            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="4" },
-                            #tablecell { style="padding:5px; background-color:#ddffdd; text-align:center;", text="1" },
-                            #tablecell { style="padding:5px; text-align:center;", body="&mdash;" }
-                        ]},
-                        #tablerow { cells=[
-                            #tableheader { style="padding:5px;", text="Açma" },
-                            #tablecell { style="padding:5px; background-color:#ddddff; text-align:center;", text="3" },
-                            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="3" },
-                            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="6" },
-                            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="6" },
-                            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="12" },
-                            #tablecell { style="padding:5px; background-color:#ddffdd; text-align:center;", text="2" },
-                            #tablecell { style="padding:5px; text-align:center;", body="&mdash;" }
-                        ]},
-                        #tablerow { cells=[
-                            #tableheader { style="padding:5px;", text="Okey atma" },
-                            #tablecell { style="padding:5px; background-color:#ddddff; text-align:center;", text="6" },
-                            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="6" },
-                            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="12" },
-                            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="12" },
-                            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="24" },
-                            #tablecell { style="padding:5px; background-color:#ddffdd; text-align:center;", text="4" },
-                            #tablecell { style="padding:5px; text-align:center;", body="açana" }
-                        ]},
-                        #tablerow { cells=[
-                            #tableheader { style="padding:5px;", text="Taş çifti" },
-                            #tablecell { style="padding:5px; background-color:#ddddff; text-align:center;", text="6" },
-                            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="6" },
-                            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="12" },
-                            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="12" },
-                            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="24" },
-                            #tablecell { style="padding:5px; background-color:#ddffdd; text-align:center;", text="4" },
-                            #tablecell { style="padding:5px; text-align:center;", body="açana" }
-                        ]},
-                        #tablerow { cells=[
-                            #tableheader { style="padding:5px;", text="8 taş" },
-                            #tablecell { style="padding:5px; background-color:#ddddff; text-align:center;", text="yok" },
-                            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="12" },
-                            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="24" },
-                            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="24" },
-                            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="48" },
-                            #tablecell { style="padding:5px; background-color:#ddffdd; text-align:center;", text="yok" },
-                            #tablecell { style="padding:5px; text-align:center;", body="yapana" }
-                        ]},
-                        #tablerow { cells=[
-                            #tableheader { style="padding:5px;", text="Renk açma" },
-                            #tablecell { style="padding:5px; background-color:#ddddff; text-align:center;", text="yok" },
-                            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="24" },
-                            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="48" },
-                            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="48" },
-                            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="96" },
-                            #tablecell { style="padding:5px; background-color:#ddffdd; text-align:center;", text="yok" },
-                            #tablecell { style="padding:5px; text-align:center;", body="açana" }
-                        ]},
-                        #tablerow { cells=[
-                            #tableheader { style="padding:5px;", text="Renkten Taş çifti" },
-                            #tablecell { style="padding:5px; background-color:#ddddff; text-align:center;", text="yok" },
-                            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="48" },
-                            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="96" },
-                            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="96" },
-                            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="192" },
-                            #tablecell { style="padding:5px; background-color:#ddffdd; text-align:center;", text="yok" },
-                            #tablecell { style="padding:5px; text-align:center;", body="açana" }
-                        ]},
-                        #tablerow { cells=[
-                            #tableheader { style="padding:5px;", text="Renkten okey atma" },
-                            #tablecell { style="padding:5px; background-color:#ddddff; text-align:center;", text="yok" },
-                            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="48" },
-                            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="96" },
-                            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="96" },
-                            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="192" },
-                            #tablecell { style="padding:5px; background-color:#ddffdd; text-align:center;", text="yok" },
-                            #tablecell { style="padding:5px; text-align:center;", body="açana" }
-                        ]},
-                        #tablerow { cells=[
-                            #tableheader { style="padding:5px;", text="Renkten Taş çifti okey atma" },
-                            #tablecell { style="padding:5px; background-color:#ddddff; text-align:center;", text="yok" },
-                            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="96" },
-                            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="192" },
-                            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="192" },
-                            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="384" },
-                            #tablecell { style="padding:5px; background-color:#ddffdd; text-align:center;", text="yok" },
-                            #tablecell { style="padding:5px; text-align:center;", body="açana" }
-                        ]},
-                        #tablerow { cells=[
-                            #tableheader { style="padding:5px;", text="Yanlış açan" },
-                            #tablecell { style="padding:5px; background-color:#ddddff; text-align:center;", text="-9" },
-                            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="-9" },
-                            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="-18" },
-                            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="-18" },
-                            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="-36" },
-                            #tablecell { style="padding:5px; background-color:#ddffdd; text-align:center;", text="-2" },
-                            #tablecell { style="padding:5px; text-align:center;", body="&mdash;" }
-                        ]},
-                        #tablerow { cells=[
-                            #tableheader { style="padding:5px;", text="Yanlış açışta diğerleri" },
-                            #tablecell { style="padding:5px; background-color:#ddddff; text-align:center;", text="3" },
-                            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="3" },
-                            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="6" },
-                            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="6" },
-                            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="12" },
-                            #tablecell { style="padding:5px; background-color:#ddffdd; text-align:center;", text="yok" },
-                            #tablecell { style="padding:5px; text-align:center;", body="&mdash;" }
-                        ]},
-                        #tablerow { cells=[
-                            #tableheader { style="padding:5px;", text="Çanak boşalınca çanağa eklenen" },
-                            #tablecell { style="padding:5px; background-color:#ddddff; text-align:center;", text="yok" },
-                            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="4" },
-                            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="8" },
-                            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="8" },
-                            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="16" },
-                            #tablecell { style="padding:5px; background-color:#ddffdd; text-align:center;", text="yok" },
-                            #tablecell { style="padding:5px; text-align:center;", body="&mdash;" }
-                        ]}
-                    ]}
+                    okey_puan_table_tr()
+
                 ]},
                 #link{text=?_T("Hide"), class="matchmaker_game_rules", style="float:right", postback=hide_rules},
                 #br{},
@@ -498,146 +360,7 @@ okey_rules() ->
                         ]}
                     ]},
 
-                    #table { rows=[
-                        #tablerow { cells=[
-                            #tableheader { style="padding:5px;", text="" },
-                            #tableheader { style="padding:5px;", text="" },
-                            #tableheader { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="Odd-even", colspan=2 },
-                            #tableheader { style="padding:5px; background-color:#ddbbff; text-align:center;", text="Colorful", colspan=2 },
-                            #tableheader { style="padding:5px;", text="" },
-                            #tableheader { style="padding:5px;", text="" }
-                        ]},
-                        #tablerow { cells=[
-                            #tableheader { style="padding:5px;", text="" },
-                            #tableheader { style="padding:5px; background-color:#ddddff; text-align:center;", text="standart" },
-                            #tableheader { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="odd" },
-                            #tableheader { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="even" },
-                            #tableheader { style="padding:5px; background-color:#ddbbff; text-align:center;", body=["yellow-and-blue EVEN", #br{}, "black-and-red ODD"] },
-                            #tableheader { style="padding:5px; background-color:#ddbbff; text-align:center;", text="Black and red EVEN" },
-                            #tableheader { style="padding:5px; background-color:#ddffdd; text-align:center;", text="Countdown from 10" },
-                            #tableheader { style="padding:5px; text-align:center;", text="Pot points" }
-                        ]},
-                        #tablerow { cells=[
-                            #tableheader { style="padding:5px;", text="Indicator" },
-                            #tablecell { style="padding:5px; background-color:#ddddff; text-align:center;", text="1" },
-                            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="1" },
-                            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="2" },
-                            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="2" },
-                            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="4" },
-                            #tablecell { style="padding:5px; background-color:#ddffdd; text-align:center;", text="1" },
-                            #tablecell { style="padding:5px; text-align:center;", body="&mdash;" }
-                        ]},
-                        #tablerow { cells=[
-                            #tableheader { style="padding:5px;", text="Hand" },
-                            #tablecell { style="padding:5px; background-color:#ddddff; text-align:center;", text="3" },
-                            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="3" },
-                            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="6" },
-                            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="6" },
-                            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="12" },
-                            #tablecell { style="padding:5px; background-color:#ddffdd; text-align:center;", text="2" },
-                            #tablecell { style="padding:5px; text-align:center;", body="&mdash;" }
-                        ]},
-                        #tablerow { cells=[
-                            #tableheader { style="padding:5px;", text="Throwing a joker" },
-                            #tablecell { style="padding:5px; background-color:#ddddff; text-align:center;", text="6" },
-                            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="6" },
-                            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="12" },
-                            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="12" },
-                            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="24" },
-                            #tablecell { style="padding:5px; background-color:#ddffdd; text-align:center;", text="4" },
-                            #tablecell { style="padding:5px; text-align:center;", body="opened" }
-                        ]},
-                        #tablerow { cells=[
-                            #tableheader { style="padding:5px;", text="Going double" },
-                            #tablecell { style="padding:5px; background-color:#ddddff; text-align:center;", text="6" },
-                            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="6" },
-                            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="12" },
-                            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="12" },
-                            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="24" },
-                            #tablecell { style="padding:5px; background-color:#ddffdd; text-align:center;", text="4" },
-                            #tablecell { style="padding:5px; text-align:center;", body="opened" }
-                        ]},
-                        #tablerow { cells=[
-                            #tableheader { style="padding:5px;", text="Eight tiles" },
-                            #tablecell { style="padding:5px; background-color:#ddddff; text-align:center;", text="no" },
-                            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="12" },
-                            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="24" },
-                            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="24" },
-                            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="48" },
-                            #tablecell { style="padding:5px; background-color:#ddffdd; text-align:center;", text="no" },
-                            #tablecell { style="padding:5px; text-align:center;", body="yours" }
-                        ]},
-                        #tablerow { cells=[
-                            #tableheader { style="padding:5px;", text="Colorful hand" },
-                            #tablecell { style="padding:5px; background-color:#ddddff; text-align:center;", text="no" },
-                            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="24" },
-                            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="48" },
-                            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="48" },
-                            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="96" },
-                            #tablecell { style="padding:5px; background-color:#ddffdd; text-align:center;", text="no" },
-                            #tablecell { style="padding:5px; text-align:center;", body="opened" }
-                        ]},
-                        #tablerow { cells=[
-                            #tableheader { style="padding:5px;", text="Going double with color" },
-                            #tablecell { style="padding:5px; background-color:#ddddff; text-align:center;", text="no" },
-                            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="48" },
-                            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="96" },
-                            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="96" },
-                            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="192" },
-                            #tablecell { style="padding:5px; background-color:#ddffdd; text-align:center;", text="no" },
-                            #tablecell { style="padding:5px; text-align:center;", body="opened" }
-                        ]},
-                        #tablerow { cells=[
-                            #tableheader { style="padding:5px;", text="Going double with joker" },
-                            #tablecell { style="padding:5px; background-color:#ddddff; text-align:center;", text="no" },
-                            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="48" },
-                            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="96" },
-                            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="96" },
-                            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="192" },
-                            #tablecell { style="padding:5px; background-color:#ddffdd; text-align:center;", text="no" },
-                            #tablecell { style="padding:5px; text-align:center;", body="opened" }
-                        ]},
-                        #tablerow { cells=[
-                            #tableheader { style="padding:5px;", text="Going double with color + joker" },
-                            #tablecell { style="padding:5px; background-color:#ddddff; text-align:center;", text="no" },
-                            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="96" },
-                            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="192" },
-                            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="192" },
-                            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="384" },
-                            #tablecell { style="padding:5px; background-color:#ddffdd; text-align:center;", text="no" },
-                            #tablecell { style="padding:5px; text-align:center;", body="opened" }
-                        ]},
-                        #tablerow { cells=[
-                            #tableheader { style="padding:5px;", text="False opening" },
-                            #tablecell { style="padding:5px; background-color:#ddddff; text-align:center;", text="-9" },
-                            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="-9" },
-                            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="-18" },
-                            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="-18" },
-                            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="-36" },
-                            #tablecell { style="padding:5px; background-color:#ddffdd; text-align:center;", text="-2" },
-                            #tablecell { style="padding:5px; text-align:center;", body="&mdash;" }
-                        ]},
-                        #tablerow { cells=[
-                            #tableheader { style="padding:5px;", text="Other players during false opening" },
-                            #tablecell { style="padding:5px; background-color:#ddddff; text-align:center;", text="3" },
-                            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="3" },
-                            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="6" },
-                            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="6" },
-                            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="12" },
-                            #tablecell { style="padding:5px; background-color:#ddffdd; text-align:center;", text="no" },
-                            #tablecell { style="padding:5px; text-align:center;", body="&mdash;" }
-                        ]},
-                        #tablerow { cells=[
-                            #tableheader { style="padding:5px;", text="Addition to the pot when the pot is empty" },
-                            #tablecell { style="padding:5px; background-color:#ddddff; text-align:center;", text="no" },
-                            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="4" },
-                            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="8" },
-                            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="8" },
-                            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="16" },
-                            #tablecell { style="padding:5px; background-color:#ddffdd; text-align:center;", text="no" },
-                            #tablecell { style="padding:5px; text-align:center;", body="&mdash;" }
-                        ]}
-                    ]}
+                    okey_puan_table_en()
                 ]},
                 #link{text=?_T("Hide"), class="matchmaker_game_rules", style="float:right", postback=hide_rules},
                 #br{},
@@ -647,4 +370,287 @@ okey_rules() ->
             ]
     end.
 
+okey_puan_table_tr() ->
+    #table { rows=[
+        #tablerow { cells=[
+            #tableheader { style="padding:5px;", text="" },
+            #tableheader { style="padding:5px;", text="" },
+            #tableheader { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="Tek-çift", colspan=2 },
+            #tableheader { style="padding:5px; background-color:#ddbbff; text-align:center;", text="Renkli", colspan=2 },
+            #tableheader { style="padding:5px;", text="" },
+            #tableheader { style="padding:5px;", text="" }
+        ]},
+        #tablerow { cells=[
+            #tableheader { style="padding:5px;", text="" },
+            #tableheader { style="padding:5px; background-color:#ddddff; text-align:center;", text="standart" },
+            #tableheader { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="tek" },
+            #tableheader { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="çift" },
+            #tableheader { style="padding:5px; background-color:#ddbbff; text-align:center;", body=["sarı-mavi ÇİFT", #br{}, "siyah-kırmızı TEK"] },
+            #tableheader { style="padding:5px; background-color:#ddbbff; text-align:center;", text="Siyah kırmızı ÇİFT" },
+            #tableheader { style="padding:5px; background-color:#ddffdd; text-align:center;", text="10'dan düşmeli" },
+            #tableheader { style="padding:5px; text-align:center;", text="Çanakta biriken" }
+        ]},
+        #tablerow { cells=[
+            #tableheader { style="padding:5px;", text="Gösterme" },
+            #tablecell { style="padding:5px; background-color:#ddddff; text-align:center;", text="1" },
+            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="1" },
+            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="2" },
+            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="2" },
+            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="4" },
+            #tablecell { style="padding:5px; background-color:#ddffdd; text-align:center;", text="1" },
+            #tablecell { style="padding:5px; text-align:center;", body="&mdash;" }
+        ]},
+        #tablerow { cells=[
+            #tableheader { style="padding:5px;", text="Açma" },
+            #tablecell { style="padding:5px; background-color:#ddddff; text-align:center;", text="3" },
+            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="3" },
+            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="6" },
+            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="6" },
+            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="12" },
+            #tablecell { style="padding:5px; background-color:#ddffdd; text-align:center;", text="2" },
+            #tablecell { style="padding:5px; text-align:center;", body="&mdash;" }
+        ]},
+        #tablerow { cells=[
+            #tableheader { style="padding:5px;", text="Okey atma" },
+            #tablecell { style="padding:5px; background-color:#ddddff; text-align:center;", text="6" },
+            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="6" },
+            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="12" },
+            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="12" },
+            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="24" },
+            #tablecell { style="padding:5px; background-color:#ddffdd; text-align:center;", text="4" },
+            #tablecell { style="padding:5px; text-align:center;", body="açana" }
+        ]},
+        #tablerow { cells=[
+            #tableheader { style="padding:5px;", text="Taş çifti" },
+            #tablecell { style="padding:5px; background-color:#ddddff; text-align:center;", text="6" },
+            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="6" },
+            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="12" },
+            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="12" },
+            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="24" },
+            #tablecell { style="padding:5px; background-color:#ddffdd; text-align:center;", text="4" },
+            #tablecell { style="padding:5px; text-align:center;", body="açana" }
+        ]},
+        #tablerow { cells=[
+            #tableheader { style="padding:5px;", text="8 taş" },
+            #tablecell { style="padding:5px; background-color:#ddddff; text-align:center;", text="yok" },
+            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="12" },
+            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="24" },
+            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="24" },
+            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="48" },
+            #tablecell { style="padding:5px; background-color:#ddffdd; text-align:center;", text="yok" },
+            #tablecell { style="padding:5px; text-align:center;", body="yapana" }
+        ]},
+        #tablerow { cells=[
+            #tableheader { style="padding:5px;", text="Renk açma" },
+            #tablecell { style="padding:5px; background-color:#ddddff; text-align:center;", text="yok" },
+            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="24" },
+            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="48" },
+            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="48" },
+            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="96" },
+            #tablecell { style="padding:5px; background-color:#ddffdd; text-align:center;", text="yok" },
+            #tablecell { style="padding:5px; text-align:center;", body="açana" }
+        ]},
+        #tablerow { cells=[
+            #tableheader { style="padding:5px;", text="Renkten Taş çifti" },
+            #tablecell { style="padding:5px; background-color:#ddddff; text-align:center;", text="yok" },
+            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="48" },
+            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="96" },
+            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="96" },
+            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="192" },
+            #tablecell { style="padding:5px; background-color:#ddffdd; text-align:center;", text="yok" },
+            #tablecell { style="padding:5px; text-align:center;", body="açana" }
+        ]},
+        #tablerow { cells=[
+            #tableheader { style="padding:5px;", text="Renkten okey atma" },
+            #tablecell { style="padding:5px; background-color:#ddddff; text-align:center;", text="yok" },
+            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="48" },
+            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="96" },
+            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="96" },
+            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="192" },
+            #tablecell { style="padding:5px; background-color:#ddffdd; text-align:center;", text="yok" },
+            #tablecell { style="padding:5px; text-align:center;", body="açana" }
+        ]},
+        #tablerow { cells=[
+            #tableheader { style="padding:5px;", text="Renkten Taş çifti okey atma" },
+            #tablecell { style="padding:5px; background-color:#ddddff; text-align:center;", text="yok" },
+            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="96" },
+            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="192" },
+            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="192" },
+            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="384" },
+            #tablecell { style="padding:5px; background-color:#ddffdd; text-align:center;", text="yok" },
+            #tablecell { style="padding:5px; text-align:center;", body="açana" }
+        ]},
+        #tablerow { cells=[
+            #tableheader { style="padding:5px;", text="Yanlış açan" },
+            #tablecell { style="padding:5px; background-color:#ddddff; text-align:center;", text="-9" },
+            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="-9" },
+            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="-18" },
+            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="-18" },
+            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="-36" },
+            #tablecell { style="padding:5px; background-color:#ddffdd; text-align:center;", text="-2" },
+            #tablecell { style="padding:5px; text-align:center;", body="&mdash;" }
+        ]},
+        #tablerow { cells=[
+            #tableheader { style="padding:5px;", text="Yanlış açışta diğerleri" },
+            #tablecell { style="padding:5px; background-color:#ddddff; text-align:center;", text="3" },
+            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="3" },
+            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="6" },
+            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="6" },
+            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="12" },
+            #tablecell { style="padding:5px; background-color:#ddffdd; text-align:center;", text="yok" },
+            #tablecell { style="padding:5px; text-align:center;", body="&mdash;" }
+        ]},
+        #tablerow { cells=[
+            #tableheader { style="padding:5px;", text="Çanak boşalınca çanağa eklenen" },
+            #tablecell { style="padding:5px; background-color:#ddddff; text-align:center;", text="yok" },
+            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="4" },
+            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="8" },
+            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="8" },
+            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="16" },
+            #tablecell { style="padding:5px; background-color:#ddffdd; text-align:center;", text="yok" },
+            #tablecell { style="padding:5px; text-align:center;", body="&mdash;" }
+        ]}
+    ]}.
 
+
+okey_puan_table_en() ->
+    #table { rows=[
+        #tablerow { cells=[
+            #tableheader { style="padding:5px;", text="" },
+            #tableheader { style="padding:5px;", text="" },
+            #tableheader { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="Odd-even", colspan=2 },
+            #tableheader { style="padding:5px; background-color:#ddbbff; text-align:center;", text="Colorful", colspan=2 },
+            #tableheader { style="padding:5px;", text="" },
+            #tableheader { style="padding:5px;", text="" }
+        ]},
+        #tablerow { cells=[
+            #tableheader { style="padding:5px;", text="" },
+            #tableheader { style="padding:5px; background-color:#ddddff; text-align:center;", text="standart" },
+            #tableheader { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="odd" },
+            #tableheader { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="even" },
+            #tableheader { style="padding:5px; background-color:#ddbbff; text-align:center;", body=["yellow-and-blue EVEN", #br{}, "black-and-red ODD"] },
+            #tableheader { style="padding:5px; background-color:#ddbbff; text-align:center;", text="Black and red EVEN" },
+            #tableheader { style="padding:5px; background-color:#ddffdd; text-align:center;", text="Countdown from 10" },
+            #tableheader { style="padding:5px; text-align:center;", text="Pot points" }
+        ]},
+        #tablerow { cells=[
+            #tableheader { style="padding:5px;", text="Indicator" },
+            #tablecell { style="padding:5px; background-color:#ddddff; text-align:center;", text="1" },
+            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="1" },
+            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="2" },
+            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="2" },
+            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="4" },
+            #tablecell { style="padding:5px; background-color:#ddffdd; text-align:center;", text="1" },
+            #tablecell { style="padding:5px; text-align:center;", body="&mdash;" }
+        ]},
+        #tablerow { cells=[
+            #tableheader { style="padding:5px;", text="Hand" },
+            #tablecell { style="padding:5px; background-color:#ddddff; text-align:center;", text="3" },
+            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="3" },
+            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="6" },
+            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="6" },
+            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="12" },
+            #tablecell { style="padding:5px; background-color:#ddffdd; text-align:center;", text="2" },
+            #tablecell { style="padding:5px; text-align:center;", body="&mdash;" }
+        ]},
+        #tablerow { cells=[
+            #tableheader { style="padding:5px;", text="Throwing a joker" },
+            #tablecell { style="padding:5px; background-color:#ddddff; text-align:center;", text="6" },
+            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="6" },
+            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="12" },
+            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="12" },
+            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="24" },
+            #tablecell { style="padding:5px; background-color:#ddffdd; text-align:center;", text="4" },
+            #tablecell { style="padding:5px; text-align:center;", body="opened" }
+        ]},
+        #tablerow { cells=[
+            #tableheader { style="padding:5px;", text="Going double" },
+            #tablecell { style="padding:5px; background-color:#ddddff; text-align:center;", text="6" },
+            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="6" },
+            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="12" },
+            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="12" },
+            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="24" },
+            #tablecell { style="padding:5px; background-color:#ddffdd; text-align:center;", text="4" },
+            #tablecell { style="padding:5px; text-align:center;", body="opened" }
+        ]},
+        #tablerow { cells=[
+            #tableheader { style="padding:5px;", text="Eight tiles" },
+            #tablecell { style="padding:5px; background-color:#ddddff; text-align:center;", text="no" },
+            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="12" },
+            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="24" },
+            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="24" },
+            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="48" },
+            #tablecell { style="padding:5px; background-color:#ddffdd; text-align:center;", text="no" },
+            #tablecell { style="padding:5px; text-align:center;", body="yours" }
+        ]},
+        #tablerow { cells=[
+            #tableheader { style="padding:5px;", text="Colorful hand" },
+            #tablecell { style="padding:5px; background-color:#ddddff; text-align:center;", text="no" },
+            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="24" },
+            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="48" },
+            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="48" },
+            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="96" },
+            #tablecell { style="padding:5px; background-color:#ddffdd; text-align:center;", text="no" },
+            #tablecell { style="padding:5px; text-align:center;", body="opened" }
+        ]},
+        #tablerow { cells=[
+            #tableheader { style="padding:5px;", text="Going double with color" },
+            #tablecell { style="padding:5px; background-color:#ddddff; text-align:center;", text="no" },
+            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="48" },
+            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="96" },
+            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="96" },
+            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="192" },
+            #tablecell { style="padding:5px; background-color:#ddffdd; text-align:center;", text="no" },
+            #tablecell { style="padding:5px; text-align:center;", body="opened" }
+        ]},
+        #tablerow { cells=[
+            #tableheader { style="padding:5px;", text="Going double with joker" },
+            #tablecell { style="padding:5px; background-color:#ddddff; text-align:center;", text="no" },
+            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="48" },
+            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="96" },
+            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="96" },
+            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="192" },
+            #tablecell { style="padding:5px; background-color:#ddffdd; text-align:center;", text="no" },
+            #tablecell { style="padding:5px; text-align:center;", body="opened" }
+        ]},
+        #tablerow { cells=[
+            #tableheader { style="padding:5px;", text="Going double with color + joker" },
+            #tablecell { style="padding:5px; background-color:#ddddff; text-align:center;", text="no" },
+            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="96" },
+            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="192" },
+            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="192" },
+            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="384" },
+            #tablecell { style="padding:5px; background-color:#ddffdd; text-align:center;", text="no" },
+            #tablecell { style="padding:5px; text-align:center;", body="opened" }
+        ]},
+        #tablerow { cells=[
+            #tableheader { style="padding:5px;", text="False opening" },
+            #tablecell { style="padding:5px; background-color:#ddddff; text-align:center;", text="-9" },
+            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="-9" },
+            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="-18" },
+            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="-18" },
+            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="-36" },
+            #tablecell { style="padding:5px; background-color:#ddffdd; text-align:center;", text="-2" },
+            #tablecell { style="padding:5px; text-align:center;", body="&mdash;" }
+        ]},
+        #tablerow { cells=[
+            #tableheader { style="padding:5px;", text="Other players during false opening" },
+            #tablecell { style="padding:5px; background-color:#ddddff; text-align:center;", text="3" },
+            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="3" },
+            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="6" },
+            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="6" },
+            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="12" },
+            #tablecell { style="padding:5px; background-color:#ddffdd; text-align:center;", text="no" },
+            #tablecell { style="padding:5px; text-align:center;", body="&mdash;" }
+        ]},
+        #tablerow { cells=[
+            #tableheader { style="padding:5px;", text="Addition to the pot when the pot is empty" },
+            #tablecell { style="padding:5px; background-color:#ddddff; text-align:center;", text="no" },
+            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="4" },
+            #tablecell { style="padding:5px; background-color:#ffbbcc; text-align:center;", text="8" },
+            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="8" },
+            #tablecell { style="padding:5px; background-color:#ddbbff; text-align:center;", text="16" },
+            #tablecell { style="padding:5px; background-color:#ddffdd; text-align:center;", text="no" },
+            #tablecell { style="padding:5px; text-align:center;", body="&mdash;" }
+        ]}
+    ]}.

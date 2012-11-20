@@ -272,11 +272,6 @@ view_add_friend() ->
      #flash{}
     ].
 
-create_user_lists() ->
-    {ok, Users} = gen_server:call(zealot_auth, get_all_user),
-    Users.
-
-
 view_subscribe(SubList) ->
     Source = [ [#link{text=Who,
                       url=site_utils:user_link(Who)}, #br{}]
@@ -342,7 +337,7 @@ inner_event(Any, _)->
 
 
 autocomplete_enter_event(SearchTerm, friend_search) ->
-    Data = create_user_lists(),
+    Data = nsm_db:all(user), % WTF?
     List = [ {struct,[{id, list_to_binary(UId) }, {label, list_to_binary(UId)}, {value, list_to_binary(UId)}]} ||
                #user{username = UId} <- Data,
                string:str(string:to_lower(UId), string:to_lower(SearchTerm)) > 0 ],

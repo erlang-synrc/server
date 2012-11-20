@@ -800,6 +800,9 @@ msgstr "Oyun Puanları"
 msgid "Game Rules"
 msgstr "Oyun Kuralları"
 #
+msgid "Rules"
+msgstr "Kuralları"
+#
 msgid "Game Settings"
 msgstr "Oyun Ayarları"
 #
@@ -4831,3 +4834,9 @@ msgstr "your photos!"
 #
 msgid "ACCORDING TO FRIENDS"
 msgstr "ARKADAŞLARIMA GÖRE"
+#
+msgid "Read the rules of our games"
+msgstr "Read the rules of our games"
+#
+msgid "Dashboard"
+msgstr "Paneli"
