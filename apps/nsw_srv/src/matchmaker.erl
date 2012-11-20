@@ -19,113 +19,68 @@
 
 route() -> ["game_name"].
 
+main() ->
+    wf:state(buttons, green),
+    case wf:user() /= undefined of
+        true  -> main_authorized0();
+        false -> wf:redirect_to_login(?_U("/login"))
+    end.
+
+main_authorized0() ->
+    webutils:add_script("/nitrogen/jquery.paginatetable.js"),
+    webutils:add_raw("
+        <link href='/nitrogen/guiders-js/guiders-1.2.8.css' rel='stylesheet'>
+        <script src='/nitrogen/guiders-js/guiders-1.2.8.js'></script>
+    "),
+     #template { file=code:priv_dir(nsw_srv)++"/templates/bare.html" }.
+
 title() -> ?_T("Matchmaker").
 
-main() ->
-  wf:state(buttons, green),
-  ?INFO("Matchmaker User: ~p",[wf:user()]),
-
-  case wf:q(game_name) of
-    "okey" -> ok;
-    "tavla" -> ok;
-    _ -> wf:redirect(?_U("/dashboard"))
-  end,
-
-
-  case wf:user() of
-    undefined -> %wf:redirect_to_login(?_U("/login")); 
-                 webutils:redirect_to_ssl("login");
-    _User ->
-
-%  case wf:q(csid) of
-%    undefined ->
-%      {_, _, C} = now(),
-%      wf:redirect(lists:concat([?_U("/matchmaker"), "/", ?_U(wf:q(game_name)), "/csid/", C, ""]));
-%    Sid -> wf:state(session_id, Sid)
- % end,
-
-      webutils:add_script("/nitrogen/jquery.paginatetable.js"),
-      webutils:add_raw("<link href='/nitrogen/guiders-js/guiders-1.2.8.css' rel='stylesheet'>
-      <script src='/nitrogen/guiders-js/guiders-1.2.8.js'></script>"),
-      case webutils:guiders_ok("matchmaker_guiders_shown") of
-        true -> guiders_script();
-        false -> []
-      end,
-      add_game_settings_guiders(),
-
-      SS = case wf:session({wf:q(game_name), wf:user()}) of
-                undefined -> case wf:q(game_name) of
-                                  "tavla" -> [{game, game_tavla}];
-                                  "okey" -> [{game, game_okey}]
-                             end ++ [{table_name, table_name(default)}];
-                Settings -> Settings
-      end,
-
-      wf:session({wf:q(game_name), wf:user()}, SS),
-      #template { file=code:priv_dir(nsw_srv)++"/templates/bare.html" }
-
-  end.
-
-
 body() ->
-  ui_update_buttons(),
-  UId = webutils:user_info(username),
-  wf:state(user_in_groups, nsm_groups:list_groups_per_user(UId)),
-  wf:state(users_subscribe, nsm_users:list_subscr(UId)),
-  ui_paginate(),
-  wf:comet(fun() -> comet_update() end),
-  [#panel{class="matchmaker-section", body=[
-    #list{class="matchmaker-menu", body=[
-      #listitem{class="create-game-item", body=[
-        "<span id='guiderscreateblock'>",
-        #span{class="title", text=?_T("Create Your Game")},
-        #span{text=?_T("You can create your own table and start to earn gift points.")},
-        #link{class="create-game-btn", postback={show,create_game}, text=?_T("CREATE"), actions=ac_hide_main_container()},
-        "</span>"
-      ]},
-      #listitem{id="guidersjoinblock", class="join-game-item", body=[
-        "<span id='guidersjoinblock'>",
-        #span{class="title", text=?_T("Join An Existing Game")},
-        #span{text=?_T("Start to gain gift points right now. Join to an existing follow's game.")},
-        #link{class="join-game-btn", postback={show,join_game}, text=?_T("JOIN"), actions=ac_hide_main_container()},
-        "</span>"
-      ]},
-      #listitem{id=play_button, class="play-game-item", body=play_button()}
-    ]},
-    #panel{id=rules_container, body=[]},
-    #panel{class="matchmaker-option",  body= [
-      #h2{text= wf:q(game_name) ++ " " ++ ?_T("Selected Option")},
-      #link{class="game-rules-btn", text=?_T("Game Rules"), postback=show_game_rules},
-      #panel{id=matchmaker_options, class="matchmaker-game-options", body=join_options()}
-    ]},
-    #panel{id=matchmaker_slide_area},
-    #panel{id=tables, class="matchmaker-games-tables", body=show_table(get_tables())},
-    #panel{class="matchmaker-table-pager paging", body=[
-      #list{body=[#listitem{body=["<a href=\"#\" class=\"prevPage\">&lt;</a>"]}]},
-      #list{body=[]},
-      #list{body=[#listitem{body=["<a href=\"#\" class=\"nextPage\">&gt;</a>"]}]}
-    ]},
-    #panel{id=info_table}
-  ]}].
-
-play_button() ->
-  Settings = wf:session({wf:q(game_name), wf:user()}),
-  Game = proplists:get_value(game, Settings),
-  LuckyAction = case rpc:call(?GAMESRVR_NODE, game_manager, get_lucky_table,[Game]) of
-    [#game_table{id = GaId}] ->
-      IdStr = integer_to_list(GaId),
-      wf:session(IdStr, IdStr),
-
-      URL = lists:concat([?_U("/client"),"/","okey","/id/", GaId]),
-      #event{type=click, actions=webutils:new_window_js(URL)};
-    [] -> []
-  end,
-  ["<span id='guidersplayblock'>",
-    #span{class="title", text=?_T("I Am Feeling Lucky")},
-    #span{text=?_T("You have no chance to get any gift points. Fast game only.")},
-    #link{class="play-game-btn", text=?_T("PLAY"), actions= LuckyAction},
-    "</span>"
-  ].
+    case (catch check_requirements()) of
+	ok ->
+	    try
+		Settings = wf:session({q_game_type(),wf:user()}),
+		ui_update_buttons(case Settings of undefined -> 
+			case q_game_type() of
+			    "tavla" ->
+				[{game, game_tavla}];%, {rounds, 3}, {speed,normal}, {game_mode, standard}];
+			    "okey" ->
+				[{game, game_okey}]%, {rounds, 20}, {speed,normal}, {game_mode, standard}]
+			end ++ [{table_name, table_name(default)}]; _ -> Settings end),
+ 		case proplists:get_value(game, Settings) of
+		   game_okey   -> ok;
+		   game_tavla  -> ok
+		end,
+                wf:session({q_game_type(),wf:user()}, Settings)
+	    catch
+		error:E when E==function_clause orelse element(1, E)==badmatch ->
+		    %% reset to default settings if it's not set or wrong
+                    FromCookies = wf:session({q_game_type(),wf:user()}),
+                    ?INFO("FromCookies: ~p",[FromCookies]),
+		    DefaultSettings = case FromCookies of
+                        undefined ->
+			case q_game_type() of
+			    "tavla" ->
+				[{game, game_tavla}];%, {rounds, 3}, {speed,normal}, {game_mode, standard}];
+			    "okey" ->
+				[{game, game_okey}]%, {rounds, 20}, {speed,normal}, {game_mode, standard}]
+			end ++ [{table_name, table_name(default)}];
+                       _ -> FromCookies
+                    end,
+		    wf:session({q_game_type(),wf:user()}, DefaultSettings),
+		    ui_update_buttons()
+	    end,
+	    UId = webutils:user_info(username), 
+	    wf:state(user_in_groups, nsm_groups:list_groups_per_user(UId)),
+	    wf:state(users_subscribe, nsm_users:list_subscr(UId)), 
+	    main_authorized();
+	{redirect, login} ->
+	    wf:redirect_to_login("/");
+	{redirect, Url} ->
+	    wf:redirect(Url);
+	_ -> ""
+    end.
 
 table_name(default) ->
     UId = wf:user(),
@@ -137,27 +92,139 @@ table_name(default) ->
 q_game_type() ->
     wf:q(game_name).
 
-create_options(Tag) ->
-  #panel{class="create-options", body=[
-    #list{id=criteria_field, class="game-criteria",  body=[]},
-    #link{class="clear-criteria-btn", text=?_T("Clear Options"), postback=clear_selection},
-    #span{id="guiderstab1createbutton", body=[
-        case Tag of
-          create -> 
-            {_, _, Sid} = now(),
-            wf:state(session_id, Sid),
-            Url = lists:concat([?_U("/view-table/"), ?_U(wf:q(game_name)),"/id/",wf:state(session_id)]),
-            Settings = wf:session({wf:q(game_name), wf:user()}),
-            wf:session(wf:state(session_id), Settings),
-            JSPostback = site_utils:postback_to_js_string(?MODULE, create_game),
-            %% create only when link is not disabled
-            CreateAction = #event{type=click, actions="if (!objs('create_button').hasClass('disable')) {"
-              ++webutils:new_window_js(Url)++";"++JSPostback++";};"},
-            #link{id=create_button, class="create-game-btn", actions=CreateAction, text=?_T("CREATE")};
-          _ -> ""
-        end
-    ]}
-  ]}.
+check_requirements() ->
+    case wf:user() /= undefined of
+	true  -> ok;
+	false -> throw({redirect, login})
+    end,
+    case q_game_type() of
+	"okey" -> ok;
+	"tavla" -> ok;
+	Other ->
+	    ?WARNING("Hacking attempt? game_type=~p\n", [Other]),
+	    throw({redirect, ?_U("/dashboard")})
+    end,
+    case wf:q(csid) of
+	undefined ->
+	    {_, _, C} = now(),
+	    throw({redirect, lists:concat([?_U("/matchmaker"), "/", ?_U(q_game_type()), "/csid/", C, ""])});
+	Sid ->
+	    wf:state(session_id, Sid)
+    end,
+    ok.
+
+main_authorized() ->
+    Tables = #panel{id=tables, body=ui_get_tables()},
+    Pager = "<div class='matchmaker-table-pager paging'><div class=\"center\">"
+	"<ul><li><a href=\"#\" class=\"prevPage\">&lt;</a></li></ul>"
+	"<ul class='pageNumbers'></ul>"
+	"<ul><li><a href=\"#\" class=\"nextPage\">&gt;</a></li>"
+	"</ul></div></div>",
+    ui_paginate(),
+
+    wf:comet(fun() -> comet_update() end),
+    % guiders
+    case webutils:guiders_ok("matchmaker_guiders_shown") of
+        true ->
+            guiders_script();
+        false ->
+            "" 
+    end,
+    [
+        #section{class="create-area", body=#section{class="create-block",
+            body=[
+                matchmaker_submenu(),
+                #panel{id=rules_container, body=[]},
+                #article{class="article1",
+                    body=[
+                        #panel{id=matchmaker_main_container, class="head", body=matchmaker_show_tables()},
+                        #panel{id=matchmaker_slide_area, class="slide-area"},
+                        Tables
+                ]},
+                Pager,
+                view_table_box()
+    ]}}].
+
+matchmaker_submenu() ->
+    B = #span{style="font-weight:bold"},
+    [
+        #list{class="steps-list", body=[
+            #listitem{class="submenu item1", body=[
+                "<span id='guiderscreateblock'>",
+                #link{postback={show,create_game}, text=?_T("CREATE"),
+                    actions=ac_hide_main_container()},
+                B#span{class="ttl", text=?_T("Create Your Game")},
+                B#span{text=?_T("You can create your own table and start to earn gift points.")},
+                "</span>"
+            ]},
+            #listitem{class="submenu item2", body=[
+                "<span id='guidersjoinblock'>",
+                #link{postback={show,join_game}, text=?_T("JOIN"),
+				    actions=ac_hide_main_container()},
+                B#span{class="ttl", text=?_T("Join An Existing Game")},
+                B#span{text=?_T("Start to gain gift points right now. Join to an existing follow's game.")},
+                "</span>"
+            ]},
+            #listitem{class="submenu item3",id=play_button_panel, body=[
+                el_inside_play()
+            ]}
+	    ]}
+    ].
+
+
+el_inside_play() ->
+     Settings = wf:session({q_game_type(), wf:user()}),
+     Game = proplists:get_value(game, Settings),
+     LuckyAction =
+         case rpc:call(?GAMESRVR_NODE,game_manager,get_lucky_table,[Game]) of
+             [#game_table{id = GaId}] ->
+                 IdStr = integer_to_list(GaId),
+                 wf:session(IdStr, IdStr),
+                 URL = lists:concat([?_U("/client"),"/","okey","/id/", GaId]),
+                 #event{type=click, actions=webutils:new_window_js(URL)};
+             [] ->
+                 []
+         end,
+     B = #span{style="font-weight:bold"},
+     [
+      "<span id='guidersplayblock'>",
+      #link{text=?_T("PLAY"), actions=LuckyAction},
+      B#span{class="ttl", text=?_T("I Am Feeling Lucky")},
+      B#span{text=?_T("You have no chance to get any gift points. Fast game only.")},
+      "</span>"
+     ].
+
+matchmaker_show_create(Tag) ->
+    ThisClass = case wf:state(buttons) of
+        green -> "row_green";
+        _ -> "row"
+    end,
+    #panel{class=criteria, body=[
+        #singlerow{cells=[
+            #tablecell{body=[
+                "<span id='guiderscriteria'><nobr>",
+                case Tag of
+                    create -> #h2{text=q_game_type() ++ " " ++ ?_T("Selected Option")};
+                    _ -> #h2{text=q_game_type() ++ " " ++?_T("Selected Option")}
+                end,
+                "</nobr></span>",
+                #br{},
+                #link{text=?_T("Game Rules"), class="matchmaker_game_rules", postback=show_game_rules, style="margin-left:0px;"}
+            ]},
+            #tablecell{body=[
+                #panel{class=area, body=[
+                    #list{id=criteria_field, class=ThisClass, body=""},
+                    "<span id='guiderstab1createbutton' style='float:right; text-align:center;'>",
+                    case Tag of
+                        create -> el_create_game_button();
+                        _ -> ""
+                    end,
+                    "</span>",
+                    #link{text=?_T("Clear Options"), postback=clear_selection, class="matchmaker_clear_selection"}
+                ]}
+            ]}
+        ]}
+    ]}.
 
 ui_paginate() ->
     wf:wire("$('.view_table_table').paginateTable({ rowsPerPage: 10, pager: '.matchmaker-table-pager', maxPageNumbers:20 }).find('tr:nth-child(2n)').addClass('color1');").
@@ -258,7 +325,7 @@ ui_rounds() ->
         #h3{text=?_T("Rounds")},
         "</span>",
         #list{class=ThisClass, body=[ 
-            #listitem{body=construct_id(#link{text=wf:to_list(X), postback={tag,{rounds,X}}})}
+            #listitem{body=construct_id(#link{text=wf:to_list(X), class=ui_rounds_btn, postback={tag,{rounds,X}}})}
             || X <- Rounds]
         }
     ].
@@ -266,7 +333,7 @@ ui_rounds() ->
 
 
 ui_checkboxes() ->
-  ui_checkboxes(tabs).
+    ui_checkboxes(tabs).
 
 ui_checkboxes(Section) ->
     Checkboxes = [
@@ -286,58 +353,100 @@ ui_checkboxes(Section) ->
         "</span>"
     ],
     case Section of
-	join -> #panel{body=[ #panel{class="row", body=X} || X <- Checkboxes ]};
-	_ ->    #panel{body=Checkboxes }
+	join -> #panel{class="choose-form", body=[ #panel{class="row", body=X} || X <- Checkboxes ]};
+	_ ->    #panel{class="form1", body=Checkboxes }
     end.
 
 ui_add_checkboxes() ->
-  Checkboxes = [
-  construct_id(#checkbox{class="chk", postback={tag,{deny_robots,true}}, value=?_T("Deny Robots"),
-    text=?_T("Table can contain only players, not robots")}),
-  construct_id(#checkbox{class="chk", postback={tag,{private,true}}, value=?_T("Private"),
-    text=?_T("Private table, only friends")}),
-  construct_id(#checkbox{class="chk", postback={tag,{slang,true}}, value=?_T("Slang"),
-    text=?_T("Slang is accepted")}),
-  construct_id(#checkbox{class="chk", postback={tag,{deny_observers,true}},
-    value=?_T("No observers"), text=?_T("I don't accept observers")})],
-  #panel{body=[ 
-    "<span id='guiderstab1additional'></span>",
-    #h3{text=?_T("Additional options")},
-    [#panel{class="row", body=X} || X <- Checkboxes ] 
-  ]}.
+    Checkboxes = [
+		  construct_id(#checkbox{class="chk", postback={tag,{deny_robots,true}},
+					 value=?_T("Deny Robots"),
+					 text=?_T("Table can contain only players, not robots")}),
+		  construct_id(#checkbox{class="chk", postback={tag,{private,true}}, % TODO: friends_only?
+					 value=?_T("Private"), text=?_T("Private table, only friends")}),
+		  construct_id(#checkbox{class="chk", postback={tag,{slang,true}},
+					 value=?_T("Slang"), text=?_T("Slang is accepted")}),
+		  construct_id(#checkbox{class="chk", postback={tag,{deny_observers,true}},
+					 value=?_T("No observers"), text=?_T("I don't accept observers")})
+		 ],
+    #panel{class="form1", body=[ 
+        "<span id='guiderstab1additional'>",
+        "</span>",
+        #h3{text=?_T("Additional options")},
+		[#panel{class="row", body=X} || X <- Checkboxes ] 
+    ]}.
 
-join_options() ->
-  [
-    #panel{class="opt game-speed", body=ui_game_speed()},
-    #panel{class="opt game-type", body=ui_game_type()},
-    #panel{class="opt game-rounds", id = ui_rounds, body=ui_rounds()},
-    #panel{class="opt game-detailed-settings", body=[
-      #panel{body=ui_checkboxes(join)},
-      #span{id="guidersdetailedsettings", body=[
-        #link{body=?_T("Detailed Settings"), postback={show, join_game_detailed}, actions=ac_hide_main_container()}
-      ]}
-    ]}
-  ].
+matchmaker_show_tables() ->
+    TableFilter = [
+		   #panel{
+		      class="item item1",
+		      body=ui_game_speed()
+		   },
+		   #panel{
+		      class="item item2",
+		      body=ui_game_type()
+		   },
+		   #panel{
+              id = ui_rounds,
+		      class="item item3",
+		      body=ui_rounds()
+		   },
+%		   #panel{
+%		      class="item item4", style="width:64px;",
+%		      body=ui_checkboxes(join)
+%		   },
+		   #panel{
+		      class="options", style="height:61px;",
+		      body=[
+%                "<span id='guidersgamebutton'>",
+%			     el_create_game_button(),
+%                 "</span>",
+                 #panel{
+                    style="margin-top:-32px; margin-bottom:-6px;",
+       		        body=ui_checkboxes(join)
+                 },
+                 "<span id='guidersdetailedsettings'>",
+		         #link{body=?_T("Detailed Settings"), postback={show, join_game_detailed},
+			       actions=ac_hide_main_container(), class="cancel", style="position:relative; bottom:-30px;"},
+                 "</span>"
+		       ]}
+		  ],
+    [
+        #singlerow { cells=[
+            #tablecell { 
+                body=#h2{text=q_game_type() ++ " " ++ ?_T("Selected Option")}
+            },
+            #tablecell { 
+                body=#link{text=?_T("Game Rules"), class="matchmaker_game_rules", postback=show_game_rules}
+            }
+        ]},
+        #panel{class="items", body=TableFilter}
+    ].
 
 
 el_create_game_button() ->
-  Url = lists:concat([?_U("/view-table/"), ?_U(q_game_type()),"/id/",wf:state(session_id)]),
-  Settings = wf:session({wf:q(game_name), wf:user()}),
-  wf:session(wf:state(session_id), Settings),
-  JSPostback = site_utils:postback_to_js_string(?MODULE, create_game),
-  %% create only when link is not disabled
-  CreateAction = #event{type=click, actions="if (!objs('create_button').hasClass('disable')) {"
-    ++webutils:new_window_js(Url)++";"++JSPostback++";};"},
-  [#link{id=create_button, class="create btn-create", actions=CreateAction, text=?_T("CREATE")}].
+
+    Url = lists:concat([?_U("/view-table/"), ?_U(q_game_type()),"/id/",wf:state(session_id)]),
+    Settings = wf:session({q_game_type(),wf:user()}),
+    wf:session(wf:state(session_id), Settings),
+    JSPostback = site_utils:postback_to_js_string(?MODULE, create_game),
+    %% create only when link is not disabled
+    CreateAction = #event{type=click, actions="if (!objs('create_button').hasClass('disable')) {"
+					      ++webutils:new_window_js(Url)++";"++JSPostback++";};"},
+    [
+        "<nobr>",   % had to tweek CSS here. It's complicated
+        #link{id=create_button, class="create btn-create", actions=CreateAction, text=?_T("CREATE"), style="width:120px;"}, 
+        "</nobr>"
+    ].
 
 construct_id(#link{postback={tag,Tag}} = A) ->
-  A#link{id=construct_id(Tag)};
+    A#link{id=construct_id(Tag)};
 construct_id(#cool_button{postback={tag,Tag}} = A) ->
-  A#cool_button{id=construct_id(Tag)};
+    A#cool_button{id=construct_id(Tag)};
 construct_id(#checkbox{postback={tag,Tag}} = A) ->
-  A#checkbox{id=construct_id(Tag)};
+    A#checkbox{id=construct_id(Tag)};
 construct_id({Key, Val}) ->
-  site_utils:simple_pickle({Key, Val}).
+    site_utils:simple_pickle({Key, Val}).
 
 modified_base64_encode(B) -> m_b64_e(base64:encode(B), <<>>).
 m_b64_e(<<>>, Acc) -> Acc;
@@ -345,6 +454,10 @@ m_b64_e(<<$+, Rest/binary>>, Acc) -> m_b64_e(Rest, <<Acc/binary, $->>);
 m_b64_e(<<$/, Rest/binary>>, Acc) -> m_b64_e(Rest, <<Acc/binary, $_>>);
 m_b64_e(<<$=, Rest/binary>>, Acc) -> m_b64_e(Rest, Acc);
 m_b64_e(<<H,  Rest/binary>>, Acc) -> m_b64_e(Rest, <<Acc/binary, H>>).
+
+ui_get_tables() ->
+    Tables = get_tables(),
+    show_table(Tables).
 
 qlc_to_game_table(TN2,I,R,G,S,M,O,A,GP) ->
    #game_table{name = TN2, id = I, rounds = R, age_limit = A, game_type = G, 
@@ -441,10 +554,11 @@ get_single_tables(Setting,UId,GameFSM,Convert) ->
 
 
 get_tables(Convert) -> 
-    Setting = wf:session({wf:q(game_name),wf:user()}),
-    retrieve_tables(Setting, wf:user(), wf:q(game_name), Convert).
+    Setting = wf:session({q_game_type(),wf:user()}),
+    UId = wf:user(),
+    retrieve_tables(Setting,UId,q_game_type(),Convert).
 
-filter_tables(QLC, UId, GameFSM, Setting, Convert) ->
+filter_tables(QLC,UId,GameFSM,Setting,Convert) ->
 
     GetPropList = fun(Key,Setngs) -> 
                    case Setngs of
@@ -520,84 +634,110 @@ list_users_links(Users, Owner) ->
               end ++ " " || User <- Users].
 
 show_table(Tables) ->
-  %% update i'm feeling lucky
-  wf:update(play_button, play_button()),
+    %% update i'm feeling lucky
+    wf:update(play_button_panel, el_inside_play()),
+    case Tables of
+        [] ->
+            #panel{style="text-align: center", body=#h4{text=?_T("You can create a game or join a game")} };
+        _ ->
+            #table{class="view_table_table article-table", style="width:100%", rows=[
+                begin
+                    {info, {_, TId}} = InfoPostback,
+                    {ok, WholeTable} = view_table:get_table(TId),
+                    MaxUsers = case q_game_type() of 
+                        "tavla" -> case WholeTable#game_table.tournament_type of
+                            paired -> 10;
+                            paired_lobby -> 10;
+                            _ -> 2
+                        end;
+                        "okey" -> 4 
+                    end,
+                    RealUsers = case q_game_type() of 
+                        "tavla" -> case WholeTable#game_table.tournament_type of
+                            paired -> WholeTable#game_table.users;
+                            _ -> Users
+                        end;
+                        "okey" -> Users 
+                    end,
+                    TMode = matchmaker:game_mode_to_text(WholeTable#game_table.game_mode) 
+                             ++ " {"++atom_to_list(WholeTable#game_table.tournament_type)++"} " 
+                             ++ integer_to_list(TId),
+                    TSpeed = matchmaker:game_speed_to_text(WholeTable#game_table.game_speed),
+                    TRoundsOrNot = case WholeTable#game_table.rounds of
+                        undefined -> "";
+                        1 -> "";
+                        M -> ", "++integer_to_list(M) ++ " " ++ ?_T("rounds")
+                    end,
+                    TDoubleOrNot = case WholeTable#game_table.double_points of
+                        1 -> "";
+                        N -> ", x"++integer_to_list(N)
+                    end,
+                    RowId = wf:temp_id(),
+                    RemoveActions = #event{type=click, actions=#hide{target=RowId}},
+                    Info = case InfoPostback of
+                        {info, _} ->
+                            #link{id=showInfo,
+                                postback=InfoPostback,
+                                text=?_T("Info")
+                            };
+                        _ -> []
+                    end,
+                    JoinOrCrate = case Action of
+                        {join, Act} ->
+                            case length(RealUsers) of
+                                MaxUsers -> "";
+                                _ ->
+                                    #link{id=joinTable,
+                                        actions=Act,
+                                        show_if=ViewPerPoint,
+                                        text=?_T("Join"),
+                                        class="join-button"
+                                    }
+                            end;
+                        {create, Act} ->
+                            #link{id=joinTable,
+                                actions=Act,
+                                text=?_T("Create")
+                            };
+                        _ -> []
+                    end,
+                    DeleteTable = #link{id=deleteTable,
+                        postback=DeleteAction,
+                        show_if=UserOwner,
+                        actions=RemoveActions,
+                        text=?_T("Remove")
+                    },
 
-  case Tables of
-    [] -> #panel{body=#h4{text=?_T("You can create a game or join a game")} };
-    _ ->  #table{class="view_table_table", rows=[
-      begin
-        {info, {_, TId}} = InfoPostback,
-        {ok, WholeTable} = view_table:get_table(TId),
-
-        MaxUsers = case wf:q(game_name) of
-          "tavla" -> 
-            case WholeTable#game_table.tournament_type of
-              paired -> 10;
-              paired_lobby -> 10;
-              _ -> 2
-            end;
-          "okey" -> 4
-        end,
-        RealUsers = case wf:q(game_name) of
-          "tavla" ->
-            case WholeTable#game_table.tournament_type of
-              paired -> WholeTable#game_table.users;
-              _ -> Users
-            end;
-          "okey" -> Users
-        end,
-        TMode = matchmaker:game_mode_to_text(WholeTable#game_table.game_mode)
-          ++ " {"++atom_to_list(WholeTable#game_table.tournament_type)++"} " 
-          ++ integer_to_list(TId),
-        TSpeed = matchmaker:game_speed_to_text(WholeTable#game_table.game_speed),
-        TRoundsOrNot = case WholeTable#game_table.rounds of
-          undefined -> "";
-          1 -> "";
-          M -> ", "++integer_to_list(M) ++ " " ++ ?_T("rounds")
-        end,
-        TDoubleOrNot = case WholeTable#game_table.double_points of
-          1 -> "";
-          N -> ", x"++integer_to_list(N)
-        end,
-        RowId = wf:temp_id(),
-        RemoveActions = #event{type=click, actions=#hide{target=RowId}},
-        Info = case InfoPostback of
-          {info, _} -> #link{id=showInfo, postback=InfoPostback, text=?_T("Info")};
-          _ -> []
-        end,
-        JoinOrCrate = case Action of
-          {join, Act} ->
-            case length(RealUsers) of
-              MaxUsers -> "";
-              _ ->
-                 #link{id=joinTable, actions=Act,show_if=ViewPerPoint, text=?_T("Join"), class="join-button" }
-            end;
-          {create, Act} ->
-            #link{id=joinTable, actions=Act, text=?_T("Create") };
-          _ -> []
-        end,
-        DeleteTable = #link{id=deleteTable, postback=DeleteAction, show_if=UserOwner, actions=RemoveActions, text=?_T("Remove")},
-        Buttons = #list{style="float:right;", body=[
-          #listitem{body=X} || X <-
-            [#image{image="/images/free.png"} || _N <- lists:seq(1,MaxUsers-length(RealUsers))] ++
-            [Info, JoinOrCrate, DeleteTable]
-        ]},
-        #tablerow{id=RowId, cells=[
-          #tablecell{id=tableNameLabel, class="cell1", body=[
-            TMode ++ ", " ++ TSpeed ++ TRoundsOrNot ++ TDoubleOrNot ++ " (" ++ list_users_links(RealUsers, OwnerLabel) ++ ") "]},
-          #tablecell{ class="cell3", body = [ "<nobr>", Buttons, "</nobr>" ] } 
-        ]}
-      end
-      || [_TableNameLabel,
-          OwnerLabel,
-          InfoPostback,
-          Action,
-          ViewPerPoint,
-          UserOwner,
-          Users,
-          DeleteAction] <- Tables]}
-  end.
+                    Buttons = #list{style="float:right;", body=[
+                        #listitem{body=X} || X <- 
+                            [#image{image="/images/free.png"} || _N <- lists:seq(1,MaxUsers-length(RealUsers))] ++ 
+                            [Info, JoinOrCrate, DeleteTable]
+                    ]},
+                    #tablerow{id=RowId, cells=[
+                        #tablecell{ class=cell1,
+                            body=[
+                                TMode ++ ", " ++ TSpeed ++ TRoundsOrNot ++ TDoubleOrNot ++ 
+                                " (" ++ list_users_links(RealUsers, OwnerLabel) ++ ") "
+                            ],
+                            id=tableNameLabel
+                        },
+                        #tablecell{ class=cell3,
+                            body = [
+                                "<nobr>", Buttons, "</nobr>"
+                            ]
+                        }
+                    ]}
+                end
+                || [_TableNameLabel,
+                    OwnerLabel,
+                    InfoPostback,
+                    Action,
+                    ViewPerPoint,
+                    UserOwner,
+                    Users,
+                    DeleteAction] <- Tables
+            ]}
+    end.
 
 check_required(Setting) ->
     Required = case proplists:get_value(game_mode, Setting) of
@@ -660,38 +800,42 @@ check_depended(_) -> ok.
 settings_box() -> settings_box(create).
 
 settings_box(_Tag) ->
-  ThisClass = case wf:state(buttons) of
-    green -> "slide-up_green";
-    _ -> "slide-up"
-  end,
-  GameSettings = #panel{body=[
-    case wf:state(buttons) =:= green of 
-      false -> ui_table_name(); 
-      _ -> ""
+    ThisClass = case wf:state(buttons) of
+        green -> "slide-up_green";
+        _ -> "slide-up"
     end,
-    ui_game_speed(),
-    #panel{body=[#panel{body=ui_game_type()}, #panel{id=ui_rounds, body=ui_rounds()}]},
-    ui_checkboxes(),
-    ui_double_game(),
-    ui_add_checkboxes()
-    %add_game_settings_guiders()
-  ]},
-  %% TODO: use real tabs
-  GroupSettings = tab_group_setting(),
-  FriendSettings = tab_friend_setting(),
-  PersonalSettings = tab_personal_setting(),
-  [#tabs{tabs = [
-    {?_T("Game Settings"), GameSettings},
-    {?_T("Group Settings"), GroupSettings},
-    {?_T("Friend Settings"), FriendSettings},
-    {?_T("Personal Settings"), PersonalSettings}
-  ]},
-  "<span id='guiderstab1hide'></span>",
-  case wf:state(buttons) of
-    green -> #link{class=ThisClass, postback={show,join_game}, text=?_T("Hide"), actions=ac_hide_main_container()};
-    _ -> ""
-  end
-  ].
+    GameSettings = #panel{body=[
+        case wf:state(buttons) =:= green of false -> ui_table_name(); _ -> "" end,
+        ui_game_speed(),
+        #panel{class="two-cols",
+            body=[#panel{class=left,body=ui_game_type()},
+                #panel{id=ui_rounds, class="right", body=ui_rounds()}]},
+        ui_checkboxes(),
+        ui_double_game(),
+        ui_add_checkboxes(),
+        add_game_settings_guiders()
+    ]},
+    %% TODO: use real tabs
+    GroupSettings = tab_group_setting(),
+    FriendSettings = tab_friend_setting(),
+    PersonalSettings = tab_personal_setting(),
+    [#tabs{
+	 tabs = [
+	  {?_T("Game Settings"), GameSettings},
+	  {?_T("Group Settings"), GroupSettings},
+	  {?_T("Friend Settings"), FriendSettings},
+	  {?_T("Personal Settings"), PersonalSettings}
+	 ]},
+     "<span id='guiderstab1hide' style='float: right; margin-top:-50px;'>",
+     "</span>",
+     case wf:state(buttons) of
+        green -> #link{class=ThisClass, postback={show,join_game}, text=?_T("Hide"), actions=ac_hide_main_container()};
+        _ -> ""
+     end
+    ].
+
+view_table_box() ->
+    [#panel{id=info_table}].
 
 tab_group_setting() ->
     ThisClass = case wf:state(buttons) of
@@ -706,10 +850,15 @@ tab_group_setting() ->
                 #listitem{body=construct_id(#link{text=Name, postback={tag,{group, Name}}})}
             end
 	     || GId <- Groups ],
-    #panel{body=[
+    #panel{class="create-game-groups-box",       
+	   body=[
          "<span id='guidersgroupfiltername'>",
-         #textbox{id=groups_filter_name, actions=js_options_filter(groups_list)},
-		 #panel{id=groups_list, body=#list{class=ThisClass, body=View}},
+         #textbox{id=groups_filter_name,
+			  actions=js_options_filter(groups_list),
+			  class="create-game-groups-filter-textbox"},
+		 #panel{class="create-game-groups-list",
+			id=groups_list,
+			body=#list{class=ThisClass, body=View}},
          "</span>"
          ]
 	  }.
@@ -722,8 +871,13 @@ tab_friend_setting() ->
     Users = wf:state(users_subscribe),
     View = [ #listitem{body=construct_id(#link{text=Name, postback={tag,{users, Name}}})}
 	     || #subs{whom = Name} <- Users ],
-    #panel{body=[#textbox{id=friends_filter_name, actions=js_options_filter(friends_list)},
-		 #panel{id=friends_list, body=#list{class=ThisClass, body=View}}]
+    #panel{class="create-game-friends-box",
+	   body=[#textbox{id=friends_filter_name,
+			  actions=js_options_filter(friends_list),
+			  class="create-game-friends-filter-textbox"},
+		 #panel{class="create-game-friends-list",
+			id=friends_list,
+			body=#list{class=ThisClass, body=View}}]
 	  }.
 
 slider_text_format(sets) ->
@@ -737,7 +891,8 @@ tab_personal_setting() ->
         _ -> "list1"
     end,
     AgeFormat=slider_text_format(age),
-    [#panel{body=[
+    [#panel{class="create_game_frame", style="text-align: center",
+	    body=[
             #h3{text=?_T("Age")},
             #slider{range = true, id=age_slider, min=18,
                 postback={?MODULE, {tag, {age, slider}}},
@@ -774,18 +929,25 @@ js_options_filter(OptionsPanelId) ->
     js_options_filter(wf:to_list(OptionsPanelId)).
 
 ui_update_buttons() ->
-  Settings = wf:session({wf:q(game_name),wf:user()}),
-  %wf:update(criteria_field, []),
-  [begin
-    case Setting of
-      {Key, {multiple, Elems}} -> [ui_button_select({Key, V}) || V <- Elems];
-      {Key, Elem} -> ui_button_select({Key, Elem})
-    end,
-    check_depended(Setting)
-  end || Setting <- Settings ],
+    Settings = wf:session({q_game_type(),wf:user()}),
+    ui_update_buttons(Settings).
 
-  check_required(Settings),
-  ok.
+ui_update_buttons(Settings) ->
+    wf:update(criteria_field, ""),
+    [begin
+        case Setting of
+            {Key, {multiple, Elems}} ->
+                [ ui_button_select({Key, V}) || V <- Elems];
+
+            {Key, Elem} ->
+                ui_button_select({Key, Elem})
+        end,
+        %% check if need to make some depended changes
+        check_depended(Setting)
+    end || Setting <- Settings ],
+
+    check_required(Settings),
+    ok.
 
 ui_button_select({game, _}) ->
     ignore;
@@ -845,85 +1007,89 @@ is_option_present(Key, Value) ->
 
 
 comet_update() ->
-  comet_update(empty).
+    comet_update(empty).
 comet_update(State) ->
-  case wf:user() of
-    undefined -> wf:redirect_to_login("/");
-    _UId ->
-      timer:sleep(?TABLE_UPDATE_QUANTUM),
-      TimeLeft = wf:session(time_left_to_update),
-      if
-        TimeLeft == undefined ->
-          NewState = State,
-          wf:session(time_left_to_update, ?TABLE_UPDATE_INTERVAL);
-        TimeLeft =< 0 ->
-          garbage_collect(self()),
-          Tables = get_tables(),
-          %% used to reduce traffic and send updates only when they needed
-          NewState = erlang:md5(term_to_binary(Tables)),
-          case NewState of
-            State -> nothing_changed;
-            _ -> % [ garbage_collect(Pid) || Pid <- processes() ],
-              ?INFO("COMET UPDATE ~p~n", [Tables]),
-              wf:update(tables, show_table(Tables)),
-              ui_paginate(),
-              wf:flush()
-          end,
-          user_counter:wf_update_me(),
-          wf:session(time_left_to_update, ?TABLE_UPDATE_INTERVAL);
-        true ->
-          NewState = State,
-          wf:session(time_left_to_update, TimeLeft - ?TABLE_UPDATE_QUANTUM)
-      end,
-      comet_update(NewState)
-  end.
+    case wf:user() of
+	undefined -> % user logged of
+	    wf:redirect_to_login("/");
+	_UId ->
+	    timer:sleep(?TABLE_UPDATE_QUANTUM),
+
+        TimeLeft = wf:session(time_left_to_update),
+        if 
+            TimeLeft == undefined ->
+                NewState = State,
+                wf:session(time_left_to_update, ?TABLE_UPDATE_INTERVAL);
+            TimeLeft =< 0 ->
+                garbage_collect(self()),
+	            Tables = get_tables(),
+	            %% used to reduce traffic and send updates only when they needed
+	            NewState = erlang:md5(term_to_binary(Tables)),
+	            case NewState of
+		        State ->
+		            nothing_changed;
+		        _ ->
+%                    [ garbage_collect(Pid) || Pid <- processes() ],
+		            wf:update(tables, show_table(Tables)),
+		            ui_paginate(),
+		            wf:flush()
+	            end,
+	            user_counter:wf_update_me(),
+                wf:session(time_left_to_update, ?TABLE_UPDATE_INTERVAL);
+            true ->
+                NewState = State,  
+                wf:session(time_left_to_update, TimeLeft - ?TABLE_UPDATE_QUANTUM)
+        end,
+
+	    comet_update(NewState)
+    end.
 
 %% We should leave that in case when we want that number of options can be selected in same time.
 can_be_multiple(age)   -> false;
 can_be_multiple(users) -> true;
 can_be_multiple(_Key)  -> false.
 
-api_event(Name, Tag, Args)->
-  fb_utils:api_event(Name, Tag, Args).
 
 event(Event) ->
-  case wf:user() of
-    undefined -> wf:redirect_to_login("/");
-    _User -> u_event(Event)
-  end.
+    case wf:user() of
+	undefined ->
+	    wf:redirect_to_login("/");
+	_User ->
+	    u_event(Event)
+    end.
 
 ac_show_main_container() ->
-    wf:wire("objs('matchmaker_options').slideDown('fast');"),
-    wf:wire("objs('matchmaker_slide_area').slideDown('fast');").
+    wf:wire("objs('matchmaker_main_container').slideDown('fast');"),
+    wf:wire("objs('matchmaker_slide_area').hide().slideDown('slow');").
 
 ac_hide_main_container() ->
-    #event{type=click, actions="objs('matchmaker_options').slideUp('fast');"}.
+    #event{type=click, actions="objs('matchmaker_main_container').slideUp('fast');"}.
 
 u_event({show,create_game}) ->
-  ?INFO("u_event create_game"),
-  u_event(clear_selection),
-  wf:state(buttons, yellow),
-  wf:update(matchmaker_options, create_options(create)),
-  wf:update(matchmaker_slide_area, settings_box()),
-  wf:wire("objs('tabs').tabs()"),
-  ac_show_main_container(),
-  ui_update_buttons();
+    u_event(clear_selection),
+    wf:state(buttons, yellow),
+    ?INFO("u_event create_game"),
+    wf:update(matchmaker_main_container, matchmaker_show_create(create)),
+    wf:update(matchmaker_slide_area, settings_box()),
+    wf:wire("objs('tabs').tabs()"),
+    ac_show_main_container(),
+    ui_update_buttons();
 
 u_event({show,join_game}) ->
-  ?INFO("u_event join_game"),
-  u_event(clear_selection),
-  wf:state(buttons, green),
-  wf:update(matchmaker_options, join_options()),
-  wf:update(matchmaker_slide_area, []),
-  ac_show_main_container(),
-  ui_update_buttons(); 
+    u_event(clear_selection),
+    wf:state(buttons, green),
+    ?INFO("u_event join_game"),
+    wf:update(matchmaker_main_container, matchmaker_show_tables()),
+    wf:update(matchmaker_slide_area, ""),
+    ac_show_main_container(),
+    ui_update_buttons(); 
 
 u_event({show,join_game_detailed}) ->
-  wf:update(matchmaker_options, create_options(none)),
-  wf:update(matchmaker_slide_area, settings_box()),
-  wf:wire("objs('tabs').tabs()"),
-  ac_show_main_container(),
-  ui_update_buttons();
+    wf:update(matchmaker_main_container, matchmaker_show_create(none)),
+    wf:update(matchmaker_slide_area, settings_box()),
+    wf:wire("objs('tabs').tabs()"),
+    ac_show_main_container(),
+    ui_update_buttons();
 
 u_event({tag, {age, slider}}) ->
     MinAge = wf:to_integer(wf:q(age_slider_values_min)),
@@ -987,31 +1153,38 @@ u_event({tab_selected, ID}) ->
     show_tab_guiders(ID);
 
 u_event(clear_selection) ->
-  OldSettings = wf:session({wf:q(game_name), wf:user()}),
-  [u_event({tag, lists:nth(N, OldSettings)}) || N <- lists:seq(3, length(OldSettings))];
+    OldSettings = wf:session({q_game_type(),wf:user()}),
+    [
+        u_event({tag, lists:nth(N, OldSettings)})
+        || N <- lists:seq(3, length(OldSettings))
+    ];
 
 u_event(show_game_rules) ->
-  case wf:q(game_name) of
-    "okey" ->
-      wf:update(rules_container, matchmaker_rules:okey_rules());
-    "tavla" ->
-      wf:wire("guiders.createGuider({" ++
-        "buttons: [" ++
-          "{name: '" ++ s_T("Ok") ++"', onclick: guiders.hideAll}," ++
-        "]," ++
-        "description: '" ++ s_T("Tables is a general name given to a class of board games similar to backgammon, played on a board with two rows of 12 vertical markings called \"points\". Players roll dice to determine the movement of pieces. Tables games are among the oldest known board games, and many variants are played throughout the world.")++"',"++
-        "id: 'tavla_okey'," ++
-        "overlay: true," ++
-        "title: '" ++ s_T("Tavla Rules") ++ "'" ++
-        "}).show();")
-  end;
+    case q_game_type() of
+        "okey" ->
+            wf:update(rules_container, matchmaker_rules:okey_rules());
+        "tavla" ->
+            wf:wire("
+                guiders.createGuider({
+                    buttons: [
+                        {name: '"++s_T("Ok")++"', onclick: guiders.hideAll},
+                    ],
+                    description: '"++s_T("Tables is a general name given to a class of board games similar to backgammon, played on a board with two rows of 12 vertical markings called \"points\". Players roll dice to determine the movement of pieces. Tables games are among the oldest known board games, and many variants are played throughout the world.")++"',
+                    id: 'tavla_okey',
+                    overlay: true,
+                    title: '"++s_T("Tavla Rules")++"'
+                }).show();
+            ")
+    end;
 
 u_event(hide_rules) ->
-  wf:update(rules_container, []);
+%    wf:wire(simple_lightbox, #hide{});
+    wf:update(rules_container, []);
 
 u_event(Other) ->
-  ?INFO("u_event other: ~p",[Other]),
-  webutils:event(Other).
+    ?INFO("u_event other: ~p",[Other]),
+    webutils:event(Other).
+
 
 process_setting({Key, Value} = Setting) ->
     OldSettings = wf:session({q_game_type(),wf:user()}),
@@ -1055,6 +1228,8 @@ process_setting({Key, Value} = Setting) ->
     check_required(NewSettings),
     io:fwrite("Update setting: ~p~n~n", [NewSettings]),
     wf:session(time_left_to_update, ?TABLE_UPDATE_QUANTUM),
+    %wf:update(tables, ui_get_tables()),
+    %ui_paginate(),
     ok.
 
 % text from atoms. I want in to be here, though it is not used, for not to get these things scattered all over the code
@@ -1237,7 +1412,6 @@ guiders_script() ->
     ").
 
 add_game_settings_guiders() ->
-    wf:info("ADD GAME GUIDETS ~p~n", [webutils:guiders_ok("matchmaker_tab_1_guiders_shown")]),
     case webutils:guiders_ok("matchmaker_tab_1_guiders_shown") of
         false ->
             "";
