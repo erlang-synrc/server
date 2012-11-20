@@ -23,12 +23,19 @@ title() -> ?_T("Matchmaker").
 
 main() ->
   wf:state(buttons, green),
+  ?INFO("Matchmaker User: ~p",[wf:user()]),
 
   case wf:q(game_name) of
     "okey" -> ok;
     "tavla" -> ok;
     _ -> wf:redirect(?_U("/dashboard"))
   end,
+
+
+  case wf:user() of
+    undefined -> %wf:redirect_to_login(?_U("/login")); 
+                 webutils:redirect_to_ssl("login");
+    _User ->
 
   case wf:q(csid) of
     undefined ->
@@ -37,9 +44,6 @@ main() ->
     Sid -> wf:state(session_id, Sid)
   end,
 
-  case wf:user() of
-    undefined -> wf:redirect_to_login(?_U("/login"));
-    _User ->
       webutils:add_script("/nitrogen/jquery.paginatetable.js"),
       webutils:add_raw("<link href='/nitrogen/guiders-js/guiders-1.2.8.css' rel='stylesheet'>
       <script src='/nitrogen/guiders-js/guiders-1.2.8.js'></script>"),
@@ -47,19 +51,21 @@ main() ->
         true -> guiders_script();
         false -> []
       end,
-      add_game_settings_guiders()
-  end,
+      add_game_settings_guiders(),
 
-  SS = case wf:session({wf:q(game_name), wf:user()}) of
-    undefined ->
-      case wf:q(game_name) of
-        "tavla" -> [{game, game_tavla}];
-        "okey" -> [{game, game_okey}]
-      end ++ [{table_name, table_name(default)}];
-    Settings -> Settings
-  end,
-  wf:session({wf:q(game_name), wf:user()}, SS),
-  #template { file=code:priv_dir(nsw_srv)++"/templates/bare.html" }.
+      SS = case wf:session({wf:q(game_name), wf:user()}) of
+                undefined -> case wf:q(game_name) of
+                                  "tavla" -> [{game, game_tavla}];
+                                  "okey" -> [{game, game_okey}]
+                             end ++ [{table_name, table_name(default)}];
+                Settings -> Settings
+      end,
+
+      wf:session({wf:q(game_name), wf:user()}, SS),
+      #template { file=code:priv_dir(nsw_srv)++"/templates/bare.html" }
+
+  end.
+
 
 body() ->
   ui_update_buttons(),
