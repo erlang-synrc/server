@@ -11,8 +11,8 @@
 
 
 main() ->
-    "Test".
+    #template { file=code:priv_dir(nsw_srv)++"/templates/bare.html" }.
 
 body() ->
-    "test".
+    "Test".
 
