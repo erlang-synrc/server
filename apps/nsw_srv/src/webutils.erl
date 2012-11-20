@@ -1156,32 +1156,26 @@ unpost_user_system_message(ID) ->   % this hasn't been tested yet
 
 guiders_ok(Cookie) ->
 %    true.
-    case wf:cookie("replayguiders") of
-        "yes" ->
-            true;
-        _ ->
-            {_, NowSecs, _} = erlang:now(),
-            UserSecsOrUndefined = (webutils:user_info())#user.register_date,
-            case UserSecsOrUndefined of
-                {_, Number ,_} ->
-                    UserSecs = Number;
-                _ ->
-                    UserSecs = NowSecs
-            end,
-            case NowSecs-UserSecs<86400 of % first 24 hours only (for these, who disable or loose cookies)
-                false ->
-                    false;
-                true ->
-                    case wf:cookie(Cookie ++ wf:user()) of
-                        "yes" ->
-                            false;
-                        _ ->
-                            wf:cookie(Cookie ++ wf:user(), "yes", "/", 24*60),
-                            true
-                    end
-            end
-    end.
-
+  case wf:cookie("replayguiders") of
+    "yes" -> true;
+    _ -> 
+      {_, NowSecs, _} = erlang:now(),
+      UserSecsOrUndefined = (webutils:user_info())#user.register_date,
+      case UserSecsOrUndefined of
+        {_, Number ,_} -> UserSecs = Number;
+        _ -> UserSecs = NowSecs
+      end,
+      case NowSecs-UserSecs<86400 of % first 24 hours only (for these, who disable or loose cookies)
+        false -> false;
+        true -> 
+          case wf:cookie(Cookie ++ wf:user()) of
+            "yes" -> false;
+            _ ->
+              wf:cookie(Cookie ++ wf:user(), "yes", "/", 24*60),
+              true
+          end
+      end
+  end.
 
 js_for_main_authorized_game_stats_menu() ->
     webutils:add_script("/nitrogen/js/jquery.autosize-min.js"),
