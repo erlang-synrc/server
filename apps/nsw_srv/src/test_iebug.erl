@@ -85,7 +85,20 @@ main() ->"
 	<strong class='logo vcard'><a href='/' class='fn org url wfid_temp265279 link' target='_self'>KakaraNet - Public Beta</a></strong>
 
 <div class='top wfid_temp265521 panel'>
-    <div class='ar wfid_temp265542 panel box'>
+    <div class='ar wfid_temp265542 panel' style='
+
+    background:url(../images/bg-box.png);
+	padding:5px 5px 7px 7px;
+	-moz-border-radius-bottomright:5px;
+	-moz-border-radius-bottomleft:5px;
+	-webkit-border-bottom-right-radius:5px;
+	-webkit-border-bottom-left-radius:5px;
+	border-bottom-right-radius:5px;
+	border-bottom-left-radius:5px;
+	float:left;
+	margin:0 0 0 9px;
+
+'>
 "++
 %        <div class='box wfid_temp265558 panel'>
 "
