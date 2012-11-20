@@ -141,28 +141,28 @@ content() ->
             ]
         },
         #panel{id=top_selectors, style="height:420px; font-size:16px; ", body=[
-            #label{style="position:absolute; left:42px; top:84px;", text="Turnuva Adı:"},
+            #label{style="position:absolute; left:-18px; top:84px; width:150px; text-align:right;", text="Turnuva Adı:"},
             #textbox{style="position:absolute; left:137px; top:77px; width:140px; height:28px; font-size:16px;", class="newtour_textbox", id=tournament_name},
-            #label{style="position:absolute; left:300px; top:84px;", text="Açiklama:"},
-            #textbox{style="position:absolute; left:375px; top:77px; width:180px; height:28px; font-size:16px;", class="newtour_textbox", id=tournament_desc},
+            #label{style="position:absolute; left:250px; top:84px; width:150px; text-align:right;", text="Açiklama:"},
+            #textbox{style="position:absolute; left:405px; top:77px; width:508px; height:28px; font-size:16px;", class="newtour_textbox", id=tournament_desc},
 
-            #panel{id=upload, class=file, body=[
-                #label{style="position:absolute; left:575px; top:84px;", text="Turnuva Resmi:"},
-                #textbox{style="position:absolute; left:692px; top:77px; width:110px; height:28px; font-size:16px;", class="newtour_textbox", id=tournament_official},
-                #button{style="position:absolute; left:806px; top:77px; width:110px; height:32px; font-size:16px;", text="BROWSE", id=browse, postback=browse_pressed}
-            ]},
+%            #panel{id=upload, class=file, body=[
+%                #label{style="position:absolute; left:575px; top:84px;", text="Turnuva Resmi:"},
+%                #textbox{style="position:absolute; left:692px; top:77px; width:110px; height:28px; font-size:16px;", class="newtour_textbox", id=tournament_official},
+%                #button{style="position:absolute; left:806px; top:77px; width:110px; height:32px; font-size:16px;", text="BROWSE", id=browse, postback=browse_pressed}
+%            ]},
 
-            #label{style="position:absolute; left:42px; top:145px;", text="Oyun Türü:"},
+            #label{style="position:absolute; left:-28px; top:145px; width:150px; text-align:right;", text="Oyun Türü:"},
             #dropdown {id=tour_game, style="position:absolute; left:126px; top:138px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
                         #option { text="OKEY" },
                         #option { text="—" }
             ]},
-            #label{style="position:absolute; left:281px; top:145px;", text="Oyun Tipi:"},
+            #label{style="position:absolute; left:203px; top:145px; width:150px; text-align:right;", text="Oyun Tipi:"},
             #dropdown {id=tour_esli, style="position:absolute; left:357px; top:138px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
                         #option { text="EŞLİ" },
                         #option { text="—" }
             ]},
-            #label{style="position:absolute; left:514px; top:145px;", text="Oyun Sayısı:"},
+            #label{style="position:absolute; left:456px; top:145px; width:150px; text-align:right;", text="Oyun Sayısı:"},
             #dropdown {postback=prize_fund_and_tours_and_quota_changed, id=tour_players, style="position:absolute; left:610px; top:138px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
                         #option { text="1024" },
                         #option { text="512" },
@@ -171,7 +171,7 @@ content() ->
                         #option { text="64" },
                         #option { text="16" }
             ]},
-            #label{style="position:absolute; left:764px; top:145px;", text="Kota:"},
+            #label{style="position:absolute; left:653px; top:145px; width:150px; text-align:right;", text="Kota:"},
             #dropdown {postback=prize_fund_and_tours_changed, id=tour_quota, style="position:absolute; left:807px; top:138px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
                         #option { text="10" },
                         #option { text="8" },
@@ -180,26 +180,26 @@ content() ->
                         #option { text="2" }
             ]},
 
-            #label{style="position:absolute; left:42px; top:197px;", text="Turnuva Türü:"},
+            #label{style="position:absolute; left:-9px; top:197px; width:150px; text-align:right;", text="Turnuva Türü:"},
             #dropdown {id=tour_type, style="position:absolute; left:146px; top:190px; width:90px; height:32px; font-size:16px; padding-top:2px;", options=[
                         #option { text="Elemeli" },
                         #option { text="—" }
             ]},
 
-            #label{style="position:absolute; left:232px; top:197px; width:100px; text-align:right;", text=?_T("Game Speed")++":"},
-            #dropdown {id=tour_speed, style="position:absolute; left:336px; top:190px; width:90px; height:32px; font-size:16px; padding-top:2px;", options=[
+            #label{style="position:absolute; left:252px; top:197px; width:100px; text-align:right;", text=?_T("Game Speed")++":"},
+            #dropdown {id=tour_speed, style="position:absolute; left:356px; top:190px; width:90px; height:32px; font-size:16px; padding-top:2px;", options=[
                         #option { text=?_T("Fast") },
                         #option { text=?_T("Normal") },
                         #option { text=?_T("Slow") }
             ]},
 
-            #label{style="position:absolute; left:450px; top:197px;", text="Tarih:"},
+            #label{style="position:absolute; left:360px; top:197px; width:150px; text-align:right;", text="Tarih:"},
             #textbox{id=tour_date, class="newtour_textbox",
-                style="position:absolute; left:495px; top:190px; width:140px; height:28px; font-size:16px;
+                style="position:absolute; left:515px; top:190px; width:140px; height:28px; font-size:16px;
                        background:url(../images/tournament/new_tournament/calendar_icon.png) no-repeat 118px 2px;",
                 text= (SD ++ "." ++ SM ++ "." ++ SY)},
             #textbox{id=tour_time, class="newtour_textbox",
-                style="position:absolute; left:645px; top:190px; width:80px; height:28px; font-size:16px;
+                style="position:absolute; left:665px; top:190px; width:80px; height:28px; font-size:16px;
                        background:url(../images/tournament/new_tournament/calendar_icon.png) no-repeat 118px 2px;",
                 text= SNH ++ ":00"},
 

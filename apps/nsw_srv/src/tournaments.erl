@@ -354,13 +354,13 @@ content() ->
             },
 
             %filters
-            #label{style="position:absolute; left:42px; top:540px;", text=?_T("Game Type:")},
+            #label{style="position:absolute; left:-28px; top:540px; width:150px; text-align:right;", text=?_T("Game Type:")},
             #dropdown {id=tour_game, style="position:absolute; left:126px; top:533px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
                         #option { text="—" },
                         #option { text="OKEY" },
                         #option { text="TAVLA" }
             ]},
-            #label{style="position:absolute; left:480px; top:540px;", text=?_T("Games Count:")},
+            #label{style="position:absolute; left:422px; top:540px; width:150px; text-align:right;", text=?_T("Players Count:")},
             #dropdown {id=tour_players, style="position:absolute; left:576px; top:533px; width:160px; height:32px; font-size:16px; padding-top:2px;", options=[
                         #option { text="—" },
                         #option { text="16" },
@@ -371,7 +371,7 @@ content() ->
                         #option { text="512" },
                         #option { text="1024" }
             ]},
-            #label{style="position:absolute; left:764px; top:540px;", text=?_T("Quota:")},
+            #label{style="position:absolute; left:653px; top:540px; width:150px; text-align:right;", text=?_T("Quota:")},
             #dropdown {id=tour_quota, style="position:absolute; left:807px; top:533px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
                         #option { text="—" },
                         #option { text="2" },
@@ -380,7 +380,7 @@ content() ->
                         #option { text="8" },
                         #option { text="10" }
             ]},
-            #label{style="position:absolute; left:285px; top:540px;", text=?_T("Date:")},
+            #label{style="position:absolute; left:175px; top:540px; width:150px; text-align:right;", text=?_T("Date:")},
             #checkbox{id=tour_date_check, style="position:absolute; left:262px; top:536px; width:20px; height:20px;", checked=false},
             #textbox{id=tour_date, class="alltour_textbox",
                 style="position:absolute; left:330px; top:532px; width:120px; height:28px; font-size:16px;
@@ -391,12 +391,12 @@ content() ->
             #link{style="position:absolute; top:590px; left:392px;", class="alltour_btns_blue alltour_btn_blue_2", text=?_T("BY GIFTS"), postback={sort_by, gifts}},
             #link{style="position:absolute; top:590px; left:564px;", class="alltour_btns_blue alltour_btn_blue_3", text=?_T("PARTICIPATION PERCENTAGE"), postback={sort_by, participation}},
 
-            #label{style="position:absolute; left:243px; top:674px;", text=?_T("Sort by type:")},
+            #label{style="position:absolute; left:203px; top:674px; width:150px; text-align:right;", text=?_T("Sort by type:")},
             #dropdown {postback=sort_order_set, id=sort_order, style="position:absolute; left:357px; top:667px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
                         #option { text=?_T("DESC") },
                         #option { text=?_T("ASC") }
             ]},
-            #label{style="position:absolute; left:490px; top:674px;", text=?_T("View:")},
+            #label{style="position:absolute; left:413px; top:674px; width:150px; text-align:right;", text=?_T("View:")},
             #dropdown {postback=per_page_set, id=per_page, style="position:absolute; left:567px; top:667px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
                         #option { text="12 " ++ ?_T("PCS") },
                         #option { text="24 " ++ ?_T("PCS") },
