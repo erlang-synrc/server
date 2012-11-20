@@ -620,9 +620,9 @@ event(arrow_left) ->
     end;
 
 event(arrow_right) ->
-    case wf:state(last_bar_tours)>4 of
+    Shift = wf:state(alltour_arrow_shift),    
+    case wf:state(last_bar_tours) > (4+Shift) of
         true ->
-            Shift = wf:state(alltour_arrow_shift),    
             wf:state(alltour_arrow_shift, Shift+1),
             wf:update(featured_tours, featured_tours());
         false ->
