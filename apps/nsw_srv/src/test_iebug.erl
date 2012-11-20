@@ -50,56 +50,62 @@ main() ->"
 
 </head>
 <body class='test_iebug'>
-<div id=fb-root></div><script>window.fbAsyncInit = function() {FB.init({ appId: '154227314626053',channelUrl: 'https://srv5.kakaranet.com/channel.html',status: true,cookie: true,xfbml: true,oauth: true});if(page.fbLogout) FB.Event.subscribe('auth.logout', function(response){page.fbLogout(response);});FB.getLoginStatus(function(response) {if(page.setFbIframe){console.log('Set FB application flag: '+ (top!=self));page.setFbIframe(top!=self);}if (response.status === 'connected') {var uid = response.authResponse.userID;console.log('User is connected: ' + uid);if(page.fbCheckPermissions){
-		FB.api('/me/permissions', function(response){
-		    var perms = response.data[0];
-		    console.log('Permissions: '+perms);
-		    page.fbCheckPermissions(perms);
-		});
-	    }else{console.log('No fbCheckPermissions')}} else if (response.status === 'not_authorized') {console.log('Not authenticated the app');} else {console.log('User isn't logged in');}});};function fb_login(){FB.getLoginStatus(function(response){if(response.status == 'connected'){console.log('User connected to FB, check for registered account');if(page.fbLogin){FB.api('/me?fields=id,username,first_name,last_name,email,birthday',function(response){page.fbLogin(response);});}}else{FB.login(function(r){if(r.authResponse){if(page.fbLogin){FB.api('/me?fields=id,username,first_name,last_name,email,birthday',function(response){page.fbLogin(response);});}}},{scope: 'email,user_birthday'});}});}function add_fb_service(){FB.ui({
-	method: 'permissions.request',
-	perms: 'publish_stream',
-	display: 'popup'},
-	function(response){
-	    if(response && response.perms){
-		console.log('Permissions granted: '+response.perms);if(page.fbCheckPermissions){
-		    page.fbCheckPermissions(response.perms);
-		}}else if(!response.perms){
-		console.log('User did't grant permission.');
-	    }
-	});};
-    function del_fb_service(){
-	console.log('Todo: revoke fb permission.');
-	FB.api({
-	    method: 'auth.revokeExtendedPermission',
-	    perm: 'publish_stream'
-	},
-	function(response) {
-	    if(page.fbRemovePermissions){
-		page.fbRemovePermissions(response);
-	    }
-	    console.log('Response revoke:' + response);
-	}); 
-    };function fb_feed(Msg){FB.api('/me/feed', 'post', { message: Msg },function(response) {if (!response || response.error) {console.log('Error occured');} else {console.log('Post ID: ' + response.id);}});};(function(d){var js, id = 'facebook-jssdk', ref = d.getElementsByTagName('script')[0];if (d.getElementById(id)) {return;}js = d.createElement('script');js.id = id;js.async = true;js.src = '//connect.facebook.net/en_US/all.js';ref.parentNode.insertBefore(js, ref);}(document));</script>
+"
+++
+%<div id=fb-root></div><script>window.fbAsyncInit = function() {FB.init({ appId: '154227314626053',channelUrl: 'https://srv5.kakaranet.com/channel.html',status: true,cookie: true,xfbml: true,oauth: true});if(page.fbLogout) FB.Event.subscribe('auth.logout', function(response){page.fbLogout(response);});FB.getLoginStatus(function(response) {if(page.setFbIframe){console.log('Set FB application flag: '+ (top!=self));page.setFbIframe(top!=self);}if (response.status === 'connected') {var uid = response.authResponse.userID;console.log('User is connected: ' + uid);if(page.fbCheckPermissions){
+%		FB.api('/me/permissions', function(response){
+%		    var perms = response.data[0];
+%		    console.log('Permissions: '+perms);
+%		    page.fbCheckPermissions(perms);
+%		});
+%	    }else{console.log('No fbCheckPermissions')}} else if (response.status === 'not_authorized') {console.log('Not authenticated the app');} else {console.log('User isn't logged in');}});};function fb_login(){FB.getLoginStatus(function(response){if(response.status == 'connected'){console.log('User connected to FB, check for registered account');if(page.fbLogin){FB.api('/me?fields=id,username,first_name,last_name,email,birthday',function(response){page.fbLogin(response);});}}else{FB.login(function(r){if(r.authResponse){if(page.fbLogin){FB.api('/me?fields=id,username,first_name,last_name,email,birthday',function(response){page.fbLogin(response);});}}},{scope: 'email,user_birthday'});}});}function add_fb_service(){FB.ui({
+%	method: 'permissions.request',
+%	perms: 'publish_stream',
+%	display: 'popup'},
+%	function(response){
+%	    if(response && response.perms){
+%		console.log('Permissions granted: '+response.perms);if(page.fbCheckPermissions){
+%		    page.fbCheckPermissions(response.perms);
+%		}}else if(!response.perms){
+%		console.log('User did't grant permission.');
+%	    }
+%	});};
+%    function del_fb_service(){
+%	console.log('Todo: revoke fb permission.');
+%	FB.api({
+%	    method: 'auth.revokeExtendedPermission',
+%	    perm: 'publish_stream'
+%	},
+%	function(response) {
+%	    if(page.fbRemovePermissions){
+%		page.fbRemovePermissions(response);
+%	    }
+%	    console.log('Response revoke:' + response);
+%	}); 
+%    };function fb_feed(Msg){FB.api('/me/feed', 'post', { message: Msg },function(response) {if (!response || response.error) {console.log('Error occured');} else {console.log('Post ID: ' + response.id);}});};(function(d){var js, id = 'facebook-jssdk', ref = d.getElementsByTagName('script')[0];if (d.getElementById(id)) {return;}js = d.createElement('script');js.id = id;js.async = true;js.src = '//connect.facebook.net/en_US/all.js';ref.parentNode.insertBefore(js, ref);}(document));</script>
+"
 <section class='wrapper'>
-    <header>
-    <div class='block'>
-	<strong class='logo vcard'><a href='/' class='fn org url wfid_temp265279 link' target='_self'>KakaraNet - Public Beta</a></strong>
-	<div class='top wfid_temp265521 panel'><div class='ar wfid_temp265542 panel'><div class='box wfid_temp265558 panel'><ul class='user-menu wfid_temp265576 list'><li class='wfid_temp265593 listitem'><a href='javascript:' class='fb_login_btn wfid_temp265627 link' target='_self'>Login</a></li><li class='wfid_temp265650 listitem'><a href='https://srv5.kakaranet.com/login' class='login wfid_temp265665 link' target='_self'>Login</a></li><li class='wfid_temp265706 listitem'><a href='javascript:' class='signup wfid_temp265721 link' target='_self'>Signup</a></li></ul></div></div></div><nav><ul class='wfid_temp265743 list'><li class='wfid_temp265779 listitem'><a href='/' class='wfid_temp265794 wfid_mainmenumainpage link' target='_self' title='You can play games here'>Home</a></li><li class='wfid_temp265818 listitem'><a href='/dashboard' class='wfid_temp265857 wfid_mainmenumypage link' target='_self' title='You can share information with others'>My Page</a></li><li class='wfid_temp265882 listitem'><a href='/rules-okey' class='wfid_temp265897 wfid_mainmenurules link' target='_self' title='Read the rules of our games'>Rules</a></li><li class='wfid_temp265919 listitem'><a href='/gifts' class='wfid_temp265934 wfid_mainmenugifts link' target='_self' title='Have no idea, what it is about'>Gifts</a></li><li class='wfid_temp265957 listitem'><a href='/tournaments' class='wfid_temp266015 wfid_mainmenutournaments link' target='_self' title='You can join tournaments and show them all'>Tournaments</a></li><li class='wfid_temp266046 listitem'><a href='/groups' class='wfid_temp266064 wfid_mainmenugroups link' target='_self' title='You can manage your groups settings here'>Groups</a></li></ul></nav>
-      <script>
-      (function(){
-          var C = {text:false};
-          var P = {my:'top right', at:'bottom left'};
-          var S = {delay: 1500};
-          objs('mainmenumainpage').qtip({content: C, position: P, show: S} );
-          objs('mainmenumypage').qtip({content: C, position: P, show: S});
-          objs('mainmenugifts').qtip({content: C, position: P, show: S});
-          objs('mainmenutournaments').qtip({content: C, position: P, show: S});
-          objs('mainmenugroups').qtip({content: C, position: P, show: S});
-      })();
-      </script>
-    </div>
-</header>
+"
+++
+%    <header>
+%    <div class='block'>
+%	<strong class='logo vcard'><a href='/' class='fn org url wfid_temp265279 link' target='_self'>KakaraNet - Public Beta</a></strong>
+%	<div class='top wfid_temp265521 panel'><div class='ar wfid_temp265542 panel'><div class='box wfid_temp265558 panel'><ul class='user-menu wfid_temp265576 list'><li class='wfid_temp265593 listitem'><a href='javascript:' class='fb_login_btn wfid_temp265627 link' target='_self'>Login</a></li><li class='wfid_temp265650 listitem'><a href='https://srv5.kakaranet.com/login' class='login wfid_temp265665 link' target='_self'>Login</a></li><li class='wfid_temp265706 listitem'><a href='javascript:' class='signup wfid_temp265721 link' target='_self'>Signup</a></li></ul></div></div></div><nav><ul class='wfid_temp265743 list'><li class='wfid_temp265779 listitem'><a href='/' class='wfid_temp265794 wfid_mainmenumainpage link' target='_self' title='You can play games here'>Home</a></li><li class='wfid_temp265818 listitem'><a href='/dashboard' class='wfid_temp265857 wfid_mainmenumypage link' target='_self' title='You can share information with others'>My Page</a></li><li class='wfid_temp265882 listitem'><a href='/rules-okey' class='wfid_temp265897 wfid_mainmenurules link' target='_self' title='Read the rules of our games'>Rules</a></li><li class='wfid_temp265919 listitem'><a href='/gifts' class='wfid_temp265934 wfid_mainmenugifts link' target='_self' title='Have no idea, what it is about'>Gifts</a></li><li class='wfid_temp265957 listitem'><a href='/tournaments' class='wfid_temp266015 wfid_mainmenutournaments link' target='_self' title='You can join tournaments and show them all'>Tournaments</a></li><li class='wfid_temp266046 listitem'><a href='/groups' class='wfid_temp266064 wfid_mainmenugroups link' target='_self' title='You can manage your groups settings here'>Groups</a></li></ul></nav>
+%      <script>
+%      (function(){
+%          var C = {text:false};
+%          var P = {my:'top right', at:'bottom left'};
+%          var S = {delay: 1500};
+%          objs('mainmenumainpage').qtip({content: C, position: P, show: S} );
+%          objs('mainmenumypage').qtip({content: C, position: P, show: S});
+%          objs('mainmenugifts').qtip({content: C, position: P, show: S});
+%          objs('mainmenutournaments').qtip({content: C, position: P, show: S});
+%          objs('mainmenugroups').qtip({content: C, position: P, show: S});
+%      })();
+%      </script>
+%    </div>
+%</header>
+"
 <div class='wfid_temp266183 wfid_simple_lightbox lightbox panel' style='position: fixed; top: 0px; left: 0px; bottom: 0px; right: 0px; display: none; position: relative;'><div class='lightbox_background wfid_temp266210 panel' style='position: fixed; top: 0px; left: 0px; bottom: 0px; right: 0px; z-index: 98; background-color: #000000;'></div><table border='0' cellpadding='0' cellspacing='0' class='wfid_temp266230 table' style='position: fixed; top: 0px; left: 0px; width: 100%; height: 100%; z-index: 99; overflow:auto;'><tbody><tr class='wfid_temp266306 tablerow'><td class='wfid_temp266325 tablecell' style='vertical-align: middle;' align='center' valign='middle' colspan='1' rowspan='1'><center><table><tr><td><div class='wfid_temp266346 wfid_simple_panel panel'></div></td></tr></table></center></td></tr></tbody></table></div>
 
     Test
