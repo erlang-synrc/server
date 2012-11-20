@@ -37,12 +37,12 @@ main() ->
                  webutils:redirect_to_ssl("login");
     _User ->
 
-  case wf:q(csid) of
-    undefined ->
-      {_, _, C} = now(),
-      wf:redirect(lists:concat([?_U("/matchmaker"), "/", ?_U(wf:q(game_name)), "/csid/", C, ""]));
-    Sid -> wf:state(session_id, Sid)
-  end,
+%  case wf:q(csid) of
+%    undefined ->
+%      {_, _, C} = now(),
+%      wf:redirect(lists:concat([?_U("/matchmaker"), "/", ?_U(wf:q(game_name)), "/csid/", C, ""]));
+%    Sid -> wf:state(session_id, Sid)
+ % end,
 
       webutils:add_script("/nitrogen/jquery.paginatetable.js"),
       webutils:add_raw("<link href='/nitrogen/guiders-js/guiders-1.2.8.css' rel='stylesheet'>
