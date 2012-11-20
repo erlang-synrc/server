@@ -5,7 +5,7 @@
 -define(INVITE_CODE_EXPIRED, 172800). %% 48h
 -define(SERVER_PORT, nsx_opt:get_env(nsw_srv,game_srv_port, 7999)).
 -define(SERVER_HOST, nsx_opt:get_env(nsw_srv, game_srv_host, "kakaranet.com")).
--define(HTTP_ADDRESS, nsx_opt:get_env(nsw_srv,http_address, "http://kakaranet.com:7788")).
+-define(HTTP_ADDRESS, nsx_opt:get_env(nsw_srv,http_address, "http://kakaranet.com")).
 -define(FEED_PAGEAMOUNT, 20).
 
 % demo_id 176025532423202, kakaranet_id 154227314626053
