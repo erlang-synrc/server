@@ -14,25 +14,18 @@
 -include_lib("nsm_db/include/accounts.hrl").
 -include_lib("nsm_db/include/scoring.hrl").
 
+start_link() -> gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
+add_game(Game) -> gen_server:cast(?MODULE, {add_game, Game}).
 
-start_link() ->
-    gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
+get_skill(UserId) when is_binary(UserId) -> get_skill(binary_to_list(UserId));
+get_skill(UserId) -> {ok, 0}.
+%    score_db:get_skill(UserId).
 
-add_game(Game) ->
-    gen_server:cast(?MODULE, {add_game, Game}).
+get_game_points(GameType, UserId) when is_binary(UserId) -> get_game_points(GameType, binary_to_list(UserId));
+get_game_points(GameType, UserId) -> {ok, 0}.
+%    score_db:get_game_points(GameType, UserId).
 
-get_skill(UserId) when is_binary(UserId) ->
-    get_skill(binary_to_list(UserId));
-get_skill(UserId) ->
-    score_db:get_skill(UserId).
-
-get_game_points(GameType, UserId) when is_binary(UserId) ->
-    get_game_points(GameType, binary_to_list(UserId));
-get_game_points(GameType, UserId) ->
-    score_db:get_game_points(GameType, UserId).
-
-init([]) ->
-    {ok, no_state}.
+init([]) -> {ok, no_state}.
 
 handle_call(Request, From, State) ->
     error_logger:error_msg("unknown call ~p ~p ~n", [Request, From]),
@@ -41,7 +34,7 @@ handle_call(Request, From, State) ->
 handle_cast({add_game, Game}, State) % when is_record(Game, 'OkeyGameResults') 
     ->
     ?INFO("same game ~p", [Game]),
-    score_db:save_game(Game),
+%    score_db:save_game(Game),
     {noreply, State};
 handle_cast(Msg, State) ->
     error_logger:error_msg("unknown cast ~p ~n", [Msg]),

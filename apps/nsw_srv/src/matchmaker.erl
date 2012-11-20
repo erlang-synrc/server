@@ -115,6 +115,7 @@ play_button() ->
     [#game_table{id = GaId}] ->
       IdStr = integer_to_list(GaId),
       wf:session(IdStr, IdStr),
+
       URL = lists:concat([?_U("/client"),"/","okey","/id/", GaId]),
       #event{type=click, actions=webutils:new_window_js(URL)};
     [] -> []
@@ -143,6 +144,8 @@ create_options(Tag) ->
     #span{id="guiderstab1createbutton", body=[
         case Tag of
           create -> 
+            {_, _, Sid} = now(),
+            wf:state(session_id, Sid),
             Url = lists:concat([?_U("/view-table/"), ?_U(wf:q(game_name)),"/id/",wf:state(session_id)]),
             Settings = wf:session({wf:q(game_name), wf:user()}),
             wf:session(wf:state(session_id), Settings),
