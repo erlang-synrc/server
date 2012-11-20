@@ -1,6 +1,7 @@
 -module(nsw_srv_sup).
 -behaviour(supervisor).
 -compile(export_all).
+-include_lib("nsm_db/include/config.hrl").
 -include_lib("nsm_db/include/tournaments.hrl").
 -include("setup.hrl").
 -include("loger.hrl").

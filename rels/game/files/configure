@@ -52,10 +52,10 @@ else
 fi
 
 ./config -file app.config nsm_db riak_srv_node -atom $GAMESERVER@$H
+./config -file app.config nsm_db app_srv_node -atom $APPSERVER
+./config -file app.config nsm_db game_srv_node -atom $GAMESERVER@$H
+./config -file app.config nsm_db web_srv_node -atom $WEBSERVER@$H
 ./config -file app.config nsg_srv game_srv_port -integer $GAMEPORT
-./config -file app.config nsg_srv app_srv_node -atom $APPSERVER
-./config -file app.config nsg_srv game_srv_node -atom $GAMESERVER@$H
-./config -file app.config nsg_srv web_srv_node -atom $WEBSERVER@$H
 ./config -file app.config nsm_conn ip -list "\"$GAMEHOST\""
 ./config -file app.config nsm_db nodes -list [app@$H,game@$H,web@$H]
 ./config -file app.config nsm_mq amqp_host -list "\"$MQ_HOST\""

@@ -86,8 +86,8 @@ get_all_user() -> {ok,nsm_db:all(user)}.
 
 generate_token(User) ->
     Token = generate_token0(),
-    ?INFO("saving token: ~p, ~p to ~p machine~n", [User, Token, ?GAMESERVER_NODE]),
-    Res = rpc:call(?GAMESERVER_NODE, auth_server, store_token, [Token, User]),
+    ?INFO("saving token: ~p, ~p to ~p machine~n", [User, Token, ?GAMESRVR_NODE]),
+    Res = rpc:call(?GAMESRVR_NODE, auth_server, store_token, [Token, User]),
     ?INFO("with result :~p~n", [Res]),
     Token.
 

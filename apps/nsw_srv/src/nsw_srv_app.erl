@@ -1,6 +1,7 @@
 -module(nsw_srv_app).
 -behaviour(application).
 -include_lib("nsx_config/include/log.hrl").
+-include_lib("nsm_db/include/config.hrl").
 -include_lib("nsm_db/include/tournaments.hrl").
 -include("setup.hrl").
 -compile(export_all).
