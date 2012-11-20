@@ -143,7 +143,7 @@ content() ->
         #panel{id=top_selectors, style="height:420px; font-size:16px; ", body=[
             #label{style="position:absolute; left:-18px; top:84px; width:150px; text-align:right;", text="Turnuva Adı:"},
             #textbox{style="position:absolute; left:137px; top:77px; width:140px; height:28px; font-size:16px;", class="newtour_textbox", id=tournament_name},
-            #label{style="position:absolute; left:250px; top:84px; width:150px; text-align:right;", text="Açiklama:"},
+            #label{style="position:absolute; left:300px; top:84px; width:100px; text-align:right;", text="Açiklama:"},
             #textbox{style="position:absolute; left:405px; top:77px; width:508px; height:28px; font-size:16px;", class="newtour_textbox", id=tournament_desc},
 
 %            #panel{id=upload, class=file, body=[
@@ -157,12 +157,12 @@ content() ->
                         #option { text="OKEY" },
                         #option { text="—" }
             ]},
-            #label{style="position:absolute; left:203px; top:145px; width:150px; text-align:right;", text="Oyun Tipi:"},
+            #label{style="position:absolute; left:253px; top:145px; width:100px; text-align:right;", text="Oyun Tipi:"},
             #dropdown {id=tour_esli, style="position:absolute; left:357px; top:138px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
                         #option { text="EŞLİ" },
                         #option { text="—" }
             ]},
-            #label{style="position:absolute; left:456px; top:145px; width:150px; text-align:right;", text="Oyun Sayısı:"},
+            #label{style="position:absolute; left:506px; top:145px; width:100px; text-align:right;", text="Oyun Sayısı:"},
             #dropdown {postback=prize_fund_and_tours_and_quota_changed, id=tour_players, style="position:absolute; left:610px; top:138px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
                         #option { text="1024" },
                         #option { text="512" },
@@ -171,7 +171,7 @@ content() ->
                         #option { text="64" },
                         #option { text="16" }
             ]},
-            #label{style="position:absolute; left:653px; top:145px; width:150px; text-align:right;", text="Kota:"},
+            #label{style="position:absolute; left:723px; top:145px; width:80px; text-align:right;", text="Kota:"},
             #dropdown {postback=prize_fund_and_tours_changed, id=tour_quota, style="position:absolute; left:807px; top:138px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
                         #option { text="10" },
                         #option { text="8" },
@@ -193,7 +193,7 @@ content() ->
                         #option { text=?_T("Slow") }
             ]},
 
-            #label{style="position:absolute; left:360px; top:197px; width:150px; text-align:right;", text="Tarih:"},
+            #label{style="position:absolute; left:450px; top:197px; width:60px; text-align:right;", text="Tarih:"},
             #textbox{id=tour_date, class="newtour_textbox",
                 style="position:absolute; left:515px; top:190px; width:140px; height:28px; font-size:16px;
                        background:url(../images/tournament/new_tournament/calendar_icon.png) no-repeat 118px 2px;",
