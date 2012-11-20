@@ -87,7 +87,7 @@ main() ->"
 <div class='top wfid_temp265521 panel'>
     <div class='ar wfid_temp265542 panel'>
 
-        <div class='box wfid_temp265558 panel' style='
+        <div class='wfid_temp265558 panel' style='
 
     background:url(../images/bg-box.png);
 	padding:5px 5px 7px 7px;
