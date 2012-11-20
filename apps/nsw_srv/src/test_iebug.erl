@@ -14,15 +14,19 @@ main() ->"
 <!DOCTYPE html>
 <html xmlns='http://www.w3.org/1999/xhtml' xml:lang='en' lang='en'>
 <head>
-    <meta http-equiv='cache-control' content='max-age=0' />
-    <meta http-equiv='X-UA-Compatible' content='IE=8,IE=9,IE=10' />
-    <meta http-equiv='cache-control' content='no-cache' />
-    <meta http-equiv='expires' content='0' />
-    <meta http-equiv='expires' content='Tue, 01 Jan 1980 1:00:00 GMT' />
-    <meta http-equiv='pragma' content='no-cache' />
+"
+++
+%    <meta http-equiv='cache-control' content='max-age=0' />
+%    <meta http-equiv='X-UA-Compatible' content='IE=8,IE=9,IE=10' />
+%    <meta http-equiv='cache-control' content='no-cache' />
+%    <meta http-equiv='expires' content='0' />
+%    <meta http-equiv='expires' content='Tue, 01 Jan 1980 1:00:00 GMT' />
+%    <meta http-equiv='pragma' content='no-cache' />
+"
 	<meta http-equiv='Content-Type' content='text/html; charset=utf-8' />
 	<title></title>
-"++
+"
+++
 %	<link rel='stylesheet' type='text/css' href='/css/kakara.full.css' media='all' />
 %	<link rel='stylesheet' href='/css/en.css' />
 %	<script src='/js/kakara.full.js' type='text/javascript' charset='utf-8'></script>
