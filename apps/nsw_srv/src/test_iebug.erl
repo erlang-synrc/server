@@ -22,9 +22,11 @@ main() ->"
     <meta http-equiv='pragma' content='no-cache' />
 	<meta http-equiv='Content-Type' content='text/html; charset=utf-8' />
 	<title></title>
-	<link rel='stylesheet' type='text/css' href='/css/kakara.full.css' media='all' />
-	<link rel='stylesheet' href='/css/en.css' />
-	<script src='/js/kakara.full.js' type='text/javascript' charset='utf-8'></script>
+"++
+%	<link rel='stylesheet' type='text/css' href='/css/kakara.full.css' media='all' />
+%	<link rel='stylesheet' href='/css/en.css' />
+%	<script src='/js/kakara.full.js' type='text/javascript' charset='utf-8'></script>
+"
 	<!--[if IE]>
 		<link rel='stylesheet' type='text/css' href='/css/ie.css' media='all'/>
 	<![endif]-->
