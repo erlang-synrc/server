@@ -91,8 +91,8 @@ main() ->"
 "++
 %                <li class='wfid_temp265593 listitem'><a href='javascript:' class='fb_login_btn wfid_temp265627 link' target='_self'>Login</a></li>
 %                <li class='wfid_temp265650 listitem'><a href='https://srv5.kakaranet.com/login' class='login wfid_temp265665 link' target='_self'>Login</a></li>
-"                <li class='wfid_temp265706 listitem'><a href='javascript:' class='signup wfid_temp265721 link' target='_self'>Signup</a></li>
-
+%                <li class='wfid_temp265706 listitem'><a href='javascript:' class='signup wfid_temp265721 link' target='_self'>Signup</a></li>
+"
             </ul>
         </div>
     </div>
