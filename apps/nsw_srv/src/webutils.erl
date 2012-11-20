@@ -138,7 +138,18 @@ account_menu() ->
 		#listitem{body=#link{class=signup, text=?_T("Signup"), postback=register}}
 	    ]}]
 	end,
-	#panel{class="top", body= #panel{class="ar", body=[#panel{class=box, body=Element}]}}.
+	#panel{class="top", body= #panel{class="ar", body=[#panel{style="
+    background:url(../images/bg-box.png);
+	padding:5px 5px 7px 7px;
+	-moz-border-radius-bottomright:5px;
+	-moz-border-radius-bottomleft:5px;
+	-webkit-border-bottom-right-radius:5px;
+	-webkit-border-bottom-left-radius:5px;
+	border-bottom-right-radius:5px;
+	border-bottom-left-radius:5px;
+	float:left;
+	margin:0 0 0 9px;
+    ", body=Element}]}}.    % yeah, I know, I know. Once I'm sure this is the only cause, I'll move it to styles.
 
 menu_links() ->
 	["<nav>",
