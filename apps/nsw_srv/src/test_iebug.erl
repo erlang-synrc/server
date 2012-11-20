@@ -83,19 +83,21 @@ main() ->"
     <header>
     <div class='block'>
 	<strong class='logo vcard'><a href='/' class='fn org url wfid_temp265279 link' target='_self'>KakaraNet - Public Beta</a></strong>
+
+<div class='top wfid_temp265521 panel'>
+    <div class='ar wfid_temp265542 panel'>
+        <div class='box wfid_temp265558 panel'>
+            <ul class='user-menu wfid_temp265576 list'>
 "++
-%<div class='top wfid_temp265521 panel'>
-%    <div class='ar wfid_temp265542 panel'>
-%        <div class='box wfid_temp265558 panel'>
-%            <ul class='user-menu wfid_temp265576 list'>
 %                <li class='wfid_temp265593 listitem'><a href='javascript:' class='fb_login_btn wfid_temp265627 link' target='_self'>Login</a></li>
 %                <li class='wfid_temp265650 listitem'><a href='https://srv5.kakaranet.com/login' class='login wfid_temp265665 link' target='_self'>Login</a></li>
-%                <li class='wfid_temp265706 listitem'><a href='javascript:' class='signup wfid_temp265721 link' target='_self'>Signup</a></li>
-%            </ul>
-%        </div>
-%    </div>
-%</div>
-"
+"                <li class='wfid_temp265706 listitem'><a href='javascript:' class='signup wfid_temp265721 link' target='_self'>Signup</a></li>
+
+            </ul>
+        </div>
+    </div>
+</div>
+
 <nav>
     <ul class='wfid_temp265743 list'>
         <li class='wfid_temp265779 listitem'><a href='/' class='wfid_temp265794 wfid_mainmenumainpage link' target='_self' title='You can play games here'>Home</a></li>
