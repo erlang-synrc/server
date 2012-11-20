@@ -85,9 +85,10 @@ main() ->"
 	<strong class='logo vcard'><a href='/' class='fn org url wfid_temp265279 link' target='_self'>KakaraNet - Public Beta</a></strong>
 
 <div class='top wfid_temp265521 panel'>
-    <div class='ar wfid_temp265542 panel'>
-
-        <div class='box wfid_temp265558 panel'>
+    <div class='ar wfid_temp265542 panel box'>
+"++
+%        <div class='box wfid_temp265558 panel'>
+"
             <ul class='user-menu wfid_temp265576 list'>
 
                 <li class='wfid_temp265593 listitem'><a href='javascript:' class='fb_login_btn wfid_temp265627 link' target='_self'>Login</a></li>
@@ -95,8 +96,9 @@ main() ->"
                 <li class='wfid_temp265706 listitem'><a href='javascript:' class='signup wfid_temp265721 link' target='_self'>Signup</a></li>
 
             </ul>
-
-        </div>
+"++
+%        </div>
+"
     </div>
 </div>
 
