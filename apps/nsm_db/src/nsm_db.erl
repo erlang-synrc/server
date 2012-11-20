@@ -306,7 +306,7 @@ add_sample_users() ->
     ?INFO("adding users accounts"),
     [ begin
           nsm_accounts:create_account(Me#user.username),
-          nsm_accounts:transaction(Me#user.username, ?CURRENCY_QUOTA, nsm_db:get(config, "accounts/default_quota",  300), #ti_default_assignment{}),
+          nsm_accounts:transaction(Me#user.username, ?CURRENCY_QUOTA, nsm_db:get_config("accounts/default_quota", 300), #ti_default_assignment{}),
           nsm_db:put(Me#user{password = utils:sha(Me#user.password),
                                 starred = feed_create(),
                                 pinned = feed_create()})

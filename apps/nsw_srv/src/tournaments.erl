@@ -9,6 +9,10 @@
 -include("common.hrl").
 -include("elements/records.hrl").
 
+-define(BAR_PRIZE_FUND, 500).   % this should go to config, stays here for now
+-define(BAR_SOON_SECONDS, 24*60*60).
+-define(BAR_FILL_PERCENT, 80).
+
 game_type_image(T,Prefix) ->
    case T of
        game_okey -> lists:concat([Prefix,"/slider_okey.png"]);
@@ -113,29 +117,10 @@ main_authorized() ->
                 width:226px; height:60px; background: url(/images/tournament/tournaments_page/bar_4_normal.png);
             }
 
-            .alltour_bar_4:hover {
-                width:226px; height:60px; background: url(/images/tournament/tournaments_page/bar_4_hover.png);
-                text-decoration:none;
-            }
-
-            .alltour_bar_4:active {
-                width:226px; height:60px; background: url(/images/tournament/tournaments_page/bar_4_pressed.png);
-                text-decoration:none; line-height:48px;
-            }
-
             .alltour_bar_5 {
                 width:188px; height:60px; background: url(/images/tournament/tournaments_page/bar_5_normal.png);
             }
 
-            .alltour_bar_5:hover {
-                width:188px; height:60px; background: url(/images/tournament/tournaments_page/bar_5_hover.png);
-                text-decoration:none;
-            }
-
-            .alltour_bar_5:active {
-                width:188px; height:60px; background: url(/images/tournament/tournaments_page/bar_5_pressed.png);
-                text-decoration:none; line-height:48px;
-            }
 
             .alltour_arrow_left {
                 display:block; 
@@ -333,15 +318,15 @@ content() ->
         },
         #panel{id=top_selectors, style="height:700px; font-size:16px; ", body=[
             #panel{style="background-color:#e4e8e9;height:360px; margin-top:80px; margin-left:-25px; margin-right:-25px; width:960;", body=[]},
-            #link{style="position:absolute; top:52px; left:-1px;", class="alltour_bars alltour_bar_1", text=?_T("FEATURED"), postback=bar},
-            #link{style="position:absolute; top:52px; left:149px;", class="alltour_bars alltour_bar_2", text=?_T("TIME APPROACHING"), postback=bar},
-            #link{style="position:absolute; top:52px; left:356px;", class="alltour_bars alltour_bar_3", text=?_T("NOT FILL UP"), postback=bar},
-            #link{style="position:absolute; top:52px; left:548px;", class="alltour_bars alltour_bar_4", text=?_T("LARGE TOURNAMENTS"), postback=bar},
-            #link{style="position:absolute; top:52px; left:772px;", class="alltour_bars alltour_bar_5", text=?_T("KALLAVİ GIFTS"), postback=bar},
+            #link{style="position:absolute; top:52px; left:-1px;", class="alltour_bars alltour_bar_1", text=?_T("FEATURED"), postback={bar, featured}},
+            #link{style="position:absolute; top:52px; left:149px;", class="alltour_bars alltour_bar_2", text=?_T("TIME APPROACHING"), postback={bar, soon}},
+            #link{style="position:absolute; top:52px; left:356px;", class="alltour_bars alltour_bar_3", text=?_T("NOT FILL UP"), postback={bar, filled}},
+            #panel{style="position:absolute; top:52px; left:548px;", class="alltour_bars alltour_bar_4", body=[]},
+            #panel{style="position:absolute; top:52px; left:772px;", class="alltour_bars alltour_bar_5", body=[]},
             #image{image="/images/tournament/tournaments_page/bar_dividers.png", style="position:absolute; top:61px; left:148px;"},
             #image{image="/images/tournament/tournaments_page/bar_dividers.png", style="position:absolute; top:61px; left:355px;"},
             #image{image="/images/tournament/tournaments_page/bar_dividers.png", style="position:absolute; top:61px; left:547px;"},
-            #image{image="/images/tournament/tournaments_page/bar_dividers.png", style="position:absolute; top:61px; left:771px;"},
+%            #image{image="/images/tournament/tournaments_page/bar_dividers.png", style="position:absolute; top:61px; left:771px;"},
             
             #panel{id=featured_tours, style="position:absolute; top:112px; left:43px; width:880px;", body=[
                 featured_tours()
@@ -354,7 +339,7 @@ content() ->
             },
 
             %filters
-            #label{style="position:absolute; left:-28px; top:540px; width:150px; text-align:right;", text=?_T("Game Type:")},
+            #label{style="position:absolute; left:22px; top:540px; width:100px; text-align:right;", text=?_T("Game Type:")},
             #dropdown {id=tour_game, style="position:absolute; left:126px; top:533px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
                         #option { text="—" },
                         #option { text="OKEY" },
@@ -371,7 +356,7 @@ content() ->
                         #option { text="512" },
                         #option { text="1024" }
             ]},
-            #label{style="position:absolute; left:653px; top:540px; width:150px; text-align:right;", text=?_T("Quota:")},
+            #label{style="position:absolute; left:703px; top:540px; width:100px; text-align:right;", text=?_T("Quota:")},
             #dropdown {id=tour_quota, style="position:absolute; left:807px; top:533px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
                         #option { text="—" },
                         #option { text="2" },
@@ -380,7 +365,7 @@ content() ->
                         #option { text="8" },
                         #option { text="10" }
             ]},
-            #label{style="position:absolute; left:175px; top:540px; width:150px; text-align:right;", text=?_T("Date:")},
+            #label{style="position:absolute; left:225px; top:540px; width:100px; text-align:right;", text=?_T("Date:")},
             #checkbox{id=tour_date_check, style="position:absolute; left:262px; top:536px; width:20px; height:20px;", checked=false},
             #textbox{id=tour_date, class="alltour_textbox",
                 style="position:absolute; left:330px; top:532px; width:120px; height:28px; font-size:16px;
@@ -396,7 +381,7 @@ content() ->
                         #option { text=?_T("DESC") },
                         #option { text=?_T("ASC") }
             ]},
-            #label{style="position:absolute; left:413px; top:674px; width:150px; text-align:right;", text=?_T("View:")},
+            #label{style="position:absolute; left:463px; top:674px; width:100px; text-align:right;", text=?_T("View:")},
             #dropdown {postback=per_page_set, id=per_page, style="position:absolute; left:567px; top:667px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
                         #option { text="12 " ++ ?_T("PCS") },
                         #option { text="24 " ++ ?_T("PCS") },
@@ -418,9 +403,24 @@ content() ->
 
 featured_tours() ->
     AllTours = nsm_db:all(tournament),
+    FilteredTours = case wf:state(bar) of
+        featured -> 
+            PreFiltered = [{T, new_tournament:get_prizes_total(A)} || T=#tournament{awards=A} <- AllTours],
+            [T || {T, G} <- PreFiltered, G >= ?BAR_PRIZE_FUND];
+        soon ->
+            PreFiltered = [{T, calendar:datetime_to_gregorian_seconds({SD, ST}) - calendar:datetime_to_gregorian_seconds(calendar:now_to_datetime(now()))} 
+            || T=#tournament{start_date=SD, start_time=ST} <- AllTours],
+            [T || {T, DT} <- PreFiltered, DT > 0, DT =< ?BAR_SOON_SECONDS];
+        filled ->
+            PreFiltered = [{T, 100 * length(nsm_tournaments:joined_users(Id)) / PC} || T=#tournament{id=Id, players_count=PC} <- AllTours],
+            [T || {T, F} <- PreFiltered, F >= ?BAR_FILL_PERCENT];
+        _ ->
+            AllTours
+    end,
     SortedTours = lists:sort(fun(#tournament{start_date=SD1, start_time=ST1, id=Id1}, #tournament{start_date=SD2, start_time=ST2, id=Id2}) ->
-        {SD1, ST1, Id1} > {SD2, ST2, Id2} end, AllTours),
+        {SD1, ST1, Id1} > {SD2, ST2, Id2} end, FilteredTours),
     TourIds = [TId || #tournament{id=TId} <- SortedTours],
+    wf:state(last_bar_tours, length(TourIds)),
     ShiftedTours = lists:sublist(TourIds, 1+wf:state(alltour_arrow_shift), 4),
     [#panel{style="margin:8px; float:left", body=tourblock(Id)} || Id <- ShiftedTours].
 
@@ -620,9 +620,14 @@ event(arrow_left) ->
     end;
 
 event(arrow_right) ->
-    Shift = wf:state(alltour_arrow_shift),
-    wf:state(alltour_arrow_shift, Shift+1),
-    wf:update(featured_tours, featured_tours());
+    case wf:state(last_bar_tours)>4 of
+        true ->
+            Shift = wf:state(alltour_arrow_shift),    
+            wf:state(alltour_arrow_shift, Shift+1),
+            wf:update(featured_tours, featured_tours());
+        false ->
+            ok
+    end;
 
 event(bar) ->
     wf:wire(#alert{text=?_T("Sorry, these filters are not yet implemented.")});
@@ -686,6 +691,11 @@ event(per_page_set) ->
 event({sort_by, C}) ->
     wf:state(sort_by, C),
     event({page, 1});
+
+event({bar, B}) ->
+    wf:state(bar, B),
+    wf:state(alltour_arrow_shift, 0),
+    wf:update(featured_tours, featured_tours());
 
 event(Any) ->
     webutils:event(Any).
