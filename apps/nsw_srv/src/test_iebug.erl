@@ -77,12 +77,14 @@ main() ->"
 	}); 
     };function fb_feed(Msg){FB.api('/me/feed', 'post', { message: Msg },function(response) {if (!response || response.error) {console.log('Error occured');} else {console.log('Post ID: ' + response.id);}});};(function(d){var js, id = 'facebook-jssdk', ref = d.getElementsByTagName('script')[0];if (d.getElementById(id)) {return;}js = d.createElement('script');js.id = id;js.async = true;js.src = '//connect.facebook.net/en_US/all.js';ref.parentNode.insertBefore(js, ref);}(document));</script>
 <section class='wrapper'>
-"
-++
-%    <header>
-%    <div class='block'>
-%	<strong class='logo vcard'><a href='/' class='fn org url wfid_temp265279 link' target='_self'>KakaraNet - Public Beta</a></strong>
-%	<div class='top wfid_temp265521 panel'><div class='ar wfid_temp265542 panel'><div class='box wfid_temp265558 panel'><ul class='user-menu wfid_temp265576 list'><li class='wfid_temp265593 listitem'><a href='javascript:' class='fb_login_btn wfid_temp265627 link' target='_self'>Login</a></li><li class='wfid_temp265650 listitem'><a href='https://srv5.kakaranet.com/login' class='login wfid_temp265665 link' target='_self'>Login</a></li><li class='wfid_temp265706 listitem'><a href='javascript:' class='signup wfid_temp265721 link' target='_self'>Signup</a></li></ul></div></div></div><nav><ul class='wfid_temp265743 list'><li class='wfid_temp265779 listitem'><a href='/' class='wfid_temp265794 wfid_mainmenumainpage link' target='_self' title='You can play games here'>Home</a></li><li class='wfid_temp265818 listitem'><a href='/dashboard' class='wfid_temp265857 wfid_mainmenumypage link' target='_self' title='You can share information with others'>My Page</a></li><li class='wfid_temp265882 listitem'><a href='/rules-okey' class='wfid_temp265897 wfid_mainmenurules link' target='_self' title='Read the rules of our games'>Rules</a></li><li class='wfid_temp265919 listitem'><a href='/gifts' class='wfid_temp265934 wfid_mainmenugifts link' target='_self' title='Have no idea, what it is about'>Gifts</a></li><li class='wfid_temp265957 listitem'><a href='/tournaments' class='wfid_temp266015 wfid_mainmenutournaments link' target='_self' title='You can join tournaments and show them all'>Tournaments</a></li><li class='wfid_temp266046 listitem'><a href='/groups' class='wfid_temp266064 wfid_mainmenugroups link' target='_self' title='You can manage your groups settings here'>Groups</a></li></ul></nav>
+
+
+
+    <header>
+    <div class='block'>
+	<strong class='logo vcard'><a href='/' class='fn org url wfid_temp265279 link' target='_self'>KakaraNet - Public Beta</a></strong>
+	<div class='top wfid_temp265521 panel'><div class='ar wfid_temp265542 panel'><div class='box wfid_temp265558 panel'><ul class='user-menu wfid_temp265576 list'><li class='wfid_temp265593 listitem'><a href='javascript:' class='fb_login_btn wfid_temp265627 link' target='_self'>Login</a></li><li class='wfid_temp265650 listitem'><a href='https://srv5.kakaranet.com/login' class='login wfid_temp265665 link' target='_self'>Login</a></li><li class='wfid_temp265706 listitem'><a href='javascript:' class='signup wfid_temp265721 link' target='_self'>Signup</a></li></ul></div></div></div><nav><ul class='wfid_temp265743 list'><li class='wfid_temp265779 listitem'><a href='/' class='wfid_temp265794 wfid_mainmenumainpage link' target='_self' title='You can play games here'>Home</a></li><li class='wfid_temp265818 listitem'><a href='/dashboard' class='wfid_temp265857 wfid_mainmenumypage link' target='_self' title='You can share information with others'>My Page</a></li><li class='wfid_temp265882 listitem'><a href='/rules-okey' class='wfid_temp265897 wfid_mainmenurules link' target='_self' title='Read the rules of our games'>Rules</a></li><li class='wfid_temp265919 listitem'><a href='/gifts' class='wfid_temp265934 wfid_mainmenugifts link' target='_self' title='Have no idea, what it is about'>Gifts</a></li><li class='wfid_temp265957 listitem'><a href='/tournaments' class='wfid_temp266015 wfid_mainmenutournaments link' target='_self' title='You can join tournaments and show them all'>Tournaments</a></li><li class='wfid_temp266046 listitem'><a href='/groups' class='wfid_temp266064 wfid_mainmenugroups link' target='_self' title='You can manage your groups settings here'>Groups</a></li></ul></nav>
+"++
 %      <script>
 %      (function(){
 %          var C = {text:false};
@@ -95,9 +97,9 @@ main() ->"
 %          objs('mainmenugroups').qtip({content: C, position: P, show: S});
 %      })();
 %      </script>
-%    </div>
-%</header>
-"
+"    </div>
+</header>
+
 <div class='wfid_temp266183 wfid_simple_lightbox lightbox panel' style='position: fixed; top: 0px; left: 0px; bottom: 0px; right: 0px; display: none; position: relative;'><div class='lightbox_background wfid_temp266210 panel' style='position: fixed; top: 0px; left: 0px; bottom: 0px; right: 0px; z-index: 98; background-color: #000000;'></div><table border='0' cellpadding='0' cellspacing='0' class='wfid_temp266230 table' style='position: fixed; top: 0px; left: 0px; width: 100%; height: 100%; z-index: 99; overflow:auto;'><tbody><tr class='wfid_temp266306 tablerow'><td class='wfid_temp266325 tablecell' style='vertical-align: middle;' align='center' valign='middle' colspan='1' rowspan='1'><center><table><tr><td><div class='wfid_temp266346 wfid_simple_panel panel'></div></td></tr></table></center></td></tr></tbody></table></div>
 
     Test
