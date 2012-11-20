@@ -28,7 +28,7 @@ main_unsafe() ->
     case wf:user() /= undefined of
         true  -> main_authorized();
         false -> %wf:redirect_to_login(?_U("/login"))
-                 webutils:redirect_to_ssl(?U("login"))
+                 webutils:redirect_to_ssl(?_U("login"))
     end.
 
 main_authorized() ->
