@@ -6,9 +6,11 @@
 %-define(SMTP_PORT, db_opt:get_smtp_port()).
 %-define(SMTP_SSL, db_opt:get_smtp_ssl()).
 
--define(GAMESERVER_NODE, nsx_opt:get_env(nsm_db, game_srv_node, "app@srv5.kakaranet.com")).
--define(WEBSERVER_NODE, nsx_opt:get_env(nsm_db, game_srv_node, "app@srv5.kakaranet.com")).
+-define(APPSERVER_NODE, nsx_opt:get_env(nsm_db, app_srv_node, "app@srv5.kakaranet.com")).
+-define(GAMESERVER_NODE, nsx_opt:get_env(nsm_db, game_srv_node, "game@srv5.kakaranet.com")).
+-define(WEBSERVER_NODE, nsx_opt:get_env(nsm_db, web_srv_node, "web@srv5.kakaranet.com")).
 -define(DBA, nsx_opt:get_env(nsm_db, dba, nsm_riak)).
 -define(VERSION, nsx_opt:get_env(nsm_db, version, "1")).
+-define(RIAKSERVER_NODE, nsx_opt:get_env(nsm_db, riak_srv_node, "app@srv5.kakaranet.com")).
 
 -record(config, {key, value}).

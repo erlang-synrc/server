@@ -42,11 +42,10 @@ do
     esac
 done
 
-
+./config -file app.config nsm_db riak_srv_node -atom $APPSERVER
 ./config -file app.config nsm_srv game_srv_node -atom $GAMESERVER@$H
 ./config -file app.config nsm_srv web_srv_node -atom $WEBSERVER@$H
 ./config -file app.config nsm_srv app_srv_node -atom $APPSERVER
-./config -file app.config nsm_srv riak_srv_node -atom $APPSERVER
 ./config -file app.config nsm_srv dba -atom $DBA
 ./config -file app.config riak_core handoff_port -integer $HOPORT
 ./config -file app.config riak_core http -listener $RIAKHTTP

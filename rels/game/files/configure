@@ -51,6 +51,7 @@ else
     ./config -file app.config nsg_srv mnesia_init -atom default
 fi
 
+./config -file app.config nsm_db riak_srv_node -atom $GAMESERVER@$H
 ./config -file app.config nsg_srv game_srv_port -integer $GAMEPORT
 ./config -file app.config nsg_srv app_srv_node -atom $APPSERVER
 ./config -file app.config nsg_srv game_srv_node -atom $GAMESERVER@$H
