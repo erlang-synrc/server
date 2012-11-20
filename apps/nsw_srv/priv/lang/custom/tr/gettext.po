@@ -1273,7 +1273,7 @@ msgid "My Gifts"
 msgstr "Hediyelerim"
 #
 msgid "My Page"
-msgstr "Benim Sayfam"
+msgstr "Sayfam"
 #
 msgid "My Profile"
 msgstr "Profilim"
@@ -4839,4 +4839,7 @@ msgid "Read the rules of our games"
 msgstr "Read the rules of our games"
 #
 msgid "Dashboard"
-msgstr "Paneli"
+msgstr "Sayfam"
+#
+msgid "Home"
+msgstr "Ana Sayfa"
