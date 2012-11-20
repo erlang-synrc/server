@@ -135,7 +135,7 @@ account_menu() ->
 	_UserLoggedIn ->
 	    [#list{class="user-menu", body=[
 		#listitem{body=fb_utils:login_btn()},
-		#listitem{body=#link{class=login, text=?_T("Login"), url=?_U("/login")}},
+		#listitem{body=#link{class=login, text=?_T("Login"), url=[?HTTP_ADDRESS,?_U("/login")]}},
 		#listitem{body=#link{class=signup, text=?_T("Signup"), postback=register}}
 	    ]}]
 	end,
@@ -237,7 +237,7 @@ event(login) ->
     login(login,password,login_hintbox);
 event(register)->
     wf:session(fb_registration, undefined),
-    wf:redirect(?_T("/login/register"));
+    wf:redirect([?HTTP_ADDRESS,?_T("/login/register")]);
 event(logout) ->
     %wf:clear_session(),
     wf:logout(),
