@@ -19,9 +19,8 @@
         ]).
 
 -include_lib("nsg_srv/include/social_actions.hrl").
-%%-include_lib("nsg_srv/include/logging.hrl").
 -include_lib("nsg_srv/include/requests.hrl").
--include_lib("nsg_srv/include/setup.hrl").
+-include_lib("nsm_db/include/config.hrl").
 -include_lib("nsg_srv/include/basic_types.hrl").
 -include_lib("nsg_srv/include/game_tavla.hrl").
 -include_lib("nsm_db/include/table.hrl").

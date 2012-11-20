@@ -4,7 +4,7 @@
 -include_lib("nsm_db/include/user.hrl").
 -include_lib("nsm_db/include/tournaments.hrl").
 -include_lib("nsx_config/include/log.hrl").
--include("setup.hrl").
+-include_lib("nsx_config/include/config.hrl").
 -compile(export_all).
 
 -record(state, {active_users,

@@ -1,6 +1,6 @@
 -module(nsg_srv_sup).
 -behaviour(supervisor).
--include("setup.hrl").
+-include_lib("nsm_db/include/config.hrl").
 -export([start_link/0]).
 -export([init/1]).
 -define(CHILD(I, Type), {I, {I, start_link, []}, permanent, 5000, Type, [I]}).

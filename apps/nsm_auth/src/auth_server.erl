@@ -1,6 +1,5 @@
 -module(auth_server).
 
--include_lib("nsg_srv/include/setup.hrl").
 -include_lib("nsg_srv/include/conf.hrl").
 -include_lib("nsg_srv/include/settings.hrl").
 -include_lib("nsx_config/include/log.hrl").
