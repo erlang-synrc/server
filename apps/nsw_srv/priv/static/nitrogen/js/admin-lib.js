@@ -265,6 +265,13 @@ UI.admin.PurchasesGrid = Ext.extend(Ext.grid.EditorGridPanel, {
     data = Base64.decode(unescape(data)),
     data = Ext.util.JSON.decode(data), this.getStore().loadData(data);
   },
+  updateItem : function(id, state){
+    var record = this.getStore().getById(id);
+    if(record){
+      record.set('state', state);
+      record.commit();
+    }
+  },
   initComponent : function() {
     var self = this;
 
@@ -284,14 +291,16 @@ UI.admin.PurchasesGrid = Ext.extend(Ext.grid.EditorGridPanel, {
 
     function handleConfirm(){
       var selection = self.getView().grid.selModel.selections.items[0];
-      console.log(selection);
       if(selection){
         self.confirmPayment(selection.id);
       }
     }
 
     function handleDiscard(){
-      alert('discard');
+      var selection = self.getView().grid.selModel.selections.items[0];
+      if(selection){
+        self.discardPayment(selection.id);
+      }
     }
 
     function handleReload(){

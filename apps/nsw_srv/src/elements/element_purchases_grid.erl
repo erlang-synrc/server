@@ -32,11 +32,13 @@ grid_script(Id) ->
   %% create api action, save id in tag to have access later
   Save   = #api{anchor = Id, tag = Id,  name = saveData, delegate = ?MODULE},
   LoadData = #api{anchor = Id, tag = Id, name = loadData, delegate = ?MODULE},
-  ConfirmPayment = #api{anchor=Id, name=confirmPayment, tag=payment_admin, delegate=?MODULE},
+  ConfirmPayment = #api{anchor=Id, name=confirmPayment, tag=Id, delegate=?MODULE},
+  DiscardPayment = #api{anchor=Id, name=discardPayment, tag=Id, delegate=?MODULE},
 
   wf:wire(Save),
   wf:wire(LoadData),
   wf:wire(ConfirmPayment),
+  wf:wire(DiscardPayment),
 
   %% fields, columns and logic is in admin-lib.js file
   %% create 'grid' field in anchor object to have access later
@@ -48,12 +50,14 @@ grid_script(Id) ->
     ",loadDataRequest: function(){~s}"
     ",onSave: function(data){~s}"
     ",confirmPayment: function(sel){~s}"
+    ",discardPayment: function(sel){~s}"
   "});",
 
   wf:f(ScriptTemplate, [Id, ?_T("Purchases"), Id,
     callback(LoadData, ""),
     callback(Save, "data"),
-    callback(ConfirmPayment, "sel")
+    callback(ConfirmPayment, "sel"),
+    callback(DiscardPayment, "sel")
   ]).
 
 callback(#api{anchor = Id, name = Name}, DataVar) ->
@@ -62,17 +66,23 @@ callback(#api{anchor = Id, name = Name}, DataVar) ->
 api_event(saveData, Anchor, [Data]) ->
   ?DBG("Got SAVE event: Anchor: ~p, Data: ~p", [Anchor, Data]),
   ok;
-api_event(confirmPayment, _Tag, [PurchaseId])->
-  case nsm_membership_packages:get_purchase(PurchaseId) of
-    {ok, #membership_purchase{}} ->
-      nsx_msg:notify([purchase, user, wf:user(), set_purchase_state], {PurchaseId, confirmed, []});
-    _ -> ?INFO("Purchase Not Found")
-  end;
+api_event(discardPayment, Tag, [PurchaseId])->
+  update_purchase_state(PurchaseId, Tag, ?MP_STATE_DISCARDED);
+api_event(confirmPayment, Tag, [PurchaseId])->
+  update_purchase_state(PurchaseId, Tag, ?MP_STATE_CONFIRMED);
 api_event(loadData, Anchor, []) ->
     ?DBG("Got LOAD event: Anchor: ~p", [Anchor]),
     Purchases = nsm_membership_packages:list_purchases(),
     JSON = site_utils:base64_encode_to_url(mochijson2:encode([purchase_to_json(P) || P <- Purchases])),
     wf:wire(wf:f("obj('~s').grid.updateData('~s')", [Anchor, JSON])).
+
+update_purchase_state(Id, Anchor, State)->
+  case nsm_membership_packages:get_purchase(Id) of
+    {ok, #membership_purchase{}} ->
+      nsx_msg:notify([purchase, user, wf:user(), set_purchase_state], {Id, State, []}),
+      wf:wire(wf:f("obj('~s').grid.updateItem('~s','~s')", [Anchor, Id, State]));
+    _ -> ?INFO("Purchase Not Found")
+  end.
 
 purchase_to_json(#membership_purchase{} = I)->
     P = I#membership_purchase.membership_package,
