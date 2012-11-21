@@ -18,69 +18,62 @@
 -define(TABLE_UPDATE_QUANTUM, 100).
 
 route() -> ["game_name"].
-
-main() ->
-    wf:state(buttons, green),
-    case wf:user() /= undefined of
-        true  -> main_authorized0();
-        false -> wf:redirect_to_login(?_U("/login"))
-    end.
-
-main_authorized0() ->
-    webutils:add_script("/nitrogen/jquery.paginatetable.js"),
-    webutils:add_raw("
-        <link href='/nitrogen/guiders-js/guiders-1.2.8.css' rel='stylesheet'>
-        <script src='/nitrogen/guiders-js/guiders-1.2.8.js'></script>
-    "),
-     #template { file=code:priv_dir(nsw_srv)++"/templates/bare.html" }.
-
 title() -> ?_T("Matchmaker").
 
+main() ->
+  wf:state(buttons, green),
+  ?INFO("Matchmaker User: ~p",[wf:user()]),
+
+  case wf:q(game_name) of
+    "okey" -> ok;
+    "tavla" -> ok;
+    _ -> wf:redirect(?_U("/dashboard"))
+  end,
+
+  case wf:user() of
+    undefined -> webutils:redirect_to_ssl("login");
+    _User ->
+      webutils:add_script("/nitrogen/jquery.paginatetable.js"),
+      webutils:add_raw("<link href='/nitrogen/guiders-js/guiders-1.2.8.css' rel='stylesheet'>
+      <script src='/nitrogen/guiders-js/guiders-1.2.8.js'></script>"),
+      case webutils:guiders_ok("matchmaker_guiders_shown") of
+        true -> guiders_script();
+        false -> []
+      end,
+      add_game_settings_guiders(),
+      SS = case wf:session({wf:q(game_name), wf:user()}) of
+        undefined -> case wf:q(game_name) of
+                      "tavla" -> [{game, game_tavla}];
+                      "okey" -> [{game, game_okey}]
+                     end ++ [{table_name, table_name(default)}];
+        Settings -> Settings
+      end,
+      wf:session({wf:q(game_name), wf:user()}, SS),
+      #template { file=code:priv_dir(nsw_srv)++"/templates/bare.html" }
+  end.
+
 body() ->
-    case (catch check_requirements()) of
-	ok ->
-	    try
-		Settings = wf:session({q_game_type(),wf:user()}),
-		ui_update_buttons(case Settings of undefined -> 
-			case q_game_type() of
-			    "tavla" ->
-				[{game, game_tavla}];%, {rounds, 3}, {speed,normal}, {game_mode, standard}];
-			    "okey" ->
-				[{game, game_okey}]%, {rounds, 20}, {speed,normal}, {game_mode, standard}]
-			end ++ [{table_name, table_name(default)}]; _ -> Settings end),
- 		case proplists:get_value(game, Settings) of
-		   game_okey   -> ok;
-		   game_tavla  -> ok
-		end,
-                wf:session({q_game_type(),wf:user()}, Settings)
-	    catch
-		error:E when E==function_clause orelse element(1, E)==badmatch ->
-		    %% reset to default settings if it's not set or wrong
-                    FromCookies = wf:session({q_game_type(),wf:user()}),
-                    ?INFO("FromCookies: ~p",[FromCookies]),
-		    DefaultSettings = case FromCookies of
-                        undefined ->
-			case q_game_type() of
-			    "tavla" ->
-				[{game, game_tavla}];%, {rounds, 3}, {speed,normal}, {game_mode, standard}];
-			    "okey" ->
-				[{game, game_okey}]%, {rounds, 20}, {speed,normal}, {game_mode, standard}]
-			end ++ [{table_name, table_name(default)}];
-                       _ -> FromCookies
-                    end,
-		    wf:session({q_game_type(),wf:user()}, DefaultSettings),
-		    ui_update_buttons()
-	    end,
-	    UId = webutils:user_info(username), 
-	    wf:state(user_in_groups, nsm_groups:list_groups_per_user(UId)),
-	    wf:state(users_subscribe, nsm_users:list_subscr(UId)), 
-	    main_authorized();
-	{redirect, login} ->
-	    wf:redirect_to_login("/");
-	{redirect, Url} ->
-	    wf:redirect(Url);
-	_ -> ""
-    end.
+  ui_update_buttons(),
+  UId = webutils:user_info(username),
+  wf:state(user_in_groups, nsm_groups:list_groups_per_user(UId)),
+  wf:state(users_subscribe, nsm_users:list_subscr(UId)),
+  ui_paginate(),
+  wf:comet(fun() -> comet_update() end),
+  [#section{class="create-area", body=#section{class="create-block", body=[
+    matchmaker_submenu(),
+    #panel{id=rules_container, body=[]},
+    #article{class="article1", body=[
+      #panel{id=matchmaker_main_container, class="head", body=matchmaker_show_tables()},
+      #panel{id=matchmaker_slide_area, class="slide-area"},
+      #panel{id=tables, body=ui_get_tables()}
+    ]},
+    "<div class='matchmaker-table-pager paging'><div class=\"center\">" ++
+    "<ul><li><a href=\"#\" class=\"prevPage\">&lt;</a></li></ul>" ++
+    "<ul class='pageNumbers'></ul>"++
+    "<ul><li><a href=\"#\" class=\"nextPage\">&gt;</a></li>"++
+    "</ul></div></div>",
+    view_table_box()
+  ]}}].
 
 table_name(default) ->
     UId = wf:user(),
@@ -91,59 +84,6 @@ table_name(default) ->
 
 q_game_type() ->
     wf:q(game_name).
-
-check_requirements() ->
-    case wf:user() /= undefined of
-	true  -> ok;
-	false -> throw({redirect, login})
-    end,
-    case q_game_type() of
-	"okey" -> ok;
-	"tavla" -> ok;
-	Other ->
-	    ?WARNING("Hacking attempt? game_type=~p\n", [Other]),
-	    throw({redirect, ?_U("/dashboard")})
-    end,
-    case wf:q(csid) of
-	undefined ->
-	    {_, _, C} = now(),
-	    throw({redirect, lists:concat([?_U("/matchmaker"), "/", ?_U(q_game_type()), "/csid/", C, ""])});
-	Sid ->
-	    wf:state(session_id, Sid)
-    end,
-    ok.
-
-main_authorized() ->
-    Tables = #panel{id=tables, body=ui_get_tables()},
-    Pager = "<div class='matchmaker-table-pager paging'><div class=\"center\">"
-	"<ul><li><a href=\"#\" class=\"prevPage\">&lt;</a></li></ul>"
-	"<ul class='pageNumbers'></ul>"
-	"<ul><li><a href=\"#\" class=\"nextPage\">&gt;</a></li>"
-	"</ul></div></div>",
-    ui_paginate(),
-
-    wf:comet(fun() -> comet_update() end),
-    % guiders
-    case webutils:guiders_ok("matchmaker_guiders_shown") of
-        true ->
-            guiders_script();
-        false ->
-            "" 
-    end,
-    [
-        #section{class="create-area", body=#section{class="create-block",
-            body=[
-                matchmaker_submenu(),
-                #panel{id=rules_container, body=[]},
-                #article{class="article1",
-                    body=[
-                        #panel{id=matchmaker_main_container, class="head", body=matchmaker_show_tables()},
-                        #panel{id=matchmaker_slide_area, class="slide-area"},
-                        Tables
-                ]},
-                Pager,
-                view_table_box()
-    ]}}].
 
 matchmaker_submenu() ->
     B = #span{style="font-weight:bold"},
@@ -425,7 +365,8 @@ matchmaker_show_tables() ->
 
 
 el_create_game_button() ->
-
+    {_, _, Sid} = now(), 
+    wf:state(session_id, Sid),
     Url = lists:concat([?_U("/view-table/"), ?_U(q_game_type()),"/id/",wf:state(session_id)]),
     Settings = wf:session({q_game_type(),wf:user()}),
     wf:session(wf:state(session_id), Settings),
@@ -1009,11 +950,10 @@ is_option_present(Key, Value) ->
 comet_update() ->
     comet_update(empty).
 comet_update(State) ->
-    case wf:user() of
-	undefined -> % user logged of
-	    wf:redirect_to_login("/");
-	_UId ->
-	    timer:sleep(?TABLE_UPDATE_QUANTUM),
+  case wf:user() of
+    undefined -> webutils:redirect_to_ssl("login");
+    _UId ->
+      timer:sleep(?TABLE_UPDATE_QUANTUM),
 
         TimeLeft = wf:session(time_left_to_update),
         if 
@@ -1049,14 +989,14 @@ can_be_multiple(age)   -> false;
 can_be_multiple(users) -> true;
 can_be_multiple(_Key)  -> false.
 
+api_event(Name, Tag, Args) ->
+  fb_utils:api_event(Name, Tag, Args).
 
 event(Event) ->
-    case wf:user() of
-	undefined ->
-	    wf:redirect_to_login("/");
-	_User ->
-	    u_event(Event)
-    end.
+  case wf:user() of
+    undefined -> webutils:redirect_to_ssl("login");
+    _User -> u_event(Event)
+  end.
 
 ac_show_main_container() ->
     wf:wire("objs('matchmaker_main_container').slideDown('fast');"),
