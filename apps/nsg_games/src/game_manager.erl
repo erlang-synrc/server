@@ -327,6 +327,9 @@ stress_test(NumberOfRooms) ->
     ?INFO("Okey bot rooms runned (STRESS): ~p~n",[{OP1,OP2}]).
 
 start_tournament(TourId,NumberOfTournaments,NumberOfPlayers,Quota,Tours,Speed) ->
+
+    {ok,Tournament} = nsm_db:get(tournament,TourId),
+
     RealPlayers = [ erlang:list_to_binary(U#play_record.who) || U <- nsm_tournaments:joined_users(TourId)],
     
     Registrants = case NumberOfPlayers > length(RealPlayers) of
@@ -339,9 +342,10 @@ start_tournament(TourId,NumberOfTournaments,NumberOfPlayers,Quota,Tours,Speed) -
     OkeyTournaments =
         [begin
              {ok,GameId,A} = game_manager:create_game(game_okey_ng_trn_elim, [{registrants, Registrants},
-                                                               {quota_per_round, Quota},
-                                                               {tours, Tours},
-                                                               {speed, Speed},
+                                                               {quota_per_round, Tournament#tournament.quota},
+                                                               {tours, Tournament#tournament.tours},
+                                                               {speed, Tournament#tournament.speed},
+                                                               {game_mode, Tournament#tournament.game_mode},
                                                                {trn_id,TourId},
                                                                {demo_mode, true}]),
             % TODO: fix test_okey robot

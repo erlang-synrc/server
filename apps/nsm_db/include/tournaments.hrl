@@ -24,7 +24,8 @@
          owner,
          players_count,
          speed,
-         type }). % { eliminatin, pointing, etc }
+         type,
+         game_mode }). % { eliminatin, pointing, etc }
 
 -record(play_record, % { tournament_player, game_record, tournament_info, choose your name :) }
         {who, % { user }
