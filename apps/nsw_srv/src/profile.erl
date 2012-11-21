@@ -137,11 +137,11 @@ section_body(profile) ->
     AvatarP = avatar_update_box(User),
 
     Services = #panel{class=cell,body=[
-	#h3{text=?_T("Services")},
-	#list{class="soc-list",body=[
-	    fb_utils:service_item(),
-	    tw_utils:service_item()
-	]}
+      #h3{text=?_T("Services")},
+      #list{class="soc-list",body=[
+        fb_utils:service_item(),
+        tw_utils:service_item()
+      ]}
     ]},
     [
      #h1{text=?_T("Profile Information")},

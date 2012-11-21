@@ -260,106 +260,72 @@ UI.admin.PackagesGrid = Ext.extend(Ext.grid.EditorGridPanel, {
 		});
 
 UI.admin.PurchasesGrid = Ext.extend(Ext.grid.EditorGridPanel, {
-	onSave : function(data) {
-	},
-	updateData : function(data) {
-		data = Base64.decode(unescape(data)),
-		data = Ext.util.JSON.decode(data), this.getStore().loadData(data);
-	},
-	initComponent : function() {
-		var self = this;
+  onSave : function(data) {},
+  updateData : function(data) {
+    data = Base64.decode(unescape(data)),
+    data = Ext.util.JSON.decode(data), this.getStore().loadData(data);
+  },
+  initComponent : function() {
+    var self = this;
 
-		function renderAmount(pkg) {
-			return pkg.amount;
-		}
+    function renderAmount(pkg) {
+      return pkg.amount;
+    }
 
-		function renderPaymentType(pkg) {
-			return pkg.payment_type;
-		}
+    function renderPaymentType(pkg) {
+      return pkg.payment_type;
+    }
 
-		var ds = new Ext.data.JsonStore({
-			idIndex : 0,
-			fields : ['id', 'external_id', 'user_name', 'user_info', 'state',
-					'm_package', 'start_time', 'end_time', 'info', 'state_log'],
-			data : []
-		});
+    var ds = new Ext.data.JsonStore({
+      idIndex : 0,
+      fields : ['id', 'external_id', 'user_name', 'user_info', 'state', 'm_package', 'start_time', 'end_time', 'info', 'state_log'],
+      data : []
+    });
 
-		Ext.apply(this, {
-					sm : this.sm || new Ext.grid.RowSelectionModel({
-								singleSelect : true
-							}),
-					store : ds,
-					view : new Ext.ux.grid.BufferView({
-								cacheSize : 50
-							}),
-					colModel : new Ext.grid.ColumnModel({
-								defaults : {
-									sortable : true
-								},
-								columns : [{
-											header : 'Id',
-											id : 'id',
-											dataIndex : 'id'
-										}, {
-											header : 'External Id',
-											id : 'external_id',
-											dataIndex : 'external_id'
-										}, {
-											header : 'State',
-											id : 'state',
-											dataIndex : 'state'
-										}, {
-											header : 'User',
-											id : 'user_name',
-											dataIndex : 'user_name'
-										}, {
-											dataIndex : 'm_package',
-											header : 'Amount',
-											renderer : renderAmount
-										}, {
-											dataIndex : 'm_package',
-											header : 'Payment type',
-											renderer : renderPaymentType
-										}, {
-											header : 'Start',
-											id : 'start_time',
-											dataIndex : 'start_time'
-										}, {
-											header : 'End',
-											id : 'end_time',
-											dataIndex : 'end_time'
-										}]
+    function handleConfirm(){
+      var selection = self.getView().grid.selModel.selections.items[0];
+      console.log(selection);
+      if(selection){
+        self.confirmPayment(selection.id);
+      }
+    }
 
-							}),
+    function handleDiscard(){
+      alert('discard');
+    }
 
-					tbar : [{
-								iconCls : 'icon-confirm',
-								text : 'Confirm purchase',
-								handler : function() {
-									alert('Confirm!')
-								}
-							}, {
-								iconCls : 'icon-discard',
-								text : 'Discard purchase',
-								handler : function() {
-									alert('Discard!')
-								}
-							}, {
-								iconCls : 'icon-reload-db',
-								text : 'Reload',
-								handler : function() {
-									// this function is defined in
-									// elemens module
-									// (element_purchases_grid.erl)
-									// updateData() callback will be
-									// called to update data
-									self.loadDataRequest()
-								}
-							}]
-				});
-		// load data
-		self.loadDataRequest();
+    function handleReload(){
+      // this function is defined in elemens module (element_purchases_grid.erl)
+      // updateData() callback will be called to update data
+      self.loadDataRequest()
+    }
 
-		UI.admin.PurchasesGrid.superclass.initComponent.call(this);
-	}
+    Ext.apply(this, {
+      sm : this.sm || new Ext.grid.RowSelectionModel({singleSelect : true}),
+      store : ds,
+      view : new Ext.ux.grid.BufferView({cacheSize : 50}),
+      colModel : new Ext.grid.ColumnModel({
+        defaults : {sortable : true},
+        columns : [
+          {header : 'Id', id : 'id', dataIndex : 'id'},
+          {header : 'External Id', id : 'external_id',dataIndex : 'external_id'},
+          {header : 'State', id : 'state', dataIndex : 'state'},
+          {header : 'User', id : 'user_name', dataIndex : 'user_name'},
+          {dataIndex : 'm_package', header : 'Amount', renderer : renderAmount },
+          {dataIndex : 'm_package', header : 'Payment type', renderer : renderPaymentType},
+          {header : 'Start', id : 'start_time', dataIndex : 'start_time' },
+          {header : 'End', id : 'end_time', dataIndex : 'end_time' }
+        ]
+      }),
+      tbar : [
+        {iconCls : 'icon-confirm', text : 'Confirm purchase', handler : handleConfirm},
+        {iconCls : 'icon-discard', text : 'Discard purchase', handler : handleDiscard},
+        {iconCls : 'icon-reload-db', text : 'Reload', handler : handleReload}
+      ]
+    });
+
+    // load data
+    self.loadDataRequest();
+    UI.admin.PurchasesGrid.superclass.initComponent.call(this);
+  }
 });

@@ -16,43 +16,35 @@
 -define(GIFT_LIST_PAGE_SIZE, 15).
 
 main() ->
-    case wf:user() of
-	undefined ->
-	    wf:redirect_to_login("/");
-	_User  ->
-	    main_authorized()
-    end.
+  case wf:user() of
+    undefined -> webutils:redirect_to_ssl("login");
+    _User  ->
+      webutils:add_script("/nitrogen/jquery.paginatetable.js"),
+      webutils:add_script("/nitrogen/bert.js"),
+      webutils:add_script("/nitrogen/base64.js"),
+      %% add extjs scripts
+      webutils:add_script("/nitrogen/js/admin-lib.js"),
+      webutils:add_script("/nitrogen/extjs/ext/ux/BufferView.js"),
+      webutils:add_script("/nitrogen/extjs/ext/ux/RowEditor.js"),
+      webutils:add_script("/nitrogen/extjs/ext-all.js"),
+      webutils:add_script("/nitrogen/extjs/ext-base.js"),
+      %% add extjs styles, common and themes
+      add_stylesheet("/css/admin.css"),
+      add_stylesheet("/nitrogen/extjs/ext/ux/css/RowEditor.css"),
+      add_stylesheet("/css/xtheme-gray.css"),
+      add_stylesheet("/css/ext-all.css"),
 
-main_authorized() ->
-    webutils:add_script("/nitrogen/jquery.paginatetable.js"),
-    webutils:add_script("/nitrogen/bert.js"),
-    webutils:add_script("/nitrogen/base64.js"),
-    %% add extjs scripts
-    webutils:add_script("/nitrogen/js/admin-lib.js"),
-
-    webutils:add_script("/nitrogen/extjs/ext/ux/BufferView.js"),
-    webutils:add_script("/nitrogen/extjs/ext/ux/RowEditor.js"),
-    webutils:add_script("/nitrogen/extjs/ext-all.js"),
-    webutils:add_script("/nitrogen/extjs/ext-base.js"),
-
-
-    %% add extjs styles, common and themes
-    add_stylesheet("/css/admin.css"),
-    add_stylesheet("/nitrogen/extjs/ext/ux/css/RowEditor.css"),
-    add_stylesheet("/css/xtheme-gray.css"),
-    add_stylesheet("/css/ext-all.css"),
-
-    #template { file=code:priv_dir(nsw_srv)++"/templates/bare.html" }.
+      #template { file=code:priv_dir(nsw_srv)++"/templates/bare.html" }
+  end.
 
 title() -> webutils:title(?MODULE).
 
 body() ->
-    UserName = wf:user(),
-    {ok, User} = nsm_users:get_user(UserName),
-    case nsm_acl:check_access(User, {feature, admin}) of
-	allow -> body_authorized();
-	_ -> ?_T("You don't have access to do that.")
-    end.
+  {ok, User} = nsm_users:get_user(wf:user()),
+  case nsm_acl:check_access(User, {feature, admin}) of
+    allow -> body_authorized();
+    _ -> ?_T("You don't have access to do that.")
+  end.
 
 body_authorized() ->
     CurrentSelection = get_current_section(),
@@ -73,15 +65,14 @@ body_authorized() ->
 
     SubmenuLinks = submenu(CurrentSelection),
 
-    SubMenu = #list{body=[#listitem{body=#link{text=Text, postback=Postback}}
-			   || {Text, Postback} <- SubmenuLinks]},
+    SubMenu = #list{body=[#listitem{body=#link{text=Text, postback=Postback}} || {Text, Postback} <- SubmenuLinks]},
 
-    #section{class="admin-block white-block", body=[#panel{class="admin-menu", body=Menu},
-						    #grid_clear{},
-						    #panel{class="admin-submenu round-block",
-							   show_if=SubmenuLinks=/=[],
-							   body=[SubMenu, #grid_clear{}]},
-						    #panel{id=view_box, class="admin-content", body=Col}]}.
+    #section{class="admin-block white-block", body=[
+      #panel{class="admin-menu", body=Menu},
+      #grid_clear{},
+      #panel{class="admin-submenu round-block", show_if=SubmenuLinks=/=[], body=[SubMenu, #grid_clear{}]},
+      #panel{id=view_box, class="admin-content", body=Col}
+    ]}.
 
 get_current_section() ->
     case wf:q('__submodule__') of
@@ -89,38 +80,21 @@ get_current_section() ->
 	Page -> list_to_existing_atom(Page)
     end.
 
-submenu(users) ->
-    users_submenu();
-submenu(system) ->
-    config_submenu();
-submenu(others) ->
-	other_submenu();
-submenu(affiliates) ->
-    affiliates_submenu();
+submenu(users) -> users_submenu();
+submenu(system) -> config_submenu();
+submenu(others) -> other_submenu();
+submenu(affiliates) -> affiliates_submenu();
 submenu(_) -> [].
 
-
-section_body(users) ->
-    invite();
-section_body(games) ->
-    ?_T("Not implemented");
-section_body(tournaments) ->
-    ?_T("Not implemented");
-section_body(system) ->
-    config_new();
-section_body(stats) ->
-    ?_T("Not implemented");
-section_body(others) ->
-	%% create placeholder for others elements
-	["<div id=\"others-placeholder\"></div>"];
-section_body(reports) ->
-    ?_T("Not implemented");
-section_body(affiliates) ->
-    affiliates_body();
-section_body(_) ->
-    ?_T("Not implemented").
-
-
+section_body(users) -> invite();
+section_body(games) -> ?_T("Not implemented");
+section_body(tournaments) -> ?_T("Not implemented");
+section_body(system) -> config_new();
+section_body(stats) -> ?_T("Not implemented");
+section_body(others) -> ["<div id=\"others-placeholder\"></div>"];
+section_body(reports) -> ?_T("Not implemented");
+section_body(affiliates) -> affiliates_body();
+section_body(_) -> ?_T("Not implemented").
 
 logo() ->
     [
@@ -760,6 +734,7 @@ create_new_contract_from_form() ->
 %%%%%%%%%%%%%%% EVENT %%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 api_event(Name, Tag, Args)->
+    ?INFO("kakaAdmin api_event: ~p ~p ~p~n", [Name, Tag, Args]),
     fb_utils:api_event(Name, Tag, Args).
 
 event(add_new_contract) ->

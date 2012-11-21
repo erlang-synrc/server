@@ -23,48 +23,51 @@
 reflect() -> record_info(fields, purchases_grid).
 
 render_element(_Record = #purchases_grid{}) ->
-    Id =  wf:temp_id(),
-
-    wf:wire(Id, #attr{target=Id, attr=id, value=Id}),
-    Script = grid_script(Id),
-    wf:wire(Id, Script),
-
-    [#panel{id=Id}].
+  Id =  wf:temp_id(),
+  wf:wire(Id, #attr{target=Id, attr=id, value=Id}),
+  wf:wire(Id, grid_script(Id)),
+  [#panel{id=Id}].
 
 grid_script(Id) ->
-    %% create api action, save id in tag to have access later
-    APISave   = #api{anchor = Id, tag = Id,  name = saveData, delegate = ?MODULE},
-    %% API to anable grid reload data
-    APILoadData = #api{anchor = Id, tag = Id, name = loadData, delegate = ?MODULE},
+  %% create api action, save id in tag to have access later
+  Save   = #api{anchor = Id, tag = Id,  name = saveData, delegate = ?MODULE},
+  LoadData = #api{anchor = Id, tag = Id, name = loadData, delegate = ?MODULE},
+  ConfirmPayment = #api{anchor=Id, name=confirmPayment, tag=payment_admin, delegate=?MODULE},
 
-    wf:wire(APISave),
-    wf:wire(APILoadData),
+  wf:wire(Save),
+  wf:wire(LoadData),
+  wf:wire(ConfirmPayment),
 
-    %% fields, columns and logic is in admin-lib.js file
-    %% create 'grid' field in anchor object to have access later
-    ScriptTemplate = "obj('~s').grid = new UI.admin.PurchasesGrid({"
-        "title: '~s'"
-        ",height: 400"
-        ",layout: 'fit'"
-        ",renderTo: '~s'"
-        %% here grid will call to our api and then will be updated with new data
-        %% async
-        ",loadDataRequest: function(){~s}"
-        %% call nitrogen api to send data
-        ",onSave: function(data){ ~s }"
-        "});",
+  %% fields, columns and logic is in admin-lib.js file
+  %% create 'grid' field in anchor object to have access later
+  ScriptTemplate = "obj('~s').grid = new UI.admin.PurchasesGrid({"
+    "title: '~s'"
+    ",height: 400"
+    ",layout: 'fit'"
+    ",renderTo: '~s'"
+    ",loadDataRequest: function(){~s}"
+    ",onSave: function(data){~s}"
+    ",confirmPayment: function(sel){~s}"
+  "});",
 
-    wf:f(ScriptTemplate, [Id, ?_T("Purchases"), Id,
-        callback(APILoadData, ""), 
-        callback(APISave, "data") ]).
+  wf:f(ScriptTemplate, [Id, ?_T("Purchases"), Id,
+    callback(LoadData, ""),
+    callback(Save, "data"),
+    callback(ConfirmPayment, "sel")
+  ]).
 
 callback(#api{anchor = Id, name = Name}, DataVar) ->
-    wf:f("obj('~s').~p(~s)", [Id, Name, DataVar]).
+  wf:f("obj('~s').~p(~s)", [Id, Name, DataVar]).
 
 api_event(saveData, Anchor, [Data]) ->
-    ?DBG("Got SAVE event: Anchor: ~p, Data: ~p", [Anchor, Data]),
-    ok;
-
+  ?DBG("Got SAVE event: Anchor: ~p, Data: ~p", [Anchor, Data]),
+  ok;
+api_event(confirmPayment, _Tag, [PurchaseId])->
+  case nsm_membership_packages:get_purchase(PurchaseId) of
+    {ok, #membership_purchase{}} ->
+      nsx_msg:notify([purchase, user, wf:user(), set_purchase_state], {PurchaseId, confirmed, []});
+    _ -> ?INFO("Purchase Not Found")
+  end;
 api_event(loadData, Anchor, []) ->
     ?DBG("Got LOAD event: Anchor: ~p", [Anchor]),
     Purchases = nsm_membership_packages:list_purchases(),
@@ -95,9 +98,7 @@ to_list(undefined)         -> "";
 to_list(L) when is_list(L) -> L;
 to_list(Other)             -> wf:f("~p", [Other]).
 
-convert_time(undefined) ->
-    "";
+convert_time(undefined) -> "";
 convert_time({_MSec, _Sec, _} = Now) ->
     {{Y,MM,D},{H,M,S}} = calendar:now_to_local_time(Now),
-    lists:flatten(
-      io_lib:format("~b-~2..0b-~2..0bT~2..0b:~2..0b:~2..0b", [Y, MM, D, H, M, S])).
+    lists:flatten(io_lib:format("~b-~2..0b-~2..0bT~2..0b:~2..0b:~2..0b", [Y, MM, D, H, M, S])).
