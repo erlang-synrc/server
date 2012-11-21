@@ -67,12 +67,14 @@ body() ->
       #panel{id=matchmaker_slide_area, class="slide-area"},
       #panel{id=tables, body=ui_get_tables()}
     ]},
-    "<div class='matchmaker-table-pager paging'><div class=\"center\">" ++
-    "<ul><li><a href=\"#\" class=\"prevPage\">&lt;</a></li></ul>" ++
-    "<ul class='pageNumbers'></ul>"++
-    "<ul><li><a href=\"#\" class=\"nextPage\">&gt;</a></li>"++
-    "</ul></div></div>",
-    view_table_box()
+    #panel{class="matchmaker-table-pager paging", body=[
+      #panel{class="center", body=[
+        #list{body=[#listitem{body=[#link{class="prevPage", text="<"}]}]},
+        "<ul class='pageNumbers'></ul>",
+        #list{body=[#listitem{body=[#link{class="nextPage", text=">"}]}]}
+      ]}
+    ]},
+    #panel{id=info_table}
   ]}}].
 
 table_name(default) ->
@@ -81,9 +83,6 @@ table_name(default) ->
     Time = site_utils:date_to_text(Date),
     TableName = ?_TS("$username$ table, $date$ ", [{username, UId}, {date, Time}]),
     lists:flatten(TableName).
-
-q_game_type() ->
-    wf:q(game_name).
 
 matchmaker_submenu() ->
     B = #span{style="font-weight:bold"},
@@ -111,9 +110,8 @@ matchmaker_submenu() ->
 	    ]}
     ].
 
-
 el_inside_play() ->
-     Settings = wf:session({q_game_type(), wf:user()}),
+     Settings = wf:session({wf:q(game_name), wf:user()}),
      Game = proplists:get_value(game, Settings),
      LuckyAction =
          case rpc:call(?GAMESRVR_NODE,game_manager,get_lucky_table,[Game]) of
@@ -144,8 +142,8 @@ matchmaker_show_create(Tag) ->
             #tablecell{body=[
                 "<span id='guiderscriteria'><nobr>",
                 case Tag of
-                    create -> #h2{text=q_game_type() ++ " " ++ ?_T("Selected Option")};
-                    _ -> #h2{text=q_game_type() ++ " " ++?_T("Selected Option")}
+                    create -> #h2{text=wf:q(game_name) ++ " " ++ ?_T("Selected Option")};
+                    _ -> #h2{text=wf:q(game_name) ++ " " ++?_T("Selected Option")}
                 end,
                 "</nobr></span>",
                 #br{},
@@ -170,11 +168,11 @@ ui_paginate() ->
     wf:wire("$('.view_table_table').paginateTable({ rowsPerPage: 10, pager: '.matchmaker-table-pager', maxPageNumbers:20 }).find('tr:nth-child(2n)').addClass('color1');").
 
 ui_table_name() ->
-    ThisClass = case wf:state(buttons) of
-        green -> "set-table-name_green";
-        _ -> "set-table-name"
-    end,
-    [
+  ThisClass = case wf:state(buttons) of
+    green -> "set-table-name_green";
+    _ -> "set-table-name"
+  end,
+  [
         "<span id='guiderstab1tablename'>",
         "</span>",
         #h3{text=?_T("Table Name")},
@@ -186,7 +184,7 @@ ui_table_name() ->
             #link{text=?_T("Set"), class=ThisClass, postback={tag, {table_name, textbox}}},
             "</span>"
         ]}
-    ].
+  ].
 
 ui_game_speed() ->
     ThisClass = case wf:state(buttons) of
@@ -212,7 +210,7 @@ ui_game_type() ->
         _ -> "list1"
     end,
     GameType =
-	   case q_game_type() of
+	   case wf:q(game_name) of
 	       "okey" ->
 		   [{?_T("Standard"),	  standard},
 		    {?_T("Even/Odd"),	  evenodd},
@@ -254,7 +252,7 @@ ui_rounds() ->
         _ -> "list1"
     end,
     Rounds =
-	case q_game_type() of
+	case wf:q(game_name) of
 	    "okey"  -> [10,20,40,60,80];
 	    "tavla" -> [3,5,7]
 	end,
@@ -281,7 +279,7 @@ ui_checkboxes(Section) ->
         "<span id='guiderstab1paired'>",
         "</span>",
 %        construct_id(#checkbox{class="chk", postback={tag,{paired_game,true}}, text=?_T("Paired"), value=?_T("Paired")}),
-        case q_game_type() of
+        case wf:q(game_name) of
             okey ->
 %            "okey" ->  % this is how it should be
                 #panel{id=gosterge_placeholder, body=
@@ -354,7 +352,7 @@ matchmaker_show_tables() ->
     [
         #singlerow { cells=[
             #tablecell { 
-                body=#h2{text=q_game_type() ++ " " ++ ?_T("Selected Option")}
+                body=#h2{text=wf:q(game_name) ++ " " ++ ?_T("Selected Option")}
             },
             #tablecell { 
                 body=#link{text=?_T("Game Rules"), class="matchmaker_game_rules", postback=show_game_rules}
@@ -365,10 +363,10 @@ matchmaker_show_tables() ->
 
 
 el_create_game_button() ->
-    {_, _, Sid} = now(), 
+    {_, _, Sid} = now(),
     wf:state(session_id, Sid),
-    Url = lists:concat([?_U("/view-table/"), ?_U(q_game_type()),"/id/",wf:state(session_id)]),
-    Settings = wf:session({q_game_type(),wf:user()}),
+    Url = lists:concat([?_U("/view-table/"), ?_U(wf:q(game_name)),"/id/",wf:state(session_id)]),
+    Settings = wf:session({wf:q(game_name), wf:user()}),
     wf:session(wf:state(session_id), Settings),
     JSPostback = site_utils:postback_to_js_string(?MODULE, create_game),
     %% create only when link is not disabled
@@ -397,8 +395,8 @@ m_b64_e(<<$=, Rest/binary>>, Acc) -> m_b64_e(Rest, Acc);
 m_b64_e(<<H,  Rest/binary>>, Acc) -> m_b64_e(Rest, <<Acc/binary, H>>).
 
 ui_get_tables() ->
-    Tables = get_tables(),
-    show_table(Tables).
+  Tables = get_tables(),
+  show_table(Tables).
 
 qlc_to_game_table(TN2,I,R,G,S,M,O,A,GP) ->
    #game_table{name = TN2, id = I, rounds = R, age_limit = A, game_type = G, 
@@ -495,9 +493,9 @@ get_single_tables(Setting,UId,GameFSM,Convert) ->
 
 
 get_tables(Convert) -> 
-    Setting = wf:session({q_game_type(),wf:user()}),
+    Setting = wf:session({wf:q(game_name),wf:user()}),
     UId = wf:user(),
-    retrieve_tables(Setting,UId,q_game_type(),Convert).
+    retrieve_tables(Setting, UId, wf:q(game_name), Convert).
 
 filter_tables(QLC,UId,GameFSM,Setting,Convert) ->
 
@@ -585,7 +583,7 @@ show_table(Tables) ->
                 begin
                     {info, {_, TId}} = InfoPostback,
                     {ok, WholeTable} = view_table:get_table(TId),
-                    MaxUsers = case q_game_type() of 
+                    MaxUsers = case wf:q(game_name) of 
                         "tavla" -> case WholeTable#game_table.tournament_type of
                             paired -> 10;
                             paired_lobby -> 10;
@@ -593,7 +591,7 @@ show_table(Tables) ->
                         end;
                         "okey" -> 4 
                     end,
-                    RealUsers = case q_game_type() of 
+                    RealUsers = case wf:q(game_name) of 
                         "tavla" -> case WholeTable#game_table.tournament_type of
                             paired -> WholeTable#game_table.users;
                             _ -> Users
@@ -739,34 +737,17 @@ check_depended({game_mode, _}) ->
 check_depended(_) -> ok.
 
 settings_box() -> settings_box(create).
-
 settings_box(_Tag) ->
     ThisClass = case wf:state(buttons) of
         green -> "slide-up_green";
         _ -> "slide-up"
     end,
-    GameSettings = #panel{body=[
-        case wf:state(buttons) =:= green of false -> ui_table_name(); _ -> "" end,
-        ui_game_speed(),
-        #panel{class="two-cols",
-            body=[#panel{class=left,body=ui_game_type()},
-                #panel{id=ui_rounds, class="right", body=ui_rounds()}]},
-        ui_checkboxes(),
-        ui_double_game(),
-        ui_add_checkboxes(),
-        add_game_settings_guiders()
+    [#tabs{tabs = [
+      {?_T("Game Settings"), tab_game_setting()},
+      {?_T("Group Settings"), tab_group_setting()},
+      {?_T("Friend Settings"), tab_friend_setting()},
+      {?_T("Personal Settings"), tab_personal_setting()}
     ]},
-    %% TODO: use real tabs
-    GroupSettings = tab_group_setting(),
-    FriendSettings = tab_friend_setting(),
-    PersonalSettings = tab_personal_setting(),
-    [#tabs{
-	 tabs = [
-	  {?_T("Game Settings"), GameSettings},
-	  {?_T("Group Settings"), GroupSettings},
-	  {?_T("Friend Settings"), FriendSettings},
-	  {?_T("Personal Settings"), PersonalSettings}
-	 ]},
      "<span id='guiderstab1hide' style='float: right; margin-top:-50px;'>",
      "</span>",
      case wf:state(buttons) of
@@ -775,8 +756,22 @@ settings_box(_Tag) ->
      end
     ].
 
-view_table_box() ->
-    [#panel{id=info_table}].
+tab_game_setting()->
+  #panel{body=[
+    case wf:state(buttons) =:= green of
+      false -> ui_table_name();
+      _ -> "" 
+    end,
+    ui_game_speed(),
+    #panel{class="two-cols", body=[
+      #panel{class=left,body=ui_game_type()},
+      #panel{id=ui_rounds, class="right", body=ui_rounds()}
+    ]},
+    ui_checkboxes(),
+    ui_double_game(),
+    ui_add_checkboxes(),
+    add_game_settings_guiders()
+  ]}.
 
 tab_group_setting() ->
     ThisClass = case wf:state(buttons) of
@@ -870,7 +865,7 @@ js_options_filter(OptionsPanelId) ->
     js_options_filter(wf:to_list(OptionsPanelId)).
 
 ui_update_buttons() ->
-    Settings = wf:session({q_game_type(),wf:user()}),
+    Settings = wf:session({wf:q(game_name),wf:user()}),
     ui_update_buttons(Settings).
 
 ui_update_buttons(Settings) ->
@@ -943,46 +938,44 @@ is_checkbox(Key) ->
     lists:member(Key, [paired_game, gosterge_finish, deny_robots, private, slang, deny_observers]).
 
 is_option_present(Key, Value) ->
-    Settings = wf:session({q_game_type(),wf:user()}),
+    Settings = wf:session({wf:q(game_name), wf:user()}),
     proplists:is_defined(Key, Settings) andalso Value == proplists:get_value(Key, Settings).
 
 
-comet_update() ->
-    comet_update(empty).
+comet_update() -> comet_update(empty).
 comet_update(State) ->
   case wf:user() of
     undefined -> webutils:redirect_to_ssl("login");
     _UId ->
       timer:sleep(?TABLE_UPDATE_QUANTUM),
 
-        TimeLeft = wf:session(time_left_to_update),
-        if 
-            TimeLeft == undefined ->
-                NewState = State,
-                wf:session(time_left_to_update, ?TABLE_UPDATE_INTERVAL);
-            TimeLeft =< 0 ->
-                garbage_collect(self()),
-	            Tables = get_tables(),
-	            %% used to reduce traffic and send updates only when they needed
-	            NewState = erlang:md5(term_to_binary(Tables)),
-	            case NewState of
-		        State ->
-		            nothing_changed;
-		        _ ->
-%                    [ garbage_collect(Pid) || Pid <- processes() ],
-		            wf:update(tables, show_table(Tables)),
-		            ui_paginate(),
-		            wf:flush()
-	            end,
-	            user_counter:wf_update_me(),
-                wf:session(time_left_to_update, ?TABLE_UPDATE_INTERVAL);
-            true ->
-                NewState = State,  
-                wf:session(time_left_to_update, TimeLeft - ?TABLE_UPDATE_QUANTUM)
-        end,
-
-	    comet_update(NewState)
-    end.
+      TimeLeft = wf:session(time_left_to_update),
+      if
+        TimeLeft == undefined ->
+          NewState = State,
+          wf:session(time_left_to_update, ?TABLE_UPDATE_INTERVAL);
+        TimeLeft =< 0 ->
+          garbage_collect(self()),
+          Tables = get_tables(),
+          %% used to reduce traffic and send updates only when they needed
+          NewState = erlang:md5(term_to_binary(Tables)),
+          case NewState of
+            State -> nothing_changed;
+            _ ->
+              % garbage_collect(Pid) || Pid <- processes() ],
+              ?INFO("Comet update ~p~n", [Tables]),
+              wf:update(tables, show_table(Tables)),
+              ui_paginate(),
+              wf:flush()
+          end,
+          user_counter:wf_update_me(),
+          wf:session(time_left_to_update, ?TABLE_UPDATE_INTERVAL);
+        true ->
+          NewState = State,
+          wf:session(time_left_to_update, TimeLeft - ?TABLE_UPDATE_QUANTUM)
+      end,
+      comet_update(NewState)
+  end.
 
 %% We should leave that in case when we want that number of options can be selected in same time.
 can_be_multiple(age)   -> false;
@@ -999,11 +992,11 @@ event(Event) ->
   end.
 
 ac_show_main_container() ->
-    wf:wire("objs('matchmaker_main_container').slideDown('fast');"),
-    wf:wire("objs('matchmaker_slide_area').hide().slideDown('slow');").
+    wf:wire("objs('matchmaker_main_container').show();"),
+    wf:wire("objs('matchmaker_slide_area').show();").
 
 ac_hide_main_container() ->
-    #event{type=click, actions="objs('matchmaker_main_container').slideUp('fast');"}.
+    #event{type=click, actions="objs('matchmaker_main_container').hide();"}.
 
 u_event({show,create_game}) ->
     u_event(clear_selection),
@@ -1053,15 +1046,14 @@ u_event({tag, {_Key, _Value} = Setting}) ->
     check_depended(Setting),
     process_setting(Setting);
 
-
 u_event(create_game) ->
     UId = wf:user(),
-    Settings = wf:session({q_game_type(),wf:user()}),
-    wf:session({q_game_type(),UId},Settings),
-    URL = ?_U(lists:concat(["/matchmaker/", q_game_type()])),
+    Settings = wf:session({wf:q(game_name), wf:user()}),
+    wf:session({wf:q(game_name), UId},Settings),
+    URL = ?_U(lists:concat(["/matchmaker/", wf:q(game_name)])),
     wf:redirect(URL),
 
-    Desc = lists:flatten( URL ++ "|" ++ UId ++ "|" ++ proplists:get_value(table_name,Settings) ++ "|" ++ q_game_type() ++ "|" ++
+    Desc = lists:flatten( URL ++ "|" ++ UId ++ "|" ++ proplists:get_value(table_name,Settings) ++ "|" ++ wf:q(game_name) ++ "|" ++
         integer_to_list(proplists:get_value(rounds,Settings)) ++ "|" ++ atom_to_list(proplists:get_value(speed,Settings)) ++ "|" ++
         atom_to_list(proplists:get_value(game_mode,Settings))),
     webutils:post_user_system_message(Desc);
@@ -1093,14 +1085,14 @@ u_event({tab_selected, ID}) ->
     show_tab_guiders(ID);
 
 u_event(clear_selection) ->
-    OldSettings = wf:session({q_game_type(),wf:user()}),
+    OldSettings = wf:session({wf:q(game_name), wf:user()}),
     [
         u_event({tag, lists:nth(N, OldSettings)})
         || N <- lists:seq(3, length(OldSettings))
     ];
 
 u_event(show_game_rules) ->
-    case q_game_type() of
+    case wf:q(game_name) of
         "okey" ->
             wf:update(rules_container, matchmaker_rules:okey_rules());
         "tavla" ->
@@ -1125,9 +1117,8 @@ u_event(Other) ->
     ?INFO("u_event other: ~p",[Other]),
     webutils:event(Other).
 
-
 process_setting({Key, Value} = Setting) ->
-    OldSettings = wf:session({q_game_type(),wf:user()}),
+    OldSettings = wf:session({wf:q(game_name), wf:user()}),
 
     OldValues =
 	case proplists:get_value(Key, OldSettings) of
@@ -1164,12 +1155,10 @@ process_setting({Key, Value} = Setting) ->
 		lists:keystore(Key, 1, OldSettings, {Key, NewValue})
 	end,
 
-    wf:session({q_game_type(),wf:user()}, NewSettings),
+    wf:session({wf:q(game_name), wf:user()}, NewSettings),
     check_required(NewSettings),
-    io:fwrite("Update setting: ~p~n~n", [NewSettings]),
+    ?INFO("Update setting: ~p~n~n", [NewSettings]),
     wf:session(time_left_to_update, ?TABLE_UPDATE_QUANTUM),
-    %wf:update(tables, ui_get_tables()),
-    %ui_paginate(),
     ok.
 
 % text from atoms. I want in to be here, though it is not used, for not to get these things scattered all over the code
