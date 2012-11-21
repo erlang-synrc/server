@@ -115,7 +115,7 @@ get_requirements(GameFSM,M) -> (game_monitor_module(GameFSM, M)):get_requirement
 -spec create_game_monitor(string(), pid(), [any()], [pid()], #state{}) -> {{'ok', pid()} | {'error', any()}, #state{}}.
 create_game_monitor(Topic, {lobby,GameFSM}, Params, Players, State) ->
     GameMode = proplists:get_value(game_mode, Params, standard),
-    ?INFO("Create Root Game Process (Game Monitor): ~p Mode: ~p",[GameFSM, GameMode]),
+    ?INFO("Create Root Game Process (Game Monitor): ~p Mode: ~p Params: ~p",[GameFSM, GameMode,Params]),
     RelayInit = (game_monitor_module(GameFSM,GameMode)):start(Topic, {lobby,GameFSM}, Params, Players, self()),
     case RelayInit of 
         {ok, Srv} ->

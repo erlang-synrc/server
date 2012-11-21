@@ -25,6 +25,8 @@
                      location_limit = "",
                      paid_only,
                      deny_robots = false :: boolean() | '_',
+                     slang,
+                     deny_observers,
                      gosterge_finish = false :: boolean() | '_',
                      double_points = 1 :: integer(),
                      game_state,
