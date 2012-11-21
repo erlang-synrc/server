@@ -25,7 +25,7 @@ get_game_points(GameType, UserId) -> {ok, [{game_points,crypto:rand_uniform(1,10
                                            {finished_with_okey,crypto:rand_uniform(1,1000)},
                                            {finished_with_8_tashes,crypto:rand_uniform(1,1000)}]}.
 
-get_player_stats(UserId) when is_binary(UserId) -> get_skill(binary_to_list(UserId));
+get_player_stats(UserId) when is_binary(UserId) -> get_player_stats(binary_to_list(UserId));
 get_player_stats(UserId) -> {ok, [{total_games,crypto:rand_uniform(1,10)},
                                   {total_wins,crypto:rand_uniform(1,10)},
                                   {total_loses,crypto:rand_uniform(1,10)},
