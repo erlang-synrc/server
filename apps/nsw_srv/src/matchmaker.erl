@@ -358,7 +358,7 @@ matchmaker_show_tables() ->
                  },
                  "<span id='guidersdetailedsettings'>",
 		         #link{body=?_T("Detailed Settings"), postback={show, join_game_detailed},
-			       actions=ac_hide_main_container(), class="cancel", style="position:relative; bottom:-30px;"},
+			       actions=ac_hide_main_container(), class="cancel", style=""},
                  "</span>"
 		       ]}
 		  ],
