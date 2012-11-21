@@ -119,7 +119,7 @@ get_player_stats(PlayerId) ->
                        totalLose = 0,
                        totalDisconnects = 0,
                        overalSuccessRatio = 0,
-                       averagePlayDuration = 0,
+                       averagePlayDuration = 0
                       % totalWins = proplists:get_value(total_wins, PlayerStats),
                       % totalLose = proplists:get_value(total_loses, PlayerStats),
                       % totalDisconnects = proplists:get_value(total_disconnects, PlayerStats),
