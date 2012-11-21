@@ -59,6 +59,8 @@ body() ->
   wf:state(users_subscribe, nsm_users:list_subscr(UId)),
   ui_paginate(),
   wf:comet(fun() -> comet_update() end),
+
+
   [#section{class="create-area", body=#section{class="create-block", body=[
     matchmaker_submenu(),
     #panel{id=rules_container, body=[]},
@@ -85,6 +87,8 @@ table_name(default) ->
     lists:flatten(TableName).
 
 matchmaker_submenu() ->
+
+
     B = #span{style="font-weight:bold"},
     [
         #list{class="steps-list", body=[
@@ -165,6 +169,11 @@ matchmaker_show_create(Tag) ->
     ]}.
 
 ui_paginate() ->
+
+    CD10 = is_option_present(game_mode, countdown),
+    ?INFO("CD10: ~p",[CD10] ),
+    case CD10 of true -> wf:wire(gosterge_placeholder, #show{}); _ -> wf:wire(gosterge_placeholder, #hide{}) end,
+
     wf:wire("$('.view_table_table').paginateTable({ rowsPerPage: 10, pager: '.matchmaker-table-pager', maxPageNumbers:20 }).find('tr:nth-child(2n)').addClass('color1');").
 
 ui_table_name() ->
@@ -274,14 +283,16 @@ ui_checkboxes() ->
     ui_checkboxes(tabs).
 
 ui_checkboxes(Section) ->
+
+    Settings = wf:session({wf:q(game_name), wf:user()}),
+    Countdown = proplists:get_value(game_mode, Settings, undefined),
     Checkboxes = [
         "<span id='guidersitem4'>",
         "<span id='guiderstab1paired'>",
         "</span>",
 %        construct_id(#checkbox{class="chk", postback={tag,{paired_game,true}}, text=?_T("Paired"), value=?_T("Paired")}),
         case wf:q(game_name) of
-            okey ->
-%            "okey" ->  % this is how it should be
+            "okey" ->  % this is how it should be
                 #panel{id=gosterge_placeholder, body=
                     construct_id(#checkbox{class="chk", postback={tag,{gosterge_finish,true}},
                         text=?_T("Gosterge finish"), value=?_T("Gosterge finish")})
@@ -305,7 +316,9 @@ ui_add_checkboxes() ->
 		  construct_id(#checkbox{class="chk", postback={tag,{slang,true}},
 					 value=?_T("Slang"), text=?_T("Slang is accepted")}),
 		  construct_id(#checkbox{class="chk", postback={tag,{deny_observers,true}},
-					 value=?_T("No observers"), text=?_T("I don't accept observers")})
+					 value=?_T("No observers"), text=?_T("I don't accept observers")}),
+		  construct_id(#checkbox{class="chk", postback={tag,{paid,true}},
+					 value=?_T("Paid"), text=?_T("Only paid members")})
 		 ],
     #panel{class="form1", body=[ 
         "<span id='guiderstab1additional'>",
@@ -345,7 +358,7 @@ matchmaker_show_tables() ->
                  },
                  "<span id='guidersdetailedsettings'>",
 		         #link{body=?_T("Detailed Settings"), postback={show, join_game_detailed},
-			       actions=ac_hide_main_container(), class="cancel", style="position:relative; bottom:-30px;"},
+			       actions=ac_hide_main_container(), class="cancel", style=""},
                  "</span>"
 		       ]}
 		  ],
@@ -713,25 +726,14 @@ check_required(Setting) ->
 
 %% don't put this function to process_setting/1, it can cause cycling
 check_depended({game_mode, countdown}) ->
-    %% disable rounds
+    ?INFO("CD10 pressed"),
     wf:wire(ui_rounds, #hide{}),
     wf:wire("objs('.for_rounds').remove()"), %% criteria_box
     wf:wire("objs('.ui_rounds_btn').parent('li').removeClass('active');"),
-
-    %% enable gosterge_finish
-    wf:wire(gosterge_placeholder, #show{});
+    wf:wire(gosterge_placeholder, #show{}); 
 
 check_depended({game_mode, _}) ->
-    %% enable rounds
     wf:wire(ui_rounds, #show{}),
-
-    %% disable gosterge
-    case is_option_present(gosterge_finish, true) of
-        true ->
-            process_setting({gosterge_finish, true}); %% toggle setting
-        false ->
-            ok
-    end,
     wf:wire(gosterge_placeholder, #hide{});
 
 check_depended(_) -> ok.
@@ -935,7 +937,7 @@ ui_button_deselect({Key, Value}) ->
 
 
 is_checkbox(Key) ->
-    lists:member(Key, [paired_game, gosterge_finish, deny_robots, private, slang, deny_observers]).
+    lists:member(Key, [paired_game, deny_robots, private, slang, deny_observers]).
 
 is_option_present(Key, Value) ->
     Settings = wf:session({wf:q(game_name), wf:user()}),
@@ -947,6 +949,8 @@ comet_update(State) ->
   case wf:user() of
     undefined -> webutils:redirect_to_ssl("login");
     _UId ->
+
+
       timer:sleep(?TABLE_UPDATE_QUANTUM),
 
       TimeLeft = wf:session(time_left_to_update),

@@ -154,16 +154,20 @@ content() ->
 
             #label{style="position:absolute; left:-28px; top:145px; width:150px; text-align:right;", text="Oyun Türü:"},
             #dropdown {id=tour_game, style="position:absolute; left:126px; top:138px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
-                        #option { text="OKEY" },
-                        #option { text="—" }
+                        #option { text="OKEY" }
+%                        #option { text="—" }
             ]},
             #label{style="position:absolute; left:253px; top:145px; width:100px; text-align:right;", text="Oyun Tipi:"},
             #dropdown {id=tour_esli, style="position:absolute; left:357px; top:138px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
-                        #option { text="EŞLİ" },
-                        #option { text="—" }
+                        #option { text=?_T("Standard"), value=standard },
+                        #option { text=?_T("Even/Odd"), value=evenodd},
+                        #option { text=?_T("Color"), value=color },
+                        #option { text=?_U("Countdown from 10"), value=countdown }
+%                        #option { text="—" }
             ]},
             #label{style="position:absolute; left:506px; top:145px; width:100px; text-align:right;", text="Oyun Sayısı:"},
             #dropdown {postback=prize_fund_and_tours_and_quota_changed, id=tour_players, style="position:absolute; left:610px; top:138px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
+                        #option { text="2048" },
                         #option { text="1024" },
                         #option { text="512" },
                         #option { text="256" },
@@ -182,8 +186,8 @@ content() ->
 
             #label{style="position:absolute; left:-9px; top:197px; width:150px; text-align:right;", text="Turnuva Türü:"},
             #dropdown {id=tour_type, style="position:absolute; left:146px; top:190px; width:90px; height:32px; font-size:16px; padding-top:2px;", options=[
-                        #option { text="Elemeli" },
-                        #option { text="—" }
+                        #option { text="Elemeli" }
+%                        #option { text="—" }
             ]},
 
             #label{style="position:absolute; left:252px; top:197px; width:100px; text-align:right;", text=?_T("Game Speed")++":"},
@@ -448,9 +452,9 @@ event(browse_pressed) ->
 event(create_pressed) ->
     TourName = wf:q(tournament_name),
     TourDesc = wf:q(tournament_desc),
-    TourGame = case wf:q(tour_game) of
-        "OKEY" -> game_okey;
-        "TAVLA" -> game_tavla
+    {TourGame,TourGameType} = case wf:q(tour_game) of
+        "OKEY" ->  {game_okey, case wf:q(tour_esli) of A when is_list(A) -> list_to_atom(A); _ -> standard end};
+        "TAVLA" -> {game_tavla, standard}
     end,
     TourType = case wf:q(tour_type) of
         "Elemeli" -> elimination;
@@ -490,12 +494,12 @@ event(create_pressed) ->
                 false ->
                     wf:replace(create_button, #panel{class="view_media_other_attachment", style="float:none", body=#panel{class=loading_spiner}}),
                     wf:replace(create_button_top, #panel{class="view_media_other_attachment", style="float:none", body=#panel{class=loading_spiner}}),
-                    wf:wire(#event{postback={start_tournament, TourName, TourDesc, TourDate, TourTime, TourPlayers, TourQuota, Prize1, Prize2, Prize3, TourType, TourGame, Tours, TourSpeed}})
+                    wf:wire(#event{postback={start_tournament, TourName, TourDesc, TourDate, TourTime, TourPlayers, TourQuota, Prize1, Prize2, Prize3, TourType, TourGame, TourGameType, Tours, TourSpeed}})
             end
     end;
 
-event({start_tournament, TourName, TourDesc, TourDate, TourTime, TourPlayers, TourQuota, Prize1, Prize2, Prize3, TourType, TourGame, Tours, TourSpeed}) ->
-    TID = nsm_tournaments:create(wf:user(), TourName, TourDesc, TourDate, TourTime, TourPlayers, TourQuota, [Prize1, Prize2, Prize3], TourType, TourGame, Tours, TourSpeed),
+event({start_tournament, TourName, TourDesc, TourDate, TourTime, TourPlayers, TourQuota, Prize1, Prize2, Prize3, TourType, TourGame, TourGameType, Tours, TourSpeed}) ->
+    TID = nsm_tournaments:create(wf:user(), TourName, TourDesc, TourDate, TourTime, TourPlayers, TourQuota, [Prize1, Prize2, Prize3], TourType, TourGame, TourGameType, Tours, TourSpeed),
     AllowedUsers = ["doxtop","demo1","maxim","sustel","ahmettez",
                     "kunthar","alice","kate","serg","imagia","willbe"],
     [case nsm_db:get(user,User) of

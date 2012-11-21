@@ -210,6 +210,8 @@ handle_call({create_table, User, S}, _From, State) ->
                                 gosterge_finish  = get_setting(gosterge_finish, S, false),
                                 double_points    = DoublePoints,
                                 paid_only        = get_setting(paid, S),
+                                slang            = get_setting(slang, S),
+                                deny_observers   = get_setting(deny_observers, S),
                                 pointing_rules   = PR,
                                 pointing_rules_ex = PREx
                                },
@@ -642,6 +644,8 @@ game_table_to_settings(#game_table{name           = Name,
                                   deny_robots    = DenyRobots,
                                   gosterge_finish= GostergeFinish,
                                   paid_only      = Paid,
+                                  slang          = Slang,
+                                  deny_observers = DenyObservers,
                                   double_points  = DoublePoints,
                                   pointing_rules = GeneralPointingRule,
                                   pointing_rules_ex = AdditionalPointingRules
@@ -658,7 +662,8 @@ game_table_to_settings(#game_table{name           = Name,
          {owner, Owner},
          {users, Users},
          {users_options, UsersOptions},
-
+         {slang,Slang},
+         {deny_observers,DenyObservers},
          {friends_only, FriendsOnly},
          split_to_tuple(user, ForUsers),
          {private, Private},
@@ -671,7 +676,7 @@ game_table_to_settings(#game_table{name           = Name,
          {double_points, DoublePoints},
          {pointing_rules, GeneralPointingRule},
          {pointing_rules_ex, AdditionalPointingRules},
-         {paid, Paid}],
+         {paid_only, Paid}],
     lists:flatten(Setting).
 
 -spec save_game_table_to_settings(record(save_game_table)) -> proplist().

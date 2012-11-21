@@ -186,7 +186,7 @@ calc_chanak(GameMode, WhoHasGosterge, PlayersAchs, RefillingPoints, PointingRule
     if GameMode == ?MODE_EVENODD;
        GameMode == ?MODE_COLOR ->
            GostergePoints = if WhoHasGosterge == undefined ->
-                                   proplists:get_value(?ACH_GOSTERGE_SHOWN, PointingRules);
+                                   lists:nth(?ACH_GOSTERGE_SHOWN, PointingRules);
                                true -> 0
                             end,
            case find_chanak_winners(PlayersAchs) of

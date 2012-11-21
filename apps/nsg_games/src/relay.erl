@@ -96,6 +96,10 @@ init([Topic, {lobby, GameFSM}, Params0, PlayerIds, Manager]) ->
     GameMode = proplists:get_value(game_mode, Settings, standard),
     GameSpeed = proplists:get_value(speed, Settings, normal),
     DPR = proplists:get_value(default_pr, Settings, no),
+    Slang = proplists:get_value(slang, Settings, false),
+    GostergeFinish = proplists:get_value(gosterge_finish, Settings, false),
+    DenyObservers = proplists:get_value(deny_observers, Settings, false),
+    Paid = proplists:get_value(paid_only, Settings, false),
     Owner = proplists:get_value(owner, Settings, "maxim"), %% FIXME
   
     {Params,P,PE} = case DPR of
@@ -121,6 +125,10 @@ init([Topic, {lobby, GameFSM}, Params0, PlayerIds, Manager]) ->
                            owner = Owner,
                            creator = Owner,
                            rounds = Rounds,
+                           slang = Slang,
+                           paid_only = Paid,
+                           gosterge_finish = GostergeFinish,
+                           deny_observers = DenyObservers,
                            pointing_rules   = P,
                            pointing_rules_ex = PE,
                            users = [ case User of robot -> robot; _ -> erlang:binary_to_list(User) end || User <- PlayerIds],

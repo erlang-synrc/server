@@ -9,4 +9,4 @@ for f in `ls -d apps/*/{src,include}`; do
     total=`expr $total + ${appsize[0]}`
 done
 
-echo ${total}K
+echo "Erlang sources total ${total}K"

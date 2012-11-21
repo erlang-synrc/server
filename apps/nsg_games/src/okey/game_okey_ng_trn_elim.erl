@@ -152,12 +152,13 @@ init([GameId, Params, _Manager]) ->
     QuotaPerRound = get_param(quota_per_round, Params),
     Tours = get_param(tours, Params),
     Speed = get_param(speed, Params),
+    GameType = get_param(game_mode, Params),
     DemoMode = get_option(demo_mode, Params, false),
     TrnId = get_option(trn_id, Params, undefined),
 
     RegistrantsNum = length(Registrants),
     {ok, TurnsPlan} = get_plan(QuotaPerRound, RegistrantsNum, Tours),
-    TableParams = table_parameters(?MODULE, self(), Speed),
+    TableParams = table_parameters(?MODULE, self(), Speed, GameType),
     BotsParams = bots_parameters(),
 
     Players = setup_players(Registrants),
@@ -954,7 +955,7 @@ spawn_table(GameId, TableId, Params) -> ?TAB_MOD:start(GameId, TableId, Params).
 send_to_table(TabPid, Message) -> ?TAB_MOD:parent_message(TabPid, Message).
 
 %% table_parameters(ParentMod, ParentPid, Speed) -> Proplist
-table_parameters(ParentMod, ParentPid, Speed) ->
+table_parameters(ParentMod, ParentPid, Speed, GameType) ->
     [
      {parent, {ParentMod, ParentPid}},
      {seats_num, 4},
@@ -967,7 +968,7 @@ table_parameters(ParentMod, ParentPid, Speed) ->
 %%     {round_timeout, get_round_timeout(Speed)},
      {round_timeout, 20*1000},
      {speed, Speed},
-     {game_type, standard},
+     {game_type, GameType},
      {rounds, ?ROUNDS_PER_TOUR},
      {reveal_confirmation, true},
      {next_series_confirmation, false},

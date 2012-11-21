@@ -3,7 +3,7 @@
 -include("user.hrl").
 -include("tournaments.hrl").
 
--export([create/2,create/12,     % create the tournament
+-export([create/2,create/13,     % create the tournament
          destroy/1,              % purge tournament with all team placeholders and played games
          join/2,                 % put users in waiting queue
          waiting_player/1,       % dequeue first waiting_player
@@ -23,8 +23,8 @@ create_team(Name) ->
     ok = nsm_db:put(Team = #team{id=TID,name=Name}),
     TID.
 
-create(UID, Name) -> create(UID, Name, "", date(), time(), 100, 100, undefined, pointing, game_okey, 8, slow).
-create(UID, Name, Desc, Date, Time, Players, Quota, Awards, Type, Game, Tours, Speed) ->
+create(UID, Name) -> create(UID, Name, "", date(), time(), 100, 100, undefined, pointing, game_okey, standard, 8, slow).
+create(UID, Name, Desc, Date, Time, Players, Quota, Awards, Type, Game, Mode, Tours, Speed) ->
     TID = nsm_db:next_id("tournament",1),
     CTime = erlang:now(),
     ok = nsm_db:put(#tournament{name = Name,
@@ -37,6 +37,7 @@ create(UID, Name, Desc, Date, Time, Players, Quota, Awards, Type, Game, Tours, S
                                    creator = UID,
                                    created = CTime,
                                    game_type = Game,
+                                   game_mode = Mode,
                                    type = Type,
                                    tours = Tours,
                                    speed = Speed,

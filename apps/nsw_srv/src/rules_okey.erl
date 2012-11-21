@@ -86,7 +86,7 @@ tr() ->
             #panel{style="top:150px; left:400px; font-size:28px; color:#FC6404;",body="OYUN SETİ"},
             #panel{style="top:190px; left:355px; font-size:18px;",body="Okey oyunu 2-4 kişi ile oynanır."},
             #panel{style="top:220px; left:400px; font-size:18px;",body="Herbir set <span style='color:#ff5e21'>1’ den 13’ e kadar</span> numaralı olmak üzere;"},
-            #panel{style="top:250px; left:400px; font-size:18px;",body="<span style='color:#fe0002'>kırmızı</span>, <span style='color:#000'>siyah</span>, <span style='color:#00b1eb'>mavi</span> ve <span style='color:#2eb77f'>sarı</span> renklerde 4 renk seti vardır."},
+            #panel{style="top:250px; left:400px; font-size:18px;",body="<span style='color:#fe0002;'>kırmızı</span>, <span style='color:#000'>siyah</span>, <span style='color:#00b1eb'>mavi</span> ve <span style='color:#c9c101'>sarı</span> renklerde 4 renk seti vardır."},
             #panel{style="top:280px; left:445px; font-size:18px;",body="2 tane “Sahte Okey” ile birlikte toplam 106 taş vardır."}
         ]},
         #panel{class="info-page-content-panel", body=[
@@ -109,16 +109,17 @@ tr() ->
         ]},
         #panel{class="info-page-content-panel", body=[
             #panel{style="left:390px; top:1020px; font-size:28px; color:#FC6404;",body="AÇAR TAŞLAR"},
-            #panel{style="left:370px; top:1060px; font-size:17px;",body="aynı renkten sıralı hale gelmesi, (örn. Yeşil 1, 2, 3, 4, sarı 7, 8, 9, <br>kırmızı 10, 11, 12 gibi) 1 sayılı taş seride 13 ten sonrada kullanılabilir <br><span style='margin-left:-5px;'>(</span>11, 12, 13, 1 gibi)"},
-            #panel{style="left:370px; top:1125px; font-size:17px;",body="aynı sayıların farklı renklerden bir seri uluşturması <br><span style='margin-left:-5px;'>(</span>sarı- yeşil-kırmızı 2'li gibi)"},
-            #panel{style="left:370px; top:1170px; font-size:17px;",body="eldeki taşların tamamının (14 tane) açarlı gruplar oluşturması <br>oyun bitme şartıdır."},
-            #panel{style="left:380px; top:1216px; font-size:17px;",body="Bu gruplar 4 - 4  - 3 - 3 lü olabileceği gibi 5 - 3 - 3 - 3 lü de veya 14 taşı açar hale gelen 5 - 5 - 4 te olabilir. Seri taşlar arasında boşluk olmamalıdır."},
+            #panel{style="left:370px; top:1060px; font-size:17px;",body="Aynı renkten sıralı hale gelmesi, <span style='font-size:12px;'>(örn. Yeşil 1, 2, 3, 4, <span style='color:#c9c101;'>sarı</span> 7, 8, 9, <span style='color:#fe0002;'>kırmızı</span> 10, 11, 12 <span style='color:#000;'>gibi</span>)</span> "},
+            #panel{style="left:370px; top:1085px; font-size:17px;",body="1 sayılı taş seride 13 ten sonrada kullanılabilir <span style='font-size:12px'>(11, 12, 13, 1 <span style='color:#000;'>gibi</span>)</span>"},
+            #panel{style="left:370px; top:1110px; font-size:17px;",body="Aynı sayıların farklı renklerden bir seri uluşturması<span style='font-size:12px;'>(<span style='color:#c9c101;'>sarı</span>-yeşil-<span style='color:#fe0002;'>kırmızı</span> 2'li <span style='color:#000;'>gibi</span>)</span>"},
+            #panel{style="left:370px; top:1150px; font-size:17px;",body="Eldeki taşların tamamının (14 tane) açarlı gruplar oluşturması <br>oyun bitme şartıdır."},
+            #panel{style="left:380px; top:1206px; font-size:17px;",body="Bu gruplar 4 - 4  - 3 - 3 lü olabileceği gibi 5 - 3 - 3 - 3 lü de veya 14 taşı açar hale gelen 5 - 5 - 4 te olabilir. Seri taşlar arasında boşluk olmamalıdır."},
             #panel{style="left:393px; top:1262px; font-size:17px;",body="Eldeki taşların çekilen ile beraber 14 tanesinin açar konuma gelmesi <br>ile oyuncu 15. taşını (ıskarta) masa ortasındaki taş çekme yerine <br>sürükleyip bırakarak oyunu bitirir."}
         ]},
         #panel{class="info-page-content-panel", body=[
             #panel{style="left:200px; top:1380px; font-size:28px; color:#FC6404;",body="ÇİFT AÇMAK"},
             #panel{style="left:80px; top:1420px; font-size:18px;",body="Aynı renk ve sayıdan olmak üzere 7 çift taş da açar seri oluşturur."},
-            #panel{style="left:130px; top:1445px; font-size:18px;",body="(sahte okey çifti de dahildir). Buna “ÇİFT AÇMAK” denir."},
+            #panel{style="left:130px; top:1445px; font-size:18px;",body="(sahte okey çifti de dahildir). Buna <span style='color:#FC6404;'>“ÇİFT AÇMAK”</span> denir."},
             #panel{style="left:50px; top:1470px; font-size:18px;",body="Çift olan taşlar yanyana dururken farklı çiftleri en az bir boşluk bırakarak dizmek gerekir."},
             #panel{style="left:150px; top:1495px; font-size:18px;",body="15. taş çekilen taşların üzerine konarak oyun bitti bilgisi verilir."}
         ]},
@@ -233,7 +234,7 @@ tr() ->
         #panel{class="info-page-content-panel", body=[
             #panel{style="left:244px; top:4262px; font-size:22px; color:#fff;",body="Oyun ve puanlama seçenekleri masa açılışında set edilir. "}
         ]},
-        #panel{class="info-page-content-panel", style="height:100px;", body=[
+        #panel{class="info-page-content-panel", style="height:640px;", body=[
             #panel{style="left:394px; top:4400px; font-size:28px; color:#FC6404;",body="Puanlama Tablosu"},
             #panel{style="top:4450px; font-size:18px;",body=[matchmaker_rules:okey_puan_table_tr()]}
         ]}
