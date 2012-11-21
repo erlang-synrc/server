@@ -114,7 +114,7 @@ get_player_stats(PlayerId) ->
                        level = Skill,
                        score = proplists:get_value(game_points, GameStats),
                        numberOkey = proplists:get_value(finished_with_okey, GameStats),
-                       number8Tashes = proplists:get_value(finished_with_8_tashes, GameStats) %,
+                       number8Tashes = proplists:get_value(finished_with_8_tashes, GameStats),
                        totalWins = 0,
                        totalLose = 0,
                        totalDisconnects = 0,
