@@ -20,7 +20,7 @@ init([]) ->
     Shutdown = 2000,
 
     GameManager = {game_manager, {game_manager, start, []}, Restart, Shutdown, worker, [game_manager]},
-    GameStats = {game_stats, {game_stats, start_link, []}, Restart, Shutdown, worker, [game_stats]},
+%    GameStats = {game_stats, {game_stats, start_link, []}, Restart, Shutdown, worker, [game_stats]},
 
-    {ok, {SupFlags, [GameManager, GameStats]}}.
+    {ok, {SupFlags, [GameManager]}}.
 

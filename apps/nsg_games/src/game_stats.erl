@@ -1,7 +1,7 @@
 -module(game_stats).
 -behaviour(gen_server).
 
--export([start_link/0, add_game/1, get_skill/1, get_game_points/2,
+-export([start_link/0, add_game/1, get_skill/1, get_game_points/2, get_player_stats/1,
          init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3,
          assign_points/2, is_feel_lucky/2, game_info_to_ti/1, charge_quota/1]).
 
@@ -18,12 +18,19 @@ start_link() -> gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 add_game(Game) -> gen_server:cast(?MODULE, {add_game, Game}).
 
 get_skill(UserId) when is_binary(UserId) -> get_skill(binary_to_list(UserId));
-get_skill(UserId) -> {ok, 0}.
-%    score_db:get_skill(UserId).
+get_skill(UserId) -> {ok, crypto:rand_uniform(1,1000)}.
 
 get_game_points(GameType, UserId) when is_binary(UserId) -> get_game_points(GameType, binary_to_list(UserId));
-get_game_points(GameType, UserId) -> {ok, 0}.
-%    score_db:get_game_points(GameType, UserId).
+get_game_points(GameType, UserId) -> {ok, [{game_points,crypto:rand_uniform(1,1000)},
+                                           {finished_with_okey,crypto:rand_uniform(1,1000)},
+                                           {finished_with_8_tashes,crypto:rand_uniform(1,1000)}]}.
+
+get_player_stats(UserId) when is_binary(UserId) -> get_skill(binary_to_list(UserId));
+get_player_stats(UserId) -> {ok, [{total_games,crypto:rand_uniform(1,10)},
+                                  {total_wins,crypto:rand_uniform(1,10)},
+                                  {total_loses,crypto:rand_uniform(1,10)},
+                                  {overal_success_ratio,crypto:rand_uniform(1,100)},
+                                  {average_play_time,crypto:rand_uniform(1000,5000)}]}.
 
 init([]) -> {ok, no_state}.
 
@@ -31,24 +38,11 @@ handle_call(Request, From, State) ->
     error_logger:error_msg("unknown call ~p ~p ~n", [Request, From]),
     {noreply, State}.
 
-handle_cast({add_game, Game}, State) % when is_record(Game, 'OkeyGameResults') 
-    ->
-    ?INFO("same game ~p", [Game]),
-%    score_db:save_game(Game),
-    {noreply, State};
-handle_cast(Msg, State) ->
-    error_logger:error_msg("unknown cast ~p ~n", [Msg]),
-    {noreply, State}.
-
-handle_info(Info, State) ->
-    error_logger:error_msg("unknown info ~p~n", [Info]),
-    {noreply, State}.
-
-terminate(_Reason, _State) ->
-    ok.
-
-code_change(_OldVsn, State, _Extra) ->
-    {ok, State}.
+handle_cast({add_game, Game}, State) -> {noreply, State};
+handle_cast(Msg, State) -> error_logger:error_msg("unknown cast ~p ~n", [Msg]), {noreply, State}.
+handle_info(Info, State) -> error_logger:error_msg("unknown info ~p~n", [Info]), {noreply, State}.
+terminate(_Reason, _State) -> ok.
+code_change(_OldVsn, State, _Extra) -> {ok, State}.
 
 is_feel_lucky(UId, GameInfo) ->
     ?INFO("Charge Quota Feel Lucky Check: User ~p GameInfo ~p",[UId,GameInfo]),

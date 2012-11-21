@@ -109,22 +109,17 @@ make_move(Server, Who, Msg) ->
 get_player_stats(PlayerId) ->
     {ok, GameStats} = game_stats:get_game_points(okey, PlayerId),
     {ok, Skill} = game_stats:get_skill(PlayerId),
-%    {ok, PlayerStats} = score_db:get_player_stats(PlayerId),
+    {ok, PlayerStats} = game_stats:get_player_stats(PlayerId),
     #'PlayerOkeyStats'{playerId = PlayerId,
                        level = Skill,
                        score = proplists:get_value(game_points, GameStats),
                        numberOkey = proplists:get_value(finished_with_okey, GameStats),
                        number8Tashes = proplists:get_value(finished_with_8_tashes, GameStats),
-                       totalWins = 0,
-                       totalLose = 0,
-                       totalDisconnects = 0,
-                       overalSuccessRatio = 0,
-                       averagePlayDuration = 0
-                      % totalWins = proplists:get_value(total_wins, PlayerStats),
-                      % totalLose = proplists:get_value(total_loses, PlayerStats),
-                      % totalDisconnects = proplists:get_value(total_disconnects, PlayerStats),
-                      % overalSuccessRatio = proplists:get_value(overall_success_ratio, PlayerStats),
-                      % averagePlayDuration = proplists:get_value(average_play_time, PlayerStats)
+                       totalWins = proplists:get_value(total_wins, PlayerStats),
+                       totalLose = proplists:get_value(total_loses, PlayerStats),
+                       totalDisconnects = proplists:get_value(total_disconnects, PlayerStats),
+                       overalSuccessRatio = proplists:get_value(overall_success_ratio, PlayerStats),
+                       averagePlayDuration = proplists:get_value(average_play_time, PlayerStats)
                       }.
 
 start(Relay, Pids, GameId) ->
