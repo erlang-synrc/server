@@ -317,8 +317,13 @@ ui_add_checkboxes() ->
 					 value=?_T("Slang"), text=?_T("Slang is accepted")}),
 		  construct_id(#checkbox{class="chk", postback={tag,{deny_observers,true}},
 					 value=?_T("No observers"), text=?_T("I don't accept observers")}),
-		  construct_id(#checkbox{class="chk", postback={tag,{paid,true}},
-					 value=?_T("Paid"), text=?_T("Only paid members")})
+		  case nsm_account:user_paid(wf:user()) of
+                true ->
+                    construct_id(#checkbox{class="chk", postback={tag,{paid,true}},
+				        	 value=?_T("Paid"), text=?_T("Only paid members")});
+                false ->
+                    []
+          end
 		 ],
     #panel{class="form1", body=[ 
         "<span id='guiderstab1additional'>",

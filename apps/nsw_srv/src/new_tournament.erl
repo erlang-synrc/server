@@ -155,7 +155,6 @@ content() ->
             #label{style="position:absolute; left:-28px; top:145px; width:150px; text-align:right;", text="Oyun Türü:"},
             #dropdown {id=tour_game, style="position:absolute; left:126px; top:138px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
                         #option { text="OKEY" }
-%                        #option { text="—" }
             ]},
             #label{style="position:absolute; left:253px; top:145px; width:100px; text-align:right;", text="Oyun Tipi:"},
             #dropdown {id=tour_esli, style="position:absolute; left:357px; top:138px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
@@ -163,7 +162,6 @@ content() ->
                         #option { text=?_T("Even/Odd"), value=evenodd},
                         #option { text=?_T("Color"), value=color },
                         #option { text=?_U("Countdown from 10"), value=countdown }
-%                        #option { text="—" }
             ]},
             #label{style="position:absolute; left:506px; top:145px; width:100px; text-align:right;", text="Oyun Sayısı:"},
             #dropdown {postback=prize_fund_and_tours_and_quota_changed, id=tour_players, style="position:absolute; left:610px; top:138px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
@@ -311,11 +309,7 @@ product_list_paged(Page) ->
                         },
                         #tablecell{
                             style="text-align:right; background:#9d9d9d; color:#fff; 
-                                   font-size:18px; padding-right:5px"%,
-%                            body=[
-%                                affiliates:kurus_to_string(OneGift#gift.our_price),
-%                                #image{image="images/tl_white.svg", style="width:12px; height:16px; padding-left:3px;"}
-%                            ]
+                                   font-size:18px; padding-right:5px"
                         }
                     ]},
 					"<div class='img'>",
