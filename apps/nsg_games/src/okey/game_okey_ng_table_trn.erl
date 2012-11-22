@@ -52,7 +52,6 @@
          game_id              :: pos_integer(),
          table_id             :: pos_integer(),
          table_name           :: string(),
-         params               :: proplists:proplist(),
          parent               :: {atom(), pid()},
          relay                :: pid(),
          mult_factor          :: integer(),
@@ -166,12 +165,12 @@ init([GameId, TableId, Params]) ->
                    {observers_allowed, false},
                    {table, {?MODULE, self()}}],
     {ok, Relay} = ?RELAY:start(RelayParams),
+    ?INFO("OKEY_NG_TABLE_TRN <~p,~p> PlayersInfo: ~p.", [GameId, TableId, PlayersInfo]),
     ?INFO("OKEY_NG_TABLE_TRN <~p,~p> Started.", [GameId, TableId]),
     parent_notify_table_created(Parent, TableId, Relay),
     {ok, ?STATE_WAITING_FOR_START, #state{game_id = GameId,
                                           table_id = TableId,
                                           table_name = TableName,
-                                          params = Params,
                                           parent = Parent,
                                           relay = Relay,
                                           mult_factor = MultFactor,
@@ -298,7 +297,7 @@ handle_parent_message(start_round, StateName,
                 lists:split(Num, AccDeck)
         end,
     {Hands, TablePile} = lists:mapfoldl(F, deck:to_list(Deck1), lists:seq(1, ?SEATS_NUM)),
-    GostFinishList = if GameMode == countdown andalso GostergeFinishAllowed ->
+    GostFinishList = if GameMode == countdown andalso GostergeFinishAllowed andalso NewCurRound > 1 ->
                             {_,_,_,Scores} = ?SCORING:last_round_result(ScoringState),
                             [SeatNum || {SeatNum, 1} <- Scores];
                         true -> []
@@ -333,9 +332,10 @@ handle_parent_message(start_round, StateName,
                                                  round_timer = RoundTRef}};
 
 handle_parent_message(show_round_result, ?STATE_FINISHED,
-                      #state{relay = Relay, scoring_state = ScoringState
-                            } = StateData) ->
+                      #state{relay = Relay, scoring_state = ScoringState,
+                             game_id = GameId, table_id = TableId} = StateData) ->
     {FinishInfo, RoundScore, AchsPoints, TotalScore} = ?SCORING:last_round_result(ScoringState),
+    ?INFO("OKEY_NG_TABLE_TRN <~p,~p> RoundScore: ~p Total score: ~p.", [GameId, TableId, RoundScore, TotalScore]),
     Msg = case FinishInfo of
               {win_reveal, Revealer, WrongRejects, _RevealWithColor, _RevealWithOkey, _RevealWithPairs} ->
                   create_okey_round_ended_reveal(Revealer, true, WrongRejects, RoundScore,

@@ -49,6 +49,8 @@
          bot_module        :: atom(),
          quota_per_round   :: integer(),
          registrants       :: [robot | binary()],
+         initial_points    :: integer(),
+         common_params     :: proplists:proplist(),
          %% Dinamic values
          players,          %% The register of tournament players
          tables,           %% The register of tournament tables
@@ -157,13 +159,14 @@ init([GameId, Params, _Manager]) ->
     TableParams =   get_param(table_params, Params),
     TableModule =   get_param(table_module, Params),
     BotModule =     get_param(bot_module, Params),
-    TrnId =         get_option(trn_id, Params, undefined),
+    InitialPoints = get_param(initial_points, Params),
+    CommonParams  = get_param(common_params, Params),
 
 
+    ?INFO("OKEY_NG_TRN_STANDALONE <~p> Inital points:~p", [GameId, InitialPoints]),
     ?INFO("OKEY_NG_TRN_STANDALONE <~p> started.  Pid:~p", [GameId, self()]),
     gen_fsm:send_all_state_event(self(), go),
     {ok, ?STATE_INIT, #state{game_id = GameId,
-                             trn_id = TrnId,
                              game = Game,
                              game_mode = GameMode,
                              mul_factor = MulFactor,
@@ -173,33 +176,19 @@ init([GameId, Params, _Manager]) ->
                              bot_module = BotModule,
                              quota_per_round = QuotaPerRound,
                              registrants = Registrants,
-                             table_id_counter = 1
+                             initial_points = InitialPoints,
+                             table_id_counter = 1,
+                             common_params = CommonParams
                             }}.
 
 %%===================================================================
-handle_event(go, ?STATE_INIT, #state{game_id = GameId, trn_id = TrnId, registrants = Registrants,
-                                     bot_module = BotModule} = StateData) ->
+handle_event(go, ?STATE_INIT, #state{game_id = GameId,
+                                     registrants = Registrants, bot_module = BotModule,
+                                     common_params = CommonParams} = StateData) ->
     ?INFO("OKEY_NG_TRN_STANDALONE <~p> Received a directive to starting the tournament.", [GameId]),
-    GProcVal = #game_table{game_type = game_okey,
-                           game_process = self(),
-                           game_module = ?MODULE,
-                           id = GameId,
-                           trn_id = TrnId,
-                           age_limit = 100,
-                           game_mode = undefined,
-                           game_speed = undefined,
-                           feel_lucky = false,
-                           owner = undefined,
-                           creator = undefined,
-                           rounds = undefined,
-                           pointing_rules   = [],
-                           pointing_rules_ex = [],
-                           users = [],
-                           name = "Okey Elimination Tournament - " ++ erlang:integer_to_list(GameId) ++ " "
-                          },
-    ?INFO("OKEY_NG_TRN_STANDALONE <~p> Parameters has been read.", [GameId]),
     {Players, PlayerIdCounter} = setup_players(Registrants, GameId, BotModule),
-    gproc:reg({p,l,self()}, GProcVal),
+    DeclRec = create_decl_rec(CommonParams, GameId, Players),
+    gproc:reg({p,l,self()}, DeclRec),
     init_tour(1, StateData#state{players = Players,
                                  player_id_counter = PlayerIdCounter});
 
@@ -244,7 +233,7 @@ handle_info({rest_timeout, TableId}, StateName,
                    quota_per_round = Amount, mul_factor = MulFactor, tables = Tables,
                    players = Players, seats = Seats, cur_table = TableId, bot_module = BotModule,
                    player_id_counter = PlayerIdCounter, tab_requests = Requests,
-                   table_module = TableMod} = StateData) ->
+                   table_module = TableMod, common_params = CommonParams} = StateData) ->
     ?INFO("OKEY_NG_TRN_STANDALONE <~p> Time to start new round for table <~p>.", [GameId, TableId]),
     Disconnected = find_disconnected_players(TableId, Seats),
     ConnectedRealPlayers = [PlayerId || #player{id = PlayerId, is_bot = false} <- players_to_list(Players),
@@ -265,6 +254,8 @@ handle_info({rest_timeout, TableId}, StateName,
             deduct_quota(GameId, Game, GameMode, Amount, MulFactor, RealUsersIds),
             NewRequests = table_req_replace_players(TableMod, TablePid, TableId, Replacements, Requests),
             send_to_table(TableMod, TablePid, start_round),
+            DeclRec = create_decl_rec(CommonParams, GameId, NewPlayers),
+            gproc:set_value({p,l,self()}, DeclRec),
             {next_state, StateName, StateData#state{tables = NewTables, players = NewPlayers, seats = NewSeats,
                                                     tab_requests = NewRequests, player_id_counter = NewPlayerIdCounter}}
     end;
@@ -523,10 +514,10 @@ handle_client_request(Request, From, StateName, #state{game_id = GameId} = State
 %%===================================================================
 init_tour(Tour, #state{game_id = GameId, seats_per_table = SeatsPerTable,
                        params = TableParams, players = Players, table_module = TableMod,
-                       table_id_counter = TableIdCounter, tables = OldTables
-                      } = StateData) ->
+                       table_id_counter = TableIdCounter, tables = OldTables,
+                       initial_points = InitialPoints} = StateData) ->
     ?INFO("OKEY_NG_TRN_STANDALONE <~p> Initializing tour <~p>...", [GameId, Tour]),
-    PlayersList = prepare_players_for_new_tour(Players),
+    PlayersList = prepare_players_for_new_tour(InitialPoints, Players),
     {NewTables, Seats, NewTableIdCounter, CrRequests} =
         setup_tables(TableMod, PlayersList, SeatsPerTable, undefined, Tour,
                      undefined, TableIdCounter, GameId, TableParams),
@@ -669,9 +660,9 @@ series_result(TableResult) ->
 
 
 
-%% prepare_players_for_new_tour(Players) -> [{PlayerId, UserInfo, Points}]
-prepare_players_for_new_tour(Players) ->
-    [{PlayerId, UserInfo, 0}
+%% prepare_players_for_new_tour(InitialPoints, Players) -> [{PlayerId, UserInfo, Points}]
+prepare_players_for_new_tour(InitialPoints, Players) ->
+    [{PlayerId, UserInfo, InitialPoints}
      || #player{id = PlayerId, user_info = UserInfo} <- players_to_list(Players)].
 
 
@@ -884,6 +875,51 @@ split_by_num(_, [], Acc) -> lists:reverse(Acc);
 split_by_num(Num, List, Acc) ->
     {Group, Rest} = lists:split(Num, List),
     split_by_num(Num, Rest, [Group | Acc]).
+
+
+create_decl_rec(CParams, GameId, Players) ->
+    Users = [if IsBot -> robot;
+                true -> user_id_to_string(UserId)
+             end || #player{is_bot = IsBot, user_id = UserId} <- players_to_list(Players)],
+    #game_table{id              = GameId,
+                name            = proplists:get_value(table_name, CParams),
+%                gameid,
+%                trn_id,
+                game_type       = proplists:get_value(game, CParams),
+                rounds          = proplists:get_value(rounds, CParams),
+                sets            = proplists:get_value(sets, CParams),
+                owner           = proplists:get_value(owner, CParams),
+                timestamp       = now(),
+                users           = Users,
+                users_options   = proplists:get_value(users_options, CParams),
+                game_mode       = proplists:get_value(game_mode, CParams),
+%                game_options,
+                game_speed      = proplists:get_value(speed, CParams),
+                friends_only    = proplists:get_value(friends_only, CParams),
+%                invited_users = [],
+                private         = proplists:get_value(private, CParams),
+                feel_lucky = false,
+%                creator,
+                age_limit       = proplists:get_value(age, CParams),
+%                groups_only = [],
+                gender_limit    = proplists:get_value(gender_limit, CParams),
+%                location_limit = "",
+                paid_only       = proplists:get_value(paid_only, CParams),
+                deny_robots     = proplists:get_value(deny_robots, CParams),
+                slang           = proplists:get_value(slang, CParams),
+                deny_observers  = proplists:get_value(deny_observers, CParams),
+                gosterge_finish = proplists:get_value(gosterge_finish, CParams),
+                double_points   = proplists:get_value(double_points, CParams),
+%                game_state,
+                game_process    = self(),
+                game_module     = ?MODULE,
+                pointing_rules  = proplists:get_value(pointing_rules, CParams),
+                pointing_rules_ex = proplists:get_value(pointing_rules, CParams)
+%                game_process_monitor =
+%                tournament_type = 
+               }.
+
+user_id_to_string(UserId) -> binary_to_list(UserId).
 
 %% start_timer(Timeout) -> {TRef, Magic}
 start_timer(Timeout) ->

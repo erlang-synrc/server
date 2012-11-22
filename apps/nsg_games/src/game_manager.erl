@@ -252,6 +252,58 @@ stress_test(NumberOfRooms) ->
     [{ok,OP2,_}|_] = lists:reverse(OkeyPlayers),
     ?INFO("Okey bot rooms runned (STRESS): ~p~n",[{OP1,OP2}]).
 
+
+create_standalone_game(Game, Params, Users) ->
+    ?INFO("create_standalone_game/3 Params:~p", [Params]),
+    case Game of
+        game_okey ->
+            TableName = proplists:get_value(table_name, Params),
+            MulFactor = proplists:get_value(double_points, Params, 1),
+            SlangAllowed = proplists:get_value(slang, Params, false),
+            ObserversAllowed = proplists:get_value(observers, Params, false),
+            Speed = proplists:get_value(speed, Params, normal),
+            GameMode = proplists:get_value(game_mode, Params),
+            Rounds = case GameMode of
+                         countdown -> undefined;
+                         _ -> proplists:get_value(rounds, Params, undefined)
+                     end,
+            GostergeFinishAllowed = proplists:get_value(gosterge_finish, Params, false),
+            TableParams = [
+                           {table_name, TableName},
+                           {mult_factor, MulFactor},
+                           {slang_allowed, SlangAllowed},
+                           {observers_allowed, ObserversAllowed},
+                           {tournament_type, standalone},
+                           {round_timeout, infinity},
+                           {speed, Speed},
+                           {game_type, GameMode},
+                           {rounds, Rounds},
+                           {reveal_confirmation, true},
+                           {next_series_confirmation, true},
+                           {pause_mode, normal},
+                           {social_actions_enabled, true},
+                           {gosterge_finish_allowed, GostergeFinishAllowed}
+                         ],
+
+            create_game(game_okey_ng_trn_standalone,
+                         [{game, Game},
+                          {game_mode, GameMode},
+                          {seats, 4},
+                          {registrants, Users},
+                          {initial_points, 0},
+%%                          {quota_per_round, Quota},
+                          {quota_per_round, 1},  %%FIXME See pointing_rules
+                          {mul_factor, MulFactor},
+                          {table_module, game_okey_ng_table_trn},
+                          {bot_module, game_okey_bot},
+                          {table_params, TableParams},
+                          {common_params, Params}
+                         ]);
+        game_tavla ->
+            create_table(Game, Params, Users)
+    end.
+
+
 start_tournament(TourId,NumberOfTournaments,NumberOfPlayers,Quota,Tours,Speed) ->
 
     {ok,Tournament} = nsm_db:get(tournament,TourId),
