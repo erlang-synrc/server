@@ -28,6 +28,7 @@
 -define(MODE_COLOR, color).
 -define(MODE_COUNTDOWN, countdown).
 
+-define(COUNTDOWN_MAX_POINTS, 10).
 
 -define(ACH_CHANAK_WINNER, 0). %% Not defined in the points matrix
 
@@ -75,6 +76,7 @@
 %%     RoundsNum = undefined | pos_integer()
 
 init(Mode, SeatsInfo, RoundsNum) ->
+    ?INFO("OKEY_NG_SCORING init Mode: ~p SeatsInfo = ~p RoundsNum = ~p", [Mode, SeatsInfo, RoundsNum]),
     true = lists:member(Mode, [?MODE_STANDARD, ?MODE_EVENODD, ?MODE_COLOR, ?MODE_COUNTDOWN]),
     true = if Mode == ?MODE_COUNTDOWN -> RoundsNum == undefined;
               true -> is_integer(RoundsNum) orelse RoundsNum == undefined end,
@@ -156,7 +158,7 @@ round_finished(#state{mode = GameMode, seats_num = SeatsNum,
     RoundScore = [{SeatNum, sum_achivements_points(AchPoints)}
                    || {SeatNum, AchPoints} <- RoundAchs],
     RoundNum = LastRoundNum + 1,
-    NewTotalScore = add_delta(GameMode, TotalScore, RoundScore),
+    NewTotalScore = add_delta(TotalScore, RoundScore),
     NewState = State#state{last_round_num = RoundNum,
                            round_score = RoundScore,
                            total_score = NewTotalScore,
@@ -216,7 +218,7 @@ is_chanak_winner(Achs) ->
 detect_game_finish(#state{mode = GameMode, last_round_num = RoundNum,
                           rounds_num = MaxRoundNum, total_score = TotalScore}) ->
     if GameMode == ?MODE_COUNTDOWN ->
-           lists:any(fun({_, Points}) -> Points =< 0 end, TotalScore);
+           lists:any(fun({_, Points}) -> Points >= ?COUNTDOWN_MAX_POINTS end, TotalScore);
        true ->
            RoundNum == MaxRoundNum
     end.
@@ -303,18 +305,11 @@ get_achivements_points(PointingRules, Achivements) ->
 sum_achivements_points(AchPoints) ->
     lists:foldl(fun({_, P}, Acc)-> Acc + P end, 0, AchPoints).
 
-%% @spec add_delta(GameMode, TotalScore, RoundScores) -> NewTotalScore
+%% @spec add_delta(TotalScore, RoundScores) -> NewTotalScore
 %% @end
-add_delta(GameMode, TotalScore, RoundScores) ->
-    case GameMode of
-        ?MODE_COUNTDOWN ->
-            [{SeatNum, proplists:get_value(SeatNum, TotalScore) - Delta}
-             || {SeatNum, Delta} <- RoundScores];
-        _ ->
-            [{SeatNum, proplists:get_value(SeatNum, TotalScore) + Delta}
-             || {SeatNum, Delta} <- RoundScores]
-    end.
-
+add_delta(TotalScore, RoundScores) ->
+    [{SeatNum, proplists:get_value(SeatNum, TotalScore) + Delta}
+     || {SeatNum, Delta} <- RoundScores].
 
 
 %% @spec gosterge_to_okey(GostergyTash) -> OkeyTash

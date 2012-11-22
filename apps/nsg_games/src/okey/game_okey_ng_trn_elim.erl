@@ -246,7 +246,7 @@ handle_info({rest_timeout, TableId}, StateName,
             #state{game_id = GameId, tables = Tables} = StateData) ->
     ?INFO("OKEY_NG_TRN_ELIM <~p> Time to start new round for table <~p>.", [GameId, TableId]),
     #table{pid = TablePid} = Table = fetch_table(TableId, Tables),
-    NewTable = Table#table{state = in_process},
+    NewTable = Table#table{state = ?TABLE_STATE_IN_PROGRESS},
     NewTables = store_table(NewTable, Tables),
     send_to_table(TablePid, start_round),
     {next_state, StateName, StateData#state{tables = NewTables}};

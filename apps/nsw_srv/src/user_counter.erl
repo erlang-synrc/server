@@ -143,13 +143,11 @@ handle_call({user_count,undefined}, _From, #state{cache_table = CT} = State) ->
     {reply, Count, State};
 
 handle_call({user_count, Game}, _From, #state{cache_table=CT} = State) ->
+    ?INFO("user_count: Game ~p~n", [Game]),
     GameH = case Game of tavla -> game_tavla; okey -> game_okey end,
-    GameCounts = nsm_queries:map_reduce(game_manager,counter,[GameH]),
+    GameCounts = rpc:call(?GAMESRVR_NODE,game_manager,counter,[GameH]),
     ?INFO("user count: ~p",[{GameCounts,GameH}]),
     {reply, GameCounts, State};
-    %% TODO: cache result
-%    GameRecords = ets:match(CT, #browser_counter{game = Game, _ = '_'}),
- %   {reply, length(GameRecords), State};
 
 handle_call(_Request, _From, State) ->
     Reply = unknown,

@@ -80,4 +80,7 @@ get_single_tables(Setting,UId,GameFSM,Convert) ->
           NoMoreLeftListOwn ++ NoMoreLeftListOther.
 
 map_reduce(Module, Fun, Args)->
-  [rpc:call(Node, Module, Fun, Args) || Node <- nsx_opt:get_env(nsm_db, nodes, [])].
+  [ case rpc:call(Node, Module, Fun, Args) of
+      {badrpc, _Reason} -> [];
+      R -> wf:info("R:  ~p~n",[R]), R
+    end || Node <- nsx_opt:get_env(nsm_db, nodes, [])].
