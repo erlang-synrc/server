@@ -469,7 +469,7 @@ show_row(Label, Info) ->
               body=[#h5 {text=Label},
                      #panel {body=Info}]}.
 
-get_tables(Id) -> rpc:call(?GAMESRVR_NODE,game_manager,get_tables,[Id]) ++
+get_tables(Id) -> nsm_queries:map_reduce(game_manager,get_tables,[Id]) ++
   qlc:e(qlc:q([Val || {{_,_,_Key},_,Val=#game_table{id = _Id}}
                 <- gproc:table(props), Id == _Id ])).
 
@@ -483,12 +483,9 @@ qlc_id_creator(Id,Creator,Owner) ->
                             owner = _Owner, creator = _Creator}} <- 
              gproc:table(props), Id == _Id, Creator == _Creator, Owner ==_Owner])).
 
-get_table(Id) -> get_table_raw(Id, qlc_id(Id) ++ rpc:call(?GAMESRVR_NODE,game_manager,qlc_id,[Id]), wf:state(table)).
+get_table(Id) -> get_table_raw(Id, qlc_id(Id) ++ nsm_queries:map_reduce(game_manager,qlc_id,[Id]), wf:state(table)).
 get_table(Id, Creator,Owner) -> get_table_raw(Id, qlc_id_creator(Id,Creator,Owner) ++
-           rpc:call(?GAMESRVR_NODE,game_manager,qlc_id_creator,[Id,Creator,Owner]), undefined).
-
-%get_table(Id) -> get_table_raw(Id, rpc:call(?GAMESRVR_NODE,game_manager,qlc_id,[Id]), wf:state(table)).
-%get_table(Id, Creator,Owner) -> get_table_raw(Id, rpc:call(?GAMESRVR_NODE,game_manager,qlc_id_creator,[Id,Creator,Owner]), undefined).
+           nsm_queries:map_reduce(game_manager,qlc_id_creator,[Id,Creator,Owner]), undefined).
 
 get_table_raw(_Id, QLC,StateTab) ->
     Tables = case StateTab  of
@@ -676,7 +673,7 @@ start_game() ->
                     UsersIdsAsBinaries = [ binarize_name(X) || X <- Table#game_table.users ],
                     Params = table_manager:game_table_to_settings(Table),
                     io:fwrite("params: ~p~n", [Params]),
-                    GSPId = rpc:call(?GAMESRVR_NODE,
+                    GSPId = nsm_queries:map_reduce(
                                         game_manager,
                                         create_table,
                                         [Table#game_table.game_type, Params, UsersIdsAsBinaries]),
@@ -842,8 +839,7 @@ rss_container() -> [ #panel { class="silver rss", body=rss() } ].
 rss() -> [ "Feeds" ].
 
 game_type() -> list_to_existing_atom("game_"++wf:q('__submodule__')).
-game_requirements(Table) -> rpc:call(?GAMESRVR_NODE, game_manager, get_requirements, [Table#game_table.game_type,Table#game_table.game_mode]).
-%game_requirements() -> rpc:call(?GAMESERVER_NODE, game_manager, get_requirements, [game_type()]).
+game_requirements(Table) -> nsm_queries:map_reduce(game_manager, get_requirements, [Table#game_table.game_type,Table#game_table.game_mode]).
 binarize_name(robot) -> robot;
 binarize_name(Name) -> list_to_binary(Name).
 

@@ -79,3 +79,5 @@ get_single_tables(Setting,UId,GameFSM,Convert) ->
           MoreLeftListOwn ++ MoreLeftListOther ++
           NoMoreLeftListOwn ++ NoMoreLeftListOther.
 
+map_reduce(Module, Fun, Args)->
+  [rpc:call(Node, Module, Fun, Args) || Node <- nsx_opt:get_env(nsm_db, nodes, [])].

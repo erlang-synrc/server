@@ -144,7 +144,7 @@ handle_call({user_count,undefined}, _From, #state{cache_table = CT} = State) ->
 
 handle_call({user_count, Game}, _From, #state{cache_table=CT} = State) ->
     GameH = case Game of tavla -> game_tavla; okey -> game_okey end,
-    GameCounts = rpc:call(?GAMESRVR_NODE,game_manager,counter,[GameH]),
+    GameCounts = nsm_queries:map_reduce(game_manager,counter,[GameH]),
     ?INFO("user count: ~p",[{GameCounts,GameH}]),
     {reply, GameCounts, State};
     %% TODO: cache result

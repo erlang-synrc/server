@@ -503,7 +503,7 @@ event({start_tournament, TourName, TourDesc, TourDate, TourTime, TourPlayers, To
            {ok, _} -> nsm_tournaments:join(User,TID);
            {error, _} -> ?INFO("TOURNAMENT DEFAULT USERS SKIP: ~p",[User])
      end || User <- AllowedUsers],
-    rpc:call(?GAMESRVR_NODE,nsm_srv_tournament_lobby_sup,start_lobby,[TID]),
+    nsm_queries:map_reduce(nsm_srv_tournament_lobby_sup,start_lobby,[TID]),
     URL = ?_U("tournament/lobby/id/")++integer_to_list(TID),
 
     % notification via text messaging

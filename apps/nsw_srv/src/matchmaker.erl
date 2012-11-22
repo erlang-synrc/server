@@ -119,7 +119,7 @@ el_inside_play() ->
      Settings = wf:session({wf:q(game_name), wf:user()}),
      Game = proplists:get_value(game, Settings),
      LuckyAction =
-         case rpc:call(?GAMESRVR_NODE,game_manager,get_lucky_table,[Game]) of
+         case nsm_queries:map_reduce(game_manager,get_lucky_table,[Game]) of
              [#game_table{id = GaId}] ->
                  IdStr = integer_to_list(GaId),
                  wf:session(IdStr, IdStr),
@@ -429,8 +429,7 @@ retrieve_tables(Setting, UId, GameType,Convert) ->
 process_tables(Setting, UId,GameType,Convert) ->
     receive
          {From, get} -> 
-              Tables = rpc:call(?GAMESRVR_NODE,nsm_queries,get_single_tables,[Setting,UId,GameType,Convert])
-                       ++ nsm_queries:get_single_tables(Setting,UId,GameType,Convert),
+              Tables = nsm_queries:map_reduce(nsm_queries,get_single_tables,[Setting,UId,GameType,Convert]),
               Filtered = filter_tables(Tables,UId,GameType,Setting,Convert),
               From ! {self(), Filtered},stop end. 
 

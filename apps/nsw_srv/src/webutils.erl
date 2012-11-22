@@ -566,7 +566,7 @@ user_count() ->
     integer_to_list(user_counter:user_count()).
 
 user_count(GameH) ->
-    GameCounts = rpc:call(?GAMESRVR_NODE,game_manager,counter,[
+    GameCounts = nsm_queries:map_reduce(?GAMESRVR_NODE,game_manager,counter,[
         case GameH of
             tavla -> game_tavla;
             okey -> game_okey; _ -> GameH
