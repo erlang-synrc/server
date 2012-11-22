@@ -678,6 +678,7 @@ start_game() ->
                     io:fwrite("params: ~p~n", [Params]),
                     GSPId = rpc:call(?GAMESRVR_NODE,
                                         game_manager,
+%%                                        create_standalone_game,  %% Replace next line to use new standalone tables implementation
                                         create_table,
                                         [Table#game_table.game_type, Params, UsersIdsAsBinaries]),
                     ?INFO("GameManager Create Table Pid: ~p",[GSPId]),
