@@ -32,7 +32,7 @@ main() ->
 
   case wf:user() of
     undefined -> webutils:redirect_to_ssl("login");
-    _User ->
+    User ->        
       webutils:add_script("/nitrogen/jquery.paginatetable.js"),
       webutils:add_raw("<link href='/nitrogen/guiders-js/guiders-1.2.8.css' rel='stylesheet'>
       <script src='/nitrogen/guiders-js/guiders-1.2.8.js'></script>"),
@@ -49,6 +49,7 @@ main() ->
         Settings -> Settings
       end,
       wf:session({wf:q(game_name), wf:user()}, SS),
+      wf:state(user_paid, nsm_accounts:user_paid(User)),
       #template { file=code:priv_dir(nsw_srv)++"/templates/bare.html" }
   end.
 
@@ -317,11 +318,11 @@ ui_add_checkboxes() ->
 					 value=?_T("Slang"), text=?_T("Slang is accepted")}),
 		  construct_id(#checkbox{class="chk", postback={tag,{deny_observers,true}},
 					 value=?_T("No observers"), text=?_T("I don't accept observers")}),
-		  case nsm_accounts:user_paid(wf:user()) of
+		  case wf:state(user_paid) of
                 true ->
                     construct_id(#checkbox{class="chk", postback={tag,{paid,true}},
 				        	 value=?_T("Paid"), text=?_T("Only paid members")});
-                false ->
+                _ ->
                     []
           end
 		 ],
@@ -516,6 +517,7 @@ get_tables(Convert) ->
     retrieve_tables(Setting, UId, wf:q(game_name), Convert).
 
 filter_tables(QLC,UId,GameFSM,Setting,Convert) ->
+    UserPaid = nsm_accounts:user_paid(UId),
 
     GetPropList = fun(Key,Setngs) -> 
                    case Setngs of
@@ -553,7 +555,12 @@ filter_tables(QLC,UId,GameFSM,Setting,Convert) ->
             A#game_table.timestamp =< B#game_table.timestamp
         end, FilteredQLC2),
 
-    case Convert of convert -> convert_to_map(FilteredQLC3,Setting,UId,GameFSM); _ -> FilteredQLC3 end.
+    FilteredQLC4 = case UserPaid of  % paid user filter
+        true -> FilteredQLC3;
+        _ -> [A || A <- FilteredQLC3, A#game_table.paid_only /= true]
+    end,
+    
+    case Convert of convert -> convert_to_map(FilteredQLC4,Setting,UId,GameFSM); _ -> FilteredQLC4 end.
 
 convert_to_map(Data,_Setting,UId,GameFSM) ->
     [ begin Url = lists:concat([?_U("/view-table/"),GameFSM,"/id/", TId]),
@@ -942,7 +949,12 @@ ui_button_deselect({Key, Value}) ->
 
 
 is_checkbox(Key) ->
-    lists:member(Key, [paired_game, deny_robots, private, slang, deny_observers]).
+    case wf:state(user_paid) of
+        true ->
+            lists:member(Key, [paired_game, deny_robots, private, slang, deny_observers, paid]);
+        false ->
+            lists:member(Key, [paired_game, deny_robots, private, slang, deny_observers])
+    end.
 
 is_option_present(Key, Value) ->
     Settings = wf:session({wf:q(game_name), wf:user()}),

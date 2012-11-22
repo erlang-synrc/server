@@ -108,12 +108,12 @@ user_info() ->
 
     #panel{class="box user-info", body=[
         #h3{style="letter-spacing:0px;", text=Info#user.username},
-        #panel{class=img, body=#image{image=Ava, class=
-            case nsm_accounts:user_paid(Info#user.surname) of
-                true -> "paid_user_avatar";
-                _ -> ""
-            end
-        }},
+
+        case nsm_accounts:user_paid(Info#user.username) of
+            true -> #panel{class=paid_user_avatar_img, body=#image{image=Ava}};
+            _ -> #panel{class=img, body=#image{image=Ava}}
+        end,
+
         #panel{body=[
 	        #list{class=user_info, style="margin-left:0px;", body=[
                 #listitem{body=[?_T("Name")++": ",#span{text=UserName}]},
