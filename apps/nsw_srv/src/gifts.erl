@@ -9,9 +9,12 @@
 -include("elements/records.hrl").
 
 -define(GIFTSPERPAGE, 20).
+-define(MAX_SLIDER_PRICE, 1200000).
 
 main() ->
     webutils:add_script("/nitrogen/blockui.js"),
+    wf:state(slider_min, 0),
+    wf:state(slider_max, ?MAX_SLIDER_PRICE),
     #template { file=code:priv_dir(nsw_srv)++"/templates/bare.html" }.
 
    
@@ -76,12 +79,27 @@ body() ->
 		<div class='top-space top-space-2'>
 			<h1>Hedİyeler</h1>
 		</div>",
+        #panel{style="height:70px; font-size:16px;", body=[
+            #label{id=slider_min_value, style="position:absolute; left:276px; top:100px;", text="0"},
+            #label{id=slider_max_value, style="position:absolute; left:576px; top:100px; text-align:right; width:100px;", text=integer_to_list(?MAX_SLIDER_PRICE)},
+            #panel{id=slider_panel, style="position:absolute; left:276px; top:125px; width:400px; height:20px;", body=[
+                #slider{range = true, id=gifts_slider, max=?MAX_SLIDER_PRICE,
+                    postback={?MODULE, {gifts_slider}},
+                    values=[{min,0}, {max,?MAX_SLIDER_PRICE}]
+                }
+            ]}
+        ]},
         #panel{id=product_list, body=product_list_paged(1)},
         "</section>"
     ].
 
 product_list_paged(Page) ->
+    MinPrice = wf:state(slider_min),
+    MaxPrice = wf:state(slider_max),
+
     AllGiftsData = nsm_gifts_db:get_all_gifts(),
+    FilteredGiftsData = [Gift || {Gift, _Obj} <- AllGiftsData, Gift#gift.enabled_on_site, (Gift#gift.kakush_point >= MinPrice) and (Gift#gift.kakush_point =< MaxPrice)],
+
     OnlyGiftsData = lists:sublist( 
         lists:sort(
             fun(A, B) -> 
@@ -91,10 +109,10 @@ product_list_paged(Page) ->
                     true -> false
                 end
             end,
-            [Gift || {Gift, _Obj} <- AllGiftsData, Gift#gift.enabled_on_site]
+            [Gift || Gift <- FilteredGiftsData, Gift#gift.enabled_on_site]
         ), 
     (Page-1) * ?GIFTSPERPAGE + 1, ?GIFTSPERPAGE),
-    Buttons = case length(AllGiftsData) > ?GIFTSPERPAGE of
+    Buttons = case length(FilteredGiftsData) > ?GIFTSPERPAGE of
         true ->
             #panel{class="paging-2", style="padding: 10px 0px 0px 0px;", body=[
                 #panel{class="center", body=[
@@ -108,8 +126,8 @@ product_list_paged(Page) ->
                                 style="color:#444444; font-weight:bold;"}};
                             _ -> #listitem{body=#link{text=integer_to_list(N), postback={page, N}}}
                         end
-                        || N <- lists:seq(1, (length(AllGiftsData) - 1) div ?GIFTSPERPAGE + 1)],
-                        case Page * ?GIFTSPERPAGE >= length(AllGiftsData) of                 
+                        || N <- lists:seq(1, (length(FilteredGiftsData) - 1) div ?GIFTSPERPAGE + 1)],
+                        case Page * ?GIFTSPERPAGE >= length(FilteredGiftsData) of                 
                             true -> #listitem{body=#link{text=">", postback={nothing}, class="inactive"}};
                             false -> #listitem{body=#link{text=">", postback={page, Page + 1}}}
                         end
@@ -131,11 +149,11 @@ product_list_paged(Page) ->
                         },
                         #tablecell{
                             style="text-align:right; background:#9d9d9d; color:#fff; 
-                                   font-size:18px; padding-right:5px",
-                            body=[
-                                affiliates:kurus_to_string(OneGift#gift.our_price),
-                                #image{image="images/tl_white.svg", style="width:12px; height:16px; padding-left:3px;"}
-                            ]
+                                   font-size:18px; padding-right:5px"
+%                            body=[
+%                                affiliates:kurus_to_string(OneGift#gift.our_price),
+%                                #image{image="images/tl_white.svg", style="width:12px; height:16px; padding-left:3px;"}
+%                            ]
                         }
                     ]},
 					"<div class='img'>",
@@ -201,6 +219,11 @@ event({buy_gift, Id}) ->
 
 event({page, Page}) ->
     wf:update(product_list, product_list_paged(Page));
+
+event({gifts_slider}) ->
+    wf:state(slider_min, list_to_integer(wf:q(gifts_slider_values_min))),
+    wf:state(slider_max, list_to_integer(wf:q(gifts_slider_values_max))),
+    wf:update(product_list, product_list_paged(1));
 
 event(Any) ->
     webutils:event(Any).
