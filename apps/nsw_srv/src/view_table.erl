@@ -776,7 +776,12 @@ html_user_info(UserName, IsOwner, IsPlaceholder, OwnerName, GameType) ->
 		{"user robot", #image{class="avatar", image="/images/robot.png"}};
 	    false ->
 		%% TODO: get actual avatar
-		{"user", #image{class="avatar", image=avatar:get_avatar_by_username(UserName, small)}}
+		{"user", #image{image=avatar:get_avatar_by_username(UserName, small), class=
+            case nsm_accounts:user_paid(UserName) of
+                true -> "avatar paid_user_avatar";
+                _ -> "avatar"
+            end
+        }}
 	end,
     #listitem{body=
        #panel{class=Class,

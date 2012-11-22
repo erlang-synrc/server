@@ -201,7 +201,12 @@ friends_view(UId) ->
     ShortDescription = user_short_description(UId),
     #listitem{class="user-item", body=[
        #link{class="entity", url=site_utils:user_link(UId), body=[
-            #panel{class="img", body=#image{image=webutils:get_user_avatar(UId, "big"), style="width:96px;height:96px"}},
+            #panel{class="img", body=#image{image=webutils:get_user_avatar(UId, "big"), style="width:96px;height:96px", class=
+                case nsm_accounts:user_paid(UId) of
+                    true -> "paid_user_avatar";
+                    _ -> ""
+                end
+            }},
             #panel{class="user-name", body=UId}
        ]},
        #panel{class="tooltip-1", body=[
@@ -209,7 +214,12 @@ friends_view(UId) ->
                 #panel{class="c", body=[
                     #panel{class="frame", body=[
                         #panel{class="img", body=[
-                            #image{image=webutils:get_user_avatar(UId, "big"), style="width:96px;height:96px"}
+                            #image{image=webutils:get_user_avatar(UId, "big"), style="width:96px;height:96px", class=
+                                case nsm_accounts:user_paid(UId) of
+                                    true -> "paid_user_avatar";
+                                    _ -> ""
+                                end
+                            }
                         ]},
                         #panel{class="descr", body=[
                             io_lib:format("<strong class=\"user-name\">~s</strong>", [UId]), %PHASE1
@@ -243,7 +253,12 @@ friends_row(FL) -> #panel{body=[ show_friend(X) || X <- FL]}.
 show_friend(#subs{whom = Who}) ->
     #panel{style="float:left;padding-left:5px",
         body=[
-            #image{image=webutils:get_user_avatar(Who, "big")}
+            #image{image=webutils:get_user_avatar(Who, "big"), class=
+                case nsm_accounts:user_paid(Who) of
+                    true -> "paid_user_avatar";
+                    _ -> ""
+                end
+            }
     ]}.
 
 big() ->

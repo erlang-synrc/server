@@ -444,7 +444,12 @@ avatar_update_box(User) ->
     Avatar = avatar:get_avatar_by_username(User#user.username, big),
     #panel{class=cell,body=[
 			    #h3{text=?_T("Avatar")},
-			    #panel{id=avatarholder, class=photo, body=#image{image=Avatar}},
+			    #panel{id=avatarholder, class=photo, body=#image{image=Avatar, class=
+                    case nsm_accounts:user_paid(User#user.username) of
+                        true -> "paid_user_avatar";
+                        _ -> ""
+                    end
+                }},
 			    #panel{class=file, body=[
 				#upload { class="file-input-area", tag=upload_avatar, show_button=false },
 				#textbox{class="file-text", text=?_T("Update")},
@@ -470,10 +475,22 @@ finish_upload_event(_Tag, OrigFile, LocalFile, _Node) ->
             wf:state(new_avatar, Avatar),
             wf:replace(header_user_avatar,
                        #image{image=avatar:get_avatar(Avatar, tiny), 
-                            id=header_user_avatar, style="width:23px;height:23px", alt="#"}),
+                            id=header_user_avatar, style="width:23px;height:23px", alt="#", class=
+                                case nsm_accounts:user_paid(User#user.username) of
+                                    true -> "paid_user_avatar";
+                                    _ -> ""
+                                end
+            }),
             wf:replace(avatarholder,
-                       #panel { id=avatarholder, class=photo,
-                                body=#image{image=avatar:get_avatar(Avatar, big)} }),
+                   #panel { id=avatarholder, class=photo,
+                            body=#image{image=avatar:get_avatar(Avatar, big), class=
+                                case nsm_accounts:user_paid(User#user.username) of
+                                    true -> "paid_user_avatar";
+                                    _ -> ""
+                                end
+                            } 
+                    }
+            ),
             UserWithAvatar = User#user{avatar = Avatar},
             nsx_msg:notify(["db", "user", User#user.username, "put"], UserWithAvatar)
     end.

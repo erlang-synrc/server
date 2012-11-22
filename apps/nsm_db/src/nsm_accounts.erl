@@ -7,6 +7,7 @@
 -export([debet/2, credit/2, balance/2, create_account/1, create_account/2]).
 -export([transaction/4, transaction/5]).
 -export([check_quota/1, check_quota/2]).
+-export([user_paid/1]).
 
 -spec transaction(string(), currency(), integer(), transaction_info()) -> {ok, transaction_id()} | {error, term()}.
 transaction(Account, Currency, 0, TransactionInfo) ->
@@ -159,3 +160,11 @@ generate_id() ->
     {MegSec, Sec, MicroSec} = now(),
     H = erlang:phash2(make_ref()),
     lists:concat([MegSec*1000000000000, Sec*1000000, MicroSec, "-", H]).
+
+user_paid(UId) ->
+    {_, Top} = nsm_db:get(user_purchase, UId),
+    case Top of
+        notfound -> false;
+        undefined -> false;
+        _ -> true
+    end.

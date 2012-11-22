@@ -5285,3 +5285,12 @@ footer .lang img {
     padding-left:24px;
     margin-top:-4px;
 }
+
+/* paid user avatar indentation */
+.paid_user_avatar{
+    border:3px solid #ffb03b;
+    margin-left:-3px;
+    margin-top:-3px;
+}
+
+

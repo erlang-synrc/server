@@ -356,8 +356,6 @@ body() ->
 
 
 content() ->
-    {ok, User} = nsm_users:get_user(wf:user()), % to check if admin  
-
     Id = list_to_integer(wf:q("id")),
     {ok, T} = nsm_db:get(tournament, Id),
     Title = T#tournament.name,
@@ -609,7 +607,12 @@ user_table_row(UId, P1, P2, Color, N, RealName) ->
     #tablerow{cells=[
         #tablecell{body=[
             #singlerow{cells=[
-                #tablecell{style="padding: 5px 5px 5px 16px;", body=#image{image=Avatar} },
+                #tablecell{style="padding: 5px 5px 5px 16px;", body=#image{image=Avatar, class=
+                    case nsm_accounts:user_paid(UId) of
+                        true -> "paid_user_avatar";
+                        _ -> ""
+                    end
+                } },
                 #tablecell{body=[
                     #link{style="font-weight:bold;", url=URL, text=UId},
                     " &mdash; ",

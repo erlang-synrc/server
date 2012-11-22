@@ -662,7 +662,12 @@ get_metalist(Id, Title, Module, List, EmptyMsg, Nav) ->
                                 Name_Surname -> RealName = Name_Surname
                             end,
                             #listitem{body=[
-                                #image{image=get_user_avatar(Who), style="width:32px,height:33px"},
+                                #image{image=get_user_avatar(Who), style=
+                                    case nsm_accounts:user_paid(Who) of
+                                        true -> "border:3px solid #ffb03b; padding:0px;";
+                                        _ -> ""
+                                    end
+                                },
                                 #link{text=RealName, url=site_utils:user_link(Who)}
                             ]}
                         end
@@ -819,7 +824,6 @@ get_ribbon_menu() ->
         undefined -> webutils:user_info();
         _         -> {ok, Usr} = nsm_users:get_user(CheckedUser), Usr
     end,
-    _UA = get_user_avatar(element(2, User) ,"small"),
     {SubscribersCount, FriendsCount, CommentsCount, LikesCount} =
     case CheckedUser of
         undefined -> {0,0,0,0};
@@ -830,7 +834,7 @@ get_ribbon_menu() ->
             feed:user_likes_count(CheckedUser)
         }
     end,
-    NewDirectMessages=false,    %PUBLIC BETA we need this!
+    NewDirectMessages=false,    %PUBLIC BETA 
     BlockedUsers = nsm_users:get_blocked_users(wf:user()),
     BlockUnblock = case CheckedUser of
         undefined -> [];
