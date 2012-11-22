@@ -320,7 +320,7 @@ ui_add_checkboxes() ->
 					 value=?_T("No observers"), text=?_T("I don't accept observers")}),
 		  case wf:state(user_paid) of
                 true ->
-                    construct_id(#checkbox{class="chk", postback={tag,{paid,true}},
+                    construct_id(#checkbox{class="chk", postback={tag,{paid_only,true}},
 				        	 value=?_T("Paid"), text=?_T("Only paid members")});
                 _ ->
                     []

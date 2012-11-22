@@ -127,7 +127,7 @@ assign_points(#'GameResults'{results = Results}, GameInfo) ->
                     ?INFO("winner: ~p", [UId]),
                     {PR#pointing_rule.kakush_winner, PR#pointing_rule.game_points};
                 _ ->
-                    {PR#pointing_rule.kakush_winner, 0}
+                    {PR#pointing_rule.kakush_other, 0}
             end,
 
         case lists:member(UId, PlayersIds) of

@@ -209,7 +209,7 @@ handle_call({create_table, User, S}, _From, State) ->
                                 deny_robots      = get_setting(deny_robots, S, false),
                                 gosterge_finish  = get_setting(gosterge_finish, S, false),
                                 double_points    = DoublePoints,
-                                paid_only        = get_setting(paid, S),
+                                paid_only        = get_setting(paid_only, S),
                                 slang            = get_setting(slang, S),
                                 deny_observers   = get_setting(deny_observers, S),
                                 pointing_rules   = PR,
@@ -703,7 +703,7 @@ save_game_table_to_settings(#save_game_table{name     = Name,
          {deny_robots, proplists:get_value(deny_robots, S)},
          {gosterge_finish, proplists:get_value(gosterge_finish, S)},
          {double_points, proplists:get_value(double_points, S)},
-         {paid, proplists:get_value(paid, S)}],
+         {paid_only, proplists:get_value(paid_only, S)}],
 
     lists:flatten(Setting).
 
