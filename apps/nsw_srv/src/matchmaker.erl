@@ -14,8 +14,8 @@
 -include("setup.hrl").
 -include("gettext.hrl").
 
--define(TABLE_UPDATE_INTERVAL, 5000).
--define(TABLE_UPDATE_QUANTUM, 100).
+-define(TABLE_UPDATE_INTERVAL, 10000).
+-define(TABLE_UPDATE_QUANTUM, 3000).
 
 route() -> ["game_name"].
 title() -> ?_T("Matchmaker").
@@ -884,37 +884,14 @@ comet_update() -> comet_update(empty).
 comet_update(State) ->
   case wf:user() of
     undefined -> webutils:redirect_to_ssl("login");
-    _UId ->
+    _UId -> timer:sleep(?TABLE_UPDATE_QUANTUM),
+            garbage_collect(self()),
+            Tables = get_tables(),
+            wf:update(tables, show_table(Tables)),
+            ui_paginate(),
+            wf:flush(),
+            comet_update(State)
 
-
-      timer:sleep(?TABLE_UPDATE_QUANTUM),
-
-      TimeLeft = wf:session(time_left_to_update),
-      if
-        TimeLeft == undefined ->
-          NewState = State,
-          wf:session(time_left_to_update, ?TABLE_UPDATE_INTERVAL);
-        TimeLeft =< 0 ->
-          garbage_collect(self()),
-          Tables = get_tables(),
-          %% used to reduce traffic and send updates only when they needed
-          NewState = erlang:md5(term_to_binary(Tables)),
-          case NewState of
-            State -> nothing_changed;
-            _ ->
-              % garbage_collect(Pid) || Pid <- processes() ],
-              ?INFO("Comet update ~p~n", [Tables]),
-              wf:update(tables, show_table(Tables)),
-              ui_paginate(),
-              wf:flush()
-          end,
-          user_counter:wf_update_me(),
-          wf:session(time_left_to_update, ?TABLE_UPDATE_INTERVAL);
-        true ->
-          NewState = State,
-          wf:session(time_left_to_update, TimeLeft - ?TABLE_UPDATE_QUANTUM)
-      end,
-      comet_update(NewState)
   end.
 
 %% We should leave that in case when we want that number of options can be selected in same time.
