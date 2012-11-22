@@ -977,7 +977,12 @@ get_ribbon_menu() ->
     wf:wire(wf:f("TestStOpt[4]='~s';",[wf_event:serialize_event_context({set_user_status, "invisible"}, undefined, undefined, dashboard)])),
     [
         #panel{class="top-box", body=[
-            #panel{class="photo", body=[#image{image=get_user_avatar(element(2, User) ,"small"), style="height:48px;weight:48px"}]},
+            case nsm_accounts:user_paid(element(2, User) ) of
+                true -> 
+                    #panel{class="paid_user_avatar_photo", body=[#image{image=get_user_avatar(element(2, User) ,"small"), style="height:48px; width:48px;"}]};                   
+                _ -> 
+                    #panel{class="photo", body=[#image{image=get_user_avatar(element(2, User) ,"small"), style="height:48px; width:48px;"}]}
+            end, 
             #panel{class="holder", body=[
                 io_lib:format("<strong class=\"title\">~s</strong>", [?_T("Status")]),
                 StatusBlock,
