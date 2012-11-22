@@ -136,7 +136,7 @@ init([Topic, {lobby, GameFSM}, Params0, PlayerIds, Manager]) ->
 
     ?INFO(" +++ paired_tavla.erl GProc Registration: ~p",[GProcVal]),
 
-    gproc:reg({p,g,self()},GProcVal),
+    gproc:reg({p,l,self()},GProcVal),
 
     Manager ! {add_game, GameFSM },
 
@@ -178,7 +178,7 @@ handle_call(get_topic, _From, State) ->
     {reply, State#state.topic, State};
 
 handle_call({update_reg, Key, Value}, _From, State) ->
-    gproc:set_value({p,g,Key},Value),
+    gproc:set_value({p,l,Key},Value),
     {reply, ok, State};
 
 

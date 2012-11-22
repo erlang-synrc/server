@@ -1012,7 +1012,7 @@ u_event({info, {Target, TId}}) ->
 
 u_event({delete_table, TId, ProcId}) ->
     ?INFO("delete table: ~p",[{delete_table, TId, ProcId}]),
-    case ProcId of undefined -> ok; _ -> ProcId ! {unreg, {p,g,ProcId}} end,
+    case ProcId of undefined -> ok; _ -> ProcId ! {unreg, {p,l,ProcId}} end,
     ?INFO(" *** delete"),
     table_manager:delete_table(TId);
 

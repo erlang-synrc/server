@@ -199,7 +199,7 @@ handle_event(go, ?STATE_INIT, #state{game_id = GameId, trn_id = TrnId, registran
                           },
     ?INFO("OKEY_NG_TRN_STANDALONE <~p> Parameters has been read.", [GameId]),
     {Players, PlayerIdCounter} = setup_players(Registrants, GameId, BotModule),
-    gproc:reg({p,g,self()}, GProcVal),
+    gproc:reg({p,l,self()}, GProcVal),
     init_tour(1, StateData#state{players = Players,
                                  player_id_counter = PlayerIdCounter});
 

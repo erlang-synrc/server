@@ -203,7 +203,7 @@ handle_event(go, ?STATE_INIT, #state{game_id = GameId, trn_id = TrnId} = StateDa
                            users = [],
                            name = "Okey Elimination Tournament - " ++ erlang:integer_to_list(GameId) ++ " "
                           },
-    gproc:reg({p,g,self()}, GProcVal),
+    gproc:reg({p,l,self()}, GProcVal),
     init_tour(1, StateData);
 
 handle_event({client_message, Message}, StateName, #state{game_id = GameId} = StateData) ->

@@ -315,7 +315,7 @@ start_pre_comet_process(Id, Skip) ->
 			    receive
 				{WebPid, really_start_comet} ->
                                     ?INFO("INIT: ~p",[Table]),
-                                    gproc:reg({p,g,self()},Table),
+                                    gproc:reg({p,l,self()},Table),
 				    table_info(Table); %% really start comet
 				{WebPid, exit} -> %% explicit exit
 				    exit("No need in comet")
@@ -357,7 +357,7 @@ start_pre_comet_process(Id, Skip) ->
                             wf:state(table, GProcTable),
                             ?INFO("GProc Registration from Comet: ~p",[GProcTable]),
 
-                            gproc:reg({p,g,self()},GProcTable),
+                            gproc:reg({p,l,self()},GProcTable),
 
 			    receive
 				{WebPid, really_start_comet} ->
@@ -406,7 +406,7 @@ table_info(Table) ->
         {change_owner, User} ->
              ?INFO("changing creator from ~p to ~p",[Table#game_table.creator,User]),
              NewTable = Table#game_table{creator=User,users=lists:delete(Table#game_table.creator,Table#game_table.users)},
-             gproc:set_value({p,g,self()},NewTable),
+             gproc:set_value({p,l,self()},NewTable),
              update_table_info(NewTable),
              wf:update(action_button, action_button(Id)),
              table_info(NewTable);
@@ -516,7 +516,7 @@ leaving(User, Table) ->
     NewTable = Table#game_table{users=NewUsers},
     wf:state(table,NewTable),
     ?INFO("leaving ~p in owner table ~p left: ~p",[User,Table#game_table.owner, NewUsers]),
-    gproc:set_value({p,g,NewTable#game_table.game_process},NewTable),
+    gproc:set_value({p,l,NewTable#game_table.game_process},NewTable),
     chat_info(Message),
     update_table_info(NewTable),
     wf:flush().
@@ -528,7 +528,7 @@ leave_table(User, Id) ->
     [ begin 
     case T#game_table.owner == User of
          true ->  ?INFO("CLOSE ME"), 
-                  gproc:unreg({p,g,self()}),
+                  gproc:unreg({p,l,self()}),
                   wf:update(info, ?_T("You have left from table")),
 		  wf:flush(),
                   Users = T#game_table.users,
@@ -561,7 +561,7 @@ join_user(User,Table) ->
                   NewTable2 = case List of 
                      false -> chat_user_in(User#user.username),
                               NewTable = Table#game_table{users=[User#user.username|Users]},
-                              gproc:set_value({p,g,NewTable#game_table.game_process},NewTable),
+                              gproc:set_value({p,l,NewTable#game_table.game_process},NewTable),
                               ?INFO("Can Join: ~p User ~p to ~p",[not List,User#user.username,NewTable#game_table.users]),
                               wf:state(table,NewTable),
                               update_table_info(NewTable),
@@ -585,7 +585,7 @@ add_robot() ->
                        NewTable = Table#game_table{users=[robot|Users]},
                        ?INFO("add robot Table: ~p",[{Table#game_table.game_process,NewTable}]),
                        wf:state(table,NewTable),
-                       gproc:set_value({p,g,NewTable#game_table.game_process},NewTable),
+                       gproc:set_value({p,l,NewTable#game_table.game_process},NewTable),
                        update_table_info(NewTable);
                    false ->
                        chat_info(#span{class=error, text= ?_T("There are too many players.")})
@@ -610,7 +610,7 @@ kick_user(UserName) ->
                             NewTable = Table#game_table{users=NewUsers},
                             ?INFO("kick robot: ~p",[NewUsers]),
                             wf:state(table,NewTable),
-                            gproc:set_value({p,g,NewTable#game_table.game_process},NewTable),
+                            gproc:set_value({p,l,NewTable#game_table.game_process},NewTable),
                             update_table_info(NewTable),
                             table_info(Table);
 			CUser ->
@@ -629,7 +629,7 @@ kick_user(UserName) ->
                                     NewTable = Table#game_table{users=NewUsers},
                                     ?INFO("kick user: ~p",[NewUsers]),
                                     wf:state(table,NewTable),
-                                    gproc:set_value({p,g,NewTable#game_table.game_process},NewTable),
+                                    gproc:set_value({p,l,NewTable#game_table.game_process},NewTable),
                                	    chat_info(Message),
                                     update_table_info(NewTable),
                  	      	    wf:flush(),

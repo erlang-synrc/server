@@ -137,7 +137,7 @@ init([Topic, {lobby, GameFSM}, Params0, PlayerIds, Manager]) ->
 
     ?INFO(" +++ relay.erl GProc Registration: ~p",[GProcVal]),
 
-    gproc:reg({p,g,self()},GProcVal),
+    gproc:reg({p,l,self()},GProcVal),
 
     Manager ! {add_game, GameFSM},
 
@@ -204,7 +204,7 @@ handle_call(get_topic, _From, State) ->
     {reply, State#state.topic, State};
 
 handle_call({update_reg, Key, Value}, _From, State) ->
-    gproc:set_value({p,g,Key},Value),
+    gproc:set_value({p,l,Key},Value),
     {reply, ok, State};
 
 handle_call({get_player_state, UId}, _From, State) ->
@@ -387,7 +387,7 @@ handle_info({'DOWN', _, process, Pid, _}, State = #state{gamestate = GS}) when G
 handle_info({'DOWN', _, process, Pid, _}, State) ->
     ?INFO("relay session died (wait for user reconnection), Pid: ~p", [Pid]),
     try 
-    gproc:unreg({p,g,self()}),
+    gproc:unreg({p,l,self()}),
     State#state.manager ! {remove_game, State#state.rules_module},
     ?INFO("game manager notified ~p ! ~p",[State#state.manager,{remove_game, State#state.rules_module}])
     catch _:_ -> noting
@@ -397,7 +397,7 @@ handle_info({'DOWN', _, process, Pid, _}, State) ->
 
 handle_info({unreg, _Key}, State) ->
     try 
-    gproc:unreg({p,g,self()}),
+    gproc:unreg({p,l,self()}),
     State#state.manager ! {remove_game, State#state.rules_module},
     ?INFO("game manager notified ~p ! ~p",[State#state.manager,{remove_game, State#state.rules_module}])
     catch _:_ -> noting

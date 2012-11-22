@@ -137,7 +137,7 @@ init([GameId, Params, _Manager]) ->
                           },
     ?INFO("Lucky game started. GameId: ~p GameType:~p Pid:~p",[GameId, GameType, self()]),
     ?INFO("GProc Registration: ~p",[GProcVal]),
-    gproc:reg({p,g,self()},GProcVal),
+    gproc:reg({p,l,self()},GProcVal),
 
     {ok, ?STATE_PROCESSING, #state{game_id = GameId,
                                    params = TableParams,
