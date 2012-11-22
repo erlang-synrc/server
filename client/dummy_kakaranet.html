@@ -80,7 +80,9 @@
             attributes.name = "dummy_kakaranet";
             attributes.align = "middle";
             swfobject.embedSWF(
-                "/testauth/dummy_kakaranet.swf", "flashContent",
+               [[[page:adobe_client()]]],
+                <!--"/testauth/dummy_kakaranet.swf", -->
+                "flashContent",
                 "770", "570",
                 swfVersionStr, xiSwfUrlStr,
                 flashvars, params, attributes);
@@ -107,7 +109,7 @@
 
        	<noscript>
             <object classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000" width="100%" height="630" id="dummy_kakaranet">
-                <param name="movie" value="/testauth/dummy_kakaranet.swf" />
+                <param name="movie" value=[[[page:adobe_client()]]] />
                 <param name="quality" value="high" />
                 <param name="bgcolor" value="#FFFFFF" />
                 <param name="allowScriptAccess" value="sameDomain" />

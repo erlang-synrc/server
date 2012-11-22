@@ -122,7 +122,7 @@ el_inside_play() ->
              [#game_table{id = GaId}] ->
                  IdStr = integer_to_list(GaId),
                  wf:session(IdStr, IdStr),
-                 URL = lists:concat([?_U("/client"),"/","okey","/id/", GaId]),
+                 URL = lists:concat([?_U("/client"),"/",wf:q(game_name),"/id/", GaId]),
                  #event{type=click, actions=webutils:new_window_js(URL)};
              [] ->
                  []

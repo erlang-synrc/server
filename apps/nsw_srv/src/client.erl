@@ -23,17 +23,15 @@ generate_token0() ->
     T = base64:encode(T0),
     T.
 
+adobe_client() ->
+    ?INFO("Adobe Client: ~p",[?_U(wf:q(game_name))]),
+    io_lib:fwrite("\"/testauth/~s.swf\"~n",[?_U(wf:q(game_name))]).
+
 token() ->
     U = wf:user(),
     T = rpc:call(?GAMESRVR_NODE,auth_server,store_token,[generate_token0(),U]),
-    GameType = case wf:q('__submodule__') of
-                    "batak" -> "flashvars.gameType = \"batak\";~n";
-                    "king"  -> "flashvars.gameType = \"king\";~n";
-                    "tavla" -> "flashvars.gameType = \"tavla\";~n";
-                    "okey"  -> "flashvars.gameType = \"okey\";~n";
-                    "sorbi" -> "flashvars.gameType = \"sorbi\";~n";
-                          _ -> ""
-            end,
+    GameType = ["flashvars.gameType = \"", ?_U(wf:q(game_name)),"\";"],
+
     Debug = case nsm_db:get(config,"is_production",false) of
                  {ok,true} -> "";
                  {ok,false} -> wf:f("flashvars.debugMode = \"true\";\n")
