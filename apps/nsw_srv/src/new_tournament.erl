@@ -333,8 +333,11 @@ get_prizes_total(Prizes) ->
         case Id of
             undefined -> 0;
             _ -> 
-                {ok, {Gift, _}} = nsm_gifts_db:get_gift(Id),
-                Gift#gift.our_price
+                {Status, Res} = nsm_gifts_db:get_gift(Id),
+                case Status of 
+                    ok -> {Gift, _} = Res, Gift#gift.our_price;
+                    _ -> 0
+                end
         end 
     || Id <- Prizes]).
 
