@@ -286,7 +286,7 @@ ui_checkboxes() ->
 ui_checkboxes(Section) ->
 
     Settings = wf:session({wf:q(game_name), wf:user()}),
-    Countdown = proplists:get_value(game_mode, Settings, undefined),
+    _Countdown = proplists:get_value(game_mode, Settings, undefined),
     Checkboxes = [
         "<span id='guidersitem4'>",
         "<span id='guiderstab1paired'>",
@@ -442,7 +442,6 @@ get_tables(Convert) ->
     retrieve_tables(Setting, UId, wf:q(game_name), Convert).
 
 filter_tables(QLC,UId,GameFSM,Setting,Convert) ->
-    UserPaid = nsm_accounts:user_paid(UId),
 
     GetPropList = fun(Key,Setngs) -> 
                    case Setngs of
@@ -459,7 +458,7 @@ filter_tables(QLC,UId,GameFSM,Setting,Convert) ->
     FilterAnyUser = case GetPropList(group, Setting) of
         undefined -> [];
         GroupId -> 
-            [UId || UId <- nsm_groups:list_group_members(GroupId)]
+            [GUId || GUId <- nsm_groups:list_group_members(GroupId)]
     end,
 
     FilteredQLC1 = lists:filter(
@@ -479,13 +478,8 @@ filter_tables(QLC,UId,GameFSM,Setting,Convert) ->
     FilteredQLC3 = lists:sort(fun (A, B) ->
             A#game_table.timestamp =< B#game_table.timestamp
         end, FilteredQLC2),
-
-    FilteredQLC4 = case UserPaid of  % paid user filter
-        true -> FilteredQLC3;
-        _ -> [A || A <- FilteredQLC3, A#game_table.paid_only /= true]
-    end,
-    
-    case Convert of convert -> convert_to_map(FilteredQLC4,Setting,UId,GameFSM); _ -> FilteredQLC4 end.
+   
+    case Convert of convert -> convert_to_map(FilteredQLC3, Setting,UId,GameFSM); _ -> FilteredQLC3 end.
 
 convert_to_map(Data,_Setting,UId,GameFSM) ->
     [ begin Url = lists:concat([?_U("/view-table/"),GameFSM,"/id/", TId]),
