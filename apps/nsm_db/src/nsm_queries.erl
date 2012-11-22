@@ -4,8 +4,6 @@
 -compile(export_all).
 
 get_single_tables(Setting,UId,GameFSM,Convert) ->
-    UserPaid = nsm_accounts:user_paid(UId),
-
     GetPropList = fun(Key,Setngs) -> 
                    case Setngs of
                         undefined -> undefined;
@@ -16,6 +14,7 @@ get_single_tables(Setting,UId,GameFSM,Convert) ->
     GameType = GetPropList(game_mode, Setting),
     Speed = GetPropList(speed, Setting),
     Game = GetPropList(game, Setting),
+    PaidOnly = GetPropList(paid_only, Setting),
     Lucky = false,
 
     FilterAllUsers = case GetPropList(users, Setting) of
@@ -38,13 +37,6 @@ get_single_tables(Setting,UId,GameFSM,Convert) ->
                         _Else -> Param == Value
                    end end,
 
-    CheckPaidOnly = fun(PO) ->
-        case UserPaid of
-            true -> true;
-            false -> PO /= true
-        end
-    end,
-
     Cursor = fun(Id,FilterFree,FilterUser) ->
                 qlc:cursor(qlc:q([V || {{_,_,_K},_,V=#game_table{creator=C,
                                                    rounds=R, game_type=G,
@@ -59,7 +51,7 @@ get_single_tables(Setting,UId,GameFSM,Convert) ->
                            Check(GameType,GT),
                            Check(Rounds,R),
                            Check(Lucky, L),
-                           CheckPaidOnly(PO)])
+                           Check(PaidOnly, PO)])
                 )
     end,
     OneAvailable   = fun(N) -> N == 1 end,
