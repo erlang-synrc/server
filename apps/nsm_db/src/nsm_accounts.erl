@@ -2,6 +2,7 @@
 -author('Vladimir Baranov <baranoff.vladimir@gmail.com>').
 
 -include("accounts.hrl").
+-include("membership_packages.hrl").
 -include_lib("nsx_config/include/log.hrl").
 
 -export([debet/2, credit/2, balance/2, create_account/1, create_account/2]).
@@ -162,9 +163,9 @@ generate_id() ->
     lists:concat([MegSec*1000000000000, Sec*1000000, MicroSec, "-", H]).
 
 user_paid(UId) ->
-    {_, Top} = nsm_db:get(user_purchase, UId),
-    case Top of
+    {_, UP} = nsm_db:get(user_purchase, UId),
+    case UP of
         notfound -> false;
-        undefined -> false;
+        #user_purchase{top = undefined} -> false;
         _ -> true
     end.

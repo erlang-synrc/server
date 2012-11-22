@@ -388,10 +388,19 @@ content() ->
                         #option { text="24 " ++ ?_T("ALL") }
             ]},
 
-            #link{style="position:absolute; top:726px; left:226px;", class="alltour_big_buttons alltour_gray_button", text=?_T("FILTER"), postback=filter_pressed},
-            #link{style="position:absolute; top:726px; left:392px;", class="alltour_big_buttons alltour_gray_button", text=?_T("RESET"), postback=clean_filter_pressed},
-            #link{style="position:absolute; top:726px; left:558px;", class="alltour_big_buttons alltour_orange_button", text=?_T("NEW"), postback=new_pressed},
-
+            case nsm_accounts:user_paid(wf:user()) of
+                true ->
+                    [
+                        #link{style="position:absolute; top:726px; left:226px;", class="alltour_big_buttons alltour_gray_button", text=?_T("FILTER"), postback=filter_pressed},
+                        #link{style="position:absolute; top:726px; left:392px;", class="alltour_big_buttons alltour_gray_button", text=?_T("RESET"), postback=clean_filter_pressed},
+                        #link{style="position:absolute; top:726px; left:558px;", class="alltour_big_buttons alltour_orange_button", text=?_T("NEW"), postback=new_pressed}
+                    ];
+                false ->
+                    [
+                        #link{style="position:absolute; top:726px; left:309px;", class="alltour_big_buttons alltour_gray_button", text=?_T("FILTER"), postback=filter_pressed},
+                        #link{style="position:absolute; top:726px; left:475px;", class="alltour_big_buttons alltour_gray_button", text=?_T("RESET"), postback=clean_filter_pressed}
+                    ]
+            end,
             #link{style="position:absolute; top:268px; left:20px;", class="alltour_arrow_left", postback=arrow_left},
             #link{style="position:absolute; top:268px; left:925px;", class="alltour_arrow_right", postback=arrow_right},
             #link{} % this is WTF fix. Something with the Nitrogen I suppose. Delete it and the last link will appear twise on a page.
