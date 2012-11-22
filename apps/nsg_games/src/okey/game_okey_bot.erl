@@ -202,9 +202,9 @@ okey_client_loop(State) ->
             RC = proplists:get_value(current_round, Args),
             ST = State#state.set_state,
             ST1 = ST#'OkeySetState'{round_cur = RC},
-            State#state{hand = MH, gosterge = G, set_state = ST1},
+%            State#state{hand = MH, gosterge = G, set_state = ST1},
             ?INFO("OKEY BOT GAME STARTED : ~p",[length(MH)]),
-            okey_client_loop(State#state{hand = MH});
+            okey_client_loop(State#state{hand = MH, gosterge = G, set_state = ST1});
         #game_event{event = <<"okey_game_player_state">>, args = Args} ->
             ?INFO("OKEY BOT OKEY GAME PLAYER STATE: ~p ROBOT NAME ~p", [Args,Id]),
             SS = #'OkeySetState'{round_cur = 1, round_max = 3,
