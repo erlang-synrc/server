@@ -317,7 +317,7 @@ ui_add_checkboxes() ->
 					 value=?_T("Slang"), text=?_T("Slang is accepted")}),
 		  construct_id(#checkbox{class="chk", postback={tag,{deny_observers,true}},
 					 value=?_T("No observers"), text=?_T("I don't accept observers")}),
-		  case nsm_account:user_paid(wf:user()) of
+		  case nsm_accounts:user_paid(wf:user()) of
                 true ->
                     construct_id(#checkbox{class="chk", postback={tag,{paid,true}},
 				        	 value=?_T("Paid"), text=?_T("Only paid members")});
