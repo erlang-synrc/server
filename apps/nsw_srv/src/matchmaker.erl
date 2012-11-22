@@ -429,8 +429,8 @@ retrieve_tables(Setting, UId, GameType,Convert) ->
 process_tables(Setting, UId,GameType,Convert) ->
     receive
          {From, get} -> 
-              Tables = rpc:call(?GAMESRVR_NODE,nsm_db,get_single_tables,[Setting,UId,GameType,Convert])
-                       ++ nsm_db:get_single_tables(Setting,UId,GameType,Convert),
+              Tables = rpc:call(?GAMESRVR_NODE,nsm_queries,get_single_tables,[Setting,UId,GameType,Convert])
+                       ++ nsm_queries:get_single_tables(Setting,UId,GameType,Convert),
               Filtered = filter_tables(Tables,UId,GameType,Setting,Convert),
               From ! {self(), Filtered},stop end. 
 
