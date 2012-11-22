@@ -778,7 +778,7 @@ html_user_info(UserName, IsOwner, IsPlaceholder, OwnerName, GameType) ->
 		%% TODO: get actual avatar
 		{"user", #image{image=avatar:get_avatar_by_username(UserName, small), class=
             case nsm_accounts:user_paid(UserName) of
-                true -> "avatar paid_user_avatar";
+                true -> "table_paid_user_avatar";
                 _ -> "avatar"
             end
         }}
