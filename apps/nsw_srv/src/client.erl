@@ -29,7 +29,7 @@ adobe_client() ->
 
 token() ->
     U = wf:user(),
-    T = nsm_queries:map_reduce(auth_server,store_token,[generate_token0(),U]),
+    T = rpc:call(?GAMESRVR_NODE,auth_server,store_token,[generate_token0(),U]),
     GameType = ["flashvars.gameType = \"", ?_U(wf:q(game_name)),"\";"],
 
     Debug = case nsm_db:get(config,"is_production",false) of

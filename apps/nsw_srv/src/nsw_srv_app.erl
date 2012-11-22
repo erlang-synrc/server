@@ -24,8 +24,8 @@ start(_StartType, _StartArgs) ->
     HttpOpts = [{dispatch, Dispatch}],
     start_cowboy(HttpOpts),
     case nsw_srv_sup:start_link() of
-                 {ok, Pid} -> 
-    [ nsm_queries:map_reduce(nsm_srv_tournament_lobby_sup,start_lobby,[erlang:integer_to_list(Tour#tournament.id)])
+                 {ok, Pid} ->
+    [ rpc:call(?GAMESRVR_NODE,nsm_srv_tournament_lobby_sup,start_lobby,[erlang:integer_to_list(Tour#tournament.id)])
                                      || Tour <- nsm_tournaments:all() ],
                 spawn(nsw_srv_app,spawn_tables,[]),
                               io:format("Web Started OK\n."), {ok, Pid};
@@ -35,7 +35,7 @@ start(_StartType, _StartArgs) ->
                          X -> io:format("Error ~p",[X]), erlang:halt(1)
     end.
 
-spawn_tables() -> timer:sleep(42000), nsm_queries:map_reduce(game_manager,create_tables,[42]).
+spawn_tables() -> timer:sleep(42000),  rpc:call(?GAMESRVR_NODE,game_manager,create_tables,[42]).
 
 mime() ->
     [

@@ -366,7 +366,7 @@ content() ->
         _ -> "WTF"
     end,
 
-    TourId = nsm_queries:map_reduce(game_manager,get_tournament,[Id]),
+    TourId = rpc:call(?GAMESRVR_NODE,game_manager,get_tournament,[Id]),
     wf:session(TourId,TourId),
     wf:state(tour_long_id, TourId),
 
@@ -413,7 +413,7 @@ content() ->
     {PN2, PI2} = hd(tl(Prizes)),
     {PN3, PI3} = hd(tl(tl(Prizes))),
 
-    case nsm_queries:map_reduce(nsm_srv_tournament_lobby,chat_history,[Id]) of
+    case rpc:call(?GAMESRVR_NODE,nsm_srv_tournament_lobby,chat_history,[Id]) of
         H when is_list(H) ->
             add_chat_history(H);
         _ ->
@@ -740,7 +740,7 @@ update_userlist() ->
 
 get_tour_user_list() ->
     TID = wf:state(tournament_id),
-    ActiveUsers = sets:from_list([U#user.username || U <- nsm_queries:map_reduce(nsm_srv_tournament_lobby,active_users,[TID])]),
+    ActiveUsers = sets:from_list([U#user.username || U <- rpc:call(?GAMESRVR_NODE,nsm_srv_tournament_lobby,active_users,[TID])]),
     JoinedUsers = sets:from_list([U#play_record.who || U <- nsm_tournaments:joined_users(TID)]),
     List = [begin 
                S1 = case nsm_accounts:balance(U, ?CURRENCY_GAME_POINTS) of
@@ -794,7 +794,7 @@ event(join_tournament) ->
 
 event({start_tour, Id, NPlayers,Q,T,S}) ->
     wf:state(tour_start_time, time()),
-    TourId = nsm_queries:map_reduce(game_manager,start_tournament,[Id, 1, NPlayers,Q,T,S]),
+    TourId = rpc:call(?GAMESRVR_NODE, game_manager,start_tournament,[Id, 1, NPlayers,Q,T,S]),
     wf:replace(attach_button, #link{id=attach_button, class="tourlobby_yellow_button", text=?_T("TAKE MY SEAT"), postback=attach}),
     wf:replace(start_button, ""),
     wf:state(tour_long_id,TourId);
@@ -835,7 +835,7 @@ get_timer_for_now() ->
     case DTime =< 0 of
         true -> 
             TId = wf:state(tournament_int_id),
-            case nsm_queries:map_reduce(game_manager,get_tournament,[TId]) of
+            case rpc:call(?GAMESRVR_NODE, game_manager,get_tournament,[TId]) of
                 [] -> ?_T("FINISHED");
                 _ -> ?_T("NOW")
             end;
