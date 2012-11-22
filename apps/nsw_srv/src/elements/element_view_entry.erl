@@ -44,7 +44,12 @@ render_normal_element(#view_entry{entry=E, anchor=Anchor}) ->
 
     %% Get avatar
     {ok, User} = nsm_users:get_user(E#entry.from),
-    Avatar = #image{image = avatar:get_avatar(User, small), style="width:48px;height:48px"},
+    Avatar = #image{image = avatar:get_avatar(User, small), style="width:48px;height:48px", class = 
+        case nsm_accounts:user_paid(E#entry.from) of
+            true -> "paid_user_avatar";
+            _ -> ""
+        end
+    },
 
     %% Get attachments
     ViewMediaPanelId = wf:temp_id(),

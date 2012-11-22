@@ -181,7 +181,12 @@ group_link(Gid) when is_list(Gid) ->
 user_vcard(Username) when is_list(Username) ->
     {ok, User} = nsm_users:get_user(Username),
     Avatar = avatar:get_avatar(User, small),
-    #link{body=[#image{image=Avatar}, #span{text=username_upper(Username)}],
+    #link{body=[#image{image=Avatar, class =
+        case nsm_accounts:user_paid(Username) of
+            true -> "paid_user_avatar";
+            _ -> ""
+        end
+    }, #span{text=username_upper(Username)}],
 	  url=site_utils:user_link(Username)}.
 
 

@@ -301,7 +301,12 @@ active_members() ->
         #h3{text=?_T("Active members")},
         #list{class="soc-users", body=[
             #listitem{body=#link{url=site_utils:user_link(Uid),
-                body=#image{image=webutils:get_user_avatar(Uid, "small"), style="width:52px;height:52px"}, style="width:52px;height:52px"}}
+                body=#image{image=webutils:get_user_avatar(Uid, "small"), style="width:52px;height:52px", class=
+                    case nsm_accounts:user_paid(Uid) of
+                        true -> "paid_user_avatar";
+                        _ -> ""
+                    end
+                }, style="width:52px;height:52px"}}
             || {Uid, _} <- ActiveUsers
         ]}
     ]}.

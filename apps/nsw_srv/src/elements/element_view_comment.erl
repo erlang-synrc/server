@@ -21,8 +21,12 @@ render_element(_R = #view_comment{comment=C}) ->
     %ViewMediaPanelId = wf:temp_id(),
 
     {ok, User} = nsm_users:get_user(Author),
-    Avatar = #image{image = avatar:get_avatar(User, tiny), style="width:30px;height:30px"},
-
+    Avatar = #image{image = avatar:get_avatar(User, tiny), style="width:30px;height:30px", class = 
+        case nsm_accounts:user_paid(Author) of
+            true -> "paid_user_avatar";
+            _ -> ""
+        end
+    },
     {CId, {EId, FId}} = C#comment.id,
     Id = lists:concat([CId,"_", EId, "_", FId]),
     [

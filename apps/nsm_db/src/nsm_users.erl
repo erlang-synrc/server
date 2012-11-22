@@ -415,7 +415,7 @@ user_realname(UId) ->
         Surname=="undefined" -> Name;
         true -> Name ++ [" "] ++ Surname
     end.
-
+      
 
 %% This function will be called from nsm_auth, after successfull login.
 login_posthook(User) ->
