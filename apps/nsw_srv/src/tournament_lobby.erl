@@ -27,11 +27,8 @@ main() ->
 
 main_authorized() ->
     TournamentId = wf:q(id),
-%    UserInfo = webutils:user_info(),
     wf:state(tournament_id, TournamentId),
-
-    %% user became ready automatically
-%    nsx_msg:notify_tournament_user_ready(TournamentId, UserInfo),
+    wf:state(tournament_int_id, list_to_integer(TournamentId)),
 
     TournamentInfo = nsm_tournaments:get(TournamentId),
     wf:state(tournament, TournamentInfo),
@@ -236,19 +233,21 @@ main_authorized() ->
                 font-size:12px; color:#000; line-height:26px; padding-left:10px;
             }
 
+            .tourlobby_prize_star{
+                width:55px; height:51px; 
+                position:absolute; left:-19px; top:-29px; text-align:center;
+            }
+
             .tourlobby_prize_star_1 {
-                width:55px; height:51px; background: url(/images/tournament/lobby/star_1.png);
-                position:relative; left:-19px; top:-175px; text-align:center;
+                background: url(/images/tournament/lobby/star_1.png);
             }
 
             .tourlobby_prize_star_2 {
-                width:55px; height:51px; background: url(/images/tournament/lobby/star_2.png);
-                position:relative; left:-19px; top:-175px; text-align:center;
+                background: url(/images/tournament/lobby/star_2.png);
             }
 
             .tourlobby_prize_star_3 {
-                width:55px; height:51px; background: url(/images/tournament/lobby/star_3.png);
-                position:relative; left:-19px; top:-175px; text-align:center;
+                background: url(/images/tournament/lobby/star_3.png);
             }
 
             .tourlobby_prize_star_text {
@@ -366,6 +365,11 @@ content() ->
         game_batak -> "BATAK";
         _ -> "WTF"
     end,
+
+    TourId = rpc:call(?GAMESRVR_NODE,game_manager,get_tournament,[Id]),
+    wf:session(TourId,TourId),
+    wf:state(tour_long_id, TourId),
+
     Date = integer_to_list(element(3, T#tournament.start_date)) ++ "." ++ 
            integer_to_list(element(2, T#tournament.start_date)) ++ "." ++ 
            integer_to_list(element(1, T#tournament.start_date)),
@@ -379,7 +383,7 @@ content() ->
                 N -> 
                     case N>0 of
                         true -> integer_to_list(N) ++ " " ++ ?_T("days");
-                        false -> ?_T("FINISHED")
+                        false -> get_timer_for_now()
                     end
             end;
         true ->
@@ -408,11 +412,6 @@ content() ->
     {PN1, PI1} = hd(Prizes),
     {PN2, PI2} = hd(tl(Prizes)),
     {PN3, PI3} = hd(tl(tl(Prizes))),
-
-    TourId = rpc:call(?GAMESRVR_NODE,game_manager,get_tournament,[Id]),
-    wf:session(TourId,TourId),
-
-    wf:state(tour_long_id, TourId),
 
     case rpc:call(?GAMESRVR_NODE,nsm_srv_tournament_lobby,chat_history,[Id]) of
         H when is_list(H) ->
@@ -509,7 +508,7 @@ content() ->
                         #br{},
                         #label{style="font-size:12px; color:#000;", body=PN1},
                         "</center>",
-                        #panel{class="tourlobby_prize_star_1", body=
+                        #panel{class="tourlobby_prize_star tourlobby_prize_star_1", body=
                             #label{class="tourlobby_prize_star_text", body="1"}
                         }
                     ]
@@ -520,7 +519,7 @@ content() ->
                         #br{},
                         #label{style="font-size:12px; color:#000;", body=PN2},
                         "</center>",
-                        #panel{class="tourlobby_prize_star_2", body=
+                        #panel{class="tourlobby_prize_star tourlobby_prize_star_2", body=
                             #label{class="tourlobby_prize_star_text", body="2"}
                         }
                     ]
@@ -531,7 +530,7 @@ content() ->
                         #br{},
                         #label{style="font-size:12px; color:#000;", body=PN3},
                         "</center>",
-                        #panel{class="tourlobby_prize_star_3", body=
+                        #panel{class="tourlobby_prize_star tourlobby_prize_star_3", body=
                             #label{class="tourlobby_prize_star_text", body="3"}
                         }
                     ]
@@ -600,7 +599,6 @@ user_table(Users) ->
     end.
 
 user_table_row(UId, P1, P2, Color, N, RealName) ->
-%    RealName = nsm_users:user_realname(UId),
     Avatar = avatar:get_avatar_by_username(UId, tiny),
     URL = site_utils:user_link(UId),
 
@@ -795,6 +793,7 @@ event(join_tournament) ->
     update_userlist();    
 
 event({start_tour, Id, NPlayers,Q,T,S}) ->
+    wf:state(tour_start_time, time()),
     TourId = rpc:call(?GAMESRVR_NODE,game_manager,start_tournament,[Id, 1, NPlayers,Q,T,S]),
     wf:replace(attach_button, #link{id=attach_button, class="tourlobby_yellow_button", text=?_T("TAKE MY SEAT"), postback=attach}),
     wf:replace(start_button, ""),
@@ -829,9 +828,17 @@ str_plus_0(N) ->
 
 get_timer_for_now() ->
     TourTime = wf:state(tour_start_time),
-    DTime = calendar:time_to_seconds(TourTime) - calendar:time_to_seconds(time()),
+    DTime = case wf:state(tour_long_id) of 
+        [] -> calendar:time_to_seconds(TourTime) - calendar:time_to_seconds(time());
+        _ -> 0  % started tournament is always either NOW or FINISHED
+    end,
     case DTime =< 0 of
-        true -> ?_T("NOW");
+        true -> 
+            TId = wf:state(tournament_int_id),
+            case rpc:call(?GAMESRVR_NODE,game_manager,get_tournament,[TId]) of
+                [] -> ?_T("FINISHED");
+                _ -> ?_T("NOW")
+            end;
         false ->
             S = DTime rem 60,
             M = (DTime div 60) rem 60,
