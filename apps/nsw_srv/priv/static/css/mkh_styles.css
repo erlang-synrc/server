@@ -166,8 +166,8 @@ ul.ui-autocomplete {
   height: 150px;
   width: 500px;
 }
-.modal-content{width: 3400px;}
-.modal-content div{float:left; padding: 0 2px;}
+.modal-content{width: 100%;}
+.modal-content div{float:left; padding: 0 2px;clear:both;}
 
 .scroller_prev{
     /*float:left;*/
