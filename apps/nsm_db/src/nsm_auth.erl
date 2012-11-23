@@ -17,6 +17,7 @@ login_fb(Data) ->
             {ok, User} ->
                 case User#user.status of
                     ok ->
+                        nsm_users:init_mq_for_user(User#user.username),
                         nsm_users:login_posthook(User#user.username),
                         {ok, User#user.username};
                     banned ->
@@ -39,6 +40,7 @@ login(Data) ->
             {ok, #user{password = HashedPassword, username = U} = User } ->
                 case User#user.status of
                     ok ->
+                        nsm_users:init_mq_for_user(UserName),
                         nsm_users:login_posthook(UserName),
                         {ok, U};
                     not_verified ->
