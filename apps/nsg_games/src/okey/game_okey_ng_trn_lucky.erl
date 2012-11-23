@@ -27,7 +27,7 @@
 
 %% --------------------------------------------------------------------
 %% External exports
--export([start/2, start_link/2, reg/2]).
+-export([start/1, start/2, start_link/2, reg/2]).
 
 %% gen_fsm callbacks
 -export([init/1, handle_event/3, handle_sync_event/4, handle_info/3, terminate/3, code_change/4]).
@@ -95,6 +95,10 @@
 %% External functions
 %% ====================================================================
 
+start([GameId, Params]) -> 
+    ?INFO(" +++ START OKEY LUCKY"),
+    start(GameId,Params).
+
 start(GameId, Params) ->
     gen_fsm:start(?MODULE, [GameId, Params, self()], []).
 
@@ -121,6 +125,8 @@ client_request(Pid, Message, Timeout) ->
 %% Server functions
 %% ====================================================================
 
+init([GameId, _Params]) -> init([GameId, _Params, self()]);
+
 init([GameId, _Params, _Manager]) ->
     TableParams = table_parameters(?MODULE, self()),
     BotsParams = bots_parameters(),
@@ -144,7 +150,8 @@ init([GameId, _Params, _Manager]) ->
     ?INFO("GProc Registration: ~p", [GProcVal]),
     gproc:reg({p,l,self()}, GProcVal),
 
-    {ok, ?STATE_PROCESSING, #state{game_id = GameId,
+    {ok, ?STATE_PROCESSING,
+         #state{game_id = GameId,
                                    params = TableParams,
                                    bots_params = BotsParams,
                                    players = players_init(),

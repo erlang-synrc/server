@@ -8,6 +8,7 @@
          notify_tables/2,
          submit/4,
          get_requirements/2,
+         start/1,
          start/5,
          start_link/5,
          stop/1,
@@ -92,11 +93,11 @@ notify_tables(Srv, Msg) -> Self = self(), gen_server:cast(Srv, {notify_tables, S
 im_ready(Srv) -> Self = self(), gen_server:cast(Srv, {im_ready, Self}).
 submit(Srv, Msg, From, Player) -> Self = self(), gen_server:cast(Srv, {submit, Self, Msg, From, Player}).
 
+start(P) -> gen_server:start(?MODULE, P, []).
 
 init([Topic, {lobby, GameFSM}, Params0, PlayerIds, Manager]) ->
 
     ?INFO(" +++ init paired tavla lobby ~p",[{GameFSM,Params0,PlayerIds,Manager}]),
-
     Settings = Params0,
 
     TableName = proplists:get_value(table_name, Settings, "no table"),

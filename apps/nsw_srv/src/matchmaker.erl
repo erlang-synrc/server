@@ -22,7 +22,9 @@ title() -> ?_T("Matchmaker").
 
 main() ->
   wf:state(buttons, green),
-  ?INFO("Matchmaker User: ~p",[wf:user()]),
+  ?INFO("Matchmaker User: ~p game: ~p",[wf:user(),?_U(wf:q(game_name))]),
+%     Settings = wf:session({wf:q(game_name), wf:user()}),
+%     Game = proplists:get_value(game, Settings),
 
   case wf:q(game_name) of
     "okey" -> ok;
@@ -54,6 +56,10 @@ main() ->
   end.
 
 body() ->
+
+            X = rpc:call(?GAMESRVR_NODE,game_manager,get_lucky_table,[list_to_atom("game_"++?_U(wf:q(game_name)))]),
+            wf:state(lucky,X),
+
   ui_update_buttons(),
   UId = webutils:user_info(username),
   wf:state(user_in_groups, nsm_groups:list_groups_per_user(UId)),
@@ -118,15 +124,15 @@ matchmaker_submenu() ->
 el_inside_play() ->
      Settings = wf:session({wf:q(game_name), wf:user()}),
      Game = proplists:get_value(game, Settings),
+%     X = rpc:call(?GAMESRVR_NODE,game_manager,get_lucky_table,[Game]),
      LuckyAction =
-        case rpc:call(?GAMESRVR_NODE,game_manager,get_lucky_table,[Game]) of
+        case wf:state(lucky) of
              [#game_table{id = GaId}] ->
                  IdStr = integer_to_list(GaId),
                  wf:session(IdStr, IdStr),
                  URL = lists:concat([?_U("/client"),"/",wf:q(game_name),"/id/", GaId]),
                  #event{type=click, actions=webutils:new_window_js(URL)};
-             [] ->
-                 []
+             _ -> []
         end,
      B = #span{style="font-weight:bold"},
      [
@@ -885,6 +891,8 @@ comet_update(State) ->
   case wf:user() of
     undefined -> webutils:redirect_to_ssl("login");
     _UId -> timer:sleep(?TABLE_UPDATE_QUANTUM),
+            X = rpc:call(?GAMESRVR_NODE,game_manager,get_lucky_table,[list_to_atom("game_"++?_U(wf:q(game_name)))]),
+            wf:state(lucky,X),
             garbage_collect(self()),
             Tables = get_tables(),
             wf:update(tables, show_table(Tables)),
@@ -989,13 +997,14 @@ u_event({info, {Target, TId}}) ->
 
 u_event({delete_table, TId, ProcId}) ->
     ?INFO("delete table: ~p",[{delete_table, TId, ProcId}]),
-    case ProcId of undefined -> ok; _ -> ProcId ! {unreg, {p,l,ProcId}} end,
+%    case ProcId of undefined -> ok; _ -> ProcId ! {unreg, {p,l,ProcId}} end,
     ?INFO(" *** delete"),
-    table_manager:delete_table(TId);
+    exit(ProcId, {shutdown,and_forget});
+%    table_manager:delete_table(TId);
 
 u_event({delete_saved_table, TId}) ->
-    ?INFO(" *** delete saved"),
-    table_manager:delete_save_table(TId);
+    ?INFO(" *** delete saved");
+%    table_manager:delete_save_table(TId);
 
 u_event({tab_selected, ID}) ->
     ?INFO("u_event"),

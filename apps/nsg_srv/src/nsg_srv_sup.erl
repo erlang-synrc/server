@@ -16,24 +16,5 @@ init([]) ->
     Restart = permanent,
     Shutdown = 2000,
 
-    OkeyLucky =
-        {okey_lucky, %% Id
-         {nsg_proxy_lucky, start_link, [okey, [{game_type, game_okey},
-                                               {mode, normal}]]},
-         permanent, %% Restart
-         2000,      %% Shutdown timeout
-         worker,    %% Process type
-         [nsg_proxy_lucky]
-        },
-    TavlaLucky =
-        {tavla_lucky, %% Id
-         {nsg_proxy_lucky, start_link, [tavla, [{game_type, game_tavla},
-                                                {mode, exclusive}]]},
-         permanent, %% Restart
-         2000,      %% Shutdown timeout
-         worker,    %% Process type
-         [nsg_proxy_lucky]
-        },
-
-    {ok, { SupFlags, [OkeyLucky, TavlaLucky]} }.
+    {ok, { SupFlags, []} }.
 

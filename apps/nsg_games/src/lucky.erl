@@ -1,4 +1,4 @@
--module(nsg_proxy_lucky).
+-module(lucky).
 -behaviour(gen_server).
 -include_lib("nsx_config/include/log.hrl").
 -compile(export_all).

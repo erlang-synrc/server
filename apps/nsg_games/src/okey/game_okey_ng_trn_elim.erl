@@ -28,7 +28,7 @@
 
 %% --------------------------------------------------------------------
 %% External exports
--export([start/2, start_link/2, reg/2]).
+-export([start/1, start/2, start_link/2, reg/2]).
 
 %% gen_fsm callbacks
 -export([init/1, handle_event/3, handle_sync_event/4, handle_info/3, terminate/3, code_change/4]).
@@ -119,6 +119,8 @@
 %% ====================================================================
 %% External functions
 %% ====================================================================
+
+start([GameId, Params]) -> start(GameId, Params).
 
 start(GameId, Params) ->
     gen_fsm:start(?MODULE, [GameId, Params, self()], []).

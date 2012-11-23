@@ -14,7 +14,7 @@
 
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 -export([do_rematch/2, signal/3, publish/2, submit/3, republish/2, resubmit/3, cast_resubmit/3,
-         notify_table/2, game/1, to_session/3, reg/2,
+         notify_table/2, game/1, to_session/3, reg/2, start/1,
          subscribe/2, subscribe/3, subscribe/4, unsubscribe/2, get_requirements/2, start/5, start_link/5, stop/1, get_topic/1,
          get_player_state/2, get_table_info/1, update_gamestate/2, can_observe/2, unreg/2, im_ready/1]).
 
@@ -74,6 +74,8 @@ game(_) -> okey.
 get_requirements(game_tavla,_) -> [{max_users,2},{min_users,2}];
 get_requirements(game_okey,_) -> [{max_users,4},{min_users,4}];
 get_requirements(_,_) -> [{max_users,2},{min_users,2}].
+
+start([GameId, GameFSM, Params, Pids, Manager]) -> gen_server:start_link(?MODULE, [GameId, GameFSM, Params, Pids, Manager], []).
 
 init([Topic, chat, _, _]) ->
     {ok, #state{topic = Topic, rules_pid = none, rules_module = chat,
@@ -151,12 +153,11 @@ init([Topic, {lobby, GameFSM}, Params0, PlayerIds, Manager]) ->
 
     ?INFO("State Lobby List: ~p",[State#state.lobby_list]),
 
-    gen_server:cast(self(), {update_gamestate, State#state.gamestate}),
+     gen_server:cast(self(), {update_gamestate, State#state.gamestate}),
 
     ?INFO("Humans/Robots: ~p/~p",[length(HumanIds),length(RobotIds)]),
 
-    gen_server:cast(self(), {start_robots, RobotIds}),
-%%    [add_robot(State) || _ <- RobotIds],
+     gen_server:cast(self(), {start_robots, RobotIds}),
     ?INFO("Start Robots"),
 
     {ok, State}.

@@ -29,7 +29,7 @@
 
 %% --------------------------------------------------------------------
 %% External exports
--export([start/2, start_link/2, reg/2]).
+-export([start/1, start/2, start_link/2, reg/2]).
 
 %% gen_fsm callbacks
 -export([init/1, state_name/2, state_name/3, handle_event/3,
@@ -83,6 +83,8 @@
 %% External functions
 %% ====================================================================
 
+start([GameId,Params]) -> start(GameId,Params).
+
 start(GameId, Params) ->
     gen_fsm:start(?MODULE, [GameId, Params, self()], []).
 start_link(GameId, Params) ->
@@ -114,6 +116,9 @@ client_sync_send(Pid, Message, Timeout) ->
 %%          ignore                              |
 %%          {stop, StopReason}
 %% --------------------------------------------------------------------
+
+init([GameId, Params]) -> init([GameId, Params, self()]);
+
 init([GameId, Params, _Manager]) ->
     GameType = proplists:get_value(game_type, Params),
     Mode = proplists:get_value(mode, Params),
@@ -139,7 +144,8 @@ init([GameId, Params, _Manager]) ->
     ?INFO("GProc Registration: ~p",[GProcVal]),
     gproc:reg({p,l,self()},GProcVal),
 
-    {ok, ?STATE_PROCESSING, #state{game_id = GameId,
+    {ok, ?STATE_PROCESSING, 
+         #state{game_id = GameId,
                                    params = TableParams,
                                    players = players_init(),
                                    tables = tables_init(),

@@ -2,7 +2,7 @@
 -author('Maxim Sokhatsky <maxim@synrc.com>').
 -behaviour(gen_fsm).
 
--export([start_link/2, start/3, start/4]).
+-export([start_link/2, start/3, start/4, start/1]).
 -export([signal/2, make_move/3, get_requirements/0, get_settings/1]).
 -export([setup_board/1, get_timeout/2,roll/1, get_player_stats/1]).
 -export([%%state_wait/3,
@@ -67,6 +67,8 @@
 
 start_link(Relay, PidsWithPlayersInfo) ->
     gen_fsm:start_link(?MODULE, [Relay, PidsWithPlayersInfo], []).
+
+start([Relay, PidsWithPlayersInfo, GameId]) -> start(Relay, PidsWithPlayersInfo, GameId).
 
 start(Relay, PidsWithPlayersInfo, GameId) ->
     start(Relay, PidsWithPlayersInfo, GameId, []).

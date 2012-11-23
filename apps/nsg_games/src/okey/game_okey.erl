@@ -2,7 +2,7 @@
 -author('Paul Peregud <paulperegud@gmail.com>').
 -behaviour(gen_fsm).
 
--export([start/3, start/4]).
+-export([start/3, start/4, start/1]).
 -export([get_requirements/0, get_settings/1]).
 -export([signal/2, make_move/3]).
 -export([status/1, get_player_stats/1]).
@@ -122,10 +122,10 @@ get_player_stats(PlayerId) ->
                        averagePlayDuration = proplists:get_value(average_play_time, PlayerStats)
                       }.
 
-start(Relay, Pids, GameId) ->
-    start(Relay, Pids, GameId, []).
-start(Relay, Pids, GameId, Params) ->
-    gen_fsm:start(?MODULE, [Relay, Pids, GameId, Params], []).
+start([Relay, Pids, GameId]) -> start(Relay, Pids, GameId);
+start([Relay, Pids, GameId, P]) -> start(Relay, Pids, GameId, P).
+start(Relay, Pids, GameId) -> start(Relay, Pids, GameId, []).
+start(Relay, Pids, GameId, Params) -> gen_fsm:start_link(?MODULE, [Relay, Pids, GameId, Params], []).
 
 
 init([Relay, PidsWithPlayersInfo, GameId, Settings0]) ->

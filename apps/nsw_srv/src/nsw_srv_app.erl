@@ -4,6 +4,7 @@
 -include_lib("nsm_db/include/config.hrl").
 -include_lib("nsm_db/include/tournaments.hrl").
 -include("setup.hrl").
+-export([start/2,stop/1]).
 -compile(export_all).
 
 start_cowboy(HttpOpts) ->
