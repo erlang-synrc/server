@@ -81,7 +81,7 @@ body() ->
 		</div>",
         #panel{style="height:70px; font-size:16px;", body=[
             #label{id=slider_min_value, style="position:absolute; left:276px; top:100px;", text="0"},
-            #label{id=slider_max_value, style="position:absolute; left:576px; top:100px; text-align:right; width:100px;", text=integer_to_list(?MAX_SLIDER_PRICE)},
+            #label{id=slider_max_value, style="position:absolute; left:576px; top:100px; text-align:right; width:100px;", text=site_utils:long_integer_to_list(?MAX_SLIDER_PRICE)},
             #panel{id=slider_panel, style="position:absolute; left:276px; top:125px; width:400px; height:20px;", body=[
                 #slider{range = true, id=gifts_slider, max=?MAX_SLIDER_PRICE,
                     postback={?MODULE, {gifts_slider}},
@@ -145,7 +145,7 @@ product_list_paged(Page) ->
                     #singlerow { style="width:100%;", cells=[
                         #tablecell{body=
         					"<h2 class='head'>"++ ?_T("Price") ++ ":&nbsp;" ++ integer_to_list(OneGift#gift.kakush_currency) ++ "<br>" 
-                            ++ ?_T("Kakuş") ++ ":&nbsp;" ++ integer_to_list(OneGift#gift.kakush_point) ++ "</h2>"
+                            ++ ?_T("Kakuş") ++ ":&nbsp;" ++ site_utils:long_integer_to_list(OneGift#gift.kakush_point) ++ "</h2>"
                         },
                         #tablecell{
                             style="text-align:right; background:#9d9d9d; color:#fff; 

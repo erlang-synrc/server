@@ -305,7 +305,7 @@ product_list_paged(Page) ->
                     #singlerow { style="width:100%;", cells=[
                         #tablecell{body=
         					"<h2 class='head'>"++ ?_T("Price") ++ ":&nbsp;" ++ integer_to_list(OneGift#gift.kakush_currency) ++ "<br>" 
-                            ++ ?_T("Kakuş") ++ ":&nbsp;" ++ integer_to_list(OneGift#gift.kakush_point) ++ "</h2>"
+                            ++ ?_T("Kakuş") ++ ":&nbsp;" ++ site_utils:long_integer_to_list(OneGift#gift.kakush_point) ++ "</h2>"
                         },
                         #tablecell{
                             style="text-align:right; background:#9d9d9d; color:#fff; 
@@ -369,8 +369,8 @@ reset_slider() ->
     wf:state(slider_max_value, Max div 100),
     {_, KMin} = nsm_gifts_tools:convert_money_to_kakush(Min),
     {_, KMax} = nsm_gifts_tools:convert_money_to_kakush(Max),
-    wf:update(slider_min_value, integer_to_list(KMin)),
-    wf:update(slider_max_value, integer_to_list(KMax)),
+    wf:update(slider_min_value, site_utils:long_integer_to_list(KMin)),
+    wf:update(slider_max_value, site_utils:long_integer_to_list(KMax)),
     event({newtour_slider}).
 
 set_prize(No, Id, ImageUrl) ->
