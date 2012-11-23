@@ -11,11 +11,11 @@ stop() -> exit(?SERVER, shutdown).
 
 init([]) ->
     RestartStrategy = simple_one_for_one,
-    MaxRestarts = 0,
-    MaxSecondsBetweenRestarts = 100,
+    MaxRestarts = 1,
+    MaxSecondsBetweenRestarts = 1000,
     SupFlags = {RestartStrategy, MaxRestarts, MaxSecondsBetweenRestarts},
     Restart = transient,
-    Shutdown = 200,
+    Shutdown = 2000,
     GameManager = {game_manager, {game_manager, start, []}, Restart, Shutdown, worker, [game_manager]},
     {ok, {SupFlags, [GameManager]}}.
 

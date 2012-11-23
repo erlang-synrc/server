@@ -12,6 +12,8 @@
 -compile(export_all). 
 -record(state, { game_tavla = 0, game_okey = 0 }).
 
+destroy_game(Sup, Pid) -> game_sup:stop_game(Sup,Pid).
+
 create_game(GameFSM, Params) ->
     GameId = id_generator:get_id(),
     {{ok,Pid},_} = create_game_monitor2(GameId, GameFSM, Params, self()),
