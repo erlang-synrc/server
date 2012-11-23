@@ -617,7 +617,6 @@ show_table(Tables) ->
                     OwnerLabel,
                     InfoPostback,
                     Action,
-                    _ViewPerPoint,
                     UserOwner,
                     Users,
                     DeleteAction] <- Tables
