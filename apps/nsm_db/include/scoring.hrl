@@ -1,4 +1,3 @@
-
 -record(player_scoring, {
     id,
     temp, 
@@ -24,3 +23,12 @@
     timestamp    % now() of the record
     }).
 
+-record(personal_score, { % total count of everything
+        uid,
+        games = 0,  
+        wins = 0,
+        loses = 0,
+        disconnects = 0,
+        points = 0,
+        average_time = 0
+    }).

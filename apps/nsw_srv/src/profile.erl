@@ -362,8 +362,43 @@ section_body(_) ->
     Scores = scoring:score_entries(wf:user()),
     STotalScore = integer_to_list(lists:sum([S#scoring_record.score_points || S <- Scores])),
     STotalKakaush = integer_to_list(lists:sum([S#scoring_record.score_kakaush || S <- Scores])),
+
+    {_, PersonalScore} = nsm_db:get(personal_score, wf:user()),
     [
         #h1{text=?_T("Player statistics")},
+        case PersonalScore of 
+            notfound -> [];
+            PS -> #panel{body=[
+                #singlerow{style="width:700px; margin-left:36px; font-size:16px; ",cells=[
+                    #tablecell{body=[
+                        ?_T("Total games played: "),
+                        #span{style="font-size:18px;", text=integer_to_list(PS#personal_score.games)}
+                    ]},
+                    #tablecell{body=[
+                        ?_T("Success ratio: "),
+                        #span{style="font-size:18px;", text=integer_to_list(100 * PS#personal_score.wins div PS#personal_score.games) ++ "%"}
+                    ]}
+                ]},
+                #br{},
+                #singlerow{style="width:400px; margin-left:36px; font-size:14px; ", cells=[
+                    #tablecell{body=[
+                        ?_T("Wins: "),
+                        #span{style="font-size:16px;", text=integer_to_list(PS#personal_score.wins)}
+                    ]},
+                    #tablecell{body=[
+                        ?_T("Loses: "),
+                        #span{style="font-size:16px;", text=integer_to_list(PS#personal_score.loses)}
+                    ]},
+                    #tablecell{body=[
+                        ?_T("Disconnects: "),
+                        #span{style="font-size:16px;", text=integer_to_list(PS#personal_score.disconnects)}
+                    ]}
+                ]},
+                #br{},
+                #br{},
+                #br{}
+            ]}
+        end,
         case Scores of 
             [] ->
                 #span{text=?_T("You haven't played any games yet.")};

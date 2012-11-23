@@ -145,7 +145,19 @@ assign_points(#'GameResults'{results = Results}, GameInfo) ->
                     timestamp = erlang:now()
                 },
                 Route = [feed, user, UId, scores, 0, add],  % maybe it would require separate worker for this
-                nsx_msg:notify(Route, [SR]);
+                nsx_msg:notify(Route, [SR]),
+                % personal score
+                {Games, Disconnects} = case R#'PlayerResults'.disconnected of
+                    true -> {0, 1};
+                    _ -> {1, 0}
+                end,
+                {Wins, Loses} = case R#'PlayerResults'.winner of
+                    <<"true">> -> {1, 0};
+                    _ -> {0, 1}
+                end,
+                % haven't found a way to properly get average time
+                nsx_msg:notify([personal_score, user, UId, add], {Games, Wins, Loses, Disconnects, GamePoints, 0});
+
             false ->
                 ok  % no statistics for robots
         end,

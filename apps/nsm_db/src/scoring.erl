@@ -4,7 +4,7 @@
 -include("scoring.hrl").
 -include_lib("nsx_config/include/log.hrl").
 
--export([add_score/3,score_entries/1, score_test/0]).
+-export([add_score/3,score_entries/1, add_personal_score/7, score_test/0, personal_score_test/0]).
 
 add_score(PlayerId, ScoringRecord, Temp) ->
     PlayerScoring = case nsm_db:get(player_scoring, PlayerId) of 
@@ -85,6 +85,35 @@ traverse_score_entries(Next, Result) ->
     end.
 
 
+add_personal_score(UId, Games, Wins, Loses, Disconnects, Points, AverageTime) ->
+    {_, PS} = nsm_db:get(personal_score, UId),
+    {NGames, NWins, NLoses,  NDisconnects, NPoints, NAverageTime} = case PS of
+        notfound ->
+            {Games, Wins, Loses, Disconnects, Points, AverageTime};
+        _ -> 
+            {
+                PS#personal_score.games + Games, 
+                PS#personal_score.wins + Wins,
+                PS#personal_score.loses + Loses,
+                PS#personal_score.disconnects + Disconnects,
+                PS#personal_score.points + Points,
+                case PS#personal_score.games of
+                    0 -> 0;
+                    Gs -> (PS#personal_score.average_time * Gs + AverageTime) / (PS#personal_score.games + Games)
+                end
+            }
+    end,
+    nsm_db:put(#personal_score{
+        uid = UId,
+        games = NGames,
+        wins = NWins,
+        loses = NLoses,
+        disconnects = NDisconnects,
+        points = NPoints,
+        average_time = NAverageTime
+    }).
+
+
 score_test() ->
     SR1 = #scoring_record{
         game_id = 1000403,
@@ -124,3 +153,7 @@ score_test() ->
         nsm_db:all(player_scoring),
         nsm_db:all(scoring_record)
     ].
+
+
+personal_score_test() ->
+    nsx_msg:notify(["personal_score", "user", "demo1", "add"], {1, 1, 0, 0, 10, 0}).
