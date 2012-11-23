@@ -495,7 +495,6 @@ convert_to_map(Data,_Setting,UId,GameFSM) ->
               Owner,
               {info, {table, TId}},
               {join, Action},
-              ViewPerPoint,
               UserOwner,
               Users,
               {delete_table, TId, ProcId} ]
@@ -618,7 +617,7 @@ show_table(Tables) ->
                     OwnerLabel,
                     InfoPostback,
                     Action,
-                    ViewPerPoint,
+                    _ViewPerPoint,
                     UserOwner,
                     Users,
                     DeleteAction] <- Tables
