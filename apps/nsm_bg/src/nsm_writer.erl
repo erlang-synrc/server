@@ -610,10 +610,10 @@ handle_notice(["likes", "user", UId, "add_like"] = Route,
     {noreply, State};
 
 handle_notice(["personal_score", "user", UId, "add"] = Route,
-    Message, #state{owner = Owner, type =Type} = State) ->
+    Message, #state{owner = Owner, type = Type} = State) ->
     ?INFO("queue_action(~p): personal_score add: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),
-    {Games, Wins, Loses, Disconnects, Points, AveregeTime} = Message,
-    scoring:add_personal_score(UId, Games, Wins, Loses, Disconnects, Points, AveregeTime),
+    {Games, Wins, Loses, Disconnects, Points, AverageTime} = Message,
+    scoring:add_personal_score(UId, Games, Wins, Loses, Disconnects, Points, AverageTime),
     {noreply, State};
 
 handle_notice(["system", "create_contract"] = Route,

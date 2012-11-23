@@ -489,6 +489,7 @@ build_user_relations(User, Groups) ->
      rk( [subscription, user, User, leave_group]),
      rk( [login, user, User, update_after_login]),
      rk( [likes, user, User, add_like]),
+     rk( [personal_score, user, User, add]),
 
      rk( [feed, user, User, count_entry_in_statistics] ),
      rk( [feed, user, User, count_comment_in_statistics] ),
@@ -516,8 +517,6 @@ build_user_relations(User, Groups) ->
 
      rk( [tournaments, user, User, create]),
      rk( [tournaments, user, User, create_and_join]),
-
-     rk( [personal_score, user, User, add]),
 
      %% system message format: feed.system.ElementType.Action
      rk( [feed, system, '*', '*']) |

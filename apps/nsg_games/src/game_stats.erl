@@ -156,7 +156,7 @@ assign_points(#'GameResults'{results = Results}, GameInfo) ->
                     _ -> {0, 1}
                 end,
                 % haven't found a way to properly get average time
-                nsx_msg:notify([personal_score, user, UId, add], [{Games, Wins, Loses, Disconnects, GamePoints, 0}]);
+                nsx_msg:notify([personal_score, user, UId, add], {Games, Wins, Loses, Disconnects, GamePoints, 0});
 
             false ->
                 ok  % no statistics for robots
