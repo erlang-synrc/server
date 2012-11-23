@@ -148,7 +148,7 @@ make_obj(T, user) -> riak_object:new(<<"user">>, list_to_binary(T#user.username)
 make_obj(T, game_table) -> riak_object:new(<<"game_table">>, list_to_binary(T#game_table.id), T);
 make_obj(T, player_scoring) -> riak_object:new(<<"player_scoring">>, list_to_binary(T#player_scoring.id), T);
 make_obj(T, scoring_record) -> riak_object:new(<<"scoring_record">>, list_to_binary(integer_to_list(T#scoring_record.id)), T);
-make_obj(T, personal_score) -> riak_object:new(<<"personal_score">>, list_to_binary(integer_to_list(T#personal_score.uid)), T);
+make_obj(T, personal_score) -> riak_object:new(<<"personal_score">>, list_to_binary(T#personal_score.uid), T);
 make_obj(T, save_game_table) -> riak_object:new(<<"save_game_table">>, list_to_binary(integer_to_list(T#save_game_table.id)), T);
 make_obj(T, browser_counter) -> riak_object:new(<<"browser_counter">>, T#browser_counter.id, T);
 make_obj(T, feature) -> riak_object:new(<<"feature">>, list_to_binary(T#feature.name), T);

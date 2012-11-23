@@ -25,10 +25,10 @@
 
 -record(personal_score, { % total count of everything
         uid,
-        games,  
-        wins,
-        loses,
-        disconnects,
-        points,
-        averege_time
+        games = 0,  
+        wins = 0,
+        loses = 0,
+        disconnects = 0,
+        points = 0,
+        average_time = 0
     }).
