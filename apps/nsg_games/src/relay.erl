@@ -82,7 +82,7 @@ init([Topic, chat, _, _]) ->
                 players = [], reg_players = [], gamestate = no_game}};
 
 init([Topic, {lobby, GameFSM}, Params0, PlayerIds, Manager]) ->
-    ?INFO("~n +++ init lobby ~p",[{GameFSM,Params0,PlayerIds,Manager}]),
+    ?INFO("~ninit lobby ~p",[{GameFSM,Params0,PlayerIds,Manager}]),
 
     Settings = Params0,
 
@@ -137,7 +137,7 @@ init([Topic, {lobby, GameFSM}, Params0, PlayerIds, Manager]) ->
                            name = TableName
                },
 
-    ?INFO(" +++ relay.erl GProc Registration: ~p",[GProcVal]),
+    ?INFO("relay.erl GProc Registration: ~p",[GProcVal]),
 
     gproc:reg({p,l,self()},GProcVal),
 
