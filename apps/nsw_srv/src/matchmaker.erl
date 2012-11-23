@@ -994,7 +994,7 @@ u_event({delete_table, TId, ProcId}) ->
     ?INFO("delete table: ~p",[{delete_table, TId, ProcId}]),
 %    case ProcId of undefined -> ok; _ -> ProcId ! {unreg, {p,l,ProcId}} end,
     A = rpc:call(?GAMESRVR_NODE,game_manager,destroy_game,[case ?_U(wf:q(game_name)) of "tavla" -> tavla_sup; _ -> okey_sup end, ProcId]),
-    ?INFO(" *** delete ~p.",[A]),
+    ?INFO(" *** delete ~p.",[A]);
 %    exit(ProcId, {shutdown,and_forget});
 %    table_manager:delete_table(TId);
 
