@@ -433,15 +433,23 @@ inner_event({remove_entry, EId, PanelId, ETo, From}, _) ->
                        postback={remove_entry, EId, PanelId, ETo, From, true} });
 
 inner_event({remove_entry, EId, _PanelId, _ETo, From, true}, _) ->
-    ?DBG("Remove entry: ~p~n", [EId]),
+    CurrentUser = wf:user(),
     %% TODO: replace with API call?
     {Type, Owner} = case wf:state(feed_owner) of
-        {T, Name} ->
-            {T, Name};
-        _ ->
-            {user, wf:user()}
+        {T, Name} -> {T, Name};
+        _ -> {user, CurrentUser}
     end,
-    nsx_msg:notify([feed, Type, Owner, entry, EId, delete], [From]);
+    case Type of
+      group when From == CurrentUser ->
+        nsx_msg:notify([feed, Type, Owner, entry, EId, delete], [From]);
+      group ->
+        case nsm_groups:group_user_type(CurrentUser, Owner) of
+          admin -> nsx_msg:notify([feed, Type, Owner, entry, EId, delete], [From]);
+          _ -> ok
+        end;
+      _ ->
+        nsx_msg:notify([feed, Type, Owner, entry, EId, delete], [From])
+    end;
 
 inner_event({hide_entry, EId, PanelId}, _) ->
     wf:wire(#confirm { text=?_T("Do you want to hide this entry?"),

@@ -290,7 +290,7 @@ entry_element_usual(E, Comments, Avatar, {MediaThumb, MediaLists0}, _TargetMedia
         _ ->
             {DmFrom, DmFromLink, IsEditable} = case {E#entry.from, wf:user()} of
                 {DMF, DMF} -> {"You", wf:user(), true};
-                _ -> {site_utils:username_upper(E#entry.from), E#entry.from, false}
+                _ -> {E#entry.from, E#entry.from, false}
             end,
 
             case E#entry.to of 

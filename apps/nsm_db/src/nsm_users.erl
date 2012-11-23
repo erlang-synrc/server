@@ -475,6 +475,9 @@ init_mq(User, Groups) ->
     nsm_mq_channel:close(Channel),
     ok.
 
+init_mq_for_user(User) ->
+    init_mq(User, nsm_groups:list_groups_per_user(User) ).
+
 build_user_relations(User, Groups) ->
     %% Feed Keys. Subscribe for self events, system and groups events
     %% feed.FeedOwnerType.FeedOwnerId.ElementType.ElementId.Action
@@ -535,6 +538,7 @@ unbind_user_exchange(Channel, User, RoutingKey) ->
         {unbind, RoutingKey,
          nsm_mq_channel:unbind_exchange(Channel, ?USER_EXCHANGE(User),
                                         ?NOTIFICATIONS_EX, RoutingKey)}.
+
 %% same stuff for groups
 init_mq_for_group(Group) ->
     GroupExchange = ?GROUP_EXCHANGE(Group),
