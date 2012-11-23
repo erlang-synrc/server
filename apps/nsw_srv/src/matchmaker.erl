@@ -433,12 +433,11 @@ retrieve_tables(Setting, UId, GameType,Convert) ->
     receive {Pid,Msg} -> Msg end.
 
 process_tables(Setting, UId,GameType,Convert) ->
-    receive
-         {From, get} -> 
-              Tables = rpc:call(?GAMESRVR_NODE,nsm_queries,get_single_tables,[Setting,UId,GameType,Convert])
-                ++ nsm_queries:get_single_tables(Setting,UId,GameType,Convert),
-              Filtered = filter_tables(Tables,UId,GameType,Setting,Convert),
-              From ! {self(), Filtered},stop end. 
+  receive
+    {From, get} -> 
+      Tables = nsm_queries:map_reduce(nsm_queries,get_single_tables,[Setting,UId,GameType,Convert]),
+      Filtered = filter_tables(Tables,UId,GameType,Setting,Convert),
+      From ! {self(), Filtered},stop end.
 
 get_tables() -> get_tables(convert).
 
@@ -491,7 +490,6 @@ convert_to_map(Data,_Setting,UId,GameFSM) ->
     [ begin Url = lists:concat([?_U("/view-table/"),GameFSM,"/id/", TId]),
             Script = webutils:new_window_js(Url),
             Action = #event{type=click, actions=#script{script=Script}},
-            ViewPerPoint = "",%site_utils:table_per_user_point(UId, 0, Rounds),
             UserOwner = UId == Owner,
             [ Name,
               Owner,
@@ -578,7 +576,6 @@ show_table(Tables) ->
                                 _ ->
                                     #link{id=joinTable,
                                         actions=Act,
-                                        show_if=ViewPerPoint,
                                         text=?_T("Join"),
                                         class="join-button"
                                     }
