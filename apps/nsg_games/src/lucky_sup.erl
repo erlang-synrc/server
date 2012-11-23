@@ -15,24 +15,13 @@ init([]) ->
     Restart = permanent,
     Shutdown = 2000,
 
-    OkeyLucky =
-        {okey_lucky, %% Id
-         {lucky, start_link, [okey, [{game_type, game_okey},
-                                               {mode, normal}]]},
-         permanent, %% Restart
-         2000,      %% Shutdown timeout
-         worker,    %% Process type
-         [lucky]
-        },
-    TavlaLucky =
-        {tavla_lucky, %% Id
-         {lucky, start_link, [tavla, [{game_type, game_tavla},
-                                                {mode, exclusive}]]},
-         permanent, %% Restart
-         2000,      %% Shutdown timeout
-         worker,    %% Process type
-         [lucky]
-        },
+    OkeyGameId = id_generator:get_id(),
+    OkeySpec = {okey_lucky, {game_okey_ng_trn_lucky, start_link, [OkeyGameId,[{game_type, game_okey}, {mode, normal}]]}, 
+                  Restart, Shutdown, worker, [game_okey_ng_trn_lucky]},
 
-    {ok, { SupFlags, [OkeyLucky, TavlaLucky]} }.
+    TavlaGameId = id_generator:get_id(),
+    TavlaSpec = {tavla_lucky, {fl_lucky, start_link, [TavlaGameId,[{game_type, game_tavla}, {mode, normal}]]}, 
+                  Restart, Shutdown, worker, [fl_lucky]},
+
+    {ok, { SupFlags, [OkeySpec, TavlaSpec]} }.
 

@@ -2,20 +2,25 @@
 -behaviour(supervisor).
 -export([start_link/0, stop/0]).
 -include_lib("nsg_srv/include/conf.hrl").
--export([init/1, start/0]).
+-include_lib("nsx_config/include/log.hrl").
+-export([init/1, start/0, start_game/3]).
 -define(SERVER, ?MODULE).
 
 start() -> supervisor:start({local, ?SERVER}, ?MODULE, []).
 start_link() -> supervisor:start_link({local, ?SERVER}, ?MODULE, []).
 stop() -> exit(?SERVER, shutdown).
-
-init([]) ->
-    RestartStrategy = simple_one_for_one,
-    MaxRestarts = 0,
-    MaxSecondsBetweenRestarts = 600,
-    SupFlags = {RestartStrategy, MaxRestarts, MaxSecondsBetweenRestarts},
+start_game(Mod,Par,GameId) -> 
+    ?INFO("TAVLA SUP STAR CHILD"),
     Restart = transient,
     Shutdown = 200,
-    GameManager = {game_manager, {game_manager, start, []}, Restart, Shutdown, worker, [game_manager]},
-    {ok, {SupFlags, [GameManager]}}.
+    ChildSpec = {GameId, {Mod, start_link, Par}, Restart, Shutdown, worker, [Mod]},
+    supervisor:start_child(?MODULE,ChildSpec).
+
+init([]) ->
+    ?INFO("TAVLA SUP STARTED"),
+    RestartStrategy = one_for_one,
+    MaxRestarts = 1,
+    MaxSecondsBetweenRestarts = 600,
+    SupFlags = {RestartStrategy, MaxRestarts, MaxSecondsBetweenRestarts},
+    {ok, {SupFlags, []}}.
 

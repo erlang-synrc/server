@@ -2,7 +2,7 @@
 -behaviour(gen_server).
 -author('Maxim Sokhatsky <maxim@synrc.com>').
 -compile(export_all).
--export([init/1, start/0, start/2, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
+-export([init/1, start/0, start_link/0, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 -include_lib("nsg_srv/include/requests.hrl").
 -include_lib("nsg_srv/include/conf.hrl").
 -include_lib("nsm_db/include/table.hrl").
@@ -37,18 +37,19 @@ game_requirements(GameAtom) -> GameAtom:get_requirements().
 counter(Game) -> PL = supervisor:count_children(case Game of game_okey -> okey_sup; game_tavla -> tavla_sup; _ -> game_sup end),
                  proplists:get_value(active, PL, 0).
 
-start([Module, Args]) -> gen_server:start(?MODULE,[Module,Args],[]).
-start(Module, Args) -> gen_server:start(?MODULE,[Module,Args],[]).
-start() -> gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
+%start([Module, Args]) -> gen_server:start(?MODULE,[Module,Args],[]).
+%start(Module, Args) -> gen_server:start(?MODULE,[Module,Args],[]).
+start() -> gen_server:start({local, ?MODULE}, ?MODULE, [], []).
+start_link() -> gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 stop(Ref) -> gen_server:cast(Ref, stop).
 
-init([]) -> {ok,#state{}};
-init([Module,Args]) -> 
-    ?INFO("STARTING MODULE ~p under SUPERVISOR with PARAMS ~p~n",[Module,Args]),
-    case Module:start(Args) of
-                         {ok,_,Pid} -> {ok, Pid};
-                         {ok,Pid} -> {ok, Pid}
-                        end.
+init([]) -> {ok,#state{}}.
+%init([Module,Args]) -> 
+%    ?INFO("STARTING MODULE ~p under SUPERVISOR with PARAMS ~p~n",[Module,Args]),
+%    case Module:start(Args) of
+%                         {ok,_,Pid} -> {ok, Pid};
+%                         {ok,Pid} -> {ok, Pid}
+%                        end.
 
 handle_call({get_relay, Topic}, _From, State) -> Res = get_relay_pid(Topic), {reply, Res, State};
 handle_call({game_counter, FSM}, _From, State) ->
@@ -68,8 +69,8 @@ game_sup_domain(Module) ->
          game_okey_ng_trn_elim -> okey_sup;
          game_okey -> okey_sup;
          game_tavla -> tavla_sup;
-         fl_lucky -> tavla_sup;
-         game_okey_ng_trn_lucky -> okey_sup;
+         fl_lucky -> lucky_sup;
+         game_okey_ng_trn_lucky -> lucky_sup;
          game_okey_ng_trn_standalone -> okey_sup;
          _ -> game_sup
     end.
@@ -79,23 +80,25 @@ create_game_monitor(Topic, {lobby,GameFSM}, Params, Players, State) ->
     GameMode = proplists:get_value(game_mode, Params, standard),
     ?INFO("Create Root Game Process (Game Monitor): ~p Mode: ~p Params: ~p",[GameFSM, GameMode,Params]),
     GameModule = game_monitor_module(GameFSM,GameMode),
-    RelayInit =  game_sup:start_game(game_sup_domain(GameFSM),GameModule,[Topic, {lobby,GameFSM}, Params, Players, self()]),
+    Sup = game_sup_domain(GameFSM),
+    RelayInit = Sup:start_game(GameModule,[Topic, {lobby,GameFSM}, Params, Players, self()], Topic),
     ?INFO("RelayInit ~p",[RelayInit]),
     case RelayInit of 
         {ok, Srv} ->
-            Ref = erlang:monitor(process, Srv),
+%            Ref = erlang:monitor(process, Srv),
             {{ok, Srv}, State};
         {error, Reason} ->
             {{error, Reason}, State}
     end.
 
 create_game_monitor2(Topic, GameFSM, Params, State) ->
-    ?INFO("Create Root Game Process (Game Monitor2): ~p Params: ~p",[GameFSM, Params]),
-    RelayInit = game_sup:start_game(game_sup_domain(GameFSM),GameFSM,[Topic, Params]),
+    Sup = game_sup_domain(GameFSM),
+    ?INFO("Create Root Game Process (Game Monitor2): ~p Params: ~p Sup: ~p",[GameFSM, Params,Sup]),
+    RelayInit = Sup:start_game(GameFSM,Params,Topic),
     ?INFO("RelayInit ~p",[RelayInit]),
     case RelayInit of 
         {ok, Srv} ->
-            Ref = erlang:monitor(process, Srv),
+%            Ref = erlang:monitor(process, Srv),
             {{ok, Srv}, State};
         {error, Reason} ->
             {{error, Reason}, State}

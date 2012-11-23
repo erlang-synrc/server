@@ -12,12 +12,15 @@ start_game(Sup,Mod,Par) -> supervisor:start_child(Sup,[Mod,Par]).
 stop_game(Sup,Pid) -> supervisor:terminate_child(Sup,Pid).
 
 init([]) ->
-    RestartStrategy = simple_one_for_one,
-    MaxRestarts = 0,
+    RestartStrategy = one_for_one,
+    MaxRestarts = 100,
     MaxSecondsBetweenRestarts = 3600,
     SupFlags = {RestartStrategy, MaxRestarts, MaxSecondsBetweenRestarts},
-    Restart = transient,
+    Restart = permanent,
     Shutdown = 2000,
-    GameManager = {game_manager, {game_manager, start, []}, Restart, Shutdown, worker, [game_manager]},
-    {ok, {SupFlags, [GameManager]}}.
+    GameManager = {game_manager, {game_manager, start_link, []}, Restart, Shutdown, worker, [game_manager]},
+    TavlaSup = {tavla_sup, {tavla_sup, start_link, []}, Restart, Shutdown, supervisor, [tavla_sup]},
+    OkeySup = {okey_sup, {okey_sup, start_link, []}, Restart, Shutdown, supervisor, [okey_sup]},
+    LuckySup = {lucky_sup, {lucky_sup, start_link, []}, Restart, Shutdown, supervisor, [lucky_sup]},
+    {ok, {SupFlags, [GameManager,TavlaSup,OkeySup,LuckySup]}}.
 

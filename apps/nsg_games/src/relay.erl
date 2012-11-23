@@ -12,9 +12,9 @@
 -include_lib("nsg_srv/include/settings.hrl").
 -include_lib("stdlib/include/qlc.hrl").
 
--export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
+-export([init/5, init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 -export([do_rematch/2, signal/3, publish/2, submit/3, republish/2, resubmit/3, cast_resubmit/3,
-         notify_table/2, game/1, to_session/3, reg/2, start/1,
+         notify_table/2, game/1, to_session/3, reg/2, start/1, start_link/1,
          subscribe/2, subscribe/3, subscribe/4, unsubscribe/2, get_requirements/2, start/5, start_link/5, stop/1, get_topic/1,
          get_player_state/2, get_table_info/1, update_gamestate/2, can_observe/2, unreg/2, im_ready/1]).
 
@@ -63,6 +63,7 @@ get_table_info(Srv) -> gen_server:call(Srv, get_table_info).
 update_gamestate(Srv, NewGameState) -> gen_server:cast(Srv, {update_gamestate, NewGameState}).
 can_observe(Srv, Id) -> gen_server:call(Srv, {can_observe, Id}).
 start_link(GameId, GameFSM, Params, Pids, Manager) -> gen_server:start_link(?MODULE, [GameId, GameFSM, Params, Pids, Manager], []).
+start_link([GameId, GameFSM, Params, Pids, Manager]) -> gen_server:start_link(?MODULE, [GameId, GameFSM, Params, Pids, Manager], []).
 start(GameId, GameFSM, Params, Pids, Manager) -> gen_server:start(?MODULE, [GameId, GameFSM, Params, Pids, Manager], []).
 stop(Srv) -> gen_server:cast(Srv, stop).
 im_ready(Srv) -> gen_server:cast(Srv, room_ready).
@@ -75,11 +76,14 @@ get_requirements(game_tavla,_) -> [{max_users,2},{min_users,2}];
 get_requirements(game_okey,_) -> [{max_users,4},{min_users,4}];
 get_requirements(_,_) -> [{max_users,2},{min_users,2}].
 
-start([GameId, GameFSM, Params, Pids, Manager]) -> gen_server:start_link(?MODULE, [GameId, GameFSM, Params, Pids, Manager], []).
+start([GameId, GameFSM, Params, Pids, Manager]) -> gen_server:start(?MODULE, [GameId, GameFSM, Params, Pids, Manager], []).
+
+init(Topic, {lobby, GameFSM}, Params0, PlayerIds, Manager) -> init([Topic, {lobby, GameFSM}, Params0, PlayerIds, Manager]).
 
 init([Topic, chat, _, _]) ->
     {ok, #state{topic = Topic, rules_pid = none, rules_module = chat,
                 players = [], reg_players = [], gamestate = no_game}};
+
 
 init([Topic, {lobby, GameFSM}, Params0, PlayerIds, Manager]) ->
     ?INFO("~ninit lobby ~p",[{GameFSM,Params0,PlayerIds,Manager}]),
