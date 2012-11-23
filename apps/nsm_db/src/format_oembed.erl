@@ -20,9 +20,12 @@ search(T) ->
 
 
 -spec format(string(), #media{}) -> {string(), #media{}}.
-format(Url, #entry{media=Media} = Entry) ->
+format(Url, #entry{media=Media, shared=Shared} = Entry) ->
     NewElement = short_link(Url),
-    MyMedia0 = oembed(Url),
+    MyMedia0 = case Shared of
+      [] -> oembed(Url);
+      _Who -> []
+    end,
     MyMedia = lists:flatten([MyMedia0 | Media]),
     NewEntry = Entry#entry{media = lists:reverse(MyMedia)},
     {lists:flatten(NewElement), NewEntry}.
