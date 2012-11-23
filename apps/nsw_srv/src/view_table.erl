@@ -469,9 +469,8 @@ show_row(Label, Info) ->
               body=[#h5 {text=Label},
                      #panel {body=Info}]}.
 
-get_tables(Id) ->  rpc:call(?GAMESRVR_NODE, game_manager,get_tables,[Id]) ++ 
-  qlc:e(qlc:q([Val || {{_,_,_Key},_,Val=#game_table{id = _Id}} 
-      <- gproc:table(props), Id == _Id ])).
+get_tables(Id) ->
+  nsm_queries:map_reduce(game_manager,get_tables,[Id]).
 
 qlc_id(Id) ->
     qlc:e(qlc:q([Val || {{_,_,_Key},_,Val=#game_table{gameid = _GameId, id = _Id, 
