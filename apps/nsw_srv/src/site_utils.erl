@@ -39,7 +39,9 @@
          base64_encode_to_url/1,
          base64_decode_from_url/1,
 
-         feed_time_tuple/1
+         feed_time_tuple/1,
+    
+         long_integer_to_list/1
         ]).
 
 %% Localized #game_table values
@@ -425,3 +427,12 @@ base64_encode_to_url(String) ->
 
 base64_decode_from_url(EncodedUrl) ->
     base64:decode_to_string( wf:url_decode(EncodedUrl) ).
+
+long_integer_to_list(I) when is_integer(I) ->
+    long_integer_to_list(integer_to_list(I));
+long_integer_to_list(S) ->
+    LS = length(S),
+    case LS > 3 of 
+        true -> long_integer_to_list(lists:sublist(S, 1, LS-3)) ++ " " ++ lists:sublist(S, LS-2, 3);
+        false -> S
+    end.
