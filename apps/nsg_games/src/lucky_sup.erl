@@ -22,7 +22,7 @@ init([]) ->
          permanent, %% Restart
          2000,      %% Shutdown timeout
          worker,    %% Process type
-         [nsg_proxy_lucky]
+         [lucky]
         },
     TavlaLucky =
         {tavla_lucky, %% Id
@@ -31,7 +31,7 @@ init([]) ->
          permanent, %% Restart
          2000,      %% Shutdown timeout
          worker,    %% Process type
-         [nsg_proxy_lucky]
+         [lucky]
         },
 
     {ok, { SupFlags, [OkeyLucky, TavlaLucky]} }.

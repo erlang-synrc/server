@@ -83,7 +83,7 @@
 %% External functions
 %% ====================================================================
 
-start([GameId,Params]) -> start(GameId,Params).
+start([GameId,Params]) -> start_link(GameId,Params).
 
 start(GameId, Params) ->
     gen_fsm:start(?MODULE, [GameId, Params, self()], []).

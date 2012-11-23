@@ -23,6 +23,9 @@ create_table(GameFSM, Params, PlayerIds) ->
     {{ok, Pid},_} = create_game_monitor(GameId, {lobby, GameFSM}, Params, PlayerIds, self()),
     {ok, GameId, Pid}.
 
+get_lucky_pid() ->
+    [X]=game_manager:get_lucky_table(game_tavla),
+    X#game_table.game_process.
 get_relay_pid(GameId) -> case get_tables(GameId) of [] -> undefined;
     [#game_table{game_process = P} | _] -> ?INFO("GameRelay: ~p",[P]), P end.
 get_relay_mod_pid(GameId) -> case get_tables(GameId) of [] -> undefined;

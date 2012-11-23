@@ -14,7 +14,7 @@ init([]) ->
     MaxRestarts = 0,
     MaxSecondsBetweenRestarts = 600,
     SupFlags = {RestartStrategy, MaxRestarts, MaxSecondsBetweenRestarts},
-    Restart = temporary,
+    Restart = transient,
     Shutdown = 200,
     GameManager = {game_manager, {game_manager, start, []}, Restart, Shutdown, worker, [game_manager]},
     {ok, {SupFlags, [GameManager]}}.
