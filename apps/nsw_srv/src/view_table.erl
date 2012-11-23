@@ -786,6 +786,8 @@ html_user_info(UserName, IsOwner, IsPlaceholder, OwnerName, GameType) ->
 	      }}.
 
 % events
+api_event(Name, Tag, Args)->
+  fb_utils:api_event(Name, Tag, Args).
 
 event(chat) ->
 %    Id = wf:state_default(table_id, undefined),
