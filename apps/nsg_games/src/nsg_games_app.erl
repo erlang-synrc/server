@@ -5,6 +5,6 @@
 -include_lib("nsg_srv/include/conf.hrl").
 
 start() -> start(init,[]).
-start(_StartType, _StartArgs) -> game_sup:start_link(), tavla_sup:start_link(), okey_sup:start_link().%, lucky_sup:start_link().
+start(_StartType, _StartArgs) -> game_sup:start_link(), tavla_sup:start_link(), okey_sup:start_link(), lucky_sup:start_link().
 stop() -> stop([]).
 stop(_State) -> game_sup:stop().
