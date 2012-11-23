@@ -394,11 +394,14 @@ redirect(Url, Delay) ->
     wf:wire(#event{type=timer, delay = Delay, actions=#script{script="window.location=\""++Url++"\";"}}).
 
 login_user(UserName) ->
-    {ok, User} = nsm_users:get_user(UserName),
-    nsx_msg:notify(["login", "user", UserName, "update_after_login"], []),
-    wf:session(user_info, User),
-    wf:user(UserName),
-    wf:cookie("lang", site_utils:detect_language(), "/", 100*24*60), %% 100 days
-    wf:config_default(session_timeout, 120),    % setting nitrogen session to 2 hours
-    webutils:redirect_to_tcp(?_U("/dashboard")).
-%    wf:redirect_from_login(?_U("/dashboard")).
+  case nsm_users:get_user(UserName) of 
+    {ok, User}->
+      nsx_msg:notify(["login", "user", UserName, "update_after_login"], []),
+      wf:session(user_info, User),
+      wf:user(UserName),
+      wf:cookie("lang", site_utils:detect_language(), "/", 100*24*60), %% 100 days
+      wf:config_default(session_timeout, 120),    % setting nitrogen session to 2 hours
+      webutils:redirect_to_tcp(?_U("/dashboard"));
+    {error, notfound}-> 
+      wf:redirect(?_U("/?message=") ++ site_utils:base64_encode_to_url(?_T("failed")))
+  end.
