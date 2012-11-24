@@ -78,6 +78,12 @@ main_authorized() ->
                 display:block; width:109px; height:28px; background: url(../images/tournament/new_tournament/btn_browse_pressed.png);
                 font:16px; border:0px; line-height:25px;
             }
+
+            .newtour_prize_holder {
+                width:80px; height:84px;
+                border:1px solid #cdcdcd; 
+                display:table-cell; vertical-align:middle; text-align:center;
+            }
         </style>
 
         <link rel='stylesheet' href='/nitrogen/datepicker/css/datepicker.css' type='text/css' />
@@ -226,17 +232,23 @@ content() ->
                 }
             ]},
             #label{style="position:absolute; left:550px; top:350px;", text="Ödüller:"},
-            #panel{id=prize_1, style="position:absolute; left:620px; top:315px; border:1px solid #cdcdcd;", body=[
+            #panel{id=prize_1, style="position:absolute; left:620px; top:315px;", body=[
                 #label{style="position:absolute; left:36px; top:-20px;", text="1"},
-                #link{postback=deselect_1_prize, body=#image{id=img_prize_1, style="width:80px; height:80px;", image="/images/tournament/new_tournament/question.png"}}
+                #panel{class="newtour_prize_holder", body=
+                    #link{postback=deselect_1_prize, body=#image{id=img_prize_1, style="max-width:80px; max-height:80px;", image="/images/tournament/new_tournament/question.png"}}
+                }
             ]},
-            #panel{id=prize_2, style="position:absolute; left:710px; top:315px; border:1px solid #cdcdcd;", body=[
+            #panel{id=prize_2, style="position:absolute; left:710px; top:315px;", body=[
                 #label{style="position:absolute; left:36px; top:-20px;", text="2"},
-                #link{postback=deselect_2_prize, body=#image{id=img_prize_2, style="width:80px; height:80px;", image="/images/tournament/new_tournament/question.png"}}
+                #panel{class="newtour_prize_holder", body=
+                    #link{postback=deselect_2_prize, body=#image{id=img_prize_2, style="max-width:80px; max-height:80px;", image="/images/tournament/new_tournament/question.png"}}
+                }
             ]},
-            #panel{id=prize_3, style="position:absolute; left:800px; top:315px; border:1px solid #cdcdcd;", body=[
+            #panel{id=prize_3, style="position:absolute; left:800px; top:315px;", body=[
                 #label{style="position:absolute; left:36px; top:-20px;", text="3"},
-                #link{postback=deselect_3_prize, body=#image{id=img_prize_3, style="width:80px; height:80px;", image="/images/tournament/new_tournament/question.png"}}
+                #panel{class="newtour_prize_holder", body=
+                    #link{postback=deselect_3_prize, body=#image{id=img_prize_3, style="max-width:80px; max-height:80px;", image="/images/tournament/new_tournament/question.png"}}
+                }
             ]}
         ]},
 
@@ -313,7 +325,7 @@ product_list_paged(Page) ->
                         }
                     ]},
 					"<div class='img'>",
-                    #link{body=#image{image=OneGift#gift.image_small_url, style="width:144px; height:118px;"}, 
+                    #link{body=#image{image=OneGift#gift.image_small_url, style="max-width:144px; max-height:118px;"}, 
                         postback={show_details, OneGift#gift.description_long, OneGift#gift.image_big_url, OneGift#gift.id}},
                     "</div>
 				    <strong class='prod-name' style='padding-bottom:15px; margin-top:-15px;'>",
@@ -377,7 +389,7 @@ set_prize(No, Id, ImageUrl) ->
     SNo = integer_to_list(No),
     wf:state(list_to_atom("prize_"++SNo), Id),
     AImg = list_to_atom("img_prize_"++SNo),
-    wf:replace(AImg, #image{id=AImg, style="width:80px; height:80px;", image=ImageUrl}).
+    wf:replace(AImg, #image{id=AImg, style="max-width:80px; max-height:80px;", image=ImageUrl}).
 
 event({newtour_slider}) ->
     Min1000 = list_to_integer(wf:q(newtour_slider_values_min)),
@@ -405,7 +417,7 @@ event({show_details, Description, ImageUrl, Id}) ->
     Body = [
         #panel{class=holder, body=[
             "<center>",
-            #image{image=ImageUrl, style="margin:10px; width:300px; height:300px;"},
+            #image{image=ImageUrl, style="margin:10px; max-width:300px; max-height:300px;"},
             "</center>",
             gifts:decode_html(Description),
             "<center>",
