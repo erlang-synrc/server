@@ -246,6 +246,19 @@ main_authorized() ->
                 text-decoration:none;
                 line-height:58px;
             }
+
+            .alltour_prize_icon_holder {
+                width:55px; height:55px; 
+                border:1px solid #ccd0d3; 
+                background-color:#fff; 
+                display:table-cell; vertical-align:middle;
+            }
+
+            .alltour_prize_icon {
+                max-width:55px; 
+                max-height:55px; 
+                display:block;
+            }
         </style>
 
         <link rel='stylesheet' href='/nitrogen/datepicker/css/datepicker.css' type='text/css' />
@@ -577,15 +590,37 @@ tourblock(Id, Title, Game, Date, NGames, Quota, Avatar, Prizes) ->
 
             #label{style="position:absolute; left:34px; top:224px; color:#222; font-size:14px;", text="1"},
             #panel{style="position:absolute; left:9px; top:240px; background-color:#9c9da2; width:55px; height:1px;", body=[]},
-            #image{style="position:absolute; left:9px; top:246px; width:55px; height:55px; border:1px solid #ccd0d3;", image=lists:nth(1, Prizes)},
-
+            #panel{style="position:absolute; left:9px; top:246px;",
+                body=#panel{class="alltour_prize_icon_holder",
+                    body=[
+                        "<center>",
+                        #image{class="alltour_prize_icon", image=lists:nth(1, Prizes)},
+                        "</center>"
+                    ]
+                }
+            },
             #label{style="position:absolute; left:97px; top:224px; color:#222; font-size:14px;", text="2"},
             #panel{style="position:absolute; left:72px; top:240px; background-color:#9c9da2; width:55px; height:1px;", body=[]},
-            #image{style="position:absolute; left:72px; top:246px; width:55px; height:55px; border:1px solid #ccd0d3;", image=lists:nth(2, Prizes)},
-
+            #panel{style="position:absolute; left:72px; top:246px;",
+                body=#panel{class="alltour_prize_icon_holder",
+                    body=[
+                        "<center>",
+                        #image{class="alltour_prize_icon", image=lists:nth(2, Prizes)},
+                        "</center>"
+                    ]
+                }
+            },
             #label{style="position:absolute; left:159px; top:224px; color:#222; font-size:14px;", text="3"},
             #panel{style="position:absolute; left:135px; top:240px; background-color:#9c9da2; width:55px; height:1px;", body=[]},
-            #image{style="position:absolute; left:135px; top:246px; width:55px; height:55px; border:1px solid #ccd0d3;", image=lists:nth(3, Prizes)}
+            #panel{style="position:absolute; left:135px; top:246px;",
+                body=#panel{class="alltour_prize_icon_holder",
+                    body=[
+                        "<center>",
+                        #image{class="alltour_prize_icon", image=lists:nth(3, Prizes)},
+                        "</center>"
+                    ]
+                }
+            }
         ]}
     ]}.
 

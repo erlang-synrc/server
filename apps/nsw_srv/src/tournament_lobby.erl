@@ -502,10 +502,12 @@ content() ->
 
         %prizes
         #panel{class="tourlobby_prizes", body=[
-                #panel{class="tourlobby_prize_1", body=[
+                #panel{class="tourlobby_prize_1",body=[
                         "<center>",
-                        #image{style="width:130px; height:130px;", image=PI1},
-                        #br{},
+                        #panel{
+                            style="background-color:888; height:135px; display:table-cell; vertical-align:middle;",
+                            body=#image{style="max-width:130px; max-height:130px;", image=PI1}
+                        },
                         #label{style="font-size:12px; color:#000;", body=PN1},
                         "</center>",
                         #panel{class="tourlobby_prize_star tourlobby_prize_star_1", body=
@@ -515,8 +517,10 @@ content() ->
                 },
                 #panel{class="tourlobby_prize_2", body=[
                         "<center>",
-                        #image{style="width:130px; height:130px;", image=PI2},
-                        #br{},
+                        #panel{
+                            style="background-color:888; height:135px; display:table-cell; vertical-align:middle;",
+                            body=#image{style="max-width:130px; max-height:130px;", image=PI2}
+                        },
                         #label{style="font-size:12px; color:#000;", body=PN2},
                         "</center>",
                         #panel{class="tourlobby_prize_star tourlobby_prize_star_2", body=
@@ -526,8 +530,10 @@ content() ->
                 },
                 #panel{class="tourlobby_prize_3", body=[
                         "<center>",
-                        #image{style="width:130px; height:130px;", image=PI3},
-                        #br{},
+                        #panel{
+                            style="background-color:888; height:135px; display:table-cell; vertical-align:middle;",
+                            body=#image{style="max-width:130px; max-height:130px;", image=PI3}
+                        },
                         #label{style="font-size:12px; color:#000;", body=PN3},
                         "</center>",
                         #panel{class="tourlobby_prize_star tourlobby_prize_star_3", body=
@@ -715,7 +721,7 @@ comet_update(User, TournamentId) ->
             wf:state(tour_long_id, TourId),
             wf:replace(attach_button, #link{id=attach_button, class="tourlobby_yellow_button", text=?_T("TAKE MY SEAT"), postback=attach}),
             wf:replace(start_button, ""),
-            ?INFO(" +++ (in comet): start game TId: ~p, User: ~p, Data: ~p", [TournamentId, User, TourId]),
+            ?INFO("(in comet): start game TId: ~p, User: ~p, Data: ~p", [TournamentId, User, TourId]),
             Url = lists:concat([?_U("/client"), "/", ?_U("okey"), "/id/", TourId]),
             StartClient = webutils:new_window_js(Url),
             wf:wire(#script{script=StartClient}),
