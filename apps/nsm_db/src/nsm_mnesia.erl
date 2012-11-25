@@ -6,7 +6,6 @@
 -include("acl.hrl").
 -include("invite.hrl").
 -include("attachment.hrl").
--include("user_counter.hrl").
 -include("table.hrl").
 -include("uri_translator.hrl").
 -include_lib("stdlib/include/qlc.hrl").
@@ -49,7 +48,6 @@ init_db() ->
     ok = create_table(uploads, record_info(fields, uploads), [{storage, permanent}, {type, set}]),
     ok = create_table(save_game_table, record_info(fields, save_game_table), [{storage, permanent}, {type, bag}]),
     ok = add_table_index(save_game_table, id),
-    ok = create_table(browser_counter, record_info(fields, browser_counter), [{storage, permanent}, {type, bag}]),
     ok = create_table(id_seq, record_info(fields, id_seq), [{storage, permanent}]),
     ok = create_table(feature, record_info(fields, feature), [{storage, permanent}]),
     ok = create_table(ut_word, record_info(fields, ut_word), [{storage, permanent}, {type, bag}]),
@@ -116,22 +114,6 @@ next_id(RecordName) ->
 next_id(RecordName, Incr) ->
     [RecordStr] = io_lib:format("~p",[RecordName]),
     mnesia:dirty_update_counter({id_seq, RecordStr}, Incr).
-
-delete_browser_counter_older_than(MinTS) ->
-    MatchHead = #browser_counter{minute='$1', _ = '_'},
-    Guard = {'<', '$1', MinTS},
-    Result = '$_',
-    Fun = fun() ->
-          List = mnesia:select(browser_counter, [{MatchHead, [Guard], [Result]}]),
-          lists:foreach(fun(X) ->
-                    mnesia:delete_object(X)
-                end, List)
-      end,
-    void(Fun).
-
-browser_counter_by_game(Game) ->
-     {atomic, Result} = mnesia:transaction(fun() -> mnesia:match_object(#browser_counter{game=Game,_= '_'}) end),
-     Result.
 
 unused_invites() ->
     {atomic, Result} =

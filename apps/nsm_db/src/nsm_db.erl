@@ -29,7 +29,6 @@
 -include("tournaments.hrl").
 -include("invite.hrl").
 -include("attachment.hrl").
--include("user_counter.hrl").
 -include("table.hrl").
 -include("uri_translator.hrl").
 -include("accounts.hrl").
