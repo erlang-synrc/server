@@ -25,13 +25,14 @@ main() ->"
 	<link rel='stylesheet' href='/css/tr.css' />
 	<script src='/js/kakara.min.js' type='text/javascript' charset='utf-8'></script>
 	<!--[if IE]>
-
+		<link rel='stylesheet' type='text/css' href='/css/ie.css' media='all'/>
 	<![endif]-->
 	<!--[if lt IE 7]>
-
+		<script src='/nitrogen/js/ie-hover.js' type='text/javascript'></script>
+		<script src='/nitrogen/js/ie-png.js' type='text/javascript'></script>
 	<![endif]-->
 	<!--[if lt IE 9]>
-
+		<link rel='stylesheet' type='text/css' href='/css/ie7.css' media='all'/>
 	<![endif]-->
 	<!--[if IE 9]>
 		<link rel='stylesheet' type='text/css' href='/css/ie9.css' media='all' />
