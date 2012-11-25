@@ -32,7 +32,8 @@ main() ->"
 		<script src='/nitrogen/js/ie-png.js' type='text/javascript'></script>
 	<![endif]-->
 	<!--[if lt IE 9]>
-		<link rel='stylesheet' type='text/css' href='/css/ie7.css' media='all'/>
+		<script src='/nitrogen/js/html5.js' type='text/javascript'></script>
+
 	<![endif]-->
 	<!--[if IE 9]>
 		<link rel='stylesheet' type='text/css' href='/css/ie9.css' media='all' />
