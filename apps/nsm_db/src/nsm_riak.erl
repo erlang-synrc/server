@@ -7,7 +7,6 @@
 -include("invite.hrl").
 -include("attachment.hrl").
 -include("affiliates.hrl").
--include("user_counter.hrl").
 -include("table.hrl").
 -include("tournaments.hrl").
 -include("uri_translator.hrl").
@@ -150,7 +149,6 @@ make_obj(T, player_scoring) -> riak_object:new(<<"player_scoring">>, list_to_bin
 make_obj(T, scoring_record) -> riak_object:new(<<"scoring_record">>, list_to_binary(integer_to_list(T#scoring_record.id)), T);
 make_obj(T, personal_score) -> riak_object:new(<<"personal_score">>, list_to_binary(T#personal_score.uid), T);
 make_obj(T, save_game_table) -> riak_object:new(<<"save_game_table">>, list_to_binary(integer_to_list(T#save_game_table.id)), T);
-make_obj(T, browser_counter) -> riak_object:new(<<"browser_counter">>, T#browser_counter.id, T);
 make_obj(T, feature) -> riak_object:new(<<"feature">>, list_to_binary(T#feature.name), T);
 make_obj(T, config) -> riak_object:new(<<"config">>, list_to_binary(T#config.key), T);
 make_obj(T = {user_by_email, _User, Email}, user_by_email) -> riak_object:new(<<"user_by_email">>, list_to_binary(Email), T);
@@ -463,13 +461,6 @@ delete_browser_counter_older_than(_MinTS) -> % TODO
 %                    mnesia:delete_object(X)
 %                end, List),
 %    List.
-
--spec browser_counter_by_game(atom()) -> [#browser_counter{}].
-browser_counter_by_game(Game) ->
-    ?INFO("Game: ~p,",[Game]), % TODO
-    [].
-%     {atomic, Result} = mnesia:transaction(fun() -> mnesia:match_object(#browser_counter{game=Game,_= '_'}) end),
-%	 Result.
 
 unused_invites() -> % TODO
     List = nsm_db:all(invite_code),
