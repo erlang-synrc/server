@@ -24,7 +24,22 @@ main() ->"
 	<link rel='stylesheet' type='text/css' href='/css/kakara.min.css' media='all' />
 	<link rel='stylesheet' href='/css/tr.css' />
 	<script src='/js/kakara.min.js' type='text/javascript' charset='utf-8'></script>
+	<!--[if IE]>
 
+	<![endif]-->
+	<!--[if lt IE 7]>
+		<script src='/nitrogen/js/ie-hover.js' type='text/javascript'></script>
+		<script src='/nitrogen/js/ie-png.js' type='text/javascript'></script>
+	<![endif]-->
+	<!--[if lt IE 9]>
+		<script src='/nitrogen/js/html5.js' type='text/javascript'></script>
+		<link rel='stylesheet' type='text/css' href='/css/ie7.css' media='all'/>
+	<![endif]-->
+	<!--[if IE 9]>
+		<link rel='stylesheet' type='text/css' href='/css/ie9.css' media='all' />
+	<![endif]-->
+	<!-- Most of scripts and css files were wiped out, you can see old state of this file by command
+	git cat-file blob 4a15d19e2b760379d3776a95fcb84bac9b86fab3 -->
 	
     <link href='/nitrogen/video-js/video-js.css' rel='stylesheet'>
     <script src='/nitrogen/video-js/video.js'></script>
