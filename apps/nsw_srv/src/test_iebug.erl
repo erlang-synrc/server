@@ -21,9 +21,10 @@ main() ->"
     <meta http-equiv='pragma' content='no-cache' />
 	<meta http-equiv='Content-Type' content='text/html; charset=utf-8' />
 	<title>Kakaranet</title>
-	<link rel='stylesheet' type='text/css' href='http://srv3.kakaranet.com/css/kakara.min.css' media='all' />
-	<link rel='stylesheet' href='http://srv3.kakaranet.com/css/tr.css' />
+	<link rel='stylesheet' type='text/css' href='/css/kakara.min.css' media='all' />
+	<link rel='stylesheet' href='/css/tr.css' />
 	<script src='/js/kakara.min.js' type='text/javascript' charset='utf-8'></script>
+
 	
     <link href='/nitrogen/video-js/video-js.css' rel='stylesheet'>
     <script src='/nitrogen/video-js/video.js'></script>
