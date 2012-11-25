@@ -200,7 +200,6 @@ user_avatar(big) ->
     ok.
 
 footer_box() ->
-    user_counter:wf_update_me(),
     case wf_context:page_module() of
         view_table ->
             [];
@@ -550,9 +549,6 @@ save_facebook_id(UserName, FBID, FbToken) ->
 display_error(MsgBox, Message)->
     wf:update(MsgBox,?_T(Message)),
     wf:wire(MsgBox, #show{effect=slide, speed=300}).
-
-user_count() ->
-  integer_to_list(user_counter:user_count()).
 
 user_count(GameH) ->
   GameCounts = rpc:call(?GAMESRVR_NODE,game_manager,counter,[

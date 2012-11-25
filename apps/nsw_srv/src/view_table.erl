@@ -417,7 +417,6 @@ table_info(Table) ->
 	    ?PRINT({unknown_message, Any}),
 	    table_info(Table)
     after 3000 ->
-	user_counter:wf_update_me(wf:to_atom(get(game_type))),
 	?MODULE:table_info(Table)
     end.
 

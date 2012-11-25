@@ -30,7 +30,7 @@ main_authorized() ->
             dashboard:main_authorized();
         Reason ->
             ?ERROR("unable to get user info: User=~p, Reason=~p", [UserName, Reason]),
-            wf:redirect("404")
+            wf:redirect(?_U("/404"))
     end.
 
 
@@ -183,6 +183,9 @@ view_user(Users) ->
     Source = [ #panel{style="text-align: left;", body = site_utils:user_vcard(UId)}
                || #subscription{whom = UId} <- Users ],
     lists:flatten(Source).
+
+api_event(Name, Tag, Args)->
+  fb_utils:api_event(Name, Tag, Args).
 
 event({subscribe,_,_,_}=Event) ->
     friends:event(Event);
