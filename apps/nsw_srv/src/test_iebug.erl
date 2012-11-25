@@ -28,8 +28,7 @@ main() ->"
 
 	<![endif]-->
 	<!--[if lt IE 7]>
-		<script src='/nitrogen/js/ie-hover.js' type='text/javascript'></script>
-		<script src='/nitrogen/js/ie-png.js' type='text/javascript'></script>
+
 	<![endif]-->
 	<!--[if lt IE 9]>
 		<script src='/nitrogen/js/html5.js' type='text/javascript'></script>
