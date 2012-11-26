@@ -16,60 +16,34 @@
 -define(PAGEAMOUNT, 3).
 -define(MAX_NUM_OF_ATTACMNETS_PER_TIME, 3).
 
-main() ->
-    try main_unsafe() of
-    	V -> V
-    catch
-    	_:E -> 
-            ?ERROR("Dashboard main_unsafe/0 exception: ~p ", [E])
-    end.
-
-main_unsafe() ->
-    case wf:user() /= undefined of
-        true  -> main_authorized();
-        false -> %wf:redirect_to_login(?_U("/login"))
-                 webutils:redirect_to_ssl(?_U("login"))
-    end.
-
-main_authorized() ->
-     ?INFO("Dahsboard Authorized"),
-    webutils:js_for_main_authorized_game_stats_menu(),
-     ?INFO("Webutils OK"),
-    [
-        #template { file=code:priv_dir(nsw_srv)++"/templates/bare.html"},
-        % guiders part        
-        case webutils:guiders_ok("dashboard_guiders_shown") of
-             true ->
-                guiders_script(),
-                "";
-            false ->
-                ""
-        end
-    ]. 
-
-
 title() -> webutils:title(?MODULE).
 
-body() ->
-     ?INFO("BODY"),
-    try body_unsafe() of
-	V->V
-    catch
-	_:R -> io_lib:format("BODY EXEPTION: ~p ", [R])
-    end.
+main() ->
+  case wf:user() of
+    undefined -> wf:redirect(?_U("/login"));
+    _User ->
+      webutils:js_for_main_authorized_game_stats_menu(),
+      case webutils:guiders_ok("dashboard_guiders_shown") of
+        true -> guiders_script();
+        false -> ok
+      end,
+      #template { file=code:priv_dir(nsw_srv)++"/templates/bare.html"}
+  end.
 
-body_unsafe() ->
-    #template{file=code:priv_dir(nsw_srv)++"/templates/inner_page.html"}.
+body() ->
+  #template{file=code:priv_dir(nsw_srv)++"/templates/inner_page.html"}.
+
+content() -> dashboard:view_feed_mkh().
 
 feed_form() ->
-    FId = webutils:user_info(feed),
-    [
-        #panel{body=entry_form(FId), style="width:600px"},
-        #grid_clear{},
-        #panel{id=attachment_box},
-        #grid_clear{},
-        #panel{id=feed, body=view_feed()}
-    ].
+  FId = webutils:user_info(feed),
+  [
+    #panel{body=entry_form(FId), style="width:600px"},
+    #grid_clear{},
+    #panel{id=attachment_box},
+    #grid_clear{},
+    #panel{id=feed, body=view_feed()}
+  ].
 
 view_feed_mkh() ->
     ?INFO("View Feed"),
@@ -549,9 +523,6 @@ inner_event(Other, _) -> webutils:event(Other).
 mkh_clear_list([], A)           -> A;
 mkh_clear_list(undefined, A)    -> A;
 mkh_clear_list([H|T], A) -> mkh_clear_list(T, [H] ++ A).
-
-
-content() -> dashboard:view_feed_mkh().
 
 get_page_number() ->
     ?INFO("Page Number"),

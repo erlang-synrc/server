@@ -551,6 +551,23 @@ display_error(MsgBox, Message)->
     wf:update(MsgBox,?_T(Message)),
     wf:wire(MsgBox, #show{effect=slide, speed=300}).
 
+show_if(remove_entry, Entry) ->
+  CurrentUser = wf:user(),
+  {Type, EntryOwner} = case wf:state(feed_owner) of
+    {T, N} -> {T, N};
+    _ -> {user, CurrentUser}
+  end,
+  case Type of
+    group when Entry#entry.from == CurrentUser -> true;
+    group ->
+      case nsm_groups:group_user_type(CurrentUser, EntryOwner) of
+        admin -> true;
+        _ -> false
+      end;
+    _ -> true
+  end;
+show_if(_, _Entry) -> false.
+
 count_user()->
   case wf:user() of
     undefined -> ok;

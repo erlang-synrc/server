@@ -355,73 +355,56 @@ entry_element_usual(E, Comments, Avatar, {MediaThumb, MediaLists0}, _TargetMedia
     LikeBtnId       = wf:temp_id(),
     LikePanelId     = like_panel_id(E#entry.entry_id),
     [
-        #panel{class="post", id=TempId, actions=Events, body=[
-            #panel{class="entry-avatar", body=[
-                #link{body=Avatar, url=site_utils:user_link(E#entry.from)}
-            ]},
-            #panel{class="entity", body=[
-                TitleStr,
-                case E#entry.shared of
-                     undefined -> [];
-                    "" -> [];
-                    Someone -> #span{style="font-size:12px;", 
-                                    body=[" (", ?_T("shared by"), " <b>", #link{text=Someone, url=site_utils:user_link(Someone)}, "</b>)"]}
-                end,
-                Description,
-                #panel{class="meta", body=[
-                    io_lib:format("<span class=\"entry-time\"> ~s </span>",[Time]),
-                    #list{
-                        class="list-4", body=[
-                            #listitem{body=#link{
-                                text=?_T("Comment"), class="clr-1", url="javascript:void(0)", show_if=ViewC,
-                                actions=[
-                                    #event{type=click, actions=[
-                                        #hide{},
-                                        #show{target=NewCommentBoxId},
-                                        #show{target=CommentRingId}
-                                    ]}
-                                ]
-                            }
-                        },
-                        #listitem{body=#link{text=?_T("Like"), class="clr-1", id=LikeBtnId, postback={like_entry, E, LikeBtnId}, show_if=LikeBtnShow}},
-
-                        % user should not reshare own shares
-                        case wf:user() == E#entry.shared of
-                            true ->
-                                "";
-                            false ->
-                                % user should not share her own entries
-                                case wf:user() == E#entry.from of
-                                    true ->
-                                        "";
-                                    false ->
-                                        #listitem{body=#link{text=?_T("Share"), class="clr-1", url="javascript:void(0)", postback={share_entry, E}}}
-                                end
-                        end,
-
-%PHASE1                        #listitem{body=#link{text=?_T("Hide"),  class="clr-3", url="javascript:void(0)",  postback={hide_entry, E#entry.entry_id, TempId}}},
-                        #listitem{body=#link{text=?_T("Edit"), show_if=IsDirectMessage, class="clr-4", url="javascript:void(0)",
-                            actions=[ 
-                                #event { type=click, actions=[
-                                    #hide { target=ViewPanelID },
-                                    #show { target=EntryBodyId },
-                                    #script { script = wf:f("obj('~s').focus(); obj('~s').select();", [TextBoxID, TextBoxID]) }
-                                ]}
-                            ]}
-                        },
-                        #listitem{body=#link{text=?_T("Remove"),class="clr-2", url="javascript:void(0)",
-                            postback={remove_entry, E#entry.entry_id, TempId, E#entry.to, E#entry.from},
-                            title=?_T("Clicking here will remove an entry from your own and your friends feeds")}
-                        }
-                    ]}
-                ]},
-                #panel{id=LikePanelId, body=[LikeBox]},
-                #panel{body=MediaThumb},
-                #grid_clear{},
-                comments_element(E#entry.entry_id, Comments, Anchor, Avatar, NewCommentBoxId, 
-                    CommentsPanelId, CommentRingId, NewCommentTBId)
+      #panel{class="post", id=TempId, actions=Events, body=[
+        #panel{class="entry-avatar", body=[
+          #link{body=Avatar, url=site_utils:user_link(E#entry.from)}
+        ]},
+        #panel{class="entity", body=[
+          TitleStr,
+          case E#entry.shared of
+            undefined -> [];
+            "" -> [];
+            Someone -> #span{style="font-size:12px;", body=[" (", ?_T("shared by"), " <b>", #link{text=Someone, url=site_utils:user_link(Someone)}, "</b>)"]}
+          end,
+          Description,
+          #panel{class="meta", body=[
+            io_lib:format("<span class=\"entry-time\"> ~s </span>",[Time]),
+            #list{class="list-4", body=[
+              #listitem{body=#link{
+                text=?_T("Comment"), class="clr-1", url="javascript:void(0)", show_if=ViewC,
+                actions=[
+                  #event{type=click, actions=[
+                    #hide{},
+                    #show{target=NewCommentBoxId},
+                    #show{target=CommentRingId}
+                  ]}
+                ]}},
+              #listitem{body=#link{text=?_T("Like"), class="clr-1", id=LikeBtnId, postback={like_entry, E, LikeBtnId}, show_if=LikeBtnShow}},
+              #listitem{body=#link{text=?_T("Share"), class="clr-1", url="javascript:void(0)",
+                show_if=wf:user() /= E#entry.shared andalso wf:user() /= E#entry.from, postback={share_entry, E}}},
+              #listitem{body=#link{text=?_T("Edit"), show_if=IsDirectMessage, class="clr-4", url="javascript:void(0)",
+                actions=[
+                  #event { type=click, actions=[
+                    #hide { target=ViewPanelID },
+                    #show { target=EntryBodyId },
+                    #script { script = wf:f("obj('~s').focus(); obj('~s').select();", [TextBoxID, TextBoxID]) }
+                  ]}
+                ]}
+              },
+              #listitem{body=#link{text=?_T("Remove"),class="clr-2", url="javascript:void(0)",
+                show_if= webutils:show_if(remove_entry, E),
+                postback={remove_entry, E#entry.entry_id, TempId, E#entry.to, E#entry.from},
+                title=?_T("Clicking here will remove an entry from your own and your friends feeds")}
+              }
             ]}
+          ]},
+          #panel{id=LikePanelId, body=[LikeBox]},
+          #panel{body=MediaThumb},
+          #grid_clear{},
+          comments_element(E#entry.entry_id, Comments, Anchor, Avatar, NewCommentBoxId, 
+            CommentsPanelId, CommentRingId, NewCommentTBId)
         ]}
+      ]}
     ].
 
 comments_element(EId, Comments, Anchor, Avatar) ->

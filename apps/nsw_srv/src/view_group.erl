@@ -9,14 +9,7 @@
 -include("elements/records.hrl").
 -include_lib("nsx_config/include/log.hrl").
 
-main() ->
-    case wf:user() /= undefined of
-        true  -> main_authorized();
-        false -> wf:redirect_to_login(?_U("/login"))
-    end.
-
-main_authorized() ->
-    dashboard:main_authorized().
+main() -> dashboard:main().
 
 title() -> webutils:title(?MODULE).
 
