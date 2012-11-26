@@ -112,7 +112,7 @@ handle_notice(["feed", "user", _FeedOwner, "entry", EntryId, "add_system"] = Rou
     feed:add_entry(Feed, From, [], EntryId, Desc, Medias, {user, system}),
     {noreply, State};
 
-handle_notice(["feed", "group", _Group, "entry", EntryId, "delete_system"] = Route,
+handle_notice(["feed", "user", _FeedOwner, "entry", EntryId, "delete_system"] = Route,
               Message,
               #state{owner = Owner, feed = Feed} = State) ->
     ?INFO("feed(~p): remove entry: Owner=~p, Route=~p, Message=~p",
@@ -120,6 +120,15 @@ handle_notice(["feed", "group", _Group, "entry", EntryId, "delete_system"] = Rou
     %% all group subscribers shold delete entry from their feeds
     feed:remove_entry(Feed, EntryId),
     {noreply, State};
+
+handle_notice(["feed", "user", UId, "post_note"] = Route, Message, 
+        #state{owner = Owner, feed = Feed} = State) ->
+    ?INFO("feed(~p): post_note: Owner=~p, Route=~p, Message=~p", [self(), Owner, Route, Message]),
+    [Note] = Message,
+    Id = utils:uuid_ex(),
+    feed:add_entry(Feed, UId, [], Id, Note, [], {user, system_note}),
+    {noreply, State};
+
 
 handle_notice(["feed", _, WhoShares, "entry", NewEntryId, "share"],
               #entry{entry_id = _EntryId, raw_description = Desc, media = Medias,

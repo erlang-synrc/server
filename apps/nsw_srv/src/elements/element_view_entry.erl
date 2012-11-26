@@ -123,6 +123,15 @@ get_media_thumb(E, ViewMediaPanelId) ->
 
 entry_element(E, Comments, Avatar, {MediaThumb, MediaLists0}, _TargetMedia, Anchor) ->
     case E#entry.type of 
+        {_, system_note} ->
+            Title_Desc_Args = ling:split(E#entry.description, "|"),
+            RawArgs = lists:nthtail(1, Title_Desc_Args),
+            Args = [begin Arg=ling:split(RArg, "="), {list_to_atom(hd(Arg)), hd(tl(Arg))} end || RArg <- RawArgs],
+            {Title, Desc} = case lists:nth(1, Title_Desc_Args) of 
+                "test" -> {?_T("Test"), ?_TS("Body: $arg1$ and \"$arg2$\"", Args)};
+                _ -> {?_T("Unsupported note type!"), ""}
+            end,
+            #notice{type=message, position=left, title=Title, body=Desc};
         {_, system} ->
             MessageSecs = calendar:datetime_to_gregorian_seconds( calendar:now_to_datetime(E#entry.created_time) ),
             NowSecs = calendar:datetime_to_gregorian_seconds( calendar:now_to_datetime(erlang:now()) ),
