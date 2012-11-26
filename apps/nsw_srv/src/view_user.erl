@@ -9,31 +9,22 @@
 -include("common.hrl").
 
 main() ->
-    try main_unsafe() of
-	V -> V
-    catch
-	_:_ -> #template { file=code:priv_dir(nsw_srv)++"/templates/debug.html" }
-    end.
-
-main_unsafe() ->
-    case wf:user() /= undefined of
-        true  -> main_authorized();
-        false -> wf:redirect_to_login(?_U("/login"))
-    end.
+  case wf:user() of
+    undefined -> wf:redirect_to_login(?_U("/login"));
+    _User -> main_authorized()
+  end.
 
 main_authorized() ->
-    UserName = wf:q(id),
-    case catch nsm_users:get_user(UserName) of
-        {ok, UserInfo} ->
-            wf:state(user, UserInfo),
-            wf:state(feed_owner, {user, UserName}),
-            dashboard:main_authorized();
-        Reason ->
-            ?ERROR("unable to get user info: User=~p, Reason=~p", [UserName, Reason]),
-            wf:redirect(?_U("/404"))
-    end.
-
-
+  UserName = wf:q(id),
+  case catch nsm_users:get_user(UserName) of
+    {ok, UserInfo} ->
+      wf:state(user, UserInfo),
+      wf:state(feed_owner, {user, UserName}),
+      dashboard:main();
+    Reason ->
+      ?ERROR("unable to get user info: User=~p, Reason=~p", [UserName, Reason]),
+      wf:redirect(?_U("/404"))
+  end.
 
 title() -> webutils:title(?MODULE).
 

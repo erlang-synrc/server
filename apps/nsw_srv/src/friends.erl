@@ -29,13 +29,11 @@ main_authorized() ->
         {ok, UserInfo} ->
             wf:state(user, UserInfo),
             wf:state(feed_owner, {user, UserName}),
-            dashboard:main_authorized();
+            dashboard:main();
         Reason ->
             ?ERROR("unable to get user info: User=~p, Reason=~p", [UserName, Reason]),
             wf:redirect("404")
-    end,
-    webutils:js_for_main_authorized_game_stats_menu(),
-    #template { file=code:priv_dir(nsw_srv)++"/templates/bare.html" }.
+    end.
 
 title() -> webutils:title(?MODULE).
 
