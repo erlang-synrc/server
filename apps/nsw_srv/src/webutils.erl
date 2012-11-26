@@ -572,7 +572,7 @@ count_user()->
   case wf:user() of
     undefined -> ok;
     _User ->
-      {ok, CometPid} = wf:comet_global(fun()-> comet_update() end, user_count),
+      {ok, CometPid} = wf:comet(fun()-> comet_update() end, user_count),
       [ case Child of
           undefined -> ok;
           restarting -> ok;
@@ -582,15 +582,7 @@ count_user()->
   end.
 
 comet_update()->
-  process_flag(trap_exit, true),
   receive
-    {'EXIT', Pid, _Msg} -> exit(Pid, kill);
-    {'JOIN', Pid} ->
-      case self() of
-        Pid -> ok;
-        _ -> exit(Pid, normal)
-      end;
-    'INIT' -> ok;
     _Msg -> ok
   end,
   wf:flush(),
