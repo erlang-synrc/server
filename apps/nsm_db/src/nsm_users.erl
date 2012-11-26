@@ -502,6 +502,8 @@ build_user_relations(User, Groups) ->
      rk( [feed, user, User, count_entry_in_statistics] ),
      rk( [feed, user, User, count_comment_in_statistics] ),
 
+     rk( [feed, user, User, post_note] ),
+
      rk( [subscription, user, User, subscribe_user]),
      rk( [subscription, user, User, remove_subscribe]),
      rk( [subscription, user, User, set_user_game_status]),
