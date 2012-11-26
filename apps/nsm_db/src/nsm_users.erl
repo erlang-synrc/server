@@ -369,13 +369,18 @@ attempt_active_user_top(UId, UEC) ->
     {_, Outsider} = nsm_db:get(active_users_top, ?ACTIVE_USERS_TOP_N),
     case Outsider of
         notfound ->    % Top is not yet filled
-            N = length(nsm_db:all(active_users_top)) + 1,
-            nsm_db:put(#active_users_top{
-                no = N,
-                user_id = UId,
-                entries_count = UEC,
-                last_one_timestamp = erlang:now()
-            });
+            TopUIds = [TUId || #active_users_top{user_id=TUId} <- nsm_db:all(active_users_top)],
+            case lists:member(UId, TopUIds) of
+                true -> ok; % this isn't right, as the top should be rewised, but who cares about first 12 users anyways
+                false ->
+                    N = length(nsm_db:all(active_users_top)) + 1,
+                    nsm_db:put(#active_users_top{
+                        no = N,
+                        user_id = UId,
+                        entries_count = UEC,
+                        last_one_timestamp = erlang:now()
+                    })
+            end;
         #active_users_top{entries_count=EC, last_one_timestamp=LOT} ->
             case calculate_activity(EC, LOT) < UEC of
                 true -> % Attemting user should be anywhere in top
@@ -496,6 +501,8 @@ build_user_relations(User, Groups) ->
 
      rk( [feed, user, User, count_entry_in_statistics] ),
      rk( [feed, user, User, count_comment_in_statistics] ),
+
+     rk( [feed, user, User, post_note] ),
 
      rk( [subscription, user, User, subscribe_user]),
      rk( [subscription, user, User, remove_subscribe]),
