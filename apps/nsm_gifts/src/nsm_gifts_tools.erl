@@ -125,8 +125,11 @@ import(VendorId) ->
     {ok, VendGifts} = nsm_gifts_vendor:get_gifts(VendorId),
     dumb_store(VendGifts, CurDateTime, A, B, C, D).
 
-import_all() ->
+clean_and_import_all() ->
     nsm_gifts_db:clear_gifts(),
+    import_all().
+
+import_all() ->
     CurDateTime = calendar:now_to_datetime(now()),
     {A, B, C, D} = nsm_gifts_db:get_factors(),
     [begin
