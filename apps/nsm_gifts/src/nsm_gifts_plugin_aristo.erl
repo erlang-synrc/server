@@ -61,8 +61,8 @@ process(P_XML) ->
                        small_image_url = Image,
                        big_image_url = Image,
                        in_stock = true,
-                       retailer_price = RetailerPrice * 100,
-                       user_price = UserPrice * 100
+                       retailer_price = round(RetailerPrice * 100),
+                       user_price = round(UserPrice * 100)
                       } || #product_aristo{no = ProductId, name = Name, brand = Category, model = CategoryName, 
                                     price = RetailerPrice, currency = Currency, tl_price = TL_Price, 
                                     count = Count, cargo = Cargo, fix = Fix, image = Image,
@@ -77,7 +77,7 @@ process_products(XML = #xmlElement{name='TABLE'}) ->
             _ -> ?INFO("Wrong Tuples: ~p",[{XXX,xmerl_xs:value_of(lists:nth(1,Cells))}])
           end,
          [XNo,XName,XVendor,XModel,XPrice,XCurr,XImg,XTL,XA,XCargo,XFix,XLSR,XTLLSR,XY,XZ,XTotal,XDesc]=Cells, 
-         No = xmerl_xs:value_of(XNo),
+         No = list_to_integer(hd(xmerl_xs:value_of(XNo))),
          Name = xmerl_xs:value_of(XName),
          Vendor = xmerl_xs:value_of(XVendor),
          Model = xmerl_xs:value_of(XModel),
@@ -94,9 +94,9 @@ process_products(XML = #xmlElement{name='TABLE'}) ->
          [OTotal] = xmerl_xs:value_of(XTotal),
          Total = ling:replace(OTotal,",",""),
          Desc = xmerl_xs:value_of(XDesc),
-         #product_aristo{no = No, name = Name, brand =Vendor, model = Model, price = nsm_gifts_plugin_enilginc:list_to_float_smart(Price), currency = Curr, 
+         #product_aristo{no = No, name = Name, brand =Vendor, model = Model, price = list_to_float_smart(Price), currency = Curr, 
                          image = Img, tl_price = TL, count = A, cargo = Cargo, fix = Fix,
-                         logistic_service_rate = LSR, tl_lsr = TLLSR, total = nsm_gifts_plugin_enilginc:list_to_float_smart(Total), desc = Desc}
+                         logistic_service_rate = LSR, tl_lsr = TLLSR, total = list_to_float_smart(Total), desc = Desc}
      end|| E <- List].
 
 str_price_to_int(String) -> round(list_to_float_smart(String)*100).

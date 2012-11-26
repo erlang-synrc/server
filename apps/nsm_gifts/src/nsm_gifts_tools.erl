@@ -64,7 +64,7 @@ show(List) ->
     ok.
 
 
-%% @spec dumb_store(List) -> ok
+%% @spec dumb_store(List, CurDateTime, A, B, C, D) -> ok
 %% @doc
 %% Types:
 %%     List = list(#ext_product_info{})
@@ -72,26 +72,12 @@ show(List) ->
 %% FIXME: The procedure should be processed by admin using some UI.
 %% @end
 
-convert_money_to_kakush(UserPrice) ->
-    {A, B, C, D} = nsm_gifts_db:get_factors(),
-    OurPrice = round(UserPrice * A),
-    KakushCurrencyPre = round(OurPrice * D / 100),
-%    {KakushCurrency, KakushPoints} =
-    if KakushCurrencyPre < ?FIXED_CURRENCY_AMOUNT ->
-        {?FIXED_CURRENCY_AMOUNT, round(B * C * (?HACKED_PRICE - ?FIXED_CURRENCY_AMOUNT))};
-        true -> {KakushCurrencyPre, round(B * C * (OurPrice / 100 - KakushCurrencyPre))}
-    end.
-
-dumb_store(List) ->
-    nsm_gifts_db:clear_gifts(),
-    CurDateTime = calendar:now_to_datetime(now()),
-    {A, B, C, D} = nsm_gifts_db:get_factors(),
+dumb_store(List, CurDateTime, A, B, C, D) ->
     List2 =
         [begin
-             ?INFO("User Price: ~p",[{UserPrice,ExtId}]),
-             OurPrice = round(UserPrice * A),
-             {KakushCurrency, KakushPoints} = convert_money_to_kakush(UserPrice),
-             #gift{
+             ?INFO("User Price: ~p",[{UserPrice,{VendorId, ExtId}}]),
+             {OurPrice, KakushCurrency, KakushPoints} = calc_prices(UserPrice, A, B, C, D),
+             #gift{id = {VendorId, ExtId},
                    vendor_id = VendorId,
                    categories = [1],
                    ext_gift_id = ExtId,
@@ -132,8 +118,31 @@ dumb_store(List) ->
     [ok = nsm_gifts_db:create_gift(GiftRec) || GiftRec <- List2],
     ok.
 
+import(VendorId) ->
+    CurDateTime = calendar:now_to_datetime(now()),
+    {A, B, C, D} = nsm_gifts_db:get_factors(),
+    nsm_gifts_db:clear_gifts(),
+    {ok, VendGifts} = nsm_gifts_vendor:get_gifts(VendorId),
+    dumb_store(VendGifts, CurDateTime, A, B, C, D).
 
+import_all() ->
+    nsm_gifts_db:clear_gifts(),
+    CurDateTime = calendar:now_to_datetime(now()),
+    {A, B, C, D} = nsm_gifts_db:get_factors(),
+    [begin
+         {ok, VendGifts} = nsm_gifts_vendor:get_gifts(VendorId),
+         dumb_store(VendGifts, CurDateTime, A, B, C, D)
+     end || VendorId <- [1,2]].
 %%
 %% Local Functions
 %%
+
+%% calc_prices(UserPrice, A, B, C, D) -> {OurPrice, KakushCurrency, KakushPoints}
+calc_prices(UserPrice, A, B, C, D) ->
+    OurPrice = round(UserPrice * A),
+    KakushCurrencyPre = round(OurPrice * D / 100),
+    if KakushCurrencyPre < ?FIXED_CURRENCY_AMOUNT ->
+        {OurPrice, ?FIXED_CURRENCY_AMOUNT, round(B * C * (?HACKED_PRICE - ?FIXED_CURRENCY_AMOUNT))};
+        true -> {OurPrice, KakushCurrencyPre, round(B * C * (OurPrice / 100 - KakushCurrencyPre))}
+    end.
 

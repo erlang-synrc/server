@@ -31,8 +31,8 @@
          set_factors/5,
          get_factors/0,
          get_factors/1,
-         create_category/3,
          create_category/4,
+         create_category/5,
          create_gift/1,
          create_gift/2,
          get_all_categories/0,
@@ -70,7 +70,7 @@
 
 %% Indices
 -define(BUCKET_INDEX, "bucket_bin").
--define(CATEGORY_INDEX, "categoty_bin").
+-define(CATEGORY_INDEX, "category_bin").
 -define(CATPARENT_INDEX, "catparent_bin").
 
 %% Meta Id
@@ -179,9 +179,9 @@ get_factors(Handler) ->
 %%     Reason = term()
 %% @end
 
-create_category(Name, Description, ParentId) ->
+create_category(CatId, Name, Description, ParentId) ->
     Handler = start_riak_client(),
-    Res = create_category(Handler, Name, Description, ParentId),
+    Res = create_category(Handler, CatId, Name, Description, ParentId),
     stop_riak_client(Handler),
     Res.
 
@@ -195,15 +195,14 @@ create_category(Name, Description, ParentId) ->
 %%     Reason = term()
 %% @end
 
-create_category(Cl, Name, Description, ParentId) ->
-    Id = category_id(),
-    Record=#gifts_category{id = Id,
+create_category(Cl, CatId, Name, Description, ParentId) ->
+    Record=#gifts_category{id = CatId,
                            name = Name,
                            description = Description,
                            parent = ParentId},
-    Obj1 = riak_object:new(?CATEGORIES_BUCKET, term_to_binary(Id), Record),
+    Obj1 = riak_object:new(?CATEGORIES_BUCKET, key_to_bin(CatId), Record),
     Indices = [{?BUCKET_INDEX, ?CATEGORIES_BUCKET},
-               {?CATPARENT_INDEX, term_to_binary(ParentId)}],
+               {?CATPARENT_INDEX, key_to_bin(ParentId)}],
     Meta = dict:store(?MD_INDEX, Indices, dict:new()),
     Obj2 = riak_object:update_metadata(Obj1, Meta),
     ok = Cl:put(Obj2, []).
@@ -230,13 +229,10 @@ create_gift(GiftRec) ->
 %%     Reason = term()
 %% @end
 
-create_gift(Cl, #gift{categories = Cats} = Record) ->
-    Id = gift_id(),
-    Record2 = Record#gift{id = Id},
-    Obj1 = riak_object:new(?GIFTS_BUCKET, term_to_binary(Id), Record2),
+create_gift(Cl, #gift{id = Id, categories = Cats} = Record) ->
+    Obj1 = riak_object:new(?GIFTS_BUCKET, key_to_bin(Id), Record),
     Indices = [{?BUCKET_INDEX, ?GIFTS_BUCKET} |
-                 [{?CATEGORY_INDEX, term_to_binary(CatId)} ||
-                  CatId <- lists:usort(Cats)]],
+                 [{?CATEGORY_INDEX, term_to_binary(CatId)} || CatId <- lists:usort(Cats)]],
     Meta = dict:store(?MD_INDEX, Indices, dict:new()),
     Obj2 = riak_object:update_metadata(Obj1, Meta),
     ok = Cl:put(Obj2, []).
@@ -459,21 +455,19 @@ get_gift(GiftId) ->
 %% @doc
 %% Type:
 %%     Handler = db_handler()
-%%     GiftId = integer()
+%%     GiftId = {VendorId, ExtGiftId}
 %%     GiftRec = #gift{}
 %%     Obj = term()
 %% @end
 
 get_gift(Handler, GiftId) ->
-    case read_object(Handler, ?GIFTS_BUCKET, term_to_binary(GiftId), []) of
+    case read_object(Handler, ?GIFTS_BUCKET, key_to_bin(GiftId), []) of
         {ok, Object} ->
             Rec = riak_object:get_value(Object),
             {ok, {Rec, Object}};
         {error, notfound} ->
             {error, notfound}
     end.
-
-
 
 %% @spec update_gift(GiftRec, Object) -> ok | {error, Reason}
 %% @doc
@@ -613,11 +607,11 @@ init_conf(Cl, Key, InitVal, Options) ->
     end.
 
 
-category_id() ->
-    nsm_db:next_id(?CATEGORIES_COUNTER).
+%% category_id() ->
+%%     nsm_db:next_id(?CATEGORIES_COUNTER).
 
-gift_id() ->
-    nsm_db:next_id(?GIFTS_COUNTER).
+%% gift_id() ->
+%%     nsm_db:next_id(?GIFTS_COUNTER).
 
 
 %% @private
@@ -727,3 +721,12 @@ write_object(Cl, Object, Options) ->
 delete_object(Cl, Bucket, Key, Options) ->
     Cl:delete(Bucket, Key, Options).
 
+
+key_to_bin(Key) ->
+    if is_integer(Key) -> erlang:list_to_binary(integer_to_list(Key));
+       is_list(Key) -> erlang:list_to_binary(Key);
+       is_tuple(Key) -> [ListKey] = io_lib:format("~p", [Key]), erlang:list_to_binary(ListKey);
+       is_atom(Key) -> erlang:list_to_binary(erlang:atom_to_list(Key));
+       is_binary(Key) -> Key;
+       true ->  [ListKey] = io_lib:format("~p", [Key]), erlang:list_to_binary(ListKey)
+    end.
