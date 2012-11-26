@@ -92,7 +92,8 @@ new_tab_js(Url) when is_list(Url)->
                   "');"]).
 
 header_box() ->
-    #template { file=code:priv_dir(nsw_srv)++"/templates/header.html"}.
+  count_user(),
+  #template { file=code:priv_dir(nsw_srv)++"/templates/header.html"}.
 
 header_body() -> [account_menu(), menu_links()].
 
@@ -549,6 +550,34 @@ save_facebook_id(UserName, FBID, FbToken) ->
 display_error(MsgBox, Message)->
     wf:update(MsgBox,?_T(Message)),
     wf:wire(MsgBox, #show{effect=slide, speed=300}).
+
+count_user()->
+  case wf:user() of
+    undefined -> ok;
+    _User ->
+      {ok, CometPid} = wf:comet_global(fun()-> comet_update() end, user_count),
+      [ case Child of
+          undefined -> ok;
+          restarting -> ok;
+          Pid -> Pid ! {inc_user, CometPid}
+        end
+      || {_Id, Child, _Type, _Modules} <- nsm_queries:map_reduce(supervisor, which_children, [nsw_srv_sup])]
+  end.
+
+comet_update()->
+  process_flag(trap_exit, true),
+  receive
+    {'EXIT', Pid, _Msg} -> exit(Pid, kill);
+    {'JOIN', Pid} ->
+      case self() of
+        Pid -> ok;
+        _ -> exit(Pid, normal)
+      end;
+    'INIT' -> ok;
+    _Msg -> ok
+  end,
+  wf:flush(),
+  comet_update().
 
 user_count(GameH) ->
   GameCounts = rpc:call(?GAMESRVR_NODE,game_manager,counter,[
