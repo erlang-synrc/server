@@ -57,7 +57,7 @@ main() ->
 
 body() ->
 
-            X = rpc:call(?GAMESRVR_NODE,game_manager,get_lucky_table,[list_to_atom("game_"++?_U(wf:q(game_name)))]),
+            X = rpc:call(?GAMESRVR_NODE,game_manager,get_lucky_table,[list_to_atom("game_"++wf:q(game_name))]),
             wf:state(lucky,X),
 
   ui_update_buttons(),
@@ -128,6 +128,7 @@ el_inside_play() ->
      LuckyAction =
         case wf:state(lucky) of
              [#game_table{id = GaId}] ->
+?INFO(" +++ lucky"),
                  IdStr = integer_to_list(GaId),
                  wf:session(IdStr, IdStr),
                  URL = lists:concat([?_U("/client"),"/",wf:q(game_name),"/id/", GaId]),
