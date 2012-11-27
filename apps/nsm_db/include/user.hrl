@@ -4,6 +4,7 @@
         {username :: username_type() | '_', %% Dialyzer and record MatchSpec warnings http://j.mp/vZ8670
          password,
          facebook_id,
+         twitter_id,
          email,
          avatar,
 

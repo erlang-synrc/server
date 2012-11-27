@@ -199,3 +199,35 @@ update_groups_to_leveldb() ->
     add_two_0_to_group_if_needed(),
     group_member_to_group_subs(),
     enrich_groups_with_statistics().
+
+convert_twitter()->
+  Users = [  #user{
+    username = UserName,
+    password = Password,
+    facebook_id = FacebookId,
+    twitter_id = undefined,
+    email = Email,
+    avatar = Avatar,
+    name = Name,
+    surname = Surname,
+    age = Age,
+    sex = Sex,
+    location = Location,
+    education = Education,
+    register_date = RegisterDate,
+    status = Status,
+    verification_code = VerificationCode,
+    type = Type,
+    feed = Feed,
+    direct = Direct,
+    starred = Starred,
+    pinned = Pinned,
+    comments = Comments,
+    discussions = Discussions,
+    team = Team,
+    aclver = Aclver  }
+  || {user,
+      UserName, Password, FacebookId, Email, Avatar, Name, Surname, Age,
+      Sex, Location, Education, RegisterDate, Status, VerificationCode,
+      Type, Feed, Direct, Starred, Pinned, Comments, Discussions, Team, Aclver} <- nsm_db:all(user)],
+  [nsm_db:put(U) || U<-Users].
