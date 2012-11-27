@@ -157,10 +157,11 @@ add_translations() ->
     end, ?URI_DICTIONARY).
 
 create_tour_users(A,B,Groups) ->
-    TourUsers =  [#user{username = "trn_player" ++ integer_to_list(N),
+    ImagioUsers = nsm_auth:imagionary_users(),
+    TourUsers =  [#user{username = nsm_auth:ima_gio(N,ImagioUsers), % "trn_player" ++ integer_to_list(N),
                             password="password",
                             feed = feed_create(),
-                            name = "Tournament Player " ++ integer_to_list(N),
+                            name = nsm_auth:ima_gio(N,ImagioUsers), % "Tournament Player " ++ integer_to_list(N),
                             team = create_team("tours"), direct = feed_create(),
                             status=ok,
                             age={1981,9,29},

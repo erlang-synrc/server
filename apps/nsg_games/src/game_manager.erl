@@ -275,17 +275,22 @@ start_tournament(TourId,NumberOfTournaments,NumberOfPlayers,Quota,Tours,Speed,Gi
 
     {ok,Tournament} = nsm_db:get(tournament,TourId),
 
+    ImagioUsers = nsm_auth:imagionary_users(),
+
     RealPlayers = [ erlang:list_to_binary(U#play_record.who) || U <- nsm_tournaments:joined_users(TourId)],
-    
+
     Registrants = case NumberOfPlayers > length(RealPlayers) of
-                       true -> RealPlayers ++ 
-                                [ erlang:list_to_binary([<<"trn_player">>, integer_to_list(N)]) ||
+                       true -> RealPlayers ++
+                                [ erlang:list_to_binary(nsm_auth:ima_gio(N,ImagioUsers)) ||
                                       N <- lists:seq(1, NumberOfPlayers - length(RealPlayers))];
                        false -> RealPlayers
                    end,
 
     OkeyTournaments =
         [begin
+
+             ?INFO("Registrants: ~p",[Registrants]),
+
              {ok,GameId,A} = game_manager:create_game(game_okey_ng_trn_elim, [{registrants, Registrants},
                                                                {quota_per_round, Tournament#tournament.quota},
                                                                {tours, Tournament#tournament.tours},
