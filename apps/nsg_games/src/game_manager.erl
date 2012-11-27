@@ -25,8 +25,8 @@ create_table(GameFSM, Params, PlayerIds) ->
     {{ok, Pid},_} = create_game_monitor(GameId, {lobby, GameFSM}, Params, PlayerIds, self()),
     {ok, GameId, Pid}.
 
-get_lucky_pid() ->
-    [X]=game_manager:get_lucky_table(game_tavla),
+get_lucky_pid(Sup) ->
+    [X]=game_manager:get_lucky_table(Sup),
     X#game_table.game_process.
 get_relay_pid(GameId) -> case get_tables(GameId) of [] -> undefined;
     [#game_table{game_process = P} | _] -> ?INFO("GameRelay: ~p",[P]), P end.
@@ -94,7 +94,7 @@ create_game_monitor(Topic, {lobby,GameFSM}, Params, Players, State) ->
 create_game_monitor2(Topic, GameFSM, Params, State) ->
     Sup = game_sup_domain(GameFSM),
     ?INFO("Create Root Game Process (Game Monitor2): ~p Params: ~p Sup: ~p",[GameFSM, Params,Sup]),
-    RelayInit = Sup:start_game(GameFSM,Params,Topic),
+    RelayInit = Sup:start_game(GameFSM,[Topic,Params],Topic),
     ?INFO("RelayInit ~p",[RelayInit]),
     case RelayInit of 
         {ok, Srv} ->
