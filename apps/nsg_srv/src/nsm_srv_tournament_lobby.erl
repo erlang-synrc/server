@@ -77,6 +77,7 @@ handle_cast(start_tournament, State) ->
     Quota = Tour#tournament.quota,
     Tours = Tour#tournament.tours,
     Speed = Tour#tournament.speed,
+    Gifts = Tour#tournament.awards, % this is now a list of ids, but it might change in a while!
     TourId = game_manager:start_tournament(TIDinDB,1,NumberOfUsers,Quota,Tours,Speed),
     ?INFO(" +++ notifying ~p", [TIDinDB]),
     nsx_msg:notify(["tournament", integer_to_list(TIDinDB), "start"], {TourId}),

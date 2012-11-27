@@ -209,7 +209,8 @@ event({buy_gift, Id}) ->
         _ ->
             case nsm_users:can_buy_gift(wf:user(), Id) of
                 true ->
-                    nsm_users:buy_gift(wf:user(), Id),
+%                    nsm_users:buy_gift(wf:user(), Id),
+                    nsx_msg:notify(["gifts", "user", wf:user(), "buy_gift"], {Id}),
                     wf:wire(#alert{text=?_T("Check it in your profile!")}),
                     wf:redirect("/gifts");
                 false ->

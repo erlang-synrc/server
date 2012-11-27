@@ -66,7 +66,7 @@ clean() ->
     riak_clean(group),
     riak_clean(browser_counter),
     riak_clean(invite_code), riak_clean(forget_password),
-    riak_clean(user), riak_clean(user_by_email), riak_clean(user_by_facebook_id),
+    riak_clean(user), riak_clean(user_by_email), riak_clean(user_by_facebook_id), riak_clean(user_address),
     riak_clean(uploads),
     riak_clean(acl), riak_clean(acl_entry),
     riak_clean(account), riak_clean(transaction),
@@ -146,6 +146,7 @@ make_obj(T, user_bought_gifts) -> [Key] = io_lib:format("~p", [{T#user_bought_gi
 make_obj(T, account) -> [Key] = io_lib:format("~p", [T#account.id]), riak_object:new(<<"account">>, list_to_binary(Key), T);
 make_obj(T, feed) -> riak_object:new(<<"feed">>, list_to_binary(integer_to_list(T#feed.id)), T);
 make_obj(T, user) -> riak_object:new(<<"user">>, list_to_binary(T#user.username), T);
+make_obj(T, user_address) -> riak_object:new(<<"user_address">>, list_to_binary(T#user_address.username), T);
 make_obj(T, game_table) -> riak_object:new(<<"game_table">>, list_to_binary(T#game_table.id), T);
 make_obj(T, player_scoring) -> riak_object:new(<<"player_scoring">>, list_to_binary(T#player_scoring.id), T);
 make_obj(T, scoring_record) -> riak_object:new(<<"scoring_record">>, list_to_binary(integer_to_list(T#scoring_record.id)), T);

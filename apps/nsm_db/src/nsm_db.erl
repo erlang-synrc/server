@@ -67,7 +67,8 @@ init_db() ->
                     add_purchases();
                 true ->
                     do_nothing
-            end;
+            end,
+            nsm_gifts_tools:import_all();
        {ok,_} -> ignore
     end.
 
@@ -178,8 +179,6 @@ create_tour_users(A,B,Groups) ->
       end || Me <- TourUsers].
 
 add_sample_users() ->
-
-
     UserList =
                     [#user{username = "demo1", password="kakara20",
                            name = "Demo", surname = "Nstration", feed = feed_create(),
@@ -330,14 +329,7 @@ add_sample_users() ->
     [[case Me == Her of
         true -> ok;
         false -> nsm_users:subscr_user(Me#user.username, Her#user.username)
-    end || Her <- UserList] || Me <- UserList],
-
-    case nsm_gifts_vendor:get_gifts(1) of 
-	{ok, G} -> 
-	    nsm_gifts_tools:dumb_store(G), 
-	    ok;
-        {error, not_found} -> ok
-    end.
+    end || Her <- UserList] || Me <- UserList].
 
 add_sample_packages() -> nsm_membership_packages:add_sample_data().
 version() -> ?INFO("version: ~p", [?VERSION]).
@@ -366,7 +358,10 @@ add_configs() ->
     nsm_db:put(#config{key="accounts/quota_limit/hard",  value=-100}),
 
     %%  purchases
-    nsm_db:put(#config{key= "purchase/notifications/email",  value=["gokhan@kakaranet.com"]}).
+    nsm_db:put(#config{key= "purchase/notifications/email",  value=["maxim@synrc.com"]}),
+
+    %%  delivery
+    nsm_db:put(#config{key= "delivery/notifications/email",  value=["maxim@synrc.com"]}).
 
 % put
 
