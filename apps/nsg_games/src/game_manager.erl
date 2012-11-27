@@ -296,6 +296,7 @@ start_tournament(TourId,NumberOfTournaments,NumberOfPlayers,Quota,Tours,Speed,Gi
                                                                {tours, Tournament#tournament.tours},
                                                                {speed, Tournament#tournament.speed},
                                                                {game_mode, Tournament#tournament.game_mode},
+                                                               {awards, GiftIds},
                                                                {trn_id,TourId},
                                                                {demo_mode, false}]),
             % TODO: fix test_okey robot

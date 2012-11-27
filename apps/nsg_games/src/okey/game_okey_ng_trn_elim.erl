@@ -47,6 +47,7 @@
          tours             :: integer(),
          quota_per_round   :: integer(),
          speed             :: fast | normal,
+         awards            :: list(), %% [FirtsPrize, SecondPrize, ThirdPrize], Prize = undefined | GiftId
          demo_mode         :: boolean(), %% If true then results of turns will be generated randomly
          %% Dinamic values
          players,          %% The register of tournament players
@@ -99,7 +100,7 @@
 -define(STATE_WAITING_FOR_TABLES, state_waiting_for_tables).
 -define(STATE_WAITING_FOR_PLAYERS, state_waiting_for_players).
 -define(STATE_TURN_PROCESSING, state_turn_processing).
--define(STATE_SHOW_TURN_RESULT, state_show_turn_result).
+-define(STATE_SHOW_SERIES_RESULT, state_show_series_result).
 -define(STATE_FINISHED, state_finished).
 
 -define(TAB_MOD, game_okey_ng_table_trn).
@@ -111,7 +112,7 @@
 
 -define(WAITING_PLAYERS_TIMEOUT, 3000) . %% Time between all table was created and starting a turn
 -define(REST_TIMEOUT, 5000).             %% Time between a round finish and start of a new one
--define(SHOW_TURN_RESULT_TIMEOUT, 15000).%% Time between a turn finish and start of a new one
+-define(SHOW_SERIES_RESULT_TIMEOUT, 15000).%% Time between a tour finish and start of a new one
 -define(SHOW_TOURNAMENT_RESULT_TIMEOUT, 15000). %% Time between last tour result showing and the tournament finish
 
 -define(SEATS_NUM, 4). %% TODO: Define this by a parameter. Number of seats per table
@@ -155,6 +156,7 @@ init([GameId, Params, _Manager]) ->
     Tours = get_param(tours, Params),
     Speed = get_param(speed, Params),
     GameType = get_param(game_mode, Params),
+    Awards = get_param(awards, Params),
     DemoMode = get_option(demo_mode, Params, false),
     TrnId = get_option(trn_id, Params, undefined),
 
@@ -179,6 +181,7 @@ init([GameId, Params, _Manager]) ->
                              tours_plan = TurnsPlan,
                              tours = Tours,
                              speed = Speed,
+                             awards  = Awards,
                              demo_mode = DemoMode,
                              players = Players,
                              tournament_table = TTable,
@@ -260,7 +263,7 @@ handle_info({timeout, Magic}, ?STATE_WAITING_FOR_PLAYERS,
     start_turn(StateData);
 
 
-handle_info({timeout, Magic}, ?STATE_SHOW_TURN_RESULT,
+handle_info({timeout, Magic}, ?STATE_SHOW_SERIES_RESULT,
             #state{timer_magic = Magic, tour = Tour, tours = Tours,
                    game_id = GameId} = StateData) ->
     if Tour == Tours ->
@@ -580,30 +583,64 @@ process_tour_result(#state{game_id = GameId, tournament_table = TTable,
            (_, Acc) -> Acc
         end,
     NewPlayers = lists:foldl(F, Players, TourResult),
-    TurnResultWithUserId = [{get_user_id(PlayerId, Players), Position, Points, Status}
+    TourResultWithUserId = [{get_user_id(PlayerId, Players), Position, Points, Status}
                             || {PlayerId, Position, Points, Status} <- TourResult],
     TablesResultsWithPos = set_tables_results_position(TablesResults, TourResult),
-    [send_to_table(TablePid, {turn_result, Tour, TurnResultWithUserId})
+    [send_to_table(TablePid, {turn_result, Tour, TourResultWithUserId})
        || #table{pid = TablePid} <- tables_to_list(Tables)],
     [send_to_table(get_table_pid(TableId, Tables),
                    {show_series_result, subs_status(TableResultWithPos, Tour, Plan)})
        || {TableId, TableResultWithPos} <- TablesResultsWithPos],
-    {TRef, Magic} = start_timer(?SHOW_TURN_RESULT_TIMEOUT),
+    {TRef, Magic} = start_timer(?SHOW_SERIES_RESULT_TIMEOUT),
     ?INFO("OKEY_NG_TRN_ELIM <~p> Results processing of tour <~p> is finished. "
           "Waiting some time (~p secs) before continue...",
-          [GameId, Tour, ?SHOW_TURN_RESULT_TIMEOUT div 1000]),
-    {next_state, ?STATE_SHOW_TURN_RESULT, StateData#state{timer = TRef, timer_magic = Magic,
-                                                          tournament_table = NewTTable,
-                                                          players = NewPlayers}}.
+          [GameId, Tour, ?SHOW_SERIES_RESULT_TIMEOUT div 1000]),
+    {next_state, ?STATE_SHOW_SERIES_RESULT, StateData#state{timer = TRef, timer_magic = Magic,
+                                                            tournament_table = NewTTable,
+                                                            players = NewPlayers}}.
 
-finalize_tournament(#state{game_id = GameId} = StateData) ->
+finalize_tournament(#state{game_id = GameId, awards = Awards, tournament_table = TTable,
+                           players = Players} = StateData) ->
     ?INFO("OKEY_NG_TRN_ELIM <~p> Finalizing the tournament...", [GameId]),
-    %% TODO: Real finalization needed
+    AwardsDistrib = awards_distribution(TTable, Awards),
+    [nsx_msg:notify(["gifts", "user", user_id_to_string(get_user_id(PlayerId, Players)), "give_gift"], {GiftId})
+       || {PlayerId, _Pos, GiftId} <- AwardsDistrib],
+    %% TODO: Do we need advertise the prizes to game clients?
+    ?INFO("OKEY_NG_TRN_ELIM <~p> Awards distribution: ~p",
+          [GameId, [{get_user_id(PlId, Players), PlId, Pos, GiftId} || {PlId, Pos, GiftId} <- AwardsDistrib]]),
     {TRef, Magic} = start_timer(?SHOW_TOURNAMENT_RESULT_TIMEOUT),
     ?INFO("OKEY_NG_TRN_ELIM <~p> The tournament is finalized. "
           "Waiting some time (~p secs) before continue...",
           [GameId, ?SHOW_TOURNAMENT_RESULT_TIMEOUT div 1000]),
     {next_state, ?STATE_FINISHED, StateData#state{timer = TRef, timer_magic = Magic}}.
+
+%% awards_distribution(TTable, Awards) -> [{PlayerId, Pos, GiftId}]
+awards_distribution(TTable, Awards) ->
+    MTTable = merge_tournament_table(TTable),
+    F = fun({PlayerId, Pos}, Acc) ->
+                try lists:nth(Pos, Awards) of
+                    undefined -> Acc;
+                    GiftId -> [{PlayerId, Pos, GiftId} | Acc]
+                catch
+                    _:_ -> Acc
+                end
+        end,
+    lists:foldl(F, [], MTTable).
+
+%% merge_tournament_table(TTable) -> [{PlayerId, Pos}]
+merge_tournament_table(TTable) ->
+    [{_, Tour0} | Tours] = lists:keysort(1, TTable),
+    PlayersPos0 = tour_res_to_players_pos(Tour0),
+    F = fun({_, Tour}, Acc) ->
+                lists:foldl(fun({PlayerId, Pos}, Acc2) ->
+                                    lists:keyreplace(PlayerId, 1, Acc2, {PlayerId, Pos})
+                            end, Acc, tour_res_to_players_pos(Tour))
+        end,
+    lists:foldl(F, PlayersPos0, Tours).
+
+%% tour_res_to_players_pos(TourRes) -> [{PlayerId, Pos}]
+tour_res_to_players_pos(TourRes) ->
+    [{PlayerId, Pos} || {PlayerId, Pos, _Points, _Status} <- TourRes].
 
 deduct_quota(GameId, Amount, UsersIds) ->
     [begin
@@ -916,6 +953,7 @@ store_seat(#seat{table = TabId, seat_num = SeatNum, player_id = PlayerId,
               end,
     midict:store({TabId, SeatNum}, Seat, Indices, Seats).
 
+user_id_to_string(UserId) -> binary_to_list(UserId).
 
 shuffle(List) -> deck:to_list(deck:shuffle(deck:from_list(List))).
 
@@ -967,8 +1005,8 @@ table_parameters(ParentMod, ParentPid, Speed, GameType) ->
      {slang_allowed, false},
      {observers_allowed, false},
      {tournament_type, elimination},
-     {round_timeout, get_round_timeout(Speed)},
-%     {round_timeout, 20*1000},
+%     {round_timeout, get_round_timeout(Speed)},
+     {round_timeout, 20*1000},
      {speed, Speed},
      {game_type, GameType},
      {rounds, ?ROUNDS_PER_TOUR},
