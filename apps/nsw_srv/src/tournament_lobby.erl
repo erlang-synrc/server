@@ -458,7 +458,7 @@ content() ->
                      true ->
                         case TourId of
                             "" ->
-                                #link{id=start_button, text=?_T("MANUAL START"), postback={start_tour, Id, NPlayers,Quota,Tours,Speed}};
+                                #link{id=start_button, text=?_T("MANUAL START"), postback={start_tour, Id, NPlayers,Quota,Tours,Speed,T#tournament.awards}};
                             _ -> ""
                         end;
                     _ -> ""
@@ -798,9 +798,9 @@ event(join_tournament) ->
     wf:replace(join_button, #panel{id=join_button, class="tourlobby_orange_button_disabled", text="TURNUVAYA KATIL"}),
     update_userlist();    
 
-event({start_tour, Id, NPlayers,Q,T,S}) ->
+event({start_tour, Id, NPlayers,Q,T,S,P}) ->
     wf:state(tour_start_time, time()),
-    TourId = rpc:call(?GAMESRVR_NODE, game_manager,start_tournament,[Id, 1, NPlayers,Q,T,S]),
+    TourId = rpc:call(?GAMESRVR_NODE, game_manager,start_tournament,[Id, 1, NPlayers,Q,T,S,P]),
     wf:replace(attach_button, #link{id=attach_button, class="tourlobby_yellow_button", text=?_T("TAKE MY SEAT"), postback=attach}),
     wf:replace(start_button, ""),
     wf:state(tour_long_id,TourId);
