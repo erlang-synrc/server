@@ -271,7 +271,7 @@ create_standalone_game(Game, Params, Users) ->
     end.
 
 
-start_tournament(TourId,NumberOfTournaments,NumberOfPlayers,Quota,Tours,Speed) ->
+start_tournament(TourId,NumberOfTournaments,NumberOfPlayers,Quota,Tours,Speed,GiftIds) ->
 
     {ok,Tournament} = nsm_db:get(tournament,TourId),
 
