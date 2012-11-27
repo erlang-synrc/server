@@ -72,7 +72,7 @@ api_event(confirmPayment, Tag, [PurchaseId])->
   update_purchase_state(PurchaseId, Tag, ?MP_STATE_CONFIRMED);
 api_event(loadData, Anchor, []) ->
     ?DBG("Got LOAD event: Anchor: ~p", [Anchor]),
-    Purchases = nsm_membership_packages:list_purchases(),
+    Purchases = lists:reverse(lists:sort(nsm_membership_packages:list_purchases())),
     JSON = site_utils:base64_encode_to_url(mochijson2:encode([purchase_to_json(P) || P <- Purchases])),
     wf:wire(wf:f("obj('~s').grid.updateData('~s')", [Anchor, JSON])).
 

@@ -44,6 +44,14 @@
          skill = 0 :: integer(),
          score = 0 :: integer()}).
 
+-record(user_address, {
+        username :: username_type(),
+        address = "",
+        city = "",
+        district = "",
+        postal_code = ""
+    }).
+
 -record(user_counter,
     {username :: username_type(),
         point = 150}).

@@ -379,8 +379,9 @@ reset_slider() ->
     end,
     wf:state(slider_min_value, Min div 100),
     wf:state(slider_max_value, Max div 100),
-    {_, KMin} = nsm_gifts_tools:convert_money_to_kakush(Min),
-    {_, KMax} = nsm_gifts_tools:convert_money_to_kakush(Max),
+    {A, B, C, D} = nsm_gifts_db:get_factors(),
+    {_, _, KMin} = nsm_gifts_tools:calc_prices(Min, A, B, C, D),
+    {_, _, KMax} = nsm_gifts_tools:calc_prices(Max, A, B, C, D),
     wf:update(slider_min_value, site_utils:long_integer_to_list(KMin)),
     wf:update(slider_max_value, site_utils:long_integer_to_list(KMax)),
     event({newtour_slider}).

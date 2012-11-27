@@ -169,7 +169,7 @@ section_body(gifts) ->
                                 "<b>" ++ SName ++ " </b><font style='color:#777;'>(" ++ SDate ++ ")</font> " ++ ?_T("worth") ++ " " ++
                                 SPrice ++ " <font size=-1>TL</font> " ++ ?_T("for") ++ " " ++ SKakush ++ " " ++ ?_T("kakush")
                             ]},
-                            #link{class=btn, postback={deliver},  text=?_T("Deliver")}
+                            #link{class=btn, postback={deliver, GiftId, SName, SKakush},  text=?_T("Deliver")}
                         ]};
                     error ->    % some junk got into user_bought_gifts
                         ?ERROR("No such gift with id: ~p", [GiftId])
@@ -256,7 +256,13 @@ section_body(account) ->
 %    Script = wf:f(" { ~s } ",[callback(ApiSave,"self == top")]),
 %    wf:wire(Id, Script),
     Orders = nsm_db:get_purchases_by_user(Username, ?ORDERS_PER_PAGE, [?MP_STATE_DONE]),
-
+    {_, UA} = nsm_db:get(user_address, wf:user()),
+    case UA of
+        notfound ->
+            Address="", City="", District="", PostalCode="";
+        _ -> 
+            #user_address{address = Address, city = City, district = District, postal_code = PostalCode} = UA
+    end,
     [
 	#h1{text=?_T("Account")},
 	#panel{class="inform-block", body = [
@@ -273,21 +279,21 @@ section_body(account) ->
                     "<h2 class=\"ttl\"><span>"++?_T("Account information")++"</span></h2>",
                     #panel{class=row, body = [
                         #label{text = ?_T("Address")},
-                        #panel{class=text, body = #textbox{}} ]},
+                        #panel{class=text, body = #textbox{id=user_address, text=Address}} ]},
                     #panel{class=row, body = [
                         #label{text = ?_T("City")},
-                        #panel{class=text, body = #textbox{}} ]},
+                        #panel{class=text, body = #textbox{id=user_city, text=City}} ]},
                     #panel{class=row, body = [
                         #label{text = ?_T("District")},
-                        #panel{class=text, body = #textbox{}} ]},
+                        #panel{class=text, body = #textbox{id=user_district, text=District}} ]},
                     #panel{class=row, body = [
                         #label{text = ?_T("Postal code")},
-                        #panel{class=text, body = #textbox{}} ]},
+                        #panel{class=text, body = #textbox{id=user_postal_code, text=PostalCode}} ]},
                     #panel{class="row", body=[
                         #panel{class="btn-holder", body=[
                             #panel{class="ar", body=[
-                                #button{class="btn-reset", text=?_T("Cancel")},
-                                #button{class="btn-submit", text=?_T("Save")}
+                                #button{class="btn-reset", text=?_T("Cancel"), postback=user_address_cancel},
+                                #button{class="btn-submit", text=?_T("Save"), postback=user_address_save}
                             ]}
                         ]}
                     ]},
@@ -743,6 +749,117 @@ u_event(convert_kakush_to_quota) ->
         _:Error ->
             ?ERROR(Error),
             wf:wire(#alert{text=?_T("Please, write only digits.")})
+    end;
+
+u_event(user_address_save) ->
+    Address = wf:q(user_address),
+    City = wf:q(user_city),
+    District = wf:q(user_district),
+    PostalCode = wf:q(user_postal_code),
+    nsx_msg:notify(["db", "user", wf:user(), "put"], #user_address{
+        username=wf:user(),
+        address = Address,
+        city = City,
+        district = District,
+        postal_code = PostalCode
+    }),
+    wf:wire(#alert{text=?_T("Saved")});
+
+u_event(user_address_cancel) ->
+    {_, UA} = nsm_db:get(user_address, wf:user()),
+    case UA of
+        #user_address{address = Address, city = City, district = District, postal_code = PostalCode} ->
+            wf:set(user_address, Address),
+            wf:set(user_city, City),
+            wf:set(user_district, District),
+            wf:set(user_postal_code, PostalCode);
+        _ ->
+            wf:set(user_address, ""),
+            wf:set(user_city, ""),
+            wf:set(user_district, ""),
+            wf:set(user_postal_code, "")
+    end;
+
+u_event({deliver, GiftId, SName, SKakush}) ->
+    {_, UA} = nsm_db:get(user_address, wf:user()),
+    case UA of
+        notfound ->
+            Address="", City="", District="", PostalCode="";
+        _ -> 
+            #user_address{address = Address, city = City, district = District, postal_code = PostalCode} = UA
+    end,
+    Body = [
+        #panel{class=holder, style="margin-left:12px;", body=[
+            #panel{style="font-size:18px; margin-top:30px;", body=?_T("So, you want to deliver") ++ " <b>" ++ SName ++ " </b> " ++ ?_T("worth") ++ " " ++ SKakush ++ " " ++ ?_T("kakush")},
+            #singlerow{style="margin-top:26px; margin-bottom:16px;", cells=[
+                #tablecell{style="vertical-align:top; width:200px; font-size:1.4em; padding-top:10px;", body=?_T("Please, check:")},
+                #tablecell{body=[
+                    #panel{class=row, body = [
+                        #label{text = ?_T("Address")},
+                        #panel{class=text, body = #textbox{id=delivery_address, text=Address}} ]},
+                    #panel{class=row, body = [
+                        #label{text = ?_T("City")},
+                        #panel{class=text, body = #textbox{id=delivery_city, text=City}} ]},
+                    #panel{class=row, body = [
+                        #label{text = ?_T("District")},
+                        #panel{class=text, body = #textbox{id=delivery_district, text=District}} ]},
+                    #panel{class=row, body = [
+                        #label{text = ?_T("Postal code")},
+                        #panel{class=text, body = #textbox{id=delivery_postal_code, text=PostalCode}} ]}
+                ]}
+            ]},
+            #singlerow{cells=[
+                #tablecell{
+                    body="", style="width:272px;"
+                },
+                #tablecell{
+                    body=#cool_button{text=?_T("Deliver!"), postback={process_delivery, wf:user(), GiftId, SName}, style="display:block;"}
+                }
+            ]},
+            #grid_clear{}
+        ]}
+    ],
+    wf:update(simple_panel, webutils:lightbox_panel_template(gift_lightbox, Body, hide_delivery_details)),
+    wf:wire(simple_lightbox, #show{});
+
+u_event(hide_delivery_details) ->
+    wf:wire(simple_lightbox, #hide{});
+
+u_event({process_delivery, UId, GiftId, SName}) ->
+    Orders = nsm_db:get_purchases_by_user(UId, undefined, all),
+    HasNotConfirmed = fun(F, OL) ->
+        case OL of
+            [] -> false;
+            [#membership_purchase{state=S}|T] -> case S of
+                confirmed -> F(F, T);
+                _ -> true
+            end
+        end
+    end,
+    case HasNotConfirmed(HasNotConfirmed, Orders) of
+        true ->
+            wf:wire(#alert{text=?_T("Sorry, not all of your payments are yet confirmed. We are working on it, please wait a little bit more.")}),
+            wf:wire(simple_lightbox, #hide{});
+        false ->
+            case nsm_db:get(config, "delivery/notifications/email") of
+                {error, notfound} ->
+                    ?ERROR("Delivery error, delivery/notifications/email not set"),
+                    wf:wire(#alert{text=?_T("Notification error while processing delivery!")});
+                {ok, Email} ->
+                    nsx_msg:notify(["gifts", "user", UId, "mark_gift_as_deliving"], {GiftId}),
+                    Address = wf:q(delivery_address),
+                    City = wf:q(delivery_city),
+                    District = wf:q(delivery_district),
+                    PostalCode = wf:q(delivery_postal_code),
+                    {Vendor, Gift} = GiftId,
+                    MailContent = ?_TS("User $user$ wants his $gname$ ($vendor_id$, $gift_id$) delivered to $address$, $city$, $district$, $postal_code$.", 
+                        [{user, UId}, {gname, SName}, {vendor_id, Vendor}, {gift_id, Gift}, {address, Address}, {city, City}, {district, District}, {postal_code, PostalCode}]),
+                    MailSubj = ?_T("Kakaranet: new delivery"),
+                    nsx_msg:notify_email(MailSubj, MailContent, Email),
+                    wf:wire(#alert{text=?_T("Ok, the delivery is on its' way now!")}),
+                    wf:wire(simple_lightbox, #hide{}),
+                    wf:redirect("/profile/gifts")
+            end
     end;
 
 u_event(Any) ->

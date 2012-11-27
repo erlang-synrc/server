@@ -358,6 +358,9 @@ buy_gift(UId, GiftId) ->
 list_gifts_of(UId) ->
     nsm_db:all_by_index(user_bought_gifts, <<"user_bought_gifts_username_bin">>, list_to_binary(UId)).
 
+mark_gift_as_deliving(UId, GiftId) ->
+    [nsm_db:delete(user_bought_gifts, {UId, T}) || #user_bought_gifts{timestamp=T, gift_id=GId} <- list_gifts_of(UId), GId == GiftId],
+    nsm_db:put(#user_bought_gifts{username="."++UId, timestamp=now(), gift_id=GiftId}).
 
 % active_user_top
 calculate_activity(E, Timestamp) ->
@@ -527,6 +530,9 @@ build_user_relations(User, Groups) ->
 
      rk( [tournaments, user, User, create]),
      rk( [tournaments, user, User, create_and_join]),
+
+     rk( [gifts, user, User, buy_gift]),
+     rk( [gifts, user, User, mark_gift_as_deliving]),
 
      %% system message format: feed.system.ElementType.Action
      rk( [feed, system, '*', '*']) |
