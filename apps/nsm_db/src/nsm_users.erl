@@ -355,6 +355,9 @@ buy_gift(UId, GiftId) ->
     nsm_accounts:transaction(UId, ?CURRENCY_KAKUSH, -KakushPrice, "Buying gift: "++GiftName++" for "++integer_to_list(KakushPrice)++" kakush."),
     nsm_db:put(#user_bought_gifts{username=UId, timestamp=now(), gift_id=GiftId}).
 
+give_gift(UId, GiftId) ->
+    nsm_db:put(#user_bought_gifts{username=UId, timestamp=now(), gift_id=GiftId}).
+
 list_gifts_of(UId) ->
     nsm_db:all_by_index(user_bought_gifts, <<"user_bought_gifts_username_bin">>, list_to_binary(UId)).
 
@@ -532,6 +535,7 @@ build_user_relations(User, Groups) ->
      rk( [tournaments, user, User, create_and_join]),
 
      rk( [gifts, user, User, buy_gift]),
+     rk( [gifts, user, User, give_gift]),
      rk( [gifts, user, User, mark_gift_as_deliving]),
 
      %% system message format: feed.system.ElementType.Action

@@ -558,6 +558,13 @@ handle_notice(["gifts", "user", UId, "buy_gift"] = Route,
     nsm_users:buy_gift(UId, GId),
     {noreply, State};
 
+handle_notice(["gifts", "user", UId, "give_gift"] = Route,
+    Message, #state{owner = Owner, type =Type} = State) ->
+    ?INFO(" queue_action(~p): give_gift: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),
+    {GId} = Message,
+    nsm_users:give_gift(UId, GId),
+    {noreply, State};
+
 handle_notice(["gifts", "user", UId, "mark_gift_as_deliving"] = Route,
     Message, #state{owner = Owner, type =Type} = State) ->
     ?INFO(" queue_action(~p): mark_gift_as_deliving: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),

@@ -493,8 +493,11 @@ other_submenu() ->
 packages_list() ->
 	#packages_grid{}.
 
+ok_gifts() ->
+    [G#gift{id = integer_to_list(V) ++ ", " ++integer_to_list(I)}|| G = #gift{id={V,I}} <- nsm_db:all(gifts)].
+
 gifts_list() ->
-    FirstCursor = cursor:new(nsm_db:all(gifts), 2),
+    FirstCursor = cursor:new(ok_gifts(), 2),
     {ok, Result, Cursor} = cursor:page_next(?GIFT_LIST_PAGE_SIZE, FirstCursor),
     wf:state(gift_list_cursor, Cursor),
     view_gift_list(Result, 1, cursor:size(Cursor)).
