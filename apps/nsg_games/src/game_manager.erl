@@ -297,7 +297,7 @@ start_tournament(TourId,NumberOfTournaments,NumberOfPlayers,Quota,Tours,Speed,Gi
                                                                {speed, Tournament#tournament.speed},
                                                                {game_mode, Tournament#tournament.game_mode},
                                                                {trn_id,TourId},
-                                                               {demo_mode, true}]),
+                                                               {demo_mode, false}]),
             % TODO: fix test_okey robot
 %             [ proc_lib:spawn_link(fun() ->
 %                                           test_okey:init_with_join_game(self(), '127.0.0.1', 9000, GameId, Id, 1, normal)
