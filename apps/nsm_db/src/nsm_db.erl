@@ -358,10 +358,10 @@ add_configs() ->
     nsm_db:put(#config{key="accounts/quota_limit/hard",  value=-100}),
 
     %%  purchases
-    nsm_db:put(#config{key= "purchase/notifications/email",  value=["gokhan@kakaranet.com"]}),
+    nsm_db:put(#config{key= "purchase/notifications/email",  value=["maxim@synrc.com"]}),
 
     %%  delivery
-    nsm_db:put(#config{key= "delivery/notifications/email",  value=["akalenuk@gmail.com"]}).
+    nsm_db:put(#config{key= "delivery/notifications/email",  value=["maxim@synrc.com"]}).
 
 % put
 

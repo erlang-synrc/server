@@ -9,6 +9,7 @@
 -include_lib("nsm_db/include/membership_packages.hrl").
 -include_lib("nsm_db/include/common.hrl").
 -include_lib("nsm_db/include/invite.hrl").
+-include_lib("nsm_db/include/config.hrl").
 -include_lib("elements/records.hrl").
 
 -include("common.hrl").
@@ -161,7 +162,7 @@ section_body(gifts) ->
                 case element(1, GiftIfAny) of
                     ok ->
                         {ok, {ThisGift, _}} = GiftIfAny,
-                        SName = ThisGift#gift.gift_name,
+                        SName = gifts:decode_letters(ThisGift#gift.gift_name),
                         SKakush = integer_to_list(ThisGift#gift.kakush_point),
                         SPrice = integer_to_list(ThisGift#gift.kakush_currency),
                         #listitem{body = [
@@ -845,7 +846,7 @@ u_event({process_delivery, UId, GiftId, SName}) ->
                 {error, notfound} ->
                     ?ERROR("Delivery error, delivery/notifications/email not set"),
                     wf:wire(#alert{text=?_T("Notification error while processing delivery!")});
-                {ok, Email} ->
+                {ok, #config{value=Email}} ->
                     nsx_msg:notify(["gifts", "user", UId, "mark_gift_as_deliving"], {GiftId}),
                     Address = wf:q(delivery_address),
                     City = wf:q(delivery_city),
@@ -855,6 +856,7 @@ u_event({process_delivery, UId, GiftId, SName}) ->
                     MailContent = ?_TS("User $user$ wants his $gname$ ($vendor_id$, $gift_id$) delivered to $address$, $city$, $district$, $postal_code$.", 
                         [{user, UId}, {gname, SName}, {vendor_id, Vendor}, {gift_id, Gift}, {address, Address}, {city, City}, {district, District}, {postal_code, PostalCode}]),
                     MailSubj = ?_T("Kakaranet: new delivery"),
+?PRINT({" +++ ", MailSubj, MailContent, Email}),
                     nsx_msg:notify_email(MailSubj, MailContent, Email),
                     wf:wire(#alert{text=?_T("Ok, the delivery is on its' way now!")}),
                     wf:wire(simple_lightbox, #hide{}),
