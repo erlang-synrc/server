@@ -154,7 +154,6 @@ delete_user(UserName) ->
 	   [ unsubscr_user(FrId, MeId) || {MeId, FrId} <- F2U ],
 	   %% remove save_game_table
 	   nsm_db:delete(save_game_table, UserName),
-	   nsm_db:delete(user_counter, UserName),
 	   nsm_db:delete(user_status, UserName),
 	   %% TODO: delete feed? or not?
 	   %% delete user
@@ -231,15 +230,7 @@ update_after_login(User) -> %RPC to cleanup
             {ok, UserStatus} ->
                 UserStatus#user_status{last_login = erlang:now()}
         end,
-    nsm_db:put(Update),
-
-    case nsm_db:get(user_counter, User) of
-        {error, not_found} ->
-            UC = #user_counter{username = User},
-            nsm_db:put(UC);
-        _ ->
-            ok
-    end.
+    nsm_db:put(Update).
 
 user_status(User) ->
     case nsm_db:get(user_status, User) of
@@ -496,6 +487,8 @@ build_user_relations(User, Groups) ->
      rk( [subscription, user, User, reject_invite_to_group]),
      rk( [subscription, user, User, leave_group]),
      rk( [login, user, User, update_after_login]),
+     rk( [profile, user, User, add_twitter]),
+     rk( [profile, user, User, remove_twitter]),
      rk( [likes, user, User, add_like]),
      rk( [personal_score, user, User, add]),
 

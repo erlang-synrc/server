@@ -562,14 +562,6 @@ handle_notice(["login", "user", UId, "update_after_login"] = Route,
                 UserStatus#user_status{last_login = erlang:now()}
         end,
     nsm_db:put(Update),
-
-    case nsm_db:get(user_counter, UId) of
-        {error, not_found} ->
-            UC = #user_counter{username = UId},
-            nsm_db:put(UC);
-        _ ->
-            ok
-    end,
     {noreply, State};
 
 handle_notice(["invite", "user", UId, "add_invite_to_issuer"] = Route,

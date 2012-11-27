@@ -39,7 +39,6 @@ init_db() ->
     ok = add_table_index(invite_code, created_user),
     ok = create_table(user, record_info(fields, user), [{storage, permanent}]),
     ok = create_table(user_status, record_info(fields, user_status), [{storage, permanent}]),
-    ok = create_table(user_counter, record_info(fields, user_counter), [{storage, permanent}]),
     ok = create_table(subscription, record_info(fields, subscription), [{storage, permanent}, {type, bag}]),
     ok = create_table(subscription_rev, record_info(fields, subscription_rev), [{storage, permanent}, {type, bag}]),
     ok = add_table_index(user, verification_code),

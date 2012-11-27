@@ -44,10 +44,6 @@
          skill = 0 :: integer(),
          score = 0 :: integer()}).
 
--record(user_counter,
-    {username :: username_type(),
-        point = 150}).
-
 -record(user_type,
         {id,
          aclver}).
@@ -130,6 +126,9 @@
         gift_id
     }).
 
+-record(user_count, {count}).
+-record(twitter_oauth, {user_id, token, secret}).
+
 % users activity top
 -define(ACTIVE_USERS_TOP_N, 12).
 
@@ -137,7 +136,7 @@
         no,
         user_id,
         entries_count,
-        last_one_timestamp    
+        last_one_timestamp
     }).
 
 %% Message queues stuff related to user
