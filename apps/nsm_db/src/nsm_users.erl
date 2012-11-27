@@ -531,6 +531,9 @@ build_user_relations(User, Groups) ->
      rk( [tournaments, user, User, create]),
      rk( [tournaments, user, User, create_and_join]),
 
+     rk( [gifts, user, User, buy_gift]),
+     rk( [gifts, user, User, mark_gift_as_deliving]),
+
      %% system message format: feed.system.ElementType.Action
      rk( [feed, system, '*', '*']) |
      [rk_group_feed(G) || G <- Groups]].

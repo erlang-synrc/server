@@ -550,6 +550,22 @@ handle_notice(["subscription", "user", Who, "unblock_user"] = Route,
     nsx_msg:notify_user_unblock(Who, Whom),
     {noreply, State};
 
+
+handle_notice(["gifts", "user", UId, "buy_gift"] = Route,
+    Message, #state{owner = Owner, type =Type} = State) ->
+    ?INFO(" queue_action(~p): buy_gift: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),
+    {GId} = Message,
+    nsm_users:buy_gift(UId, GId),
+    {noreply, State};
+
+handle_notice(["gifts", "user", UId, "mark_gift_as_deliving"] = Route,
+    Message, #state{owner = Owner, type =Type} = State) ->
+    ?INFO(" queue_action(~p): mark_gift_as_deliving: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),
+    {GId} = Message,
+    nsm_users:mark_gift_as_deliving(UId, GId),
+    {noreply, State};
+
+
 handle_notice(["login", "user", UId, "update_after_login"] = Route,
     Message, #state{owner = Owner, type =Type} = State) ->
     ?INFO("queue_action(~p): update_after_login: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),    

@@ -258,7 +258,7 @@ section_body(account) ->
     Orders = nsm_db:get_purchases_by_user(Username, ?ORDERS_PER_PAGE, [?MP_STATE_DONE]),
     {_, UA} = nsm_db:get(user_address, wf:user()),
     case UA of
-        notforund ->
+        notfound ->
             Address="", City="", District="", PostalCode="";
         _ -> 
             #user_address{address = Address, city = City, district = District, postal_code = PostalCode} = UA
@@ -783,7 +783,7 @@ u_event(user_address_cancel) ->
 u_event({deliver, GiftId, SName, SKakush}) ->
     {_, UA} = nsm_db:get(user_address, wf:user()),
     case UA of
-        notforund ->
+        notfound ->
             Address="", City="", District="", PostalCode="";
         _ -> 
             #user_address{address = Address, city = City, district = District, postal_code = PostalCode} = UA
@@ -846,17 +846,16 @@ u_event({process_delivery, UId, GiftId, SName}) ->
                     ?ERROR("Delivery error, delivery/notifications/email not set"),
                     wf:wire(#alert{text=?_T("Notification error while processing delivery!")});
                 {ok, Email} ->
+                    nsx_msg:notify(["gifts", "user", UId, "mark_gift_as_deliving"], {GiftId}),
                     Address = wf:q(delivery_address),
                     City = wf:q(delivery_city),
                     District = wf:q(delivery_district),
                     PostalCode = wf:q(delivery_postal_code),
-%                    {Vendor, Gift} = GiftId,
-%                    "User $user$ wants his $gname$ ($vendor_id$, $gift_id$) delivered to $address$, $city$, $district$, $postal_code$.",
-                    MailContent = ?_TS("User $user$ wants his $gname$ delivered to $address$, $city$, $district$, $postal_code$.", 
-                        [{user, UId}, {gname, SName}, {address, Address}, {city, City}, {district, District}, {postal_code, PostalCode}]),
+                    {Vendor, Gift} = GiftId,
+                    MailContent = ?_TS("User $user$ wants his $gname$ ($vendor_id$, $gift_id$) delivered to $address$, $city$, $district$, $postal_code$.", 
+                        [{user, UId}, {gname, SName}, {vendor_id, Vendor}, {gift_id, Gift}, {address, Address}, {city, City}, {district, District}, {postal_code, PostalCode}]),
                     MailSubj = ?_T("Kakaranet: new delivery"),
                     nsx_msg:notify_email(MailSubj, MailContent, Email),
-                    nsm_users:mark_gift_as_deliving(UId, GiftId),
                     wf:wire(#alert{text=?_T("Ok, the delivery is on its' way now!")}),
                     wf:wire(simple_lightbox, #hide{}),
                     wf:redirect("/profile/gifts")
