@@ -443,14 +443,18 @@ inner_event({like_entry, E, LikeBtnId}, User) ->
     wf:replace(LikeBtnId, []);
 
 
-inner_event({share_entry, Entry}, User) ->
-   {Type, _Owner} = case wf:state(feed_owner) of
-        {T, O} ->
-            {T, O};
-        _ ->
-            {user, User}
-    end,
-    nsx_msg:notify([feed, Type, User, entry, utils:uuid_ex(), share], Entry); % it is not good design to issue id in web part, but we need it both in comet and db
+inner_event({share_entry, Entry, ShareBtnId}, User) ->
+%   {Type, _Owner} = case wf:state(feed_owner) of
+%        {T, O} ->
+%            {T, O};
+%        _ ->
+%            {user, User}
+%    end,
+%    ?INFO(" +++ share! ~p ~p", [Type, _Owner]),  
+    wf:replace(ShareBtnId, ""),
+    Type = user,
+    nsx_msg:notify([feed, Type, User, entry, utils:uuid_ex(), share], Entry), % it is not good design to issue id in web part, but we need it both in comet and db
+    wf:wire(#alert{text=?_T("It will now appear in your feed.")});
 
 inner_event({comment_entry, _EId, _PanelId}, _) ->
     ?PRINT({comment,event,button});

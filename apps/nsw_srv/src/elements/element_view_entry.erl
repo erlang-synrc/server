@@ -363,6 +363,7 @@ entry_element_usual(E, Comments, Avatar, {MediaThumb, MediaLists0}, _TargetMedia
     ViewC           = Comments == [],
     LikeBtnId       = wf:temp_id(),
     LikePanelId     = like_panel_id(E#entry.entry_id),
+    ShareBtnId       = wf:temp_id(),
     [
       #panel{class="post", id=TempId, actions=Events, body=[
         #panel{class="entry-avatar", body=[
@@ -389,8 +390,8 @@ entry_element_usual(E, Comments, Avatar, {MediaThumb, MediaLists0}, _TargetMedia
                   ]}
                 ]}},
               #listitem{body=#link{text=?_T("Like"), class="clr-1", id=LikeBtnId, postback={like_entry, E, LikeBtnId}, show_if=LikeBtnShow}},
-              #listitem{body=#link{text=?_T("Share"), class="clr-1", url="javascript:void(0)",
-                show_if=wf:user() /= E#entry.shared andalso wf:user() /= E#entry.from, postback={share_entry, E}}},
+              #listitem{body=#link{text=?_T("Share"), class="clr-1", id=ShareBtnId,
+                show_if=wf:user() /= E#entry.shared andalso wf:user() /= E#entry.from, postback={share_entry, E, ShareBtnId}}},
               #listitem{body=#link{text=?_T("Edit"), show_if=IsDirectMessage, class="clr-4", url="javascript:void(0)",
                 actions=[
                   #event { type=click, actions=[

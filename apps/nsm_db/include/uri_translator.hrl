@@ -31,7 +31,7 @@
                          {"main", "tr", "ana-sayfa"},
                          {"matchmaker", "tr", "oyun-kuran"},
                          {"okey", "tr", "okey"},
-                         {"tavla", "tr", "backgammon"},
+                         {"tavla", "tr", "tavla"},
                          {"privacy", "tr", "gizlilik"},
                          {"social", "tr", "sosyal"},
                          {"terms", "tr", "kullanim-sartlari"},
