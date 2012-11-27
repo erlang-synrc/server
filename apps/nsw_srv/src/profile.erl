@@ -856,7 +856,6 @@ u_event({process_delivery, UId, GiftId, SName}) ->
                     MailContent = ?_TS("User $user$ wants his $gname$ ($vendor_id$, $gift_id$) delivered to $address$, $city$, $district$, $postal_code$.", 
                         [{user, UId}, {gname, SName}, {vendor_id, Vendor}, {gift_id, Gift}, {address, Address}, {city, City}, {district, District}, {postal_code, PostalCode}]),
                     MailSubj = ?_T("Kakaranet: new delivery"),
-?PRINT({" +++ ", MailSubj, MailContent, Email}),
                     nsx_msg:notify_email(MailSubj, MailContent, Email),
                     wf:wire(#alert{text=?_T("Ok, the delivery is on its' way now!")}),
                     wf:wire(simple_lightbox, #hide{}),
