@@ -91,9 +91,7 @@ new_tab_js(Url) when is_list(Url)->
                   Url,
                   "');"]).
 
-header_box() ->
-  count_user(),
-  #template { file=code:priv_dir(nsw_srv)++"/templates/header.html"}.
+header_box() -> #template { file=code:priv_dir(nsw_srv)++"/templates/header.html"}.
 
 header_body() -> [account_menu(), menu_links()].
 
@@ -570,7 +568,7 @@ show_if(_, _Entry) -> false.
 
 count_user()->
   case wf:user() of
-    undefined -> ok;
+    undefined -> [];
     _User ->
       {ok, CometPid} = wf:comet(fun()-> comet_update() end, user_count),
       [ case Child of
@@ -578,7 +576,13 @@ count_user()->
           restarting -> ok;
           Pid -> Pid ! {inc_user, CometPid}
         end
-      || {_Id, Child, _Type, _Modules} <- nsm_queries:map_reduce(supervisor, which_children, [nsw_srv_sup])]
+      || {_Id, Child, _Type, _Modules} <- nsm_queries:map_reduce(supervisor, which_children, [nsw_srv_sup])],
+      ["<script type=\"text/javascript\">",
+        "$(window).bind('beforeunload', function(){",
+            "$.post(\"user/counter\", {dec_user: \""++pid_to_list(CometPid)++"\"});",
+            "return void(0);",
+        "});",
+      "</script>"]
   end.
 
 comet_update()->
@@ -587,6 +591,11 @@ comet_update()->
   end,
   wf:flush(),
   comet_update().
+
+api_event(Name, fb, Args)->
+  fb_utils:api_event(Name, fb, Args);
+api_event(Name, Tag, Args)->
+  ?INFO("API event in webutils: ~p ~p ~p ~n", [Name, Tag, Args]).
 
 user_count(GameH) ->
   GameCounts = rpc:call(?GAMESRVR_NODE,game_manager,counter,[
@@ -1250,8 +1259,7 @@ js_for_main_authorized_game_stats_menu() ->
     webutils:add_script("/nitrogen/js/jquery.autosize-min.js"),
     webutils:add_script("/nitrogen/js/jquery.scrollTo-1.4.2-min.js"),
     webutils:add_script("/nitrogen/js/jquery.serialScroll-1.2.2-min.js"),
-    webutils:add_raw("
-    <link href='/nitrogen/video-js/video-js.css' rel='stylesheet'>
+    webutils:add_raw("<link href='/nitrogen/video-js/video-js.css' rel='stylesheet'>
     <script src='/nitrogen/video-js/video.js'></script>
 
     <link href='/nitrogen/guiders-js/guiders-1.2.8.css' rel='stylesheet'>

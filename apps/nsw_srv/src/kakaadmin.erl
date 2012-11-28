@@ -737,8 +737,7 @@ create_new_contract_from_form() ->
 %%%%%%%%%%%%%%% EVENT %%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 api_event(Name, Tag, Args)->
-    ?INFO("kakaAdmin api_event: ~p ~p ~p~n", [Name, Tag, Args]),
-    fb_utils:api_event(Name, Tag, Args).
+  webutils:api_event(Name, Tag, Args).
 
 event(add_new_contract) ->
     UserId = wf:q(contract_new_user),

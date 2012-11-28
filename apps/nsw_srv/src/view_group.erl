@@ -310,7 +310,7 @@ leave_group_form(Group) ->
     webutils:lightbox_panel_template(simple_lightbox, Body).
 
 api_event(Name, Tag, Args)->
-  fb_utils:api_event(Name, Tag, Args).
+  webutils:api_event(Name, Tag, Args).
 
 event({show_group_edit, Group}) ->
     wf:update(simple_panel, show_editgroup_content(Group)),

@@ -447,3 +447,6 @@ top_adv() ->
             url="javascript:void(0)", class="btn", postback=show_new_group_edit,
             text=?_T("Create a group")}
     ]}.
+
+api_event(Name, Tag, Args) ->
+  webutils:api_event(Name, Tag, Args).

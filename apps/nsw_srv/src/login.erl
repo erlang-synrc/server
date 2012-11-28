@@ -387,8 +387,8 @@ event(change_password) ->
 
 event({change_language,SL}) -> webutils:event({change_language, SL}).
 
-api_event(Name, Tag, Data)-> 
-    fb_utils:api_event(Name, Tag, Data).
+api_event(Name, Tag, Data)->
+  webutils:api_event(Name, Tag, Data).
 
 redirect(Url, Delay) ->
     wf:wire(#event{type=timer, delay = Delay, actions=#script{script="window.location=\""++Url++"\";"}}).

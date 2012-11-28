@@ -228,3 +228,6 @@ event({gifts_slider}) ->
 
 event(Any) ->
     webutils:event(Any).
+
+api_event(Name, Tag, Args) ->
+  webutils:api_event(Name, Tag, Args).

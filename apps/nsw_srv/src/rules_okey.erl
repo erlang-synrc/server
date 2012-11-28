@@ -246,3 +246,5 @@ event(not_implemented) ->
 event(Any)->
     webutils:event(Any).
 
+api_event(Name, Tag, Args) ->
+  webutils:api_event(Name, Tag, Args).

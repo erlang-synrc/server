@@ -97,7 +97,7 @@ event(Any)->
     webutils:event(Any).
 
 api_event(Name, Tag, Data) ->
-    fb_utils:api_event(Name, Tag, Data).
+  webutils:api_event(Name, Tag, Data).
 
 %% Local functions
 -spec columns_to_rows(Columns::list())-> Rows::list().

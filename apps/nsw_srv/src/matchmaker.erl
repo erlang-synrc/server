@@ -904,7 +904,7 @@ can_be_multiple(users) -> true;
 can_be_multiple(_Key)  -> false.
 
 api_event(Name, Tag, Args) ->
-  fb_utils:api_event(Name, Tag, Args).
+  webutils:api_event(Name, Tag, Args).
 
 event(Event) ->
   case wf:user() of

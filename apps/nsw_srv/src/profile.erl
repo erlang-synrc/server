@@ -71,7 +71,7 @@ callback(#api{anchor = Id, name = Name}, DataVar) ->
 api_event(savePackage, Anchor, Data) ->
     ?INFO("Api Event: ~p ~p",[Anchor, Data]);
 api_event(Name, Tag, Args)->
-    fb_utils:api_event(Name, Tag, Args).
+    webutils:api_event(Name, Tag, Args).
 
 section_body(profile) ->
     User0 = webutils:user_info(),

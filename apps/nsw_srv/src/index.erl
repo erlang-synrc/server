@@ -54,10 +54,10 @@ body() ->
 %    wf:redirect(?_U("/login/register"));
 
 event(Other) ->
-    webutils:event(Other).
+  webutils:event(Other).
 
 api_event(Name, Tag, Args)->
-    fb_utils:api_event(Name, Tag, Args).
+  webutils:api_event(Name, Tag, Args).
 
 show_message(Message) ->
     Decoded = site_utils:base64_decode_from_url(Message),

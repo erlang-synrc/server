@@ -176,7 +176,7 @@ view_user(Users) ->
     lists:flatten(Source).
 
 api_event(Name, Tag, Args)->
-  fb_utils:api_event(Name, Tag, Args).
+  webutils:api_event(Name, Tag, Args).
 
 event({subscribe,_,_,_}=Event) ->
     friends:event(Event);
