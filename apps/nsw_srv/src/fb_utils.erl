@@ -54,6 +54,7 @@ init()->
 	"});",
     "}",
   "function add_fb_service(){",
+    "FB.login(function(resp){",
     "FB.ui({",
       "method: 'permissions.request',",
       "perms: 'publish_stream',",
@@ -64,6 +65,7 @@ init()->
           "if(response.perms){",
             "FB.api(\"/me?fields=id\",",
             "function(r){",
+              "if(r.error){console.log(r.error.message);}",
               "if(page.fbAddAsService){",
                 "page.fbAddAsService(r.id);",
               "}",
@@ -71,6 +73,7 @@ init()->
           "}",
         "}",
       "});",
+    "});",
   "};",
 
   "function fb_feed(Id, Msg, Token){",
