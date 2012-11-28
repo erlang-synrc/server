@@ -57,6 +57,7 @@ main() ->
 
 body() ->
 
+
             X = rpc:call(?GAMESRVR_NODE,game_manager,get_lucky_table,[list_to_atom("game_"++wf:q(game_name))]),
             wf:state(lucky,X),
 
@@ -67,6 +68,9 @@ body() ->
   ui_paginate(),
   wf:comet(fun() -> comet_update() end),
 
+  ["<div class=\"list-top-photo-h\" style=\"margin-bottom: -30px;\">"] ++ 
+  [webutils:get_hemen_nav(matchmaker)] ++ 
+  ["</div>"] ++
 
   [#section{class="create-area", body=#section{class="create-block", body=[
     matchmaker_submenu(),
