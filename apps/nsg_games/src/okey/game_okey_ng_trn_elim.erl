@@ -606,7 +606,7 @@ finalize_tournament(#state{game_id = GameId, awards = Awards, tournament_table =
        || {UserId, _Pos, GiftId} <- AwardsDistrib],
     %% TODO: Do we need advertise the prizes to game clients?
     ?INFO("OKEY_NG_TRN_ELIM <~p> Awards distribution: ~p", [GameId, AwardsDistribUserId]),
-    nsx_msg:notify(["system", "tournament_end_note"], {TrnId, AwardsDistribUserId}),
+    nsx_msg:notify(["system", "tournament_ends_note"], {TrnId, AwardsDistribUserId}),
     {TRef, Magic} = start_timer(?SHOW_TOURNAMENT_RESULT_TIMEOUT),
     ?INFO("OKEY_NG_TRN_ELIM <~p> The tournament is finalized. "
           "Waiting some time (~p secs) before continue...",
@@ -994,7 +994,7 @@ table_parameters(ParentMod, ParentPid, Speed, GameType) ->
      {observers_allowed, false},
      {tournament_type, elimination},
      {round_timeout, get_round_timeout(Speed)},
-%     {round_timeout, 20*1000},
+%     {round_timeout, 10*1000},
      {speed, Speed},
      {game_type, GameType},
      {rounds, ?ROUNDS_PER_TOUR},
