@@ -135,64 +135,126 @@ get_tournament(TrnId) ->
     Table.
 
 create_tables(Num) ->
-    Users = ["maxim","kate","alice","sustel","ahmettez","shyronnie","kunthar"], % TODO: chose randomly
+%    Users = ["maxim","kate","alice","sustel","ahmettez","shyronnie","kunthar"], % TODO: chose randomly
 
-    TavlaTwoPlayers = [game_manager:create_table(game_tavla,
-                         [{table_name,"maxim and alice"},
+    Users = nsm_auth:imagionary_users(),
+
+
+    TavlaTwoPlayers = [ begin
+
+    T2U1 = nsm_auth:ima_gio(crypto:rand_uniform(0,2048),Users),
+    T2U2 = nsm_auth:ima_gio(crypto:rand_uniform(0,2048),Users),
+
+    game_manager:create_table(game_tavla,
+                         [{table_name,"tavla two players"},
                           {speed,normal},
                           {rounds,3},
                           {default_pr,yes},
                           {game_mode,standard},
                           {owner,"maxim"}],
-                         [<<"maxim">>,<<"alice">>]) || X<-lists:seq(1,Num)],
+                         [list_to_binary(T2U1),list_to_binary(T2U2)]) end || X<-lists:seq(2,Num)],
     [{ok,T2P1,_}|_] = TavlaTwoPlayers,
     [{ok,T2P2,_}|_] = lists:reverse(TavlaTwoPlayers),
     ?INFO("Tavla two playrs rooms: ~p",[{T2P1,T2P2}]),
-    TavlaRobot = [game_manager:create_table(game_tavla,[{table_name,"maxim and robot"},
+
+    TavlaRobot = [ begin
+
+    T2U1 = nsm_auth:ima_gio(crypto:rand_uniform(0,2048),Users),
+    T2U2 = nsm_auth:ima_gio(crypto:rand_uniform(0,2048),Users),
+
+    game_manager:create_table(game_tavla,[{table_name,"tavla one player"},
                           {speed,normal},
                           {rounds,3},
                           {default_pr,yes},
                           {game_mode,standard},
-                          {owner,"maxim"}],[<<"maxim">>,robot])||X<-lists:seq(1,Num)],
+                          {owner,"maxim"}],[list_to_binary(T2U1),robot]) end ||X<-lists:seq(2,Num)],
     [{ok,TR1,_}|_] = TavlaRobot,
     [{ok,TR2,_}|_] = lists:reverse(TavlaRobot),
     ?INFO("Tavla bot rooms: ~p",[{TR1,TR2}]),
-    OkeyBots = [game_manager:create_table(game_okey,[{table_name,"okey maxim and robots"},
+
+
+    OkeyBots = [begin
+
+    T2U1 = nsm_auth:ima_gio(crypto:rand_uniform(0,2048),Users),
+    T2U2 = nsm_auth:ima_gio(crypto:rand_uniform(0,2048),Users),
+
+    game_manager:create_table(game_okey,[{table_name,"okey one player"},
                           {speed,fast},
                           {rounds,3},
                           {sets,1},
                           {default_pr,yes},
                           {game_mode,color},
-                          {owner,"maxim"}],[<<"maxim">>,robot,robot,robot])||X<-lists:seq(1,Num)],
+                          {owner,"maxim"}],[list_to_binary(T2U1),robot,robot,robot]) end||X<-lists:seq(2,5)],
     [{ok,OB1,_}|_] = OkeyBots,
     [{ok,OB2,_}|_] = lists:reverse(OkeyBots),
     ?INFO("Okey bot rooms: ~p~n",[{OB1,OB2}]),
-    OkeyPlayers = [game_manager:create_table(game_okey,[{table_name,"okey maxim and alice + 2 robots"},
+
+
+    OkeyPlayers = [begin
+
+    T2U1 = nsm_auth:ima_gio(crypto:rand_uniform(0,2048),Users),
+    T2U2 = nsm_auth:ima_gio(crypto:rand_uniform(0,2048),Users),
+    T2U3 = nsm_auth:ima_gio(crypto:rand_uniform(0,2048),Users),
+    T2U4 = nsm_auth:ima_gio(crypto:rand_uniform(0,2048),Users),
+
+    game_manager:create_table(game_okey,[{table_name,"okey four players"},
                           {speed,normal},
                           {rounds,3},
                           {default_pr,yes},
                           {sets,1},
                           {game_mode,standard},
-                          {owner,"kate"}],[<<"maxim">>,<<"alice">>,robot,robot])||X<-lists:seq(1,Num)],
+                          {owner,"kate"}],[list_to_binary(T2U1),list_to_binary(T2U2),
+                                           list_to_binary(T2U3),list_to_binary(T2U4)]) end ||X<-lists:seq(2,Num)],
     [{ok,OP1,_}|_] = OkeyPlayers,
     [{ok,OP2,_}|_] = lists:reverse(OkeyPlayers),
     ?INFO("Okey two players bot rooms: ~p~n",[{OP1,OP2}]),
-    TavlaPairedPlayers = [game_manager:create_table(game_tavla,[{table_name,"maxim and robots"},
+
+
+    TavlaPairedPlayers = [begin
+
+    T2U1 = nsm_auth:ima_gio(crypto:rand_uniform(0,2048),Users),
+    T2U2 = nsm_auth:ima_gio(crypto:rand_uniform(0,2048),Users),
+
+    game_manager:create_table(game_tavla,[{table_name,"paired tavla two tables"},
                           {speed, normal},
                           {default_pr,yes},
                           {rounds,3},
                           {game_mode, paired},
-                          {owner,"maxim"}],[<<"maxim">>,robot, robot, robot])|| _ <-lists:seq(1,Num)],
+                          {owner,"maxim"}],[list_to_binary(T2U1),robot, robot, robot]) end || X <-lists:seq(2,Num)],
     [{ok,TP1,_}|_] = TavlaPairedPlayers,
     [{ok,TP2,_}|_] = lists:reverse(TavlaPairedPlayers),
     ?INFO("Paired Tavla 2 tables rooms: ~p",[{TP1,TP2}]),
-    TavlaPairedPlayers5Tables = [game_manager:create_table(game_tavla,[{table_name,"maxim and robots"},
+
+
+    TavlaPairedPlayers5Tables = [begin
+
+    T2U1 = nsm_auth:ima_gio(crypto:rand_uniform(0,2048),Users),
+    T2U2 = nsm_auth:ima_gio(crypto:rand_uniform(0,2048),Users),
+    T2U3 = nsm_auth:ima_gio(crypto:rand_uniform(0,2048),Users),
+    T2U4 = nsm_auth:ima_gio(crypto:rand_uniform(0,2048),Users),
+    T2U5 = nsm_auth:ima_gio(crypto:rand_uniform(0,2048),Users),
+    T2U6 = nsm_auth:ima_gio(crypto:rand_uniform(0,2048),Users),
+    T2U7 = nsm_auth:ima_gio(crypto:rand_uniform(0,2048),Users),
+    T2U8 = nsm_auth:ima_gio(crypto:rand_uniform(0,2048),Users),
+    T2U9 = nsm_auth:ima_gio(crypto:rand_uniform(0,2048),Users),
+    T2U10 = nsm_auth:ima_gio(crypto:rand_uniform(0,2048),Users),
+
+    game_manager:create_table(game_tavla,[{table_name,"paired tavla 5 tables"},
                           {speed, normal},
                           {rounds,3},
                           {default_pr,yes},
                           {game_mode, paired},
-                          {owner,"maxim"}],[<<"maxim">>,robot, robot, robot, 
-                                            robot, robot, robot, robot, robot, robot])|| _ <-lists:seq(1,Num)],
+                          {owner,"maxim"}],[list_to_binary(T2U1),
+                                            list_to_binary(T2U2),
+                                            list_to_binary(T2U3),
+                                            list_to_binary(T2U4),
+                                            list_to_binary(T2U5),
+                                            list_to_binary(T2U6),
+                                            list_to_binary(T2U7),
+                                            list_to_binary(T2U8),
+                                            list_to_binary(T2U9),
+                                            list_to_binary(T2U10)]) end || X <-lists:seq(2,Num)],
+
     [{ok,TP15,_}|_] = TavlaPairedPlayers5Tables,
     [{ok,TP25,_}|_] = lists:reverse(TavlaPairedPlayers5Tables),
     ?INFO("Paired Tavla 5 tables rooms: ~p",[{TP15,TP25}]),

@@ -365,10 +365,10 @@ handle_parent_message({show_series_result, Results}, ?STATE_FINISHED,
     {next_state, ?STATE_FINISHED, StateData#state{}};
 
 %% Results = [{UserId, Position, Score, Status}] Status = active | eliminated
-handle_parent_message({turn_result, TurnNum, Results}, StateName,
+handle_parent_message({tour_result, TourNum, Results}, StateName,
                       #state{relay = Relay, tournament_type = TTable} = StateData) ->
-    NewTTable = [{TurnNum, Results} | TTable],
-    Msg = create_okey_turn_result(TurnNum, Results),
+    NewTTable = [{TourNum, Results} | TTable],
+    Msg = create_okey_tour_result(TourNum, Results),
     relay_publish_ge(Relay, Msg),
     {next_state, StateName, StateData#state{tournament_table = NewTTable}};
 
@@ -415,7 +415,7 @@ handle_relay_message({player_connected, PlayerId}, StateName,
     send_to_client_ge(Relay, PlayerId, GI),
     send_to_client_ge(Relay, PlayerId, PlState),
     if TTable =/= undefined ->
-           [send_to_client_ge(Relay, PlayerId, create_okey_turn_result(TurnNum, Results))
+           [send_to_client_ge(Relay, PlayerId, create_okey_tour_result(TurnNum, Results))
               || {TurnNum, Results} <- lists:sort(TTable)];
        true -> do_nothing
     end,
@@ -1287,7 +1287,7 @@ create_okey_series_ended(Results, Players, Confirm) ->
     #okey_series_ended{standings = Standings,
                        dialog_type = DialogType}.
 
-create_okey_turn_result(TurnNum, Results) ->
+create_okey_tour_result(TurnNum, Results) ->
     Records = [begin
                    #okey_turn_record{player_id = UserId, place = Position, score = Score,
                                      status = Status}

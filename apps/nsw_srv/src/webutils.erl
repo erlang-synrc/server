@@ -1151,10 +1151,14 @@ affiliates(User) ->
 get_hemen_nav() ->
     get_hemen_nav(dashboard).
 get_hemen_nav(Page) ->
-    ListClass = case Page of dashboard -> "list-top-photo"; tournament -> "list-top-photo"; _ -> "" end,
+    ListClass = case Page of dashboard -> "list-top-photo";
+                             matchmaker -> "list-top-photo"; 
+                             tournament -> "list-top-photo"; _ -> "" end,
     #list{class="hemen-nav "++ListClass, body=[
     begin
-        Link = case Page of tournament -> #link{postback=Postback}; _ -> #link{url=Url} end,
+        Link = case Page of tournament -> #link{postback=Postback};
+                            %matchmaker -> #link{postback=Postback};
+                             _ -> #link{url=Url} end,
         #listitem{class=Class, body=[Link#link{body=[
 	    #panel{class="box",body=[
 		#panel{class="img", body=[#image{image=Img1, style="width:160px;height:88px"}]},
@@ -1162,6 +1166,7 @@ get_hemen_nav(Page) ->
 	    ]},
 	    case Page of
                 dashboard -> "";
+                matchmaker -> "";
                 tournament -> "";
 		_ -> #span{class="descr", text=?_T("Let's Play!")}
 	    end,

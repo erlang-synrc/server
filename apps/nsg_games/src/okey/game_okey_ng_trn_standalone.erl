@@ -557,38 +557,6 @@ start_turn(#state{game_id = GameId, game = Game, game_mode = GameMode, mul_facto
                                                          tables_wl = WL}}.
 
 
-%% process_tour_result(#state{game_id = GameId, tournament_table = TTable,
-%%                            tours_plan = Plan, tour = Tour, tables_results = TablesResults,
-%%                            players = Players, tables = Tables} = StateData) ->
-%%     ?INFO("OKEY_NG_TRN_STANDALONE <~p> Tour <~p> is completed. Starting results processing...", [GameId, Tour]),
-%%     TourType = lists:nth(Tour, Plan),
-%%     TourResult1 = case TourType of
-%%                      ne -> turn_result_all(TablesResults);
-%%                      {te, Limit} -> turn_result_per_table(Limit, TablesResults);
-%%                      {ce, Limit} -> turn_result_overall(Limit, TablesResults)
-%%                  end,
-%%     TourResult = set_turn_results_position(TourResult1), %% [{PlayerId, CommonPos, Points, Status}]
-%%     NewTTable = ttable_store_turn_result(Tour, TourResult, TTable),
-%%     F = fun({PlayerId, _, _, eliminated}, Acc) -> set_player_status(PlayerId, eliminated, Acc);
-%%            (_, Acc) -> Acc
-%%         end,
-%%     NewPlayers = lists:foldl(F, Players, TourResult),
-%%     TurnResultWithUserId = [{get_user_id(PlayerId, Players), Position, Points, Status}
-%%                             || {PlayerId, Position, Points, Status} <- TourResult],
-%%     TablesResultsWithPos = set_tables_results_position(TablesResults, TourResult),
-%%     [send_to_table(TablePid, {turn_result, Tour, TurnResultWithUserId})
-%%        || #table{pid = TablePid} <- tables_to_list(Tables)],
-%%     [send_to_table(get_table_pid(TableId, Tables),
-%%                    {show_series_result, subs_status(TableResultWithPos, Tour, Plan)})
-%%        || {TableId, TableResultWithPos} <- TablesResultsWithPos],
-%%     {TRef, Magic} = start_timer(?SHOW_TURN_RESULT_TIMEOUT),
-%%     ?INFO("OKEY_NG_TRN_STANDALONE <~p> Results processing of tour <~p> is finished. "
-%%           "Waiting some time (~p secs) before continue...",
-%%           [GameId, Tour, ?SHOW_TURN_RESULT_TIMEOUT div 1000]),
-%%     {next_state, ?STATE_SHOW_TURN_RESULT, StateData#state{timer = TRef, timer_magic = Magic,
-%%                                                           tournament_table = NewTTable,
-%%                                                           players = NewPlayers}}.
-
 finalize_tournament(#state{game_id = GameId} = StateData) ->
     ?INFO("OKEY_NG_TRN_STANDALONE <~p> Finalizing the tournament...", [GameId]),
     %% TODO: Real finalization needed

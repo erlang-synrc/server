@@ -57,6 +57,7 @@ main() ->
 
 body() ->
 
+
             X = rpc:call(?GAMESRVR_NODE,game_manager,get_lucky_table,[list_to_atom("game_"++wf:q(game_name))]),
             wf:state(lucky,X),
 
@@ -67,6 +68,9 @@ body() ->
   ui_paginate(),
   wf:comet(fun() -> comet_update() end),
 
+  ["<div class=\"list-top-photo-h\" style=\"margin-bottom: -30px;\">"] ++ 
+  [webutils:get_hemen_nav(matchmaker)] ++ 
+  ["</div>"] ++
 
   [#section{class="create-area", body=#section{class="create-block", body=[
     matchmaker_submenu(),
@@ -510,14 +514,15 @@ convert_to_map(Data,_Setting,UId,GameFSM) ->
 
 list_users(Users) -> [ " " ++ case User of robot -> "robot"; User -> User end ++ " " || User <- Users].
 list_users_links(Users, Owner) ->
-    [ " " ++ case User of robot -> "robot"; 
+    Usrs = [ " " ++ case User of robot -> "robot"; 
               Owner ->  
                   io_lib:format("<strong class=\"author\" style='font-size:14px;'><a href=\"~s\">~s</a></strong>",
                         [site_utils:user_link(User), User]);
               User -> 
                   io_lib:format("<strong class=\"author\"><a href=\"~s\">~s</a></strong>",
                         [site_utils:user_link(User), User])
-              end ++ " " || User <- Users].
+              end ++ "" || User <- Users],
+    ling:join(Usrs,",").
 
 show_table(Tables) ->
     %% update i'm feeling lucky
@@ -602,7 +607,7 @@ show_table(Tables) ->
                         #tablecell{ class=cell1,
                             body=[
                                 TMode ++ ", " ++ TSpeed ++ TRoundsOrNot ++ TDoubleOrNot ++ 
-                                " (" ++ list_users_links(RealUsers, OwnerLabel) ++ ") "
+                                "<br>Players: " ++ list_users_links(RealUsers, OwnerLabel) ++ " "
                             ],
                             id=tableNameLabel
                         },

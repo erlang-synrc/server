@@ -42,7 +42,6 @@
          game_id           :: pos_integer(),
          trn_id            :: term(),
          params            :: proplists:proplist(),
-         bots_params       :: proplists:proplist(),
          tours_plan        :: list(integer()), %% Defines how many players will be passed to a next tour
          tours             :: integer(),
          quota_per_round   :: integer(),
@@ -163,7 +162,6 @@ init([GameId, Params, _Manager]) ->
     RegistrantsNum = length(Registrants),
     {ok, TurnsPlan} = get_plan(QuotaPerRound, RegistrantsNum, Tours),
     TableParams = table_parameters(?MODULE, self(), Speed, GameType),
-    BotsParams = bots_parameters(),
 
     Players = setup_players(Registrants),
     PlayersIds = get_players_ids(Players),
@@ -176,7 +174,6 @@ init([GameId, Params, _Manager]) ->
     {ok, ?STATE_INIT, #state{game_id = GameId,
                              trn_id = TrnId,
                              params = TableParams,
-                             bots_params = BotsParams,
                              quota_per_round = QuotaPerRound,
                              tours_plan = TurnsPlan,
                              tours = Tours,
@@ -573,12 +570,12 @@ process_tour_result(#state{game_id = GameId, tournament_table = TTable,
     ?INFO("OKEY_NG_TRN_ELIM <~p> Tour <~p> is completed. Starting results processing...", [GameId, Tour]),
     TourType = lists:nth(Tour, Plan),
     TourResult1 = case TourType of
-                     ne -> turn_result_all(TablesResults);
-                     {te, Limit} -> turn_result_per_table(Limit, TablesResults);
-                     {ce, Limit} -> turn_result_overall(Limit, TablesResults)
+                     ne -> tour_result_all(TablesResults);
+                     {te, Limit} -> tour_result_per_table(Limit, TablesResults);
+                     {ce, Limit} -> tour_result_overall(Limit, TablesResults)
                  end,
-    TourResult = set_turn_results_position(TourResult1), %% [{PlayerId, CommonPos, Points, Status}]
-    NewTTable = ttable_store_turn_result(Tour, TourResult, TTable),
+    TourResult = set_tour_results_position(TourResult1), %% [{PlayerId, CommonPos, Points, Status}]
+    NewTTable = ttable_store_tour_result(Tour, TourResult, TTable),
     F = fun({PlayerId, _, _, eliminated}, Acc) -> set_player_status(PlayerId, eliminated, Acc);
            (_, Acc) -> Acc
         end,
@@ -586,7 +583,7 @@ process_tour_result(#state{game_id = GameId, tournament_table = TTable,
     TourResultWithUserId = [{get_user_id(PlayerId, Players), Position, Points, Status}
                             || {PlayerId, Position, Points, Status} <- TourResult],
     TablesResultsWithPos = set_tables_results_position(TablesResults, TourResult),
-    [send_to_table(TablePid, {turn_result, Tour, TourResultWithUserId})
+    [send_to_table(TablePid, {tour_result, Tour, TourResultWithUserId})
        || #table{pid = TablePid} <- tables_to_list(Tables)],
     [send_to_table(get_table_pid(TableId, Tables),
                    {show_series_result, subs_status(TableResultWithPos, Tour, Plan)})
@@ -600,14 +597,16 @@ process_tour_result(#state{game_id = GameId, tournament_table = TTable,
                                                             players = NewPlayers}}.
 
 finalize_tournament(#state{game_id = GameId, awards = Awards, tournament_table = TTable,
-                           players = Players} = StateData) ->
+                           players = Players, trn_id = TrnId} = StateData) ->
     ?INFO("OKEY_NG_TRN_ELIM <~p> Finalizing the tournament...", [GameId]),
     AwardsDistrib = awards_distribution(TTable, Awards),
-    [nsx_msg:notify(["gifts", "user", user_id_to_string(get_user_id(PlayerId, Players)), "give_gift"], {GiftId})
-       || {PlayerId, _Pos, GiftId} <- AwardsDistrib],
+    AwardsDistribUserId = [{user_id_to_string(get_user_id(PlayerId, Players)), Pos, GiftId}
+                           || {PlayerId, Pos, GiftId} <- AwardsDistrib],
+    [nsx_msg:notify(["gifts", "user", UserId, "give_gift"], {GiftId})
+       || {UserId, _Pos, GiftId} <- AwardsDistrib],
     %% TODO: Do we need advertise the prizes to game clients?
-    ?INFO("OKEY_NG_TRN_ELIM <~p> Awards distribution: ~p",
-          [GameId, [{get_user_id(PlId, Players), PlId, Pos, GiftId} || {PlId, Pos, GiftId} <- AwardsDistrib]]),
+    ?INFO("OKEY_NG_TRN_ELIM <~p> Awards distribution: ~p", [GameId, AwardsDistribUserId]),
+    nsx_msg:notify(["system", "tournament_ends_note"], {TrnId, AwardsDistribUserId}),
     {TRef, Magic} = start_timer(?SHOW_TOURNAMENT_RESULT_TIMEOUT),
     ?INFO("OKEY_NG_TRN_ELIM <~p> The tournament is finalized. "
           "Waiting some time (~p secs) before continue...",
@@ -650,22 +649,22 @@ deduct_quota(GameId, Amount, UsersIds) ->
                              game_name = okey,       %% FIXME: hardcoded
                              game_mode = standard,   %% FIXME: hardcoded
                              double_points = 1},
-         nsm_accounts:transaction(binary_to_list(UserId), ?CURRENCY_QUOTA, -Amount, TI)
+         nsm_accounts:transaction(user_id_to_string(UserId), ?CURRENCY_QUOTA, -Amount, TI)
      end
      || UserId <- UsersIds].
 
 
-turn_result_all(TablesResults) ->
+tour_result_all(TablesResults) ->
     F = fun({_, TableRes}, Acc) ->
             [{Pl, Points, active} || {Pl, Points} <- TableRes] ++ Acc
         end,
     lists:foldl(F, [], TablesResults).
 
 
-turn_result_per_table(NextTurnLimit, TablesResults) ->
+tour_result_per_table(NextTourLimit, TablesResults) ->
     F = fun({_, TableResult}, Acc) ->
                 SortedRes = sort_results(TableResult),
-                {Winners, _} = lists:unzip(lists:sublist(SortedRes, NextTurnLimit)),
+                {Winners, _} = lists:unzip(lists:sublist(SortedRes, NextTourLimit)),
                 [case lists:member(Pl, Winners) of
                      true -> {Pl, Points, active};
                      false -> {Pl, Points, eliminated}
@@ -674,23 +673,23 @@ turn_result_per_table(NextTurnLimit, TablesResults) ->
     lists:foldl(F, [], TablesResults).
 
 
-turn_result_overall(TurnLimit, TablesResults) ->
+tour_result_overall(TourLimit, TablesResults) ->
     F = fun({_, TableRes}, Acc) -> TableRes ++ Acc end,
     OverallResults = lists:foldl(F, [], TablesResults),
     SortedResults = sort_results(OverallResults),
-    {Winners, _} = lists:unzip(lists:sublist(SortedResults, TurnLimit)),
+    {Winners, _} = lists:unzip(lists:sublist(SortedResults, TourLimit)),
     [case lists:member(Pl, Winners) of
          true -> {Pl, Points, active};
          false -> {Pl, Points, eliminated}
      end || {Pl, Points} <- OverallResults].
 
-%% set_turn_results_position([{PlayerId, Points, Status}]) -> [{PlayerId, Pos, Points, Status}]
-set_turn_results_position(TurnResult) ->
+%% set_tour_results_position([{PlayerId, Points, Status}]) -> [{PlayerId, Pos, Points, Status}]
+set_tour_results_position(TourResult) ->
     F = fun({PlayerId, Points, Status}, Pos) ->
                 {{PlayerId, Pos, Points, Status}, Pos + 1}
         end,
-    {TurnResultsWithPos, _} = lists:mapfoldl(F, 1, sort_results2(TurnResult)),
-    TurnResultsWithPos.
+    {TourResultsWithPos, _} = lists:mapfoldl(F, 1, sort_results2(TourResult)),
+    TourResultsWithPos.
 
 %% set_tables_results_position/2 -> [{TableId, [{PlayerId, Position, Points, Status}]}]
 set_tables_results_position(TablesResults, TurnResult) ->
@@ -764,7 +763,7 @@ sort_results2(Results) ->
 %% prepare_players_for_new_tour(Tour, TTable, ToursPlan, Players) -> [{PlayerId, UserInfo, Points}]
 prepare_players_for_new_tour(Tour, TTable, ToursPlan, Players) ->
     PrevTour = Tour - 1,
-    TResult = ttable_get_turn_result(PrevTour, TTable),
+    TResult = ttable_get_tour_result(PrevTour, TTable),
     if Tour == 1 ->
            [{PlayerId, get_user_info(PlayerId, Players), _Points = 0}
             || {PlayerId, _, _, active} <- TResult];
@@ -843,18 +842,18 @@ finalize_tables_with_disconnect(Tables) ->
 
 
 %% ttable_init(PlayersIds) -> TTable
-%% Types: TTable = [{Turn, TurnResult}]
+%% Types: TTable = [{Tour, TourResult}]
 ttable_init(PlayersIds) -> [{0, [{Id, Id, 0, active} || Id <- PlayersIds]}].
 
-%% ttable_get_turn_result(Turn, TTable) -> undefined | TurnResult
-%% Types: TurnResult = [{PlayerId, CommonPos, Points, PlayerState}]
+%% ttable_get_tour_result(Tour, TTable) -> undefined | TourResult
+%% Types: TourResult = [{PlayerId, CommonPos, Points, PlayerState}]
 %%          PlayerState = undefined | active | eliminated
-ttable_get_turn_result(Turn, TTable) ->
-    proplists:get_value(Turn, TTable).
+ttable_get_tour_result(Tour, TTable) ->
+    proplists:get_value(Tour, TTable).
 
-%% ttable_store_turn_result(Turn, TurnResult, TTable) -> NewTTable
-ttable_store_turn_result(Turn, TurnResult, TTable) ->
-    lists:keystore(Turn, 1, TTable, {Turn, TurnResult}).
+%% ttable_store_tour_result(Tour, TourResult, TTable) -> NewTTable
+ttable_store_tour_result(Tour, TourResult, TTable) ->
+    lists:keystore(Tour, 1, TTable, {Tour, TourResult}).
 
 
 %% players_init() -> players()
@@ -909,8 +908,6 @@ get_table_pid(TabId, Tables) ->
     #table{pid = TabPid} = midict:fetch(TabId, Tables),
     TabPid.
 
-del_table(TabId, Tables) -> midict:erase(TabId, Tables).
-
 get_table_by_mon_ref(MonRef, Tables) ->
     case midict:geti(MonRef, mon_ref, Tables) of
         [Table] -> Table;
@@ -926,8 +923,6 @@ find_seats_by_player_id(PlayerId, Seats) ->
 
 find_seats_by_table_id(TabId, Seats) ->
     midict:geti(TabId, table_id, Seats).
-
-fetch_seat(TableId, SeatNum, Seats) -> midict:fetch({TableId, SeatNum}, Seats).
 
 %% assign_seat(TabId, SeatNum, PlayerId, RegByTable, Connected, Seats) -> NewSeats
 %% PlayerId = integer()
@@ -970,25 +965,18 @@ start_timer(Timeout) ->
     TRef = erlang:send_after(Timeout, self(), {timeout, Magic}),
     {TRef, Magic}.
 
-spawn_bots(GameId, Params, BotsNum) ->
-    spawn_bots(GameId, Params, BotsNum, []).
-
-spawn_bots(_GameId, _Params, 0, Acc) -> Acc;
-spawn_bots(GameId, Params, BotsNum, Acc) ->
-    UserInfo = spawn_bot(bot_module(Params), GameId),
-    spawn_bots(GameId, Params, BotsNum-1, [UserInfo | Acc]).
-
-spawn_bot(BM, GameId) ->
-    {NPid, _SPid, _NUId, User} = create_robot(BM, GameId),
-    BM:join_game(NPid),
-    User.
-
-create_robot(BM, GameId) ->
-    User = auth_server:robot_credentials(),
-    NUId = User#'PlayerInfo'.id,
-    {ok, NPid} = BM:start_link(self(), User, GameId),
-    SPid = BM:get_session(NPid),
-    {NPid, SPid, NUId, User}.
+%% spawn_bots(GameId, BotMod, BotsNum) ->
+%%     [spawn_bot(BotMod, GameId) || _ <- lists:seq(1, BotsNum)].
+%% 
+%% spawn_bot(BotMod, GameId) ->
+%%     {NPid, UserInfo} = create_robot(BotMod, GameId),
+%%     BotMod:join_game(NPid),
+%%     UserInfo.
+%% 
+%% create_robot(BotMod, GameId) ->
+%%     UserInfo = auth_server:robot_credentials(),
+%%     {ok, NPid} = BotMod:start_link(self(), UserInfo, GameId),
+%%     {NPid, UserInfo}.
 
 spawn_table(GameId, TableId, Params) -> ?TAB_MOD:start(GameId, TableId, Params).
 
@@ -1006,7 +994,7 @@ table_parameters(ParentMod, ParentPid, Speed, GameType) ->
      {observers_allowed, false},
      {tournament_type, elimination},
      {round_timeout, get_round_timeout(Speed)},
-%     {round_timeout, 20*1000},
+%     {round_timeout, 10*1000},
      {speed, Speed},
      {game_type, GameType},
      {rounds, ?ROUNDS_PER_TOUR},
@@ -1015,23 +1003,6 @@ table_parameters(ParentMod, ParentPid, Speed, GameType) ->
      {pause_mode, disabled},
      {social_actions_enabled, false}
     ].
-
-%% bots_parameters() -> Proplist
-bots_parameters() ->
-    [
-     {game, game_okey},
-     {game_mode, standard},
-     {lucky, true},
-     {speed, normal},
-     {rounds, ?ROUNDS_PER_TOUR}
-    ].
-
-seats_num(TableParams) -> proplists:get_value(seats_num, TableParams).
-
-bot_module(TableParams) ->
-    case proplists:get_value(game, TableParams) of
-        game_okey -> game_okey_bot
-    end.
 
 get_param(ParamId, Params) ->
     {_, Value} = lists:keyfind(ParamId, 1, Params),
