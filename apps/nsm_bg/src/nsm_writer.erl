@@ -3,6 +3,8 @@
 -include_lib("nsx_config/include/log.hrl").
 -include_lib("nsm_db/include/feed.hrl").
 -include_lib("nsm_db/include/user.hrl").
+-include_lib("nsm_db/include/tournaments.hrl").
+-include_lib("nsm_gifts/include/common.hrl").
 -include("nsm_bg.hrl").
 -export([init/1, handle_notice/3, get_opts/1, handle_info/2]).
 -record(state, {owner = "", type :: user | group, feed, direct }).
@@ -124,9 +126,38 @@ handle_notice(["feed", "user", _FeedOwner, "entry", EntryId, "delete_system"] = 
 handle_notice(["feed", "user", UId, "post_note"] = Route, Message, 
         #state{owner = Owner, feed = Feed} = State) ->
     ?INFO("feed(~p): post_note: Owner=~p, Route=~p, Message=~p", [self(), Owner, Route, Message]),
-    [Note] = Message,
+    Note = Message,
     Id = utils:uuid_ex(),
     feed:add_entry(Feed, UId, [], Id, Note, [], {user, system_note}),
+    {noreply, State};
+
+
+handle_notice(["system", "tournament_ends_note"] = Route, Message, 
+        #state{owner = Owner, feed = Feed} = State) ->
+    ?INFO("feed(~p): tournament_ends_note: Owner=~p, Route=~p, Message=~p", [self(), Owner, Route, Message]),
+    {TId, Results} = Message,
+    {ok, Tour} = nsm_db:get(tournament, TId),
+    Users = [UId || #play_record{who=UId} <- nsm_tournaments:joined_users(TId)],
+    Desc = case Tour#tournament.description of
+        "" -> "";
+        D -> " (" ++ D ++ ")"
+    end,
+    NoteString = "tour" ++ integer_to_list(length(Results)) ++ "|name=" ++ Tour#tournament.name ++ "|desc=" ++ Desc ++ lists:flatten([
+        begin
+            {ok, {Gift, _}} = nsm_gifts_db:get_gift(G),
+            SP = integer_to_list(Pos),
+            SKakush = integer_to_list(Gift#gift.kakush_point),
+            SName = Gift#gift.gift_name,
+            "|winner" ++ SP ++ "=" ++ UId ++ "|kakush" ++ SP ++ "=" ++ SKakush ++ "|prize" ++ SP ++ "=" ++ SName
+        end
+    || {UId, Pos, G} <- Results]),
+    [nsx_msg:notify(["feed", "user", UId, "post_note"], NoteString) || UId <- Users],
+    {noreply, State};
+
+handle_notice(["system", "game_ends_note"] = Route, Message, 
+        #state{owner = Owner, feed = Feed} = State) ->
+    ?INFO("feed(~p): game_ends_note: Owner=~p, Route=~p, Message=~p", [self(), Owner, Route, Message]),
+    {GId, Results} = Message,
     {noreply, State};
 
 
@@ -782,7 +813,10 @@ get_opts(#state{type = system, owner = Owner}) ->
                 % membership pachages
                 [system, add_package],
                 % invites
-                [system, use_invite]
+                [system, use_invite],
+                % notifications
+                [system, tournament_ends_note],
+                [system, game_ends_note]
                 ]},
      {gproc_name, Name},
      {consume_options, [exclusive]},
