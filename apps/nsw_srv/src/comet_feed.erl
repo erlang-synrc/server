@@ -150,11 +150,12 @@ process_delivery({_, _FeedId, FeedOwner, _},
     end;
 
 %% like
-process_delivery({_, _, FeedOwner, _}, ["likes", "user", User, "add_like"], {FeedId, EntryId}) ->
+process_delivery({_, _, FeedOwner, _}, ["likes", _, _, "add_like"], {User, E}) ->
+    {EntryId, FeedId} = E#entry.id,
     LikePanelId = element_view_entry:like_panel_id(EntryId),
-    {ok, E} = nsm_db:entry_by_id({EntryId, FeedId}),
     {LikeBox, _} = element_view_entry:like_string_and_button_bool(E, FeedOwner, [#one_like{user_id=User, entry_id=EntryId, feed_id=FeedId}]),
     wf:update(LikePanelId, LikeBox),
+    ?INFO(" +++ Like e: ~p   owner: ~p   lpid: ~p" , [E, FeedOwner, LikePanelId]),
     wf:flush();
 
 process_delivery(Info, Route, Message) -> % just to avoid nevedomaya yebanaya huynya

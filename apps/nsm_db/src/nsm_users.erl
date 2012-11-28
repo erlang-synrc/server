@@ -567,6 +567,7 @@ build_group_relations(Group) ->
         rk( [db, group, Group, put] ),
         rk( [db, group, Group, update_group] ),
         rk( [db, group, Group, remove_group] ),
+        rk( [likes, group, Group, add_like]),   % for comet mostly
         rk( [feed, delete, Group] ),
         rk( [feed, group, Group, '*', '*', '*'] )
     ].

@@ -128,7 +128,6 @@ el_inside_play() ->
      LuckyAction =
         case wf:state(lucky) of
              [#game_table{id = GaId}] ->
-?INFO(" +++ lucky"),
                  IdStr = integer_to_list(GaId),
                  wf:session(IdStr, IdStr),
                  URL = lists:concat([?_U("/client"),"/",wf:q(game_name),"/id/", GaId]),
