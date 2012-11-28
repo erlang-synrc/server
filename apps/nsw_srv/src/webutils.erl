@@ -39,8 +39,8 @@ redirect_to_tcp(Page) ->
         8000 -> no_redirect;
         _ ->
             case Host == "kakaranet.com" of
-                 true ->  wf:redirect_from_login(["http://",Host,"/",Page]);
-                 false ->  wf:redirect_from_login(["http://",Host,":8000/",Page])
+                 true ->  wf:redirect(["http://",Host,"/",Page]);
+                 false ->  wf:redirect(["http://",Host,":8000/",Page])
             end 
     end.
 
