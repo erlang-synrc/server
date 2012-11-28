@@ -626,11 +626,12 @@ handle_notice(["tournaments", "user", UId, "create_and_join"] = Route,
     end,
     {noreply, State};
 
-handle_notice(["likes", "user", UId, "add_like"] = Route,
+handle_notice(["likes", _, _, "add_like"] = Route,  % _, _ is here beacause of the same message used for comet update
     Message, #state{owner = Owner, type =Type} = State) ->
     ?INFO("queue_action(~p): add_like: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),
-    {Fid, Eid} = Message,
-    feed:add_like(Fid, Eid, UId),
+    {UId, E} = Message,
+    {EId, FId} = E#entry.id,
+    feed:add_like(FId, EId, UId),
     {noreply, State};
 
 handle_notice(["personal_score", "user", UId, "add"] = Route,

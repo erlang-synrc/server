@@ -52,7 +52,7 @@ do_group_subscribe(GroupId, ReplyTo) ->
     {ok, Channel} = nsm_mq:open([{consumer, ReplyTo}]),
     {ok, Queue} = nsm_mq_channel:create_queue(Channel, <<"">>, [auto_delete]),
     [ok = nsm_mq_channel:bind_queue(Channel, Queue, ?NOTIFICATIONS_EX, routing_key(Key)) ||
-            Key <-[[feed, group, GroupId, '*', '*', '*'], [feed, delete, GroupId]]],
+            Key <-[[feed, group, GroupId, '*', '*', '*'], [feed, delete, GroupId], [likes, group, GroupId, add_like]]],
     {ok, _} = nsm_mq_channel:consume(Channel, Queue, [{callback, Callback}, {state, ReplyTo}]),
     {ok, Channel}.
 

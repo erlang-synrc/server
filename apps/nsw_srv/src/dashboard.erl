@@ -435,13 +435,20 @@ inner_event({show_all_likers, LeftPart, Id}, _) ->
     wf:update(Id, LeftPart);
 
 inner_event({like_entry, E, LikeBtnId}, User) ->
-    UserInfo = webutils:user_info(),
-    Eid = E#entry.entry_id,
-    Fid = UserInfo#user.feed,
-    nsx_msg:notify(["likes", "user", User, "add_like"], {Fid, Eid}),
-    
+%    UserInfo = webutils:user_info(),
+%    Fid = UserInfo#user.feed,
+%    Eid = E#entry.entry_id,
+%    Fid = E#entry.feed_id,
+%    {EId, FId} = E#entry.id,
+    {Type, Owner} = case wf:state(feed_owner) of
+        {T, O} ->
+            {T, O};
+        _ ->
+            {user, User}
+    end,
+    ?INFO(" +++ like pressed: ~p ~p", [E, {Type, Owner}]),
+    nsx_msg:notify(["likes", Type, Owner, "add_like"], {User, E}),
     wf:replace(LikeBtnId, []);
-
 
 inner_event({share_entry, Entry, ShareBtnId}, User) ->
 %   {Type, _Owner} = case wf:state(feed_owner) of
