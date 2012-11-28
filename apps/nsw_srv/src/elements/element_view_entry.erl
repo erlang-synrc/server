@@ -124,12 +124,14 @@ get_media_thumb(E, ViewMediaPanelId) ->
 entry_element(E, Comments, Avatar, {MediaThumb, MediaLists0}, _TargetMedia, Anchor) ->
     case E#entry.type of 
         {_, system_note} ->
-            Title_Desc_Args = ling:split(E#entry.description, "|"),
+            Title_Desc_Args = ling:split(gifts:decode_letters(E#entry.description), "|"),
             RawArgs = lists:nthtail(1, Title_Desc_Args),
             Args = [begin Arg=ling:split(RArg, "="), {list_to_atom(hd(Arg)), hd(tl(Arg))} end || RArg <- RawArgs],
             {Title, Desc} = case lists:nth(1, Title_Desc_Args) of 
-                "test" -> {?_T("Test"), ?_TS("Body: $arg1$ and \"$arg2$\"", Args)};
-                _ -> {?_T("Unsupported note type!"), ""}
+                "tour1" -> {?_T("Tournament finished"), ?_TS("Tournament $name$$desc$ just finished.<br>$winner1$ won $kakush1$ worth $prize1$.", Args)};
+                "tour2" -> {?_T("Tournament finished"), ?_TS("Tournament $name$$desc$ just finished.<br>$winner1$ won $kakush1$ worth $prize1$.<br>$winner2$ won $kakush2$ worth $prize2$.", Args)};
+                "tour3" -> {?_T("Tournament finished"), ?_TS("Tournament $name$$desc$ just finished.<br>$winner1$ won $kakush1$ worth $prize1$.<br>$winner2$ won $kakush2$ worth $prize2$.<br>$winner3$ won $kakush3$ worth $prize3$.", Args)};
+                _ -> {?_T("Unsupported note type!"), E#entry.description}
             end,
             #notice{type=message, position=left, title=Title, body=Desc};
         {_, system} ->
@@ -194,13 +196,19 @@ append_once(To, From) ->
         true -> append_once(To, tl(From))
     end.
 
+no_you_you([]) -> [];
+no_you_you([H|T]) ->
+    [H| no_you_you([A || A <- T, A /= H])].
+    
+
 like_string_and_button_bool(E, FeedOwner) ->
     like_string_and_button_bool(E, FeedOwner, []).
 
 like_string_and_button_bool(E, FeedOwner, Plus) ->
-    case append_once(feed:get_entries_likes(E#entry.entry_id), Plus) of
+    LikeUids = no_you_you([Uid || #one_like{user_id=Uid} <- append_once(feed:get_entries_likes(E#entry.entry_id), Plus)]),
+    case LikeUids of
         []     -> {"", true};
-        [#one_like{user_id=Uid}|[]] ->
+        [Uid|[]] ->
             {
                 #panel{class="like-box", body = case Uid == FeedOwner of
                     true ->
@@ -222,7 +230,7 @@ like_string_and_button_bool(E, FeedOwner, Plus) ->
             };
         OL when is_list(OL) ->
             L = lists:reverse(OL),
-            #one_like{user_id=LastUid} = lists:last(L),
+            LastUid = lists:last(L),
             LeftPart = kakaadmin:nitrojoin([
                     case Uid == FeedOwner of
                         true ->
@@ -230,7 +238,7 @@ like_string_and_button_bool(E, FeedOwner, Plus) ->
                         false ->
                             #link{text=Uid, url=site_utils:user_link(Uid)}
                     end
-                    || #one_like{user_id=Uid} <- lists:sublist(L, length(L)-1)
+                    || Uid <- lists:sublist(L, length(L)-1)
             ], ", "),
             Lstr = [
                 case length(L) > ?LIKERS_TO_SHOW of
