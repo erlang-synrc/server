@@ -15,7 +15,7 @@ init()->
   ["<div id=fb-root></div>",
     "<script>window.fbAsyncInit = function() {",
     "FB.init({ appId: '"++ ?FB_APP_ID ++"',",
-    "channelUrl: " ++ ?HTTP_ADDRESS ++ "/channel.html',",
+    "channelUrl: '" ++ ?HTTP_ADDRESS ++ "/channel.html',",
     "status: true,",
     "cookie: true,",
     "xfbml: true,",
