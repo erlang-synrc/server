@@ -266,7 +266,10 @@ post_write_hooks(Class,R,C) ->
                     undefined -> nothind;
                     _ -> C:put(make_object({user_by_verification_code, R#user.username, R#user.verification_code}, user_by_verification_code))
                 end,
-                C:put(make_object({user_by_facebook_id, R#user.username, R#user.facebook_id}, user_by_facebook_id));
+                case R#user.facebook_id of
+                  undefined -> nothing;
+                  _ -> C:put(make_object({user_by_facebook_id, R#user.username, R#user.facebook_id}, user_by_facebook_id))
+                end;
 
         invite_code ->
             #invite_code{created_user=User, issuer = Issuer} = R,
