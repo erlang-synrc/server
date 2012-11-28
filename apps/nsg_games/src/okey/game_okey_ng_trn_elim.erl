@@ -573,12 +573,12 @@ process_tour_result(#state{game_id = GameId, tournament_table = TTable,
     ?INFO("OKEY_NG_TRN_ELIM <~p> Tour <~p> is completed. Starting results processing...", [GameId, Tour]),
     TourType = lists:nth(Tour, Plan),
     TourResult1 = case TourType of
-                     ne -> turn_result_all(TablesResults);
-                     {te, Limit} -> turn_result_per_table(Limit, TablesResults);
-                     {ce, Limit} -> turn_result_overall(Limit, TablesResults)
+                     ne -> tour_result_all(TablesResults);
+                     {te, Limit} -> tour_result_per_table(Limit, TablesResults);
+                     {ce, Limit} -> tour_result_overall(Limit, TablesResults)
                  end,
-    TourResult = set_turn_results_position(TourResult1), %% [{PlayerId, CommonPos, Points, Status}]
-    NewTTable = ttable_store_turn_result(Tour, TourResult, TTable),
+    TourResult = set_tour_results_position(TourResult1), %% [{PlayerId, CommonPos, Points, Status}]
+    NewTTable = ttable_store_tour_result(Tour, TourResult, TTable),
     F = fun({PlayerId, _, _, eliminated}, Acc) -> set_player_status(PlayerId, eliminated, Acc);
            (_, Acc) -> Acc
         end,
@@ -586,7 +586,7 @@ process_tour_result(#state{game_id = GameId, tournament_table = TTable,
     TourResultWithUserId = [{get_user_id(PlayerId, Players), Position, Points, Status}
                             || {PlayerId, Position, Points, Status} <- TourResult],
     TablesResultsWithPos = set_tables_results_position(TablesResults, TourResult),
-    [send_to_table(TablePid, {turn_result, Tour, TourResultWithUserId})
+    [send_to_table(TablePid, {tour_result, Tour, TourResultWithUserId})
        || #table{pid = TablePid} <- tables_to_list(Tables)],
     [send_to_table(get_table_pid(TableId, Tables),
                    {show_series_result, subs_status(TableResultWithPos, Tour, Plan)})
@@ -650,22 +650,22 @@ deduct_quota(GameId, Amount, UsersIds) ->
                              game_name = okey,       %% FIXME: hardcoded
                              game_mode = standard,   %% FIXME: hardcoded
                              double_points = 1},
-         nsm_accounts:transaction(binary_to_list(UserId), ?CURRENCY_QUOTA, -Amount, TI)
+         nsm_accounts:transaction(user_id_to_string(UserId), ?CURRENCY_QUOTA, -Amount, TI)
      end
      || UserId <- UsersIds].
 
 
-turn_result_all(TablesResults) ->
+tour_result_all(TablesResults) ->
     F = fun({_, TableRes}, Acc) ->
             [{Pl, Points, active} || {Pl, Points} <- TableRes] ++ Acc
         end,
     lists:foldl(F, [], TablesResults).
 
 
-turn_result_per_table(NextTurnLimit, TablesResults) ->
+tour_result_per_table(NextTourLimit, TablesResults) ->
     F = fun({_, TableResult}, Acc) ->
                 SortedRes = sort_results(TableResult),
-                {Winners, _} = lists:unzip(lists:sublist(SortedRes, NextTurnLimit)),
+                {Winners, _} = lists:unzip(lists:sublist(SortedRes, NextTourLimit)),
                 [case lists:member(Pl, Winners) of
                      true -> {Pl, Points, active};
                      false -> {Pl, Points, eliminated}
@@ -674,23 +674,23 @@ turn_result_per_table(NextTurnLimit, TablesResults) ->
     lists:foldl(F, [], TablesResults).
 
 
-turn_result_overall(TurnLimit, TablesResults) ->
+tour_result_overall(TourLimit, TablesResults) ->
     F = fun({_, TableRes}, Acc) -> TableRes ++ Acc end,
     OverallResults = lists:foldl(F, [], TablesResults),
     SortedResults = sort_results(OverallResults),
-    {Winners, _} = lists:unzip(lists:sublist(SortedResults, TurnLimit)),
+    {Winners, _} = lists:unzip(lists:sublist(SortedResults, TourLimit)),
     [case lists:member(Pl, Winners) of
          true -> {Pl, Points, active};
          false -> {Pl, Points, eliminated}
      end || {Pl, Points} <- OverallResults].
 
-%% set_turn_results_position([{PlayerId, Points, Status}]) -> [{PlayerId, Pos, Points, Status}]
-set_turn_results_position(TurnResult) ->
+%% set_tour_results_position([{PlayerId, Points, Status}]) -> [{PlayerId, Pos, Points, Status}]
+set_tour_results_position(TourResult) ->
     F = fun({PlayerId, Points, Status}, Pos) ->
                 {{PlayerId, Pos, Points, Status}, Pos + 1}
         end,
-    {TurnResultsWithPos, _} = lists:mapfoldl(F, 1, sort_results2(TurnResult)),
-    TurnResultsWithPos.
+    {TourResultsWithPos, _} = lists:mapfoldl(F, 1, sort_results2(TourResult)),
+    TourResultsWithPos.
 
 %% set_tables_results_position/2 -> [{TableId, [{PlayerId, Position, Points, Status}]}]
 set_tables_results_position(TablesResults, TurnResult) ->
@@ -764,7 +764,7 @@ sort_results2(Results) ->
 %% prepare_players_for_new_tour(Tour, TTable, ToursPlan, Players) -> [{PlayerId, UserInfo, Points}]
 prepare_players_for_new_tour(Tour, TTable, ToursPlan, Players) ->
     PrevTour = Tour - 1,
-    TResult = ttable_get_turn_result(PrevTour, TTable),
+    TResult = ttable_get_tour_result(PrevTour, TTable),
     if Tour == 1 ->
            [{PlayerId, get_user_info(PlayerId, Players), _Points = 0}
             || {PlayerId, _, _, active} <- TResult];
@@ -843,18 +843,18 @@ finalize_tables_with_disconnect(Tables) ->
 
 
 %% ttable_init(PlayersIds) -> TTable
-%% Types: TTable = [{Turn, TurnResult}]
+%% Types: TTable = [{Tour, TourResult}]
 ttable_init(PlayersIds) -> [{0, [{Id, Id, 0, active} || Id <- PlayersIds]}].
 
-%% ttable_get_turn_result(Turn, TTable) -> undefined | TurnResult
-%% Types: TurnResult = [{PlayerId, CommonPos, Points, PlayerState}]
+%% ttable_get_tour_result(Tour, TTable) -> undefined | TourResult
+%% Types: TourResult = [{PlayerId, CommonPos, Points, PlayerState}]
 %%          PlayerState = undefined | active | eliminated
-ttable_get_turn_result(Turn, TTable) ->
-    proplists:get_value(Turn, TTable).
+ttable_get_tour_result(Tour, TTable) ->
+    proplists:get_value(Tour, TTable).
 
-%% ttable_store_turn_result(Turn, TurnResult, TTable) -> NewTTable
-ttable_store_turn_result(Turn, TurnResult, TTable) ->
-    lists:keystore(Turn, 1, TTable, {Turn, TurnResult}).
+%% ttable_store_tour_result(Tour, TourResult, TTable) -> NewTTable
+ttable_store_tour_result(Tour, TourResult, TTable) ->
+    lists:keystore(Tour, 1, TTable, {Tour, TourResult}).
 
 
 %% players_init() -> players()
