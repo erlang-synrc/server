@@ -42,7 +42,6 @@
          game_id           :: pos_integer(),
          trn_id            :: term(),
          params            :: proplists:proplist(),
-         bots_params       :: proplists:proplist(),
          tours_plan        :: list(integer()), %% Defines how many players will be passed to a next tour
          tours             :: integer(),
          quota_per_round   :: integer(),
@@ -163,7 +162,6 @@ init([GameId, Params, _Manager]) ->
     RegistrantsNum = length(Registrants),
     {ok, TurnsPlan} = get_plan(QuotaPerRound, RegistrantsNum, Tours),
     TableParams = table_parameters(?MODULE, self(), Speed, GameType),
-    BotsParams = bots_parameters(),
 
     Players = setup_players(Registrants),
     PlayersIds = get_players_ids(Players),
@@ -176,7 +174,6 @@ init([GameId, Params, _Manager]) ->
     {ok, ?STATE_INIT, #state{game_id = GameId,
                              trn_id = TrnId,
                              params = TableParams,
-                             bots_params = BotsParams,
                              quota_per_round = QuotaPerRound,
                              tours_plan = TurnsPlan,
                              tours = Tours,
@@ -909,8 +906,6 @@ get_table_pid(TabId, Tables) ->
     #table{pid = TabPid} = midict:fetch(TabId, Tables),
     TabPid.
 
-del_table(TabId, Tables) -> midict:erase(TabId, Tables).
-
 get_table_by_mon_ref(MonRef, Tables) ->
     case midict:geti(MonRef, mon_ref, Tables) of
         [Table] -> Table;
@@ -926,8 +921,6 @@ find_seats_by_player_id(PlayerId, Seats) ->
 
 find_seats_by_table_id(TabId, Seats) ->
     midict:geti(TabId, table_id, Seats).
-
-fetch_seat(TableId, SeatNum, Seats) -> midict:fetch({TableId, SeatNum}, Seats).
 
 %% assign_seat(TabId, SeatNum, PlayerId, RegByTable, Connected, Seats) -> NewSeats
 %% PlayerId = integer()
@@ -970,25 +963,18 @@ start_timer(Timeout) ->
     TRef = erlang:send_after(Timeout, self(), {timeout, Magic}),
     {TRef, Magic}.
 
-spawn_bots(GameId, Params, BotsNum) ->
-    spawn_bots(GameId, Params, BotsNum, []).
-
-spawn_bots(_GameId, _Params, 0, Acc) -> Acc;
-spawn_bots(GameId, Params, BotsNum, Acc) ->
-    UserInfo = spawn_bot(bot_module(Params), GameId),
-    spawn_bots(GameId, Params, BotsNum-1, [UserInfo | Acc]).
-
-spawn_bot(BM, GameId) ->
-    {NPid, _SPid, _NUId, User} = create_robot(BM, GameId),
-    BM:join_game(NPid),
-    User.
-
-create_robot(BM, GameId) ->
-    User = auth_server:robot_credentials(),
-    NUId = User#'PlayerInfo'.id,
-    {ok, NPid} = BM:start_link(self(), User, GameId),
-    SPid = BM:get_session(NPid),
-    {NPid, SPid, NUId, User}.
+%% spawn_bots(GameId, BotMod, BotsNum) ->
+%%     [spawn_bot(BotMod, GameId) || _ <- lists:seq(1, BotsNum)].
+%% 
+%% spawn_bot(BotMod, GameId) ->
+%%     {NPid, UserInfo} = create_robot(BotMod, GameId),
+%%     BotMod:join_game(NPid),
+%%     UserInfo.
+%% 
+%% create_robot(BotMod, GameId) ->
+%%     UserInfo = auth_server:robot_credentials(),
+%%     {ok, NPid} = BotMod:start_link(self(), UserInfo, GameId),
+%%     {NPid, UserInfo}.
 
 spawn_table(GameId, TableId, Params) -> ?TAB_MOD:start(GameId, TableId, Params).
 
@@ -1015,23 +1001,6 @@ table_parameters(ParentMod, ParentPid, Speed, GameType) ->
      {pause_mode, disabled},
      {social_actions_enabled, false}
     ].
-
-%% bots_parameters() -> Proplist
-bots_parameters() ->
-    [
-     {game, game_okey},
-     {game_mode, standard},
-     {lucky, true},
-     {speed, normal},
-     {rounds, ?ROUNDS_PER_TOUR}
-    ].
-
-seats_num(TableParams) -> proplists:get_value(seats_num, TableParams).
-
-bot_module(TableParams) ->
-    case proplists:get_value(game, TableParams) of
-        game_okey -> game_okey_bot
-    end.
 
 get_param(ParamId, Params) ->
     {_, Value} = lists:keyfind(ParamId, 1, Params),
