@@ -597,14 +597,16 @@ process_tour_result(#state{game_id = GameId, tournament_table = TTable,
                                                             players = NewPlayers}}.
 
 finalize_tournament(#state{game_id = GameId, awards = Awards, tournament_table = TTable,
-                           players = Players} = StateData) ->
+                           players = Players, trn_id = TrnId} = StateData) ->
     ?INFO("OKEY_NG_TRN_ELIM <~p> Finalizing the tournament...", [GameId]),
     AwardsDistrib = awards_distribution(TTable, Awards),
-    [nsx_msg:notify(["gifts", "user", user_id_to_string(get_user_id(PlayerId, Players)), "give_gift"], {GiftId})
-       || {PlayerId, _Pos, GiftId} <- AwardsDistrib],
+    AwardsDistribUserId = [{user_id_to_string(get_user_id(PlayerId, Players)), Pos, GiftId}
+                           || {PlayerId, Pos, GiftId} <- AwardsDistrib],
+    [nsx_msg:notify(["gifts", "user", UserId, "give_gift"], {GiftId})
+       || {UserId, _Pos, GiftId} <- AwardsDistrib],
     %% TODO: Do we need advertise the prizes to game clients?
-    ?INFO("OKEY_NG_TRN_ELIM <~p> Awards distribution: ~p",
-          [GameId, [{get_user_id(PlId, Players), PlId, Pos, GiftId} || {PlId, Pos, GiftId} <- AwardsDistrib]]),
+    ?INFO("OKEY_NG_TRN_ELIM <~p> Awards distribution: ~p", [GameId, AwardsDistribUserId]),
+    nsx_msg:notify(["system", "tournament_end_note"], {TrnId, AwardsDistribUserId}),
     {TRef, Magic} = start_timer(?SHOW_TOURNAMENT_RESULT_TIMEOUT),
     ?INFO("OKEY_NG_TRN_ELIM <~p> The tournament is finalized. "
           "Waiting some time (~p secs) before continue...",
