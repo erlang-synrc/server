@@ -203,8 +203,8 @@ api_event(fbLogin, _, [Args])->
 		    true ->
 			login:login_user(User#user.username),
 			wf:session(logged_with_fb, true),
-			wf:redirect_from_login(?_U("/dashboard"));
-                        %webutils:redirect_to_tcp(?_U("dashboard"));
+			%wf:redirect_from_login(?_U("/dashboard"));
+                        webutils:redirect_to_tcp(?_U("dashboard"));
 		    _ -> fb_user_not_match
 		end;
 	    _ ->
