@@ -137,6 +137,7 @@
 
 -record(user_count, {count}).
 -record(twitter_oauth, {user_id, token, secret}).
+-record(facebook_oauth, {user_id, access_token}).
 
 % users activity top
 -define(ACTIVE_USERS_TOP_N, 12).

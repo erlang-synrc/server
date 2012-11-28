@@ -267,7 +267,8 @@ event(replay_guiders_changed) ->
     end;
 
 event(Other) ->
-    login:event(Other).
+  fb_utils:event(Other),
+  login:event(Other).
 
 %% API: list_to_options/1,2,3
 list_to_options(List) ->

@@ -61,8 +61,11 @@ service_item()->
 	service_btn(wf:session(twuser))]}.
 
 service_btn(undefined)->
-    {RequestToken, _, _} = tw_utils:get_request_token(),
-    [#link{class="btn", text=["<span>+</span>",?_T("Add")], url=authorize_url(RequestToken),html_encode = false}];
+  case tw_utils:get_request_token() of
+    {RequestToken, _, _} ->
+      [#link{class="btn", text=["<span>+</span>",?_T("Add")], url=authorize_url(RequestToken),html_encode = false}];
+    {error, R} -> ?INFO("Twitter request failed:", [R]), []
+  end;
 service_btn(#twuser{})->
     [#link{class="btn btn-2", text=["<span>-</span>",?_T("Test")], html_encode = false, postback={service, twitter}}].
 

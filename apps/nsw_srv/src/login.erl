@@ -385,7 +385,9 @@ event(change_password) ->
             wf:update(change_password_info, ?_T("Password different!"))
     end;
 
-event({change_language,SL}) -> webutils:event({change_language, SL}).
+event({change_language,SL}) -> webutils:event({change_language, SL});
+event(_) -> ok.
+
 
 api_event(Name, Tag, Data)->
   webutils:api_event(Name, Tag, Data).
