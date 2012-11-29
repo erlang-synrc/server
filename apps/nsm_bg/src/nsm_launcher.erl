@@ -21,27 +21,27 @@ init([{name, Name}]) ->
     end.
 
 handle_notice(["user", "init"], User, State) ->
-    ?INFO("internal_config(~p): user feed initialization message received: ~p", [self(), User]),
+%    ?INFO("internal_config(~p): user feed initialization message received: ~p", [self(), User]),
     start_local_if_not_started(user, User),
     {noreply, State};
 
 handle_notice(["group", "init"], {Group, FeedId}, State) ->
-    ?INFO("internal_config(~p): group feed ~p initialization message received: ~p", [self(), FeedId, Group]),
+%    ?INFO("internal_config(~p): group feed ~p initialization message received: ~p", [self(), FeedId, Group]),
     start_local_if_not_started(user, Group, FeedId),
     {noreply, State};
 
 handle_notice(["group", "init"], Group, State) ->
-    ?INFO("internal_config(~p): group feed initialization message received: ~p", [self(), Group]),
+%    ?INFO("internal_config(~p): group feed initialization message received: ~p", [self(), Group]),
     start_local_if_not_started(user, Group),
     {noreply, State};
 
 handle_notice(["system", "init"], Name, State) ->
-    ?INFO("internal_config(~p): system 'feed' initialization message received: ~p", [self(), Name]),
+%    ?INFO("internal_config(~p): system 'feed' initialization message received: ~p", [self(), Name]),
     start_local_if_not_started(system, Name),
     {noreply, State};
 
 handle_notice(Route, Message, State) ->
-    ?INFO("internal_config(~p): notification received: ", [self(), Route, Message]),
+%    ?INFO("internal_config(~p): notification received: ", [self(), Route, Message]),
     {noreply, State}.
 
 handle_info(start_all, State) ->
@@ -76,12 +76,12 @@ start_workers() ->
     Groups = nsm_db:all(group),
     [begin
          timer:sleep(15+random:uniform(20)),
-         ?INFO(" start group: ~p",[G#group.username]),
+%         ?INFO(" start group: ~p",[G#group.username]),
          start_worker(G)
      end || G <- Groups],
     [begin
          timer:sleep(15+random:uniform(20)),
-         ?INFO(" start user: ~p",[U#user.username]),
+%         ?INFO(" start user: ~p",[U#user.username]),
          start_worker(U)
      end || U <- Users],
     start_worker(system).
@@ -104,14 +104,13 @@ start_global_if_not_started(Type, Name) ->
 
 start_worker(Type, Name, Action) ->
     WorkerName = ?FEED_WORKER_NAME(Type, Name),
-    Id = {n, g, WorkerName},
+    Id = {n, l, WorkerName},
     case catch gproc:where(Id) of
         Pid when is_pid(Pid) ->
-            ?INFO("start worker: ~p ~p, already started: ~p", [Type, Name, Pid]),
+%            ?INFO("start worker: ~p ~p, already started: ~p", [Type, Name, Pid]),
             %% if already exists, start to monitor worker
             gproc:monitor(Id);
         Other ->
-            ?INFO("not registered, try to register: ~p ~p. Where return value: ~p",
-                  [Type, Name, Other]),
+%            ?INFO("not registered, try to register: ~p ~p. Where return value: ~p", [Type, Name, Other]),
             Action()
     end.

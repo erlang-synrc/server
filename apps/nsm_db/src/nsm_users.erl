@@ -66,6 +66,34 @@ check_register_data_(#user{username = UserName,
 	_ -> throw({error, user_too_young})
     end.
 
+do_register(#user{username=U, email=Email, facebook_id=FBId} = RegisterData0) ->
+    case check_register_data(RegisterData0) of
+         ok ->
+            PlainPassword  = RegisterData0#user.password,
+            HashedPassword = utils:sha(PlainPassword),
+
+            RegisterData = RegisterData0#user{feed     = nsm_db:feed_create(),
+                                              direct   = nsm_db:feed_create(),
+                                              pinned   = nsm_db:feed_create(),
+                                              starred  = nsm_db:feed_create(),
+                                              password = HashedPassword},
+            %ok = nsm_db:put(RegisterData),
+            nsx_msg:notify(["system", "put"], RegisterData),
+            nsm_accounts:create_account(U),
+            % assign quota
+            {ok, DefaultQuota} = nsm_db:get(config, "accounts/default_quota",  300),
+            nsm_accounts:transaction(U, ?CURRENCY_QUOTA,
+                                         DefaultQuota,
+                                         #ti_default_assignment{}),
+            %% init message queues infrastructure
+            init_mq(U, []),
+            login_posthook(U),
+            {ok, register};
+         {error, Error} ->
+            {error, Error}
+    end.
+
+
 -spec register(record(user)) -> {ok, register} | {error, any()}.
 register(#user{username=U, email=Email, facebook_id=FBId} = RegisterData0) ->
     FindUser =
@@ -99,43 +127,12 @@ register(#user{username=U, email=Email, facebook_id=FBId} = RegisterData0) ->
         SomethingElse ->
             SomethingElse
     end,
-            
 
     case FindUser2 of
-	ok ->
-	    case check_register_data(RegisterData0) of
-		ok ->
-            PlainPassword  = RegisterData0#user.password,
-            HashedPassword = utils:sha(PlainPassword),
-
-            RegisterData = RegisterData0#user{feed     = nsm_db:feed_create(),
-                                              direct   = nsm_db:feed_create(),
-                                              pinned   = nsm_db:feed_create(),
-                                              starred  = nsm_db:feed_create(),
-                                              password = HashedPassword},
-		    %ok = nsm_db:put(RegisterData),
-            nsx_msg:notify(["system", "put"], RegisterData),
-			nsm_accounts:create_account(U),
-			%% assign quota
-            {ok, DefaultQuota} = nsm_db:get(config, "accounts/default_quota",  300),
-			nsm_accounts:transaction(U, ?CURRENCY_QUOTA,
-                                         DefaultQuota,
-                                         #ti_default_assignment{}),
-            %% init message queues infrastructure
-            init_mq(U, []),
-
-            login_posthook(U),
-
-			{ok, register};
-		{error, Error} ->
-		    {error, Error}
-	    end;
-	{error, username_taken} ->
-	    {error, user_exist};
-	{error, facebook_taken} ->
-	    {error, facebook_taken};
-	{error, email_taken} ->
-	    {error, email_taken}
+         ok -> do_register(RegisterData0);
+         {error, username_taken} -> {error, user_exist};
+         {error, facebook_taken} -> {error, facebook_taken};
+         {error, email_taken} ->    {error, email_taken}
     end.
 
 % @doc

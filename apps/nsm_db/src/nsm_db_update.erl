@@ -231,3 +231,7 @@ convert_twitter()->
       Sex, Location, Education, RegisterDate, Status, VerificationCode,
       Type, Feed, Direct, Starred, Pinned, Comments, Discussions, Team, Aclver} <- nsm_db:all(user)],
   [nsm_db:put(U) || U<-Users].
+
+delete_trn_players() ->
+   [nsm_db:delete(user,U#user.username)||U<-nsm_db:all(user), lists:sublist(U#user.username,10)=="trn_player" ].
+

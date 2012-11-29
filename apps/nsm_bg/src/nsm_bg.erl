@@ -16,14 +16,18 @@ start_all_feed_workers() -> gen_server:call(?MODULE, start_all_feed_workers).
 
 start_feed_worker(Owner) ->
     case nsm_bg_workers_sup:start_worker(nsm_writer, [{owner, Owner}]) of
-         {ok, Pid} -> ?INFO(" Consumer process started with pid: ~p for ~p", [Pid, Owner]), ok;
-         Error -> ?ERROR(" Feed consumer process starting error. Owner: ~p, Reason: ~p", [Owner, Error]), Error
+         {ok, Pid} -> %?INFO(" Consumer process started with pid: ~p for ~p", [Pid, Owner]), 
+                      ok;
+         Error -> %?ERROR(" Feed consumer process starting error. Owner: ~p, Reason: ~p", [Owner, Error]), 
+                  Error
     end.
 
 start_feed_worker(Owner, FeedId) ->
     case nsm_bg_workers_sup:start_worker(nsm_writer, [{owner, Owner}, {feed_id, FeedId}]) of
-         {ok, Pid} -> ?INFO(" Consumer process started with pid: ~p for ~p", [Pid, Owner]), ok;
-         Error -> ?ERROR(" Feed consumer process starting error. Owner: ~p, Reason: ~p", [Owner, Error]), Error
+         {ok, Pid} -> %?INFO(" Consumer process started with pid: ~p for ~p", [Pid, Owner]), 
+                      ok;
+         Error -> %?ERROR(" Feed consumer process starting error. Owner: ~p, Reason: ~p", [Owner, Error]), 
+                  Error
     end.
 
 init_workers() ->

@@ -24,8 +24,7 @@ init(Params) ->
                 undefined ->
                     case feed:get_feed_by_user_or_group(Owner) of
                         {ok, Type, FeedId, DirectId} ->
-                            ?INFO("Owner: ~p, Type: ~p, FeedId: ~p, DirectId: ~p",
-                                  [Owner, Type, FeedId, DirectId]),
+%                            ?INFO("Owner: ~p, Type: ~p, FeedId: ~p, DirectId: ~p", [Owner, Type, FeedId, DirectId]),
                             {ok, #state{owner = Owner,
                                         type = Type,
                                         feed = FeedId,
