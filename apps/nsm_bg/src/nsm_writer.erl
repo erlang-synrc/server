@@ -3,6 +3,7 @@
 -include_lib("nsx_config/include/log.hrl").
 -include_lib("nsm_db/include/feed.hrl").
 -include_lib("nsm_db/include/user.hrl").
+-include_lib("nsm_db/include/table.hrl").
 -include_lib("nsm_db/include/tournaments.hrl").
 -include_lib("nsm_gifts/include/common.hrl").
 -include("nsm_bg.hrl").
@@ -154,10 +155,33 @@ handle_notice(["system", "tournament_ends_note"] = Route, Message,
     [nsx_msg:notify(["feed", "user", UId, "post_note"], NoteString) || UId <- Users],
     {noreply, State};
 
+
 handle_notice(["system", "game_ends_note"] = Route, Message, 
         #state{owner = Owner, feed = Feed} = State) ->
     ?INFO("feed(~p): game_ends_note: Owner=~p, Route=~p, Message=~p", [self(), Owner, Route, Message]),
-    {GId, Results} = Message,
+    {{GameName, GameType, Users}, Results} = Message,
+    Winners = [UId || {UId, _, _, _} <- Results],
+    [
+        begin
+            Prefix = case lists:member(UId, Winners) of
+                true -> 
+                    {WKP, WGP} = hd([{KP, GP} || {RUId, _, KP, GP} <- Results, UId == RUId]),
+                    "game_won" ++ integer_to_list(length(Results)) ++ "|winner=" ++ UId ++ "|kakush=" ++ integer_to_list(WKP) ++ "|points=" ++ integer_to_list(WGP);
+                false ->
+                    "game_ended" ++ integer_to_list(length(Results))
+            end,
+            NoteString = Prefix ++ "|tablename=" ++ GameName ++ "|gametype=" ++ atom_to_list(GameType) ++ lists:flatten([
+                begin
+                    SP = integer_to_list(Pos),
+                    SKP = integer_to_list(KP),
+                    SGP = integer_to_list(GP),
+                    "|winner" ++ SP ++ "=" ++ RUId ++ "|kakush" ++ SP ++ "=" ++ SKP ++ "|points" ++ SP ++ "=" ++ SGP
+                end
+            || {RUId, Pos, KP, GP} <- Results]),
+            nsx_msg:notify(["feed", "user", UId, "post_note"], NoteString)
+        end
+    || UId <- Users],
+    %{GameId, [{UserId, Pos, KakushPoints, GamePoints}]}
     {noreply, State};
 
 

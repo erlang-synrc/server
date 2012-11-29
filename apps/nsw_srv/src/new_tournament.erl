@@ -329,7 +329,7 @@ product_list_paged(Page) ->
                         postback={show_details, OneGift#gift.description_long, OneGift#gift.image_big_url, OneGift#gift.id}},
                     "</div>
 				    <strong class='prod-name' style='padding-bottom:15px; margin-top:-15px;'>",
-                    #link{text=gifts:decode_letters(OneGift#gift.gift_name),  
+                    #link{text=site_utils:decode_letters(OneGift#gift.gift_name),  
                         postback={show_details, OneGift#gift.description_long, OneGift#gift.image_big_url, OneGift#gift.id}},
                     "</strong>",
 				"</div>",
@@ -420,7 +420,7 @@ event({show_details, Description, ImageUrl, Id}) ->
             "<center>",
             #image{image=ImageUrl, style="margin:10px; max-width:300px; max-height:300px;"},
             "</center>",
-            gifts:decode_html(Description),
+            site_utils:decode_html(Description),
             "<center>",
             #singlerow{cells=[
                 #tablecell{
@@ -530,11 +530,7 @@ event({start_tournament, TourName, TourDesc, TourDate, TourTime, TourPlayers, To
     STourTime = integer_to_list(Th) ++ ":" ++ case Tm<10 of true -> "0"++integer_to_list(Tm); false -> integer_to_list(Tm) end,
     STourPlayers = integer_to_list(TourPlayers),
     STourQuota = integer_to_list(TourQuota),
-    STourGame = case TourGame of
-        game_okey -> ?_T("OKEY");
-        game_tavla -> ?_T("TAVLA");
-        _ -> "?"
-    end,
+    STourGame = site_utils:game_to_string(TourGame),
     STourType = case TourType of
         elimination -> ?_T("elimination");
         _ -> "?"

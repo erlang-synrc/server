@@ -162,7 +162,7 @@ section_body(gifts) ->
                 case element(1, GiftIfAny) of
                     ok ->
                         {ok, {ThisGift, _}} = GiftIfAny,
-                        SName = gifts:decode_letters(ThisGift#gift.gift_name),
+                        SName = site_utils:decode_letters(ThisGift#gift.gift_name),
                         SKakush = integer_to_list(ThisGift#gift.kakush_point),
                         SPrice = integer_to_list(ThisGift#gift.kakush_currency),
                         #listitem{body = [
@@ -570,8 +570,8 @@ u_event({nothing}) ->
 
 u_event(profile_save) ->
     OrigUser = webutils:user_info(),
-    NewName = wf:q(profile_name),
-    NewSurname = wf:q(profile_surname),
+    NewName = site_utils:decode_letters(wf:q(profile_name)),
+    NewSurname = site_utils:decode_letters(wf:q(profile_surname)),
     NewEmail = wf:q(profile_email),
     Passwd1 = wf:q(password1),
     Passwd2 = wf:q(password2),
@@ -753,9 +753,9 @@ u_event(convert_kakush_to_quota) ->
     end;
 
 u_event(user_address_save) ->
-    Address = wf:q(user_address),
-    City = wf:q(user_city),
-    District = wf:q(user_district),
+    Address = site_utils:decode_letters(wf:q(user_address)),
+    City = site_utils:decode_letters(wf:q(user_city)),
+    District = site_utils:decode_letters(wf:q(user_district)),
     PostalCode = wf:q(user_postal_code),
     nsx_msg:notify(["db", "user", wf:user(), "put"], #user_address{
         username=wf:user(),
