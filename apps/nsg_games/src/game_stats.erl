@@ -3,7 +3,7 @@
 
 -export([start_link/0, add_game/1, get_skill/1, get_game_points/2, get_player_stats/1,
          init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3,
-         assign_points/2, is_feel_lucky/2, game_info_to_ti/1, charge_quota/1]).
+         assign_points/2, is_feel_lucky/1, game_info_to_ti/1, charge_quota/1]).
 
 -include_lib("nsg_srv/include/basic_types.hrl").
 -include_lib("nsg_srv/include/game_okey.hrl").
@@ -13,6 +13,24 @@
 -include_lib("nsm_db/include/config.hrl").
 -include_lib("nsm_db/include/accounts.hrl").
 -include_lib("nsm_db/include/scoring.hrl").
+
+
+-record(raw_result,
+        {player_id :: binary(),
+         winner    :: boolean(),
+         score     :: integer(),
+         pos       :: integer()
+        }).
+
+-record(result,
+        {player_id :: string(),
+         robot     :: boolean(),
+         winner    :: boolean(),
+         score     :: integer(),
+         pos       :: integer(),
+         kakush_points :: integer(),
+         game_points :: integer()
+        }).
 
 start_link() -> gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 add_game(Game) -> gen_server:cast(?MODULE, {add_game, Game}).
@@ -44,8 +62,7 @@ handle_info(Info, State) -> error_logger:error_msg("unknown info ~p~n", [Info]),
 terminate(_Reason, _State) -> ok.
 code_change(_OldVsn, State, _Extra) -> {ok, State}.
 
-is_feel_lucky(UId, GameInfo) ->
-    ?INFO("Charge Quota Feel Lucky Check: User ~p GameInfo ~p",[UId,GameInfo]),
+is_feel_lucky(GameInfo) ->
     proplists:get_value(lucky, GameInfo,false).
 
 game_info_to_ti(GameInfo) ->
@@ -68,7 +85,7 @@ charge_quota(GameInfo) ->
     [begin
          UId = binary_to_list(U#'PlayerInfo'.id),
 
-         Amount = case is_feel_lucky(UId, GameInfo) of
+         Amount = case is_feel_lucky(GameInfo) of
                       true ->
                           PRLucky#pointing_rule.quota;
                       _ ->
@@ -80,16 +97,17 @@ charge_quota(GameInfo) ->
      end || U  <- Players].
 
 assign_points(#'TavlaGameResults'{players = Results}, GameInfo) ->
-    ConvertedResults = [ #'PlayerResults'{winner = Winner, player_id = PlayerId, score = Score}
+    ConvertedResults = [ #raw_result{winner = Winner == <<"true">>, player_id = PlayerId, score = Score,
+                                     pos = if Winner == <<"true">> -> 1; true -> 2 end}
                         || #'TavlaPlayerScore'{winner = Winner, player_id = PlayerId, score = Score} <- Results],
-    assign_points(#'GameResults'{results = ConvertedResults}, GameInfo);
+    assign_points(ConvertedResults, GameInfo);
 
 assign_points(#'OkeyGameResults'{series_results = Results}, GameInfo) ->
-    ConvertedResults = [ #'PlayerResults'{winner = Winner, player_id = PlayerId, score = Score}
-                        || #'OkeySeriesResult'{winner = Winner, player_id = PlayerId, score = Score} <- Results],
-    assign_points(#'GameResults'{results = ConvertedResults}, GameInfo);
+    ConvertedResults = [ #raw_result{winner = Winner == <<"true">>, player_id = PlayerId, score = Score, pos = Pos}
+                        || #'OkeySeriesResult'{winner = Winner, player_id = PlayerId, score = Score, place = Pos} <- Results],
+    assign_points(ConvertedResults, GameInfo);
 
-assign_points(#'GameResults'{results = Results}, GameInfo) ->
+assign_points(RawResults, GameInfo) ->
 
     PR0      = proplists:get_value(pointing_rules, GameInfo),
     PRLucky  = proplists:get_value(pointing_rules_lucky, GameInfo),
@@ -100,74 +118,87 @@ assign_points(#'GameResults'{results = Results}, GameInfo) ->
 
     PR1 = pointing_rules:double_points(PR0, Double),
 
-    PlayersIds = [case U#'PlayerInfo'.robot of false -> binary_to_list(U#'PlayerInfo'.id); _ -> "(robot)" end || U <- Players],
+    PlayersIds = [case U#'PlayerInfo'.robot of false -> user_id_to_string(U#'PlayerInfo'.id); _ -> "(robot)" end || U <- Players],
 
     %% nobody get any points if playing with robots
     PR2 = case WithRobots of
-             true ->
-                 #pointing_rule{_ = 0};
-             false ->
-                 PR1
+             true -> #pointing_rule{_ = 0};
+             false -> PR1
          end,
 
+    #pointing_rule{
+                   kakush_winner = KakushWinner,
+                   kakush_other = KakushOther,
+                   game_points = WinGamePoints
+                  } = case is_feel_lucky(GameInfo) of true -> PRLucky; false -> PR2 end,
+
+    Results = [begin
+                   Robot = is_bot(UserId, Players),
+                   {KakushPoints, GamePoints} = if not Robot ->
+                                                       if Winner -> {KakushWinner, WinGamePoints};
+                                                          true -> {KakushOther, 0}
+                                                       end;
+                                                   true -> {0, 0}
+                                                end,
+                   #result{player_id = user_id_to_string(UserId), robot = Robot, winner = Winner,
+                           pos = Pos, kakush_points = KakushPoints, game_points = GamePoints}
+               end || #raw_result{player_id = UserId, winner = Winner, pos = Pos} <- RawResults],
+
     [begin
-        %% TODO: feel lucky
-        UId = binary_to_list(R#'PlayerResults'.player_id),
-
-        PR = case is_feel_lucky(UId, GameInfo) of
-                 true ->
-                     PRLucky;
-                 false ->
-                     PR2
-             end,
-
-        {Kakaush, GamePoints} =
-            case R#'PlayerResults'.winner of
-                <<"true">> ->
-                    ?INFO("winner: ~p", [UId]),
-                    {PR#pointing_rule.kakush_winner, PR#pointing_rule.game_points};
-                _ ->
-                    {PR#pointing_rule.kakush_other, 0}
-            end,
-
-        case lists:member(UId, PlayersIds) of
-            true -> % flesh and bones
+         if not Robot ->
                 SR = #scoring_record{
-                    game_id = proplists:get_value(id, GameInfo),
-                    who = UId,
-                    all_players = PlayersIds,
-                    game_type = PR0#pointing_rule.game_type,
-                    game_kind = PR0#pointing_rule.game,
-%                   condition, % where'd I get that?
-                    score_points = GamePoints,
-                    score_kakaush = Kakaush,
-%                   custom,    % no idea what to put here
-                    timestamp = erlang:now()
-                },
-                Route = [feed, user, UId, scores, 0, add],  % maybe it would require separate worker for this
+                                     game_id = proplists:get_value(id, GameInfo),
+                                     who = UserId,
+                                     all_players = PlayersIds,
+                                     game_type = PR0#pointing_rule.game_type,
+                                     game_kind = PR0#pointing_rule.game,
+%                                     condition, % where'd I get that?
+                                     score_points = GamePoints,
+                                     score_kakaush = KakushPoints,
+%                                     custom,    % no idea what to put here
+                                     timestamp = erlang:now()
+                                    },
+                Route = [feed, user, UserId, scores, 0, add],  % maybe it would require separate worker for this
                 nsx_msg:notify(Route, [SR]),
                 % personal score
-                {Games, Disconnects} = case R#'PlayerResults'.disconnected of
-                    true -> {0, 1};
-                    _ -> {1, 0}
-                end,
-                {Wins, Loses} = case R#'PlayerResults'.winner of
-                    <<"true">> -> {1, 0};
-                    _ -> {0, 1}
-                end,
+%%                 {Games, Disconnects} = case R#'PlayerResults'.disconnected of
+%%                                            true -> {0, 1};
+%%                                            _ -> {1, 0}
+%%                                        end,
+                {Wins, Loses} = if Winner-> {1, 0};
+                                   true -> {0, 1}
+                                end,
                 % haven't found a way to properly get average time
-                nsx_msg:notify([personal_score, user, UId, add], {Games, Wins, Loses, Disconnects, GamePoints, 0});
+                nsx_msg:notify([personal_score, user, UserId, add],
+                               {_Games = 1, Wins, Loses, _Disconnects = 0, GamePoints, 0});
+            true -> do_nothing  % no statistics for robots
+         end,
+         if not Robot ->
+                if KakushPoints /= 0 ->
+                       ok = nsm_accounts:transaction(UserId, ?CURRENCY_KAKUSH, KakushPoints, TI#ti_game_event{type = game_end});
+                   true -> ok
+                end,
+                if GamePoints /= 0 ->
+                        ok = nsm_accounts:transaction(UserId, ?CURRENCY_GAME_POINTS, GamePoints, TI#ti_game_event{type = game_end});
+                   true -> ok
+                end;
+            true -> do_nothing %% no points for robots
+         end
+     end || #result{player_id = UserId, robot = Robot, winner = Winner,
+                    kakush_points = KakushPoints, game_points = GamePoints}  <- Results],
 
-            false ->
-                ok  % no statistics for robots
-        end,
+    GameName = proplists:get_value(name, GameInfo, ""),
+    GameType = proplists:get_value(game_type, GameInfo),
+    GameEndRes = [{if Robot -> "robot"; true -> UserId end, Robot, Pos, KPoints, GPoints}
+                  || #result{player_id = UserId, robot = Robot, pos = Pos,
+                             kakush_points = KPoints, game_points = GPoints} <- Results],
+    ?INFO("GAME_STATS <~p> Notificaton: ~p", [proplists:get_value(id, GameInfo), {GameName, GameType, GameEndRes}]),
+    nsx_msg:notify(["system", "game_ends_note"], {GameName, GameType, GameEndRes}).
 
-        ok = nsm_accounts:transaction(UId, ?CURRENCY_KAKUSH, Kakaush, TI#ti_game_event{type = game_end}),
-        if
-            GamePoints /= 0 ->
-                ok = nsm_accounts:transaction(UId, ?CURRENCY_GAME_POINTS, GamePoints, TI#ti_game_event{type = game_end});
-            true ->
-                ok
-        end
-     end || R  <- Results].
+is_bot(UserId, Players) ->
+    case lists:keyfind(UserId, #'PlayerInfo'.id, Players) of
+        #'PlayerInfo'{robot = Robot} -> Robot;
+        _ -> true % If UserId is not found then the player is a replaced bot. 
+    end.
 
+user_id_to_string(UserId) -> binary_to_list(UserId).
