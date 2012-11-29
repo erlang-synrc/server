@@ -205,7 +205,9 @@ api_event(fbLogin, _, [Args])->
 	    ErrorMsg = io_lib:format("Facebook error:~p", [E]),
 	    wf:redirect( ?_U("/index/message/") ++ site_utils:base64_encode_to_url(ErrorMsg));
 	_ ->
+        CurrentUser = wf:user(),
 	    case nsm_users:get_user({facebook, proplists:get_value(id, Args)}) of
+        {ok, User} when User#user.username == CurrentUser -> ok;
 	    {ok, User} ->
 		case same_or_undefined(wf:user(), User#user.username) of
 		    true ->
