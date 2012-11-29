@@ -964,8 +964,9 @@ order_list_item(#membership_purchase{membership_package = Package} = MP) ->
     Quota = Package#membership_package.quota,
     {PurchaseDateRaw, _} = calendar:now_to_datetime(MP#membership_purchase.start_time),
     PurchaseDate = site_utils:date_to_text(PurchaseDateRaw),
+    OverLimit = nsm_membership_packages:check_limit_over(wf:user(), MP#membership_package.id),
     Button = case AvailableForSale of
-        true -> [buy_it_button(PaymentType, PackageId)];
+        true -> [buy_it_button(PaymentType, PackageId, OverLimit)];
         _ -> []
     end,
     Text = ?_TS("Package $number$, $quota$ quotas, $date$",
@@ -973,15 +974,18 @@ order_list_item(#membership_purchase{membership_package = Package} = MP) ->
 
     #listitem{body = [#span{text=Text} | Button]}.
 
-buy_it_button(facebook, PackageId)->
-    case wf:session(is_facebook) of
-	true ->
-	    #link{class="pay_fb_btn", text=?_T("Buy it"),
-		actions=#event{type=click, actions=#script{script="pay_with_fb(\""++ PackageId ++"\");"}}};
-	_ ->
-	    #link{class="pay_fb_stub",text=" ", url=""}
-    end;
-buy_it_button(PaymentType, PackageId)->
+buy_it_button(facebook, PackageId, OverLimit)->
+  case wf:session(is_facebook) of
+    true ->
+      #link{class="pay_fb_btn", text=?_T("Buy it"),
+        actions=#event{type=click, actions=#script{script="pay_with_fb(\""
+          ++ wf:user() ++ "\" ,\""
+          ++ PackageId ++ "\","
+          ++ atom_to_list(OverLimit) ++");"}}};
+    _ ->
+      #link{class="pay_fb_stub",text=" ", url=""}
+  end;
+buy_it_button(PaymentType, PackageId, _)->
     Url = ?_U(lists:concat(["/buy/", PaymentType, "/package_id/", PackageId])),
     #link{class=btn, url=Url,  text=?_T("Buy it")}.
 
