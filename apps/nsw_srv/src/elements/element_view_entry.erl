@@ -144,6 +144,9 @@ entry_element(E, Comments, Avatar, {MediaThumb, MediaLists0}, _TargetMedia, Anch
                 "game_ended3" ->
                     {?_T("Game ended"),
                     ?_TS("Game $tablename$ of $gametype$ just ended.<br> &mdash; $winner1$ won $points1$ game points and $kakush1$ kakush;<br> &mdash; $winner2$ won $points2$ game points and $kakush2$ kakush;<br> &mdash; $winner3$ won $points3$ game points and $kakush3$ kakush.", Args)};
+                "game_ended4" ->
+                    {?_T("Game ended"),
+                    ?_TS("Game $tablename$ of $gametype$ just ended.<br> &mdash; $winner1$ won $points1$ game points and $kakush1$ kakush;<br> &mdash; $winner2$ won $points2$ game points and $kakush2$ kakush;<br> &mdash; $winner3$ won $points3$ game points and $kakush3$ kakush;<br> &mdash; $winner4$ won $points4$ game points and $kakush4$ kakush.", Args)};
                 "game_won1" ->
                     {?_T("Game won!"),
                     ?_TS("Our player $winner$ just won $points$ game points and $kakush$ kakush in $tablename$ of $gametype$.", Args)};
@@ -153,6 +156,9 @@ entry_element(E, Comments, Avatar, {MediaThumb, MediaLists0}, _TargetMedia, Anch
                 "game_won3" ->
                     {?_T("Game won!"),
                     ?_TS("Our player $winner$ just won $points$ game points and $kakush$ kakush in $tablename$ of $gametype$.<br>All the winners are:<br> &mdash; $winner1$ won $points1$ game points and $kakush1$ kakush;<br> &mdash; $winner2$ won $points2$ game points and $kakush2$ kakush;<br> &mdash; $winner3$ won $points3$ game points and $kakush3$ kakush.", Args)};
+                "game_won4" ->
+                    {?_T("Game won!"),
+                    ?_TS("Our player $winner$ just won $points$ game points and $kakush$ kakush in $tablename$ of $gametype$.<br>All the winners are:<br> &mdash; $winner1$ won $points1$ game points and $kakush1$ kakush;<br> &mdash; $winner2$ won $points2$ game points and $kakush2$ kakush;<br> &mdash; $winner3$ won $points3$ game points and $kakush3$ kakush;<br> &mdash; $winner4$ won $points4$ game points and $kakush4$ kakush.", Args)};
                 _ -> {?_T("Unsupported note type!"), E#entry.description}
             end,
 
