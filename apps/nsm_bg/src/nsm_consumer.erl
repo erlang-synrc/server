@@ -46,7 +46,7 @@ init([Module | Args]) ->
                 undefined ->
                     ok;
                 Name ->
-                    ?INFO("register ~p in gproc with name ~p", [Module, Name]),
+%                    ?INFO("register ~p in gproc with name ~p", [Module, Name]),
                     catch gproc:reg(gproc_key(Name), Module)
             end,
 
@@ -93,10 +93,10 @@ terminate(_Reason, State) ->
 code_change(_OldVsn, State, _Extra) -> {ok, State}.
 
 process_delivery(["notice", "system", "reconfigure"], #envelope{payload = Conf}, State) ->
-    ?INFO("recofigure received: ~p", [Conf]),
+%    ?INFO("recofigure received: ~p", [Conf]),
     {noreply, State};
 process_delivery(Route, Envelope, #state{callback = Module, callback_state = CState0} = State) ->
-    ?DBG("process delivery. Not system call: ~p", [Route]),
+%    ?DBG("process delivery. Not system call: ~p", [Route]),
     Payload = Envelope#envelope.payload,
     process_result(State, catch Module:handle_notice(Route, Payload, CState0)).
 
@@ -131,7 +131,7 @@ subscribe_system(Channel) ->
 
 
 subscribe(Channel, Exchange, Routes, Queue, QueueOptions, ConsumeOptions) ->
-    ?INFO("gen_worker: ~p, Exchange: ~p, Routes: ~p, Queue:~p, QueueOptions: ~p", [Channel, Exchange, Routes, Queue, QueueOptions]),
+%    ?INFO("gen_worker: ~p, Exchange: ~p, Routes: ~p, Queue:~p, QueueOptions: ~p", [Channel, Exchange, Routes, Queue, QueueOptions]),
     {ok, _} = nsm_mq_channel:create_queue(Channel, Queue, QueueOptions),
     [begin RoutingKey = nsm_mq_lib:list_to_key(Route), 
            ok = nsm_mq_channel:bind_queue(Channel, Queue, Exchange, RoutingKey) end || Route <- Routes],

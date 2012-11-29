@@ -158,17 +158,18 @@ add_translations() ->
 
 create_tour_users(A,B,Groups) ->
     ImagioUsers = nsm_auth:imagionary_users(),
-    TourUsers =  [#user{username = nsm_auth:ima_gio(N,ImagioUsers), % "trn_player" ++ integer_to_list(N),
+    TourUsers =  [#user{username = nsm_auth:ima_gio(N,ImagioUsers),
                             password="password",
                             feed = feed_create(),
-                            name = nsm_auth:ima_gio(N,ImagioUsers), % "Tournament Player " ++ integer_to_list(N),
+                            name = nsm_auth:ima_gio(N,ImagioUsers),
                             team = create_team("tours"), direct = feed_create(),
                             status=ok,
                             age={1981,9,29},
                             register_date={1345,14071,852889}
                            } || N <- lists:seq(A, B)],
     [ begin
-%          nsm_users:init_mq(Me#user.username, Groups),
+          [nsm_groups:add_to_group_directly_to_db(Me#user.username, GId, member)||GId<-Groups],
+          nsm_users:init_mq(Me#user.username, Groups),
           nsm_accounts:create_account(Me#user.username),
           nsm_accounts:transaction(Me#user.username,
                                    ?CURRENCY_QUOTA,
@@ -290,7 +291,7 @@ add_sample_users() ->
                            age={1981,9,29},
                            register_date={1345,14071,852889}
                      } 
-		],
+         ],
 
 
     ?INFO("creating groups"),
@@ -368,20 +369,20 @@ add_configs() ->
 
 -spec put(tuple() | [tuple()]) -> ok.
 put(Record) ->
-    ?INFO("db:put ~p",[Record]),
+%    ?INFO("db:put ~p",[Record]),
     DBA=?DBA,
     DBA:put(Record).
 
 
 put_if_none_match(Record) ->
-    ?INFO("db:put_if_none_match ~p",[Record]),
+%    ?INFO("db:put_if_none_match ~p",[Record]),
     DBA=?DBA,
     DBA:put_if_none_match(Record).
 
 % update
 
 update(Record, Meta) ->
-    ?INFO("db:update ~p",[Record]),
+%    ?INFO("db:update ~p",[Record]),
     DBA=?DBA,
     DBA:update(Record, Meta).
 
@@ -392,13 +393,13 @@ get(RecordName, Key) ->
     DBA=?DBA,
     case C = DBA:get(RecordName, Key) of
     {ok,_R} ->
-        ?INFO("db:get ~p,", [{RecordName, Key}]),
+%        ?INFO("db:get ~p,", [{RecordName, Key}]),
         C;
     A -> A
     end.
 
 get_for_update(RecordName, Key) ->
-    ?INFO("db:get_for_update ~p,", [{RecordName, Key}]),
+%    ?INFO("db:get_for_update ~p,", [{RecordName, Key}]),
     DBA=?DBA,
     DBA:get_for_update(RecordName, Key).
 

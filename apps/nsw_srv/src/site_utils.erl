@@ -169,7 +169,12 @@ game_mode_to_string(countdown) -> ?_T("Countdown from 10");
 game_mode_to_string(kakaratavla) -> ?_T("Kakara Tavla").
 
 -spec game_to_string(atom()) -> string().
-game_to_string(game_okey) -> ?_T("Okey").
+game_to_string(game_okey) -> ?_T("okey");
+game_to_string(game_tavla) -> ?_T("tavla");
+game_to_string(game_batak) -> ?_T("batak");
+game_to_string(game_sorbi) -> ?_T("sorbi");
+game_to_string(game_king) -> ?_T("king");
+game_to_string(_) -> ?_T("unsupported").
 
 
 user_link(Username) when is_list(Username) ->
@@ -436,3 +441,57 @@ long_integer_to_list(S) ->
         true -> long_integer_to_list(lists:sublist(S, 1, LS-3)) ++ " " ++ lists:sublist(S, LS-2, 3);
         false -> S
     end.
+
+
+decode_letters(In) ->
+    case is_list(hd(In)) of
+        true ->
+            decode_letters(hd(In));
+        _ ->
+            ling:replace_a_lot(In, [ 
+                {[286], "Ğ"},    % 'unicode'
+                {[287], "ğ"},
+                {[304], "İ"},
+                {[305], "ı"},
+                {[350], "Ş"},
+                {[351], "ş"},
+
+                {[246], "ö"},    % both latin-5 and 'unicode'
+                {[214], "Ö"},
+                {[252], "ü"},
+                {[220], "Ü"},
+
+                {[231], "ç"},    % latin-5
+                {[199], "Ç"},
+                {[240], "ğ"},
+                {[208], "Ğ"},
+
+                {[253], "ı"},
+                {[221], "İ"},
+                {[254], "ş"},
+                {[222], "Ş"}
+            ])
+    end.
+
+decode_amp(In) ->
+    ling:replace(In, "&amp;", "&").
+
+decode_entities(In) ->
+    ling:replace_a_lot(In, [
+        {"&lt;", "<"},
+        {"&gt;", ">"},
+        {"&quot;", "'"},
+
+        {": medium", ": small"} % this is a dirty hack for making description fit into a page. 
+                                % It should be eradicated with decent design.
+    ]).
+
+assume_eq(In) ->
+    ling:replace_a_lot(In, [
+        {"style'", "style='"},
+        {"align'", "align='"},
+        {"src'", "src='"}
+    ]).
+
+decode_html(In) ->
+    decode_letters(assume_eq(decode_entities(decode_amp(decode_amp(In))))).
