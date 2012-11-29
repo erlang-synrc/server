@@ -124,15 +124,45 @@ get_media_thumb(E, ViewMediaPanelId) ->
 entry_element(E, Comments, Avatar, {MediaThumb, MediaLists0}, _TargetMedia, Anchor) ->
     case E#entry.type of 
         {_, system_note} ->
-            Title_Desc_Args = ling:split(gifts:decode_letters(E#entry.description), "|"),
+            Title_Desc_Args = ling:split(site_utils:decode_letters(E#entry.description), "|"),
             RawArgs = lists:nthtail(1, Title_Desc_Args),
-            Args = [begin Arg=ling:split(RArg, "="), {list_to_atom(hd(Arg)), hd(tl(Arg))} end || RArg <- RawArgs],
+            Args1 = [begin Arg=ling:split(RArg, "="), {list_to_atom(hd(Arg)), hd(tl(Arg))} end || RArg <- RawArgs],
+            Args = case proplists:get_value(gametype, Args1, "") of
+                "" -> Args1;
+                Type -> proplists:delete(gametype, Args1) ++ [{gametype, site_utils:game_to_string(list_to_atom(Type))}]
+            end,
             {Title, Desc} = case lists:nth(1, Title_Desc_Args) of 
                 "tour1" -> {?_T("Tournament finished"), ?_TS("Tournament $name$$desc$ just finished.<br>$winner1$ won $kakush1$ worth $prize1$.", Args)};
                 "tour2" -> {?_T("Tournament finished"), ?_TS("Tournament $name$$desc$ just finished.<br>$winner1$ won $kakush1$ worth $prize1$.<br>$winner2$ won $kakush2$ worth $prize2$.", Args)};
                 "tour3" -> {?_T("Tournament finished"), ?_TS("Tournament $name$$desc$ just finished.<br>$winner1$ won $kakush1$ worth $prize1$.<br>$winner2$ won $kakush2$ worth $prize2$.<br>$winner3$ won $kakush3$ worth $prize3$.", Args)};
+                "game_ended1" ->
+                    {?_T("Game ended"),
+                    ?_TS("Game $tablename$ of $gametype$ just ended.<br>$winner1$ won $points1$ game points and $kakush1$ kakush.", Args)};
+                "game_ended2" ->
+                    {?_T("Game ended"),
+                    ?_TS("Game $tablename$ of $gametype$ just ended.<br> &mdash; $winner1$ won $points1$ game points and $kakush1$ kakush;<br> &mdash; $winner2$ won $points2$ game points and $kakush2$ kakush.", Args)};
+                "game_ended3" ->
+                    {?_T("Game ended"),
+                    ?_TS("Game $tablename$ of $gametype$ just ended.<br> &mdash; $winner1$ won $points1$ game points and $kakush1$ kakush;<br> &mdash; $winner2$ won $points2$ game points and $kakush2$ kakush;<br> &mdash; $winner3$ won $points3$ game points and $kakush3$ kakush.", Args)};
+                "game_won1" ->
+                    {?_T("Game won!"),
+                    ?_TS("Our player $winner$ just won $points$ game points and $kakush$ kakush in $tablename$ of $gametype$.", Args)};
+                "game_won2" ->
+                    {?_T("Game won!"),
+                    ?_TS("Our player $winner$ just won $points$ game points and $kakush$ kakush in $tablename$ of $gametype$.<br>All the winners are:<br> &mdash; $winner1$ won $points1$ game points and $kakush1$ kakush;<br> &mdash; $winner2$ won $points2$ game points and $kakush2$ kakush.", Args)};
+                "game_won3" ->
+                    {?_T("Game won!"),
+                    ?_TS("Our player $winner$ just won $points$ game points and $kakush$ kakush in $tablename$ of $gametype$.<br>All the winners are:<br> &mdash; $winner1$ won $points1$ game points and $kakush1$ kakush;<br> &mdash; $winner2$ won $points2$ game points and $kakush2$ kakush;<br> &mdash; $winner3$ won $points3$ game points and $kakush3$ kakush.", Args)};
                 _ -> {?_T("Unsupported note type!"), E#entry.description}
             end,
+
+% "Game ended"
+% "Game $tablename$ for $gametype$ game just ended. Player $winner$ won $points$ points."
+%"Player $winner1$ won $points1$ points. Player $winner2$ won $points2$ points. Player $winner3$ won $points3$ points."
+
+% "Game won! Our player $username$ just won $points$ points in $tablename$ for $gametype$!"
+%"All the winners are: player $winner1$ won $points1$ points; player $winner2$ won $points2$ points; player $winner3$ won $points3$ points."
+
             #notice{type=message, position=left, title=Title, body=Desc};
         {_, system} ->
             MessageSecs = calendar:datetime_to_gregorian_seconds( calendar:now_to_datetime(E#entry.created_time) ),

@@ -404,7 +404,7 @@ content() ->
             GOs = [nsm_gifts_db:get_gift(A) || A <- T#tournament.awards],
             [case GO of
                 {error, notfound} -> {"", "/images/tournament/nothing.png"};
-                {ok, {Gift, _}} -> {gifts:decode_letters(Gift#gift.gift_name), Gift#gift.image_small_url}
+                {ok, {Gift, _}} -> {site_utils:decode_letters(Gift#gift.gift_name), Gift#gift.image_small_url}
             end || GO <- GOs];
         false ->
             [{"?", "/images/tournament/new_tournament/question.png"},{"?", "/images/tournament/new_tournament/question.png"},{"?", "/images/tournament/new_tournament/question.png"}]
