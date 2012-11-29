@@ -964,7 +964,7 @@ order_list_item(#membership_purchase{membership_package = Package} = MP) ->
     Quota = Package#membership_package.quota,
     {PurchaseDateRaw, _} = calendar:now_to_datetime(MP#membership_purchase.start_time),
     PurchaseDate = site_utils:date_to_text(PurchaseDateRaw),
-    OverLimit = nsm_membership_packages:check_limit_over(wf:user(), MP#membership_package.id),
+    OverLimit = nsm_membership_packages:check_limit_over(wf:user(), PackageId),
     Button = case AvailableForSale of
         true -> [buy_it_button(PaymentType, PackageId, OverLimit)];
         _ -> []
