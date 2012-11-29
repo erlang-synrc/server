@@ -55,6 +55,9 @@
 	 invite_message/5
 	]).
 
+%% turkish latin-5/unicode decode
+-export([decode_letters/1, decode_html/1]).
+
 -export([x/1]).
 
 -include_lib("nitrogen_core/include/wf.hrl").

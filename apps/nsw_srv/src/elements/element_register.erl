@@ -276,7 +276,8 @@ event({register_success, User}) ->
     login:login_user(User);
 
 event(show_please_wait) ->
-    wf:update(register_hintbox, "<span style='color:#44AA44'>" ++ ?_T("Please wait...") ++ "</span>");
+    wf:update(register_hintbox, ["<span style='color:#44AA44'>" ++ ?_T("Please wait...") ++ "</span>", 
+        #panel{class="view_media_other_attachment", style="float:none", body=#panel{class=loading_spiner}}]);
 
 event(register) ->
     case wf:state(invite) of
