@@ -25,8 +25,8 @@ process_order("payments_get_items", Credits)->
   User = binary_to_list(proplists:get_value(<<"user">>, Item#struct.list )),
   [begin
     Purchase = #membership_purchase{
-      id = OrderId, % nsm_membership_packages:purchase_id() facebook only process orders with own id's
-      external_id = OrderId,
+      id = integer_to_list(OrderId), % nsm_membership_packages:purchase_id() facebook only process orders with own id's
+      external_id = integer_to_list(OrderId),
       user_id = User,
       membership_package = Pack,
       info = facebook},
