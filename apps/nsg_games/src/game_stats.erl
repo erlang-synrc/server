@@ -192,8 +192,8 @@ assign_points(RawResults, GameInfo) ->
     GameEndRes = [{if Robot -> "robot"; true -> UserId end, Robot, Pos, KPoints, GPoints}
                   || #result{player_id = UserId, robot = Robot, pos = Pos,
                              kakush_points = KPoints, game_points = GPoints} <- Results],
-    ?INFO("GAME_STATS <~p> Notificaton: ~p", [proplists:get_value(id, GameInfo), {GameName, GameType, GameEndRes}]),
-    nsx_msg:notify(["system", "game_ends_note"], {GameName, GameType, GameEndRes}).
+    ?INFO("GAME_STATS <~p> Notificaton: ~p", [proplists:get_value(id, GameInfo), {{GameName, GameType}, GameEndRes}]),
+    nsx_msg:notify(["system", "game_ends_note"], {{GameName, GameType}, GameEndRes}).
 
 is_bot(UserId, Players) ->
     case lists:keyfind(UserId, #'PlayerInfo'.id, Players) of
