@@ -603,7 +603,7 @@ finalize_tournament(#state{game_id = GameId, awards = Awards, tournament_table =
     AwardsDistribUserId = [{user_id_to_string(get_user_id(PlayerId, Players)), Pos, GiftId}
                            || {PlayerId, Pos, GiftId} <- AwardsDistrib],
     [nsx_msg:notify(["gifts", "user", UserId, "give_gift"], {GiftId})
-       || {UserId, _Pos, GiftId} <- AwardsDistrib],
+       || {UserId, _Pos, GiftId} <- AwardsDistribUserId],
     %% TODO: Do we need advertise the prizes to game clients?
     ?INFO("OKEY_NG_TRN_ELIM <~p> Awards distribution: ~p", [GameId, AwardsDistribUserId]),
     nsx_msg:notify(["system", "tournament_ends_note"], {TrnId, AwardsDistribUserId}),
