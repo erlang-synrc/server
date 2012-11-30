@@ -256,7 +256,7 @@ section_body(account) ->
 %    wf:wire(ApiSave),
 %    Script = wf:f(" { ~s } ",[callback(ApiSave,"self == top")]),
 %    wf:wire(Id, Script),
-    Orders = nsm_db:get_purchases_by_user(Username, ?ORDERS_PER_PAGE, [?MP_STATE_DONE]),
+    Orders = nsm_db:get_purchases_by_user(Username, ?ORDERS_PER_PAGE, [?MP_STATE_DONE,?MP_STATE_CONFIRMED]),
     {_, UA} = nsm_db:get(user_address, wf:user()),
     case UA of
         notfound ->
