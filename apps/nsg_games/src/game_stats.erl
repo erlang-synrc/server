@@ -79,21 +79,14 @@ charge_quota(GameInfo) ->
     Players   = proplists:get_value(initial_players, GameInfo),
     Double    = proplists:get_value(double_points, GameInfo),
     TI = game_info_to_ti(GameInfo),
-
     PR = pointing_rules:double_points(PR0, Double),
-
     [begin
-         UId = binary_to_list(U#'PlayerInfo'.id),
-
+         UId = user_id_to_string(U#'PlayerInfo'.id),
          Amount = case is_feel_lucky(GameInfo) of
-                      true ->
-                          PRLucky#pointing_rule.quota;
-                      _ ->
-                          PR#pointing_rule.quota
+                      true -> PRLucky#pointing_rule.quota;
+                      _ -> PR#pointing_rule.quota
                   end,
-
         ok = nsm_accounts:transaction(UId, ?CURRENCY_QUOTA, -Amount, TI#ti_game_event{type = game_start})
-
      end || U  <- Players].
 
 assign_points(#'TavlaGameResults'{players = Results}, GameInfo) ->
@@ -108,42 +101,44 @@ assign_points(#'OkeyGameResults'{series_results = Results}, GameInfo) ->
     assign_points(ConvertedResults, GameInfo);
 
 assign_points(RawResults, GameInfo) ->
-
+    GameId   = proplists:get_value(id, GameInfo),
     PR0      = proplists:get_value(pointing_rules, GameInfo),
     PRLucky  = proplists:get_value(pointing_rules_lucky, GameInfo),
     Players  = proplists:get_value(initial_players, GameInfo),
     Double   = proplists:get_value(double_points, GameInfo),
-    WithRobots = false, %[] /= [ robot || #'PlayerInfo'{robot = true} <- Players],
     TI = game_info_to_ti(GameInfo),
 
     PR1 = pointing_rules:double_points(PR0, Double),
 
-    PlayersIds = [case U#'PlayerInfo'.robot of false -> user_id_to_string(U#'PlayerInfo'.id); _ -> "(robot)" end || U <- Players],
-
-    %% nobody get any points if playing with robots
-    PR2 = case WithRobots of
-             true -> #pointing_rule{_ = 0};
-             false -> PR1
-         end,
+    PlayersIds = [if Robot -> user_id_to_string(UserId);
+                     true -> "(robot)"
+                  end || #'PlayerInfo'{id = UserId, robot = Robot} <- Players],
 
     #pointing_rule{
                    kakush_winner = KakushWinner,
                    kakush_other = KakushOther,
                    game_points = WinGamePoints
-                  } = case is_feel_lucky(GameInfo) of true -> PRLucky; false -> PR2 end,
+                  } = case is_feel_lucky(GameInfo) of true -> PRLucky; false -> PR1 end,
 
+    Bots    = [UserId || #raw_result{player_id = UserId} <- RawResults, is_bot(UserId, Players)],
+    Paids   = [UserId || #raw_result{player_id = UserId} <- RawResults, is_paid(UserId)],
+    Winners = [UserId || #raw_result{player_id = UserId, winner = true} <- RawResults],
+    TotalNum = length(RawResults),
+    PaidsNum = length(Paids),
+    WinnersNum = length(Winners),
+    KakushPerWinner = round((KakushWinner * PaidsNum div TotalNum) / WinnersNum),
+    KakushPerLoser = KakushOther * PaidsNum div TotalNum,
+    ?INFO("GAME_STATS <~p> KakushWinner: ~p KakushOther: ~p", [GameId, KakushWinner, KakushOther]),
+    ?INFO("GAME_STATS <~p> KakushPerWinner: ~p KakushPerLoser: ~p", [GameId, KakushPerWinner, KakushPerLoser]),
     Results = [begin
-                   Robot = is_bot(UserId, Players),
-                   {KakushPoints, GamePoints} = if not Robot ->
-                                                       if Winner -> {KakushWinner, WinGamePoints};
-                                                          true -> {KakushOther, 0}
-                                                       end;
-                                                   true -> {0, 0}
-                                                end,
+                   Robot = lists:member(UserId, Bots),
+                   Paid = lists:member(UserId, Paids),
+                   {KakushPoints, GamePoints} = calc_points(KakushPerWinner, KakushPerLoser,
+                                                            WinGamePoints, Paid, Robot, Winner),
                    #result{player_id = user_id_to_string(UserId), robot = Robot, winner = Winner,
                            pos = Pos, kakush_points = KakushPoints, game_points = GamePoints}
                end || #raw_result{player_id = UserId, winner = Winner, pos = Pos} <- RawResults],
-
+    ?INFO("GAME_STATS <~p> Results: ~p", [GameId, Results]),
     [begin
          if not Robot ->
                 SR = #scoring_record{
@@ -160,11 +155,6 @@ assign_points(RawResults, GameInfo) ->
                                     },
                 Route = [feed, user, UserId, scores, 0, add],  % maybe it would require separate worker for this
                 nsx_msg:notify(Route, [SR]),
-                % personal score
-%%                 {Games, Disconnects} = case R#'PlayerResults'.disconnected of
-%%                                            true -> {0, 1};
-%%                                            _ -> {1, 0}
-%%                                        end,
                 {Wins, Loses} = if Winner-> {1, 0};
                                    true -> {0, 1}
                                 end,
@@ -192,7 +182,7 @@ assign_points(RawResults, GameInfo) ->
     GameEndRes = [{if Robot -> "robot"; true -> UserId end, Robot, Pos, KPoints, GPoints}
                   || #result{player_id = UserId, robot = Robot, pos = Pos,
                              kakush_points = KPoints, game_points = GPoints} <- Results],
-    ?INFO("GAME_STATS <~p> Notificaton: ~p", [proplists:get_value(id, GameInfo), {{GameName, GameType}, GameEndRes}]),
+    ?INFO("GAME_STATS <~p> Notificaton: ~p", [GameId, {{GameName, GameType}, GameEndRes}]),
     nsx_msg:notify(["system", "game_ends_note"], {{GameName, GameType}, GameEndRes}).
 
 is_bot(UserId, Players) ->
@@ -201,4 +191,14 @@ is_bot(UserId, Players) ->
         _ -> true % If UserId is not found then the player is a replaced bot. 
     end.
 
+is_paid(UserId) -> nsm_accounts:user_paid(UserId).
+
 user_id_to_string(UserId) -> binary_to_list(UserId).
+
+calc_points(KakushPerWinner, KakushPerLoser, WinGamePoints, Paid, Robot, Winner) ->
+    if Robot -> {0, 0};
+       not Paid andalso Winner -> {0, WinGamePoints};
+       not Paid -> {0, 0};
+       Paid andalso Winner -> {KakushPerWinner, WinGamePoints};
+       Paid -> {KakushPerLoser, 0}
+    end.
