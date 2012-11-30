@@ -155,7 +155,7 @@ process_delivery({_, _, FeedOwner, _}, ["likes", _, _, "add_like"], {User, E}) -
     LikePanelId = element_view_entry:like_panel_id(EntryId),
     {LikeBox, _} = element_view_entry:like_string_and_button_bool(E, FeedOwner, [#one_like{user_id=User, entry_id=EntryId, feed_id=FeedId}]),
     wf:update(LikePanelId, LikeBox),
-    ?INFO(" +++ Like e: ~p   owner: ~p   lpid: ~p" , [E, FeedOwner, LikePanelId]),
+    ?INFO("Like e: ~p   owner: ~p   lpid: ~p" , [E, FeedOwner, LikePanelId]),
     wf:flush();
 
 process_delivery(Info, Route, Message) -> % just to avoid nevedomaya yebanaya huynya

@@ -29,6 +29,9 @@ main_authorized() ->
         {ok, UserInfo} ->
             wf:state(user, UserInfo),
             wf:state(feed_owner, {user, UserName}),
+            UserList = [FrId || #subs{whom=FrId} <- nsm_users:list_subscr(UserName)],
+            wf:state(userlist, lists:sort(UserList)),
+            wf:state(userlist_count, length(UserList)),
             dashboard:main();
         Reason ->
             ?ERROR("unable to get user info: User=~p, Reason=~p", [UserName, Reason]),
@@ -41,25 +44,17 @@ body() ->
     #template{file=code:priv_dir(nsw_srv)++"/templates/view-user.html"}.
 
 content()     -> content(1).
-content(Page) -> content(Page, ?_T("FRIENDS"), wf:user(), {nsm_users, list_subscr}).
-content(Page, Title, UId, ModFun) ->
-    wf:wire(wf:f("objs('search_textbox')"
-             ".bind('keyup keydown change', function()"
-             "{var $this=objs('search_textbox');var l = parseInt($this.attr('value').length);"
-             " if(l > 0){objs('sendsearch').css('background','url(/images/grn-shr-btn.png) no-repeat');objs('sendsearch').css('cursor','pointer');}"
-             " if(l <= 0){objs('sendsearch').css('background','url(/images/gre_shr_btn.png) no-repeat');objs('sendsearch').css('cursor','default');}"
-             " })"
-             ".bind('keypress', function(e)"
-             "{var code = e.keyCode || e.which;"
-             " if (code == 13) { if (!e.shiftKey) {objs('sendsearch').trigger('click'); return false;}}" %% send postback
-             " if (code != 116 && code != 46 && code > 40 || code == 32) return $(this).trigger('change').attr('value').length < ~b" %% deny only text keys
-             "})",
-             [100])),
+content(Page) -> content(Page, ?_T("FRIENDS")).
+content(Page, Title) ->
     [
         #panel{class="top-space", body=[
-            #h1{text=Title}
+            #h1{text=Title},
+            #textbox{id=nick_filter, style="width:84px; height:19px; border-radius:3px; border: 1px solid rgb(201, 201, 201); float:left;"},
+            #link{postback=filter_by_nick, class="set-table-name", text=?_T("Filter by nick"), style="float:left; font-weight:bold; padding-left:8px; padding-top:5px;"},
+            #br{},
+            #br{}
         ]},
-        #panel{id="friends_content", body=getPageContent(Page, UId, ModFun)}
+        #panel{id="friends_content", body=getPageContent(Page)}
     ].
 
 
@@ -81,28 +76,15 @@ user_info() ->
     end.
 
 getPageContent(Page) ->
-    getPageContent(Page, wf:user(), {nsm_users, list_subscr}).
-
-getPageContent(Page, UId, ModFun) when is_number(Page) ->
     [
-        friends_search_form(),
-        get_users_view(get_subscribed_users(Page, UId, ModFun), true, Page)
-    ];
-getPageContent(Page, UId, ModFun) when is_list(Page) ->
-    [
-        friends_search_form(),
-        get_users_view(get_subscribed_users(Page, UId, ModFun), false, 0)
+        get_users_view(get_subscribed_users(Page), Page)
     ].
 
-friends_search_form() ->
-    [].
 
-get_users_view(UsersView, false, _)         -> #list{class="user-list", body=[UsersView]};
-get_users_view(UsersView, true, PageNumber) ->
-    NextButton = if
-        length(UsersView) < ?FRIENDSPERPAGE %PUBLIC BETA this is wrong, but will do
-             -> #listitem{body=#link{text=">", url="javascript:void(0)", class="inactive"}};
-        true -> #listitem{body=#link{text=">", postback={page, PageNumber + 1}}}
+get_users_view(UsersView, PageNumber) ->
+    NextButton = case PageNumber < (wf:state(userlist_count) div ?FRIENDSPERPAGE + 1) of
+        true -> #listitem{body=#link{text=">", postback={page, PageNumber + 1}}};
+        false -> #listitem{body=#link{text=">", url="javascript:void(0)", class="inactive"}}
     end,
     PrevButton = case PageNumber of
         I when is_integer(I),I>1 -> #listitem{body=#link{text="<", postback={page, PageNumber - 1}}};
@@ -110,45 +92,38 @@ get_users_view(UsersView, true, PageNumber) ->
     end,
     [
         #list{class="user-list", body=[UsersView]},
-        #panel{class="paging-2", body=[
-            #panel{class="center", body=[
-                #list{body=[
-                    PrevButton,
-                    #listitem{body=#link{class="inactive", url="javascript:void(0)", text=io_lib:format("~b",[PageNumber])}},
-                    NextButton
-                ]}
-            ]}
-        ]}
+        case wf:state(userlist_count) > ?FRIENDSPERPAGE of
+            true ->
+                #panel{class="paging-2", body=[
+                    #panel{class="center", body=[
+                        #list{body=[
+                            PrevButton,
+                            NextButton,
+                            #listitem{class="inactive", style="width:84px;", body=
+                                #link{text="Go to page", postback=go_to_page}
+                            },
+                            #listitem{class="inactive", style="width:36px;", body=
+                                #textbox{id=pager_textbox, style="width:36px; height:19px; text-align:right; border-radius:3px; border: 1px solid rgb(201, 201, 201);", text=integer_to_list(PageNumber)}
+                            },
+                            #listitem{class="inactive", style="padding-top:2px;", body=
+                                "&nbsp;/&nbsp;" ++ integer_to_list(wf:state(userlist_count) div ?FRIENDSPERPAGE + 1)
+                            }
+                        ]}
+                    ]}
+                ]};
+            false -> 
+                []
+        end
     ].
 
 get_subscribed_users()     -> get_subscribed_users(1).
-get_subscribed_users(Page) -> 
-    get_subscribed_users(Page, wf:user(), {nsm_users, list_subscr}).
-
-get_subscribed_users(Page,UId, {Mod,Fun}) when is_number(Page) ->
-    AltUser = wf:q('of'),
-    case AltUser of
-        undefined ->
-            UserId = UId;
-        MrX ->
-            UserId = MrX
-    end,
-    case Mod:Fun(UserId, Page, ?FRIENDSPERPAGE) of
+get_subscribed_users(Page) ->
+    case lists:sublist(wf:state(userlist), (Page-1)*?FRIENDSPERPAGE + 1, ?FRIENDSPERPAGE) of
         [] ->
             #label{text=?_T("Nothing on this page"), style="margin-left:2em;"};
         Sub ->
-            ?PRINT(Sub),
-            [friends_view(X) || X <- Sub]
-    end;
-get_subscribed_users(Query,UId, {Mod,Fun}) when is_list(Query) ->
-    case Mod:Fun(UId, Query) of
-        [] ->
-            ?_T("Can't find anything matching your request");
-        Sub ->
-            ?PRINT(Sub),
             [friends_view(X) || X <- Sub]
     end.
-
 
 user_short_description(UId) ->
     case UId of
@@ -226,9 +201,6 @@ friends_view(UId) ->
                             #br{},
                             #list{class="func-list", body=[
                                 #listitem{body=#link{url=io_lib:format("/dashboard/filter/direct/tu/~s",[UId]), text=?_T("Send direct message"), title=?_T("You can send a message only this user will read")}},
-%PHASE1                                #listitem{body=#link{url="#", text=?_T("Recommend friends")}},
-%PHASE1                                #listitem{body=[#link{url="#", text=?_T("Personal")}, " (", #link{url="#", text=?_T("edit")}, ")"]},
-                                %#listitem{body=#link{url="#", text=?_T("Unsubscribe")}}
                                 SubUnsubItem
                             ]}
                         ]}
@@ -239,14 +211,6 @@ friends_view(UId) ->
        ]}
     ]}.
 
-
-split_subs([], A) -> A;
-split_subs(L, A)  when length(L) =< 5 -> A ++ [L];
-split_subs(L, A)  ->
-    {L2, L3} = lists:split(5, L),
-    split_subs(L3, A ++ [L2]).
-
-friends_row(FL) -> #panel{body=[ show_friend(X) || X <- FL]}.
 
 show_friend(#subs{whom = Who}) ->
     #panel{style="float:left;padding-left:5px",
@@ -259,64 +223,13 @@ show_friend(#subs{whom = Who}) ->
             }
     ]}.
 
-big() ->
-    [
-     #panel { id="main_area", style="margin:0px;",  body=[subscribe()] }
-    ].
-
-subscribe() ->
-    UId = wf:user(),
-    SubList =
-        case nsm_users:list_subscr(UId) of
-            [] ->
-                ?_T("You are not subscribed to anyone");
-            Sub ->
-                [?_T("You are subscribed to:"),
-                 #br{},
-                 view_subscribe(Sub)]
-        end,
-    [view_add_friend(), SubList].
-
-
-view_add_friend() ->
-    [
-     #label{text=?_T("Search users")++":"},
-     #textbox_autocomplete {tag=friend_search},
-     #flash{}
-    ].
-
-view_subscribe(SubList) ->
-    Source = [ [#link{text=Who,
-                      url=site_utils:user_link(Who)}, #br{}]
-               || #subs{whom = Who} <- SubList ],
-    lists:flatten(Source).
 
 event(Event) ->
-    ?PRINT({"FE:", Event}),
     case wf:user() of
 	undefined -> wf:redirect_to_login(?_U("/login"));
         User      -> inner_event(Event, User)
     end.
 
-inner_event(view_sub, _) ->
-    wf:update(main_area, subscribe());
-
-inner_event({subscription, FrId}, _) ->
-    UId = wf:user(),
-    nsx_msg:notify(["subscription", "user", UId, "subscribe_user"], {FrId}),
-    wf:update(main_area, subscribe()),
-    Msg = io_lib:fwrite(?_T("You have subscribed to '~s'."), [FrId]),
-    wf:flash(Msg);
-
-inner_event(search_friend, _) ->
-    SearchStr = wf:q("search_textbox"),
-    SearchedUsers = case nsm_users:search_user(SearchStr) of
-        [] ->
-            #panel{body=?_T("We could not find any users matching the search") ++ " \"" ++ SearchStr ++ "\""};
-        Sub ->
-            [friends_view(X) || X <- Sub]
-    end,
-    wf:update(friends_content, get_users_view(SearchedUsers, false, 0));
 
 inner_event({page, N}, _) ->
     ActualNumber = if
@@ -325,6 +238,20 @@ inner_event({page, N}, _) ->
     end,
     wf:update(friends_content, getPageContent(ActualNumber));
 
+inner_event(go_to_page, User) ->
+    Page = list_to_integer(wf:q(pager_textbox)),
+    case (Page > 0) and (Page =< wf:state(userlist_count) / ?FRIENDSPERPAGE + 1) of
+        true -> inner_event({page, Page}, User);
+        false -> ok
+    end;
+
+inner_event(filter_by_nick, User) ->
+    Filter = wf:q(nick_filter),
+    UserList = [FrId || #subs{whom=FrId} <- nsm_users:list_subscr(User)],
+    FilteredUserList = [UId || UId <- UserList, string:str(UId, Filter) /= 0],
+    wf:state(userlist, lists:sort(FilteredUserList)),
+    wf:state(userlist_count, length(FilteredUserList)),
+    event({page, 1});
 
 inner_event({unsubscribe, _, Who, SUId}, User1) ->
     nsx_msg:notify(["subscription", "user", User1, "remove_subscribe"], {Who}),
@@ -347,22 +274,3 @@ inner_event({subscribe, _, Who, SUId}, User1)   ->
 inner_event(Any, _)->
     webutils:event(Any).
 
-
-
-autocomplete_enter_event(SearchTerm, friend_search) ->
-    Data = nsm_db:all(user), % WTF?
-    List = [ {struct,[{id, list_to_binary(UId) }, {label, list_to_binary(UId)}, {value, list_to_binary(UId)}]} ||
-               #user{username = UId} <- Data,
-               string:str(string:to_lower(UId), string:to_lower(SearchTerm)) > 0 ],
-    mochijson2:encode(List).
-
-autocomplete_select_event({struct, [{<<"id">>, _ },{<<"value">>, Value}]}, friend_search) ->
-    TextQuestion = io_lib:fwrite(?_T("Do you want to subscribe to '~s'?"), [Value]),
-    wf:flash([#label {text=TextQuestion, style="display: inline;"},
-            #button {text=?_T("Yes"), class="inputButton", postback={subscription, binary_to_list(Value)}}]),
-    ok.
-
-list_group_members_paged(GId, Page, PerPage) ->  % I'd like a decent paging here. This is poor
-    From = (Page-1)*PerPage+1,
-    All = lists:sort(nsm_groups:list_group_members(GId)),
-    lists:sublist(All, From, PerPage).

@@ -132,9 +132,8 @@ handle_notice(["feed", "user", UId, "post_note"] = Route, Message,
     {noreply, State};
 
 
-handle_notice(["system", "tournament_ends_note"] = Route, Message, 
-        #state{owner = Owner, feed = Feed} = State) ->
-    ?INFO("feed(~p): tournament_ends_note: Owner=~p, Route=~p, Message=~p", [self(), Owner, Route, Message]),
+handle_notice(["system", "tournament_ends_note"] = Route, Message, State) ->
+    ?INFO("feed(~p): tournament_ends_note: Route=~p, Message=~p", [self(), Route, Message]),
     {TId, Results} = Message,
     {ok, Tour} = nsm_db:get(tournament, TId),
     Users = [UId || #play_record{who=UId} <- nsm_tournaments:joined_users(TId)],
@@ -155,10 +154,10 @@ handle_notice(["system", "tournament_ends_note"] = Route, Message,
     {noreply, State};
 
 
-handle_notice(["system", "game_ends_note"] = Route, Message, 
-        #state{owner = Owner, feed = Feed} = State) ->
-    ?INFO("feed(~p): game_ends_note: Owner=~p, Route=~p, Message=~p", [self(), Owner, Route, Message]),
+handle_notice(["system", "game_ends_note"] = Route, Message, State) ->
+    ?INFO("feed(~p): game_ends_note: Route=~p, Message=~p", [self(), Route, Message]),
     {{GameName, GameType}, Results} = Message,
+    NResults = lists:zip(lists:seq(1, length(Results)), Results),
     [
         case Robot of
             true -> ok;
@@ -171,12 +170,12 @@ handle_notice(["system", "game_ends_note"] = Route, Message,
                 end,
                 NoteString = Prefix ++ "|tablename=" ++ GameName ++ "|gametype=" ++ atom_to_list(GameType) ++ lists:flatten([
                     begin
-                        SP = integer_to_list(RPos),
+                        SP = integer_to_list(P),
                         SKP = integer_to_list(RKP),
                         SGP = integer_to_list(RGP),
                         "|winner" ++ SP ++ "=" ++ RUId ++ "|kakush" ++ SP ++ "=" ++ SKP ++ "|points" ++ SP ++ "=" ++ SGP
                     end
-                || {RUId, _, RPos, RKP, RGP} <- Results]),
+                || {P, {RUId, _, _, RKP, RGP}} <- NResults]),
                 nsx_msg:notify(["feed", "user", UId, "post_note"], NoteString)
         end
     || {UId, Robot, Pos, KP, GP} <- Results],
