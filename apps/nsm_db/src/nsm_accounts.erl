@@ -112,7 +112,7 @@ commit_transaction(#transaction{remitter = R, acceptor = A,  currency = Currency
                     nsx_msg:notify_transaction(A,TX);
                     %nsm_db:add_transaction_to_user(A,TX);
                 _ ->
-                    ?ERROR("commit transaction error: change accounts ~p", Error),
+                    ?ERROR("commit transaction error: change accounts ~p", [Error]),
                     Error
             end
     end.
