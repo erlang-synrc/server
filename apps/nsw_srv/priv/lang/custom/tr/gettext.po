@@ -801,7 +801,7 @@ msgid "Game Rules"
 msgstr "Oyun Kuralları"
 #
 msgid "Rules"
-msgstr "Kuralları"
+msgstr "Kurallar"
 #
 msgid "Game Settings"
 msgstr "Oyun Ayarları"
