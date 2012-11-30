@@ -14,44 +14,50 @@ init()->
   wf:wire(#api{name=fbAddAsService, tag=fb}),
   ["<div id=fb-root></div>",
     "<script>window.fbAsyncInit = function() {",
-    "FB.init({ appId: '"++ ?FB_APP_ID ++"',",
-    "channelUrl: '" ++ ?HTTP_ADDRESS ++ "/channel.html',",
-    "status: true,",
-    "cookie: true,",
-    "xfbml: true,",
-    "oauth: true",
-    "});",
-    "if(page.fbLogout) FB.Event.subscribe('auth.logout', function(response){",
-      "page.fbLogout(response);",
-    "});",
-    "FB.getLoginStatus(function(response) {",
-	"if(page.setFbIframe){",
-	    "console.log(\"Set FB application flag: \"+ (top!=self));",
-	    "page.setFbIframe(top!=self);",
-	"}",
-    "});",
+      "FB.init({ appId: '"++ ?FB_APP_ID ++"',",
+      "channelUrl: '" ++ ?HTTP_ADDRESS ++ "/channel.html',",
+      "status: true,",
+      "cookie: true,",
+      "xfbml: true,",
+      "oauth: true",
+      "});",
+      "if(page.fbLogout) FB.Event.subscribe('auth.logout', function(response){",
+        "page.fbLogout(response);",
+      "});",
+      "FB.getLoginStatus(function(response) {",
+        "if(page.setFbIframe){",
+          "var inIframe= top!=self;",
+          "page.setFbIframe(inIframe);",
+          "if(inIframe && response.status == 'connected' && page.fbLogin){",
+            "FB.api(\"/me?fields=id,username,first_name,last_name,email,birthday\",",
+            "function(response){",
+              "page.fbLogin(response);",
+            "});",
+          "}",
+        "}",
+      "});",
     "};",
     "function fb_login(){",
-	"FB.getLoginStatus(function(response){",
-	    "if(response.status == 'connected'){",
-		"console.log(\"User connected to FB, check for registered account\");",
-		"if(page.fbLogin){",
-		    "FB.api(\"/me?fields=id,username,first_name,last_name,email,birthday\",",
-			"function(response){",
-			    "page.fbLogin(response);",
-			"});",
-		"}",
-	    "}else{",
-		"FB.login(function(r){",
-		    "if(r.authResponse){",
-			"if(page.fbLogin){",
-			    "FB.api(\"/me?fields=id,username,first_name,last_name,email,birthday\",",
-			    "function(response){page.fbLogin(response);});",
-			"}",
-		    "}",
-		"},{scope: 'email,user_birthday'});",
-	    "}",
-	"});",
+      "FB.getLoginStatus(function(response){",
+        "if(response.status == 'connected'){",
+          "console.log(\"User connected to FB, check for registered account\");",
+          "if(page.fbLogin){",
+            "FB.api(\"/me?fields=id,username,first_name,last_name,email,birthday\",",
+              "function(response){",
+                "page.fbLogin(response);",
+              "});",
+          "}",
+        "}else{",
+          "FB.login(function(r){",
+            "if(r.authResponse){",
+              "if(page.fbLogin){",
+                "FB.api(\"/me?fields=id,username,first_name,last_name,email,birthday\",",
+                "function(response){page.fbLogin(response);});",
+              "}",
+            "}",
+          "},{scope: 'email,user_birthday'});",
+        "}",
+      "});",
     "}",
   "function add_fb_service(){",
     "FB.login(function(resp){",
@@ -141,36 +147,38 @@ test_btn(FbId, Token)->
 
 buy_button(PackageId, OverLimit) when is_atom(OverLimit)->
     #link{class="pay_fb_btn", text=?_T("Buy"),
-    actions=#event{type=click, actions=#script{script="pay_with_fb(\""++ PackageId ++ "\"," ++ atom_to_list(OverLimit) ++");"}}}.
+    actions=#event{type=click, actions=#script{script="pay_with_fb(\""
+      ++ wf:user() ++ "\" ,\""
+      ++ PackageId ++ "\","
+      ++ atom_to_list(OverLimit) ++");"}}}.
 
 pay_dialog()->
     wf:wire(#api{name=processOrder, tag=fb}),
     wf:wire(#api{name=fbNotifyOverLimit, tag=fb}),
     ["<script type=\"text/javascript\">",
     "var callback = function(data){",
-	"if(data['error_code']){",
-	    "console.log(\"Code: \"+data['error_code'] + \" Message: \"+ data['error_message']);",
-	    "return false;",
-	"}",
-	"if(data['order_id']){",
-	    "console.log(\"Order:\" + data);",
-	    "if(page.processOrder){",
-		"page.processOrder(data);",
-	    "}",
-	    "return true;",
-	"}",
+    "if(data['error_code']){",
+        "console.log(\"Code: \"+data['error_code'] + \" Message: \"+ data['error_message']);",
+        "return false;",
+    "}",
+    "if(data['order_id']){",
+      "if(page.processOrder){",
+        "page.processOrder(data);",
+      "}",
+      "return true;",
+    "}",
     "};",
-    "function pay_with_fb(package_id, overlimit){",
-	"if(overlimit && page.fbNotifyOverLimit){",
-	    "page.fbNotifyOverLimit();",
-	"} else {",
-	    "FB.ui({",
-		"method:'pay',",
-		"action:'buy_item',",
-		"order_info: {'item_id': package_id},",
-		"dev_purchase_params: {'oscif':true} },",
-		"callback);",
-	"}",
+    "function pay_with_fb(user, package_id, overlimit){",
+      "if(overlimit && page.fbNotifyOverLimit){",
+        "page.fbNotifyOverLimit();",
+      "} else {",
+        "FB.ui({",
+        "method:'pay',",
+        "action:'buy_item',",
+        "order_info: {'item_id': package_id, 'user': user},",
+        "dev_purchase_params: {'oscif':true} },",
+        "callback);",
+      "}",
     "}",
     "</script>"].
 
@@ -197,7 +205,9 @@ api_event(fbLogin, _, [Args])->
 	    ErrorMsg = io_lib:format("Facebook error:~p", [E]),
 	    wf:redirect( ?_U("/index/message/") ++ site_utils:base64_encode_to_url(ErrorMsg));
 	_ ->
+        CurrentUser = wf:user(),
 	    case nsm_users:get_user({facebook, proplists:get_value(id, Args)}) of
+        {ok, User} when User#user.username == CurrentUser -> ok;
 	    {ok, User} ->
 		case same_or_undefined(wf:user(), User#user.username) of
 		    true ->
@@ -216,13 +226,13 @@ api_event(fbLogout, _, _Data)-> wf:session(fb_registration, undefined);
 api_event(fbNotifyOverLimit, _, _)->
     buy:over_limit_popup(nsm_membership_packages:get_monthly_purchase_limit());
 api_event(processOrder, _, [[{order_id, OrderId}, {status, Status}]])-> 
-    ?INFO("Payment complete. Order:~p~n", [OrderId]),
-    case nsm_membership_packages:get_purchase(integer_to_list(OrderId)) of
-	{ok, Purchase} when Status =:= "settled" ->
-	    nsx_msg:notify(["purchase", "user", wf:user(), "set_purchase_state"], {element(2,Purchase), done, facebook}),
-	    wf:redirect("/profile/account");
-	_ -> wf:info("Purchase Not Found")
-    end;
+  ?INFO("Payment complete. Order:~p~n", [OrderId]),
+  case nsm_membership_packages:get_purchase(integer_to_list(OrderId)) of
+    {ok, Purchase} when Status =:= "settled" ->
+      nsx_msg:notify(["purchase", "user", wf:user(), "set_purchase_state"], {element(2,Purchase), done, facebook}),
+      wf:redirect("/profile/account");
+    _ -> wf:info("Purchase Not Found")
+  end;
 api_event(setFbIframe, _, [IsIframe]) -> wf:session(is_facebook, IsIframe);
 api_event(fbSignedRequest, _, _Data) -> ok;
 api_event(fbAddAsService, _, [Id])->

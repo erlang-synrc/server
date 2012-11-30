@@ -557,13 +557,14 @@ show_if(remove_entry, Entry) ->
     _ -> {user, CurrentUser}
   end,
   case Type of
-    group when Entry#entry.from == CurrentUser -> true;
+    _Any when Entry#entry.from == CurrentUser -> true;
     group ->
       case nsm_groups:group_user_type(CurrentUser, EntryOwner) of
         admin -> true;
         _ -> false
       end;
-    _ -> true
+    user when CurrentUser == EntryOwner -> true;
+    _ -> false
   end;
 show_if(_, _Entry) -> false.
 

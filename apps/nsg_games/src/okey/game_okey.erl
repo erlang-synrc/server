@@ -151,8 +151,11 @@ init([Relay, PidsWithPlayersInfo, GameId, Settings0]) ->
     SlangFlag = proplists:get_value(slang, Settings, false),
     LuckyFlag = proplists:get_value(lucky, Settings, false),
     ObserverFlag = proplists:get_value(deny_observers, Settings, false),
+    TName = proplists:get_value(table_name, Settings),
 
     GameInfo = [{id, GameId},
+                {name, TName},
+                {game_type, game_okey},
                 {double_points, DP},
                 {mode, Mode},
                 {lucky, LuckyFlag},
@@ -166,7 +169,6 @@ init([Relay, PidsWithPlayersInfo, GameId, Settings0]) ->
     {ok, StatsPid} = game_okey_scoring:start_link(Settings3),
 
     ?INFO("scoring mode: ~p, sets: ~p, rounds: ~p", [Mode, Sets, Rounds]),
-    TName = proplists:get_value(table_name, Settings),
     SS = #'OkeySetState'{
       round_cur = 1,
       round_max = Rounds,

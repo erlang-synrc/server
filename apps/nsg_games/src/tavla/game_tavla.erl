@@ -188,6 +188,8 @@ init([Relay, PidsWithPlayersInfo, GameId, Settings]) ->
     PR = proplists:get_value(pointing_rules, get_settings(Settings), TestPR),
 
     GameInfo = [{id, GameId},
+                {name, TName},
+                {game_type, game_tavla},
                 {double_points, DP},
                 {mode, Mode},
                 {lucky, LuckyFlag},

@@ -414,15 +414,17 @@ inner_event({remove_entry, EId, _PanelId, _ETo, From, true}, _) ->
         _ -> {user, CurrentUser}
     end,
     case Type of
-      group when From == CurrentUser ->
+      _Any when From == CurrentUser ->
         nsx_msg:notify([feed, Type, Owner, entry, EId, delete], [From]);
       group ->
         case nsm_groups:group_user_type(CurrentUser, Owner) of
           admin -> nsx_msg:notify([feed, Type, Owner, entry, EId, delete], [From]);
           _ -> ok
         end;
-      _ ->
-        nsx_msg:notify([feed, Type, Owner, entry, EId, delete], [From])
+      user when CurrentUser == Owner ->
+        nsx_msg:notify([feed, Type, Owner, entry, EId, delete], [From]);
+      Type ->
+        ?INFO("Remove entry of unknown type: ~p canceled.~n", [Type])
     end;
 
 inner_event({hide_entry, EId, PanelId}, _) ->

@@ -158,28 +158,28 @@ handle_notice(["system", "tournament_ends_note"] = Route, Message,
 handle_notice(["system", "game_ends_note"] = Route, Message, 
         #state{owner = Owner, feed = Feed} = State) ->
     ?INFO("feed(~p): game_ends_note: Owner=~p, Route=~p, Message=~p", [self(), Owner, Route, Message]),
-    {{GameName, GameType, Users}, Results} = Message,
-    Winners = [UId || {UId, _, _, _} <- Results],
+    {{GameName, GameType}, Results} = Message,
     [
-        begin
-            Prefix = case lists:member(UId, Winners) of
-                true -> 
-                    {WKP, WGP} = hd([{KP, GP} || {RUId, _, KP, GP} <- Results, UId == RUId]),
-                    "game_won" ++ integer_to_list(length(Results)) ++ "|winner=" ++ UId ++ "|kakush=" ++ integer_to_list(WKP) ++ "|points=" ++ integer_to_list(WGP);
-                false ->
-                    "game_ended" ++ integer_to_list(length(Results))
-            end,
-            NoteString = Prefix ++ "|tablename=" ++ GameName ++ "|gametype=" ++ atom_to_list(GameType) ++ lists:flatten([
-                begin
-                    SP = integer_to_list(Pos),
-                    SKP = integer_to_list(KP),
-                    SGP = integer_to_list(GP),
-                    "|winner" ++ SP ++ "=" ++ RUId ++ "|kakush" ++ SP ++ "=" ++ SKP ++ "|points" ++ SP ++ "=" ++ SGP
-                end
-            || {RUId, Pos, KP, GP} <- Results]),
-            nsx_msg:notify(["feed", "user", UId, "post_note"], NoteString)
+        case Robot of
+            true -> ok;
+            _ ->
+                Prefix = case Pos of
+                    1 -> 
+                        "game_won" ++ integer_to_list(length(Results)) ++ "|winner=" ++ UId ++ "|kakush=" ++ integer_to_list(KP) ++ "|points=" ++ integer_to_list(GP);
+                    _ ->
+                        "game_ended" ++ integer_to_list(length(Results))
+                end,
+                NoteString = Prefix ++ "|tablename=" ++ GameName ++ "|gametype=" ++ atom_to_list(GameType) ++ lists:flatten([
+                    begin
+                        SP = integer_to_list(RPos),
+                        SKP = integer_to_list(RKP),
+                        SGP = integer_to_list(RGP),
+                        "|winner" ++ SP ++ "=" ++ RUId ++ "|kakush" ++ SP ++ "=" ++ SKP ++ "|points" ++ SP ++ "=" ++ SGP
+                    end
+                || {RUId, _, RPos, RKP, RGP} <- Results]),
+                nsx_msg:notify(["feed", "user", UId, "post_note"], NoteString)
         end
-    || UId <- Users],
+    || {UId, Robot, Pos, KP, GP} <- Results],
     %{GameId, [{UserId, Pos, KakushPoints, GamePoints}]}
     {noreply, State};
 
