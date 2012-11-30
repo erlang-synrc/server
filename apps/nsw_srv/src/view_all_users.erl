@@ -11,7 +11,11 @@
 
 -define(FRIENDSOURCE, "kakaranet").
 
-main() -> dashboard:main().
+main() -> 
+    UserList = nsm_groups:list_group_members(?FRIENDSOURCE),
+    wf:state(userlist, lists:sort(UserList)),
+    wf:state(userlist_count, length(UserList)),
+    dashboard:main().
 
 title() -> webutils:title(?MODULE).
 
@@ -22,10 +26,10 @@ content() ->
     content(1).
 
 content(Page) ->
-    friends:content(Page,?_T("All users of Kakaranet"), ?FRIENDSOURCE, {friends, list_group_members_paged}).
+    friends:content(Page,?_T("All users of Kakaranet")).
 
 getPageContent(Page) ->
-    friends:getPageContent(Page, ?FRIENDSOURCE, {friends, list_group_members_paged}).
+    friends:getPageContent(Page).
 
 group_info() ->
     {ok, Info} = nsm_groups:get_group(?FRIENDSOURCE),
@@ -48,8 +52,19 @@ group_info() ->
 get_members() ->
     [].
 
+event(filter_by_nick) ->
+    Filter = wf:q(nick_filter),
+    UserList = nsm_groups:list_group_members(?FRIENDSOURCE),
+    FilteredUserList = [UId || UId <- UserList, string:str(UId, Filter) /= 0],
+    wf:state(userlist, lists:sort(FilteredUserList)),
+    wf:state(userlist_count, length(FilteredUserList)),
+    event({page, 1});
+
 event({page, N}) ->
-    wf:update(friends_content, getPageContent(N));
+    friends:event({page, N});
+
+event(go_to_page) ->
+    friends:event(go_to_page);
 
 event({subscribe,_,_,_}=Event) ->
     friends:event(Event);

@@ -8,7 +8,14 @@
 -include("setup.hrl").
 -include("elements/records.hrl").
 
-main() -> dashboard:main().
+main() -> 
+    GId = wf:q(id),
+    UserList = [UId || UId <- nsm_groups:list_group_members(GId)],
+    wf:state(userlist, lists:sort(UserList)),
+    wf:state(userlist_count, length(UserList)),
+    {ok, Group} = nsm_groups:get_group(GId),
+    wf:state(curgroup, Group#group.name),
+    dashboard:main().
 
 title() -> webutils:title(?MODULE).
 
@@ -22,13 +29,10 @@ content() ->
     content(1).
 
 content(Page) ->
-    GId = wf:q(id),
-    {ok, Group} = nsm_groups:get_group(GId),
-    friends:content(Page,?_TS("Members of $group$", [{group,Group#group.name}]),GId,{friends, list_group_members_paged}).
+    friends:content(Page,?_TS("Members of $group$", [{group, wf:state(curgroup)}])).
 
 getPageContent(Page) ->
-    Id = wf:q(id),
-    friends:getPageContent(Page, Id, {nsm_groups,list_group_members}).
+    friends:getPageContent(Page).
 
 get_members() ->
     [
@@ -50,12 +54,20 @@ group_edit_form(Owner) ->
 show_editgroup_content() ->
     view_group:show_editgroup_content().
 
+event(filter_by_nick) ->
+    Filter = wf:q(nick_filter),
+    GId = wf:q(id),
+    UserList = [UId || UId <- nsm_groups:list_group_members(GId)],
+    FilteredUserList = [UId || UId <- UserList, string:str(UId, Filter) /= 0],
+    wf:state(userlist, lists:sort(FilteredUserList)),
+    wf:state(userlist_count, length(FilteredUserList)),
+    event({page, 1});
+
 event({page, N}) ->
-    ActualNumber = if
-        N < 1 -> 1;
-        true  -> N
-    end,
-    wf:update(friends_content, getPageContent(ActualNumber));
+    friends:event({page, N});
+
+event(go_to_page) ->
+    friends:event(go_to_page);
 
 event({subscribe,_,_,_}=Event) ->
     friends:event(Event);

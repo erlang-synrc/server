@@ -978,8 +978,12 @@ u_event(create_game) ->
     URL = ?_U(lists:concat(["/matchmaker/", wf:q(game_name)])),
     wf:redirect(URL),
 
+    SRound = case proplists:get_value(rounds,Settings) of
+        undefined -> "no";
+        I -> integer_to_list(I)
+    end,
     Desc = lists:flatten( URL ++ "|" ++ UId ++ "|" ++ proplists:get_value(table_name,Settings) ++ "|" ++ wf:q(game_name) ++ "|" ++
-        integer_to_list(proplists:get_value(rounds,Settings)) ++ "|" ++ atom_to_list(proplists:get_value(speed,Settings)) ++ "|" ++
+        SRound ++ "|" ++ atom_to_list(proplists:get_value(speed,Settings)) ++ "|" ++
         atom_to_list(proplists:get_value(game_mode,Settings))),
     webutils:post_user_system_message(Desc);
 

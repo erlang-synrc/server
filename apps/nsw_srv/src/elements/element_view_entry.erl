@@ -161,15 +161,8 @@ entry_element(E, Comments, Avatar, {MediaThumb, MediaLists0}, _TargetMedia, Anch
                     ?_TS("Our player $winner$ just won $points$ game points and $kakush$ kakush in $tablename$ of $gametype$.<br>All the winners are:<br> &mdash; $winner1$ won $points1$ game points and $kakush1$ kakush;<br> &mdash; $winner2$ won $points2$ game points and $kakush2$ kakush;<br> &mdash; $winner3$ won $points3$ game points and $kakush3$ kakush;<br> &mdash; $winner4$ won $points4$ game points and $kakush4$ kakush.", Args)};
                 _ -> {?_T("Unsupported note type!"), E#entry.description}
             end,
-
-% "Game ended"
-% "Game $tablename$ for $gametype$ game just ended. Player $winner$ won $points$ points."
-%"Player $winner1$ won $points1$ points. Player $winner2$ won $points2$ points. Player $winner3$ won $points3$ points."
-
-% "Game won! Our player $username$ just won $points$ points in $tablename$ for $gametype$!"
-%"All the winners are: player $winner1$ won $points1$ points; player $winner2$ won $points2$ points; player $winner3$ won $points3$ points."
-
             #notice{type=message, position=left, title=Title, body=Desc};
+
         {_, system} ->
             MessageSecs = calendar:datetime_to_gregorian_seconds( calendar:now_to_datetime(E#entry.created_time) ),
             NowSecs = calendar:datetime_to_gregorian_seconds( calendar:now_to_datetime(erlang:now()) ),
@@ -201,8 +194,12 @@ entry_element(E, Comments, Avatar, {MediaThumb, MediaLists0}, _TargetMedia, Anch
                             Title = ?_T("New Table"),
                             Desc1 = ?_TS("Our player, $username$, has created ", [{username, UId}]),
                             Link = TableName,
+                            SRounds = case Rounds of
+                                "no" -> ?_T("no");
+                                _ -> Rounds
+                            end,
                             Desc2 = " " ++ ?_T("for") ++ " " ++ GameType ++ " " ++ ?_T("game") ++ ". " ++ ?_T("Game") 
-                                ++ " " ++ ?_T("specs") ++ ": " ++ Rounds ++ " " ++ ?_T("rounds") 
+                                ++ " " ++ ?_T("specs") ++ ": " ++ SRounds ++ " " ++ ?_T("rounds") 
                                 ++ ", \"" ++ matchmaker:game_speed_to_text(Speed) ++ "\" " ++ ?_T("speed") 
                                 ++ ", \"" ++ matchmaker:game_mode_to_text(Mode) ++ "\" " ++ ?_T("mode") ++ ".",
                             #notice{type=system_message, position=left,
