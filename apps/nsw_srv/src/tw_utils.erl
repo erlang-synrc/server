@@ -94,8 +94,8 @@ delete()->
     _ -> ok
   end.
 
-tweet(Msg)->
-  case nsm_db:get(user, wf:user()) of
+tweet(UserName, Msg)->
+  case nsm_db:get(user, UserName) of
     {error, notfound} -> fail;
     {ok, #user{twitter_id=TwitterId}}->
       case nsm_db:get(twitter_oauth, TwitterId) of
