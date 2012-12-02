@@ -98,7 +98,7 @@ user_info() ->
     LikesCount    = feed:get_user_likes_count(Info#user.username),
 
     #panel{class="box user-info", body=[
-        #h3{style="letter-spacing:0px;", text=Info#user.username},
+        #h3{text=Info#user.username},
 
         case nsm_accounts:user_paid(Info#user.username) of
             true -> #panel{class=paid_user_avatar_img, body=#image{image=Ava}};

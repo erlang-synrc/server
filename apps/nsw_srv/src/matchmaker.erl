@@ -127,7 +127,7 @@ matchmaker_submenu() ->
 
 el_inside_play() ->
      Settings = wf:session({wf:q(game_name), wf:user()}),
-     Game = proplists:get_value(game, Settings),
+%     Game = proplists:get_value(game, Settings),
 %     X = rpc:call(?GAMESRVR_NODE,game_manager,get_lucky_table,[Game]),
      LuckyAction =
         case wf:state(lucky) of
@@ -1007,7 +1007,7 @@ u_event({delete_table, TId, ProcId}) ->
 %    exit(ProcId, {shutdown,and_forget});
 %    table_manager:delete_table(TId);
 
-u_event({delete_saved_table, TId}) ->
+u_event({delete_saved_table, _TId}) ->  % do we need this at all?
     ?INFO(" *** delete saved");
 %    table_manager:delete_save_table(TId);
 

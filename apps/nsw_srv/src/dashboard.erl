@@ -46,7 +46,6 @@ feed_form() ->
   ].
 
 view_feed_mkh() ->
-    ?INFO("View Feed"),
     wf:session(autocomplete_list_values, []), %%%
     UserInfo = webutils:user_info(),
     ?PRINT(UserInfo),
@@ -165,7 +164,6 @@ view_feed() ->
     view_feed(undefined).
 view_feed(StartFrom) ->
     {Entries, FId} = get_entries(StartFrom),
-    ?PRINT({Entries, FId}),
     case FId of
         %% user blocked, have nothing to update
         undefined ->
@@ -176,9 +174,7 @@ view_feed(StartFrom) ->
     webutils:view_feed_entries(?MODULE, ?FEED_PAGEAMOUNT, Entries).
 
 get_entries(StartFrom) ->
-    ?INFO("Entries"),
     UserInfo = wf:session(user_info),
-
     {UserFiler, _IsGroup, _AddFilter} = case {wf:q("user"), wf:q("group")} of
         {undefined, undefined} -> {undefined, false, undefined};
         {undefined, GroupName} ->
@@ -194,13 +190,10 @@ get_entries(StartFrom) ->
                 TU -> autocomplete_select_event({struct, [{<<"id">>, "1" },{<<"value">>, encode_term({TU, user})}]} , "tag")
             end,
             FeedId = UserInfo#user.direct,
-            ?PRINT({direct, FeedId, StartFrom}),
             {feed:get_direct_messages(FeedId, StartFrom, ?FEED_PAGEAMOUNT), FeedId} ;
-
         {undefined, undefined} ->
             FeedId = UserInfo#user.feed,
             {feed:get_entries_in_feed(FeedId, StartFrom, ?FEED_PAGEAMOUNT), FeedId};
-
         {undefined, U} ->
             FeedId = UserInfo#user.feed,
             case lists:member(U, nsm_users:get_blocked_users(wf:user())) of
@@ -211,7 +204,6 @@ get_entries(StartFrom) ->
                 _ ->
                     {feed:get_entries_in_feed(FeedId, StartFrom, ?FEED_PAGEAMOUNT), FeedId}
             end;
-
         _  ->
             FeedId = UserInfo#user.feed,
             {feed:get_entries_in_feed(FeedId, StartFrom, ?FEED_PAGEAMOUNT), FeedId}
@@ -258,11 +250,7 @@ finish_upload_event({comment_att, _, AttachmentError, BoxId, MediaStorageId}, Or
     end;
 
 finish_upload_event({entry_att, BoxId}, OrigFile, LocalFile, _Node) ->
-%PHASE2 quick check to avoid further processing. Attachments doesn't work well with files with no extension.
-%PHASE2 Also way too long files make a lot of trouble
-
-    {ok, UploadLimit} = nsm_db:get(config, "storage/upload_limit", 31457280),
-
+    UploadLimit = nsm_db:get_config("storage/upload_limit", 31457280),
     case length(string:tokens(OrigFile, ".")) == 1 of
     true ->
         attachment_error(?_T("Sorry, can't upload binary files")),
@@ -274,8 +262,7 @@ finish_upload_event({entry_att, BoxId}, OrigFile, LocalFile, _Node) ->
             wf:remove(BoxId);
         false ->
             User = wf:session(user_info),
-            case feed_attachment:process_uploaded_file(User#user.username, User#user.feed,
-                                                       OrigFile, LocalFile) of
+            case feed_attachment:process_uploaded_file(User#user.username, User#user.feed, OrigFile, LocalFile) of
                 {error, Error} ->
                     attachment_error(?_T(Error)),
                     wf:remove(BoxId);
@@ -296,7 +283,6 @@ finish_upload_event({entry_att, BoxId}, OrigFile, LocalFile, _Node) ->
         end
     end.
 
-
 create_media(Att) ->
     #media{id = Att#attachment.id,
 	   title = Att#attachment.name,
@@ -305,7 +291,6 @@ create_media(Att) ->
 	   url = Att#attachment.file,
 	   type = {attachment, Att#attachment.type},
 	   thumbnail_url = Att#attachment.thumb}.
-
 
 event(Event) ->
     case wf:user() of
@@ -330,24 +315,20 @@ inner_event(show_add_attachment, _) ->
     end;
 
 inner_event({add_entry, _}, User) ->
-    ?INFO("Login User: ~p",[User]),
     UserDashboard = wf:state(feed_owner),
     DashboardOwner = case UserDashboard of
         {_Type, Name} ->
             Name;
         _ ->
-            wf:user()
+            User
     end,
-
-    ?INFO("User Dashboard: ~p",[DashboardOwner]),
     OrigDesc = wf:q(add_entry_textbox),
     reset_number_of_uploads(),
     DescBin = list_to_binary(OrigDesc),
     DescRunes = unicode:characters_to_list(DescBin),
 
     case DescRunes of
-        "" -> %% empty string
-            %% wf:flash([#label {text=?_T("Please write something first"), style="display: inline;"}]);
+        "" ->
             ok;
         _Error when is_tuple(_Error) -> %% corrupted utf-8 string
             ok;
@@ -357,7 +338,6 @@ inner_event({add_entry, _}, User) ->
             RawDesc = binary_to_list(RawDescBin),
             Desc = wf:html_encode(RawDesc, true),
 
-            %Medias = lists:reverse(wf:state(medias)),
             Medias = case wf:state(medias) of
                 undefined -> [];
                 PreMedias when is_list(PreMedias) -> mkh_clear_list(PreMedias, []);
@@ -374,7 +354,6 @@ inner_event({add_entry, _}, User) ->
             wf:session(autocomplete_list_values, []),
             wf:update(text_length, ""),
             wf:wire("upd_scrollers(); remove_all_tos();"),
-            % qTip all (including new entries) as their buttons don't have ids
             wf:wire("qtip_all_links();"),
             wf:wire(#attr{target=add_entry_textbox, attr="value", value=""})
     end;
@@ -408,7 +387,6 @@ inner_event({remove_entry, EId, PanelId, ETo, From}, _) ->
 
 inner_event({remove_entry, EId, _PanelId, _ETo, From, true}, _) ->
     CurrentUser = wf:user(),
-    %% TODO: replace with API call?
     {Type, Owner} = case wf:state(feed_owner) of
         {T, Name} -> {T, Name};
         _ -> {user, CurrentUser}
@@ -427,46 +405,24 @@ inner_event({remove_entry, EId, _PanelId, _ETo, From, true}, _) ->
         ?INFO("Remove entry of unknown type: ~p canceled.~n", [Type])
     end;
 
-inner_event({hide_entry, EId, PanelId}, _) ->
-    wf:wire(#confirm { text=?_T("Do you want to hide this entry?"),
-                       postback={hide_entry, EId, PanelId, true} });
-inner_event({hide_entry, _EId, PanelId, true}, _) ->
-    wf:wire(#hide {target=PanelId, effect=blind, speed=500});
-
 inner_event({show_all_likers, LeftPart, Id}, _) ->
     wf:update(Id, LeftPart);
 
 inner_event({like_entry, E, LikeBtnId}, User) ->
-%    UserInfo = webutils:user_info(),
-%    Fid = UserInfo#user.feed,
-%    Eid = E#entry.entry_id,
-%    Fid = E#entry.feed_id,
-%    {EId, FId} = E#entry.id,
     {Type, Owner} = case wf:state(feed_owner) of
         {T, O} ->
             {T, O};
         _ ->
             {user, User}
     end,
-    ?INFO(" +++ like pressed: ~p ~p", [E, {Type, Owner}]),
     nsx_msg:notify(["likes", Type, Owner, "add_like"], {User, E}),
     wf:replace(LikeBtnId, []);
 
 inner_event({share_entry, Entry, ShareBtnId}, User) ->
-%   {Type, _Owner} = case wf:state(feed_owner) of
-%        {T, O} ->
-%            {T, O};
-%        _ ->
-%            {user, User}
-%    end,
-%    ?INFO(" +++ share! ~p ~p", [Type, _Owner]),  
     wf:replace(ShareBtnId, ""),
     Type = user,
     nsx_msg:notify([feed, Type, User, entry, utils:uuid_ex(), share], Entry), % it is not good design to issue id in web part, but we need it both in comet and db
     wf:wire(#alert{text=?_T("It will now appear in your feed.")});
-
-inner_event({comment_entry, _EId, _PanelId}, _) ->
-    ?PRINT({comment,event,button});
 
 inner_event({unsubscribe, UserUid}, User) ->
     nsx_msg:notify(["subscription", "user", User, "remove_subscribe"], {UserUid}),
