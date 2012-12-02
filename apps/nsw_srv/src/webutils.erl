@@ -508,44 +508,6 @@ login(UserField, PassField, MsgBox)->
             display_error(MsgBox, "Bad password")
     end.
 
--spec save_facebook_id(string(), string(), string()) -> ok.
-save_facebook_id(UserName, FBID, undefined) ->
-    %% if token unedfined log and skip
-    ?WARNING("facebook token unedfined. User=~p, FBId=~p", [UserName, FBID]),
-    ok;
-save_facebook_id(UserName, FBID, FbToken) ->
-    ?PRINT(FbToken),
-    case fb_utils:get_user_info(FbToken) of
-        {ok, {struct, Response}} ->
-            case wf:to_list(proplists:get_value(<<"id">>, Response)) of
-                FBID ->
-                    %% access token belongs to same user
-                    case nsm_users:get_user(UserName) of
-                        {ok, User} ->
-                            case User#user.facebook_id of
-                                undefined ->
-                                    NewUser = User#user{facebook_id = list_to_binary(FBID)},
-                                    nsx_msg:notify(["system", "put"], NewUser);
-                                FBID ->
-                                    nothing_to_save;
-                                Id ->
-                                    ?ERROR("User already have facebook account linked to user"
-                                           " User=~p, FBID=~p, ID=~p",
-                                           [UserName, FBID, Id])
-                            end;
-                        Error ->
-                            ?ERROR("User not found. User=~p, FBID=~p, Error=~p",
-                                   [UserName, FBID, Error])
-                    end,
-                    ok;
-                Error ->
-                    ?ERROR("wrong UserId. FBID=~p, Error=~p", [FBID, Error])
-            end;
-        Error ->
-            ?ERROR("Unexpected error: ~p", [Error])
-    end,
-    ok.
-
 display_error(MsgBox, Message)->
     wf:update(MsgBox,?_T(Message)),
     wf:wire(MsgBox, #show{effect=slide, speed=300}).

@@ -490,8 +490,6 @@ build_user_relations(User, Groups) ->
      rk( [subscription, user, User, reject_invite_to_group]),
      rk( [subscription, user, User, leave_group]),
      rk( [login, user, User, update_after_login]),
-     rk( [profile, user, User, add_twitter]),
-     rk( [profile, user, User, remove_twitter]),
      rk( [likes, user, User, add_like]),
      rk( [personal_score, user, User, add]),
 

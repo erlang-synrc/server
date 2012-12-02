@@ -9,67 +9,99 @@
 -define(CONSUMER_KEY, nsx_opt:get_env(nsw_srv, tw_consumer_key, "")).
 -define(CONSUMER_SECRET, nsx_opt:get_env(nsw_srv, tw_consumer_secret, "")).
 -define(CONSUMER, {?CONSUMER_KEY, ?CONSUMER_SECRET, hmac_sha1}).
--record(twuser, {id, screen_name, access_token, access_token_secret}).
 
 app_callback()->
-    case wf:session(twuser) of
-	undefined ->
-	    OauthToken = wf:q(oauth_token),
-	    OauthVerifier = wf:q(oauth_verifier),
-	    case OauthToken of
-		undefined-> not_authorized;
-		_ when OauthVerifier =/= undefined ->
-		    wf:info("Token:~p Verifier:~p~n", [OauthToken, OauthVerifier]),
-		    TwUser = get_access_token(OauthToken, OauthVerifier),
-		    wf:info("Tw user~p~n", [TwUser]),
-		    wf:session(twuser, TwUser);
-		_ -> not_authorized
-	    end;
+  case nsm_db:get(user, wf:user()) of
+    {error, notfound} -> wf:redirect(?_U("login"));
+    {ok, User} ->
+      case get_access_token(wf:q(oauth_token), wf:q(oauth_verifier)) of
+        {Id, Token, Secret} ->
+          UserUpd = User#user{twitter_id=Id},
+          nsx_msg:notify(["system", "put"], UserUpd),
+          nsx_msg:notify(["db", "user", User#user.username, "put"], #twitter_oauth{user_id=Id, token=Token, secret=Secret});
         _ -> ok
-    end.
+      end
+  end.
 
 get_request_token()->
-    URL = "https://twitter.com/oauth/request_token",
-    {ok, Response} = oauth:get(URL, [], ?CONSUMER),
-    Params = oauth:params_decode(Response),
-    RequestToken = oauth:token(Params),
-    RequestTokenSecret = oauth:token_secret(Params),
-    CallbackConfirmed = proplists:get_value("oauth_callback_confirmed", Params),
-    {RequestToken, RequestTokenSecret, CallbackConfirmed}.
+  URL = "https://twitter.com/oauth/request_token",
+  {ok, Response} = oauth:get(URL, [], ?CONSUMER),
+  Params = oauth:params_decode(Response),
+  RequestToken = oauth:token(Params),
+  RequestTokenSecret = oauth:token_secret(Params),
+  CallbackConfirmed = proplists:get_value("oauth_callback_confirmed", Params),
+  {RequestToken, RequestTokenSecret, CallbackConfirmed}.
 
+get_access_token(undefined, undefined)-> not_authorized;
+get_access_token(undefined, _)-> not_authorized;
+get_access_token(_, undefined)-> not_authorized;
 get_access_token(Token, Verifier)->
-    URL = "https://twitter.com/oauth/access_token",
-    Signed = oauth:sign("GET", URL, [{"oauth_verifier", Verifier}], ?CONSUMER, Token, ""),
-    {OauthParams, QueryParams} = lists:partition(fun({K, _}) -> lists:prefix("oauth_", K) end, Signed),
-    Request = {oauth:uri(URL, QueryParams), [oauth:header(OauthParams)]},
-    {ok, Response} = httpc:request(get, Request, [{autoredirect, false}], []),
-    Params = oauth:params_decode(Response),
-    #twuser{
-	id = proplists:get_value("user_id", Params),
-	screen_name = proplists:get_value("screen_name", Params),
-	access_token=oauth:token(Params),
-	access_token_secret=oauth:token_secret(Params)
-    }.
+  URL = "https://twitter.com/oauth/access_token",
+  Signed = oauth:sign("GET", URL, [{"oauth_verifier", Verifier}], ?CONSUMER, Token, ""),
+  {OauthParams, QueryParams} = lists:partition(fun({K, _}) -> lists:prefix("oauth_", K) end, Signed),
+  Request = {oauth:uri(URL, QueryParams), [oauth:header(OauthParams)]},
+  {ok, Response} = httpc:request(get, Request, [{autoredirect, false}], []),
+  case Response of
+    {HttpResponse, _, _}->
+      case HttpResponse of
+        {"HTTP/1.1",200,"OK"}->
+          Params = oauth:params_decode(Response),
+          {proplists:get_value("user_id", Params), oauth:token(Params), oauth:token_secret(Params)};
+        _ -> not_authorized
+      end;
+    _ -> not_authorized
+  end.
 
 authorize_url(RequestToken)->
     oauth:uri("https://twitter.com/oauth/authorize", [{"oauth_token", RequestToken}]).
 
 service_item()->
-    #listitem{id=twServiceBtn, class=png, body=[
-	#image{image="/images/img-52.png"},
-	#span{text="Twitter"},
-	service_btn(wf:session(twuser))]}.
+  case nsm_db:get(user, wf:user()) of 
+    {error, notfound} -> wf:redirect(?_U("login"));
+    {ok, #user{twitter_id=TwitterId}} ->
+      #listitem{id=twServiceBtn, class=png, body=service_btn(TwitterId)}
+  end.
 
-service_btn(undefined)->
+service_btn(undefined) ->
   case tw_utils:get_request_token() of
     {RequestToken, _, _} ->
-      [#link{class="btn", text=["<span>+</span>",?_T("Add")], url=authorize_url(RequestToken),html_encode = false}];
+      [#image{image="/images/img-52.png"}, #span{text="Twitter"},
+      #link{class="btn", text=["<span>+</span>",?_T("Add")], url=authorize_url(RequestToken),html_encode = false}];
     {error, R} -> ?INFO("Twitter request failed:", [R]), []
   end;
-service_btn(#twuser{})->
-    [#link{class="btn btn-2", text=["<span>-</span>",?_T("Test")], html_encode = false, postback={service, twitter}}].
+service_btn(TwitterId)->
+  case nsm_db:get(twitter_oauth, TwitterId) of
+    {error, notfound}->
+      service_btn(undefined);
+    {ok, #twitter_oauth{token=Token, secret=TokenSecret}} when Token == undefined orelse TokenSecret == undefined ->
+      service_btn(undefined);
+    {ok, #twitter_oauth{}} ->
+      [#image{image="/images/img-52.png"}, #span{text="Twitter"},
+      #link{class="btn", text=["<span>-</span>",?_T("Del")], html_encode = false, postback={delete, twitter}}]
+  end.
+
+delete()->
+  case nsm_db:get(user, wf:user()) of
+    {error, notfound} -> wf:redirect(?_U("login"));
+    {ok, #user{twitter_id=TwitterId} = User} when TwitterId =/= undefined ->
+      case nsm_db:get(twitter_oauth, TwitterId) of
+        {error, notfound} -> ok;
+        {ok, #twitter_oauth{}} ->
+          nsx_msg:notify(["system", "put"], User#user{twitter_id = undefined}),
+          nsx_msg:notify(["system", "delete"], {twitter_oauth, TwitterId}),
+          wf:update(twServiceBtn, service_btn(undefined))
+      end;
+    _ -> ok
+  end.
 
 tweet(Msg)->
-    #twuser{access_token=AccessToken, access_token_secret=AccessTokenSecret} = wf:session(twuser),
-    URL = "http://api.twitter.com/1.1/statuses/update.json",
-    oauth:post(URL, [{"status", Msg}], ?CONSUMER, AccessToken, AccessTokenSecret).
+  case nsm_db:get(user, wf:user()) of
+    {error, notfound} -> fail;
+    {ok, #user{twitter_id=TwitterId}}->
+      case nsm_db:get(twitter_oauth, TwitterId) of
+        {error, notfound} -> fail;
+        {ok, #twitter_oauth{token = AccessToken, secret=AccessTokenSecret}}->
+          URL = "http://api.twitter.com/1.1/statuses/update.json",
+          oauth:post(URL, [{"status", Msg}], ?CONSUMER, AccessToken, AccessTokenSecret)
+    end
+  end.

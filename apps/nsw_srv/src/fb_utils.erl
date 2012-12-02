@@ -251,20 +251,12 @@ api_event(fbAddAsService, _, [Id])->
   end.
 
 update_access_token(Id)->
-  ?INFO("UPDATE ACCESS TOKEN: ~p~n", [Id]),
   nsx_msg:notify(["db", "user", wf:user(), "put"], #facebook_oauth{user_id=Id, access_token=get_access_token()}),
   wf:update(fbServiceButton, del_service_btn()).
 
 same_or_undefined(undefined, _) -> true;
 same_or_undefined(User, FbUser) when User =:= FbUser -> true;
 same_or_undefined(_,_) -> false.
-
-get_user_info(FbToken) when is_list(FbToken) ->
-    FbUrl = "https://graph.facebook.com",
-    Uri = FbUrl++"/me?access_token="++FbToken,
-    catch send_request(Uri);
-get_user_info(_) ->
-    {error, {fb_user_info, "string expected"}}.
 
 get_access_token()->
   Url = "https://graph.facebook.com/oauth/access_token?client_id=" ++ ?FB_APP_ID
@@ -286,4 +278,24 @@ send_request(Uri) ->
         [Type | _Rest] -> wf:info("Type:~p~n", [Type]), {ok, Data}
       end;
     {error, _} = E -> E
+  end.
+
+feed(Msg)->
+  case nsm_db:get(user, wf:user()) of
+    {error, notfound}-> fail;
+    {ok, #user{facebook_id=FacebookId} = User} when FacebookId =/= undefined->
+      case nsm_db:get(facebook_oauth, FacebookId) of
+        {error, notfound}-> fail;
+        {ok, #facebook_oauth{} = FO}->
+          AccessToken = case FO#facebook_oauth.access_token of
+            undefined ->
+              AT = get_access_token(),
+              nsx_msg:notify(["db", "user", User#user.username , "put"], #facebook_oauth{user_id=FacebookId, access_token=AT});
+            AT -> AT
+          end,
+          Url ="https://graph.facebook.com/"++ FacebookId ++"/feed",
+          Body = "access_token="++AccessToken++"&message="++ wf:url_encode(Msg),
+          httpc:request(post, {Url, [], "application/x-www-form-urlencoded", Body}, [], [])
+      end;
+    _ -> fail
   end.

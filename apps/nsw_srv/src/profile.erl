@@ -540,12 +540,10 @@ finish_upload_event(_Tag, OrigFile, LocalFile, _Node) ->
 %%%% end update avatar %%%%
 
 event(Event) ->
-    case wf:user() of
-	undefined ->
-	    wf:redirect_to_login("/");
-	_User ->
-	    u_event(Event)
-    end.
+  case wf:user() of 
+    undefined ->  wf:redirect_to_login("/");
+    _User -> u_event(Event)
+  end.
 
 u_event({show_contract_details, ContractId, PanelId}) ->
     affiliates:inner_event({show_contract_details, ContractId, PanelId}, "");
@@ -709,9 +707,8 @@ u_event({invite_resend, Mail}) ->
         wf:update(invite_list, invite_list())
     end;
 
-u_event({service, twitter})->
-    TweetResult = tw_utils:tweet("robotweet"),
-    wf:info("Tweet result:~p~n", [TweetResult]);
+u_event({delete, twitter}) ->
+  tw_utils:delete();
 u_event({service, _}) ->
     u_event(not_done_yet);
 
