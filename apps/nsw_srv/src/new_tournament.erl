@@ -20,72 +20,8 @@ main() ->
     end.
 
 main_authorized() ->
-    webutils:add_to_head({raw,              % this goes to styles.css. Still here for convenience of editing
+    webutils:add_to_head({raw,
     "
-        <style media='screen' type='text/css'>
-            .newtour_title {
-                width:250px; 
-                height:43px; 
-                background: url(../images/tournament/lobby/top_plask.png);
-                position:absolute; 
-                left:21px; 
-                top:-7px; 
-                text-align:center;
-            }
-
-            .newtour_title_label {
-                font-size:18px; 
-                color:#fff; 
-                font-weight:bold; 
-                line-height:42px;
-            }
-
-            .newtour_textbox {
-                font-size:16px; 
-                height:28px;
-                border:1px solid #cdcdcd;
-            }
-
-            .newtour_orange_button {
-                display:block; width:147px; height:52px; background: url(../images/tournament/new_tournament/btn_big_orange_normal.png);
-                font:18px 'Gotham Rounded Bold','Trebuchet MS'; color:#fff; text-shadow:0 1px 1px #353535;
-                border:0px; line-height:56px;
-            }
-
-            .newtour_orange_button:hover {
-                display:block; width:147px; height:52px; background: url(../images/tournament/new_tournament/btn_big_orange_hover.png);
-                font:18px 'Gotham Rounded Bold','Trebuchet MS'; color:#fff; text-shadow:0 1px 1px #353535;
-                border:0px; line-height:56px;
-            }
-
-            .newtour_orange_button:active {
-                display:block; width:147px; height:52px; background: url(../images/tournament/new_tournament/btn_big_orange_pressed.png);
-                font:18px 'Gotham Rounded Bold','Trebuchet MS'; color:#fff; text-shadow:0 1px 1px #353535;
-                border:0px; line-height:58px;
-            }
-
-            .newtour_browse_button {
-                display:block; width:109px; height:28px; background: url(../images/tournament/new_tournament/btn_browse_normal.png);
-                font:16px; border:0px; line-height:25px;
-            }
-
-            .newtour_browse_button:hover {
-                display:block; width:109px; height:28px; background: url(../images/tournament/new_tournament/btn_browse_hover.png);
-                font:16px; border:0px; line-height:25px;
-            }
-
-            .newtour_browse_button:active {
-                display:block; width:109px; height:28px; background: url(../images/tournament/new_tournament/btn_browse_pressed.png);
-                font:16px; border:0px; line-height:25px;
-            }
-
-            .newtour_prize_holder {
-                width:80px; height:84px;
-                border:1px solid #cdcdcd; 
-                display:table-cell; vertical-align:middle; text-align:center;
-            }
-        </style>
-
         <link rel='stylesheet' href='/nitrogen/datepicker/css/datepicker.css' type='text/css' />
 	    <script type='text/javascript' src='/nitrogen/datepicker/js/datepicker_tr.js'></script>
 

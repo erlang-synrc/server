@@ -20,7 +20,6 @@ render_element(Record) ->
         ; EPID    -> EPID
     end,
     LabelID = label_id(EditPanelID),
-    MouseOverID = wf:temp_id(),
     TextBoxID = case Record#inplace_textbox1.tb_id of
         undefined -> wf:temp_id()
         ; TBID    -> TBID
@@ -41,23 +40,7 @@ render_element(Record) ->
         style=Record#inplace_textbox1.style,
         body = [
             #panel { id=ViewPanelID, class="entry-main-panel", body=[
-%PUBLIC BETA This is the hack to make oembed work. This is not right and should be revised
-%                    This is how it was
-%                    #span { id=LabelID, class="label", text=Text, html_encode=Record#inplace_textbox1.html_encode, actions=[
-%                        #buttonize { target=ViewPanelID }
-%                    ]}
-%               This is how it shouldn't be
-                    #panel { id=LabelID, class="entry-main-text", body=Text}
-            ], actions = [
-%PUBLIC BETA We have trouble with multiple edits open, so it is for the best not to show them unless explicitly wanted by user
-%                    #event { type=click, actions=[
-%                        #hide { target=ViewPanelID },
-%                        #show { target=EditPanelID },
-%                        #script { script = wf:f("obj('~s').focus(); obj('~s').select();", [TextBoxID, TextBoxID]) }
-%                    ]},
-%                    #event { type=mouseover, target=MouseOverID, actions=#show{} },
-%                    #event { type=mouseout, target=MouseOverID, actions=#hide{} }
-% also I want links to work properly and user message to be accessed by mouse
+                #panel { id=LabelID, class="entry-main-text", body=Text}
             ]},
             #panel { id=EditPanelID, class="edit", body=[
                 #textbox { id=TextBoxID, text=Text, next=OKButtonID },

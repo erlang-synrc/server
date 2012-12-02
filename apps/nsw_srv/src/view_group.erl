@@ -162,7 +162,7 @@ incoming_invites() ->
             [];
         _ ->
             [#panel{class="box", id=incoming_invites, body=[
-               #h3{text=?_T("Invite requests"), style="letter-spacing:0px;"},
+               #h3{text=?_T("Invite requests")},
                #list{class="list-photo", body=[ Invites ]}
             ]}]
     end.
@@ -205,7 +205,7 @@ group_info() ->
             end,
 
             #panel{class="box user-info", body=[
-                #h3{id=group_info_name, style="letter-spacing:0px;", text=Group#group.name},
+                #h3{id=group_info_name, text=Group#group.name},
                 Description,
                 #br{},
                 #br{},

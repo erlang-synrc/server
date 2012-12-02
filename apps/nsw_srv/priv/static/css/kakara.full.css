@@ -1076,7 +1076,7 @@ div.post:first-child {background:none !important}
 	float:left;
 	width:470px;
 	height:28px;
-	background:url(/images/bg-comment-form.gif?jcb=1353306884) no-repeat;
+	background:url(/images/bg-comment-form.gif?jcb=1354439524) no-repeat;
 	padding:2px 2px 2px 8px;
 }
 .comment-form .textarea textarea {
@@ -1098,10 +1098,10 @@ div.post:first-child {background:none !important}
 	padding:0;
 	border:0;
 	cursor:pointer;
-	background:url(/images/bg-comment-form.gif?jcb=1353306884) no-repeat -480px 0;
+	background:url(/images/bg-comment-form.gif?jcb=1354439524) no-repeat -480px 0;
 	width:64px;
 	height:32px;
-	color:#999;
+	color:#555;
 	font-weight:bold;
 	text-shadow:0 1px 1px #dadada;
 }
@@ -2005,7 +2005,8 @@ div.post:first-child {background:none !important}
 	line-height:31px;
 	padding:0 13px;
 	border-bottom:1px solid #dedfdf;
-    letter-spacing:1px;
+    letter-spacing:2px;
+    text-transform: uppercase;
 }
 #aside .box h3 span,
 .side-col .box h3 span {
@@ -5314,6 +5315,597 @@ body.view_table .user-list .user .table_paid_user_avatar {  /* this from add sty
 	border:4px solid #ffb03b;
 }
 
+
+/* new tournament */
+.newtour_title {
+    width:250px; 
+    height:43px; 
+    background: url(/images/tournament/lobby/top_plask.png?jcb=1353341196);
+    position:absolute; 
+    left:21px; 
+    top:-7px; 
+    text-align:center;
+}
+
+.newtour_title_label {
+    font-size:18px; 
+    color:#fff; 
+    font-weight:bold; 
+    line-height:42px;
+}
+
+.newtour_textbox {
+    font-size:16px; 
+    height:28px;
+    border:1px solid #cdcdcd;
+}
+
+.newtour_orange_button {
+    display:block; width:147px; height:52px; background: url(/images/tournament/new_tournament/btn_big_orange_normal.png?jcb=1353306884);
+    font:18px 'Gotham Rounded Bold','Trebuchet MS'; color:#fff; text-shadow:0 1px 1px #353535;
+    border:0px; line-height:56px;
+}
+
+.newtour_orange_button:hover {
+    display:block; width:147px; height:52px; background: url(/images/tournament/new_tournament/btn_big_orange_hover.png?jcb=1353306884);
+    font:18px 'Gotham Rounded Bold','Trebuchet MS'; color:#fff; text-shadow:0 1px 1px #353535;
+    border:0px; line-height:56px;
+}
+
+.newtour_orange_button:active {
+    display:block; width:147px; height:52px; background: url(/images/tournament/new_tournament/btn_big_orange_pressed.png?jcb=1353306884);
+    font:18px 'Gotham Rounded Bold','Trebuchet MS'; color:#fff; text-shadow:0 1px 1px #353535;
+    border:0px; line-height:58px;
+}
+
+.newtour_browse_button {
+    display:block; width:109px; height:28px; background: url(/images/tournament/new_tournament/btn_browse_normal.png?jcb=1353306884);
+    font:16px; border:0px; line-height:25px;
+}
+
+.newtour_browse_button:hover {
+    display:block; width:109px; height:28px; background: url(/images/tournament/new_tournament/btn_browse_hover.png?jcb=1353306884);
+    font:16px; border:0px; line-height:25px;
+}
+
+.newtour_browse_button:active {
+    display:block; width:109px; height:28px; background: url(/images/tournament/new_tournament/btn_browse_pressed.png?jcb=1353306884);
+    font:16px; border:0px; line-height:25px;
+}
+
+.newtour_prize_holder {
+    width:80px; height:84px;
+    border:1px solid #cdcdcd; 
+    display:table-cell; vertical-align:middle; text-align:center;
+}
+
+/* tournament lobby */
+.tourlobby_title {
+    width:250px; 
+    height:43px; 
+    background: url(/images/tournament/lobby/top_plask.png?jcb=1353341196);
+    position:absolute; 
+    left:21px; 
+    top:-7px; 
+    text-align:center;
+}
+
+.tourlobby_title_label {
+    font-size:18px; 
+    color:#fff; 
+    font-weight:bold; 
+    line-height:42px;
+}
+
+.tourlobby_left_top_block {
+    width:212px; height:386px; background-color:#565656; 
+    position:absolute; left:29px; top:75px;
+    -moz-border-radius:3px;
+    -webkit-border-radius:3px;
+    border-radius:3px;
+}
+
+.tourlobby_left_top_block_label {
+    font-size:14px; color:#fff; 
+    font-weight:bold; 
+    line-height:32px;
+}
+
+.tourlobby_orange_button {
+    display:block; width:190px; height:41px; background: url(/images/tournament/lobby/btn_orange_normal.png?jcb=1353306884);
+    font-size:16px; color:#363638; line-height:42px;
+}
+
+.tourlobby_orange_button_disabled {
+    display:block; width:190px; height:41px; background: url(/images/tournament/lobby/btn_orange_disabled.png?jcb=1353341196);
+    font-size:16px; color:#363638; line-height:42px;
+}
+
+.tourlobby_orange_button_disabled:hover {
+    text-decoration:none;
+}
+
+.tourlobby_orange_button:hover {
+    display:block; width:190px; height:41px; background: url(/images/tournament/lobby/btn_orange_hover.png?jcb=1353306884);
+    font-size:16px; color:#363638; line-height:42px;
+    text-decoration:none;
+}
+
+.tourlobby_orange_button:active {
+    display:block; width:190px; height:41px; background: url(/images/tournament/lobby/btn_orange_pressed.png?jcb=1353306884);
+    font-size:16px; color:#363638; line-height:42px;
+}
+
+.tourlobby_red_button {
+    display:block; width:190px; height:41px; background: url(/images/tournament/lobby/btn_red_normal.png?jcb=1353306884);
+    font-size:16px; color:#121212; line-height:42px;
+}
+
+.tourlobby_red_button_disabled {
+    display:block; width:190px; height:41px; background: url(/images/tournament/lobby/btn_red_disabled.png?jcb=1353341196);
+    font-size:16px; color:#121212; line-height:42px;
+}
+
+.tourlobby_red_button_disabled:hover {
+    text-decoration:none;
+}
+
+.tourlobby_red_button:hover {
+    display:block; width:190px; height:41px; background: url(/images/tournament/lobby/btn_red_hover.png?jcb=1353306884);
+    font-size:16px; color:#121212; line-height:42px;
+    text-decoration:none;
+}
+
+.tourlobby_red_button:active {
+    display:block; width:190px; height:41px; background: url(/images/tournament/lobby/btn_red_pressed.png?jcb=1353306884);
+    font-size:16px; color:#121212; line-height:42px;
+}
+
+.tourlobby_yellow_button {
+    display:block; width:190px; height:41px; background: url(/images/tournament/lobby/btn_yellow_normal.png?jcb=1353306884);
+    font-size:16px; color:#363638; line-height:42px;
+}
+
+.tourlobby_yellow_button_disabled {
+    display:block; width:190px; height:41px; background: url(/images/tournament/lobby/btn_yellow_disabled.png?jcb=1353341196);
+    font-size:16px; color:#363638; line-height:42px;
+    text-decoration:none;
+}
+
+.tourlobby_yellow_button_disabled:hover {
+    text-decoration:none;
+}
+
+.tourlobby_yellow_button:hover {
+    display:block; width:190px; height:41px; background: url(/images/tournament/lobby/btn_yellow_hover.png?jcb=1353306884);
+    font-size:16px; color:#363638; line-height:42px;
+    text-decoration:none;
+}
+
+.tourlobby_yellow_button:active {
+    display:block; width:190px; height:41px; background: url(/images/tournament/lobby/btn_yellow_pressed.png?jcb=1353306884);
+    font-size:16px; color:#363638; line-height:42px;
+}
+
+.tourlobby_left_bottom_block {
+    width:212px; height:102px; background-color:#565656;
+    position:absolute; left:29px; top:462px;
+    -moz-border-radius:3px;
+    -webkit-border-radius:3px;
+    border-radius:3px;
+}
+
+.tourlobby_left_bottom_block_title {
+    font-size:18px; color:#fff; font-weight:bold; line-height:27px; padding-left:17px;
+}
+
+.tourlobby_left_bottom_block_label {
+    font-size:14px; color:#fff; line-height:22px; padding-left:17px;
+}
+
+.tourlobby_orange_plask {
+    width:213px; height:61px; background: url(/images/tournament/lobby/orange_plask.png?jcb=1353306884);
+    position:absolute; left:275px; top:75px; text-align:center; padding-top:9px;
+}
+
+.tourlobby_sky_plask {
+    width:213px; height:61px; background: url(/images/tournament/lobby/sky_plask.png?jcb=1353306884);
+    position:absolute; left:501px; top:75px; text-align:center; padding-top:9px;
+}
+
+.tourlobby_blue_plask {
+    width:213px; height:61px; background: url(/images/tournament/lobby/blue_plask.png?jcb=1353306884);
+    position:absolute; left:727px; top:75px; text-align:center; padding-top:9px;
+}
+
+.tourlobby_every_plask_title {
+    font-size:12px; color:#fff; font-weight:bold; line-height:16px;
+}
+
+.tourlobby_every_plask_label {
+    color:#fff; font: 36px 'Gotham Rounded Bold','Trebuchet MS'; margin-top:-5px;
+}
+
+.tourlobby_prizes {
+    width:663px; height:175px; background-color:#e4e8e9;
+    position:absolute; left:275px; top:174px;
+    -moz-border-radius:2px;
+    -webkit-border-radius:2px;
+    border-radius:2px;
+}
+
+.tourlobby_prize_1 {
+    width:175px; height:155px; background-color:#fff;
+    position:relative; left:50px; top:9px;
+    border:1px solid #a5a6a8;
+    -moz-border-radius:1px;
+    -webkit-border-radius:1px;
+    border-radius:1px;
+}
+
+.tourlobby_prize_2 {
+    width:175px; height:155px; background-color:#fff;
+    position:relative; left:243px; top:-148px;
+    border:1px solid #a5a6a8;
+    -moz-border-radius:1px;
+    -webkit-border-radius:1px;
+    border-radius:1px;
+}
+
+.tourlobby_prize_3 {
+    width:175px; height:155px; background-color:#fff;
+    position:relative; left:436px; top:-305px;
+    border:1px solid #a5a6a8;
+    -moz-border-radius:1px;
+    -webkit-border-radius:1px;
+    border-radius:1px;
+}
+
+.tourlobby_chat {
+    width:663px; height:191px; background-color:#fff;
+    position:absolute; left:275px; top:372px;
+    -moz-border-radius:2px;
+    -webkit-border-radius:2px;
+    border-radius:2px;
+    border:1px solid #cdcdcd;
+}
+
+.tourlobby_chat_title {
+    font-size:12px; color:#000; line-height:26px; padding-left:10px;
+}
+
+.tourlobby_prize_star{
+    width:55px; height:51px; 
+    position:absolute; left:-19px; top:-29px; text-align:center;
+}
+
+.tourlobby_prize_star_1 {
+    background: url(/images/tournament/lobby/star_1.png?jcb=1353306884);
+}
+
+.tourlobby_prize_star_2 {
+    background: url(/images/tournament/lobby/star_2.png?jcb=1353306884);
+}
+
+.tourlobby_prize_star_3 {
+    background: url(/images/tournament/lobby/star_3.png?jcb=1353341196);
+}
+
+.tourlobby_prize_star_text {
+    color:#000; font: 26px 'Gotham Rounded Bold','Trebuchet MS'; line-height:55px;
+}
+
+.tourlobby_chat_window {
+    width:640px; height:100px; background-color:#fff;
+    position:absolute; left:10px; top:36px;
+    font-size:14px; line-height:20px;
+    overflow:auto;
+}
+
+.tourlobby_chat_panel {
+    width:663px; height:28px; background-color:#c7dbf4;
+    position:absolute; left:0px; top:0px;
+}
+
+.tourlobby_chat_textarea {
+    width:557px; height:24px; background-color:#fff;
+    padding:5px;
+    position:absolute; left:10px; top:145px;
+    -moz-border-radius:2px;
+    -webkit-border-radius:2px;
+    border-radius:2px;
+    border:1px solid #cdcdcd;
+    font-size:16px;
+    line-height:20px;
+    resize:none;
+}
+
+.tourlobby_chat_button {
+    position:absolute; left:577px; top:145px;
+    display:block; width:74px; height:36px; background: url(/images/tournament/lobby/btn_chat_normal.png?jcb=1353306884);
+    font-size:16px; color:#121212; line-height:35px;
+    text-align:center;
+}
+
+.tourlobby_chat_button:hover {
+    position:absolute; left:577px; top:145px;
+    display:block; width:74px; height:36px; background: url(/images/tournament/lobby/btn_chat_hover.png?jcb=1353306884);
+    font-size:16px; color:#121212; line-height:35px;
+    text-align:center;
+    text-decoration:none;
+}
+
+.tourlobby_chat_button:active {
+    position:absolute; left:577px; top:145px;
+    display:block; width:74px; height:36px; background: url(/images/tournament/lobby/btn_chat_pressed.png?jcb=1353306884);
+    font-size:16px; color:#121212; line-height:35px;
+    text-align:center;
+}
+
+.tourlobby_table_panel {
+    width:958px;
+    margin-left:-24px;
+    margin-top:575px;
+}
+
+.tourlobby_table {
+    width:958px; font-size:16px; background-color:#e4e8e9;
+}
+
+.tourlobby_table_arrow {
+    text-align:center; height:47px; vertical-align:middle;
+}
+
+.tourlobby_table_head {
+    background-color:#a7b7b7; border-bottom:2px solid 8c8d8f; height:40px;
+    color:#fff;
+    font:18px 'Gotham Rounded Bold','Trebuchet MS'; line-height:55px;
+    text-shadow:0 1px 1px #353535;
+}
+
+.tourlobby_view_mode_link {
+    float:right; 
+    text-decoration:none;
+    margin:10px;
+    font-size:16px;
+}
+.tourlobby_view_mode_link:hover {
+    text-decoration:none;
+}
+.tourlobby_view_mode_link:active {
+    text-decoration:none;
+}
+
+
+/* tournaments */
+.alltour_title {
+    width:250px; 
+    height:43px; 
+    background: url(/images/tournament/lobby/top_plask.png?jcb=1353341196);
+    position:absolute; 
+    left:21px; 
+    top:-7px; 
+    text-align:center;
+}
+
+.alltour_second_title {
+    width:92px; 
+    height:43px; 
+    background: url(/images/tournament/tournaments_page/orange_plask_short.png?jcb=1353306884);
+    position:absolute; 
+    left:21px; 
+    top:-7px; 
+    text-align:center;
+}
+
+.alltour_title_label {
+    font-size:18px; 
+    color:#fff; 
+    font-weight:bold; 
+    line-height:42px;
+}
+
+.alltour_textbox {
+    font-size:16px; 
+    height:28px;
+    border:1px solid #cdcdcd;
+}
+
+.alltour_bars {
+    display:block; 
+    font:15px 'Gotham Rounded Bold','Trebuchet MS'; color:#fff; text-shadow:0 1px 1px #353535;
+    border:0px; line-height:46px; text-align:center;
+}
+
+.alltour_bar_1 {
+    width:152px; height:60px; background: url(/images/tournament/tournaments_page/bar_1_normal.png?jcb=1353341196);
+}
+
+.alltour_bar_1:hover {
+    width:152px; height:60px; background: url(/images/tournament/tournaments_page/bar_1_hover.png?jcb=1353341196);
+    text-decoration:none;
+}
+
+.alltour_bar_1:active {
+    width:152px; height:60px; background: url(/images/tournament/tournaments_page/bar_1_pressed.png?jcb=1353341196);
+    text-decoration:none; line-height:48px;
+}
+
+.alltour_bar_2 {
+    width:209px; height:60px; background: url(/images/tournament/tournaments_page/bar_2_normal.png?jcb=1353341196);
+}
+
+.alltour_bar_2:hover {
+    width:209px; height:60px; background: url(/images/tournament/tournaments_page/bar_2_hover.png?jcb=1353341196);
+    text-decoration:none;
+}
+
+.alltour_bar_2:active {
+    width:209px; height:60px; background: url(/images/tournament/tournaments_page/bar_2_pressed.png?jcb=1353341196);
+    text-decoration:none; line-height:48px;
+}
+
+.alltour_bar_3 {
+    width:194px; height:60px; background: url(/images/tournament/tournaments_page/bar_3_normal.png?jcb=1353341196);
+}
+
+.alltour_bar_3:hover {
+    width:194px; height:60px; background: url(/images/tournament/tournaments_page/bar_3_hover.png?jcb=1353341196);
+    text-decoration:none;
+}
+
+.alltour_bar_3:active {
+    width:194px; height:60px; background: url(/images/tournament/tournaments_page/bar_3_pressed.png?jcb=1353341196);
+    text-decoration:none; line-height:48px;
+}
+
+.alltour_bar_4 {
+    width:226px; height:60px; background: url(/images/tournament/tournaments_page/bar_4_normal.png?jcb=1353341196);
+}
+
+.alltour_bar_5 {
+    width:188px; height:60px; background: url(/images/tournament/tournaments_page/bar_5_normal.png?jcb=1353341196);
+}
+
+
+.alltour_arrow_left {
+    display:block; 
+    width:15px; height:22px; background: url(/images/tournament/tournaments_page/arrow_left.png?jcb=1353306884);
+}
+
+.alltour_arrow_right {
+    display:block; 
+    width:15px; height:22px; background: url(/images/tournament/tournaments_page/arrow_right.png?jcb=1353306884);
+}
+
+.alltour_btns_blue {
+    display:block;
+    font-size:12px; font-weight:bold; color:#111;
+    border:0px; text-align:center; line-height:52px;
+    height:52px;
+}
+
+.alltour_btn_blue_1 {
+    width:205px; background: url(/images/tournament/tournaments_page/btn_blue_1_normal.png?jcb=1353306884);
+}
+
+.alltour_btn_blue_1:hover {
+    width:205px; background: url(/images/tournament/tournaments_page/btn_blue_1_hover.png?jcb=1353306884);
+    text-decoration:none;
+}
+
+.alltour_btn_blue_1:active {
+    width:205px; background: url(/images/tournament/tournaments_page/btn_blue_1_pressed.png?jcb=1353306884);
+    text-decoration:none; line-height:54px;
+}
+
+.alltour_btn_blue_2 {
+    width:150px; background: url(/images/tournament/tournaments_page/btn_blue_2_normal.png?jcb=1353306884);
+}
+
+.alltour_btn_blue_2:hover {
+    width:150px; background: url(/images/tournament/tournaments_page/btn_blue_2_hover.png?jcb=1353306884);
+    text-decoration:none;
+}
+
+.alltour_btn_blue_2:active {
+    width:150px; background: url(/images/tournament/tournaments_page/btn_blue_2_pressed.png?jcb=1353306884);
+    text-decoration:none; line-height:54px;
+}
+
+.alltour_btn_blue_3 {
+    width:210px; background: url(/images/tournament/tournaments_page/btn_blue_3_normal.png?jcb=1353306884);
+}
+
+.alltour_btn_blue_3:hover {
+    width:210px; background: url(/images/tournament/tournaments_page/btn_blue_3_hover.png?jcb=1353306884);
+    text-decoration:none;
+}
+
+.alltour_btn_blue_3:active {
+    width:210px; background: url(/images/tournament/tournaments_page/btn_blue_3_pressed.png?jcb=1353306884);
+    text-decoration:none; line-height:54px;
+}
+
+.alltour_btn_blue_4 {
+    width:147px; background: url(/images/tournament/tournaments_page/btn_blue_4_normal.png?jcb=1353341196);
+}
+
+.alltour_btn_blue_4:hover {
+    width:147px; background: url(/images/tournament/tournaments_page/btn_blue_4_hover.png?jcb=1353306884);
+    text-decoration:none;
+}
+
+.alltour_btn_blue_4:active {
+    width:147px; background: url(/images/tournament/tournaments_page/btn_blue_4_pressed.png?jcb=1353306884);
+    text-decoration:none; line-height:54px;
+}
+
+.alltour_btn_blue_5 {
+    width:147px; background: url(/images/tournament/tournaments_page/btn_blue_5_normal.png?jcb=1353341196);
+}
+
+.alltour_btn_blue_5:hover {
+    width:147px; background: url(/images/tournament/tournaments_page/btn_blue_5_hover.png?jcb=1353306884);
+    text-decoration:none;
+}
+
+.alltour_btn_blue_5:active {
+    width:147px; background: url(/images/tournament/tournaments_page/btn_blue_5_pressed.png?jcb=1353306884);
+    text-decoration:none; line-height:54px;
+}
+
+
+.alltour_big_buttons {
+    display:block; width:147px; height:52px;
+    font:18px 'Gotham Rounded Bold','Trebuchet MS'; color:#fff; text-shadow:0 1px 1px #353535;
+    border:0px; line-height:56px;
+    text-align:center;
+}
+
+.alltour_orange_button {
+    background: url(/images/tournament/tournaments_page/btn_orange_normal.png?jcb=1353306884);
+}
+
+.alltour_orange_button:hover {
+    background: url(/images/tournament/tournaments_page/btn_orange_normal.png?jcb=1353306884);
+    text-decoration:none;
+}
+
+.alltour_orange_button:active {
+    background: url(/images/tournament/tournaments_page/btn_orange_pressed.png?jcb=1353306884);
+    text-decoration:none;
+    line-height:58px;
+}
+
+.alltour_gray_button {
+    background: url(/images/tournament/tournaments_page/btn_gray_normal.png?jcb=1353306884);
+}
+
+.alltour_gray_button:hover {
+    background: url(/images/tournament/tournaments_page/btn_gray_normal.png?jcb=1353306884);
+    text-decoration:none;
+}
+
+.alltour_gray_button:active {
+    background: url(/images/tournament/tournaments_page/btn_gray_pressed.png?jcb=1353306884);
+    text-decoration:none;
+    line-height:58px;
+}
+
+.alltour_prize_icon_holder {
+    width:55px; height:55px; 
+    border:1px solid #ccd0d3; 
+    background-color:#fff; 
+    display:table-cell; vertical-align:middle;
+}
+
+.alltour_prize_icon {
+    max-width:55px; 
+    max-height:55px; 
+    display:block;
+}
+
 /*
 * jQuery UI CSS Framework
 * Copyright (c) 2010 AUTHORS.txt (http://jqueryui.com/about)
@@ -7281,7 +7873,7 @@ ul.ui-autocomplete {
 
 /* --> dashboard direct messages inline edit */
 .post .entity .inplace_textbox .textbox {
-    width:520px;
+    width:510px;
 }
 
 .post .entity .inplace_textbox .clr-4 {

@@ -20,8 +20,8 @@
     finish/2,
     get_value/3,
     get_values/3,
-    add_path_params/2
-
+    add_path_params/2,
+    test/0
 ]).
 
 init(_Config, _State) ->

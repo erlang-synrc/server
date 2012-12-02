@@ -17,7 +17,7 @@ main() ->
             wf:redirect_to_login(?_U("/login"));
          _->
             ?INFO("main"),
-    PurchaseId = wf:q(mpy),
+%    PurchaseId = wf:q(mpy),
     PId = wf:q(pid),
     OrderGUID = wf:q(order),
             ?INFO("PID/Order: ~p",[{PId,OrderGUID}]),
@@ -45,15 +45,13 @@ package_info()->
 
 process_result(success) -> 
     PurchaseId = wf:q(mpy),
-    PId = wf:q(pid),
-    OrderGUID = wf:q(order),
     Referer = wf:header(referer),
 
     ?INFO("Mobile Operator Income URL: ~p",[Referer]),
 
     Site = case Referer of
          undefined -> "local";
-         _ -> {Proto,No,S,Port,Page,_} = http_uri:parse(Referer), S
+         _ -> {_Proto, _No, S, _Port, _Page, _} = http_uri:parse(Referer), S
     end,
 
     case ((Site =:= "www.mikro-odeme.com") orelse true) of

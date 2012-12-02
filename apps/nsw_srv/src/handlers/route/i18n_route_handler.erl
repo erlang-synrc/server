@@ -32,7 +32,7 @@
     ]).
 
 browser(UA) -> browser(?REGEXP_TO_BROWSER,UA).
-browser([],UA) -> undefined;
+browser([],_UA) -> undefined;
 browser([{Regexp, Browser}|T],UA) ->
     case re:run(UA, Regexp, [global, caseless]) of
         {match, _A} -> Browser;
@@ -40,7 +40,7 @@ browser([{Regexp, Browser}|T],UA) ->
     end.
 
 platform(UA) -> platform(?REGEXP_TO_PLATFORM,UA).
-platform([],UA) -> undefined;
+platform([],_UA) -> undefined;
 platform([{Regexp, OS}|T],UA) ->
     case re:run(UA, Regexp, [global, caseless]) of
         {match, _} -> OS;
@@ -57,22 +57,16 @@ init(_Config, State) ->
         try uri_translator:translate(BasePath)
         catch
             _:{unknown_language, _} ->
-%		?PRINT("uknown_Language"),
-                "404"; %% It should lead to a 404
+                "404"; 
             _:{unknown_translation, _, _} ->
-%		?PRINT("unknown traslation"),
-                "404" %% It should lead to a 404
+                "404"
         end,
-
-%    ?DBG("User: ~p~nBasePath: ~p~nPath: ~p~n", [wf:user(), BasePath, Path]),
 
     % Convert the path to a module. If there are no routes defined, then just
     % convert everything without an extension to a module.
     % Otherwise, look through all routes for the first matching route.
-%    {Module, PathInfo} = route(re:replace(Path, "-", "_", [{return, list}, global])),
     {Module, PathInfo} = route(ling:replace(Path, "-", "_")),
     {Module1, PathInfo1} = check_for_404(Module, PathInfo, Path),
-    % ?PRINT({BasePath, {Module, PathInfo}, {Module1, PathInfo1}}),
 
     wf_context:page_module(Module1),
     wf_context:path_info(PathInfo1),
