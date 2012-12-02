@@ -280,17 +280,17 @@ send_request(Uri) ->
     {error, _} = E -> E
   end.
 
-feed(Msg)->
-  case nsm_db:get(user, wf:user()) of
+feed(UserName, Msg)->
+  case nsm_db:get(user, UserName) of
     {error, notfound}-> fail;
-    {ok, #user{facebook_id=FacebookId} = User} when FacebookId =/= undefined->
+    {ok, #user{facebook_id=FacebookId}} when FacebookId =/= undefined->
       case nsm_db:get(facebook_oauth, FacebookId) of
         {error, notfound}-> fail;
         {ok, #facebook_oauth{} = FO}->
           AccessToken = case FO#facebook_oauth.access_token of
             undefined ->
               AT = get_access_token(),
-              nsx_msg:notify(["db", "user", User#user.username , "put"], #facebook_oauth{user_id=FacebookId, access_token=AT});
+              nsx_msg:notify(["db", "user", UserName , "put"], #facebook_oauth{user_id=FacebookId, access_token=AT});
             AT -> AT
           end,
           Url ="https://graph.facebook.com/"++ FacebookId ++"/feed",
