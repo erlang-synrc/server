@@ -530,6 +530,25 @@ show_if(remove_entry, Entry) ->
   end;
 show_if(_, _Entry) -> false.
 
+counters()->
+  Games = [okey, tavla, king, batak, sorbi],
+  #panel{class="stat-bar", body=[
+    "<dl class=\"dlist\">",
+      "<dt>", ?_T("Online Gamers"),":", "</dt>",
+      "<dd>",user_counter:user_count(),"</dd>"
+    "</dl>",
+    #list{body=[counter_item(G) || G <- Games]}
+  ]}.
+
+counter_item(Game)->
+  [H|Name] = atom_to_list(Game),
+  #listitem{body=[
+    "<dl>",
+      "<dt>", string:to_upper(H), Name, "</dt>",
+      "<dd>", user_count(Game), "</dd>",
+    "</dl>"
+  ]}.
+
 count_user()->
   case wf:user() of
     undefined -> [];
