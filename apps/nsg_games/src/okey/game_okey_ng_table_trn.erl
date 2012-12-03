@@ -372,6 +372,11 @@ handle_parent_message({tour_result, TourNum, Results}, StateName,
     relay_publish_ge(Relay, Msg),
     {next_state, StateName, StateData#state{tournament_table = NewTTable}};
 
+handle_parent_message({playing_tables_num, Num}, StateName,
+                      #state{relay = Relay} = StateData) ->
+%%XXX    Msg = create_okey_playing_tables(Num),
+%%    relay_publish_ge(Relay, Msg),
+    {next_state, StateName, StateData};
 
 handle_parent_message(rejoin_players, StateName,
                       #state{game_id = GameId, relay = Relay,
@@ -1324,6 +1329,9 @@ create_game_paused_resume(UserId, GameId) ->
                  who = UserId,
                  action = <<"resume">>,
                  retries = 0}.
+
+create_okey_playing_tables(Num) ->
+    #okey_playing_tables{num = Num}.
 
 tash_to_ext(false_okey) -> #'OkeyPiece'{color = 1, value = 0};
 tash_to_ext({Color, Value}) ->  #'OkeyPiece'{color = Color, value = Value}.
