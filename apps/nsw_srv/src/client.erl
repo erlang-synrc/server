@@ -25,7 +25,7 @@ generate_token0() ->
 
 adobe_client() ->
     ?INFO("Adobe Client: ~p",[?_U(wf:q(game_name))]),
-    io_lib:fwrite("\"/testauth/~s.swf?v=27112012.2\"~n",[?_U(wf:q(game_name))]).
+    io_lib:fwrite("\"/testauth/~s.swf?v=03122012.1\"~n",[?_U(wf:q(game_name))]).
 
 token() ->
     U = wf:user(),

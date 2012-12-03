@@ -396,8 +396,9 @@ handle_table_message(TableId, {game_finished, TableContext, _RoundScore, TotalSc
     NewTable = Table#table{context = TableContext, state = ?TABLE_STATE_FINISHED},
     NewTables = store_table(NewTable, Tables),
     send_to_table(TablePid, show_round_result),
-    %% TODO: Send to table "Waiting for the end of the tour"
     NewWL = lists:delete(TableId, WL),
+    [send_to_table(TPid, {playing_tables_num, length(NewWL)})
+       || #table{pid = TPid, state = ?TABLE_STATE_FINISHED} <- tables_to_list(Tables)],
     if NewWL == [] ->
            process_tour_result(StateData#state{tables = NewTables,
                                                tables_results = NewTablesResults,
@@ -566,7 +567,7 @@ start_turn(#state{game_id = GameId, tour = Tour, tables = Tables} = StateData) -
 
 process_tour_result(#state{game_id = GameId, tournament_table = TTable,
                            tours_plan = Plan, tour = Tour, tables_results = TablesResults,
-                           players = Players, tables = Tables} = StateData) ->
+                           players = Players, tables = Tables, trn_id = TrnId} = StateData) ->
     ?INFO("OKEY_NG_TRN_ELIM <~p> Tour <~p> is completed. Starting results processing...", [GameId, Tour]),
     TourType = lists:nth(Tour, Plan),
     TourResult1 = case TourType of
@@ -588,6 +589,7 @@ process_tour_result(#state{game_id = GameId, tournament_table = TTable,
     [send_to_table(get_table_pid(TableId, Tables),
                    {show_series_result, subs_status(TableResultWithPos, Tour, Plan)})
        || {TableId, TableResultWithPos} <- TablesResultsWithPos],
+    nsx_msg:notify(["system", "tournament_tour_note"], {TrnId, TourType, TourResultWithUserId}),
     {TRef, Magic} = start_timer(?SHOW_SERIES_RESULT_TIMEOUT),
     ?INFO("OKEY_NG_TRN_ELIM <~p> Results processing of tour <~p> is finished. "
           "Waiting some time (~p secs) before continue...",

@@ -213,6 +213,10 @@
            value           :: integer()   %% 1 - 13
          }).
 
+-record(okey_playing_tables, {
+          num              :: integer()
+         }).
+
 %%%%%
 %%%%%  Debug
 %%%%%
