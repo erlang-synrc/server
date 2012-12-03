@@ -90,10 +90,13 @@ init()->
     "js = d.createElement('script');",
     "js.id = id;",
     "js.async = true;",
-    "js.src = \"//connect.facebook.net/en_US/all.js\";",
+    "js.src = \"//connect.facebook.net/", fb_sdk_locale(site_utils:detect_language()), "/all.js\";",
     "ref.parentNode.insertBefore(js, ref);",
     "}(document));",
     "</script>"].
+
+fb_sdk_locale("tr")-> "tr_TR";
+fb_sdk_locale(_)-> "en_US".
 
 login_btn()-> login_btn("Login").
 login_btn(Label)->

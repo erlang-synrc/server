@@ -199,32 +199,29 @@ user_avatar(big) ->
     ok.
 
 footer_box() ->
-    case wf_context:page_module() of
-        view_table ->
-            [];
-        _ ->
-            LinkList = [
-%                        #listitem{body=[?_T("About Us")] },
-                #listitem{body=#link{url=?_U("/gifts"), text=?_T("Gifts")}},
-%                        #listitem{body=?_T("Pointing System")},
-
-                        #listitem{body=#link{url=?_U("/terms"), text=?_T("Terms of Service")}},
-                        #listitem{body=#link{url=?_U("/privacy"), text=?_T("Privacy Policy")}},
-                        #listitem{body=wf_tags:emit_tag(a, ?_T("Help & Support"),
-                                    [{href, "http://kakaranet.uservoice.com/"},{target,"_blank"}])},
-                        #listitem{body=#link{url=?_U("/contact"), text=?_T("Contact")}},
-                        #listitem{body=[?_T("2011 &copy; Kakaranet. All rights reserved."),"<br/>",
-                                    ?_T("Kakaranet is registered trademark of Paynet Inc."),"<br/>"]},
-                        #listitem{body=[#checkbox { id=replay_guiders, text=?_T("Replay Guiders"), postback=replay_guiders_changed,
+  case wf_context:page_module() of
+    view_table -> [];
+    _ ->
+      LinkList = [
+%       #listitem{body=[?_T("About Us")] },
+        #listitem{body=#link{url=?_U("/gifts"), text=?_T("Gifts")}},
+%       #listitem{body=?_T("Pointing System")},
+        #listitem{body=#link{url=?_U("/terms"), text=?_T("Terms of Service")}},
+        #listitem{body=#link{url=?_U("/privacy"), text=?_T("Privacy Policy")}},
+        #listitem{body=wf_tags:emit_tag(a, ?_T("Help & Support"),
+          [{href, "http://kakaranet.uservoice.com/"},{target,"_blank"}])},
+        #listitem{body=#link{url=?_U("/contact"), text=?_T("Contact")}},
+        #listitem{body=[?_T("2011 &copy; Kakaranet. All rights reserved."),"<br/>",
+                        ?_T("Kakaranet is registered trademark of Paynet Inc."),"<br/>"]},
+        #listitem{body=[#checkbox { id=replay_guiders, text=?_T("Replay Guiders"), postback=replay_guiders_changed,
                                     checked=(wf:cookie("replayguiders")=="yes") }]}
-                       ],
+      ],
 
-            ["<footer>",
-             #list{class="navbar", body = LinkList},
-             language(),
-             "</footer>"
-            ]
-    end.
+      ["<footer>",
+        #list{class="navbar", body = LinkList},
+        language(),
+      "</footer>"]
+  end.
 
 
 event({error, Msg}) ->
@@ -241,9 +238,9 @@ event(logout) ->
     wf:redirect("/");
 event({change_language,SL}) ->
     NewLang = case SL of
-		"en" -> "tr";
-		"tr" -> "en"
-	      end,
+      "en" -> "tr";
+      "tr" -> "en"
+    end,
     site_utils:reset_language(),
     wf:session(lang, NewLang),
     wf:cookie("lang", site_utils:detect_language(), "/", 100*24*60), %% 100 days
