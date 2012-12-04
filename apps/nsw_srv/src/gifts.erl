@@ -25,7 +25,7 @@ body() ->
 		<div class='top-space top-space-2'>
 			<h1>Hedİyeler</h1>
 		</div>",
-        #panel{style="height:70px; font-size:16px;", body=[
+        #panel{style="height:90px; font-size:16px;", body=[
             #label{id=slider_min_value, style="position:absolute; left:276px; top:100px;", text="0"},
             #label{id=slider_max_value, style="position:absolute; left:576px; top:100px; text-align:right; width:100px;", text=site_utils:long_integer_to_list(?MAX_SLIDER_PRICE)},
             #panel{id=slider_panel, style="position:absolute; left:276px; top:125px; width:400px; height:20px;", body=[
@@ -33,7 +33,9 @@ body() ->
                     postback={?MODULE, {gifts_slider}},
                     values=[{min,0}, {max,?MAX_SLIDER_PRICE}]
                 }
-            ]}
+            ]},
+            #label{id=slider_cur_max_value, class="slider_cur_max_value", style="position:absolute; font-size:14px; left:678px; top:145px;", text="1 200 000"},
+            #label{id=slider_cur_min_value, class="slider_cur_min_value", style="position:absolute; font-size:14px; left:78px; top:145px; text-align:right; width:200px;", text="0"}
         ]},
         #panel{id=product_list, body=product_list_paged(1)},
         "</section>"
@@ -169,8 +171,20 @@ event({page, Page}) ->
     wf:update(product_list, product_list_paged(Page));
 
 event({gifts_slider}) ->
-    wf:state(slider_min, list_to_integer(wf:q(gifts_slider_values_min))),
-    wf:state(slider_max, list_to_integer(wf:q(gifts_slider_values_max))),
+    Min = list_to_integer(wf:q(gifts_slider_values_min)),
+    Max = list_to_integer(wf:q(gifts_slider_values_max)),
+    wf:state(slider_min, Min),
+    wf:state(slider_max, Max),
+%   slider moving lables
+    MinLabelX = 78 + 400 * Min div ?MAX_SLIDER_PRICE,
+    MaxLabelX = 278 + 400 * Max div ?MAX_SLIDER_PRICE,
+    wf:wire("$('.slider_cur_min_value').css('left', '" ++ integer_to_list(MinLabelX) ++ "px' );"),
+    wf:wire("$('.slider_cur_max_value').css('left', '" ++ integer_to_list(MaxLabelX) ++ "px' );"),
+    wf:set(slider_cur_min_value, site_utils:long_integer_to_list(Min)),
+    wf:set(slider_cur_max_value, site_utils:long_integer_to_list(Max)),
+    wf:wire(#event{postback=update_product_list});
+
+event(update_product_list) ->
     wf:update(product_list, product_list_paged(1));
 
 event(Any) ->

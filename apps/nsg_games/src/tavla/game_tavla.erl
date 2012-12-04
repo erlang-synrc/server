@@ -294,38 +294,30 @@ check_game_ended(P1Collected, P2Collected, P1, P2, Relay, Player,State) ->
     ?INFO("GAME_TAVLA check_game_ending P1Collected: ~p P2Collected: ~p", [P1Collected, P2Collected]),
     TableId = State#state.table_id,
     Vido = State#state.vido,
-    {Message,Results} = case P1Collected of
-        15 -> case P2Collected of
-                 0 -> R = #'TavlaGameResults'{
-                            players = [#'TavlaPlayerScore'{player_id = P1, score = 2 * Vido, winner = <<"true">>}, 
+    {Message,Results} =
+        case {P1Collected, P2Collected} of
+            {15, 0} -> R = #'TavlaGameResults'
+                           {players = [#'TavlaPlayerScore'{player_id = P1, score = 2 * Vido, winner = <<"true">>}, 
                                        #'TavlaPlayerScore'{player_id = P2, score = 0}]},
-                      {#tavla_game_ended{table_id = TableId, winner = P1, results = R},R};
-                 _ -> R = #'TavlaGameResults'{
-                            players = [#'TavlaPlayerScore'{player_id = P1, score = 1 * Vido, winner = <<"true">>}, 
+                       {#tavla_game_ended{table_id = TableId, winner = P1, results = R}, R};
+            {15, _} -> R = #'TavlaGameResults'
+                           {players = [#'TavlaPlayerScore'{player_id = P1, score = 1 * Vido, winner = <<"true">>}, 
                                        #'TavlaPlayerScore'{player_id = P2, score = 0}]},
-
-                      {#tavla_game_ended{table_id = TableId, winner = P1, results = R}, R}
-
-              end;
-        _ -> case P2Collected of
-            15 -> case P1Collected of
-                  0 -> R = #'TavlaGameResults'{
-                            players = [#'TavlaPlayerScore'{player_id = P2, score = 0}, 
-                                       #'TavlaPlayerScore'{player_id = P1, score = 2 * Vido, winner = <<"true">>}]},
-                       {#tavla_game_ended{table_id = TableId, winner = P2, results = R},R};
-                  _ -> R = #'TavlaGameResults'{
-                            players = [#'TavlaPlayerScore'{player_id = P2,score = 0}, 
-                                       #'TavlaPlayerScore'{player_id = P1,score = 1 * Vido, winner = <<"true">>}]},
-
-                       {#tavla_game_ended{table_id = TableId, winner = P2, results = R},R}
-                  end;
-            _ ->  {#tavla_next_turn{table_id = TableId, player = case Player of P1 -> P2; P2 -> P1 end },0}
-        end
-    end,
+                       {#tavla_game_ended{table_id = TableId, winner = P1, results = R}, R};
+            {0, 15} -> R = #'TavlaGameResults'
+                           {players = [#'TavlaPlayerScore'{player_id = P2, score = 2 * Vido, winner = <<"true">>}, 
+                                       #'TavlaPlayerScore'{player_id = P1, score = 0}]},
+                       {#tavla_game_ended{table_id = TableId, winner = P2, results = R}, R};
+            {_, 15} -> R = #'TavlaGameResults'
+                           {players = [#'TavlaPlayerScore'{player_id = P2, score = 1 * Vido, winner = <<"true">>}, 
+                                       #'TavlaPlayerScore'{player_id = P1, score = 0}]},
+                       {#tavla_game_ended{table_id = TableId, winner = P2, results = R}, R};
+            _ ->  {#tavla_next_turn{table_id = TableId, player = case Player of P1 -> P2; P2 -> P1 end}, 0}
+        end,
     publish_event(Relay, Message),
     case Message of
         #tavla_next_turn{} -> no;
-        _ -> {yes,Results}
+        _ -> {yes, Results}
     end.
 
 state_move({#tavla_vido_answer{from=From,to=To,answer=A}, Pid}, _, State) ->
@@ -737,6 +729,7 @@ publish_event(Relay, MsgList) when is_list(MsgList) ->
                       publish_event(Relay, Msg)
               end, MsgList);
 publish_event({RMod, RPid}, Msg) when is_tuple(Msg) ->
+    ?INFO("GAME_TAVLA: Event: ~p", [Msg]),
     Event = api_utils:name(Msg),
     Args = api_utils:members(Msg),
     RMod:publish(RPid, #game_event{event = Event, args = Args}).
