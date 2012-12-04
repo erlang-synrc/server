@@ -387,7 +387,7 @@ long_integer_to_list(S) ->
         false -> S
     end.
 
-
+decode_letters("") -> "";
 decode_letters(In) ->
     case is_list(hd(In)) of
         true ->
