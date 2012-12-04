@@ -14,7 +14,7 @@
          start_date,
          start_time,
          end_date,
-         status, % { activated, ongoing, finished }
+         status, % { activated, ongoing, finished, canceled }
          quota,
          tours,
          awards, 

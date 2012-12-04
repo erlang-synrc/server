@@ -56,10 +56,8 @@ main() ->
   end.
 
 body() ->
-
-
-            X = rpc:call(?GAMESRVR_NODE,game_manager,get_lucky_table,[list_to_atom("game_"++wf:q(game_name))]),
-            wf:state(lucky,X),
+    X = rpc:call(?GAMESRVR_NODE,game_manager,get_lucky_table,[list_to_atom("game_"++wf:q(game_name))]),
+    wf:state(lucky,X),
 
   ui_update_buttons(),
   UId = webutils:user_info(username),
@@ -126,7 +124,7 @@ matchmaker_submenu() ->
     ].
 
 el_inside_play() ->
-     Settings = wf:session({wf:q(game_name), wf:user()}),
+%     Settings = wf:session({wf:q(game_name), wf:user()}),
 %     Game = proplists:get_value(game, Settings),
 %     X = rpc:call(?GAMESRVR_NODE,game_manager,get_lucky_table,[Game]),
      LuckyAction =
@@ -977,6 +975,9 @@ u_event(create_game) ->
     wf:session({wf:q(game_name), UId},Settings),
     URL = ?_U(lists:concat(["/matchmaker/", wf:q(game_name)])),
     wf:redirect(URL),
+
+%    nsx_msg:notify(["system", "game_begins_note"], {URL, UId, proplists:get_value(table_name,Settings), wf:q(game_name), 
+%         proplists:get_value(rounds,Settings), atom_to_list(proplists:get_value(speed,Settings)), atom_to_list(proplists:get_value(game_mode,Settings))});
 
     SRound = case proplists:get_value(rounds,Settings) of
         undefined -> "no";

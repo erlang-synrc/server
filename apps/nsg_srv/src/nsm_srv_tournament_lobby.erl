@@ -68,19 +68,26 @@ handle_call(chat_history, _From, #state{chat_history = ChatHistory} = State) ->
     {reply, List, State}.
 
 create_tables(List) -> Tables = dict:new(), ok.
-dump_tables(ArraysList, Check) -> lists:map(fun(A) -> ?INFO(" +++ tour table ~p",[A]) end, ArraysList).
+dump_tables(ArraysList, Check) -> lists:map(fun(A) -> ?INFO(" tour table ~p",[A]) end, ArraysList).
 
 handle_cast(start_tournament, State) ->
     Tour = State#state.tournament,
+    TId = Tour#tournament.id,
     NumberOfUsers = Tour#tournament.players_count,
     TIDinDB = Tour#tournament.id,
     Quota = Tour#tournament.quota,
     Tours = Tour#tournament.tours,
     Speed = Tour#tournament.speed,
     Gifts = Tour#tournament.awards, % this is now a list of ids, but it might change in a while!
-    TourId = game_manager:start_tournament(TIDinDB,1,NumberOfUsers,Quota,Tours,Speed),
-    ?INFO(" +++ notifying ~p", [TIDinDB]),
-    nsx_msg:notify(["tournament", integer_to_list(TIDinDB), "start"], {TourId}),
+    case length(nsm_tournaments:joined_users(TId)) /= NumberOfUsers of 
+        true -> % canceled
+            ?INFO("Tournament ~p canceled", [TId]),
+            nsx_msg:notify(["system", "put"], Tour#tournament{status=canceled});
+        false ->
+            TourId = game_manager:start_tournament(TIDinDB,1,NumberOfUsers,Quota,Tours,Speed,Gifts),
+            ?INFO("Tournament ~p started as ~p", [TId, TIDinDB]),
+            nsx_msg:notify(["tournament", integer_to_list(TIDinDB), "start"], {TourId})
+    end,
     {noreply, State};
 
 handle_cast(heartbeat, State) ->

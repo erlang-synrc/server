@@ -41,8 +41,7 @@ main_authorized() ->
        {gifts,           ?_U("/profile/gifts"),            ?_T("Gifts")},
        {account,         ?_U("/profile/account"),          ?_T("Account")},
        {stats,           ?_U("/profile/stats"),            ?_T("Stats")},
-       {invite,          ?_U("/profile/invite"),           ?_T("Invite")},
-       {user_tournaments,?_U("/profile/user-tournaments"), ?_T("Tournaments")}
+       {invite,          ?_U("/profile/invite"),           ?_T("Invite")}
     ],
     Links = case nsm_affiliates:is_existing_affiliate(wf:user()) of 
         true ->
@@ -108,9 +107,9 @@ section_body(profile) ->
 
     ColL = [
 	    #panel{class=row,body=[#label{text=?_T("Name")},
-				   #panel{class=text,body=#textbox{id=profile_name, text=User#user.name}}]},
+				   #panel{class=text,body=#textbox{id=profile_name, text=site_utils:decode_letters(User#user.name)}}]},
 	    #panel{class=row,body=[#label{text=?_T("Last Name")},
-				   #panel{class=text,body=#textbox{id=profile_surname, text=User#user.surname}}]},
+				   #panel{class=text,body=#textbox{id=profile_surname, text=site_utils:decode_letters(User#user.surname)}}]},
 	    #panel{class=row,body=[#label{text=?_T("E-mail")},
 				   #panel{class=text,body=#textbox{id=profile_email,text=User#user.email}}]},
 	    "<dl class=\"dlist-2\"><dt>"++?_T("Username")++"</dt><dd>"++ wf:user() ++"</dd></dl>",
