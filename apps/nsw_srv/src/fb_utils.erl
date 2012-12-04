@@ -71,7 +71,7 @@ init()->
                 "page.fbAddAsService(uid);",
             "}});",
         "}",
-      "});",
+      "}, {scope: 'email,user_birthday'});",
     "};",
     "function fb_feed(Id, Msg, Token){",
       "FB.api('/'+Id+'/feed?access_token='+Token, 'post', {message: Msg }, function(response) {});",
