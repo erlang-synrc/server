@@ -41,8 +41,7 @@ menu_tr(En) ->
         #link{body="TAVLA<br>KURALLARI", class="rules-page-menu-elements rules-page-tavla-link", postback=not_implemented},
         #link{body="KING<br>KURALLARI", class="rules-page-menu-elements rules-page-king-link", postback=not_implemented},
         #link{body="BATAK<br>KURALLARI", class="rules-page-menu-elements rules-page-batak-link", postback=not_implemented},
-        #link{body="SORBİ<br>KURALLARI", class="rules-page-menu-elements rules-page-sorbi-link", postback=not_implemented},
-        #link{text="ÜYE OL!", url=?_U("/login/register"), class="rules-page-menu-elements rules-page-join-link"}
+        #link{body="SORBİ<br>KURALLARI", class="rules-page-menu-elements rules-page-sorbi-link", postback=not_implemented}
     ].
 
 menu_en(En) ->
@@ -63,8 +62,7 @@ menu_en(En) ->
         #link{body="TAVLA<br>RULES", class="rules-page-menu-elements rules-page-tavla-link", style="letter-spacing:-1px; margin-left:-3px;", postback=not_implemented},
         #link{body="KING<br>RULES", class="rules-page-menu-elements rules-page-king-link", postback=not_implemented},
         #link{body="BATAK<br>RULES", class="rules-page-menu-elements rules-page-batak-link", postback=not_implemented},
-        #link{body="SORBI<br>RULES", class="rules-page-menu-elements rules-page-sorbi-link", postback=not_implemented},
-        #link{text="SIGNUP!", url=?_U("/login/register"), class="rules-page-menu-elements rules-page-join-link"}
+        #link{body="SORBI<br>RULES", class="rules-page-menu-elements rules-page-sorbi-link", postback=not_implemented}
     ].
 
 content() ->   

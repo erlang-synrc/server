@@ -439,4 +439,8 @@ assume_eq(In) ->
     ]).
 
 decode_html(In) ->
-    decode_letters(assume_eq(decode_entities(decode_amp(decode_amp(In))))).
+    ling:replace_a_lot(decode_letters(assume_eq(decode_entities(decode_amp(decode_amp(In))))), [
+        {"line-height:", "ignore:"},    % particular fixes for gifts html
+        {"<--", "<!--"},
+        {"/images/cuzdan", "http://www.enilginc.com/images/cuzdan"}
+    ]).
