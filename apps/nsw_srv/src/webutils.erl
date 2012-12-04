@@ -1203,19 +1203,15 @@ more_button(Module, Entries, Pageamount) ->
             }
     end.
 
-post_user_system_message(Description) ->
+post_user_system_message(Description) ->    % this should be rewised completely
     User = wf:user(),
-    Destinations = [{User, user}],
+%    Destinations = [{User, user}],
+    Destinations = [{"kakaranet", group}],
     ID = utils:uuid_ex(),
-    Route = [feed, user, User, entry, ID, add_system],
+%    Route = [feed, user, User, entry, ID, add_system],
+    Route = [feed, group, "kakaranet", entry, ID, add_system],
     nsx_msg:notify(Route, [User, Destinations, Description, []]),
     ID.
-
-unpost_user_system_message(ID) ->   % this hasn't been tested yet
-    User = wf:user(),
-    Destinations = [{User, user}],
-    Route = [feed, user, User, entry, ID, delete_system],
-    nsx_msg:notify(Route, [User, Destinations, "", []]).
 
 guiders_ok(Cookie) ->
 %    true.
