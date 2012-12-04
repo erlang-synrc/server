@@ -589,7 +589,9 @@ process_tour_result(#state{game_id = GameId, tournament_table = TTable,
     [send_to_table(get_table_pid(TableId, Tables),
                    {show_series_result, subs_status(TableResultWithPos, Tour, Plan)})
        || {TableId, TableResultWithPos} <- TablesResultsWithPos],
-    nsx_msg:notify(["system", "tournament_tour_note"], {TrnId, TourType, TourResultWithUserId}),
+    TourResultWithStrUserId = [{user_id_to_string(UserId), Position, Points, Status}
+                               || {UserId, Position, Points, Status} <- TourResultWithUserId],
+    nsx_msg:notify(["system", "tournament_tour_note"], {TrnId, TourType, TourResultWithStrUserId}),
     {TRef, Magic} = start_timer(?SHOW_SERIES_RESULT_TIMEOUT),
     ?INFO("OKEY_NG_TRN_ELIM <~p> Results processing of tour <~p> is finished. "
           "Waiting some time (~p secs) before continue...",
