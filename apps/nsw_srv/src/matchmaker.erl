@@ -33,7 +33,7 @@ main() ->
   end,
 
   case wf:user() of
-    undefined -> webutils:redirect_to_ssl("login");
+    undefined -> wf:redirect_to_login(?_U("/login"));
     User ->        
       webutils:add_script("/nitrogen/jquery.paginatetable.js"),
       webutils:add_raw("<link href='/nitrogen/guiders-js/guiders-1.2.8.css' rel='stylesheet'>
@@ -887,7 +887,7 @@ is_option_present(Key, Value) ->
 comet_update() -> comet_update(empty).
 comet_update(State) ->
   case wf:user() of
-    undefined -> webutils:redirect_to_ssl("login");
+    undefined -> wf:redirect_to_login(?_U("/login"));
     _UId -> timer:sleep(?TABLE_UPDATE_QUANTUM),
             X = rpc:call(?GAMESRVR_NODE,game_manager,get_lucky_table,[list_to_atom("game_"++?_U(wf:q(game_name)))]),
             wf:state(lucky,X),
@@ -910,7 +910,7 @@ api_event(Name, Tag, Args) ->
 
 event(Event) ->
   case wf:user() of
-    undefined -> webutils:redirect_to_ssl("login");
+    undefined -> wf:redirect_to_login(?_U("/login"));
     _User -> u_event(Event)
   end.
 

@@ -557,7 +557,11 @@ get_timer_for_now() ->
                 true -> 
                     TId = wf:state(tournament_int_id),
                     case rpc:call(?GAMESRVR_NODE, game_manager,get_tournament,[TId]) of
-                        [] -> ?_T("FINISHED");
+                        [] -> 
+                            case DTime < -60 of 
+                                true -> ?_T("FINISHED");
+                                false -> ?_T("...") % right before starting on timer
+                            end;
                         _ -> ?_T("NOW")
                     end;
                 false ->

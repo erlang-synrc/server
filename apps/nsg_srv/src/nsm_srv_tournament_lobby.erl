@@ -30,10 +30,8 @@ active_users(TID) -> Server = tid_to_atom(TID), gen_server:call(Server, active_u
 chat_history(TID) -> Server = tid_to_atom(TID), gen_server:call(Server, chat_history).
 
 init([TID]) ->
-    {H,M,S} = time(),
     Tour = nsm_tournaments:get(TID),
     ?INFO("Lobby Starting: ~p",[Tour]),
-    {TH,TM,TS} = Tour#tournament.start_time,
     Server = self(),
     timer:apply_interval(?HEARTBEAT_INTERVAL, ?MODULE, heartbeat, [Server]),
     timer:apply_after(30000, ?MODULE, check_tournament_time, [Server]),
@@ -67,26 +65,27 @@ handle_call(chat_history, _From, #state{chat_history = ChatHistory} = State) ->
     ?INFO("chat history request. History records count: ~p", [length(List)]),
     {reply, List, State}.
 
-create_tables(List) -> Tables = dict:new(), ok.
-dump_tables(ArraysList, Check) -> lists:map(fun(A) -> ?INFO(" tour table ~p",[A]) end, ArraysList).
-
-handle_cast(start_tournament, State) ->
+handle_cast(start_tournament, State) ->  
     Tour = State#state.tournament,
     TId = Tour#tournament.id,
-    NumberOfUsers = Tour#tournament.players_count,
-    TIDinDB = Tour#tournament.id,
-    Quota = Tour#tournament.quota,
-    Tours = Tour#tournament.tours,
-    Speed = Tour#tournament.speed,
-    Gifts = Tour#tournament.awards, % this is now a list of ids, but it might change in a while!
-    case length(nsm_tournaments:joined_users(TId)) /= NumberOfUsers of 
-        true -> % canceled
-            ?INFO("Tournament ~p canceled", [TId]),
-            nsx_msg:notify(["system", "put"], Tour#tournament{status=canceled});
-        false ->
-            TourId = game_manager:start_tournament(TIDinDB,1,NumberOfUsers,Quota,Tours,Speed,Gifts),
-            ?INFO("Tournament ~p started as ~p", [TId, TIDinDB]),
-            nsx_msg:notify(["tournament", integer_to_list(TIDinDB), "start"], {TourId})
+    case game_manager:get_tournament(TId) of % to prevent cancelling running tournament
+        "" ->
+            NumberOfUsers = Tour#tournament.players_count,
+            TIDinDB = Tour#tournament.id,
+            Quota = Tour#tournament.quota,
+            Tours = Tour#tournament.tours,
+            Speed = Tour#tournament.speed,
+            Gifts = Tour#tournament.awards, % this is now a list of ids, but it might change in a while!
+            case length(nsm_tournaments:joined_users(TId)) /= NumberOfUsers of 
+                true -> % canceled
+                    ?INFO("Tournament ~p canceled", [TId]),
+                    nsx_msg:notify(["system", "put"], Tour#tournament{status=canceled});
+                false ->
+                    TourId = game_manager:start_tournament(TIDinDB,1,NumberOfUsers,Quota,Tours,Speed,Gifts),
+                    ?INFO("Tournament ~p started as ~p", [TId, TIDinDB]),
+                    nsx_msg:notify(["tournament", integer_to_list(TIDinDB), "start"], {TourId})
+            end;
+        _ -> ok
     end,
     {noreply, State};
 
@@ -107,7 +106,7 @@ handle_cast({messages_callback, Envelope}, #state{active_users = AU, heartbeat_u
             User = Envelope#envelope.payload,
             {AU1, HU1} = add_to_userlist(User, AU, HU),
             {noreply, State#state{heartbeat_users = HU1, active_users = AU1}};
-        ["tournament", _TId, "user", UserId, "ready"] ->
+        ["tournament", _TId, "user", _UserId, "ready"] ->
             User = Envelope#envelope.payload,
             {AU1, HU1} = add_to_userlist(User, AU, HU),
             {noreply, State#state{active_users = AU1, heartbeat_users = HU1}};

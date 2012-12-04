@@ -17,7 +17,7 @@
 
 main() ->
   case wf:user() of
-    undefined -> webutils:redirect_to_ssl("login");
+    undefined -> wf:redirect_to_login(?_U("/login"));
     _User  ->
       webutils:add_script("/nitrogen/jquery.paginatetable.js"),
       webutils:add_script("/nitrogen/bert.js"),
