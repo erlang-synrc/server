@@ -145,6 +145,9 @@ init([GameId, TableId, Params]) ->
     ObserversFlag = proplists:get_value(observers_allowed, Params),
     TournamentType = proplists:get_value(tournament_type, Params),
     Speed = proplists:get_value(speed, Params),
+    TurnTimeout = proplists:get_value(turn_timeout, Params, get_timeout(turn, Speed)), %% TODO Set this param explictly
+    RevConfirmTimeout = proplist:get_value(reveal_confirmation_timeout, Params, get_timeout(challenge, Speed)), %% TODO Set this param explictly
+    ReadyTimeout = proplists:get_value(ready_timeout, Params, get_timeout(ready, Speed)), %% TODO Set this param explictly
     RoundTimeout = proplists:get_value(round_timeout, Params),
     GameType = proplists:get_value(game_type, Params),
     Rounds = proplists:get_value(rounds, Params),
@@ -180,9 +183,9 @@ init([GameId, TableId, Params]) ->
                                           tour = Tour,
                                           tours = Tours,
                                           speed = Speed,
-                                          turn_timeout = get_timeout(turn, Speed),
-                                          reveal_confirmation_timeout = get_timeout(challenge, Speed),
-                                          ready_timeout = get_timeout(ready, Speed),
+                                          turn_timeout = TurnTimeout,
+                                          reveal_confirmation_timeout = RevConfirmTimeout,
+                                          ready_timeout = ReadyTimeout,
                                           round_timeout = RoundTimeout,
                                           game_type = GameType,
                                           rounds = Rounds,
