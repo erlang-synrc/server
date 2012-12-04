@@ -133,13 +133,7 @@ handle_notice(["feed", "user", UId, "post_note"] = Route, Message,
     {noreply, State};
 
 
-handle_notice(["system", "tournament_begins_note"] = Route, Message, State) ->
-    ?INFO("feed(~p): tournament_begins_note: Route=~p, Message=~p", [self(), Route, Message]),
-
-    {noreply, State};
-
-
-handle_notice(["system", "game_begins_note"] = Route, Message, State) ->
+handle_notice(["system", "game_begins_note"] = Route, Message, State) ->    % this doesn't work! have to figure why
     ?INFO("feed(~p): game_begins_note: Route=~p, Message=~p", [self(), Route, Message]),
     {URL, UId, TName, GName, GRounds, GSpeed, GMode} = Message,
     SGRounds = case GRounds of   % CD10 fix
@@ -152,11 +146,31 @@ handle_notice(["system", "game_begins_note"] = Route, Message, State) ->
     UserList = [UId],
     ID = utils:uuid_ex(),
     Destinations = [{User, user} || User <- UserList],
-?INFO(" ++++ ~p", [Destinations]),
     Route = [feed, user, UId, entry, ID, add_system],
     nsx_msg:notify(Route, [UId, Destinations, Desc, []]),
     {noreply, State};
 
+
+handle_notice(["system", "tournament_tour_note"] = Route, Message, State) ->
+    ?INFO("feed(~p): tournament_tour_note: Route=~p, Message=~p", [self(), Route, Message]),
+    {TId, TourType, TourRes} = Message,
+    {ok, Tour} = nsm_db:get(tournament, TId),
+    Desc = case Tour#tournament.description of
+        "" -> "";
+        D -> " (" ++ D ++ ")"
+    end,    
+    [begin
+        SNum = case TourType of
+            ne -> integer_to_list(length(TourRes));
+            {te, Num} -> integer_to_list(Num);
+            {ce, Num} -> integer_to_list(Num)
+        end,
+        NoteString = "tourtour" ++ "|name=" ++ Tour#tournament.name ++ "|desc=" ++ Desc ++ "|total=" ++ SNum ++
+            "|player=" ++ UId ++ "|pos=" ++ integer_to_list(CommonPos) ++ "|points=" ++ integer_to_list(Points) ++ "|tourstatus=" ++ atom_to_list(Status),
+        nsx_msg:notify(["feed", "user", UId, "post_note"], NoteString)
+    end
+    || {UId, CommonPos, Points, Status} <- TourRes],
+    {noreply, State};    
 
 handle_notice(["system", "tournament_ends_note"] = Route, Message, State) ->
     ?INFO("feed(~p): tournament_ends_note: Route=~p, Message=~p", [self(), Route, Message]),
@@ -863,8 +877,8 @@ get_opts(#state{type = system, owner = Owner}) ->
                 % invites
                 [system, use_invite],
                 % notifications
-                [system, tournament_begins_note],
-                [system, game_begins_note],
+                [system, game_begins_note], % out of order
+                [system, tournament_tour_note],
                 [system, tournament_ends_note],
                 [system, game_ends_note]
                 ]},
