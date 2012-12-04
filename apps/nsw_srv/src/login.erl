@@ -208,7 +208,7 @@ login_form() ->
     "</label>",
     #panel{class = "row chk-row", body = [#button{id = postlogin, class = "btn-submit", text = ?_T("Login"), postback = login},
     #checkbox{class = "chk", text = ?_T("Keep me logged in"), checked = true}]},
-    #panel{class = "center", body = fb_utils:login_btn("Login with Facebook")}].
+    #panel{class = "center", body = fb_utils:login_btn(?_T("Login with Facebook"))}].
 
 splash_lightbox() ->
     ColLeft = #panel{class = "col-l",

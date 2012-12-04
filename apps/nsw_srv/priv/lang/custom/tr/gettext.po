@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 0.2.9\n"
 "POT-Creation-Date: 2006-07-01 16:45+0200\n"
-"PO-Revision-Date: 2012-11-16 14:31+0300\n"
+"PO-Revision-Date: 2012-12-04 01:55+0300\n"
 "Last-Translator: Andrii <andrii.zadorozhnii@gmail.com>\n"
 "Language-Team: Kakaranet Team <kunthar@gmail.com>\n"
 "MIME-Version: 1.0\n"
@@ -4843,3 +4843,225 @@ msgstr "Sayfam"
 #
 msgid "Home"
 msgstr "Ana Sayfa"
+#
+msgid "Del"
+msgstr "Del"
+#
+msgid "Deliver!"
+msgstr "Deliver!"
+#
+msgid "Disconnects: "
+msgstr "Disconnects: "
+#
+msgid "ExtId"
+msgstr "ExtId"
+#
+msgid "Filter by nick"
+msgstr "Filter by nick"
+#
+msgid ""
+"Game $tablename$ of $gametype$ just ended.<br> &mdash; $winner1$ won "
+"$points1$ game points and $kakush1$ kakush;<br> &mdash; $winner2$ won "
+"$points2$ game points and $kakush2$ kakush."
+msgstr ""
+"Game $tablename$ of $gametype$ just ended.<br> &mdash; $winner1$ won "
+"$points1$ game points and $kakush1$ kakush;<br> &mdash; $winner2$ won "
+"$points2$ game points and $kakush2$ kakush."
+#
+msgid ""
+"Game $tablename$ of $gametype$ just ended.<br> &mdash; $winner1$ won "
+"$points1$ game points and $kakush1$ kakush;<br> &mdash; $winner2$ won "
+"$points2$ game points and $kakush2$ kakush;<br> &mdash; $winner3$ won "
+"$points3$ game points and $kakush3$ kakush."
+msgstr ""
+"Game $tablename$ of $gametype$ just ended.<br> &mdash; $winner1$ won "
+"$points1$ game points and $kakush1$ kakush;<br> &mdash; $winner2$ won "
+"$points2$ game points and $kakush2$ kakush;<br> &mdash; $winner3$ won "
+"$points3$ game points and $kakush3$ kakush."
+#
+msgid ""
+"Game $tablename$ of $gametype$ just ended.<br> &mdash; $winner1$ won "
+"$points1$ game points and $kakush1$ kakush;<br> &mdash; $winner2$ won "
+"$points2$ game points and $kakush2$ kakush;<br> &mdash; $winner3$ won "
+"$points3$ game points and $kakush3$ kakush;<br> &mdash; $winner4$ won "
+"$points4$ game points and $kakush4$ kakush."
+msgstr ""
+"Game $tablename$ of $gametype$ just ended.<br> &mdash; $winner1$ won "
+"$points1$ game points and $kakush1$ kakush;<br> &mdash; $winner2$ won "
+"$points2$ game points and $kakush2$ kakush;<br> &mdash; $winner3$ won "
+"$points3$ game points and $kakush3$ kakush;<br> &mdash; $winner4$ won "
+"$points4$ game points and $kakush4$ kakush."
+#
+msgid ""
+"Game $tablename$ of $gametype$ just ended.<br>$winner1$ won $points1$ game "
+"points and $kakush1$ kakush."
+msgstr ""
+"Game $tablename$ of $gametype$ just ended.<br>$winner1$ won $points1$ game "
+"points and $kakush1$ kakush."
+#
+msgid "Game ended"
+msgstr "Game ended"
+#
+msgid "Game won!"
+msgstr "Game won!"
+#
+msgid "It will now appear in your feed."
+msgstr "It will now appear in your feed."
+#
+msgid "Kakaranet: new delivery"
+msgstr "Kakaranet: new delivery"
+#
+msgid "Login with Facebook"
+msgstr "Facebook ile giriş"
+#
+msgid "Loses: "
+msgstr "Loses: "
+#
+msgid "Notification error while processing delivery!"
+msgstr "Notification error while processing delivery!"
+#
+msgid "Ok, the delivery is on its' way now!"
+msgstr "Ok, the delivery is on its' way now!"
+#
+msgid "Only paid members"
+msgstr "Only paid members"
+#
+msgid ""
+"Our player $winner$ just won $points$ game points and $kakush$ kakush in "
+"$tablename$ of $gametype$."
+msgstr ""
+"Our player $winner$ just won $points$ game points and $kakush$ kakush in "
+"$tablename$ of $gametype$."
+#
+msgid ""
+"Our player $winner$ just won $points$ game points and $kakush$ kakush in "
+"$tablename$ of $gametype$.<br>All the winners are:<br> &mdash; $winner1$ won "
+"$points1$ game points and $kakush1$ kakush;<br> &mdash; $winner2$ won "
+"$points2$ game points and $kakush2$ kakush."
+msgstr ""
+"Our player $winner$ just won $points$ game points and $kakush$ kakush in "
+"$tablename$ of $gametype$.<br>All the winners are:<br> &mdash; $winner1$ won "
+"$points1$ game points and $kakush1$ kakush;<br> &mdash; $winner2$ won "
+"$points2$ game points and $kakush2$ kakush."
+#
+msgid ""
+"Our player $winner$ just won $points$ game points and $kakush$ kakush in "
+"$tablename$ of $gametype$.<br>All the winners are:<br> &mdash; $winner1$ won "
+"$points1$ game points and $kakush1$ kakush;<br> &mdash; $winner2$ won "
+"$points2$ game points and $kakush2$ kakush;<br> &mdash; $winner3$ won "
+"$points3$ game points and $kakush3$ kakush."
+msgstr ""
+"Our player $winner$ just won $points$ game points and $kakush$ kakush in "
+"$tablename$ of $gametype$.<br>All the winners are:<br> &mdash; $winner1$ won "
+"$points1$ game points and $kakush1$ kakush;<br> &mdash; $winner2$ won "
+"$points2$ game points and $kakush2$ kakush;<br> &mdash; $winner3$ won "
+"$points3$ game points and $kakush3$ kakush."
+#
+msgid ""
+"Our player $winner$ just won $points$ game points and $kakush$ kakush in "
+"$tablename$ of $gametype$.<br>All the winners are:<br> &mdash; $winner1$ won "
+"$points1$ game points and $kakush1$ kakush;<br> &mdash; $winner2$ won "
+"$points2$ game points and $kakush2$ kakush;<br> &mdash; $winner3$ won "
+"$points3$ game points and $kakush3$ kakush;<br> &mdash; $winner4$ won "
+"$points4$ game points and $kakush4$ kakush."
+msgstr ""
+"Our player $winner$ just won $points$ game points and $kakush$ kakush in "
+"$tablename$ of $gametype$.<br>All the winners are:<br> &mdash; $winner1$ won "
+"$points1$ game points and $kakush1$ kakush;<br> &mdash; $winner2$ won "
+"$points2$ game points and $kakush2$ kakush;<br> &mdash; $winner3$ won "
+"$points3$ game points and $kakush3$ kakush;<br> &mdash; $winner4$ won "
+"$points4$ game points and $kakush4$ kakush."
+#
+msgid "Paid"
+msgstr "Paid"
+#
+msgid "Players Count:"
+msgstr "Players Count:"
+#
+msgid "Please, check:"
+msgstr "Please, check:"
+#
+msgid "Saved"
+msgstr "Saved"
+#
+msgid "So, you want to deliver"
+msgstr "So, you want to deliver"
+#
+msgid ""
+"Sorry, not all of your payments are yet confirmed. We are working on it, "
+"please wait a little bit more."
+msgstr ""
+"Sorry, not all of your payments are yet confirmed. We are working on it, "
+"please wait a little bit more."
+#
+msgid "Success ratio: "
+msgstr "Success ratio: "
+#
+msgid "Total games played: "
+msgstr "Total games played: "
+#
+msgid ""
+"Tournament $name$$desc$ just finished.<br>$winner1$ won $kakush1$ worth "
+"$prize1$."
+msgstr ""
+"Tournament $name$$desc$ just finished.<br>$winner1$ won $kakush1$ worth "
+"$prize1$."
+#
+msgid ""
+"Tournament $name$$desc$ just finished.<br>$winner1$ won $kakush1$ worth "
+"$prize1$.<br>$winner2$ won $kakush2$ worth $prize2$."
+msgstr ""
+"Tournament $name$$desc$ just finished.<br>$winner1$ won $kakush1$ worth "
+"$prize1$.<br>$winner2$ won $kakush2$ worth $prize2$."
+#
+msgid ""
+"Tournament $name$$desc$ just finished.<br>$winner1$ won $kakush1$ worth "
+"$prize1$.<br>$winner2$ won $kakush2$ worth $prize2$.<br>$winner3$ won "
+"$kakush3$ worth $prize3$."
+msgstr ""
+"Tournament $name$$desc$ just finished.<br>$winner1$ won $kakush1$ worth "
+"$prize1$.<br>$winner2$ won $kakush2$ worth $prize2$.<br>$winner3$ won "
+"$kakush3$ worth $prize3$."
+#
+msgid "Tournament finished"
+msgstr "Tournament finished"
+#
+msgid "Unsupported note type!"
+msgstr "Unsupported note type!"
+#
+msgid ""
+"User $user$ wants his $gname$ ($vendor_id$, $gift_id$) delivered to $address"
+"$, $city$, $district$, $postal_code$."
+msgstr ""
+"User $user$ wants his $gname$ ($vendor_id$, $gift_id$) delivered to $address"
+"$, $city$, $district$, $postal_code$."
+#
+msgid "Vendor"
+msgstr "Vendor"
+#
+msgid "Wins: "
+msgstr "Wins: "
+#
+msgid "batak"
+msgstr "batak"
+#
+msgid "failed"
+msgstr "failed"
+#
+msgid "king"
+msgstr "king"
+#
+msgid "no"
+msgstr "no"
+#
+msgid "okey"
+msgstr "okey"
+#
+msgid "sorbi"
+msgstr "sorbi"
+#
+msgid "tavla"
+msgstr "tavla"
+#
+msgid "unsupported"
+msgstr "unsupported"
