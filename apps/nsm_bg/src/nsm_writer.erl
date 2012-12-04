@@ -104,7 +104,7 @@ handle_notice(["feed", "user", FeedOwner, "entry", EntryId, "add"] = Route,
     {noreply, State};
 
 % add/delete system message
-handle_notice(["feed", "user", _FeedOwner, "entry", EntryId, "add_system"] = Route,
+handle_notice(["feed", "user", _FeedOwner, "entry", EntryId, "add_system"] = Route, 
               [From|_] = Message,
               #state{owner = WorkerOwner, feed = Feed, direct = _Direct} = State) ->
     ?INFO("feed(~p): system message: Owner=~p, Route=~p, Message=~p",
@@ -114,13 +114,14 @@ handle_notice(["feed", "user", _FeedOwner, "entry", EntryId, "add_system"] = Rou
     feed:add_entry(Feed, From, [], EntryId, Desc, Medias, {user, system}),
     {noreply, State};
 
-handle_notice(["feed", "user", _FeedOwner, "entry", EntryId, "delete_system"] = Route,
-              Message,
+handle_notice(["feed", "group", GroupId, "entry", EntryId, "add_system"] = Route,
+              [From|_] = Message,
               #state{owner = Owner, feed = Feed} = State) ->
-    ?INFO("feed(~p): remove entry: Owner=~p, Route=~p, Message=~p",
+    ?INFO("feed(~p): group system message: Owner=~p, Route=~p, Message=~p",
           [self(), Owner, Route, Message]),
-    %% all group subscribers shold delete entry from their feeds
-    feed:remove_entry(Feed, EntryId),
+    [From, _Destinations, Desc, Medias] = Message,
+    feed:add_group_entry(Feed, From, [{GroupId, group}], EntryId,
+                         Desc, Medias, {group, system}),
     {noreply, State};
 
 handle_notice(["feed", "user", UId, "post_note"] = Route, Message, 
@@ -131,6 +132,45 @@ handle_notice(["feed", "user", UId, "post_note"] = Route, Message,
     feed:add_entry(Feed, UId, [], Id, Note, [], {user, system_note}),
     {noreply, State};
 
+
+handle_notice(["system", "game_begins_note"] = Route, Message, State) ->    % this doesn't work! have to figure why
+    ?INFO("feed(~p): game_begins_note: Route=~p, Message=~p", [self(), Route, Message]),
+    {URL, UId, TName, GName, GRounds, GSpeed, GMode} = Message,
+    SGRounds = case GRounds of   % CD10 fix
+        undefined -> "no";
+        I -> integer_to_list(I)
+    end,
+    Desc = lists:flatten( URL ++ "|" ++ UId ++ "|" ++ TName ++ "|" ++ GName ++ "|" ++ SGRounds ++ "|" ++ GSpeed ++ "|" ++ GMode),
+    %UserList = nsm_groups:list_group_members("kakaranet"),
+    %UserList = [To || #subs{who=To} <- nsm_users:list_subscr_me(UId)] ++ [UId],
+    UserList = [UId],
+    ID = utils:uuid_ex(),
+    Destinations = [{User, user} || User <- UserList],
+    Route = [feed, user, UId, entry, ID, add_system],
+    nsx_msg:notify(Route, [UId, Destinations, Desc, []]),
+    {noreply, State};
+
+
+handle_notice(["system", "tournament_tour_note"] = Route, Message, State) ->
+    ?INFO("feed(~p): tournament_tour_note: Route=~p, Message=~p", [self(), Route, Message]),
+    {TId, TourType, TourRes} = Message,
+    {ok, Tour} = nsm_db:get(tournament, TId),
+    Desc = case Tour#tournament.description of
+        "" -> "";
+        D -> " (" ++ D ++ ")"
+    end,    
+    [begin
+        SNum = case TourType of
+            ne -> integer_to_list(length(TourRes));
+            {te, Num} -> integer_to_list(Num);
+            {ce, Num} -> integer_to_list(Num)
+        end,
+        NoteString = "tourtour" ++ "|name=" ++ Tour#tournament.name ++ "|desc=" ++ Desc ++ "|total=" ++ SNum ++
+            "|player=" ++ UId ++ "|pos=" ++ integer_to_list(CommonPos) ++ "|points=" ++ integer_to_list(Points) ++ "|tourstatus=" ++ atom_to_list(Status),
+        nsx_msg:notify(["feed", "user", UId, "post_note"], NoteString)
+    end
+    || {UId, CommonPos, Points, Status} <- TourRes],
+    {noreply, State};    
 
 handle_notice(["system", "tournament_ends_note"] = Route, Message, State) ->
     ?INFO("feed(~p): tournament_ends_note: Route=~p, Message=~p", [self(), Route, Message]),
@@ -837,6 +877,8 @@ get_opts(#state{type = system, owner = Owner}) ->
                 % invites
                 [system, use_invite],
                 % notifications
+                [system, game_begins_note], % out of order
+                [system, tournament_tour_note],
                 [system, tournament_ends_note],
                 [system, game_ends_note]
                 ]},

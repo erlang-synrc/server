@@ -122,14 +122,20 @@ get_media_thumb(E, ViewMediaPanelId) ->
 
 
 entry_element(E, Comments, Avatar, {MediaThumb, MediaLists0}, _TargetMedia, Anchor) ->
+    ?PRINT(E),
     case E#entry.type of 
         {_, system_note} ->
             Title_Desc_Args = ling:split(site_utils:decode_letters(E#entry.description), "|"),
             RawArgs = lists:nthtail(1, Title_Desc_Args),
             Args1 = [begin Arg=ling:split(RArg, "="), {list_to_atom(hd(Arg)), hd(tl(Arg))} end || RArg <- RawArgs],
-            Args = case proplists:get_value(gametype, Args1, "") of
+            Args2 = case proplists:get_value(gametype, Args1, "") of % gametype localization
                 "" -> Args1;
                 Type -> proplists:delete(gametype, Args1) ++ [{gametype, site_utils:game_to_string(list_to_atom(Type))}]
+            end,
+            Args = case proplists:get_value(tourstatus, Args2, "") of % tour status localization
+                "" -> Args1;
+                "active" -> proplists:delete(tourstatus, Args2) ++ [{tourstatus, ?_T("proceeds in")}];
+                "eliminated" -> proplists:delete(tourstatus, Args2) ++ [{tourstatus, ?_T("leaves")}]
             end,
             {Title, Desc} = case lists:nth(1, Title_Desc_Args) of 
                 "tour1" -> {?_T("Tournament finished"), ?_TS("Tournament $name$$desc$ just finished.<br>$winner1$ won $kakush1$ worth $prize1$.", Args)};
@@ -159,6 +165,9 @@ entry_element(E, Comments, Avatar, {MediaThumb, MediaLists0}, _TargetMedia, Anch
                 "game_won4" ->
                     {?_T("Game won!"),
                     ?_TS("Our player $winner$ just won $points$ game points and $kakush$ kakush in $tablename$ of $gametype$.<br>All the winners are:<br> &mdash; $winner1$ won $points1$ game points and $kakush1$ kakush;<br> &mdash; $winner2$ won $points2$ game points and $kakush2$ kakush;<br> &mdash; $winner3$ won $points3$ game points and $kakush3$ kakush;<br> &mdash; $winner4$ won $points4$ game points and $kakush4$ kakush.", Args)};
+                "tourtour" -> 
+                    {?_T("Tour finished"),
+                    ?_TS("Our player $player$ $tourstatus$ tournament $name$$desc$ on $pos$ position with $points$ game points. Tournament goes on with $total$ players.", Args)};
                 _ -> {?_T("Unsupported note type!"), E#entry.description}
             end,
             #notice{type=message, position=left, title=Title, body=Desc};

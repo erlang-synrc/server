@@ -78,6 +78,7 @@ content() ->
            integer_to_list(element(1, T#tournament.start_date)),
 
     wf:state(tour_start_time, T#tournament.start_time),
+    wf:state(tour_start_date, T#tournament.start_date),
     Timer = case date() == T#tournament.start_date of
         false ->
             DDays = calendar:date_to_gregorian_days(T#tournament.start_date) - calendar:date_to_gregorian_days(date()),
@@ -466,7 +467,7 @@ get_tour_user_list() ->
                                         true -> green;
                                         false -> red
                                 end
-                     end, nsm_users:user_realname(U)}
+                     end, site_utils:decode_letters(nsm_users:user_realname(U))}
     end || U <- sets:to_list(sets:union(JoinedUsers,ActiveUsers)) ++ 
                 case sets:is_element(wf:user(),JoinedUsers) of true -> []; false -> [wf:user()] end],
     lists:usort(List).
@@ -536,22 +537,34 @@ str_plus_0(N) ->
     end.
 
 get_timer_for_now() ->
-    TourTime = wf:state(tour_start_time),
-    DTime = case wf:state(tour_long_id) of 
-        [] -> calendar:time_to_seconds(TourTime) - calendar:time_to_seconds(time());
-        _ -> 0  % started tournament is always either NOW or FINISHED
-    end,
-    case DTime =< 0 of
-        true -> 
-            TId = wf:state(tournament_int_id),
-            case rpc:call(?GAMESRVR_NODE, game_manager,get_tournament,[TId]) of
-                [] -> ?_T("FINISHED");
-                _ -> ?_T("NOW")
-            end;
-        false ->
-            S = DTime rem 60,
-            M = (DTime div 60) rem 60,
-            H = (DTime div 3600),
-            integer_to_list(H) ++ ":" ++ str_plus_0(M) ++ ":" ++ str_plus_0(S)
+    Id = list_to_integer(wf:q("id")),
+    {ok, T} = nsm_db:get(tournament, Id),
+    case T#tournament.status of
+        canceled -> ?_T("CANCELED");
+        _ ->
+            TourTime = wf:state(tour_start_time),
+            TourDate = wf:state(tour_start_date),
+            DTime = case date() == TourDate of
+                true -> 
+                    case wf:state(tour_long_id) of 
+                        [] -> calendar:time_to_seconds(TourTime) - calendar:time_to_seconds(time());
+                        _ -> 0  % started tournament is always either NOW or FINISHED
+                    end;
+                false ->
+                    0
+            end,
+            case DTime =< 0 of
+                true -> 
+                    TId = wf:state(tournament_int_id),
+                    case rpc:call(?GAMESRVR_NODE, game_manager,get_tournament,[TId]) of
+                        [] -> ?_T("FINISHED");
+                        _ -> ?_T("NOW")
+                    end;
+                false ->
+                    S = DTime rem 60,
+                    M = (DTime div 60) rem 60,
+                    H = (DTime div 3600),
+                    integer_to_list(H) ++ ":" ++ str_plus_0(M) ++ ":" ++ str_plus_0(S)
+            end
     end.
 
