@@ -146,7 +146,7 @@ init([GameId, TableId, Params]) ->
     TournamentType = proplists:get_value(tournament_type, Params),
     Speed = proplists:get_value(speed, Params),
     TurnTimeout = proplists:get_value(turn_timeout, Params, get_timeout(turn, Speed)), %% TODO Set this param explictly
-    RevConfirmTimeout = proplist:get_value(reveal_confirmation_timeout, Params, get_timeout(challenge, Speed)), %% TODO Set this param explictly
+    RevConfirmTimeout = proplists:get_value(reveal_confirmation_timeout, Params, get_timeout(challenge, Speed)), %% TODO Set this param explictly
     ReadyTimeout = proplists:get_value(ready_timeout, Params, get_timeout(ready, Speed)), %% TODO Set this param explictly
     RoundTimeout = proplists:get_value(round_timeout, Params),
     GameType = proplists:get_value(game_type, Params),
