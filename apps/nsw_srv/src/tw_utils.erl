@@ -25,12 +25,15 @@ app_callback()->
 
 get_request_token()->
   URL = "https://twitter.com/oauth/request_token",
-  {ok, Response} = oauth:get(URL, [], ?CONSUMER),
-  Params = oauth:params_decode(Response),
-  RequestToken = oauth:token(Params),
-  RequestTokenSecret = oauth:token_secret(Params),
-  CallbackConfirmed = proplists:get_value("oauth_callback_confirmed", Params),
-  {RequestToken, RequestTokenSecret, CallbackConfirmed}.
+  case oauth:get(URL, [], ?CONSUMER) of
+    {ok, Response} ->
+      Params = oauth:params_decode(Response),
+      RequestToken = oauth:token(Params),
+      RequestTokenSecret = oauth:token_secret(Params),
+      CallbackConfirmed = proplists:get_value("oauth_callback_confirmed", Params),
+      {RequestToken, RequestTokenSecret, CallbackConfirmed};
+    {error, E}-> {error, E}
+  end.
 
 get_access_token(undefined, undefined)-> not_authorized;
 get_access_token(undefined, _)-> not_authorized;
@@ -63,7 +66,7 @@ service_item()->
   end.
 
 service_btn(undefined) ->
-  case tw_utils:get_request_token() of
+  case get_request_token() of
     {RequestToken, _, _} ->
       [#image{image="/images/img-52.png"}, #span{text="Twitter"},
       #link{class="btn", text=["<span>+</span>",?_T("Add")], url=authorize_url(RequestToken),html_encode = false}];
