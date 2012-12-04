@@ -335,7 +335,11 @@ event({newtour_slider}) ->
     T = wf:state(slider_max_value),
     wf:state(slider_min, F + ((T-F) * Min1000) div 1000),
     wf:state(slider_max, F + ((T-F) * Max1000) div 1000),
+    wf:wire(#event{postback=update_product_list});
+
+event(update_product_list) ->
     wf:update(product_list, product_list_paged(1));
+
 
 
 %event({newtour_slider}) -> % all gifts hack
