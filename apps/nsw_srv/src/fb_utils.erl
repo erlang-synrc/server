@@ -9,7 +9,7 @@
 init()->
   wf:wire(#api{name=setFbIframe, tag=fb}),
   wf:wire(#api{name=fbLogin, tag=fb}),
-  wf:wire(#api{name=fbLogout, tag=fb}),
+  wf:wire(#api{name=fbPreLogin, tag=fb}),
   wf:wire(#api{name=fbSignedRequest, tag=fb}),
   wf:wire(#api{name=fbAddAsService, tag=fb}),
   ["<div id=fb-root></div>",
@@ -20,9 +20,6 @@ init()->
       "cookie: true,",
       "xfbml: true,",
       "oauth: true",
-      "});",
-      "if(page.fbLogout) FB.Event.subscribe('auth.logout', function(response){",
-        "page.fbLogout(response);",
       "});",
       "FB.getLoginStatus(function(response) {",
         "if(page.setFbIframe){",
@@ -38,6 +35,7 @@ init()->
       "});",
     "};",
     "function fb_login(){",
+      "page.fbPreLogin();",
       "FB.getLoginStatus(function(response){",
         "if(response.status == 'connected'){",
           "console.log(\"User connected to FB, check for registered account\");",
@@ -103,7 +101,7 @@ login_btn(Label)->
     [#link{class="fb_login_btn", text=?_T(Label), actions=#event{type=click, actions=#script{script="fb_login()"} }}].
 
 logout_btn()->
-    [#link{text=?_T("Logout"), actions=#event{type=click, actions=#script{script="FB.logout()"}}, postback=logout }].
+[#link{text=?_T("Logout"), postback=logout}].
 
 service_item()->
   case nsm_users:get_user({username, wf:user()}) of
@@ -111,12 +109,7 @@ service_item()->
     {ok, User} ->
       Li = case User#user.facebook_id of
         undefined -> add_service_btn();
-        Id ->
-          case nsm_db:get(facebook_oauth, Id) of
-            {error, notfound} -> add_service_btn();
-            {ok, #facebook_oauth{} = FO} when FO#facebook_oauth.access_token =/= undefined -> del_service_btn();
-            {ok, #facebook_oauth{}} -> add_service_btn()
-          end
+        _ -> del_service_btn()
       end,
       #listitem{id=fbServiceButton, class=png, body=Li}
   end.
@@ -179,44 +172,54 @@ pay_dialog()->
 event(fb_remove_service)->
   case nsm_users:get_user({username, wf:user()}) of
     {error, notfound} -> wf:redirect(?_U("/login"));
-    {ok, #user{facebook_id=FbId}} ->
+    {ok, #user{facebook_id=FbId} = User} when FbId =/= undefined->
       case nsm_db:get(facebook_oauth, FbId) of
-        {error, notfound} -> error;
         {ok, #facebook_oauth{access_token=Token}} ->
-          URL = "https://graph.facebook.com/" ++ FbId ++ "/permissions/publish_stream?access_token="++ Token,
-          httpc:request(delete, {URL, []}, [], []),
-          nsx_msg:notify(["db", "user", wf:user(), "put"],
-            #facebook_oauth{user_id=FbId, access_token=undefined}),
-          wf:update(fbServiceButton, add_service_btn())
-      end
+          case Token of
+            undefined -> ok;
+            T ->
+              URL = "https://graph.facebook.com/" ++ FbId ++ "/permissions/publish_stream?access_token="++ T,
+              httpc:request(delete, {URL, []}, [], [])
+          end,
+          nsx_msg:notify(["system", "delete"], #facebook_oauth{user_id=FbId});
+        {error, notfound} -> ok
+      end,
+      nsx_msg:notify(["system", "delete"], {user_by_facebook_id, FbId}),
+      nsx_msg:notify(["system", "put"], User#user{facebook_id=undefined}),
+      wf:update(fbServiceButton, add_service_btn());
+    _ -> no_service
   end;
 event(Event)->
   ?INFO("Fbutils: ~p", [Event]).
-
+api_event(fbPreLogin, _, _)->
+  wf:session(fb_registration, undefined);
 api_event(fbLogin, _, [Args])->
-    case Args of
-	[{error, E}] ->
-	    ErrorMsg = io_lib:format("Facebook error:~p", [E]),
-	    wf:redirect( ?_U("/index/message/") ++ site_utils:base64_encode_to_url(ErrorMsg));
-	_ ->
-        CurrentUser = wf:user(),
-	    case nsm_users:get_user({facebook, proplists:get_value(id, Args)}) of
+  case Args of
+    [{error, E}] ->
+      ErrorMsg = io_lib:format("Facebook error:~p", [E]),
+      wf:redirect( ?_U("/index/message/") ++ site_utils:base64_encode_to_url(ErrorMsg));
+    _ ->
+      CurrentUser = wf:user(),
+      case nsm_db:user_by_facebook_id(proplists:get_value(id, Args)) of
+        {error, notfound} ->
+          case wf:session(fb_registration) of
+            undefined ->
+              wf:session(fb_registration, Args),
+              wf:redirect([?HTTP_ADDRESS,?_U("/login/register")]);
+            _ -> ok
+          end;
         {ok, User} when User#user.username == CurrentUser -> ok;
-	    {ok, User} ->
-		case same_or_undefined(wf:user(), User#user.username) of
-		    true ->
-			login:login_user(User#user.username),
-			wf:session(logged_with_fb, true),
-			wf:redirect_from_login(?_U("/dashboard"));
-                        %webutils:redirect_to_tcp(?_U("dashboard"));
-		    _ -> fb_user_not_match
-		end;
-	    _ ->
-	        wf:session(fb_registration, Args),
-		wf:redirect([?HTTP_ADDRESS,?_U("/login/register")])
-	    end
-    end;
-api_event(fbLogout, _, _Data)-> wf:session(fb_registration, undefined);
+        {ok, User} ->
+          case same_or_undefined(wf:user(), User#user.username) of
+            true ->
+              login:login_user(User#user.username),
+              wf:session(logged_with_fb, true),
+              wf:redirect_from_login(?_U("/dashboard"));
+              %webutils:redirect_to_tcp(?_U("dashboard"));
+            _ -> ok
+          end
+      end
+  end;
 api_event(fbNotifyOverLimit, _, _)->
     buy:over_limit_popup(nsm_membership_packages:get_monthly_purchase_limit());
 api_event(processOrder, _, [[{order_id, OrderId}, {status, Status}]])-> 

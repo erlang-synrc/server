@@ -263,7 +263,7 @@ post_write_hooks(Class,R,C) ->
                     _ -> C:put(make_object({user_by_email, R#user.username, R#user.email}, user_by_email))
                 end,
                 case R#user.verification_code of
-                    undefined -> nothind;
+                    undefined -> nothing;
                     _ -> C:put(make_object({user_by_verification_code, R#user.username, R#user.verification_code}, user_by_verification_code))
                 end,
                 case R#user.facebook_id of

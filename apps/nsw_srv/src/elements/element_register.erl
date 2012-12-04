@@ -156,26 +156,26 @@ finish_register(Invite) ->
     end.
 
 finish_register_(Invite) ->
-    {Name, Surname, FbId} =
-        case wf:session(fb_registration) of
-            undefined ->
-                {wf:q(reg_name), wf:q(reg_surname), undefined};
-            Data ->
-                N = proplists:get_value(first_name, Data),
-                S = proplists:get_value(last_name, Data),
-                F =  wf:to_list(proplists:get_value(id, Data)),
-                {N,S,F}
-        end,
-    wf:info("Registration element:finish_register: name:~p surname:~p fbid:~p", [Name, Surname, FbId]),
-    Day = site_utils:element_value(reg_day),
-    Month = site_utils:element_value(reg_month),
-    Year = site_utils:element_value(reg_year),
-    BirthDay =  case site_utils:check_date_correct({Year, Month, Day}) of
-		    {ok, Date} -> Date;
-		    {error, _} -> throw({msg, ?_T("Date of birth is incorrect.")})
-		end,
+  {Name, Surname, FbId} =
+    case wf:session(fb_registration) of
+      undefined ->
+       {wf:q(reg_name), wf:q(reg_surname), undefined};
+      Data ->
+        N = proplists:get_value(first_name, Data),
+        S = proplists:get_value(last_name, Data),
+        F =  wf:to_list(proplists:get_value(id, Data)),
+        {N,S,F}
+    end,
+  wf:info("Registration element:finish_register: name:~p surname:~p fbid:~p", [Name, Surname, FbId]),
+  Day = site_utils:element_value(reg_day),
+  Month = site_utils:element_value(reg_month),
+  Year = site_utils:element_value(reg_year),
+  BirthDay =  case site_utils:check_date_correct({Year, Month, Day}) of
+    {ok, Date} -> Date;
+    {error, _} -> throw({msg, ?_T("Date of birth is incorrect.")})
+  end,
 
-    Mail = wf:q(reg_email),
+  Mail = wf:q(reg_email),
 
     {Status, VerificationCode} =
     case Invite of
