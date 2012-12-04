@@ -224,7 +224,13 @@ api_event(processOrder, _, [[{order_id, OrderId}, {status, Status}]])->
       wf:redirect("/profile/account");
     _ -> wf:info("Purchase Not Found")
   end;
-api_event(setFbIframe, _, [IsIframe]) -> wf:session(is_facebook, IsIframe);
+api_event(setFbIframe, _, [IsIframe]) ->
+  wf:session(is_facebook, IsIframe),
+  LogoutBtn = case IsIframe of
+    true -> [];
+    _ -> #listitem{body=[#link{text=?_T("Logout"), postback=logout}]}
+  end,
+  wf:update(logout_btn, LogoutBtn);
 api_event(fbSignedRequest, _, _Data) -> ok;
 api_event(fbAddAsService, _, [Id])->
   case nsm_users:get_user({username, wf:user()}) of

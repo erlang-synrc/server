@@ -125,7 +125,7 @@ header .box img {vertical-align:top;}
 	float:left;
 	position:relative;
 }
-.user-menu li {
+.user-menu li, .user-menu span li {
 	float:left;
 	padding:3px 7px 3px 8px;
 	background:url(../images/sep-01.gif) no-repeat;
@@ -135,6 +135,8 @@ header .box img {vertical-align:top;}
 }
 .user-menu li:first-child,
 .user-menu li.first-child {background:none;}
+.user-menu span li:first-child,
+.user-menu span li.first-child {background:url(/images/sep-01.gif?jcb=1353306884) no-repeat;}
 .user-menu a {color:#fff;}
 .signup {
 	float:left;
@@ -668,16 +670,21 @@ nav a:hover {
 }
 .user-menu li.active a,
 .user-menu li.hover a,
-.user-menu li:hover a {
+.user-menu li:hover a,
+.user-menu span li.active a,
+.user-menu span li.hover a,
+.user-menu span li:hover a {
 	text-decoration:none;
 	color:#ffcf63;
 }
-.user-menu li {
+.user-menu li, .user-menu span li {
 	position:relative;
 	padding:3px 11px 7px 12px;
 }
 .user-menu li:hover ul,
-.user-menu li.hover ul {display:block;}
+.user-menu li.hover ul,
+.user-menu span li:hover ul,
+.user-menu span li.hover ul {display:block;}
 .user-menu ul {
 	position:absolute;
 	left:0;
@@ -695,14 +702,17 @@ nav a:hover {
 	border-bottom-left-radius:5px;
 	display:none;
 }
-.user-menu ul li {
+.user-menu ul li,
+.user-menu ul span li {
 	float:none;
 	padding:6px 0;
 	background:none;
 	font-size:13px;
 }
 .user-menu ul li:first-child,
-.user-menu ul li.first-child {
+.user-menu ul li.first-child,
+.user-menu ul span li:first-child,
+.user-menu ul span li.first-child {
 	margin:-7px 0 0 -14px;
 	background:url(../images/bg-drop-tl.gif) no-repeat;
 	padding-top:15px;

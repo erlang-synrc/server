@@ -96,48 +96,50 @@ header_box() -> #template { file=code:priv_dir(nsw_srv)++"/templates/header.html
 header_body() -> [account_menu(), menu_links()].
 
 account_menu() ->
-    Element = case wf:user() /= undefined of 
-	true ->
-	    case R = nsm_users:get_user(wf:user()) of 
-		{error,notfound} -> event(logout);
-		_UserFound -> 
-		    {ok, User} = R,
-		    Submenus = #list{body=[#listitem{body=#link{url=Url,text=Text}}
-		    || {Url,Text}  <- [{?_U("/profile"), ?_T("My Profile")},
-				      {?_U("/profile/account"), ?_T("My Account")},
-				      {?_U("/profile/gifts"), ?_T("My Gifts")},
-				      {?_U("/profile/stats"), ?_T("Stats")},
-				      {?_U("/profile/invite"), ?_T("Invite Buddy")}]
-					++ case nsm_acl:check_access(User, {feature, admin}) of
-					    allow -> [{?_U("/kakaadmin"), ?_T("Admin")}];
-					    _ -> []
-					end ]},
-		    {ok,#user_info{username=Username,avatar_url = AvatarUrl}} = nsm_auth:get_user_info(webutils:user_info(username)),
-		    {ok, Quota}  = nsm_accounts:balance(Username, ?CURRENCY_QUOTA),
-		    {ok, Kakush} = nsm_accounts:balance(Username, ?CURRENCY_KAKUSH),
-		    #list{class="user-menu", body=[
-			#listitem{body=[
-			    #link{url="#", body=[ 
-				#image{image=AvatarUrl, id=header_user_avatar, style="width:23px;height:23px", alt="#"},
-				#label{class="username", text=Username}]},
-			    Submenus
-			]},
-			#listitem{class=quota, body=[ #link{text=lists:concat([?_T("Quota"), " : ",Quota])}]},
-			#listitem{class=kakus, body=[ #link{text=lists:concat([?_T("Kakush")," : ",Kakush])}]},
-			case wf:session(logged_with_fb) of
-			    true -> #listitem{body=fb_utils:logout_btn()};
-			    _ -> #listitem{body=#link{text=?_T("Logout"), postback=logout}}
-			end
-		    ]}
-	    end;
-	_UserLoggedIn ->
-	    [#list{class="user-menu", body=[
-		#listitem{body=fb_utils:login_btn()},
-		#listitem{body=#link{class=login, text=?_T("Login"), url=[?HTTP_ADDRESS,?_U("/login")]}},
-		#listitem{body=#link{class=signup, text=?_T("Signup"), postback=register}}
-	    ]}]
-	end,
-	#panel{class="top", body= #panel{class="ar", body=[#panel{class="box", body=Element}]}}.
+  Element = case wf:user() /= undefined of
+    true ->
+      case R = nsm_users:get_user(wf:user()) of 
+        {error,notfound} -> event(logout);
+        _UserFound ->
+          {ok, User} = R,
+          Submenus = #list{body=[
+            #listitem{body=#link{url=Url,text=Text}} || {Url,Text}  <-
+              [ {?_U("/profile"), ?_T("My Profile")},
+                {?_U("/profile/account"), ?_T("My Account")},
+                {?_U("/profile/gifts"), ?_T("My Gifts")},
+                {?_U("/profile/stats"), ?_T("Stats")},
+                {?_U("/profile/invite"), ?_T("Invite Buddy")}
+              ] ++  case nsm_acl:check_access(User, {feature, admin}) of
+                      allow -> [{?_U("/kakaadmin"), ?_T("Admin")}];
+                      _ -> []
+                    end]},
+          {ok,#user_info{username=Username,avatar_url = AvatarUrl}} = nsm_auth:get_user_info(webutils:user_info(username)),
+          {ok, Quota}  = nsm_accounts:balance(Username, ?CURRENCY_QUOTA),
+          {ok, Kakush} = nsm_accounts:balance(Username, ?CURRENCY_KAKUSH),
+          LogoutLink = case wf:session(is_facebook) of
+            true -> [];
+            _ -> #listitem{body=[#link{text=?_T("Logout"), postback=logout}]}
+          end,
+          #list{class="user-menu", body=[
+            #listitem{body=[
+              #link{url="#", body=[ 
+                #image{image=AvatarUrl, id=header_user_avatar, style="width:23px;height:23px", alt="#"},
+                #label{class="username", text=Username}]},
+                Submenus
+            ]},
+            #listitem{class=quota, body=[ #link{text=lists:concat([?_T("Quota"), " : ",Quota])}]},
+            #listitem{class=kakus, body=[ #link{text=lists:concat([?_T("Kakush")," : ",Kakush])}]},
+            #span{id=logout_btn, body=LogoutLink}
+          ]}
+      end;
+    _UserLoggedIn ->
+        [#list{class="user-menu", body=[
+          #listitem{body=fb_utils:login_btn()},
+          #listitem{body=#link{class=login, text=?_T("Login"), url=[?HTTP_ADDRESS,?_U("/login")]}},
+          #listitem{body=#link{class=signup, text=?_T("Signup"), postback=register}}
+        ]}]
+  end,
+  #panel{class="top", body= #panel{class="ar", body=[#panel{class="box", body=Element}]}}.
 
 menu_links() ->
 	["<nav>",
