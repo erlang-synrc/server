@@ -186,38 +186,35 @@ entry_element(E, Comments, Avatar, {MediaThumb, MediaLists0}, _TargetMedia, Anch
                     end,
                     Title_URL_Desc = ling:split(E#entry.description, "|"),
                     case Title_URL_Desc of
-                        [URL, UId, TourName, TourDesc, STourDate, STourTime, STourPlayers, STourQuota, STourType, STourGame] -> % new tournament
-                            Title = ?_T("New tournament"),
+                        [URL, UId, TourName, TourDesc, STourDate, STourTime, STourPlayers, STourQuota, STourType, STourGame, SKakush] -> % new tournament
+                            Title = ?_T("New Tournament"),
+                            Desc = ?_TS("Our player, $username$, has created $type$ tournament: |tournamentnamelink| $desc$ in $game$ to be held $date$ $time$ for $players$ players with $quota$ per round quota. Prize fund is: $kakush$.", [
+                                {username, UId}, {type, STourType}, {desc, TourDesc}, {game, STourGame}, 
+                                {date, STourDate}, {time, STourTime}, {players, STourPlayers}, {quota, STourQuota}, {kakush, SKakush}
+                            ]),
+                            Descs = ling:split(Desc, "|tournamentnamelink|"),
                             #notice{type=system_message, position=left,
                                 title=#link{url=URL, text=Title},
-                                body=[
-                                    ?_TS("Our player, $username$, has created $type$ tournament: ", [{username, UId}, {type, STourType}]),
-                                    #link{style="font-weight:bold;", url=URL, text=TourName},
-                                    ?_TS("$desc$ in $game$ to be held $date$ $time$ for $players$ players with $quota$ per round quota.",
-                                        [{desc, TourDesc}, {game, STourGame}, {date, STourDate}, {time, STourTime}, {players, STourPlayers}, {quota, STourQuota}])
-                                ],
+                                body=[hd(Descs), #link{style="font-weight:bold;", url=URL, text=TourName}, hd(tl(Descs))],
                                 delay = TimeLeftAndSomeMore * 1000
                             };
                             
                         [URL, UId, TableName, GameType, Rounds, Speed, Mode] -> % new table
                             Title = ?_T("New Table"),
-                            Desc1 = ?_TS("Our player, $username$, has created ", [{username, UId}]),
                             Link = TableName,
                             SRounds = case Rounds of
                                 "no" -> ?_T("no");
                                 _ -> Rounds
                             end,
-                            Desc2 = " " ++ ?_T("for") ++ " " ++ GameType ++ " " ++ ?_T("game") ++ ". " ++ ?_T("Game") 
-                                ++ " " ++ ?_T("specs") ++ ": " ++ SRounds ++ " " ++ ?_T("rounds") 
-                                ++ ", \"" ++ matchmaker:game_speed_to_text(Speed) ++ "\" " ++ ?_T("speed") 
-                                ++ ", \"" ++ matchmaker:game_mode_to_text(Mode) ++ "\" " ++ ?_T("mode") ++ ".",
+                            Desc = ?_TS("Our player, $username$, has created |tablenamelink| for $gametype$ game.
+                                        <br>Game specs: $rounds$ rounds, $speed$ speed, $mode$ mode.", [
+                                        {username, UId}, {gametype, GameType}, {rounds, SRounds}, 
+                                        {speed, matchmaker:game_speed_to_text(Speed)}, {mode, matchmaker:game_mode_to_text(Mode)}
+                                    ]),
+                            Descs = ling:split(Desc, "|tablenamelink|"),
                             #notice{type=system_message, position=left,
                                 title=#link{url=URL, text=Title},
-                                body=[
-                                    Desc1, 
-                                    #link{style="font-weight:bold;", url=URL, text=Link},
-                                    ling:replace(Desc2, ?_T("Game"), "<br/>" ++ ?_T("Game") )  
-                                ],
+                                body=[hd(Descs), #link{style="font-weight:bold;", url=URL, text=Link}, hd(tl(Descs))],
                                 delay = TimeLeftAndSomeMore * 1000
                             };
                         [Title, Desc] ->
