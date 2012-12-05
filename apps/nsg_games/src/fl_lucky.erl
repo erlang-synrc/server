@@ -40,7 +40,8 @@
 -record(state,
         {
          game_id           :: pos_integer(),
-         params            :: proplists:proplist(),
+         game_type         :: atom(),
+         bot_module        :: atom(),
          players,          %% The register of tournament players
          tables,           %% The register of tournament tables
          seats,            %% Stores relation between players and tables seats
@@ -124,7 +125,7 @@ init([GameId, Params]) -> init([GameId, Params, self()]);
 init([GameId, Params, _Manager]) ->
     GameType = proplists:get_value(game_type, Params),
     Mode = proplists:get_value(mode, Params),
-    TableParams = table_parameters(GameType, ?MODULE, self()),
+    BotModule = bot_module(GameType),
     GProcVal = #game_table{game_type = GameType,
                            game_process = self(),
                            game_module = ?MODULE,
@@ -146,9 +147,9 @@ init([GameId, Params, _Manager]) ->
     ?INFO("GProc Registration: ~p",[GProcVal]),
     gproc:reg({p,l,self()},GProcVal),
 
-    {ok, ?STATE_PROCESSING, 
-         #state{game_id = GameId,
-                                   params = TableParams,
+    {ok, ?STATE_PROCESSING, #state{game_id = GameId,
+                                   game_type = GameType,
+                                   bot_module = BotModule,
                                    players = players_init(),
                                    tables = tables_init(),
                                    seats = seats_init(),
@@ -384,8 +385,10 @@ reg_player_at_new_table(UserId, IsBot, From,
                                seats = Seats,
                                player_id_counter = PlayerId,
                                table_id_counter = TableId,
-                               params = TableParams
+                               game_type = GameType,
+                               bot_module = BotModule
                               } = StateData) ->
+    TableParams = table_parameters(GameType, ?MODULE, self(), TableId),
     {ok, TabPid} = spawn_table(GameId, TableId, TableParams),
     MonRef = erlang:monitor(process, TabPid),
     %% FIXME: Table global id should use a persistent counter
@@ -397,8 +400,7 @@ reg_player_at_new_table(UserId, IsBot, From,
     ?INFO("FL_LUCKY <~p> User ~p registered as player <~p>.", [GameId, UserId, PlayerId]),
     NewSeats2 = assign_seat(TableId, 1, PlayerId, IsBot, NewSeats),
     ?INFO("FL_LUCKY <~p> User ~p assigned to seat <~p> of table <~p>.", [GameId, UserId, 1, TableId]),
-    GameParams = proplists:get_value(game_params, TableParams),
-    spawn_bots(GameId, GameParams, SeatsNum -1),
+    spawn_bots(GameId, BotModule, SeatsNum -1),
     ?INFO("FL_LUCKY <~p> Bots for table <~p> are spawned.", [GameId, TableId]),
     send_to_table(TabPid, {register, PlayerId, 1, reg_confirm_fun(From, PlayerId, {?TAB_MOD, TabPid})}),
     ?INFO("FL_LUCKY <~p> Registration of user ~p completed.", [GameId, UserId]),
@@ -427,12 +429,11 @@ unreg_player_and_eliminate_table(PlayerId, TabId, #state{players = Players,
 unreg_player_and_call_a_bot(PlayerId, TabId, SeatNum, #state{players = Players,
                                                              seats = Seats,
                                                              game_id = GameId,
-                                                             params = TableParams
-                                                             } = StateData) ->
+                                                             bot_module = BotModule
+                                                            } = StateData) ->
     NewPlayers = del_player(PlayerId, Players),
     NewSeats = free_seat(TabId, SeatNum, Seats),
-    GameParams = proplists:get_value(game_params, TableParams),
-    spawn_bots(GameId, GameParams, 1),
+    spawn_bots(GameId, BotModule, 1),
     {next_state, ?STATE_PROCESSING, StateData#state{players = NewPlayers,
                                                     seats = NewSeats}}.
 
@@ -584,21 +585,19 @@ del_seats_by_table_id(TabId, Seats) ->
         end,
     lists:foldl(F, Seats, find_seats_by_table_id(TabId, Seats)).
 
-spawn_bots(_GameId, _Params, 0) -> ok;
-spawn_bots(GameId, Params, BotsNum) ->
-    spawn_bot(bot_module(Params), GameId),
-    spawn_bots(GameId, Params, BotsNum-1).
+spawn_bots(GameId, BotModule, BotsNum) ->
+    [spawn_bot(BotModule, GameId) || _ <- lists:seq(1, BotsNum)].
 
-spawn_bot(BM, GameId) ->
-    {NPid, _SPid, _NUId, _User} = create_robot(BM, GameId),
-    BM:join_game(NPid).
+spawn_bot(BotModule, GameId) ->
+    {NPid, UserInfo} = create_robot(BotModule, GameId),
+    BotModule:join_game(NPid),
+    UserInfo.
 
-create_robot(BM, GameId) ->
-    User = auth_server:robot_credentials(),
-    NUId = User#'PlayerInfo'.id,
-    {ok, NPid} = BM:start_link(self(), User, GameId),
-    SPid = BM:get_session(NPid),
-    {NPid, SPid, NUId, User}.
+create_robot(BotModule, GameId) ->
+    UserInfo = auth_server:robot_credentials(),
+    {ok, NPid} = BotModule:start_link(self(), UserInfo, GameId),
+    BotModule:get_session(NPid), %% Hack for game_tavla_bot. Creates a game session process
+    {NPid, UserInfo}.
 
 spawn_table(GameId, TableId, Params) ->
     Pid = sl_simple:start(GameId, TableId, Params),
@@ -608,7 +607,7 @@ send_to_table(TabPid, Message) ->
     ?TAB_MOD:parent_send(TabPid, Message).
 
 %% table_parameters(GameType, ParentPid) -> Proplist
-table_parameters(game_okey, ParentMod, ParentPid) ->
+table_parameters(game_okey, ParentMod, ParentPid, TableId) ->
     [
      {game_module, game_okey},
      {seats_num, 4},
@@ -616,6 +615,7 @@ table_parameters(game_okey, ParentMod, ParentPid) ->
      {game_params, [
                     {game, game_okey},
                     {game_mode, standard},
+                    {table_name, "I'm Filling Lucky #" ++ integer_to_list(TableId)},
                     {speed, normal},
                     {lucky, true},
                     {rounds, inifinity},
@@ -623,7 +623,7 @@ table_parameters(game_okey, ParentMod, ParentPid) ->
                    ]}
     ];
 
-table_parameters(game_tavla, ParentMod, ParentPid) ->
+table_parameters(game_tavla, ParentMod, ParentPid, TableId) ->
     [
      {game_module, game_tavla},
      {seats_num, 2},
@@ -631,6 +631,7 @@ table_parameters(game_tavla, ParentMod, ParentPid) ->
      {game_params, [
                     {game, game_tavla},
                     {game_mode, standard},
+                    {table_name, "I'm Filling Lucky #" ++ integer_to_list(TableId)},
                     {lucky, true},
                     {speed, normal},
                     {rounds, infinity}
@@ -643,21 +644,5 @@ game_type_to_str(game_tavla) -> "Tavla".
 seats_num(TableParams) ->
     proplists:get_value(seats_num, TableParams).
 
-bot_module(TableParams) ->
-    case proplists:get_value(game, TableParams) of
-        game_okey -> game_okey_bot;
-        game_tavla -> game_tavla_bot
-    end.
-
-%%     [{feel_lucky, true},
-%%      {table_name, "lucky"},
-%%      {game, game_tavla},
-%%      {game_mode, standard},
-%%      {speed, normal},
-%%      {rounds, 3},
-%%      {owner, UId},
-%%      {users, [UId, robot]},
-%%      {friends_only, false},
-%%      {private, false},
-%%      {deny_robots, false}].
-
+bot_module(game_okey) -> game_okey_bot;
+bot_module(game_tavla) -> game_tavla_bot.
