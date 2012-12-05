@@ -235,9 +235,11 @@ event(register)->
     wf:session(fb_registration, undefined),
     wf:redirect([?HTTP_ADDRESS,?_T("/login/register")]);
 event(logout) ->
-    %wf:clear_session(),
-    wf:logout(),
-    wf:redirect("/");
+  wf:session(fb_registration, undefined),
+  wf:session(logged_with_fb, undefined),
+  %wf:clear_session(),
+  wf:logout(),
+  wf:redirect("/");
 event({change_language,SL}) ->
     NewLang = case SL of
       "en" -> "tr";
