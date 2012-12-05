@@ -475,7 +475,7 @@ reg_player_at_new_table(User, From,
     {RobotsRegData, {PlayerId, SeatNum}} = lists:mapfoldl(F, {PlayerIdCounter, 1}, RobotsInfo),
 
     TPlayers = [{PlayerId, User, SeatNum, 0} | RobotsRegData],
-    TableParams2 = [{players, TPlayers} | TableParams],
+    TableParams2 = [{players, TPlayers}, {table_name, "I'am Filling Lucky #" ++ integer_to_list(TableId)} | TableParams],
     {ok, TabPid} = spawn_table(GameId, TableId, TableParams2),
 
     MonRef = erlang:monitor(process, TabPid),
@@ -726,8 +726,6 @@ table_parameters(ParentMod, ParentPid) ->
     [
      {parent, {ParentMod, ParentPid}},
      {seats_num, 4},
-%%     {players, []},
-     {table_name, ""},
      {mult_factor, 1},
      {slang_allowed, false},
      {observers_allowed, false},
