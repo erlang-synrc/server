@@ -62,11 +62,11 @@ service_item()->
   case nsm_db:get(user, wf:user()) of 
     {error, notfound} -> wf:redirect(?_U("login"));
     {ok, #user{twitter_id=TwitterId}} ->
-	try service_btn(TwitterId)=Btn of
-	    _->  #listitem{id=twServiceBtn, class=png, body=Btn}
-	catch 
-	    _:_ -> []
-	end
+      try service_btn(TwitterId) of
+        Btn ->  #listitem{id=twServiceBtn, class=png, body=Btn}
+      catch
+        _:_ -> []
+      end
   end.
 
 service_btn(undefined) ->
