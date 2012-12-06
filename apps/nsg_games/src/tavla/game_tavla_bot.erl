@@ -194,12 +194,16 @@ tavla_client_loop(State) -> % incapsulate tavla protocol
             TableId = proplists:get_value(table_id, Params, 0),
             case TableId == State#state.table_id of true ->
 
-%            ?INFO("tavla moves: ~p",[Params]),
-            _Player = proplists:get_value(player, Params),
-            PlayerColor = State#state.player_color,
+            ?INFO("tavla moves: ~p",[Params]),
+            Player = proplists:get_value(player, Params),
+            PlayerColor = if Id == Player -> Color; true -> fix_color(Color) end,
             From = proplists:get_value(from, Params),
             To = proplists:get_value(to, Params),
-            NewBoard = follow_board(State#state.board,From,To,PlayerColor),
+            ?INFO("board before moves: ~p", [State#state.board]),
+            Board = reverse_board(State#state.board, PlayerColor),
+            FromR=rel(From,PlayerColor), ToR=rel(To,PlayerColor),
+            NewBoard = reverse_board(follow_board(Board,FromR,ToR,PlayerColor), PlayerColor),
+            ?INFO("board after moves: ~p", [NewBoard]),
             tavla_client_loop(State#state{started=true,board = NewBoard,moves = State#state.moves + 1});
 
             _ -> tavla_client_loop(State) end;
@@ -361,13 +365,9 @@ follow_board(Board,From,To,PlayerColor) -> % track the moves to keep board consi
                        _ -> {KC,Sum+KA} 
                   end
             end,{0,0}, BoardWithKicks),
-%    ?INFO("Kick: ~p",[{KickColor,KickAmount}]),
+    ?INFO("Kick: ~p",[{KickColor,KickAmount}]),
     NewBoard = [ case {No,KickColor} of
-        {25,2} -> case Cell of
-                       null -> {KickColor,KickAmount};
-                       {_Color,Sum} -> {KickColor,KickAmount+Sum}
-                  end;
-        {26,1} -> case Cell of
+        {25,_} when KickColor =/= 0 -> case Cell of
                        null -> {KickColor,KickAmount};
                        {_Color,Sum} -> {KickColor,KickAmount+Sum}
                   end;
@@ -450,26 +450,28 @@ first_available_move(RealBoard,XY,Color,TableId) ->
 
     {List,Dices,Found,Board} = lists:foldl(fun (A,Acc2) ->
          {L,D,F,B} = Acc2,
+         ?INFO("board: ~p", [B]),
          Tactic = tactical_criteria(B,Color),
+         ?INFO("tactical criteria: ~p", [Tactic]),
          case D of [] -> Acc2; _ ->
               [H|T] = D,
               {Cell,No}=A,
               ?INFO("checking pos: ~p",[{Cell,No,H,Tactic}]),
               case {Cell,Tactic} of
 
-     {null,_} when No =/= H -> Acc2;
+     {_   ,kicks} when No =/= H -> Acc2;
      {null,kicks} when No =:= H -> ?INFO("found kick to empty: ~p",[{26,H}]), {L++[{26,H}],T,1,follow_board(B,26,H,Color)};
      {{OppositePlayerColor,1},kicks} when H =:= No -> ?INFO("found kick kick: ~p",[{26,H}]), {L++[{26,H}],T,1,follow_board(B,26,H,Color)};
      {{Color,Count},kicks} when H =:= No -> ?INFO("found kick over own: ~p",[{26,H}]), {L++[{26,H}],T,1,follow_board(B,26,H,Color)};
      {{Color,Count},finish} when H + No >= 25 -> ?INFO("found finish move: ~p",[{No,27}]), {L++[{No,27}],T,1,follow_board(B,No,27,Color)};
-     {{Color,Count},kicks} when H =/= No -> Acc2;
      {{Color,Count},race} when H + No >= 25 -> Acc2;
-     {{Color,Count},_} when H + No < 25 -> case lists:nth(No+H+1,B) of
+     {{Color,Count},Tactic} when (Tactic==race orelse Tactic==finish) andalso (H + No < 25) ->
+                   case lists:nth(No+H+1,B) of
                        null -> ?INFO("found race to empty: ~p",[{No,No+H}]), {L++[{No,No+H}],T,1,follow_board(B,No,No+H,Color)}; 
                        {Color,_} -> ?INFO("found race over own: ~p",[{No,No+H}]), {L++[{No,No+H}],T,1,follow_board(B,No,No+H,Color)};
                        {OppositePlayerColor,1} -> ?INFO("found race kick: ~p",[{No,No+H}]), {L++[{No,No+H}],T,1,follow_board(B,No,No+H,Color)};
                            _ -> Acc2 end;
-        _ -> Acc2
+     _ -> Acc2
              end end
         end, {[], XY, 0, RelativeBoard}, lists:sublist(lists:zip(RelativeBoard,lists:seq(0,27)),2,24)     ),
     ?INFO("moves found: ~p",[{List,Dices}]),

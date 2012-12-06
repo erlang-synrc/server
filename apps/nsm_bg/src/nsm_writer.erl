@@ -203,7 +203,7 @@ handle_notice(["system", "game_ends_note"] = Route, Message, State) ->
             true -> ok;
             _ ->
                 Prefix = case Pos of
-                    1 -> 
+                    0 -> % disabled for now
                         "game_won" ++ integer_to_list(length(Results)) ++ "|winner=" ++ UId ++ "|kakush=" ++ integer_to_list(KP) ++ "|points=" ++ integer_to_list(GP);
                     _ ->
                         "game_ended" ++ integer_to_list(length(Results))

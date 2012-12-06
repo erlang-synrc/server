@@ -340,17 +340,6 @@ event({newtour_slider}) ->
 event(update_product_list) ->
     wf:update(product_list, product_list_paged(1));
 
-
-
-%event({newtour_slider}) -> % all gifts hack
-%    Min1000 = list_to_integer(wf:q(newtour_slider_values_min)),
-%    Max1000 = list_to_integer(wf:q(newtour_slider_values_max)),
-%    F = wf:state(slider_min_value),
-%    T = wf:state(slider_max_value),
-%    wf:state(slider_min, 0),
-%    wf:state(slider_max, 50000),
-%    wf:update(product_list, product_list_paged(1));
-
 event({page, Page}) ->
     wf:update(product_list, product_list_paged(Page));
 
@@ -471,11 +460,12 @@ event({start_tournament, TourName, TourDesc, TourDate, TourTime, TourPlayers, To
     STourPlayers = integer_to_list(TourPlayers),
     STourQuota = integer_to_list(TourQuota),
     STourGame = site_utils:game_to_string(TourGame),
+    SKakush = integer_to_list(get_prizes_total([wf:state(prize_1), wf:state(prize_2), wf:state(prize_3)])),
     STourType = case TourType of
         elimination -> ?_T("elimination");
         _ -> "?"
     end,
-    Desc = lists:flatten( URL ++ "|" ++ wf:user() ++ "|" ++ TourName ++ "|" ++ STourDesc ++ "|" ++ STourDate ++ "|" ++ STourTime ++ "|" ++ STourPlayers ++ "|" ++ STourQuota ++ "|" ++ STourType ++ "|" ++ STourGame),
+    Desc = lists:flatten( URL ++ "|" ++ wf:user() ++ "|" ++ TourName ++ "|" ++ STourDesc ++ "|" ++ STourDate ++ "|" ++ STourTime ++ "|" ++ STourPlayers ++ "|" ++ STourQuota ++ "|" ++ STourType ++ "|" ++ STourGame ++ "|" ++ SKakush),
     webutils:post_user_system_message(Desc),
     wf:redirect(URL);
 
