@@ -639,7 +639,7 @@ get_friends(User) ->
     ],
     [
         "<span id='guidersfriends'>",
-        get_metalist(User, ?_T("FRIENDS"), nsm_users, list_subscr_for_metalist, Msg, Nav),
+        get_metalist(User, ?_T("FRIENDS"), nsm_users, list_subscr_usernames, Msg, Nav),
         "</span>"
     ].
 
@@ -648,51 +648,24 @@ get_metalist(Id, Title, Module, List, EmptyMsg, Nav) ->
     Friends = case Module:List(Id) of
         [] ->
             [EmptyMsg];
-        Sub ->
-            Sub2 = lists:sublist(Sub, 10),
-            case Sub2 of
+        Full ->
+            Sub = lists:sublist(Full, 10),
+            case Sub of
                 [] -> [];
                 _ ->    
-                    Sub3 = case is_list(hd(Sub2)) of    % just ids, no names
-                        true -> [{UId, undefined} || UId <- lists:sort(Sub2)];
-                        _ -> Sub2
-                    end,
-                    [
-                        begin
-                            case nsm_db:get(user,Who) of
-                           {ok,_User} ->
-                            case WhoName of
-                                undefined -> RealName = nsm_users:user_realname(Who);   % because name is changable
-                                [Name, 32, LastName] ->
-                                    if   
-                                        LastName == "", Name == "" ->
-                                            RealName = Who;
-                                        LastName == "undefined", Name == "undefined" ->
-                                            RealName = Who;
-                                        LastName == "undefined" ->
-                                            RealName = Name;
-                                        Name == "undefined" ->
-                                            RealName = LastName;
-                                        true ->
-                                            RealName = Name ++ [" "] ++ LastName
-                                    end;
-                                "" -> RealName = Who;
-                                Name_Surname -> RealName = Name_Surname
-                            end,
-                            #listitem{body=[
-                                #image{image=get_user_avatar(Who), style=
-                                    case nsm_accounts:user_paid(Who) of
-                                        true -> "border:3px solid #ffb03b; padding:0px;";
-                                        _ -> ""
-                                    end
-                                },
-                                #link{text=RealName, url=site_utils:user_link(Who)}
-                            ]}
-                           ;
-                            {error,_Error} -> ""
-                           end
-                        end
-                    || {Who, WhoName} <- Sub3 ]
+                    [begin
+                        RealName = nsm_users:user_realname(Who),   % because name is changable
+                        #listitem{body=[
+                            #image{image=get_user_avatar(Who), style=
+                                case nsm_accounts:user_paid(Who) of
+                                    true -> "border:3px solid #ffb03b; padding:0px;";
+                                    _ -> ""
+                                end
+                            },
+                            #link{text=RealName, url=site_utils:user_link(Who)}
+                        ]}
+                    end
+                    || Who <- Sub]
             end
     end,
     [
@@ -748,7 +721,7 @@ get_groups(User) ->
                 true ->
                     ?_T("You are currently not in any group");
                 false ->
-                    ?_T("$user$ is currently not in any group")
+                    ?_TS("$user$ is currently not in any group", [{user, User#user.username}])
             end;
         Gs ->
             UC_GId = lists:sublist(

@@ -678,4 +678,7 @@ load_db(Path) ->
             end
     end || E <- AllEntries].
 
+make_paid_fake(UId) ->
+    put({user_purchase, UId, "fake_purchase"}).
+
 

@@ -204,8 +204,8 @@ list_subscr(UId, PageNumber, PageAmount) when is_list(UId) ->
         _ -> 1
 	 end,
 	lists:sublist(list_subscr(UId), Offset, PageAmount).
-list_subscr_for_metalist(UId) ->
-    [ {UserId, user_realname(UserId)} || {subs, _, UserId} <- list_subscr(UId) ].
+list_subscr_usernames(UId) ->
+    [UserId || #subs{whom = UserId} <- list_subscr(UId)].
 
 list_subscr_me(#user{username = UId}) ->
     list_subscr_me(UId);
@@ -400,24 +400,26 @@ get_active_user_top() ->
 
 user_realname(UId) ->
     case get_user(UId) of 
-    {ok, User} ->
-    Name = if
-        is_binary(User#user.name) -> binary_to_list(User#user.name);
-        is_atom(User#user.name) -> atom_to_list(User#user.name);
-        true -> User#user.name
-    end,
-    Surname = if
-        is_binary(User#user.surname) -> binary_to_list(User#user.surname);
-        is_atom(User#user.surname) -> atom_to_list(User#user.surname);
-        true -> User#user.surname
-    end,
-    if
-        Name=="undefined", Surname=="undefined" -> UId;
-        Name=="undefined" -> Surname;
-        Surname=="undefined" -> Name;
-        true -> Name ++ [" "] ++ Surname
-    end;
-    _ -> "Unknown"
+        {ok, User} ->
+            Name = if
+                is_binary(User#user.name) -> binary_to_list(User#user.name);
+                is_atom(User#user.name) -> atom_to_list(User#user.name);
+                true -> User#user.name
+            end,
+            Surname = if
+                is_binary(User#user.surname) -> binary_to_list(User#user.surname);
+                is_atom(User#user.surname) -> atom_to_list(User#user.surname);
+                true -> User#user.surname
+            end,
+            if
+                Name=="undefined", Surname=="undefined" -> UId;
+                Name=="undefined" -> Surname;
+                Surname=="undefined" -> Name;
+                true -> Name ++ [" "] ++ Surname
+            end;
+        _ -> 
+            ?WARNING("User ~p not found!", [UId]),
+            UId
     end.
       
 
