@@ -485,22 +485,25 @@ event(prize_fund_and_tours_and_quota_changed) ->
                 #option { text="2" }
             ]})
     end,
-    event(prize_fund_and_tours_changed);
+    wf:wire(#event{postback=prize_fund_and_tours_changed});
 
 event(prize_fund_and_tours_changed) ->
     Tours = game_okey_ng_trn_elim:get_tours(list_to_integer(wf:q(tour_quota)), list_to_integer(wf:q(tour_players)) ),
-    wf:state(workaround_tours, hd(Tours)),
-    wf:replace(tour_tours, #dropdown {postback=prize_fund_changed, id=tour_tours, style="position:absolute; left:827px; top:190px; width:90px; height:32px; font-size:16px; padding-top:2px;", options=[
-         #option { text=integer_to_list(T) }
-    || T <- Tours]}),
-    event(prize_fund_changed);
+    case Tours of
+        [] -> ?ERROR("No sush plan: ~p quota, ~p players!", [list_to_integer(wf:q(tour_quota)), list_to_integer(wf:q(tour_players))]);
+        _ ->
+            wf:state(workaround_tours, hd(Tours)),
+            wf:replace(tour_tours, #dropdown {postback=prize_fund_changed, id=tour_tours, style="position:absolute; left:827px; top:190px; width:90px; height:32px; font-size:16px; padding-top:2px;", options=[
+                 #option { text=integer_to_list(T) }
+            || T <- Tours]}),
+            event(prize_fund_changed)
+    end;
 
 event(prize_fund_changed) ->
     set_prize(1, undefined, "/images/tournament/new_tournament/question.png"),
     set_prize(2, undefined, "/images/tournament/new_tournament/question.png"),
     set_prize(3, undefined, "/images/tournament/new_tournament/question.png"),
     reset_slider();
-%    ok;
 
 event(deselect_1_prize) ->
     set_prize(1, undefined, "/images/tournament/new_tournament/question.png"),

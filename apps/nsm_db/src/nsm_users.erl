@@ -349,8 +349,8 @@ give_gift(UId, GiftId) ->
 list_gifts_of(UId) ->
     nsm_db:all_by_index(user_bought_gifts, <<"user_bought_gifts_username_bin">>, list_to_binary(UId)).
 
-mark_gift_as_deliving(UId, GiftId) ->
-    [nsm_db:delete(user_bought_gifts, {UId, T}) || #user_bought_gifts{timestamp=T, gift_id=GId} <- list_gifts_of(UId), GId == GiftId],
+mark_gift_as_deliving(UId, GiftId, GiftTimestamp) ->
+    nsm_db:delete(user_bought_gifts, {UId, GiftTimestamp}),
     nsm_db:put(#user_bought_gifts{username="."++UId, timestamp=now(), gift_id=GiftId}).
 
 % active_user_top

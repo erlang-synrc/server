@@ -661,8 +661,8 @@ handle_notice(["gifts", "user", UId, "give_gift"] = Route,
 handle_notice(["gifts", "user", UId, "mark_gift_as_deliving"] = Route,
     Message, #state{owner = Owner, type =Type} = State) ->
     ?INFO(" queue_action(~p): mark_gift_as_deliving: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),
-    {GId} = Message,
-    nsm_users:mark_gift_as_deliving(UId, GId),
+    {GId, GTimestamp} = Message,
+    nsm_users:mark_gift_as_deliving(UId, GId, GTimestamp),
     {noreply, State};
 
 

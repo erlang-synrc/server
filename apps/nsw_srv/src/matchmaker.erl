@@ -437,8 +437,22 @@ retrieve_tables(Setting, UId, GameType,Convert) ->
 process_tables(Setting, UId,GameType,Convert) ->
   receive
     {From, get} -> 
-      Tables = nsm_queries:map_reduce(nsm_queries,get_single_tables,[Setting,UId,GameType,Convert]),
+      Tables = nsm_queries:map_reduce(nsm_queries,get_single_tables,[Setting,UId,GameType,Convert, one_own]) ++
+                nsm_queries:map_reduce(nsm_queries,get_single_tables,[Setting,UId,GameType,Convert, one_other]) ++ 
+                nsm_queries:map_reduce(nsm_queries,get_single_tables,[Setting,UId,GameType,Convert, two_own]) ++
+                nsm_queries:map_reduce(nsm_queries,get_single_tables,[Setting,UId,GameType,Convert, two_other]) ++
+                nsm_queries:map_reduce(nsm_queries,get_single_tables,[Setting,UId,GameType,Convert, three_own]) ++
+                nsm_queries:map_reduce(nsm_queries,get_single_tables,[Setting,UId,GameType,Convert, three_other]) ++
+                nsm_queries:map_reduce(nsm_queries,get_single_tables,[Setting,UId,GameType,Convert, more_own]) ++
+                nsm_queries:map_reduce(nsm_queries,get_single_tables,[Setting,UId,GameType,Convert, more_other]) ++
+                nsm_queries:map_reduce(nsm_queries,get_single_tables,[Setting,UId,GameType,Convert, nomore_own]) ++
+                nsm_queries:map_reduce(nsm_queries,get_single_tables,[Setting,UId,GameType,Convert, nomore_other]),
+Names = ling:join( [Name || #game_table{name=Name} <- Tables], ", "),
+?INFO(" ++++ before: ~p ~p", [Names, length(Tables)]),
       Filtered = filter_tables(Tables,UId,GameType,Setting,Convert),
+Filtered2 = filter_tables(Tables,UId,GameType,Setting,false),
+Names2 = ling:join( [Name || #game_table{name=Name} <- Filtered2], ", "),
+?INFO(" ---- after: ~p ~p", [Names2, length(Filtered2)]),
       From ! {self(), Filtered},stop end.
 
 get_tables() -> get_tables(convert).
@@ -478,15 +492,15 @@ filter_tables(QLC,UId,GameFSM,Setting,Convert) ->
             AllFilterOk and AnyFilterOk
         end, QLC),
 
-    FilteredQLC2 = lists:usort(fun (A, B) -> 
-            A#game_table.id =< B#game_table.id
-        end, FilteredQLC1),
-
-    FilteredQLC3 = lists:sort(fun (A, B) ->
-            A#game_table.timestamp =< B#game_table.timestamp
-        end, FilteredQLC2),
+%    FilteredQLC2 = lists:usort(fun (A, B) ->   % WTF?
+%            A#game_table.id =< B#game_table.id
+%        end, FilteredQLC1),
+%
+%    FilteredQLC3 = lists:sort(fun (A, B) ->
+%            A#game_table.timestamp =< B#game_table.timestamp
+%        end, FilteredQLC2),
    
-    case Convert of convert -> convert_to_map(FilteredQLC3, Setting,UId,GameFSM); _ -> FilteredQLC3 end.
+    case Convert of convert -> convert_to_map(FilteredQLC1, Setting,UId,GameFSM); _ -> FilteredQLC1 end.
 
 convert_to_map(Data,_Setting,UId,GameFSM) ->
     [ begin Url = lists:concat([?_U("/view-table/"),GameFSM,"/id/", TId]),
