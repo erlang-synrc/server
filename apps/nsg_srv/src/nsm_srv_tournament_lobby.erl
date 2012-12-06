@@ -19,6 +19,7 @@
 -define(HEARTBEAT_INTERVAL, 10000).
 -define(HEARTBEAT_TIMEOUT, 1000).
 -define(CHAT_HISTORY_SIZE, 100).
+-define(TOURNAMENT_START_QUANT, 100).
 
 start_link(TID) -> gen_server:start_link({local, tid_to_atom(TID)}, ?MODULE, [TID], []).
 heartbeat(Server) -> gen_server:cast(Server, heartbeat).
@@ -34,7 +35,7 @@ init([TID]) ->
     ?INFO("Lobby Starting: ~p",[Tour]),
     Server = self(),
     timer:apply_interval(?HEARTBEAT_INTERVAL, ?MODULE, heartbeat, [Server]),
-    timer:apply_after(30000, ?MODULE, check_tournament_time, [Server]),
+    timer:apply_after(?TOURNAMENT_START_QUANT, ?MODULE, check_tournament_time, [Server]),
     nsx_msg:subscribe_tournament_lobby(TID, {?MODULE, messages_callback}, Server),
     ?MODULE:heartbeat(Server),
     ?INFO("~w: started", [Server]),
@@ -55,7 +56,7 @@ handle_call(check_tournament_time, _From, State) ->
             start_tournament(self()),
             active;
         _ ->
-            timer:apply_after(30000, ?MODULE, check_tournament_time, [self()]),
+            timer:apply_after(?TOURNAMENT_START_QUANT, ?MODULE, check_tournament_time, [self()]),
             idle
     end,
     {reply, Status, State};

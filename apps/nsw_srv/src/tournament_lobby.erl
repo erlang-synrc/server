@@ -580,7 +580,7 @@ get_timer_for_now() ->
                         [] -> 
                             case DTime < -60 of 
                                 true -> ?_T("FINISHED");
-                                false -> ?_T("...") % right before starting on timer
+                                false -> ?_T("NOW") % right before starting on timer
                             end;
                         _ -> ?_T("NOW")
                     end;
