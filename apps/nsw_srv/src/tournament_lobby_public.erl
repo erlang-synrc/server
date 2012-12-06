@@ -18,6 +18,19 @@ main() ->
   wf:state(tournament_int_id, list_to_integer(Id)),
   T = nsm_tournaments:get(Id),
 
+  Date = integer_to_list(element(3, T#tournament.start_date)) 
+    ++ "."
+    ++ integer_to_list(element(2, T#tournament.start_date))
+    ++ "."
+    ++ integer_to_list(element(1, T#tournament.start_date)),
+  Time = integer_to_list(element(1, T#tournament.start_time))
+    ++ ":"
+    ++ integer_to_list(element(2, T#tournament.start_time))
+    ++ case element(2, T#tournament.start_time) of
+      0 -> "0";
+      _ -> ""
+  end,
+
   webutils:add_to_head({raw,
   ["<meta property=\"fb:app_id\" content=\"", ?FB_APP_ID, "\" />",
   "<meta property=\"og:title\" content=\"Tournament ", T#tournament.name, "\"/>",
@@ -25,14 +38,14 @@ main() ->
     "<meta property=\"og:url\" content=\"", ?HTTP_ADDRESS, "/tournament/lobby/public/id/", Id, "\" />",
     "<meta property=\"og:description\" content=\"", T#tournament.description, "\" />",
     "<meta property=\"og:type\" content=\"kakaranet:tournament\" />"
-    "<meta property=\"kakaranet:game_type\" content=\"", T#tournament.game_type, "\" />",
-    "<meta property=\"kakaranet:game_mode\" content=\"", T#tournament.game_mode, "\" />",
-    "<meta property=\"kakaranet:players_count\" content=\"", T#tournament.players_count, "\" />",
-    "<meta property=\"kakaranet:quota\" content=\"", T#tournament.quota, "\" />",
-    "<meta property=\"kakaranet:type\"  content=\"", T#tournament.type, "\" />",
-    "<meta property=\"kakaranet:speed\" content=\"", T#tournament.speed, "\" />",
-    "<meta property=\"kakaranet:tours\" content=\"", T#tournament.tours, "\" />",
-    "<meta property=\"kakaranet:date\"  content=\"", T#tournament.start_date, "\" />"
+    "<meta property=\"kakaranet:game_type\" content=\"", atom_to_list(T#tournament.game_type), "\" />",
+    "<meta property=\"kakaranet:game_mode\" content=\"", atom_to_list(T#tournament.game_mode), "\" />",
+    "<meta property=\"kakaranet:players_count\" content=\"", integer_to_list(T#tournament.players_count), "\" />",
+    "<meta property=\"kakaranet:quota\" content=\"", integer_to_list(T#tournament.quota), "\" />",
+    "<meta property=\"kakaranet:type\"  content=\"", atom_to_list(T#tournament.type), "\" />",
+    "<meta property=\"kakaranet:speed\" content=\"", atom_to_list(T#tournament.speed), "\" />",
+    "<meta property=\"kakaranet:tours\" content=\"", integer_to_list(T#tournament.tours), "\" />",
+    "<meta property=\"kakaranet:date\"  content=\"", Date, " ", Time, "\" />"
   ]}),
   #template { file=code:priv_dir(nsw_srv)++"/templates/bare_no_uservoice.html" }.
 
