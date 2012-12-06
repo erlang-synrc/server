@@ -365,7 +365,6 @@ add_redirection(Address) ->
 %%
 %% Events
 %%
-api_event(Name, Tag, Args)->  webutils:api_event(Name, Tag, Args).
 
 event({paypal_clicked, PurchaseId}) ->
     Package = buy:package(),

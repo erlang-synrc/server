@@ -88,8 +88,6 @@ form()->
         }
 	  }.
 
-api_event(Name, Tag, Args)->  webutils:api_event(Name, Tag, Args).
-
 event({buy_clicked, PurchaseId}) ->
     ?INFO("Buy Clicked: ~p", [PurchaseId]),
     Package = buy:package(),
