@@ -731,10 +731,11 @@ tab_group_setting() ->
     end,
     Groups = wf:state(user_in_groups),
     View = [
-            begin
-                {ok, Group} = nsm_groups:get_group(GId),
-                Name = Group#group.name,
-                #listitem{body=construct_id(#link{text=Name, postback={tag,{group, Name}}})}
+            case nsm_groups:get_group(GId) of
+                {ok, Group} ->
+                    Name = Group#group.name,
+                    #listitem{body=construct_id(#link{text=Name, postback={tag,{group, Name}}})};
+                _ -> []
             end
 	     || GId <- Groups ],
     #panel{class="create-game-groups-box",       
