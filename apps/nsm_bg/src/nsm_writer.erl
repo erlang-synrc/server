@@ -829,6 +829,20 @@ handle_notice(["purchase", "user", _, "set_purchase_info"] = Route,
     nsm_membership_packages:set_purchase_info(OrderId, Info),
     {noreply, State};
 
+handle_notice(["system", "tournament_join"] = Route,
+    Message, #state{owner = Owner, type =Type} = State) ->
+    ?INFO("queue_action(~p): tournament_join: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),
+    {UId, TId} = Message,
+    nsm_tournaments:join(UId, TId),
+    {noreply, State};
+
+handle_notice(["system", "tournament_remove"] = Route,
+    Message, #state{owner = Owner, type =Type} = State) ->
+    ?INFO("queue_action(~p): tournament_remove: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),
+    {UId, TId} = Message,
+    nsm_tournaments:remove(UId, TId),
+    {noreply, State};
+
 handle_notice(Route, Message, #state{owner = User} = State) ->
     ?DBG("feed(~p): unexpected notification received: User=~p, "
               "Route=~p, Message=~p", [self(), User, Route, Message]),
@@ -880,7 +894,10 @@ get_opts(#state{type = system, owner = Owner}) ->
                 [system, game_begins_note], % out of order
                 [system, tournament_tour_note],
                 [system, tournament_ends_note],
-                [system, game_ends_note]
+                [system, game_ends_note],
+                %tournaments
+                [system, tournament_join],
+                [system, tournament_remove]
                 ]},
      {gproc_name, Name},
      {consume_options, [exclusive]},
