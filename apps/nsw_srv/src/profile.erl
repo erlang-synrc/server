@@ -320,7 +320,8 @@ section_body(account) ->
 
 section_body(invite) ->
     captcha:generate(invite),
-    RSpan = " <span class=\"req\">*</span>",    
+    u_event(generate_invite),
+    RSpan = " <span class=\"req\">*</span>",
     [#h1{text=?_T("Invite")},
      #panel{id=invite_info},
      #panel{class="invite-form", body=[
