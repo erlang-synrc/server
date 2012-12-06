@@ -61,7 +61,9 @@ remove(_UID, _TID) -> ok.
 waiting_player(TID) -> nsm_db:tournament_pop_waiting_player(TID).
 joined_users(TID) -> nsm_db:tournament_waiting_queue(TID).
 user_tournaments(UID) -> nsm_db:user_tournaments(UID).
-user_joined(TID, UID) -> {error, notfound} =/= nsm_db:membership(UID, TID).
+user_joined(TID, UID) -> 
+    AllJoined = [UId || #play_record{who = UId} <- joined_users(TID)],
+    lists:member(UID, AllJoined).
 all() -> nsm_db:all(tournament).
 user_is_team_creator(_UID, _TID) -> true.
 list_users_per_team(_TeamID) -> [].
