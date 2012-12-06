@@ -144,12 +144,18 @@ content() ->
                 #br{},
                 case UserJoined of
                     true ->
-                        #panel{id=join_button, class="tourlobby_orange_button_disabled", text="TURNUVAYA KATIL"};
+                        [
+                            #panel{id=join_button, class="tourlobby_orange_button_disabled", text="TURNUVAYA KATIL"},
+                            #br{},
+                            #link{id=leave_button, class="tourlobby_red_button", text="TURNUVADAN AYRIL", postback=leave_tournament}
+                        ];
                     false ->
-                        #link{id=join_button, class="tourlobby_orange_button", text="TURNUVAYA KATIL", postback=join_tournament}
+                        [
+                            #link{id=join_button, class="tourlobby_orange_button", text="TURNUVAYA KATIL", postback=join_tournament},
+                            #br{},
+                            #panel{id=leave_button, class="tourlobby_red_button_disabled", text="TURNUVADAN AYRIL"}
+                        ]
                 end,
-                #br{},
-                #panel{id=leave_button, class="tourlobby_red_button_disabled", text="TURNUVADAN AYRIL"},
                 #br{},
                 case TourId of
                     "" ->
@@ -496,11 +502,25 @@ event({change_view, Mode}) ->
     update_userlist();
 
 event(join_tournament) ->
-    User = wf:user(),
+    UId = wf:user(),
+    case nsm_accounts:user_paid(UId) of
+        true ->
+            TID = wf:state(tournament_id),
+            nsm_tournaments:join(UId, list_to_integer(TID)),
+            wf:replace(join_button, #panel{id=join_button, class="tourlobby_orange_button_disabled", text="TURNUVAYA KATIL"}),
+            wf:replace(leave_button, #link{id=leave_button, class="tourlobby_red_button", text="TURNUVADAN AYRIL", postback=leave_tournament}),
+            update_userlist();
+        false ->
+            wf:wire(#alert{text=?_T("Sorry, only paid users can join the tournament.")})
+    end;
+
+event(leave_tournament) ->
+    UId = wf:user(),
     TID = wf:state(tournament_id),
-    nsm_tournaments:join(User, list_to_integer(TID)),
-    wf:replace(join_button, #panel{id=join_button, class="tourlobby_orange_button_disabled", text="TURNUVAYA KATIL"}),
-    update_userlist();    
+    nsm_tournaments:remove(UId, list_to_integer(TID)),
+    wf:replace(join_button, #link{id=join_button, class="tourlobby_orange_button", text="TURNUVAYA KATIL", postback=join_tournament}),
+    wf:replace(leave_button, #panel{id=leave_button, class="tourlobby_red_button_disabled", text="TURNUVADAN AYRIL"}),
+    update_userlist();
 
 event({start_tour, Id, NPlayers,Q,T,S,P}) ->
     wf:state(tour_start_time, time()),
