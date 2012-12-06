@@ -644,6 +644,7 @@ get_friends(User) ->
     ].
 
 get_metalist(Id, Title, Module, List, EmptyMsg, Nav) ->
+    ?INFO("METALIST: ~p",[{Id, Title, Module, List, EmptyMsg, Nav}]),
     Friends = case Module:List(Id) of
         [] ->
             [EmptyMsg];
@@ -658,6 +659,8 @@ get_metalist(Id, Title, Module, List, EmptyMsg, Nav) ->
                     end,
                     [
                         begin
+                            case nsm_db:get(user,Who) of
+                           {ok,_User} ->
                             case WhoName of
                                 undefined -> RealName = nsm_users:user_realname(Who);   % because name is changable
                                 [Name, 32, LastName] ->
@@ -685,6 +688,9 @@ get_metalist(Id, Title, Module, List, EmptyMsg, Nav) ->
                                 },
                                 #link{text=RealName, url=site_utils:user_link(Who)}
                             ]}
+                           ;
+                            {error,_Error} -> ""
+                           end
                         end
                     || {Who, WhoName} <- Sub3 ]
             end
@@ -752,12 +758,15 @@ get_groups(User) ->
             ?GROUPS_ON_DASHBOARD),
             lists:flatten([
                 begin
-                    {ok, Group} = nsm_groups:get_group(GId),
+                     case nsm_groups:get_group(GId) of
+                    {ok, Group} ->
                     GName = Group#group.name,
                     #listitem{body=[
                         #link{body=[GName], url=site_utils:group_link(GId)},
                         #span{style="padding-left:4px;", text="(" ++ integer_to_list(UC) ++ ")"}
-                    ]}
+                    ]};
+                    _ -> ""
+                      end
                 end
                 || {UC, GId} <- UC_GId
             ])

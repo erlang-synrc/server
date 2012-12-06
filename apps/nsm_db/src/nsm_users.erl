@@ -205,7 +205,7 @@ list_subscr(UId, PageNumber, PageAmount) when is_list(UId) ->
 	 end,
 	lists:sublist(list_subscr(UId), Offset, PageAmount).
 list_subscr_for_metalist(UId) ->
-    [{UserId, user_realname(UserId)} || {subs, _, UserId} <- list_subscr(UId)].
+    [ {UserId, user_realname(UserId)} || {subs, _, UserId} <- list_subscr(UId) ].
 
 list_subscr_me(#user{username = UId}) ->
     list_subscr_me(UId);
@@ -396,8 +396,11 @@ get_active_user_top() ->
     SortedTop = lists:sort(nsm_db:all(active_users_top)),
     [{UId, N} || #active_users_top{no = N, user_id = UId} <- SortedTop].
 
+
+
 user_realname(UId) ->
-    {ok, User} = get_user(UId),
+    case get_user(UId) of 
+    {ok, User} ->
     Name = if
         is_binary(User#user.name) -> binary_to_list(User#user.name);
         is_atom(User#user.name) -> atom_to_list(User#user.name);
@@ -413,6 +416,8 @@ user_realname(UId) ->
         Name=="undefined" -> Surname;
         Surname=="undefined" -> Name;
         true -> Name ++ [" "] ++ Surname
+    end;
+    _ -> "Unknown"
     end.
       
 
