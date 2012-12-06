@@ -9,11 +9,16 @@
 -include("common.hrl").
 
 -define(ENTRY_TEXT_LENGTH, 350).
--define(ACTIVATION_ACTION(ID), actions=#event{type=click, actions=activation_action(ID)}).
 -define(ACTIVE_CLS, "ui-state-active").
--define(INTERNAL_URL(PaymentType), url=lists:concat(["#", ?_U(payment_type_to_url(PaymentType))])).
+-define(INTERNAL_URL(PaymentType), url=?_U(["/price-table/",PaymentType])).
 
-main() -> webutils:redirect_to_ssl("price-table"), #template { file=code:priv_dir(nsw_srv)++"/templates/bare.html" }.
+main() ->
+  webutils:redirect_to_ssl("price-table"),
+  case wf:path_info() of
+    [] -> wf:redirect(?_U("/price_table/credit_card"));
+    Mod -> webutils:redirect_to_ssl(?_U("/"++Mod))
+  end,
+  #template { file=code:priv_dir(nsw_srv)++"/templates/bare.html" }.
 
 title() -> webutils:title(?MODULE).
 
@@ -22,26 +27,36 @@ body() -> #template{file=code:priv_dir(nsw_srv)++"/templates/price_table.html"}.
 payment_type_selector()-> payment_types(wf:session(is_facebook)).
 
 payment_types(undefined)->payment_types(false);
-
 payment_types(false)->
+    ?INFO("Path info: ~p~n", [wf:path_info()]),
+    Pi = list_to_atom(wf:path_info()),
+    ?INFO("PI:~p~n", [Pi]),
     ["<ul class=\"tabset\" id=\"tabset\">",
-        "<li class=\""++?ACTIVE_CLS++"\">",#link{id=credit_card,   ?INTERNAL_URL(credit_card),   postback={payment_select, credit_card},   ?ACTIVATION_ACTION("credit_card")},"<span class=\"img\"><img class=\"png\" src=\"/images/ico-06.png\" alt=\"\" width=\"48\" height=\"56\" ><img class=\"png\" src=\"/images/ico-08.png\" alt=\"\" width=\"48\" height=\"56\" ></span><strong>",?_T("Credit card"),"</strong></a></li>",
-        "<li>",                            #link{id=paypal,        ?INTERNAL_URL(paypal),        postback={payment_select, paypal},        ?ACTIVATION_ACTION("paypal")}, "<span class=\"img\"><img class=\"png\" src=\"/images/ico-09.png\" alt=\"\" width=\"62\" height=\"56\" ><img class=\"png\" src=\"/images/ico-07.png\" alt=\"\" width=\"62\" height=\"56\" ></span><strong>",?_T("Paypal"),"</strong></a></li>",
-        "<li>",                            #link{id=wire_transfer, ?INTERNAL_URL(wire_transfer), postback={payment_select, wire_transfer}, ?ACTIVATION_ACTION("wire_transfer")},"<span class=\"img\"><img class=\"png\" src=\"/images/ico-10.png\" alt=\"\" width=\"48\" height=\"56\" ><img class=\"png\" src=\"/images/ico-11.png\" alt=\"\" width=\"48\" height=\"56\" ></span><strong>",?_T("Wire"),"</strong></a></li>",
-        "<li>",                            #link{id=mobile,        ?INTERNAL_URL(mobile),        postback={payment_select, mobile},        ?ACTIVATION_ACTION("mobile")},"<span class=\"img\"><img class=\"png\" src=\"/images/ico-12.png\" alt=\"\" width=\"31\" height=\"56\" ><img class=\"png\" src=\"/images/ico-13.png\" alt=\"\" width=\"31\" height=\"56\" ></span><strong>",?_T("Mobile"),"</strong></a></li>",
+    [begin
+      Class = if Pi == Li -> ?ACTIVE_CLS; true-> "" end,
+      ["<li class=\""++ Class ++ "\"> ",
+        #link{id=Li, ?INTERNAL_URL(atom_to_list(Li)), body=[
+          "<span class=\"img\">",
+          "<img class=\"png\" src=\"", type_to_img_1(Li), "\" alt=\"\" width=\"48\" height=\"56\" >",
+          "<img class=\"png\" src=\"", type_to_img_2(Li), "\" alt=\"\" width=\"48\" height=\"56\" >",
+          "</span>",
+          "<strong>",
+          type_to_str(Li),
+          "</strong>"]},
+      "</li>"]
+      end || Li <- [credit_card, paypal, wire_transfer, mobile]],
     "</ul>"];
-payment_types(true)-> 
-    fb_utils:pay_dialog().
+payment_types(true)-> fb_utils:pay_dialog().
 
 -spec table()->#table{}.
 table()->
-    %% add table to 'data' container
-    #panel{class=data, id=price_container, body=[
-	case wf:session(is_facebook) of
-	    true -> table(facebook);
-	    _ -> table(credit_card)
-	end 
-    ]}.
+  %% add table to 'data' container
+  #panel{class=data, id=price_container, body=[
+    case wf:session(is_facebook) of
+      true -> table(facebook);
+      _ -> table(list_to_atom(wf:path_info()))
+    end
+  ]}.
 
 -spec table(PaymentType::payment_type())->#table{}.
 table(PaymentType)->
@@ -78,8 +93,6 @@ table(PaymentType)->
     #table{rows=Rows}.
 
 %% Events
-event({payment_select, PaymentType}) ->
-    wf:update(price_container, table(PaymentType));
 event({buy, PackageId, PaymentType}) ->
     case wf:user() of
         undefined ->
@@ -153,15 +166,19 @@ buy_button_element(PackageId, PaymentType, _)->
 odd_even("odd")-> "even";
 odd_even("even")-> "odd".
 
-%% script for clicked button activation
-activation_action(ID)->
-    "$('#tabset li').removeClass('ui-state-active');"
-    "objs('"++ID++"').parent('li').addClass('"++?ACTIVE_CLS++"')".
-
 to_tl(Price)-> io_lib:format("~p TL", [Price]).
 
-payment_type_to_url(mobile)        -> "mobile";
-payment_type_to_url(credit_card)   -> "credit-card";
-payment_type_to_url(wire_transfer) -> "wire-transfer";
-payment_type_to_url(paypal)        -> "paypal".
+type_to_str(credit_card)-> ?_T("Credit card");
+type_to_str(paypal)-> ?_T("Paypal");
+type_to_str(wire_transfer)-> ?_T("Wire");
+type_to_str(mobile)-> ?_T("Mobile").
 
+type_to_img_1(credit_card) -> "/images/ico-06.png";
+type_to_img_1(paypal) -> "/images/ico-09.png";
+type_to_img_1(wire_transfer) -> "/images/ico-10.png";
+type_to_img_1(mobile) -> "/images/ico-12.png".
+
+type_to_img_2(credit_card) -> "/images/ico-08.png";
+type_to_img_2(paypal) -> "/images/ico-07.png";
+type_to_img_2(wire_transfer) -> "/images/ico-11.png";
+type_to_img_2(mobile) -> "/images/ico-13.png".

@@ -477,6 +477,7 @@ construct_provision_xml() ->
     {ok, XML}.
 
 %% Events
+api_event(Name, Tag, Args)-> webutils:api_event(Name, Tag, Args).
 
 event({credit_card_clicked, PurchaseId}) ->
     Package = buy:package(),
