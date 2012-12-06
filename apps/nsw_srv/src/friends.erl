@@ -129,7 +129,8 @@ user_short_description(UId) ->
     case UId of
         undefined -> [];
         UserName ->
-            {ok, UInfo} = nsm_users:get_user(UserName),
+             case nsm_users:get_user(UserName) of
+            {ok, UInfo} ->
             #user{age=UAge, sex=USex, location=ULoc, education=UEdu} = UInfo,
             URealName = nsm_users:user_realname(UserName),
             UDOB = case UAge of
@@ -150,6 +151,9 @@ user_short_description(UId) ->
                      (_) -> ""
             end,                    
             string:join([Ok || Ok <- [UOI(URealName), UOI(USex), UOI(UDOB), UOI(ULoc), UOI(UEdu)], Ok =/= undefined], ", ")
+            ;
+            _ -> ""
+            end
     end.
 
 

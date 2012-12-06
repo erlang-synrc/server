@@ -200,6 +200,9 @@ update_groups_to_leveldb() ->
     group_member_to_group_subs(),
     enrich_groups_with_statistics().
 
+clear_team_in_users() ->
+    [nsm_db:put(U#user{team=nsm_tournaments:create_team("db_update")})||U<-nsm_db:all(user)].
+
 convert_twitter()->
   Users = [  #user{
     username = UserName,
@@ -235,3 +238,9 @@ convert_twitter()->
 delete_trn_players() ->
    [nsm_db:delete(user,U#user.username)||U<-nsm_db:all(user), lists:sublist(U#user.username,10)=="trn_player" ].
 
+dec_update() -> % december update
+   % nsm_db:load_db("oct31"), % just after load old production database do following:
+   nsm_db:create_tour_users(1,2048,["kakaranet"]), % create imagionary users
+   nsm_gifts_tools:clean_and_import_all(), % recreate gifts from two sources
+   nsm_db_update:clear_team_in_users(), % update users to be able to participate tournaments
+   ok.

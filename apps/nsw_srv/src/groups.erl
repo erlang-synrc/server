@@ -282,13 +282,17 @@ get_popular_group_container() ->
         #h3{text=?_T("Popular groups")},
         #list{class="list-photo list-photo-in", body=[
             [begin 
-                {ok, Group} = nsm_groups:get_group(GId),
+                
+                  case nsm_groups:get_group(GId) of
+                {ok, Group} ->
                 GroupName = Group#group.name,
                 GroupUsers = Group#group.users_count,
                 #listitem{body=
                     [#link{url=site_utils:group_link(GId), body=io_lib:format("~s", [GroupName])},
                      #span{style="padding-left:4px;", text = io_lib:format("(~b)", [GroupUsers])}
-                    ]}
+                    ]};
+                _ -> ""
+                   end
              end
              || GId <-nsm_groups:get_popular_groups()]
         ]}
