@@ -24,8 +24,16 @@ main() ->
     "<meta property=\"og:image\" content=\"", ?HTTP_ADDRESS, "/images/turnuvalar.png\" />",
     "<meta property=\"og:url\" content=\"", ?HTTP_ADDRESS, "/tournament/lobby/public/id/", Id, "\" />",
     "<meta property=\"og:description\" content=\"", T#tournament.description, "\" />",
-    "<meta property=\"og:type\" content=\"kakaranet:tournament\" />"]
-  }),
+    "<meta property=\"og:type\" content=\"kakaranet:tournament\" />"
+    "<meta property=\"kakaranet:game_type\" content=\"", T#tournament.game_type, "\" />",
+    "<meta property=\"kakaranet:game_mode\" content=\"", T#tournament.game_mode, "\" />",
+    "<meta property=\"kakaranet:players_count\" content=\"", T#tournament.players_count, "\" />",
+    "<meta property=\"kakaranet:quota\" content=\"", T#tournament.quota, "\" />",
+    "<meta property=\"kakaranet:type\"  content=\"", T#tournament.type, "\" />",
+    "<meta property=\"kakaranet:speed\" content=\"", T#tournament.speed, "\" />",
+    "<meta property=\"kakaranet:tours\" content=\"", T#tournament.tours, "\" />",
+    "<meta property=\"kakaranet:date\"  content=\"", T#tournament.start_date, "\" />"
+  ]}),
   #template { file=code:priv_dir(nsw_srv)++"/templates/bare_no_uservoice.html" }.
 
 body() -> #template{file=code:priv_dir(nsw_srv)++"/templates/info_page.html"}.
