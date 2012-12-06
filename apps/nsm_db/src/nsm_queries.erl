@@ -3,7 +3,7 @@
 -include_lib("stdlib/include/qlc.hrl").
 -compile(export_all).
 
-get_single_tables(Setting,UId,GameFSM,Convert) ->
+get_single_tables(Setting,UId,GameFSM,_Convert, LeftList) ->
     GetPropList = fun(Key,Setngs) -> 
                    case Setngs of
                         undefined -> undefined;
@@ -16,18 +16,6 @@ get_single_tables(Setting,UId,GameFSM,Convert) ->
     Game = GetPropList(game, Setting),
     PaidOnly = GetPropList(paid_only, Setting),
     Lucky = false,
-
-    FilterAllUsers = case GetPropList(users, Setting) of
-        undefined -> [];
-        {multiple, ManyUsers} -> ManyUsers;
-        SingleUser -> [SingleUser]
-    end,
-
-    FilterAnyUser = case GetPropList(group, Setting) of
-        undefined -> [];
-        GroupId -> 
-            [UId || UId <- nsm_groups:list_group_members(GroupId)]
-    end,
 
     MaxUsers = case GameFSM of "tavla" -> 2; "okey" -> 4 end,
 
@@ -62,22 +50,19 @@ get_single_tables(Setting,UId,GameFSM,Convert) ->
     Others         = fun(IterUser,CurrentUser) -> IterUser =/= CurrentUser end,
     Own            = fun(IterUser,CurrentUser) -> IterUser == CurrentUser end,
 
-    OneLeftListOther = qlc:next_answers(Cursor(UId, OneAvailable, Others), 10),
-    OneLeftListOwn = qlc:next_answers(Cursor(UId, OneAvailable, Own), 10),
-    TwoLeftListOther = qlc:next_answers(Cursor(UId, TwoAvailable, Others), 10),
-    TwoLeftListOwn = qlc:next_answers(Cursor(UId, TwoAvailable, Own), 10),
-    ThreeLeftListOther = qlc:next_answers(Cursor(UId, ThreeAvailable, Others), 10),
-    ThreeLeftListOwn = qlc:next_answers(Cursor(UId, ThreeAvailable, Own), 10),
-    MoreLeftListOther = qlc:next_answers(Cursor(UId, MoreAvailable, Others), 10),
-    MoreLeftListOwn = qlc:next_answers(Cursor(UId, MoreAvailable, Own), 10),
-    NoMoreLeftListOther = qlc:next_answers(Cursor(UId, NotAvailable, Others), 50),
-    NoMoreLeftListOwn = qlc:next_answers(Cursor(UId, NotAvailable, Own), 10),
+    case LeftList of
+        one_other -> qlc:next_answers(Cursor(UId, OneAvailable, Others), 10);
+        one_own -> qlc:next_answers(Cursor(UId, OneAvailable, Own), 10);
+        two_other -> qlc:next_answers(Cursor(UId, TwoAvailable, Others), 10);
+        two_own -> qlc:next_answers(Cursor(UId, TwoAvailable, Own), 10);
+        three_other -> qlc:next_answers(Cursor(UId, ThreeAvailable, Others), 10);
+        three_own -> qlc:next_answers(Cursor(UId, ThreeAvailable, Own), 10);
+        more_other -> qlc:next_answers(Cursor(UId, MoreAvailable, Others), 10);
+        more_own -> qlc:next_answers(Cursor(UId, MoreAvailable, Own), 10);
+        nomore_other -> qlc:next_answers(Cursor(UId, NotAvailable, Others), 10);
+        nomore_own -> qlc:next_answers(Cursor(UId, NotAvailable, Own), 10)
+    end.
 
-    QLC = OneLeftListOwn ++ OneLeftListOther ++
-          TwoLeftListOwn ++ TwoLeftListOther ++
-          ThreeLeftListOwn ++ ThreeLeftListOther ++
-          MoreLeftListOwn ++ MoreLeftListOther ++
-          NoMoreLeftListOwn ++ NoMoreLeftListOther.
 
 map_reduce(Module, Fun, Args)->
   lists:flatten([ case rpc:call(Node, Module, Fun, Args) of
