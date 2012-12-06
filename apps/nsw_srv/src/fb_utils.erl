@@ -1,6 +1,7 @@
 -module(fb_utils).
 -include_lib("nitrogen_core/include/wf.hrl").
 -include_lib("nsm_db/include/user.hrl").
+-include_lib("nsm_db/include/tournaments.hrl").
 -include("common.hrl").
 -include("setup.hrl").
 -include("elements/records.hrl").
@@ -297,12 +298,6 @@ feed(UserName, Msg)->
     _ -> fail
   end.
 
-% Our player, has created elimination tournament: qqw (qwqw)  - link to lobby
-% in okey
-% to be held 2012.12.5 21:00
-% for 2048 players
-%  with 10 per round quota.
-% Prize fund is: 78070.
 announce_tournament(UserName, Id)->
   case nsm_db:get(user, UserName) of
     {error, notfound}-> fail;
@@ -317,10 +312,20 @@ announce_tournament(UserName, Id)->
             AT -> AT
           end,
           Url ="https://graph.facebook.com/"++ FacebookId ++"/kakaranet:create",
-          Body = "access_token="++AccessToken++
-            "&tournament="++ ?HTTP_ADDRESS ++ "/tournament/lobby/public/id/" ++ integer_to_list(Id),
-            %++"&created_time=2012-12-6T3:49&expires_in=60",
-          httpc:request(post, {Url, [], "application/x-www-form-urlencoded", Body}, [], [])
+
+          case nsm_db:get(tournament, Id) of
+            {error, not_found} -> fail;
+            {ok, #tournament{} = T} ->
+              {{Y, M, D}, {H, Min, _}} = Now  = calendar:now_to_local_time(now()),
+              TournamentTime = calendar:datetime_to_gregorian_seconds({T#tournament.start_date, T#tournament.start_time}),
+              MessageTime = calendar:datetime_to_gregorian_seconds({Now}),
+              CreatedTime = lists:flatten(io_lib:format("~p-~p-~pT~p:~p", [Y,M,D,H,Min])),
+              Body = "access_token="++AccessToken++
+              "&tournament="++ ?HTTP_ADDRESS ++ "/tournament/lobby/public/id/" ++ integer_to_list(Id)
+              ++"&created_time="++CreatedTime
+              ++"&expires_in="++integer_to_list(TournamentTime-MessageTime),
+              httpc:request(post, {Url, [], "application/x-www-form-urlencoded", Body}, [], [])
+            end
       end;
     _ -> fail
   end.

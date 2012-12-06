@@ -30,7 +30,7 @@ main() ->
       0 -> "0";
       _ -> ""
   end,
-
+  TotalPrize = new_tournament:get_prizes_total(T#tournament.awards),
   webutils:add_to_head({raw,
   ["<meta property=\"fb:app_id\" content=\"", ?FB_APP_ID, "\" />",
   "<meta property=\"og:title\" content=\"Tournament ", T#tournament.name, "\"/>",
@@ -45,7 +45,8 @@ main() ->
     "<meta property=\"kakaranet:type\"  content=\"", atom_to_list(T#tournament.type), "\" />",
     "<meta property=\"kakaranet:speed\" content=\"", atom_to_list(T#tournament.speed), "\" />",
     "<meta property=\"kakaranet:tours\" content=\"", integer_to_list(T#tournament.tours), "\" />",
-    "<meta property=\"kakaranet:date\"  content=\"", Date, " ", Time, "\" />"
+    "<meta property=\"kakaranet:date\"  content=\"", Date, " ", Time, "\" />",
+    "<meta property=\"kakaranet:total_prize\"  content=\"", integer_to_list(TotalPrize), "\" />"
   ]}),
   #template { file=code:priv_dir(nsw_srv)++"/templates/bare_no_uservoice.html" }.
 
