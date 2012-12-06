@@ -417,8 +417,8 @@ user_realname_user(User) ->
 
 user_realname(UId) ->
     case get_user(UId) of 
-    {ok, User} -> user_realname_user(User);
-    _ -> "Unknown"
+        {ok, User} -> user_realname_user(User);
+        _ -> UId
     end.
 
 %% This function will be called from nsm_auth, after successfull login.
