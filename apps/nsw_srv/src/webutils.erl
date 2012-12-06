@@ -660,9 +660,9 @@ get_metalist(Id, Title, Module, List, EmptyMsg, Nav) ->
                     [
                         begin
                             case nsm_db:get(user,Who) of
-                           {ok,_User} ->
+                           {ok,User} ->
                             case WhoName of
-                                undefined -> RealName = nsm_users:user_realname(Who);   % because name is changable
+                                undefined -> RealName = nsm_users:user_realname_user(User);   % because name is changable
                                 [Name, 32, LastName] ->
                                     if   
                                         LastName == "", Name == "" ->
@@ -680,7 +680,7 @@ get_metalist(Id, Title, Module, List, EmptyMsg, Nav) ->
                                 Name_Surname -> RealName = Name_Surname
                             end,
                             #listitem{body=[
-                                #image{image=get_user_avatar(Who), style=
+                                #image{image=get_avatar(User), style= 
                                     case nsm_accounts:user_paid(Who) of
                                         true -> "border:3px solid #ffb03b; padding:0px;";
                                         _ -> ""
@@ -701,6 +701,14 @@ get_metalist(Id, Title, Module, List, EmptyMsg, Nav) ->
             Nav
         ]}
     ].
+
+get_avatar(U) -> get_avatar(U,"tiny").
+get_avatar(#user{avatar={_,_,_,Avatar}},"tiny") -> Avatar;
+get_avatar(#user{avatar={_,_,Avatar,_}},"small") -> Avatar;
+get_avatar(#user{avatar={_,Avatar,_,_}},"big") -> Avatar;
+get_avatar(_,"tiny") -> "/images/no_avatar_tiny.jpg";
+get_avatar(_,"small") -> "/images/no_avatar_small.jpg";
+get_avatar(_,"big") -> "/images/no_avatar_big.jpg".
 
 get_user_avatar(UserUid) ->
     case nsm_db:get(user, UserUid) of

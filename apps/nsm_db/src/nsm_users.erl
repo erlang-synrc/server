@@ -397,10 +397,7 @@ get_active_user_top() ->
     [{UId, N} || #active_users_top{no = N, user_id = UId} <- SortedTop].
 
 
-
-user_realname(UId) ->
-    case get_user(UId) of 
-    {ok, User} ->
+user_realname_user(User) ->
     Name = if
         is_binary(User#user.name) -> binary_to_list(User#user.name);
         is_atom(User#user.name) -> atom_to_list(User#user.name);
@@ -412,11 +409,15 @@ user_realname(UId) ->
         true -> User#user.surname
     end,
     if
-        Name=="undefined", Surname=="undefined" -> UId;
+        Name=="undefined", Surname=="undefined" -> User#user.username;
         Name=="undefined" -> Surname;
         Surname=="undefined" -> Name;
         true -> Name ++ [" "] ++ Surname
-    end;
+    end.
+
+user_realname(UId) ->
+    case get_user(UId) of 
+    {ok, User} -> user_realname_user(User);
     _ -> "Unknown"
     end.
       

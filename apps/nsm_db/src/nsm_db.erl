@@ -393,7 +393,7 @@ get(RecordName, Key) ->
     DBA=?DBA,
     case C = DBA:get(RecordName, Key) of
     {ok,_R} ->
-%        ?INFO("db:get ~p,", [{RecordName, Key}]),
+        ?INFO("db:get ~p,", [{RecordName, Key}]),
         C;
     A -> A
     end.

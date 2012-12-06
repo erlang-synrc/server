@@ -132,7 +132,7 @@ user_short_description(UId) ->
              case nsm_users:get_user(UserName) of
             {ok, UInfo} ->
             #user{age=UAge, sex=USex, location=ULoc, education=UEdu} = UInfo,
-            URealName = nsm_users:user_realname(UserName),
+            URealName = nsm_users:user_realname_user(UInfo),
             UDOB = case UAge of
                 undefined ->
                     undefined;
