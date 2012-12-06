@@ -130,7 +130,7 @@ tr() ->
         ]},
         #panel{class="info-page-content-panel", body=[
             #panel{style="left:200px; top:1770px; font-size:28px; color:#FC6404;",body="GÖSTERME TAŞI"},
-            #panel{style="left:100px; top:1810px; font-size:18px;",body="Taşlar dağıtıldıktan sonra sağ alt köşede “gösterMe” bölümüne açılan taş."},
+            #panel{style="left:100px; top:1810px; font-size:18px;",body="Taşlar dağıtıldıktan sonra sağ alt köşede “gösterme” bölümüne açılan taş."},
             #panel{style="left:105px; top:1835px; font-size:18px;",body="Elinde göstermesi olan gösterme taşının üzerini çift tıklayarak oyundaki"},
             #panel{style="left:120px; top:1860px; font-size:18px;",body="(varsa) gösterme puanını kazanır. "},
             #panel{style="left:200px; top:1885px; font-size:18px;",body="Gösterme ilk el taş çekilmeden yapılmalıdır."},
@@ -200,7 +200,7 @@ tr() ->
 
             #panel{style="left:640px; top:3337px; font-size:18px;",body="olmak üzere puan düşümü yapılır."},
 
-            #panel{style="left:480px; top:3420px; font-size:18px;",body="Puanını il sıfırlayan oyunu kazanır."}
+            #panel{style="left:480px; top:3420px; font-size:18px;",body="Puanını ilk sıfırlayan oyunu kazanır."}
         ]},
         #panel{class="info-page-content-panel", body=[
             #panel{style="left:100px; top:3630px; font-size:28px; color:#FC6404;",body="FARKLI OYUN BİTİRME ÇEŞİTLERİ"},

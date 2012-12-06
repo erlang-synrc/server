@@ -169,7 +169,7 @@ section_body(gifts) ->
                                 "<b>" ++ SName ++ " </b><font style='color:#777;'>(" ++ SDate ++ ")</font> " ++ ?_T("worth") ++ " " ++
                                 SPrice ++ " <font size=-1>TL</font> " ++ ?_T("for") ++ " " ++ SKakush ++ " " ++ ?_T("kakush")
                             ]},
-                            #link{class=btn, postback={deliver, GiftId, SName, SKakush},  text=?_T("Deliver")}
+                            #link{class=btn, postback={deliver, GiftId, BoughtTime, SName, SKakush},  text=?_T("Deliver")}
                         ]};
                     error ->    % some junk got into user_bought_gifts
                         ?ERROR("No such gift with id: ~p", [GiftId])
@@ -784,7 +784,7 @@ u_event(user_address_cancel) ->
             wf:set(user_phone, "")
     end;
 
-u_event({deliver, GiftId, SName, SKakush}) ->
+u_event({deliver, GiftId, GiftTimestamp, SName, SKakush}) ->
     {_, UA} = nsm_db:get(user_address, wf:user()),
     case UA of
         notfound ->
@@ -820,7 +820,7 @@ u_event({deliver, GiftId, SName, SKakush}) ->
                     body="", style="width:272px;"
                 },
                 #tablecell{
-                    body=#cool_button{text=?_T("Deliver!"), postback={process_delivery, wf:user(), GiftId, SName}, style="display:block;"}
+                    body=#cool_button{text=?_T("Deliver!"), postback={process_delivery, wf:user(), GiftId, GiftTimestamp, SName}, style="display:block;"}
                 }
             ]},
             #grid_clear{}
@@ -832,7 +832,7 @@ u_event({deliver, GiftId, SName, SKakush}) ->
 u_event(hide_delivery_details) ->
     wf:wire(simple_lightbox, #hide{});
 
-u_event({process_delivery, UId, GiftId, SName}) ->
+u_event({process_delivery, UId, GiftId, GiftTimestamp, SName}) ->
     Orders = nsm_db:get_purchases_by_user(UId, undefined, all),
     HasNotConfirmed = fun(F, OL) ->
         case OL of
@@ -853,7 +853,7 @@ u_event({process_delivery, UId, GiftId, SName}) ->
                     ?ERROR("Delivery error, delivery/notifications/email not set"),
                     wf:wire(#alert{text=?_T("Notification error while processing delivery!")});
                 {ok, #config{value=Email}} ->
-                    nsx_msg:notify(["gifts", "user", UId, "mark_gift_as_deliving"], {GiftId}),
+                    nsx_msg:notify(["gifts", "user", UId, "mark_gift_as_deliving"], {GiftId, GiftTimestamp}),
                     Address = wf:q(delivery_address),
                     City = wf:q(delivery_city),
                     District = wf:q(delivery_district),
