@@ -79,21 +79,8 @@ content() ->
 
     wf:state(tour_start_time, T#tournament.start_time),
     wf:state(tour_start_date, T#tournament.start_date),
-    Timer = case date() == T#tournament.start_date of
-        false ->
-            DDays = calendar:date_to_gregorian_days(T#tournament.start_date) - calendar:date_to_gregorian_days(date()),
-            case DDays of
-                1 -> "1 " ++ ?_T("day");
-                N -> 
-                    case N>0 of
-                        true -> integer_to_list(N) ++ " " ++ ?_T("days");
-                        false -> get_timer_for_now()
-                    end
-            end;
-        true ->
-            wf:wire(#event{type=timer, delay=1000, postback=change_timer}),
-            get_timer_for_now()
-    end,
+    wf:wire(#event{type=timer, delay=1000, postback=change_timer}),
+    Timer = get_timer_for_now(),
     Time = integer_to_list(element(1, T#tournament.start_time)) ++ ":" ++ 
            integer_to_list(element(2, T#tournament.start_time)) ++
            case element(2, T#tournament.start_time) of 
@@ -503,21 +490,41 @@ event({change_view, Mode}) ->
 
 event(join_tournament) ->
     UId = wf:user(),
+    TId = wf:state(tournament_id),
+
+    FreeTournaments = ling:split(ling:clean(ling:clean(nsm_db:get_config("tournaments/free", ""), " "), "\""), ","),
     case nsm_accounts:user_paid(UId) of
         true ->
-            TID = wf:state(tournament_id),
-            nsm_tournaments:join(UId, list_to_integer(TID)),
-            wf:replace(join_button, #panel{id=join_button, class="tourlobby_orange_button_disabled", text="TURNUVAYA KATIL"}),
-            wf:replace(leave_button, #link{id=leave_button, class="tourlobby_red_button", text="TURNUVADAN AYRIL", postback=leave_tournament}),
-            update_userlist();
+            event(actualy_join_tournament);
         false ->
-            wf:wire(#alert{text=?_T("Sorry, only paid users can join the tournament.")})
+            case lists:member(TId, FreeTournaments) of
+                true ->
+                    AllTournaments = nsm_db:all(tournament),
+                    case lists:member(true, [nsm_tournaments:user_joined(ATId, UId) || #tournament{id = ATId} <- AllTournaments]) of
+                        true ->
+                            wf:wire(#alert{text=?_T("Sorry, only paid users can play two tournaments in a time.")});
+                        _ ->
+                            event(actualy_join_tournament)
+                    end;
+                false -> 
+                    wf:wire(#alert{text=?_T("Sorry, only paid users can join this tournament.")})
+            end
     end;
+
+event(actualy_join_tournament) ->
+    UId = wf:user(),
+    TId = wf:state(tournament_id),
+    nsx_msg:notify(["system", "tournament_join"], {UId, list_to_integer(TId)}),
+%    nsm_tournaments:join(UId, list_to_integer(TId)),
+    wf:replace(join_button, #panel{id=join_button, class="tourlobby_orange_button_disabled", text="TURNUVAYA KATIL"}),
+    wf:replace(leave_button, #link{id=leave_button, class="tourlobby_red_button", text="TURNUVADAN AYRIL", postback=leave_tournament}),
+    update_userlist();
 
 event(leave_tournament) ->
     UId = wf:user(),
-    TID = wf:state(tournament_id),
-    nsm_tournaments:remove(UId, list_to_integer(TID)),
+    TId = wf:state(tournament_id),
+    nsx_msg:notify(["system", "tournament_remove"], {UId, list_to_integer(TId)}),
+%    nsm_tournaments:remove(UId, list_to_integer(TID)),
     wf:replace(join_button, #link{id=join_button, class="tourlobby_orange_button", text="TURNUVAYA KATIL", postback=join_tournament}),
     wf:replace(leave_button, #panel{id=leave_button, class="tourlobby_red_button_disabled", text="TURNUVADAN AYRIL"}),
     update_userlist();
@@ -564,31 +571,36 @@ get_timer_for_now() ->
         _ ->
             TourTime = wf:state(tour_start_time),
             TourDate = wf:state(tour_start_date),
-            DTime = case date() == TourDate of
-                true -> 
-                    case wf:state(tour_long_id) of 
-                        [] -> calendar:time_to_seconds(TourTime) - calendar:time_to_seconds(time());
-                        _ -> 0  % started tournament is always either NOW or FINISHED
-                    end;
-                false ->
-                    0
-            end,
-            case DTime =< 0 of
-                true -> 
-                    TId = wf:state(tournament_int_id),
-                    case rpc:call(?GAMESRVR_NODE, game_manager,get_tournament,[TId]) of
-                        [] -> 
-                            case DTime < -60 of 
-                                true -> ?_T("FINISHED");
-                                false -> ?_T("NOW") % right before starting on timer
-                            end;
-                        _ -> ?_T("NOW")
-                    end;
-                false ->
-                    S = DTime rem 60,
-                    M = (DTime div 60) rem 60,
-                    H = (DTime div 3600),
-                    integer_to_list(H) ++ ":" ++ str_plus_0(M) ++ ":" ++ str_plus_0(S)
+            DDays = calendar:date_to_gregorian_days(T#tournament.start_date) - calendar:date_to_gregorian_days(date()),
+            case DDays of
+                1 -> "1 " ++ ?_T("day");
+                N -> 
+                    case N>0 of
+                        true -> integer_to_list(N) ++ " " ++ ?_T("days");
+                        false -> 
+                            DTime = case date() == TourDate of
+                                true -> 
+                                    case wf:state(tour_long_id) of 
+                                        [] -> calendar:time_to_seconds(TourTime) - calendar:time_to_seconds(time());
+                                        _ -> 0  % started tournament is always either NOW or FINISHED
+                                    end;
+                                false ->
+                                    0
+                            end,
+                            case DTime =< 0 of
+                                true -> 
+                                    TId = wf:state(tournament_int_id),
+                                    case rpc:call(?GAMESRVR_NODE, game_manager,get_tournament,[TId]) of
+                                        [] -> ?_T("FINISHED");
+                                        _ -> ?_T("NOW")
+                                    end;
+                                false ->
+                                    S = DTime rem 60,
+                                    M = (DTime div 60) rem 60,
+                                    H = (DTime div 3600),
+                                    integer_to_list(H) ++ ":" ++ str_plus_0(M) ++ ":" ++ str_plus_0(S)
+                            end
+                    end
             end
     end.
 

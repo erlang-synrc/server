@@ -444,40 +444,46 @@ reverse_board(Board,PlayerColor) ->
          2 -> [BE|Rest] = Board, [WE,WK,BK|Rest1] = lists:reverse(Rest), [WE] ++ Rest1 ++ [WK,BK,BE]
     end.
 
-first_available_move(RealBoard,XY,Color,TableId) ->
+%% first_available_move(RealBoard,Dice,Color,TableId) -> Moves
+first_available_move(RealBoard,Dice,Color,TableId) ->
     RelativeBoard = reverse_board(RealBoard,Color),
-    OppositePlayerColor = case Color of 1 -> 2; 2 -> 1 end,
+    F = fun(Die, {MovesAcc, BoardAcc, FailedDiceAcc}) ->
+                ?INFO("board: ~p", [BoardAcc]),
+                Tactic = tactical_criteria(BoardAcc, Color),
+                ?INFO("tactical criteria: ~p", [Tactic]),
+                case find_move(Color, Die, Tactic, BoardAcc) of
+                    {Move, NewBoard} -> {[Move | MovesAcc], NewBoard, FailedDiceAcc};
+                    false -> {MovesAcc, BoardAcc, [Die | FailedDiceAcc]}
+                end
+        end,
+    {List, Board, FailedDice} = lists:foldl(F, {[], RelativeBoard, []}, Dice),
+    ?INFO("moves found: ~p",[{List, FailedDice}]),
+    [#'TavlaAtomicMove'{table_id = TableId,from=rel(From,Color),to=rel(To,Color)} || {From,To} <- lists:reverse(List)]  ++
+        if length(FailedDice) == 0; length(FailedDice) == length(Dice) -> [];
+           true -> first_available_move(reverse_board(Board,Color),FailedDice,Color,TableId) end.
 
-    {List,Dices,Found,Board} = lists:foldl(fun (A,Acc2) ->
-         {L,D,F,B} = Acc2,
-         ?INFO("board: ~p", [B]),
-         Tactic = tactical_criteria(B,Color),
-         ?INFO("tactical criteria: ~p", [Tactic]),
-         case D of [] -> Acc2; _ ->
-              [H|T] = D,
-              {Cell,No}=A,
-              ?INFO("checking pos: ~p",[{Cell,No,H,Tactic}]),
-              case {Cell,Tactic} of
+%% find_move(Die, Tactic, Board) -> {Move, NewBoard} | false
+find_move(Color, Die, Tactic, Board) ->
+    OppColor = case Color of 1 -> 2; 2 -> 1 end,
+    find_move(Color, OppColor, Die, Tactic, Board, lists:sublist(lists:zip(Board,lists:seq(0,27)),2,24)).
 
-     {_   ,kicks} when No =/= H -> Acc2;
-     {null,kicks} when No =:= H -> ?INFO("found kick to empty: ~p",[{26,H}]), {L++[{26,H}],T,1,follow_board(B,26,H,Color)};
-     {{OppositePlayerColor,1},kicks} when H =:= No -> ?INFO("found kick kick: ~p",[{26,H}]), {L++[{26,H}],T,1,follow_board(B,26,H,Color)};
-     {{Color,Count},kicks} when H =:= No -> ?INFO("found kick over own: ~p",[{26,H}]), {L++[{26,H}],T,1,follow_board(B,26,H,Color)};
-     {{Color,Count},finish} when H + No >= 25 -> ?INFO("found finish move: ~p",[{No,27}]), {L++[{No,27}],T,1,follow_board(B,No,27,Color)};
-     {{Color,Count},race} when H + No >= 25 -> Acc2;
-     {{Color,Count},Tactic} when (Tactic==race orelse Tactic==finish) andalso (H + No < 25) ->
-                   case lists:nth(No+H+1,B) of
-                       null -> ?INFO("found race to empty: ~p",[{No,No+H}]), {L++[{No,No+H}],T,1,follow_board(B,No,No+H,Color)}; 
-                       {Color,_} -> ?INFO("found race over own: ~p",[{No,No+H}]), {L++[{No,No+H}],T,1,follow_board(B,No,No+H,Color)};
-                       {OppositePlayerColor,1} -> ?INFO("found race kick: ~p",[{No,No+H}]), {L++[{No,No+H}],T,1,follow_board(B,No,No+H,Color)};
-                           _ -> Acc2 end;
-     _ -> Acc2
-             end end
-        end, {[], XY, 0, RelativeBoard}, lists:sublist(lists:zip(RelativeBoard,lists:seq(0,27)),2,24)     ),
-    ?INFO("moves found: ~p",[{List,Dices}]),
-
-    [#'TavlaAtomicMove'{table_id = TableId,from=rel(From,Color),to=rel(To,Color)} || {From,To} <- List]  ++
-    case {length(Dices) > 0,Found} of {true,1} -> first_available_move(reverse_board(Board,Color),Dices,Color,TableId); _ -> []  end.
+find_move(_Color, _OppColor, _Die, _Tactic, _Board, []) -> false;
+find_move(Color, OppColor, Die, Tactic, Board, [{Cell, No} | Rest]) ->
+    ?INFO("checking pos: ~p", [{Cell, No, Die, Tactic}]),
+    case {Cell, Tactic} of
+        {null,kicks} when No == Die -> ?INFO("found kick to empty: ~p",[{26,No}]), {{26,No}, follow_board(Board,26,No,Color)};
+        {{OppColor,1},kicks} when No == Die -> ?INFO("found kick kick: ~p",[{26,No}]), {{26,No}, follow_board(Board,26,No,Color)};
+        {{Color,_},kicks} when No == Die -> ?INFO("found kick over own: ~p",[{26,No}]), {{26,No}, follow_board(Board,26,No,Color)};
+        {{Color,_},finish} when No + Die >= 25 -> ?INFO("found finish move: ~p",[{No,27}]), {{No,27}, follow_board(Board,No,27,Color)};
+        {{Color,_},Tactic} when (Tactic==race orelse Tactic==finish) andalso (No + Die < 25) ->
+            case lists:nth(No+Die+1, Board) of
+                null -> ?INFO("found race to empty: ~p",[{No,No+Die}]), {{No,No+Die}, follow_board(Board,No,No+Die,Color)};
+                {Color,_} -> ?INFO("found race over own: ~p",[{No,No+Die}]), {{No,No+Die}, follow_board(Board,No,No+Die,Color)};
+                {OppColor,1} -> ?INFO("found race kick: ~p",[{No,No+Die}]), {{No,No+Die}, follow_board(Board,No,No+Die,Color)};
+                _ -> find_move(Color, OppColor, Die, Tactic, Board, Rest)
+            end;
+        _ -> find_move(Color, OppColor, Die, Tactic, Board, Rest)
+    end.
 
 make_end_series(Color,TableId,Board) ->
     lists:foldl(fun (A,Acc) -> ?INFO("~p / ~p~n",[A,Acc]), {Cell,No} = A, case Cell of null -> Acc; 
