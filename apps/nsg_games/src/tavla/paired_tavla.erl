@@ -446,7 +446,10 @@ init_state_first_move_determination(#state{tables_users = TablesUsers,
 %% @end
 
 spread_users(Owner, PlayerIds) ->
-    Players = [Owner | PlayerIds -- [Owner]], %% Move the Owner to the first pos
+    Players = case lists:member(Owner, PlayerIds) of
+                  true -> [Owner | PlayerIds -- [Owner]]; %% Move the Owner to the first pos
+                  false -> PlayerIds
+              end,
     spread_users(Players, 1, [], []).
 
 

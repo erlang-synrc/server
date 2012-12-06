@@ -204,8 +204,8 @@ list_subscr(UId, PageNumber, PageAmount) when is_list(UId) ->
         _ -> 1
 	 end,
 	lists:sublist(list_subscr(UId), Offset, PageAmount).
-list_subscr_for_metalist(UId) ->
-    [ {UserId, user_realname(UserId)} || {subs, _, UserId} <- list_subscr(UId) ].
+list_subscr_usernames(UId) ->
+    [UserId || #subs{whom = UserId} <- list_subscr(UId)].
 
 list_subscr_me(#user{username = UId}) ->
     list_subscr_me(UId);
@@ -420,7 +420,6 @@ user_realname(UId) ->
     {ok, User} -> user_realname_user(User);
     _ -> "Unknown"
     end.
-      
 
 %% This function will be called from nsm_auth, after successfull login.
 login_posthook(User) ->
