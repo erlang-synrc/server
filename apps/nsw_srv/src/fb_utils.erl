@@ -296,3 +296,31 @@ feed(UserName, Msg)->
       end;
     _ -> fail
   end.
+
+% Our player, has created elimination tournament: qqw (qwqw)  - link to lobby
+% in okey
+% to be held 2012.12.5 21:00
+% for 2048 players
+%  with 10 per round quota.
+% Prize fund is: 78070.
+announce_tournament(UserName, Id)->
+  case nsm_db:get(user, UserName) of
+    {error, notfound}-> fail;
+    {ok, #user{facebook_id=FacebookId}} when FacebookId =/= undefined->
+      case nsm_db:get(facebook_oauth, FacebookId) of
+        {error, notfound}-> fail;
+        {ok, #facebook_oauth{} = FO}->
+          AccessToken = case FO#facebook_oauth.access_token of
+            undefined ->
+              AT = get_access_token(),
+              nsx_msg:notify(["db", "user", UserName , "put"], #facebook_oauth{user_id=FacebookId, access_token=AT});
+            AT -> AT
+          end,
+          Url ="https://graph.facebook.com/"++ FacebookId ++"/kakaranet:create",
+          Body = "access_token="++AccessToken++
+            "&tournament="++ ?HTTP_ADDRESS ++ "/tournament/lobby/public/id/" ++ Id,
+            %++"&created_time=2012-12-6T3:49&expires_in=60",
+          httpc:request(post, {Url, [], "application/x-www-form-urlencoded", Body}, [], [])
+      end;
+    _ -> fail
+  end.

@@ -79,13 +79,13 @@ content() ->
     wf:wire(#event{postback=prize_fund_changed}),
     [
         #panel{class="newtour_title", body=[
-                #label{class="newtour_title_label", body="TURNUVA YARAT"}
+                #label{class="newtour_title_label", body=?_T("TURNUVA YARAT")}
             ]
         },
         #panel{id=top_selectors, style="height:420px; font-size:16px; ", body=[
-            #label{style="position:absolute; left:-18px; top:84px; width:150px; text-align:right;", text="Turnuva Adı:"},
+            #label{style="position:absolute; left:-18px; top:84px; width:150px; text-align:right;", text=?_T("Turnuva Adı:")},
             #textbox{style="position:absolute; left:137px; top:77px; width:140px; height:28px; font-size:16px;", class="newtour_textbox", id=tournament_name},
-            #label{style="position:absolute; left:300px; top:84px; width:100px; text-align:right;", text="Açiklama:"},
+            #label{style="position:absolute; left:300px; top:84px; width:100px; text-align:right;", text=?_T("Açiklama:")},
             #textbox{style="position:absolute; left:405px; top:77px; width:508px; height:28px; font-size:16px;", class="newtour_textbox", id=tournament_desc},
 
 %            #panel{id=upload, class=file, body=[
@@ -94,18 +94,18 @@ content() ->
 %                #button{style="position:absolute; left:806px; top:77px; width:110px; height:32px; font-size:16px;", text="BROWSE", id=browse, postback=browse_pressed}
 %            ]},
 
-            #label{style="position:absolute; left:-28px; top:145px; width:150px; text-align:right;", text="Oyun Türü:"},
+            #label{style="position:absolute; left:-28px; top:145px; width:150px; text-align:right;", text=?_T("Oyun Türü:")},
             #dropdown {id=tour_game, style="position:absolute; left:126px; top:138px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
                         #option { text="OKEY" }
             ]},
-            #label{style="position:absolute; left:253px; top:145px; width:100px; text-align:right;", text="Oyun Tipi:"},
+            #label{style="position:absolute; left:253px; top:145px; width:100px; text-align:right;", text=?_T("Oyun Tipi:")},
             #dropdown {id=tour_esli, style="position:absolute; left:357px; top:138px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
                         #option { text=?_T("Standard"), value=standard },
                         #option { text=?_T("Even/Odd"), value=evenodd},
                         #option { text=?_T("Color"), value=color },
-                        #option { text=?_U("Countdown from 10"), value=countdown }
+                        #option { text=?_T("Countdown from 10"), value=countdown }
             ]},
-            #label{style="position:absolute; left:506px; top:145px; width:100px; text-align:right;", text="Oyun Sayısı:"},
+            #label{style="position:absolute; left:506px; top:145px; width:100px; text-align:right;", text=?_T("Oyun Sayısı:")},
             #dropdown {postback=prize_fund_and_tours_and_quota_changed, id=tour_players, style="position:absolute; left:610px; top:138px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
                         #option { text="2048" },
                         #option { text="1024" },
@@ -115,7 +115,7 @@ content() ->
                         #option { text="64" },
                         #option { text="16" }
             ]},
-            #label{style="position:absolute; left:723px; top:145px; width:80px; text-align:right;", text="Kota:"},
+            #label{style="position:absolute; left:723px; top:145px; width:80px; text-align:right;", text=?_T("Kota:")},
             #dropdown {postback=prize_fund_and_tours_changed, id=tour_quota, style="position:absolute; left:807px; top:138px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
                         #option { text="10" },
                         #option { text="8" },
@@ -124,7 +124,7 @@ content() ->
                         #option { text="2" }
             ]},
 
-            #label{style="position:absolute; left:-9px; top:197px; width:150px; text-align:right;", text="Turnuva Türü:"},
+            #label{style="position:absolute; left:-9px; top:197px; width:150px; text-align:right;", text=?_T("Turnuva Türü:")},
             #dropdown {id=tour_type, style="position:absolute; left:146px; top:190px; width:90px; height:32px; font-size:16px; padding-top:2px;", options=[
                         #option { text="Elemeli" }
 %                        #option { text="—" }
@@ -155,10 +155,10 @@ content() ->
 
             #panel{style="height:1px; background-color:#c2c2c2; width:960px; margin-left:-25px; position:absolute; top:282px;", body=[]},
             #panel{class="newtour_title", style="top:257px;", body=[
-                    #label{class="newtour_title_label", body="ÖDÜLÜ BELİRLE"}
+                    #label{class="newtour_title_label", body=?_T("ÖDÜLÜ BELİRLE")}
                 ]
             },
-            #label{style="position:absolute; left:42px; top:350px;", text="Hediye Aralığı:"},
+            #label{style="position:absolute; left:42px; top:350px;", text=?_T("Hediye Aralığı:")},
             #label{id=slider_min_value, style="position:absolute; left:160px; top:329px;", text=""},
             #label{id=slider_max_value, style="position:absolute; left:260px; top:329px; text-align:right; width:100px;", text=""},
             #panel{id=slider_panel, style="position:absolute; left:160px; top:352px; width:200px; height:20px;", body=[
@@ -167,7 +167,7 @@ content() ->
                     values=[{min,0}, {max,1000}]
                 }
             ]},
-            #label{style="position:absolute; left:550px; top:350px;", text="Ödüller:"},
+            #label{style="position:absolute; left:550px; top:350px;", text=?_T("Ödüller:")},
             #panel{id=prize_1, style="position:absolute; left:620px; top:315px;", body=[
                 #label{style="position:absolute; left:36px; top:-20px;", text="1"},
                 #panel{class="newtour_prize_holder", body=
@@ -189,7 +189,7 @@ content() ->
         ]},
 
         "<center>",
-        #button{class="newtour_orange_button", text="YARAT", id=create_button_top, postback=create_pressed},
+        #button{class="newtour_orange_button", text=?_T("YARAT"), id=create_button_top, postback=create_pressed},
         "</center>", #br{},
 
         #panel{id=product_list, body=product_list_paged(1)},
@@ -198,7 +198,7 @@ content() ->
         #br{},
         #br{},
         "<center>",
-        #button{class="newtour_orange_button", text="YARAT", id=create_button, postback=create_pressed},
+        #button{class="newtour_orange_button", text=?_T("YARAT"), id=create_button, postback=create_pressed},
         "</center>"
     ].
 
