@@ -340,10 +340,10 @@ event(update_group) ->
     NewDesc = wf:q(group_desc),
     NewOwner = wf:q(group_owner),
     NewPublicity = wf:q(group_publicity),
-    case nsm_users:get_user({username, NewOwner}) of
+    case nsm_users:get_user(NewOwner) of
         {ok, _} ->
             nsx_msg:notify(["db", "group", GId, "update_group"], 
-                {wf:user(), NewUId, NewName, NewDesc, NewOwner, NewPublicity}),          
+                {wf:user(), NewUId, NewName, NewDesc, NewOwner, NewPublicity}),
             wf:update(group_info_name, wf:q(group_name)),
             wf:update(group_info_publicity, wf:q(group_publicity)),
             wf:update(group_info_owner, wf:q(group_owner)),

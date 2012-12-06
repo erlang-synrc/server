@@ -221,7 +221,8 @@ get_group_rows(Page) ->
                 [] ->
                     {?_T("You are not subscribed to anyone"), 0};
                 Full ->
-                    GroupsFull = [begin {ok, Group} = nsm_groups:get_group(GId), Group end || GId <- Full],
+                    GroupsAndNoGroupsFull = [begin {_, Group} = nsm_groups:get_group(GId), Group end || GId <- Full],
+                    GroupsFull = [G || G <- GroupsAndNoGroupsFull, G /= notfound],
                     SortedFull = lists:sort(fun(#group{created=T1}, #group{created=T2}) -> T2 =< T1 end, GroupsFull),
                     Sub = lists:sublist(SortedFull, Offset, ?GROUPPERPAGE),
                     {group_row(Sub), length(Full)}
@@ -281,18 +282,17 @@ get_popular_group_container() ->
     #panel{ class="box", body=[
         #h3{text=?_T("Popular groups")},
         #list{class="list-photo list-photo-in", body=[
-            [begin 
-                
-                  case nsm_groups:get_group(GId) of
-                {ok, Group} ->
-                GroupName = Group#group.name,
-                GroupUsers = Group#group.users_count,
-                #listitem{body=
-                    [#link{url=site_utils:group_link(GId), body=io_lib:format("~s", [GroupName])},
-                     #span{style="padding-left:4px;", text = io_lib:format("(~b)", [GroupUsers])}
-                    ]};
-                _ -> ""
-                   end
+            [begin              
+                case nsm_groups:get_group(GId) of
+                    {ok, Group} ->
+                        GroupName = Group#group.name,
+                        GroupUsers = Group#group.users_count,
+                        #listitem{body=
+                            [#link{url=site_utils:group_link(GId), body=io_lib:format("~s", [GroupName])},
+                             #span{style="padding-left:4px;", text = io_lib:format("(~b)", [GroupUsers])}
+                            ]};
+                     _ -> ""
+                 end
              end
              || GId <-nsm_groups:get_popular_groups()]
         ]}
