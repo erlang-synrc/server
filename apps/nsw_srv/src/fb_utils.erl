@@ -318,7 +318,7 @@ announce_tournament(UserName, Id)->
             {ok, #tournament{} = T} ->
               {{Y, M, D}, {H, Min, _}} = Now  = calendar:now_to_local_time(now()),
               TournamentTime = calendar:datetime_to_gregorian_seconds({T#tournament.start_date, T#tournament.start_time}),
-              MessageTime = calendar:datetime_to_gregorian_seconds({Now}),
+              MessageTime = calendar:datetime_to_gregorian_seconds(Now),
               CreatedTime = lists:flatten(io_lib:format("~p-~p-~pT~p:~p", [Y,M,D,H,Min])),
               Body = "access_token="++AccessToken++
               "&tournament="++ ?HTTP_ADDRESS ++ "/tournament/lobby/public/id/" ++ integer_to_list(Id)
