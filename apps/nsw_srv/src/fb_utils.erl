@@ -318,7 +318,7 @@ announce_tournament(UserName, Id)->
           end,
           Url ="https://graph.facebook.com/"++ FacebookId ++"/kakaranet:create",
           Body = "access_token="++AccessToken++
-            "&tournament="++ ?HTTP_ADDRESS ++ "/tournament/lobby/public/id/" ++ Id,
+            "&tournament="++ ?HTTP_ADDRESS ++ "/tournament/lobby/public/id/" ++ integer_to_list(Id),
             %++"&created_time=2012-12-6T3:49&expires_in=60",
           httpc:request(post, {Url, [], "application/x-www-form-urlencoded", Body}, [], [])
       end;
