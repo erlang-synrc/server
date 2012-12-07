@@ -1,4 +1,5 @@
 -module(nsm_queries).
+-include_lib("nsx_config/include/log.hrl").
 -include_lib("nsm_db/include/table.hrl").
 -include_lib("stdlib/include/qlc.hrl").
 -compile(export_all).
