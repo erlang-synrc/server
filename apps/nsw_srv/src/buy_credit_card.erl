@@ -283,8 +283,10 @@ make_provision_request(OrderId, Amount) ->
 
     {ok, XML} = construct_provision_xml(),
 
-    case buy:http_request(post, "application/x-www-form-urlencoded", [],
-                          HostAddress, "data="++buy:iolist_to_string(XML), 10000) of
+    case buy:http_request(post, "application/x-www-form-urlencoded", [], HostAddress, "data="
+%++buy:iolist_to_string(XML)
+++ erlang:binary_to_list(XML)
+, 10000) of
         {ok, Res} ->
             Parsed = parse_xml(Res),
             Response = extract_response(Parsed),
@@ -476,7 +478,8 @@ construct_provision_xml() ->
     ],
     {ok, XML} = '3D_inquiry_request_dtl':render(TplParams),
     ?INFO("Provision XML - DTL~p~n", [XML]),
-    {ok, XML}.
+%    {ok, XML}.
+    {ok, Resp}.
 
 %% Events
 api_event(Name, Tag, Args)->
