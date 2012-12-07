@@ -45,19 +45,17 @@ token() ->
         io_lib:fwrite("flashvars.tokenKey = encodeURIComponent(\"~s\");~n", [T]),
         io_lib:fwrite("flashvars.port = ~b;~n", [?SERVER_PORT]),
         io_lib:fwrite("flashvars.locale = '~s';~n", [site_utils:detect_language()]),
-%        io_lib:fwrite("flashvars.host = \"~s\";~n", [case ?SERVER_HOST of
-%                                                        "188.40.111.154" -> "test.kakaranet.com";
-%                                                        X -> X
-%                                                  end]),
+        io_lib:fwrite(GameType, []),
 
         case wf:q(id) of
              undefined -> "";
              Id ->        A = wf:session(Id),
                           GameId = case A of undefined -> Id; _ -> list_to_integer(A) end,
-                       Host = lists:nth(GameId div 1000000,?SERVER_HOST),
-%                           ?INFO("Host: ~p",[Host]),
-                          io_lib:fwrite("flashvars.host = \"~s\";~n", [Host]),
-                          io_lib:fwrite(GameType, []),
-                          io_lib:fwrite("flashvars.gameId = ~p;~n", [GameId])
+                          Host = lists:nth(GameId div 1000000,?SERVER_HOST),
+                          ?INFO("Connect to Game Host: ~p",[Host]),
+                          [
+                            io_lib:fwrite("flashvars.host = \"~s\";~n",[Host]),
+                            io_lib:fwrite("flashvars.gameId = ~p;~n", [GameId])
+                          ]
         end
     ].
