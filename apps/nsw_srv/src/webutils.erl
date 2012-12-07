@@ -135,7 +135,7 @@ account_menu() ->
     _UserLoggedIn ->
         [#list{class="user-menu", body=[
           #listitem{body=fb_utils:login_btn()},
-          #listitem{body=#link{class=login, text=?_T("Login"), url=[?HTTP_ADDRESS,?_U("/login")]}},
+          #listitem{body=#link{class=login, text=?_T("Login"), url=[?HTTPS_ADDRESS,?_U("/login")]}},
           #listitem{body=#link{class=signup, text=?_T("Signup"), postback=register}}
         ]}]
   end,
@@ -211,9 +211,9 @@ footer_box() ->
         #listitem{body=#link{url=?_U("/terms"), text=?_T("Terms of Service")}},
         #listitem{body=#link{url=?_U("/privacy"), text=?_T("Privacy Policy")}},
         #listitem{body=wf_tags:emit_tag(a, ?_T("Help & Support"),
-          [{href, "http://kakaranet.uservoice.com/"},{target,"_blank"}])},
+          [{href, "https://kakaranet.uservoice.com/"},{target,"_blank"}])},
         #listitem{body=#link{url=?_U("/contact"), text=?_T("Contact")}},
-        #listitem{body=[?_T("2011 &copy; Kakaranet. All rights reserved."),"<br/>",
+        #listitem{body=[?_T("2011&mdash;2012 &copy; Kakaranet. All rights reserved."),"<br/>",
                         ?_T("Kakaranet is registered trademark of Paynet Inc."),"<br/>"]},
         #listitem{body=[#checkbox { id=replay_guiders, text=?_T("Replay Guiders"), postback=replay_guiders_changed,
                                     checked=(wf:cookie("replayguiders")=="yes") }]}
@@ -233,7 +233,7 @@ event(login) ->
     login(login,password,login_hintbox);
 event(register)->
     wf:session(fb_registration, undefined),
-    wf:redirect([?HTTP_ADDRESS,?_T("/login/register")]);
+    wf:redirect([?HTTPS_ADDRESS,?_T("/login/register")]);
 event(logout) ->
   wf:session(fb_registration, undefined),
   wf:session(logged_with_fb, undefined),
