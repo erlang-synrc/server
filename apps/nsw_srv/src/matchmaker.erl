@@ -537,7 +537,7 @@ show_table(Tables) ->
                     {info, {_, TId}} = InfoPostback,
                     WebSrv = "web@srv" ++ integer_to_list(TId div 1000000) ++ ".kakaranet.com",
                     ?INFO("node ~p",[WebSrv]),
-                    {ok, WholeTable} = rpc:call(list_to_atom(WebSrv),view_table,get_table,[TId,wf:user()]),
+                    {ok, WholeTable} = rpc:call(list_to_atom(WebSrv),view_table,get_table,[TId,wf:state(table)]),
                     MaxUsers = case wf:q(game_name) of 
                         "tavla" -> case WholeTable#game_table.tournament_type of
                             paired -> 10;
