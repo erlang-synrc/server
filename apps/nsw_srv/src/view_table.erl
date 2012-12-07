@@ -570,7 +570,7 @@ join_user(User,Table) ->
 add_robot() ->
     Id = wf:state_default(table_id, undefined),
     ?INFO("add robot"),
-    case get_table(Id) of
+    case get_table(Id,wf:user()) of
          {ok, Table} ->
               MaxUser = proplists:get_value(max_users, game_requirements(Table)),
               CurrentUser = length(Table#game_table.users),
@@ -595,7 +595,7 @@ kick_user(UserName) ->
 	    wf:redirect_to_login(?_U("/login"));
 	CUser ->
 	    Id = wf:state(table_id),
- 	    {ok, Table} = get_table(Id),
+ 	    {ok, Table} = get_table(Id,wf:user()),
 	    case Table#game_table.owner of
 		CUser ->
 		    case UserName of
