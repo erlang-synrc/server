@@ -535,7 +535,9 @@ show_table(Tables) ->
             #table{class="view_table_table article-table", style="width:100%", rows=[
                 begin
                     {info, {_, TId}} = InfoPostback,
-                    {ok, WholeTable} = view_table:get_table(TId),
+                    WebSrv = "web@srv" ++ integer_to_list(TId div 1000000) ++ ".kakaranet.com",
+                    ?INFO("node ~p",[WebSrv]),
+                    {ok, WholeTable} = rpc:call(list_to_atom(WebSrv),view_table,get_table,[TId,wf:user()]),
                     MaxUsers = case wf:q(game_name) of 
                         "tavla" -> case WholeTable#game_table.tournament_type of
                             paired -> 10;
@@ -551,6 +553,7 @@ show_table(Tables) ->
                         end;
                         "okey" -> Users 
                     end,
+                    ?INFO("Whole Table ~p",[WholeTable]),
                     TMode = matchmaker:game_mode_to_text(WholeTable#game_table.game_mode) 
                              ++ " {"++atom_to_list(WholeTable#game_table.tournament_type)++"} " 
                              ++ integer_to_list(TId),
