@@ -391,7 +391,7 @@ matchmaker_show_tables() ->
 
 el_create_game_button() ->
     {_, _, Sid} = now(),
-    wf:state(session_id, Sid),
+    wf:state(session_id, Sid + nsx_opt:get_env(nsx_idgen,game_pool,1000000)),
     Url = lists:concat([?_U("/view-table/"), ?_U(wf:q(game_name)),"/id/",wf:state(session_id)]),
     Settings = wf:session({wf:q(game_name), wf:user()}),
     wf:session(wf:state(session_id), Settings),
@@ -537,7 +537,11 @@ show_table(Tables) ->
                     {info, {_, TId}} = InfoPostback,
                     WebSrv = "web@srv" ++ integer_to_list(TId div 1000000) ++ ".kakaranet.com",
                     ?INFO("node ~p",[WebSrv]),
-                    {ok, WholeTable} = rpc:call(list_to_atom(WebSrv),view_table,get_table,[TId,wf:state(table)]),
+                    NodeAtom = case TId < 1000000 of
+                       false -> list_to_atom(WebSrv);
+                       true -> nsx_opt:get_env(nsm_db,web_srv_node,'web@srv1.kakaranet.com')
+                    end,
+                    {ok, WholeTable} = rpc:call(NodeAtom,view_table,get_table,[TId,wf:state(table)]),
                     MaxUsers = case wf:q(game_name) of 
                         "tavla" -> case WholeTable#game_table.tournament_type of
                             paired -> 10;

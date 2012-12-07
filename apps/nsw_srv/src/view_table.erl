@@ -133,7 +133,7 @@ table_box() ->
 	{error, _A} -> wf:session({wf:q(id),wf:user()},undefined),
                        #panel{style="width: 720px;", body=table({error, _A}, Joined)};
 	Id ->
-            {ok,Table} = get_table(Id,wf:user()),
+            {ok,Table} = get_table(Id,wf:state(table)),
             case Table of [] -> 
                           wf:session({wf:q(id),wf:user()},undefined),
                           ?INFO("Table Null ~p",[Id]),
@@ -249,7 +249,7 @@ table_ok(Id) ->
                        [Postback_js])),
 
     ?INFO("table_ok"),
-    {Ret, Table} = get_table(Id,wf:user()),
+    {Ret, Table} = get_table(Id,wf:state(table)),
     case Ret of
         ok -> Owner = Table#game_table.owner,
               [ #panel { class="user-list", body=#panel{id=user_list, body=?_T("Loading...")}},
@@ -278,7 +278,7 @@ table_ok(Id) ->
 
 action_button(Id) ->
     ?INFO("action button"),
-    {ok, Table} = get_table(Id,wf:user()),
+    {ok, Table} = get_table(Id,wf:state(table)),
     Owner = Table#game_table.owner,
     action_button(Owner, Table).
 
@@ -301,7 +301,7 @@ start_pre_comet_process(Id) -> start_pre_comet_process(Id, noskip).
 start_pre_comet_process(Id, Skip) ->
     WebPid = self(),
     ?INFO("start pre comet "),
-    Ret = get_table(Id,wf:user()),
+    Ret = get_table(Id,wf:state(table)),
     Table = case Ret of {ok,T} -> T; (_) -> #game_table{} end,
     Settings = table_settings(),
     TableId = wf:state(table_id),
@@ -329,7 +329,7 @@ start_pre_comet_process(Id, Skip) ->
 			    WebPid ! {comet_started, self()},
 			    put(user, webutils:user_info()),
 			    put(game_type, GameType),
-                            Tab1 = case get_table(Id,wf:user()) of 
+                            Tab1 = case get_table(Id,wf:state(table)) of 
                                  undefined -> #game_table{creator = wf:user()}; 
                                  [] -> #game_table{creator = wf:user()}; {ok,A}-> A end,
                             TableName = proplists:get_value(table_name, Settings, "no table"),
@@ -570,7 +570,7 @@ join_user(User,Table) ->
 add_robot() ->
     Id = wf:state_default(table_id, undefined),
     ?INFO("add robot"),
-    case get_table(Id,wf:user()) of
+    case get_table(Id,wf:state(table)) of
          {ok, Table} ->
               MaxUser = proplists:get_value(max_users, game_requirements(Table)),
               CurrentUser = length(Table#game_table.users),
@@ -595,7 +595,7 @@ kick_user(UserName) ->
 	    wf:redirect_to_login(?_U("/login"));
 	CUser ->
 	    Id = wf:state(table_id),
- 	    {ok, Table} = get_table(Id,wf:user()),
+ 	    {ok, Table} = get_table(Id,wf:state(table)),
 	    case Table#game_table.owner of
 		CUser ->
 		    case UserName of
@@ -706,6 +706,7 @@ update_table_info(ATable) ->
         unknown -> wf:update(lightboxmsg, #span{text=?_T("This table has been destroyed")}),
                    wf:wire(lightbox, #show{});
         Tables when is_list(ATable) ->
+                   ?INFO("update_table_info:709 ~p",[Tables]),
                    [H|_T] = lists:foreach(fun(A)-> A#game_table.owner == wf:user() end, Tables),
                    H;
         Tab -> Tab
