@@ -450,7 +450,7 @@ construct_provision_xml() ->
 
     XML_X = xmerl:export_simple([GVPSRequest], xmerl_xml, [{prolog, ?xml_prolog}]),
     Resp = unicode:characters_to_binary(XML_X),
-    wf:info("Provision XML - xmerl ~p~n", [Resp]),
+    ?INFO("Provision XML - xmerl ~p~n", [Resp]),
 
     TplParams = [
         {mode, Mode},
@@ -473,7 +473,7 @@ construct_provision_xml() ->
         {txn_id, TxnId}
     ],
     {ok, XML} = '3D_inquiry_request_dtl':render(TplParams),
-    wf:info("Provision XML - DTL", [XML]),
+    ?INFO("Provision XML - DTL~p~n", [XML]),
     {ok, XML}.
 
 %% Events
