@@ -69,9 +69,8 @@ unregistered_popup() ->
     wf:update(simple_panel, Element),
     wf:wire(simple_lightbox, #show{}).
 
-over_limit_popup(Limit) ->
-    Msg = ?_TS("Dear visitor, we respect your enthusiasm,"
-        " but we can't sell more then $limit$ TL worth packages a month to a single person. Sorry.", [{limit, Limit}]),
+over_limit_popup(_Limit) ->
+    Msg = ?_T("Dear visitor, we respect your enthusiasm, but we can't sell that much packages a month to a single person. Sorry."),
     Element = webutils:lightbox_panel_template(simple_lightbox, [
         #h1{class="head", text=?_T("Please, try next month")},
         #panel{class=holder, body=[

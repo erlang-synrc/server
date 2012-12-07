@@ -11,6 +11,7 @@
 -include_lib("nsm_db/include/feed.hrl").
 -include_lib("nsm_db/include/table.hrl").
 -include_lib("nsm_db/include/accounts.hrl").
+-include_lib("nsm_db/include/scoring.hrl").
 -include("elements/records.hrl").
 -include("setup.hrl").
 -include("common.hrl").
@@ -859,6 +860,14 @@ get_ribbon_menu() ->
             feed:user_likes_count(CheckedUser)
         }
     end,
+    UId = case wf:q("user") of
+        undefined -> wf:user();
+        U -> U
+    end,
+    Scores = scoring:score_entries(UId),
+    SNum = integer_to_list(length(Scores)),
+    SPoints = integer_to_list(lists:sum([S#scoring_record.score_points || S <- Scores])),
+
     NewDirectMessages=false,    %PUBLIC BETA 
     BlockedUsers = nsm_users:get_blocked_users(wf:user()),
     BlockUnblock = case CheckedUser of
@@ -968,58 +977,58 @@ get_ribbon_menu() ->
             ];
         _-> ""
     end,
-    StatusBlock = case {CheckedUser, IsSubscribedUser} of
-        {undefined, undefined} ->
-            #panel{class="form-002", body=[
-                #form{body=[
-                    #dropdown{class="cs-2", id="user_status",
-                        postback={set_user_status},
-                        value=nsm_users:get_user_game_status(User#user.username),
-                        options=[
-                            #option{text=?_T("Online"),         value="online"}
+%    StatusBlock = case {CheckedUser, IsSubscribedUser} of
+%        {undefined, undefined} ->
+%            #panel{class="form-002", body=[
+%                #form{body=[
+%                    #dropdown{class="cs-2", id="user_status",
+%                        postback={set_user_status},
+%                        value=nsm_users:get_user_game_status(User#user.username),
+%                        options=[
+%                            #option{text=?_T("Online"),         value="online"}
 %PHASE1                        #option{text=?_T("Offline"),        value="offline"},
 %PHASE1                        #option{text=?_T("Busy"),           value="busy"},
 %PHASE1                        #option{text=?_T("Free for game"),  value="free_for_game"},
 %PHASE1                        #option{text=?_T("Invisible"),      value="invisible"}
-                        ]
-                    }
-                ]}
-            ], id="statuschanger"}
-        ;_->
-            {Status,ClassStatus} = case nsm_users:get_user_game_status(CheckedUser) of
-                "offline"       -> {"Offline","stat-offline"};
-                "busy"          -> {"Busy", "stat-busy"};
-                "free_for_game" -> {"Free for game", "stat-ffg"};
-                "invisible"     -> {"Invisible", "stat-invisible"};
-                _               -> {"Online","stat-online"}
-            end,
-            io_lib:format("<span class=\"stat-info\"><span class=\"~s\">~s</span></span>", [ClassStatus, Status])
-    end,
-    wf:wire(wf:f("TestStOpt[0]='~s';",[wf_event:serialize_event_context({set_user_status, "online"}, undefined, undefined, dashboard)])),
-    wf:wire(wf:f("TestStOpt[1]='~s';",[wf_event:serialize_event_context({set_user_status, "offline"}, undefined, undefined, dashboard)])),
-    wf:wire(wf:f("TestStOpt[2]='~s';",[wf_event:serialize_event_context({set_user_status, "busy"}, undefined, undefined, dashboard)])),
-    wf:wire(wf:f("TestStOpt[3]='~s';",[wf_event:serialize_event_context({set_user_status, "free_for_game"}, undefined, undefined, dashboard)])),
-    wf:wire(wf:f("TestStOpt[4]='~s';",[wf_event:serialize_event_context({set_user_status, "invisible"}, undefined, undefined, dashboard)])),
+%                        ]
+%                    }
+%                ]}
+%            ], id="statuschanger"}
+%        ;_->
+%            {Status,ClassStatus} = case nsm_users:get_user_game_status(CheckedUser) of
+%                "offline"       -> {"Offline","stat-offline"};
+%                "busy"          -> {"Busy", "stat-busy"};
+%                "free_for_game" -> {"Free for game", "stat-ffg"};
+%                "invisible"     -> {"Invisible", "stat-invisible"};
+%                _               -> {"Online","stat-online"}
+%            end,
+%            io_lib:format("<span class=\"stat-info\"><span class=\"~s\">~s</span></span>", [ClassStatus, Status])
+%    end,
+%    wf:wire(wf:f("TestStOpt[0]='~s';",[wf_event:serialize_event_context({set_user_status, "online"}, undefined, undefined, dashboard)])),
+%    wf:wire(wf:f("TestStOpt[1]='~s';",[wf_event:serialize_event_context({set_user_status, "offline"}, undefined, undefined, dashboard)])),
+%    wf:wire(wf:f("TestStOpt[2]='~s';",[wf_event:serialize_event_context({set_user_status, "busy"}, undefined, undefined, dashboard)])),
+%    wf:wire(wf:f("TestStOpt[3]='~s';",[wf_event:serialize_event_context({set_user_status, "free_for_game"}, undefined, undefined, dashboard)])),
+%    wf:wire(wf:f("TestStOpt[4]='~s';",[wf_event:serialize_event_context({set_user_status, "invisible"}, undefined, undefined, dashboard)])),
     [
         #panel{class="top-box", body=[
             case nsm_accounts:user_paid(element(2, User) ) of
                 true -> 
-                    #panel{class="paid_user_avatar_photo", body=[#image{image=get_user_avatar(element(2, User) ,"small"), style="height:48px; width:48px;"}]};                   
+                    #panel{class="paid_user_avatar_photo", body=[#image{image=get_user_avatar(element(2, User) ,"big"), style="height:150px; width:150px;"}], style="margin-left:19px;"};
                 _ -> 
-                    #panel{class="photo", body=[#image{image=get_user_avatar(element(2, User) ,"small"), style="height:48px; width:48px;"}]}
-            end, 
-            #panel{class="holder", body=[
-                io_lib:format("<strong class=\"title\">~s</strong>", [?_T("Status")]),
-                StatusBlock,
-                #list{class="list-ico", body=[
-                    #listitem{body=#image{image="/images/ico-001.png", style="width:12px; height:17px"}},
-                    #listitem{body=#image{image="/images/ico-001.png", style="width:12px; height:17px"}},
-                    #listitem{body=#image{image="/images/ico-001.png", style="width:12px; height:17px"}},
-                    #listitem{body=#image{image="/images/ico-001.png", style="width:12px; height:17px"}},
-                    #listitem{body=#image{image="/images/ico-001.png", style="width:12px; height:17px"}},
-                    #listitem{body=#image{image="/images/ico-001.png", style="width:12px; height:17px"}}
-                ]}
-            ]}
+                    #panel{class="photo", body=[#image{image=get_user_avatar(element(2, User) ,"big"), style="height:150px; width:150px;"}], style="margin-left:19px;"}
+            end
+%            #panel{class="holder", body=[
+%                io_lib:format("<strong class=\"title\">~s</strong>", [?_T("Status")]),
+%                StatusBlock,
+%                #list{class="list-ico", body=[
+%                    #listitem{body=#image{image="/images/ico-001.png", style="width:12px; height:17px"}},
+%                    #listitem{body=#image{image="/images/ico-001.png", style="width:12px; height:17px"}},
+%                    #listitem{body=#image{image="/images/ico-001.png", style="width:12px; height:17px"}},
+%                    #listitem{body=#image{image="/images/ico-001.png", style="width:12px; height:17px"}},
+%                    #listitem{body=#image{image="/images/ico-001.png", style="width:12px; height:17px"}},
+%                    #listitem{body=#image{image="/images/ico-001.png", style="width:12px; height:17px"}}
+%                ]}
+%            ]}
         ]},
         #h3{class="title-box", text=wf:to_list(User#user.name) ++ " " ++ wf:to_list(User#user.surname)},
         #panel{class="block", body=[
@@ -1029,49 +1038,14 @@ get_ribbon_menu() ->
                   #panel{class="slider", body=[
                     #list{body=[
                         #listitem{body=#image{image="/images/img-013.gif", style="width:53px;height:26px"}},
-                        #listitem{body=io_lib:format("<span>~s</span><strong>~s</strong>",[?_T("Num"), integer_to_list(12)])},
-                        #listitem{body=io_lib:format("<span>~s</span><strong>~s</strong>",[?_T("Points"), integer_to_list(2133)])}
-                    ]}
-                  ]},
-                  #panel{class="slider", body=[
-                    #list{body=[
-                        #listitem{body=#image{image="/images/img-013.gif", style="width:53px;height:26px"}},
-                        #listitem{body=io_lib:format("<span>~s</span><strong>~s</strong>",[?_T("Num"), integer_to_list(1)])},
-                        #listitem{body=io_lib:format("<span>~s</span><strong>~s</strong>",[?_T("Points"), integer_to_list(32324)])}
-                    ]}
-                  ]},
-                  #panel{class="slider", body=[
-                    #list{body=[
-                        #listitem{body=#image{image="/images/img-013.gif", style="width:53px;height:26px"}},
-                        #listitem{body=io_lib:format("<span>~s</span><strong>~s</strong>",[?_T("Num"), integer_to_list(2)])},
-                        #listitem{body=io_lib:format("<span>~s</span><strong>~s</strong>",[?_T("Points"), integer_to_list(223445)])}
-                    ]}
-                  ]},
-                  #panel{class="slider", body=[
-                    #list{body=[
-                        #listitem{body=#image{image="/images/img-013.gif", style="width:53px;height:26px"}},
-                        #listitem{body=io_lib:format("<span>~s</span><strong>~s</strong>",[?_T("Num"), integer_to_list(3)])},
-                        #listitem{body=io_lib:format("<span>~s</span><strong>~s</strong>",[?_T("Points"), integer_to_list(456464)])}
-                    ]}
-                  ]},
-                  #panel{class="slider", body=[
-                    #list{body=[
-                        #listitem{body=#image{image="/images/img-013.gif", style="width:53px;height:26px"}},
-                        #listitem{body=io_lib:format("<span>~s</span><strong>~s</strong>",[?_T("Num"), integer_to_list(4)])},
-                        #listitem{body=io_lib:format("<span>~s</span><strong>~s</strong>",[?_T("Points"), integer_to_list(3453)])}
-                    ]}
-                  ]},
-                  #panel{class="slider", body=[
-                    #list{body=[
-                        #listitem{body=#image{image="/images/img-013.gif", style="width:53px;height:26px"}},
-                        #listitem{body=io_lib:format("<span>~s</span><strong>~s</strong>",[?_T("Num"), integer_to_list(5)])},
-                        #listitem{body=io_lib:format("<span>~s</span><strong>~s</strong>",[?_T("Points"), integer_to_list(56757)])}
+                        #listitem{body=io_lib:format("<span>~s</span><strong>~s</strong>",[?_T("Num"), SNum])},
+                        #listitem{body=io_lib:format("<span>~s</span><strong>~s</strong>",[?_T("Points"), SPoints])}
                     ]}
                   ]}
                  ]}
-                ]},
-                #link{class="prev-link"},
-                #link{class="next-link"}
+                ]}
+%                #link{class="prev-link"},
+%                #link{class="next-link"}
             ]},
             MenuTail
         ]},

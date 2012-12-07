@@ -4142,8 +4142,8 @@ msgstr ""
 msgid "Tables"
 msgstr "Tables"
 #
-msgid "Sorry, all tables are full, you can create one youself!"
-msgstr "Sorry, all tables are full, you can create one youself!"
+msgid "Sorry, all tables are full, you can create one yourself!"
+msgstr "Maalesef şu anda tüm masalar dolu. Kendi masanızı kurabilirsiniz!"
 #
 msgid "Clear Options"
 msgstr "Seçimleri Temizle"
@@ -4158,19 +4158,19 @@ msgid "Kakuş"
 msgstr "Kakuş"
 #
 msgid "Other players"
-msgstr "Other players"
+msgstr "Diğer Oyuncular"
 #
 msgid "Scores"
-msgstr "Scores"
+msgstr "Sonuçlar"
 #
 msgid "We haven't implemented it yet."
 msgstr "We haven't implemented it yet."
 #
 msgid "When"
-msgstr "When"
+msgstr "Ne Zaman"
 #
 msgid "You haven't played any games yet."
-msgstr "You haven't played any games yet."
+msgstr "Henüz yeterince oyun oynamadınız."
 #
 msgid "Clear selection"
 msgstr "Clear selection"
@@ -4179,7 +4179,7 @@ msgid "Amount"
 msgstr "Amount"
 #
 msgid "Check it in your profile!"
-msgstr "Check it in your profile!"
+msgstr "Profil bilgilerinizi kontrol edin!"
 #
 msgid "Convert"
 msgstr "Convert"
@@ -4239,7 +4239,8 @@ msgid "Sorry"
 msgstr "Sorry"
 #
 msgid "Sorry, you don't have enough kakush to buy it yet."
-msgstr "Sorry, you don't have enough kakush to buy it yet."
+msgstr ""
+"Üzgünüz, bu ürün için yeterli “KAKUŞ” unuz henüz yok. Biraz daha gayret..."
 #
 msgid "Sorry, you don't have that much kakush."
 msgstr "Sorry, you don't have that much kakush."
@@ -4273,13 +4274,13 @@ msgid "/login/register"
 msgstr "/login/register"
 #
 msgid "1-st prize"
-msgstr "1-st prize"
+msgstr "1. lik ödülü”"
 #
 msgid "2-nd prize"
-msgstr "2-nd prize"
+msgstr "2. lik ödülü"
 #
 msgid "3-rd prize"
-msgstr "3-rd prize"
+msgstr "3. lük ödülü"
 #
 msgid "<b>Advertise it!</b>"
 msgstr "<b>Advertise it!</b>"
@@ -4384,11 +4385,12 @@ msgid "Date:"
 msgstr "Tarih:"
 #
 msgid ""
-"Dear visitor, we respect your enthusiasm, but we can't sell more then $limit"
-"$ TL worth packages a month to a single person. Sorry."
+"Dear visitor, we respect your enthusiasm, but we can't sell that much "
+"packages a month to a single person. Sorry."
 msgstr ""
-"Dear visitor, we respect your enthusiasm, but we can't sell more then $limit"
-"$ TL worth packages a month to a single person. Sorry."
+"Değerli Üyemiz, bir ay içinde en fazla 3 en büyük paketten satın alma "
+"kotanız dolduğundan, yeni satınalma işleminiz için biraz beklemek "
+"zorundasınız..! Anlayışınız için teşekkür ederiz."
 #
 msgid "Don't break the rules though, you will be prevented"
 msgstr "Don't break the rules though, you will be prevented"
@@ -4535,7 +4537,7 @@ msgid "Like, be liked or be disliked."
 msgstr "Like, be liked or be disliked."
 #
 msgid "List of all groups on kakaranet"
-msgstr "List of all groups on kakaranet"
+msgstr "Tüm grupların listesi"
 #
 msgid "MANUAL START"
 msgstr "MANUAL START"
@@ -4556,7 +4558,7 @@ msgid "NOW"
 msgstr "NOW"
 #
 msgid "New group created!"
-msgstr "New group created!"
+msgstr "Yeni grup kuruldu!"
 #
 msgid "New tournament"
 msgstr "New tournament"
@@ -4589,22 +4591,22 @@ msgid "Players can create their own tournaments and set the"
 msgstr "Players can create their own tournaments and set the"
 #
 msgid "Please wait for Tournament start or Start it Mannually."
-msgstr "Please wait for Tournament start or Start it Mannually."
+msgstr "Lütfen Turnuvanızın başlamasını bekleyin yada kendiniz başlatın."
 #
 msgid "Please wait..."
-msgstr "Please wait..."
+msgstr "Lütfen bekleyin..."
 #
 msgid "Please, choose at least the main prize!"
-msgstr "Please, choose at least the main prize!"
+msgstr "Lütfen, en azından 1.lik ödülünü seçin!"
 #
 msgid "Please, choose second prize!"
-msgstr "Please, choose second prize!"
+msgstr "Lütfen, 2.lik ödülünü seçin!"
 #
 msgid "Please, provide tournament name!"
-msgstr "Please, provide tournament name!"
+msgstr "Lütfen, Turnuvanıza bir “AD” verin!"
 #
 msgid "Please, try next month"
-msgstr "Please, try next month"
+msgstr "Lütfen gelecek ayı bekleyiniz..!"
 #
 msgid "Prove your skills among many competitors!"
 msgstr "Prove your skills among many competitors!"
@@ -4664,16 +4666,16 @@ msgid "UP TO YOU!"
 msgstr "UP TO YOU!"
 #
 msgid "User '$username$' can no longer see own contracts now!"
-msgstr "User '$username$' can no longer see own contracts now!"
+msgstr "$username$ üyemiz artık kendi sözleşmesini göremeyecek!"
 #
 msgid "User '$username$' can see own contracts now!"
-msgstr "User '$username$' can see own contracts now!"
+msgstr "$username$ üyemiz artık kendi sözleşmesini görebilecek!"
 #
 msgid "User '$username$' is an affiliate now!"
-msgstr "User '$username$' is an affiliate now!"
+msgstr "$username$ üyemiz artık BAYİ oldu!"
 #
 msgid "User '$username$' is no longer an affiliate!"
-msgstr "User '$username$' is no longer an affiliate!"
+msgstr "$username$' üyemizin BAYİ’liği İPTAL edildi!"
 #
 msgid "View:"
 msgstr "Görünüm:"
@@ -4839,7 +4841,7 @@ msgid "ACCORDING TO FRIENDS"
 msgstr "ARKADAŞLARIMA GÖRE"
 #
 msgid "Read the rules of our games"
-msgstr "Read the rules of our games"
+msgstr "Oyun Kurallarını okuyunuz"
 #
 msgid "Dashboard"
 msgstr "Sayfam"
@@ -4854,13 +4856,13 @@ msgid "Deliver!"
 msgstr "Hediyeni al!"
 #
 msgid "Disconnects: "
-msgstr "Disconnects: "
+msgstr "Kopmalar: "
 #
 msgid "ExtId"
 msgstr "ExtId"
 #
 msgid "Filter by nick"
-msgstr "Filter by nick"
+msgstr "Kullanıcı Adı’na göre sırala"
 #
 msgid ""
 "Game $tablename$ of $gametype$ just ended.<br> &mdash; $winner1$ won "
@@ -4906,7 +4908,7 @@ msgid "Game won!"
 msgstr "Game won!"
 #
 msgid "It will now appear in your feed."
-msgstr "It will now appear in your feed."
+msgstr "Şimdi sayfanıza geliyor."
 #
 msgid "Kakaranet: new delivery"
 msgstr "Ürün talebi"
@@ -4915,16 +4917,16 @@ msgid "Login with Facebook"
 msgstr "Facebook ile giriş"
 #
 msgid "Loses: "
-msgstr "Loses: "
+msgstr "Kaybettiği: "
 #
 msgid "Notification error while processing delivery!"
-msgstr "Notification error while processing delivery!"
+msgstr "Teslimat işlemleri için HATA mesajı"
 #
 msgid "Ok, the delivery is on its' way now!"
-msgstr "Ok, the delivery is on its' way now!"
+msgstr "Tamamdır. Ürününüz yolda..!"
 #
 msgid "Only paid members"
-msgstr "Only paid members"
+msgstr "Sadece Paket Satın Almış Üyeler"
 #
 msgid ""
 "Our player $winner$ just won $points$ game points and $kakush$ kakush in "
@@ -4973,7 +4975,7 @@ msgstr ""
 "$points4$ game points and $kakush4$ kakush."
 #
 msgid "Paid"
-msgstr "Paid"
+msgstr "Ödendi"
 #
 msgid "Players Count:"
 msgstr "Kaç Kişilik:"
@@ -4982,7 +4984,7 @@ msgid "Please, check:"
 msgstr "Lütfen Bilgilerinizi<br> Kontrol edin:"
 #
 msgid "Saved"
-msgstr "Saved"
+msgstr "Kaydedildi"
 #
 msgid "So, you want to deliver"
 msgstr "So, you want to deliver"
@@ -4995,10 +4997,10 @@ msgstr ""
 "please wait a little bit more."
 #
 msgid "Success ratio: "
-msgstr "Success ratio: "
+msgstr "Başarı Oranı: "
 #
 msgid "Total games played: "
-msgstr "Total games played: "
+msgstr "Oynadığı Oyun: "
 #
 msgid ""
 "Tournament $name$$desc$ just finished.<br>$winner1$ won $kakush1$ worth "
@@ -5035,7 +5037,7 @@ msgid "Vendor"
 msgstr "Vendor"
 #
 msgid "Wins: "
-msgstr "Wins: "
+msgstr "Kazandığı: "
 #
 msgid "batak"
 msgstr "batak"
@@ -5154,10 +5156,11 @@ msgid "Oyun Türü:"
 msgstr "Oyun Türü:"
 #
 msgid "Sorry, only paid users can join this tournament."
-msgstr "Sorry, only paid users can join this tournament."
+msgstr ""
+"Üzgünüz, Turnuvaya katılmak için bir “ÜYELİK PAKETİ” Satın Almak gerekiyor."
 #
 msgid "Sorry, only paid users can play two tournaments in a time."
-msgstr "Sorry, only paid users can play two tournaments in a time."
+msgstr "Üzgünüz, sadece “ÜYELİK PAKETİ” Satın Alan üyelere uygundur."
 #
 msgid "Sorry, you need a bigger tournament for this prize."
 msgstr "Sorry, you need a bigger tournament for this prize."
@@ -5254,3 +5257,13 @@ msgstr "Turnuva Adı:"
 #
 msgid "So, you want to deliver <b>$name$</b> worth $kakush$ kakush"
 msgstr "$kakush$ kakuş değerinde <b>$name$</b> hediyenizi alıyorsunuz"
+#
+msgid "Sorry, all tables are full, you can create one youself!"
+msgstr "Maalesef şu anda tüm masalar dolu. Kendi masanızı kurabilirsiniz!"
+#
+msgid ""
+"Dear visitor, we respect your enthusiasm, but we can't sell more then $limit"
+"$ TL worth packages a month to a single person. Sorry."
+msgstr ""
+"Dear visitor, we respect your enthusiasm, but we can't sell more then $limit"
+"$ TL worth packages a month to a single person. Sorry."
