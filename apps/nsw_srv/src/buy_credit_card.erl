@@ -450,7 +450,7 @@ construct_provision_xml() ->
 
     XML_X = xmerl:export_simple([GVPSRequest], xmerl_xml, [{prolog, ?xml_prolog}]),
     Resp = unicode:characters_to_binary(XML_X),
-    wf:info("Provision XML - xmerl", [[Resp]]),
+    wf:info("Provision XML - xmerl ~p~n", [Resp]),
 
     TplParams = [
         {mode, Mode},
@@ -477,6 +477,8 @@ construct_provision_xml() ->
     {ok, XML}.
 
 %% Events
+api_event(Name, Tag, Args)->
+    webutils:api_event(Name, Tag, Args).
 
 event({credit_card_clicked, PurchaseId}) ->
     Package = buy:package(),
