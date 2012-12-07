@@ -565,7 +565,7 @@ start_turn(#state{game_id = GameId, tour = Tour, tables = Tables} = StateData) -
                                                          tables_wl = WL}}.
 
 
-process_tour_result(#state{game_id = GameId, tournament_table = TTable,
+process_tour_result(#state{game_id = GameId, tournament_table = TTable, tours = Tours,
                            tours_plan = Plan, tour = Tour, tables_results = TablesResults,
                            players = Players, tables = Tables, trn_id = TrnId} = StateData) ->
     ?INFO("OKEY_NG_TRN_ELIM <~p> Tour <~p> is completed. Starting results processing...", [GameId, Tour]),
@@ -591,7 +591,7 @@ process_tour_result(#state{game_id = GameId, tournament_table = TTable,
        || {TableId, TableResultWithPos} <- TablesResultsWithPos],
     TourResultWithStrUserId = [{user_id_to_string(UserId), Position, Points, Status}
                                || {UserId, Position, Points, Status} <- TourResultWithUserId],
-    nsx_msg:notify(["system", "tournament_tour_note"], {TrnId, TourType, TourResultWithStrUserId}),
+    nsx_msg:notify(["system", "tournament_tour_note"], {TrnId, Tour, Tours, TourType, TourResultWithStrUserId}),
     {TRef, Magic} = start_timer(?SHOW_SERIES_RESULT_TIMEOUT),
     ?INFO("OKEY_NG_TRN_ELIM <~p> Results processing of tour <~p> is finished. "
           "Waiting some time (~p secs) before continue...",

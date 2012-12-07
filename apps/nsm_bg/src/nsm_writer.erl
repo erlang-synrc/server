@@ -153,7 +153,7 @@ handle_notice(["system", "game_begins_note"] = Route, Message, State) ->    % th
 
 handle_notice(["system", "tournament_tour_note"] = Route, Message, State) ->
     ?INFO("feed(~p): tournament_tour_note: Route=~p, Message=~p", [self(), Route, Message]),
-    {TId, TourType, TourRes} = Message,
+    {TId, TourNum, TotalTours, TourType, TourRes} = Message,
     {ok, Tour} = nsm_db:get(tournament, TId),
     Desc = case Tour#tournament.description of
         "" -> "";
