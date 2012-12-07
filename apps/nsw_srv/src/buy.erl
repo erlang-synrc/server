@@ -181,21 +181,19 @@ http_request(Method, ContentType, Headers, Url, DataToSend, Timeout) ->
                             {Url, Headers, ContentType, DataToSend}
                     end,
 
-
+	?INFO("BUY: send request"),
 	case httpc:request(Method, UrlHeader, [{timeout, Timeout}], []) of
 
 		{ok, {{V, 200, _HMes}, _H, Result}} ->
-			?DBG("http_request:<~p>:~9999p success", [Method, Url]),
+			?INFO("http_request:<~p>:~p success", [Method, Url]),
 			{ok, Result};
 
 		{ok, {{V, Code, _HMes}, _, Mes}} ->
-			?WARNING("http_request:<~p>:~9999p ubnormal response code: Code:~p,"
-					  " Response: ~p", [Method, Url, Code, Mes]),
+			?INFO("http_request:<~p>:~p ubnormal response code: Code:~p  Response: ~p", [Method, Url, Code, Mes]),
 			{error, {ecode, Code}};
 
 		{error, Reason} ->
-			?WARNING("http_request:<~p>:~9999p: unexpected error: ~9999p",
-				  [Method, Url, Reason]),
+			?INFO("http_request:<~p>:~p: unexpected error: ~p",  [Method, Url, Reason]),
 			{error, Reason}
 	end.
 

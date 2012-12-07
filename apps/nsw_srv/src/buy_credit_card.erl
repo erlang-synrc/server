@@ -213,11 +213,12 @@ expiration_date_row(SelectedMonth0, SelectedYear) ->
 
 
 process_result("failure")->
+    ?INFO("Buy credit card process FAILURE"),
     RequestBridge = wf_context:request_bridge(),
     PostParams = RequestBridge:post_params(),
     OrderId = wf:q(orderid),
     MDStatus =  wf:q(mdstatus),
-    ?PRINT({"FailureURL", PostParams}),
+    ?INFO("FailureURL  ~p~n", [PostParams]),
     Reason = case MDStatus of
         "5" ->
             ?_T("Cannot be Verified, cardholder wants to register later");
@@ -231,16 +232,16 @@ process_result("failure")->
             ?_T("Verification failure");
         Other ->
             EMessage = wf:q(mderrormessage),
-            ?ERROR("Order=~p, unexpected mdstatus=~9999p. MDErrorMessage=~9999p",
-                [OrderId, Other, EMessage]),
+            ?INFO("Order=~p, unexpected mdstatus=~9999p. MDErrorMessage=~9999p", [OrderId, Other, EMessage]),
             ?_T("Sorry, unknown error happened. Please try again")
     end,
 
-    ?ERROR("Order=~p, mdstatus=~9999p, ~s", [OrderId, MDStatus, Reason]),
+    ?INFO("Order=~p, mdstatus=~9999p, ~s", [OrderId, MDStatus, Reason]),
     error_handler(OrderId, -2, Reason);
 
 process_result("basarili") -> process_result("success");
 process_result("success")->
+    ?INFO("Buy Credit card: Process ыгссуыы result~n"),
     HashDataIn = wf:q(hash),
     HashParamsIn = wf:q(hashparams),
     SCH = cc_security_check(HashDataIn, HashParamsIn, ?CC_SECURE_KEY),
@@ -249,7 +250,8 @@ process_result("success")->
     Amount = wf:q(txnamount),
 
 
-    ?PRINT(SCH),
+    %?PRINT(SCH),
+    ?INFO("Security check~p~n", [SCH]),
     MDStatus = wf:q(mdstatus),
 
     case MDStatus of
@@ -272,7 +274,7 @@ process_result("success")->
                 _ ->   ?_T("Sorry, unknown error happened. Please try again")
             end,
 
-            ?ERROR("Order=~p, mdstatus=~p, Reason: ~p", [OrderId, MDStatus, Reason]),
+            ?INFO("Order=~p, mdstatus=~p, Reason: ~p", [OrderId, MDStatus, Reason]),
             error_handler(OrderId, -2, Reason)
     end;
 process_result(_) -> process_result("failure").
@@ -282,14 +284,18 @@ make_provision_request(OrderId, Amount) ->
     HostAddress = ?CC_CONFIRM_GATE,
 
     {ok, XML} = construct_provision_xml(),
-
+    ?INFO("XML constructed: ~p~n", [XML]),
+    ?INFO("XML constructed list: ~p~n", [binary_to_list(XML)]),
     case buy:http_request(post, "application/x-www-form-urlencoded", [], HostAddress, "data="
 %++buy:iolist_to_string(XML)
 ++ erlang:binary_to_list(XML)
 , 10000) of
         {ok, Res} ->
+	    ?INFO("Provisioning response ~p~n", [Res]),
             Parsed = parse_xml(Res),
+	    ?INFO("Parsed ~p~n", [Parsed]),
             Response = extract_response(Parsed),
+	    ?INFO("Extraxted ~p~n", [Response]),
             IntCode = (catch list_to_integer(?gv(code, Response))),
             case IntCode of
                 %% all ok, store purchase and show success message
