@@ -376,8 +376,16 @@ event({show_details, Description, ImageUrl, Id}) ->
     wf:wire(simple_lightbox, #show{});
 
 event({chose_prize, No, Id, ImageUrl}) ->
-    ?PRINT({get_cur_prize_fund(), get_prizes_total([wf:state(prize_1), wf:state(prize_2), wf:state(prize_3), Id])}),
-    case get_cur_prize_fund() >= get_prizes_total([wf:state(prize_1), wf:state(prize_2), wf:state(prize_3), Id]) of
+    PrizeFund = get_cur_prize_fund(),
+    PrizePrices = get_prizes_total([wf:state(prize_1), wf:state(prize_2), wf:state(prize_3)]),
+    MaxOrNot = (PrizeFund - PrizePrices),
+    Min = PrizeFund * ?MIN_PRIZE_PERCENT div 100,
+    Max = case Min > MaxOrNot of
+        true -> Min;
+        _ -> MaxOrNot
+    end,
+    ThisPrizeCost = get_prizes_total([Id]),
+    case (Max >= ThisPrizeCost) and (Min =< ThisPrizeCost) of
         true ->
             set_prize(No, Id, ImageUrl),
             reset_slider(),
