@@ -120,7 +120,7 @@ user_info() ->
                 #listitem{body=[?_T("Likes")++": ",#span{text=integer_to_list(LikesCount) }]}
             ]}
         ]},
-        #panel{style="margin-left:17px;", body=[
+        #panel{style="margin-left:33px;", body=[
             DirectMessageItem,
             SubUnsubItem,
             case nsm_acl:check_access(wf:user(), {feature, admin}) of

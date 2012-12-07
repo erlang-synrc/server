@@ -15,7 +15,10 @@
 
 main() ->
     case wf:user() /= undefined of
-        true  -> main_authorized();
+        true  -> case nsm_accounts:user_paid(wf:user()) of
+            true -> main_authorized();
+            false -> wf:redirect_to_login(?_U("/login"))
+        end;
         false -> wf:redirect_to_login(?_U("/login"))
     end.
 

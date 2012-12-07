@@ -122,7 +122,8 @@ get_media_thumb(E, ViewMediaPanelId) ->
 
 
 entry_element(E, Comments, Avatar, {MediaThumb, MediaLists0}, _TargetMedia, Anchor) ->
-    %?PRINT(E),
+    LocalTime = calendar:now_to_local_time(E#entry.created_time),
+    Time = site_utils:feed_time_tuple(LocalTime),
     case E#entry.type of 
         {_, system_note} ->
             Title_Desc_Args = ling:split(site_utils:decode_letters(E#entry.description), "|"),
@@ -170,7 +171,7 @@ entry_element(E, Comments, Avatar, {MediaThumb, MediaLists0}, _TargetMedia, Anch
                     ?_TS("Our player $player$ $tourstatus$ tournament $name$$desc$ on $pos$ position with $points$ game points. Tournament goes on with $total$ players.", Args)};
                 _ -> {?_T("Unsupported note type!"), E#entry.description}
             end,
-            #notice{type=message, position=left, title=Title, body=Desc};
+            #notice{type=message, position=left, title=Title, body=[Desc, #br{}, #br{}, #span{class="entry-time", text=Time}]};
 
         {_, system} ->
             MessageSecs = calendar:datetime_to_gregorian_seconds( calendar:now_to_datetime(E#entry.created_time) ),
@@ -195,7 +196,7 @@ entry_element(E, Comments, Avatar, {MediaThumb, MediaLists0}, _TargetMedia, Anch
                             Descs = ling:split(Desc, "|tournamentnamelink|"),
                             #notice{type=system_message, position=left,
                                 title=#link{url=URL, text=Title},
-                                body=[hd(Descs), #link{style="font-weight:bold;", url=URL, text=TourName}, hd(tl(Descs))],
+                                body=[hd(Descs), #link{style="font-weight:bold;", url=URL, text=TourName}, hd(tl(Descs)), #br{}, #br{}, #span{class="entry-time", text=Time}],
                                 delay = TimeLeftAndSomeMore * 1000
                             };
                             
@@ -214,7 +215,7 @@ entry_element(E, Comments, Avatar, {MediaThumb, MediaLists0}, _TargetMedia, Anch
                             Descs = ling:split(Desc, "|tablenamelink|"),
                             #notice{type=system_message, position=left,
                                 title=#link{url=URL, text=Title},
-                                body=[hd(Descs), #link{style="font-weight:bold;", url=URL, text=Link}, hd(tl(Descs))],
+                                body=[hd(Descs), #link{style="font-weight:bold;", url=URL, text=Link}, hd(tl(Descs)), #br{}, #br{}, #span{class="entry-time", text=Time}],
                                 delay = TimeLeftAndSomeMore * 1000
                             };
                         [Title, Desc] ->

@@ -465,6 +465,7 @@ body.view_user #aside {
     font-size:1.1em;
     list-style:none;
     padding:0 0 0 0px;
+    margin-left:-16px;
 }
 #aside .user-info .img img {
     border:1px solid #c8c8c8;

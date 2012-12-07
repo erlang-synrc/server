@@ -612,7 +612,7 @@ show_table(Tables) ->
                         #tablecell{ class=cell1,
                             body=[
                                 TMode ++ ", " ++ TSpeed ++ TRoundsOrNot ++ TDoubleOrNot ++ 
-                                "<br>Players: " ++ list_users_links(RealUsers, OwnerLabel) ++ " "
+                                "<br>" ++ ?_T("Players:") ++ " " ++ list_users_links(RealUsers, OwnerLabel) ++ " "
                             ],
                             id=tableNameLabel
                         },

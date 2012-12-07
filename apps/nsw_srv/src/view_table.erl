@@ -173,7 +173,7 @@ table({error, Error}, _) ->
 	       table_not_found ->
 		    ?_T("Table not found");
 	       all_tables_are_full ->
-		    ?_T("Sorry, all tables are full, you can create one youself!");
+		    ?_T("Sorry, all tables are full, you can create one yourself!");
                game_type_missing ->
                     ?_T("Game type missing");
                table_name_conflict ->
