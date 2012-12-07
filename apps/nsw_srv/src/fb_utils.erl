@@ -200,7 +200,7 @@ api_event(fbLogin, _, [Args])->
           case wf:session(fb_registration) of
             undefined ->
               wf:session(fb_registration, Args),
-              wf:redirect([?HTTP_ADDRESS,?_U("/login/register")]);
+              wf:redirect([?HTTPS_ADDRESS,?_U("/login/register")]);
             _ -> ok
           end;
         {ok, User} when User#user.username == CurrentUser -> ok;
