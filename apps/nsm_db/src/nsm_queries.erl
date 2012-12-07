@@ -66,6 +66,6 @@ get_single_tables(Setting,UId,GameFSM,_Convert, LeftList) ->
 
 map_reduce(Module, Fun, Args)->
   lists:flatten([ case rpc:call(Node, Module, Fun, Args) of
-      {badrpc, _Reason} -> [];
-      R -> R
+      {badrpc, _Reason} -> ?INFO("M/R: ~p",[_Reason]), [];
+      R -> ?INFO("M/R: ~p",[R]), R
     end || Node <- nsx_opt:get_env(nsm_db, nodes, [])]).
