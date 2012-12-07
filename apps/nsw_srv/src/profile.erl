@@ -795,7 +795,9 @@ u_event({deliver, GiftId, GiftTimestamp, SName, SKakush}) ->
     end,
     Body = [
         #panel{class=holder, style="margin-left:12px;", body=[
-            #panel{style="font-size:18px; margin-top:30px;", body=?_T("So, you want to deliver") ++ " <b>" ++ SName ++ " </b> " ++ ?_T("worth") ++ " " ++ SKakush ++ " " ++ ?_T("kakush")},
+            #panel{style="font-size:18px; margin-top:30px;", body=
+                ?_TS("So, you want to deliver <b>$name$</b> worth $kakush$ kakush", [{name, SName}, {kakush, SKakush}])
+            },
             #singlerow{style="margin-top:26px; margin-bottom:16px;", cells=[
                 #tablecell{style="vertical-align:top; width:200px; font-size:1.4em; padding-top:10px;", body=?_T("Please, check:")},
                 #tablecell{body=[

@@ -94,7 +94,7 @@ product_list_paged(Page) ->
                         #tablecell{body=
 %                            io_lib:format("[~p]", [OneGift#gift.id]) ++
         					"<h2 class='head'>"++ ?_T("Price") ++ ":&nbsp;" ++ integer_to_list(OneGift#gift.kakush_currency) ++ "<br>" 
-                            ++ ?_T("Kakuş") ++ ":&nbsp;" ++ site_utils:long_integer_to_list(OneGift#gift.kakush_point) ++ "</h2>"
+                            ++ ?_T("Kakush") ++ ":&nbsp;" ++ site_utils:long_integer_to_list(OneGift#gift.kakush_point) ++ "</h2>"
                         },
                         #tablecell{
                             style="text-align:right; background:#9d9d9d; color:#fff; 

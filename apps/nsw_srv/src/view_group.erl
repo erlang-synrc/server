@@ -211,7 +211,12 @@ group_info() ->
                 #br{},
                 #panel{class=img, body=#image{image=Ava}},
             #list{class=user_info, body=[
-                    #listitem{body=[?_T("Publicity")++": ",#span{id=group_info_publicity, text=Group#group.publicity}]},
+                    #listitem{body=[?_T("Publicity")++": ",#span{id=group_info_publicity, text=
+                        case Group#group.publicity of
+                            public -> ?_T("Public group");
+                            private -> ?_T("Private group")
+                        end
+                    }]},
                     #listitem{body=[?_T("Created")++": ",#span{text=Date}]},
                     #listitem{body=[?_T("Owner")++": ",#span{id=group_info_owner, text=Group#group.owner}]},
                     #listitem{body=[?_T("Members")++": ",#span{text=integer_to_list(MemberCount)}]}
