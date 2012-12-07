@@ -239,6 +239,7 @@ process_result("failure")->
     ?ERROR("Order=~p, mdstatus=~9999p, ~s", [OrderId, MDStatus, Reason]),
     error_handler(OrderId, -2, Reason);
 
+process_result("basarili") -> process_result("success");
 process_result("success")->
     HashDataIn = wf:q(hash),
     HashParamsIn = wf:q(hashparams),
@@ -273,7 +274,8 @@ process_result("success")->
 
             ?ERROR("Order=~p, mdstatus=~p, Reason: ~p", [OrderId, MDStatus, Reason]),
             error_handler(OrderId, -2, Reason)
-    end.
+    end;
+process_result(_) -> process_result("failure").
 
 
 make_provision_request(OrderId, Amount) ->
