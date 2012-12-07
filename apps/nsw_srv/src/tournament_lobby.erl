@@ -66,7 +66,7 @@ content() ->
         game_okey -> "OKEY";
         game_tavla -> "TAVLA";
         game_batak -> "BATAK";
-        _ -> "WTF"
+        _ -> ?_T("Unknown")
     end,
 
     TourId = rpc:call(?GAMESRVR_NODE,game_manager,get_tournament,[Id]),
@@ -117,7 +117,7 @@ content() ->
 
     [  
         #panel{class="tourlobby_title", body=[
-            #label{class="tourlobby_title_label", body="TURNUVA LOBY"}
+            #label{class="tourlobby_title_label", body=?_T("TOURNAMENT LOBBY")}
         ]},
 
 
@@ -132,15 +132,15 @@ content() ->
                 case UserJoined of
                     true ->
                         [
-                            #panel{id=join_button, class="tourlobby_orange_button_disabled", text="TURNUVAYA KATIL"},
+                            #panel{id=join_button, class="tourlobby_orange_button_disabled", text=?_T("JOIN TOURNAMENT")},
                             #br{},
-                            #link{id=leave_button, class="tourlobby_red_button", text="TURNUVADAN AYRIL", postback=leave_tournament}
+                            #link{id=leave_button, class="tourlobby_red_button", text=?_T("LEAVE TOURNAMENT"), postback=leave_tournament}
                         ];
                     false ->
                         [
-                            #link{id=join_button, class="tourlobby_orange_button", text="TURNUVAYA KATIL", postback=join_tournament},
+                            #link{id=join_button, class="tourlobby_orange_button", text=?_T("JOIN TOURNAMENT"), postback=join_tournament},
                             #br{},
-                            #panel{id=leave_button, class="tourlobby_red_button_disabled", text="TURNUVADAN AYRIL"}
+                            #panel{id=leave_button, class="tourlobby_red_button_disabled", text=?_T("LEAVE TOURNAMENT")}
                         ]
                 end,
                 #br{},
@@ -167,31 +167,31 @@ content() ->
         %left bottom block
         #panel{class="tourlobby_left_bottom_block", body=[
                 #br{},
-                #label{class="tourlobby_left_bottom_block_title", body="Turnuva Bilgileri"},
+                #label{class="tourlobby_left_bottom_block_title", body=?_T("Tournament Info")},
                 #br{},
-                #label{class="tourlobby_left_bottom_block_label", body="Oyun Türü: " ++ Game},
+                #label{class="tourlobby_left_bottom_block_label", body=?_T("Game Type: ") ++ Game},
                 #br{},
-                #label{class="tourlobby_left_bottom_block_label", body="Kota: " ++ integer_to_list(Quota)}
+                #label{class="tourlobby_left_bottom_block_label", body=?_T("Quota: ") ++ integer_to_list(Quota)}
             ]
          },
     
         %center - three panels with numbers
         #panel{class="tourlobby_orange_plask", body=[
-                #label{class="tourlobby_every_plask_title", body="KATILIMCI SAYISI"},
+                #label{class="tourlobby_every_plask_title", body=?_T("PARTICIPANTS")},
                 #br{},
                 #label{class="tourlobby_every_plask_label", body=integer_to_list(NPlayers)}
             ]
         },
 
         #panel{class="tourlobby_sky_plask", body=[
-                #label{class="tourlobby_every_plask_title", body="BAŞLAMA TARİHİ"},
+                #label{class="tourlobby_every_plask_title", body=?_T("START DATE")},
                 #br{},
                 #link{body=#label{class="tourlobby_every_plask_label", body=Date}, style="text-decoration:none", title=Time}
             ]
         },
 
         #panel{class="tourlobby_blue_plask", body=[
-                #label{class="tourlobby_every_plask_title", body="KALAN ZAMAN"},
+                #label{class="tourlobby_every_plask_title", body=?_T("TIME LEFT")},
                 #br{},
                 #label{id=lobby_timer, class="tourlobby_every_plask_label", body=Timer}
             ]
@@ -245,7 +245,7 @@ content() ->
         %chat
         #panel{class="tourlobby_chat", body=[
                 #panel{class="tourlobby_chat_panel", body=[
-                        #label{class="tourlobby_chat_title", body="CHAT"}
+                        #label{class="tourlobby_chat_title", body=?_T("CHAT")}
                     ]
                 },
                 %chat window
@@ -253,7 +253,7 @@ content() ->
                     ]
                 },
                 #textbox{id=message_text_box, class="tourlobby_chat_textarea", postback=chat},
-                #link{id=chat_send_button, class="tourlobby_chat_button", text="Gönder", postback=chat}
+                #link{id=chat_send_button, class="tourlobby_chat_button", text=?_T("Post"), postback=chat}
             ]
 
         },
@@ -289,10 +289,10 @@ user_table(Users) ->
             NdUsers = [{lists:nth(N, Users), N} || N <- lists:seq(1, length(Users))],
             [#table{class="tourlobby_table", rows=[
                 #tablerow{class="tourlobby_table_head", cells=[
-                    #tableheader{style="padding-left:16px;", text="KULLANICHI"},
-                    #tableheader{style="text-align:center;", text="TOPLAM PUAN"},
-                    #tableheader{style="text-align:center;", text="YETENEK PUANI"},
-                    #tableheader{style="text-align:center;", text="DURUM"}
+                    #tableheader{style="padding-left:16px;", text=?_T("USER")},
+                    #tableheader{style="text-align:center;", text=?_T("TOTAL SCORE")},
+                    #tableheader{style="text-align:center;", text=?_T("SKILL SCORE")},
+                    #tableheader{style="text-align:center;", text=?_T("STATUS")}
                 ]},
                 [[
                     user_table_row(Name, Score1, Score2, Color, N, RealName)
@@ -516,8 +516,8 @@ event(actualy_join_tournament) ->
     TId = wf:state(tournament_id),
     nsx_msg:notify(["system", "tournament_join"], {UId, list_to_integer(TId)}),
 %    nsm_tournaments:join(UId, list_to_integer(TId)),
-    wf:replace(join_button, #panel{id=join_button, class="tourlobby_orange_button_disabled", text="TURNUVAYA KATIL"}),
-    wf:replace(leave_button, #link{id=leave_button, class="tourlobby_red_button", text="TURNUVADAN AYRIL", postback=leave_tournament}),
+    wf:replace(join_button, #panel{id=join_button, class="tourlobby_orange_button_disabled", text=?_T("JOIN TOURNAMENT")}),
+    wf:replace(leave_button, #link{id=leave_button, class="tourlobby_red_button", text=?_T("LEAVE TOURNAMENT"), postback=leave_tournament}),
     update_userlist();
 
 event(leave_tournament) ->
@@ -525,8 +525,8 @@ event(leave_tournament) ->
     TId = wf:state(tournament_id),
     nsx_msg:notify(["system", "tournament_remove"], {UId, list_to_integer(TId)}),
 %    nsm_tournaments:remove(UId, list_to_integer(TID)),
-    wf:replace(join_button, #link{id=join_button, class="tourlobby_orange_button", text="TURNUVAYA KATIL", postback=join_tournament}),
-    wf:replace(leave_button, #panel{id=leave_button, class="tourlobby_red_button_disabled", text="TURNUVADAN AYRIL"}),
+    wf:replace(join_button, #link{id=join_button, class="tourlobby_orange_button", text=?_T("JOIN TOURNAMENT"), postback=join_tournament}),
+    wf:replace(leave_button, #panel{id=leave_button, class="tourlobby_red_button_disabled", text=?_T("LEAVE TOURNAMENT")}),
     update_userlist();
 
 event({start_tour, Id, NPlayers,Q,T,S,P}) ->

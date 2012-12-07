@@ -347,16 +347,16 @@ tourblock(Id, Title, Game, Date, NGames, Quota, Avatar, Prizes) ->
             #panel{style="width:200px; height:1px; position:absolute; left:0px; top:198px; background-color:#9c9da2;", body=[]},
  																
             #label{style="position:absolute; left:79px; top:177px; color:#f67436; font-size:12px; font-weight:bold;", 
-                body="Oyun Türü: <span style='color:#222; font-weight:normal;'>" ++ Game ++ "</span>" },
+                body=[?_T("Game Type:"), " <span style='color:#222; font-weight:normal;'>" ++ Game ++ "</span>"] },
 
             #label{style="position:absolute; left:9px; top:143px; color:#f67436; font-size:12px; font-weight:bold;", 
-                body="Başlangiç Tarihi: <span style='color:#222; font-weight:normal;'>" ++ Date ++ "</span>" },
+                body=[?_T("Start Date: "), " <span style='color:#222; font-weight:normal;'>" ++ Date ++ "</span>"] },
             #label{style="position:absolute; left:9px; top:160px; color:#f67436; font-size:12px; font-weight:bold;", 
-                body="Oyuncu Sayısı: <span style='color:#222; font-weight:normal;'>" ++ integer_to_list(NGames) ++ "</span>" },
+                body=[?_T("Players total:"), " <span style='color:#222; font-weight:normal;'>" ++ integer_to_list(NGames) ++ "</span>"] },
             #label{style="position:absolute; left:9px; top:177px; color:#f67436; font-size:12px; font-weight:bold;", 
-                body="Kota: <span style='color:#222; font-weight:normal;'>" ++ integer_to_list(Quota) ++ "</span>" },
+                body=[?_T("Quota:"), " <span style='color:#222; font-weight:normal;'>" ++ integer_to_list(Quota) ++ "</span>"] },
 
-            #label{style="position:absolute; left:9px; top:203px; color:#f67436; font-size:14px; font-weight:bold;", text="Ödüler: "},
+            #label{style="position:absolute; left:9px; top:203px; color:#f67436; font-size:14px; font-weight:bold;", text=?_T("Prizes:")},
 
             #label{style="position:absolute; left:34px; top:224px; color:#222; font-size:14px;", text="1"},
             #panel{style="position:absolute; left:9px; top:240px; background-color:#9c9da2; width:55px; height:1px;", body=[]},

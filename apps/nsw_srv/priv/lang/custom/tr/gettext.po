@@ -1929,6 +1929,9 @@ msgstr "Başlama"
 msgid "Start Date:"
 msgstr "Başlama Tarihi:"
 #
+msgid "Start Date: "
+msgstr "Başlangiç Tarihi: "
+#
 msgid "Start date"
 msgstr "Başlama Tarihi"
 #
@@ -3792,10 +3795,10 @@ msgid "gunsandbutter"
 msgstr "grup kısa adını yazın"
 #
 msgid "like this."
-msgstr "seven kişiler."
+msgstr "bunu beğenenler."
 #
 msgid "likes this."
-msgstr "bunu sevdi"
+msgstr "bunu sevdi."
 #
 msgid "people"
 msgstr "kişi"
@@ -4185,7 +4188,7 @@ msgid "Convert kakush to quota"
 msgstr "Convert kakush to quota"
 #
 msgid "Deliver"
-msgstr "Deliver"
+msgstr "Hediyeni al"
 #
 msgid "Financial"
 msgstr "Financial"
@@ -4406,7 +4409,7 @@ msgid "Enjoy your prize, look for a new tourney…"
 msgstr "Enjoy your prize, look for a new tourney…"
 #
 msgid "FEATURED"
-msgstr "FEATURED"
+msgstr "YAKINDA"
 #
 msgid "FILTER"
 msgstr "FILTRE"
@@ -4544,7 +4547,7 @@ msgid "MEMBERSHIP"
 msgstr "MEMBERSHIP"
 #
 msgid "NEW"
-msgstr "NEW"
+msgstr "SEN DÜZENLE"
 #
 msgid "NOT FILL UP"
 msgstr "DOLDU DOLACAKLAR"
@@ -4616,7 +4619,7 @@ msgid "SIGNUP!"
 msgstr "SIGNUP!"
 #
 msgid "Short view"
-msgstr "Short view"
+msgstr "Toplu gösterim"
 #
 msgid "So. You say you have skills?"
 msgstr "So. You say you have skills?"
@@ -4631,13 +4634,13 @@ msgid "Sort by type:"
 msgstr "Sıralama Şekli:"
 #
 msgid "TAKE MY SEAT"
-msgstr "TAKE MY SEAT"
+msgstr "MASAYA GİR"
 #
 msgid "TAVLA"
 msgstr "TAVLA"
 #
 msgid "TIME APPROACHING"
-msgstr "ZAMANI YAKLAŞANLAR"
+msgstr "PEK YAKINDA"
 #
 msgid "TOURNAMENTS PAGE"
 msgstr "TURNUVALAR SAYFASI"
@@ -4655,7 +4658,7 @@ msgid "Tourneys and Prizes!"
 msgstr "Tourneys and Prizes!"
 #
 msgid "Tours"
-msgstr "Tours"
+msgstr "Kaç tur"
 #
 msgid "UP TO YOU!"
 msgstr "UP TO YOU!"
@@ -4848,7 +4851,7 @@ msgid "Del"
 msgstr "Del"
 #
 msgid "Deliver!"
-msgstr "Deliver!"
+msgstr "Hediyeni al!"
 #
 msgid "Disconnects: "
 msgstr "Disconnects: "
@@ -4973,10 +4976,10 @@ msgid "Paid"
 msgstr "Paid"
 #
 msgid "Players Count:"
-msgstr "Players Count:"
+msgstr "Kaç Kişilik:"
 #
 msgid "Please, check:"
-msgstr "Please, check:"
+msgstr "Lütfen Bilgilerinizi<br> Kontrol edin:"
 #
 msgid "Saved"
 msgstr "Saved"
@@ -5067,7 +5070,7 @@ msgid "..."
 msgstr "..."
 #
 msgid "CANCELED"
-msgstr "CANCELED"
+msgstr "İPTAL OLDU"
 #
 msgid ""
 "Our player $player$ $tourstatus$ tournament $name$$desc$ on $pos$ position "
@@ -5077,7 +5080,7 @@ msgstr ""
 "with $points$ game points. Tournament goes on with $total$ players."
 #
 msgid "Phone"
-msgstr "Phone"
+msgstr "Tel."
 #
 msgid "Tour finished"
 msgstr "Tour finished"
@@ -5086,8 +5089,9 @@ msgid ""
 "User $realname$ ($user$) wants his $gname$ ($vendor_id$, $gift_id$) "
 "delivered to $address$, $city$, $district$, $postal_code$. Tel.: $phone$"
 msgstr ""
-"Talep eden: $realname$ ($user$).\nÜrün: $gname$, ($vendor_id$, $gift_id$)."
-"\nAdres: $address$, $city$, $district$, $postal_code$, $phone$."
+"Talep eden: $realname$ ($user$).\n"
+"Ürün: $gname$, ($vendor_id$, $gift_id$).\n"
+"Adres: $address$, $city$, $district$, $postal_code$, $phone$."
 #
 msgid "leaves"
 msgstr "leaves"
@@ -5108,10 +5112,9 @@ msgid ""
 "$desc$ in $game$ to be held $date$ $time$ for $players$ players with $quota$ "
 "per round quota. Prize fund is: $kakush$."
 msgstr ""
-"$kakush$ puan ödüllü $type$ $game$ TURNUVASI, $date$ "
-"günü saat $time$ de başlayacaktır. $players$ oyuncunun oyunbaşı $quota$ "
-"kota ile katılabileceği |tournamentnamelink| isimli turnuva; $username$, "
-"tarafından kurulmuştur. "
+"$kakush$ puan ödüllü $type$ $game$ TURNUVASI, $date$ günü saat $time$ de "
+"başlayacaktır. $players$ oyuncunun oyunbaşı $quota$ kota ile katılabileceği |"
+"tournamentnamelink| isimli turnuva; $username$, tarafından kurulmuştur. "
 #
 msgid ""
 "User $user$ wants his $gname$ ($vendor_id$, $gift_id$) delivered to $address"
@@ -5119,3 +5122,135 @@ msgid ""
 msgstr ""
 "User $user$ wants his $gname$ ($vendor_id$, $gift_id$) delivered to $address"
 "$, $city$, $district$, $postal_code$."
+#
+msgid "2011&mdash;2012 &copy; Kakaranet. All rights reserved."
+msgstr "2011&mdash;2012 &copy; Kakaranet. All rights reserved."
+#
+msgid "Açiklama:"
+msgstr "Açiklama:"
+#
+msgid "Hediye Aralığı:"
+msgstr "Hediye Aralığı:"
+#
+msgid "Kota:"
+msgstr "Kota:"
+#
+msgid ""
+"Our player, $username$, has created $type$ tournament: |tournamentnamelink| "
+"$desc$ in $game$ to be held $date$ $time$ for $players$ players with $quota$ "
+"per round quota."
+msgstr ""
+"Our player, $username$, has created $type$ tournament: |tournamentnamelink| "
+"$desc$ in $game$ to be held $date$ $time$ for $players$ players with $quota$ "
+"per round quota."
+#
+msgid "Oyun Sayısı:"
+msgstr "Oyun Sayısı:"
+#
+msgid "Oyun Tipi:"
+msgstr "Oyun Tipi:"
+#
+msgid "Oyun Türü:"
+msgstr "Oyun Türü:"
+#
+msgid "Sorry, only paid users can join this tournament."
+msgstr "Sorry, only paid users can join this tournament."
+#
+msgid "Sorry, only paid users can play two tournaments in a time."
+msgstr "Sorry, only paid users can play two tournaments in a time."
+#
+msgid "Sorry, you need a bigger tournament for this prize."
+msgstr "Sorry, you need a bigger tournament for this prize."
+#
+msgid "TURNUVA YARAT"
+msgstr "TURNUVA YARAT"
+#
+msgid "Turnuva Adı:"
+msgstr "Turnuva Adı:"
+#
+msgid "Turnuva Türü:"
+msgstr "Turnuva Türü:"
+#
+msgid "YARAT"
+msgstr "YARAT"
+#
+msgid "ÖDÜLÜ BELİRLE"
+msgstr "ÖDÜLÜ BELİRLE"
+#
+msgid "Ödüller:"
+msgstr "Ödüller:"
+#
+msgid "CHAT"
+msgstr "SOHBET"
+#
+msgid "Game Type: "
+msgstr "Oyun Türü: "
+#
+msgid "JOIN TOURNAMENT"
+msgstr "TURNUVAYA KATIL"
+#
+msgid "LEAVE TOURNAMENT"
+msgstr "TURNUVADAN AYRIL"
+#
+msgid "PARTICIPANTS"
+msgstr "KATILIMCI SAYISI"
+#
+msgid "Quota: "
+msgstr "Kota: "
+#
+msgid "SKILL SCORE"
+msgstr "YETENEK PUANI"
+#
+msgid "START DATE"
+msgstr "BAŞLAMA TARİHİ"
+#
+msgid "STATUS"
+msgstr "DURUM"
+#
+msgid "TIME LEFT"
+msgstr "KALAN ZAMAN"
+#
+msgid "TOTAL SCORE"
+msgstr "TOPLAM PUAN"
+#
+msgid "TOURNAMENT LOBBY"
+msgstr "TURNUVA KULİSİ"
+#
+msgid "Tournament Info"
+msgstr "Turnuva Bilgileri"
+#
+msgid "USER"
+msgstr "KATILAN ÜYELER"
+#
+msgid " CREATE "
+msgstr " YARAT "
+#
+msgid "CREATE TOURNAMENT"
+msgstr "TURNUVA YARAT"
+#
+msgid "Cost Range:"
+msgstr "Hediye Aralığı:"
+#
+msgid "Game Mode:"
+msgstr "Oyun Tipi:"
+#
+msgid "PRIZES TO CHOOSE"
+msgstr "ÖDÜLÜ BELİRLE"
+#
+msgid "Players total:"
+msgstr "Oyuncu Sayısı:"
+#
+msgid "Prizes:"
+msgstr "Ödüller:"
+#
+msgid "Tour. Name:"
+msgstr "Turnuva Adı:"
+#
+msgid "Tournament Type:"
+msgstr "Turnuva Türü:"
+#
+msgid "Tournament Name:"
+msgstr "Turnuva Adı:"
+#
+msgid "So, you want to deliver <b>$name$</b> worth $kakush$ kakush"
+msgstr "$kakush$ kakuş değerinde <b>$name$</b> hediyenizi alıyorsunuz"
