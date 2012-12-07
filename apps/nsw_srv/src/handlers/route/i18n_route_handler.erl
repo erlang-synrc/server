@@ -101,7 +101,11 @@ route(Path) ->
                     UA = RequestBridge:header(user_agent),
                     OS = platform(UA),
                     HC = browser(UA),
-                     ?INFO("URLPATH: ~s:~s:~s:~s",[inet_parse:ntoa(RequestBridge:peer_ip()),Path,OS,HC]),
+                    case Module of
+                         matchmaker -> skip;
+                         tournament_lobby -> skip;
+                         _ -> ?INFO("URLPATH: ~s:~s:~s:~s",[inet_parse:ntoa(RequestBridge:peer_ip()),Path,OS,HC])
+                    end,
                     {Module, PathInfo};
                 undefined ->
                     {web_404, Path1}

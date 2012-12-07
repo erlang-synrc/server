@@ -591,12 +591,19 @@ user_count(GameH) ->
 %    end
  % ]),
 %    ?INFO("GAME COUNT: ~p~n", [GCount]),
-  GameCounts = rpc:call(?GAMESRVR_NODE,game_manager,counter,[
-    case GameH of
+  A= nsm_queries:map_reduce(game_manager,counter,[case GameH of
       tavla -> game_tavla;
       okey -> game_okey; _ -> GameH
-    end
-  ]),
+    end]),
+%  ?INFO("Overal Game Count ~p: ~p",[GameH,A]),
+  GameCounts = lists:foldl(fun(X, Sum) -> X + Sum end, 0, A),
+  
+%  rpc:call(?GAMESRVR_NODE,game_manager,counter,[
+%    case GameH of
+%      tavla -> game_tavla;
+%      okey -> game_okey; _ -> GameH
+%    end
+ % ]),
   integer_to_list(GameCounts).
 
 get_members(GId) ->

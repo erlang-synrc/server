@@ -180,7 +180,7 @@ matchmaker_show_create(Tag) ->
 ui_paginate() ->
 
     CD10 = is_option_present(game_mode, countdown),
-    ?INFO("CD10: ~p",[CD10] ),
+%    ?INFO("CD10: ~p",[CD10] ),
     case CD10 of true -> wf:wire(gosterge_placeholder, #show{}); _ -> wf:wire(gosterge_placeholder, #hide{}) end,
 
     wf:wire("$('.view_table_table').paginateTable({ rowsPerPage: 10, pager: '.matchmaker-table-pager', maxPageNumbers:20 }).find('tr:nth-child(2n)').addClass('color1');").
@@ -536,11 +536,8 @@ show_table(Tables) ->
                 begin
                     {info, {_, TId}} = InfoPostback,
                     WebSrv = "web@srv" ++ integer_to_list(TId div 1000000) ++ ".kakaranet.com",
-                    NodeAtom = case TId < 1000000 of
-                       false -> list_to_atom(WebSrv);
-                       true -> nsx_opt:get_env(nsm_db,web_srv_node,'web@srv1.kakaranet.com')
-                    end,
-                    ?INFO("node ~p",[{NodeAtom,TId}]),
+                    NodeAtom = list_to_atom(WebSrv),
+%                    ?INFO("node ~p",[{NodeAtom,TId}]),
                     {ok, WholeTable} = rpc:call(NodeAtom,view_table,get_table,[TId,wf:state(table)]),
                     MaxUsers = case wf:q(game_name) of 
                         "tavla" -> case WholeTable#game_table.tournament_type of
@@ -557,7 +554,7 @@ show_table(Tables) ->
                         end;
                         "okey" -> Users 
                     end,
-                    ?INFO("Whole Table ~p",[WholeTable]),
+%                    ?INFO("Whole Table ~p",[WholeTable]),
                     TMode = matchmaker:game_mode_to_text(WholeTable#game_table.game_mode) 
                              ++ " {"++atom_to_list(WholeTable#game_table.tournament_type)++"} " 
                              ++ integer_to_list(TId),
@@ -1003,7 +1000,9 @@ u_event(create_game) ->
 u_event({info, {Target, TId}}) ->
     {ok, TableSettings} = case Target of
         table ->
-            {ok, Table} = view_table:get_table(TId),
+            WebSrv = "web@srv" ++ integer_to_list(TId div 1000000) ++ ".kakaranet.com",
+            NodeAtom = list_to_atom(WebSrv),
+            {ok, Table} = rpc:call(NodeAtom,view_table,get_table,[TId,wf:state(table)]),
             ?INFO("INFO: ~p",[{TId,Table}]),
             {ok,Table};
         save_table -> table_manager:get_save_table_setting(TId)

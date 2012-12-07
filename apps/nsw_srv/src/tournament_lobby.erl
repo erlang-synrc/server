@@ -452,7 +452,7 @@ get_tour_user_list() ->
                S2 = case nsm_accounts:balance(U,  ?CURRENCY_KAKUSH) of
                          {ok,AS2} -> AS2;
                          {error,_} -> 0 end,
-               ?INFO("User: ~p",[U]),
+%               ?INFO("User: ~p",[U]),
                {U,S1,S2,
                      case sets:is_element(U,JoinedUsers) of
                           false -> yellow;
