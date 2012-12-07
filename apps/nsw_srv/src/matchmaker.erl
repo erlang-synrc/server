@@ -536,11 +536,11 @@ show_table(Tables) ->
                 begin
                     {info, {_, TId}} = InfoPostback,
                     WebSrv = "web@srv" ++ integer_to_list(TId div 1000000) ++ ".kakaranet.com",
-                    ?INFO("node ~p",[WebSrv]),
                     NodeAtom = case TId < 1000000 of
                        false -> list_to_atom(WebSrv);
                        true -> nsx_opt:get_env(nsm_db,web_srv_node,'web@srv1.kakaranet.com')
                     end,
+                    ?INFO("node ~p",[{NodeAtom,TId}]),
                     {ok, WholeTable} = rpc:call(NodeAtom,view_table,get_table,[TId,wf:state(table)]),
                     MaxUsers = case wf:q(game_name) of 
                         "tavla" -> case WholeTable#game_table.tournament_type of

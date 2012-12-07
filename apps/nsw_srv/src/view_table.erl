@@ -99,7 +99,7 @@ body() ->
     PageTitle = case wf:state(table_id) of
         {error, _} -> ?_T("Info");
         Id -> ?INFO("body"),
-               case get_table(Id,wf:user()) of
+               case get_table(Id,wf:state(table)) of
 	            {ok, Table} when not is_list(Table) -> Table#game_table.name;
 		    _ -> ?_T("Error") end
     end,

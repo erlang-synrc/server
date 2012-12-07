@@ -186,7 +186,7 @@ handle_call({create_table, User, S}, _From, State) ->
         OK when OK == ok; OK == {error, soft_limit} ->
             %% if user will reach only soft limit - give him a chance to play
             #state{tables = Tables, callbacks = Callbacks} = State,
-            TableId = nsm_db:next_id("table"),
+            TableId = nsx_opt:get_env(nsx_idgen,game_pool,1000000) + 500000 + nsm_db:next_id("table"),
 
             Table = #game_table{id = TableId,
                                 name             = get_setting(table_name, S),
