@@ -99,7 +99,7 @@ body() ->
     PageTitle = case wf:state(table_id) of
         {error, _} -> ?_T("Info");
         Id -> ?INFO("body"),
-               case get_table(Id) of
+               case get_table(Id,wf:user()) of
 	            {ok, Table} when not is_list(Table) -> Table#game_table.name;
 		    _ -> ?_T("Error") end
     end,
@@ -133,7 +133,7 @@ table_box() ->
 	{error, _A} -> wf:session({wf:q(id),wf:user()},undefined),
                        #panel{style="width: 720px;", body=table({error, _A}, Joined)};
 	Id ->
-            {ok,Table} = get_table(Id),
+            {ok,Table} = get_table(Id,wf:user()),
             case Table of [] -> 
                           wf:session({wf:q(id),wf:user()},undefined),
                           ?INFO("Table Null ~p",[Id]),
@@ -249,7 +249,7 @@ table_ok(Id) ->
                        [Postback_js])),
 
     ?INFO("table_ok"),
-    {Ret, Table} = get_table(Id),
+    {Ret, Table} = get_table(Id,wf:user()),
     case Ret of
         ok -> Owner = Table#game_table.owner,
               [ #panel { class="user-list", body=#panel{id=user_list, body=?_T("Loading...")}},
@@ -278,7 +278,7 @@ table_ok(Id) ->
 
 action_button(Id) ->
     ?INFO("action button"),
-    {ok, Table} = get_table(Id),
+    {ok, Table} = get_table(Id,wf:user()),
     Owner = Table#game_table.owner,
     action_button(Owner, Table).
 
@@ -301,7 +301,7 @@ start_pre_comet_process(Id) -> start_pre_comet_process(Id, noskip).
 start_pre_comet_process(Id, Skip) ->
     WebPid = self(),
     ?INFO("start pre comet "),
-    Ret = get_table(Id),
+    Ret = get_table(Id,wf:user()),
     Table = case Ret of {ok,T} -> T; (_) -> #game_table{} end,
     Settings = table_settings(),
     TableId = wf:state(table_id),
@@ -329,7 +329,7 @@ start_pre_comet_process(Id, Skip) ->
 			    WebPid ! {comet_started, self()},
 			    put(user, webutils:user_info()),
 			    put(game_type, GameType),
-                            Tab1 = case get_table(Id) of 
+                            Tab1 = case get_table(Id,wf:user()) of 
                                  undefined -> #game_table{creator = wf:user()}; 
                                  [] -> #game_table{creator = wf:user()}; {ok,A}-> A end,
                             TableName = proplists:get_value(table_name, Settings, "no table"),
@@ -481,7 +481,7 @@ qlc_id_creator(Id,Creator,Owner) ->
                             owner = _Owner, creator = _Creator}} <- 
              gproc:table(props), Id == _Id, Creator == _Creator, Owner ==_Owner])).
 
-get_table(Id) -> get_table_raw(Id, qlc_id(Id) ++ rpc:call(?GAMESRVR_NODE,game_manager,qlc_id,[Id]), wf:state(table)).
+get_table(Id, Owner) -> get_table_raw(Id, qlc_id(Id) ++ rpc:call(?GAMESRVR_NODE,game_manager,qlc_id,[Id]), Owner).
 get_table(Id, Creator,Owner) -> get_table_raw(Id, qlc_id_creator(Id,Creator,Owner) ++
   rpc:call(?GAMESRVR_NODE,game_manager,qlc_id_creator,[Id,Creator,Owner]), undefined).
 

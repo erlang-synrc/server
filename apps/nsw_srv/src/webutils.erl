@@ -582,6 +582,13 @@ api_event(Name, Tag, Args)->
   ?INFO("API event in webutils: ~p ~p ~p ~n", [Name, Tag, Args]).
 
 user_count(GameH) ->
+%  GCounts = nsm_queries:map_reduce(game_manager,counter,[
+%    case GameH of
+%      tavla -> game_tavla;
+%      okey -> game_okey; _ -> GameH
+%    end
+ % ]),
+%    ?INFO("GAME COUNT: ~p~n", [GCount]),
   GameCounts = rpc:call(?GAMESRVR_NODE,game_manager,counter,[
     case GameH of
       tavla -> game_tavla;
