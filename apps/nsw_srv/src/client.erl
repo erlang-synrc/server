@@ -29,7 +29,7 @@ adobe_client() ->
 
 token() ->
     U = wf:user(),
-    T = rpc:call(?GAMESRVR_NODE,auth_server,store_token,[generate_token0(),U]),
+%    T = rpc:call(?GAMESRVR_NODE,auth_server,store_token,[generate_token0(),U]),
     GameType = ["flashvars.gameType = \"", ?_U(wf:q(game_name)),"\";"],
 
     Debug = case nsm_db:get(config,"is_production",false) of
@@ -42,7 +42,6 @@ token() ->
     [
         io_lib:fwrite("var flashvars = {};~n", []),
         Debug,
-        io_lib:fwrite("flashvars.tokenKey = encodeURIComponent(\"~s\");~n", [T]),
         io_lib:fwrite("flashvars.port = ~b;~n", [?SERVER_PORT]),
         io_lib:fwrite("flashvars.locale = '~s';~n", [site_utils:detect_language()]),
         io_lib:fwrite(GameType, []),
@@ -51,10 +50,15 @@ token() ->
              undefined -> "";
              Id ->        A = wf:session(Id),
                           GameId = case A of undefined -> Id; _ -> list_to_integer(A) end,
-                          Host = lists:nth(GameId div 1000000,?SERVER_HOST),
+                          Zone = GameId div 1000000,
+                          Host = lists:nth(Zone,?SERVER_HOST),
+                          GameNode = list_to_atom("game@srv"++integer_to_list(Zone)++".kakaranet.com"),
+                          T = rpc:call(GameNode,auth_server,store_token,[generate_token0(),U]),
+
                           ?INFO("Connect to Game Host: ~p",[Host]),
                           [
                             io_lib:fwrite("flashvars.host = \"~s\";~n",[Host]),
+                            io_lib:fwrite("flashvars.tokenKey = encodeURIComponent(\"~s\");~n", [T]),
                             io_lib:fwrite("flashvars.gameId = ~p;~n", [GameId])
                           ]
         end
