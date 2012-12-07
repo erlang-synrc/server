@@ -122,7 +122,7 @@ get_media_thumb(E, ViewMediaPanelId) ->
 
 
 entry_element(E, Comments, Avatar, {MediaThumb, MediaLists0}, _TargetMedia, Anchor) ->
-    ?PRINT(E),
+    %?PRINT(E),
     case E#entry.type of 
         {_, system_note} ->
             Title_Desc_Args = ling:split(site_utils:decode_letters(E#entry.description), "|"),

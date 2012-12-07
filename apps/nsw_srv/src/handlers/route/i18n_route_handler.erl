@@ -104,6 +104,7 @@ route(Path) ->
                     case Module of
                          matchmaker -> skip;
                          tournament_lobby -> skip;
+                         buy -> skip;
                          _ -> ?INFO("URLPATH: ~s:~s:~s:~s",[inet_parse:ntoa(RequestBridge:peer_ip()),Path,OS,HC])
                     end,
                     {Module, PathInfo};
