@@ -289,8 +289,7 @@ get_prizes_total(Prizes) ->
         end 
     || Id <- Prizes]).
 
-reset_slider() ->
-    PrizePrices = get_prizes_total([wf:state(prize_1), wf:state(prize_2), wf:state(prize_3)]),
+get_cur_prize_fund() ->
     NPlayers = list_to_integer(wf:q(tour_players)),
     Quota = case wf:state(workaround_quota) of 
         undefined -> 
@@ -306,9 +305,16 @@ reset_slider() ->
             wf:state(workaround_tours, undefined),
             T
     end,
-    {ok, PrizeFund} = game_okey_ng_trn_elim:get_prize_fund(Quota, NPlayers, Tours),
-    MaxOrNot = (100*PrizeFund - PrizePrices),
-    Min = PrizeFund * ?MIN_PRIZE_PERCENT,
+    case game_okey_ng_trn_elim:get_prize_fund(Quota, NPlayers, Tours) of
+        {ok, PrizeFund} -> 100*PrizeFund;
+        _ -> 0
+    end.
+
+reset_slider() ->
+    PrizeFund = get_cur_prize_fund(),
+    PrizePrices = get_prizes_total([wf:state(prize_1), wf:state(prize_2), wf:state(prize_3)]),
+    MaxOrNot = (PrizeFund - PrizePrices),
+    Min = PrizeFund * ?MIN_PRIZE_PERCENT div 100,
     Max = case Min > MaxOrNot of
         true -> Min;
         _ -> MaxOrNot
@@ -353,13 +359,13 @@ event({show_details, Description, ImageUrl, Id}) ->
             "<center>",
             #singlerow{cells=[
                 #tablecell{
-                    body=#cool_button{text=?_T("1-st prize"), postback={chose_1_prize, Id, ImageUrl}, style="display:block;"}
+                    body=#cool_button{text=?_T("1-st prize"), postback={chose_prize, 1, Id, ImageUrl}, style="display:block;"}
                 },
                 #tablecell{
-                    body=#cool_button{text=?_T("2-nd prize"), postback={chose_2_prize, Id, ImageUrl}, style="display:block;"}
+                    body=#cool_button{text=?_T("2-nd prize"), postback={chose_prize, 2, Id, ImageUrl}, style="display:block;"}
                 },
                 #tablecell{
-                    body=#cool_button{text=?_T("3-rd prize"), postback={chose_3_prize, Id, ImageUrl}, style="display:block;"}
+                    body=#cool_button{text=?_T("3-rd prize"), postback={chose_prize, 3, Id, ImageUrl}, style="display:block;"}
                 }
             ]},
             "</center>",
@@ -369,21 +375,25 @@ event({show_details, Description, ImageUrl, Id}) ->
     wf:update(simple_panel, webutils:lightbox_panel_template(gift_lightbox, Body, hide_details)),
     wf:wire(simple_lightbox, #show{});
 
-event({chose_1_prize, Id, ImageUrl}) ->
-    set_prize(1, Id, ImageUrl),
-    reset_slider(),
-    event(hide_details);
-
-event({chose_2_prize, Id, ImageUrl}) ->
-    set_prize(2, Id, ImageUrl),
-    reset_slider(),
-    event(hide_details);
-
-event({chose_3_prize, Id, ImageUrl}) ->
-    set_prize(3, Id, ImageUrl),
-    reset_slider(),
-    event(hide_details);
-
+event({chose_prize, No, Id, ImageUrl}) ->
+    PrizeFund = get_cur_prize_fund(),
+    PrizePrices = get_prizes_total([wf:state(prize_1), wf:state(prize_2), wf:state(prize_3)]),
+    MaxOrNot = (PrizeFund - PrizePrices),
+    Min = PrizeFund * ?MIN_PRIZE_PERCENT div 100,
+    Max = case Min > MaxOrNot of
+        true -> Min;
+        _ -> MaxOrNot
+    end,
+    ThisPrizeCost = get_prizes_total([Id]),
+    case (Max >= ThisPrizeCost) and (Min =< ThisPrizeCost) of
+        true ->
+            set_prize(No, Id, ImageUrl),
+            reset_slider(),
+            event(hide_details);
+        false ->
+            wf:wire(#alert{text=?_T("Sorry, you need a bigger tournament for this prize.")}),
+            event(hide_details)
+    end;
 
 event(browse_pressed) ->
     wf:wire(#alert{text=?_T("Not ready yet.")});
