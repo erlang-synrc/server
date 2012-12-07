@@ -38,11 +38,12 @@ redirect_to_tcp(Page) ->
         80 -> no_redirect;
         8000 -> no_redirect;
         _ ->
-            case Host == "kakaranet.com" orelse "srv2.kakaranet.com" == Host 
-                orelse "srv1.kakaranet.com" == Host of
-                 false ->  wf:redirect_from_login(?HTTP_ADDRESS ++ "/" ++ Page);
-                 true ->  wf:redirect_from_login(?HTTP_ADDRESS ++ "/" ++Page)
-            end 
+%            case Host == "kakaranet.com" orelse "srv2.kakaranet.com" == Host 
+%                orelse "srv1.kakaranet.com" == Host of
+%                 false ->  wf:redirect_from_login(?HTTP_ADDRESS ++ "/" ++ Page);
+%                 true ->  
+                      wf:redirect_from_login(?HTTP_ADDRESS ++ "/" ++Page)
+%            end 
     end.
 
 main() -> [].
