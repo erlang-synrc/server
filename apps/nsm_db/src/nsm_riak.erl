@@ -1315,15 +1315,32 @@ riak_read_acl_entries(C, Next, Result) ->
          {error,notfound} -> Result
     end.
 
+riak_entry_traversal(undefined, _) -> [];
+riak_entry_traversal(_, 0) -> [];
+riak_entry_traversal(Next, Count)->
+    case nsm_riak:get(entry, Next) of
+        {error,notfound} -> [];
+        {ok, R} ->
+            Prev = element(#entry.prev, R),
+            Count1 = case Count of 
+                C when is_integer(C) -> case R#entry.type of
+                    {_, system} -> C;   % temporal entries are entries too, but they shouldn't be counted
+                    _ -> C - 1
+                end;
+                _-> Count 
+            end,
+            [R | riak_entry_traversal(Prev, Count1)]
+    end.
+
 entries_in_feed(FeedId, undefined, PageAmount) ->
     case nsm_db:get(feed, FeedId) of
-        {ok, O} -> riak_traversal(entry, #entry.prev, O#feed.top, PageAmount);
+        {ok, O} -> riak_entry_traversal(O#feed.top, PageAmount);
         {error, notfound} -> []
     end;
 entries_in_feed(FeedId, StartFrom, PageAmount) ->
     %% construct entry unic id
     case nsm_db:get(entry,{StartFrom, FeedId}) of
-        {ok, #entry{prev = Prev}} -> riak_traversal(entry, #entry.prev, Prev, PageAmount);
+        {ok, #entry{prev = Prev}} -> riak_entry_traversal(Prev, PageAmount);
         _ -> []
     end.
 
