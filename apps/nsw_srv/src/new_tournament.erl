@@ -488,7 +488,7 @@ event({start_tournament, TourName, TourDesc, TourDate, TourTime, TourPlayers, To
         _ -> "?"
     end,
     Desc = lists:flatten( URL ++ "|" ++ wf:user() ++ "|" ++ TourName ++ "|" ++ STourDesc ++ "|" ++ STourDate ++ "|" ++ STourTime ++ "|" ++ STourPlayers ++ "|" ++ STourQuota ++ "|" ++ STourType ++ "|" ++ STourGame ++ "|" ++ SKakush),
-    fb_utils:announce_tournament(wf:user(), TID),
+%    fb_utils:announce_tournament(wf:user(), TID),
     webutils:post_user_system_message(Desc),
     wf:redirect(URL);
 
