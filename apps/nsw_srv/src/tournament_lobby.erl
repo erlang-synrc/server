@@ -455,6 +455,7 @@ get_tour_user_list() ->
                     4 -> nsx_opt:get_env(nsm_db, game_srv_node, 'game@doxtop.cc');
                     _ -> list_to_atom(GameSrv)
                end,
+%    ?INFO("NodeAtom: ~p",[NodeAtom]),
     ActiveUsers = sets:from_list([U#user.username || U <- rpc:call(NodeAtom,nsm_srv_tournament_lobby,active_users,[TID])]),
     JoinedUsers = sets:from_list([U#play_record.who || U <- nsm_tournaments:joined_users(TID)]),
     List = [begin 

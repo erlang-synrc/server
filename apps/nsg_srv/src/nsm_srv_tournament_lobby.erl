@@ -133,6 +133,7 @@ add_to_userlist(User, ActiveUsers, HeartbeatUsers) ->
 
 tid_to_atom(String) when is_list(String) -> try list_to_existing_atom(String) catch _:_ -> list_to_atom(String) end;
 tid_to_atom(Int) when is_integer(Int) -> tid_to_atom(integer_to_list(Int));
+tid_to_atom(Atom) when is_atom(Atom) -> Atom;
 tid_to_atom(Other) -> [L] = io_lib:format("~p", Other), tid_to_atom(L).
 
 save_chat({_UserId, _Action, _Message} = Msg, ChatHistory) ->
