@@ -186,7 +186,8 @@ handle_call({create_table, User, S}, _From, State) ->
         OK when OK == ok; OK == {error, soft_limit} ->
             %% if user will reach only soft limit - give him a chance to play
             #state{tables = Tables, callbacks = Callbacks} = State,
-            TableId = nsx_opt:get_env(nsx_idgen,game_pool,1000000) + 500000 + nsm_db:next_id("table"),
+            NodeAtom = nsx_opt:get_env(nsm_db,game_srv_node,'game@doxtop.cc'),
+            TableId = rpc:call(NodeAtom,id_generator,get_id,[]), %nsx_opt:get_env(nsx_idgen,game_pool,1000000) + 500000 + nsm_db:next_id("table"),
 
             Table = #game_table{id = TableId,
                                 name             = get_setting(table_name, S),

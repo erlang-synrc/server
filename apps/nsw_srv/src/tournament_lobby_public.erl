@@ -220,7 +220,13 @@ get_timer_for_now() ->
       case DTime =< 0 of
         true -> 
           TId = wf:state(tournament_int_id),
-          case rpc:call(?GAMESRVR_NODE, game_manager,get_tournament,[TId]) of
+          Zone = TId div 1000000,
+          GameSrv = "game@srv" ++ integer_to_list(Zone) ++ ".kakaranet.com",
+          NodeAtom = case Zone of
+                          4 -> nsx_opt:get_env(nsm_db, game_srv_node, 'game@doxtop.cc');
+                          _ -> list_to_atom(GameSrv)
+                     end,
+          case rpc:call(NodeAtom, game_manager,get_tournament,[TId]) of
             [] -> 
               case DTime < -60 of 
                 true -> ?_T("FINISHED");

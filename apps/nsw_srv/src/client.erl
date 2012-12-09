@@ -49,12 +49,19 @@ token() ->
         case wf:q(id) of
              undefined -> "";
              Id ->        A = wf:session(Id),
-                          GameId = case A of undefined -> Id; _ -> list_to_integer(A) end,
+                          GameId = case A of undefined -> list_to_integer(Id); _ -> list_to_integer(A) end,
+                          ?INFO("GameId: ~p",[GameId]),
                           Zone = GameId div 1000000,
-                          Host = lists:nth(Zone,?SERVER_HOST),
-                          GameNode = list_to_atom("game@srv"++integer_to_list(Zone)++".kakaranet.com"),
+                          Host = case Zone of
+                                      4 -> "127.0.1.1";
+                                      _ -> lists:nth(Zone,?SERVER_HOST)
+                                 end,
+                          GameNode = case Zone of
+                                4 -> nsx_opt:get_env(nsm_db,game_srv_node,'game@doxtop.cc');
+                                _ -> list_to_atom("game@srv"++integer_to_list(Zone)++".kakaranet.com")
+                          end,
                           T = rpc:call(GameNode,auth_server,store_token,[generate_token0(),U]),
-
+                          ?INFO("Connect to Game Node: ~p",[GameNode]),
                           ?INFO("Connect to Game Host: ~p",[Host]),
                           [
                             io_lib:fwrite("flashvars.host = \"~s\";~n",[Host]),

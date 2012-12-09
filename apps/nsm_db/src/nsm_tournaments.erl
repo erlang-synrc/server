@@ -25,7 +25,8 @@ create_team(Name) ->
 
 create(UID, Name) -> create(UID, Name, "", date(), time(), 100, 100, undefined, pointing, game_okey, standard, 8, slow).
 create(UID, Name, Desc, Date, Time, Players, Quota, Awards, Type, Game, Mode, Tours, Speed) ->
-    TID = nsm_db:next_id("tournament",1),
+    NodeAtom = nsx_opt:get_env(nsm_db,game_srv_node,'game@doxtop.cc'),
+    TID = rpc:call(NodeAtom,id_generator,get_id,[]), % nsm_db:next_id("tournament",1),
     CTime = erlang:now(),
     ok = nsm_db:put(#tournament{name = Name,
                                    id = TID,

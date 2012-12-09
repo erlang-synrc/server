@@ -68,8 +68,13 @@ content() ->
         game_batak -> "BATAK";
         _ -> ?_T("Unknown")
     end,
-
-    TourId = rpc:call(?GAMESRVR_NODE,game_manager,get_tournament,[Id]),
+    Zone = Id div 1000000,
+    GameSrv = "game@srv" ++ integer_to_list(Zone) ++ ".kakaranet.com",
+    NodeAtom = case Zone of
+                    4 -> nsx_opt:get_env(nsm_db, game_srv_node, 'game@doxtop.cc');
+                    _ -> list_to_atom(GameSrv)
+               end,
+    TourId = rpc:call(NodeAtom,game_manager,get_tournament,[Id]),
     wf:session(TourId,TourId),
     wf:state(tour_long_id, TourId),
 
@@ -104,7 +109,7 @@ content() ->
     {PN2, PI2} = hd(tl(Prizes)),
     {PN3, PI3} = hd(tl(tl(Prizes))),
 
-    case rpc:call(?GAMESRVR_NODE,nsm_srv_tournament_lobby,chat_history,[Id]) of
+    case rpc:call(NodeAtom,nsm_srv_tournament_lobby,chat_history,[Id]) of
         H when is_list(H) ->
             add_chat_history(H);
         _ ->
@@ -443,7 +448,14 @@ update_userlist() ->
 
 get_tour_user_list() ->
     TID = wf:state(tournament_id),
-    ActiveUsers = sets:from_list([U#user.username || U <- rpc:call(?GAMESRVR_NODE,nsm_srv_tournament_lobby,active_users,[TID])]),
+    TId = list_to_integer(TID),
+    Zone = TId div 1000000,
+    GameSrv = "game@srv" ++ integer_to_list(Zone) ++ ".kakaranet.com",
+    NodeAtom = case Zone of
+                    4 -> nsx_opt:get_env(nsm_db, game_srv_node, 'game@doxtop.cc');
+                    _ -> list_to_atom(GameSrv)
+               end,
+    ActiveUsers = sets:from_list([U#user.username || U <- rpc:call(NodeAtom,nsm_srv_tournament_lobby,active_users,[TID])]),
     JoinedUsers = sets:from_list([U#play_record.who || U <- nsm_tournaments:joined_users(TID)]),
     List = [begin 
                S1 = case nsm_accounts:balance(U, ?CURRENCY_GAME_POINTS) of
@@ -531,7 +543,13 @@ event(leave_tournament) ->
 
 event({start_tour, Id, NPlayers,Q,T,S,P}) ->
     wf:state(tour_start_time, time()),
-    TourId = rpc:call(?GAMESRVR_NODE, game_manager,start_tournament,[Id, 1, NPlayers,Q,T,S,P]),
+    Zone = Id div 1000000,
+    GameSrv = "game@srv" ++ integer_to_list(Zone) ++ ".kakaranet.com",
+    NodeAtom = case Zone of
+                    4 -> nsx_opt:get_env(nsm_db, game_srv_node, 'game@doxtop.cc');
+                    _ -> list_to_atom(GameSrv)
+               end,
+    TourId = rpc:call(NodeAtom, game_manager,start_tournament,[Id, 1, NPlayers,Q,T,S,P]),
     wf:replace(attach_button, #link{id=attach_button, class="tourlobby_yellow_button", text=?_T("TAKE MY SEAT"), postback=attach}),
     wf:replace(start_button, ""),
     wf:state(tour_long_id,TourId);
@@ -590,7 +608,13 @@ get_timer_for_now() ->
                             case DTime =< 0 of
                                 true -> 
                                     TId = wf:state(tournament_int_id),
-                                    case rpc:call(?GAMESRVR_NODE, game_manager,get_tournament,[TId]) of
+                                    Zone = TId div 1000000,
+                                    GameSrv = "game@srv" ++ integer_to_list(Zone) ++ ".kakaranet.com",
+                                    NodeAtom = case Zone of
+                                               4 -> nsx_opt:get_env(nsm_db, game_srv_node, 'game@doxtop.cc');
+                                               _ -> list_to_atom(GameSrv)
+                                    end,
+                                    case rpc:call(NodeAtom, game_manager,get_tournament,[TId]) of
                                         [] -> ?_T("FINISHED");
                                         _ -> ?_T("NOW")
                                     end;

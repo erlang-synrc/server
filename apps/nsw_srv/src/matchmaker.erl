@@ -391,7 +391,8 @@ matchmaker_show_tables() ->
 
 el_create_game_button() ->
     {_, _, Sid} = now(),
-    wf:state(session_id, Sid + nsx_opt:get_env(nsx_idgen,game_pool,1000000)),
+    wf:state(session_id, rpc:call(?GAMESRVR_NODE,id_generator,get_id,[])),
+    % Sid + nsx_opt:get_env(nsx_idgen,game_pool,1000000)),
     Url = lists:concat([?_U("/view-table/"), ?_U(wf:q(game_name)),"/id/",wf:state(session_id)]),
     Settings = wf:session({wf:q(game_name), wf:user()}),
     wf:session(wf:state(session_id), Settings),
@@ -535,9 +536,13 @@ show_table(Tables) ->
             #table{class="view_table_table article-table", style="width:100%", rows=[
                 begin
                     {info, {_, TId}} = InfoPostback,
-                    WebSrv = "web@srv" ++ integer_to_list(TId div 1000000) ++ ".kakaranet.com",
-                    NodeAtom = list_to_atom(WebSrv),
-%                    ?INFO("node ~p",[{NodeAtom,TId}]),
+                    Zone = TId div 1000000,
+                    WebSrv = "web@srv" ++ integer_to_list(Zone) ++ ".kakaranet.com",
+                    NodeAtom = case Zone of
+                                    4 -> nsx_opt:get_env(nsm_db,web_srv_node,'web@doxtop.cc');
+                                    _ -> list_to_atom(WebSrv)
+                               end,
+                    ?INFO("node ~p",[{NodeAtom,TId}]),
                     {ok, WholeTable} = rpc:call(NodeAtom,view_table,get_table,[TId,wf:state(table)]),
                     MaxUsers = case wf:q(game_name) of 
                         "tavla" -> case WholeTable#game_table.tournament_type of
@@ -1000,8 +1005,12 @@ u_event(create_game) ->
 u_event({info, {Target, TId}}) ->
     {ok, TableSettings} = case Target of
         table ->
-            WebSrv = "web@srv" ++ integer_to_list(TId div 1000000) ++ ".kakaranet.com",
-            NodeAtom = list_to_atom(WebSrv),
+            Zone = TId div 1000000,
+            WebSrv = "web@srv" ++ integer_to_list(Zone) ++ ".kakaranet.com",
+            NodeAtom = case Zone of
+                            4 -> nsx_opt:get_env(nsm_db, web_srv_node, 'web@doxtop.cc');
+                            _ -> list_to_atom(WebSrv)
+                       end,
             {ok, Table} = rpc:call(NodeAtom,view_table,get_table,[TId,wf:state(table)]),
             ?INFO("INFO: ~p",[{TId,Table}]),
             {ok,Table};
