@@ -1130,6 +1130,72 @@ play_record_add_entry(TeamId, UserId, TournamentId, GameId) ->
         ok -> {ok, Entry}
     end.
 
+
+find_play_record(Top, UId, TId) ->
+    case nsm_db:get(play_record, Top) of
+        {error, notfound} -> notfound;
+        {ok, PR} -> case (PR#play_record.who == UId) and (PR#play_record.tournament == TId) of
+                true -> PR#play_record.id;
+                false -> find_play_record(PR#play_record.next, UId, TId)
+            end
+    end.
+
+
+play_record_remove_team_entry(UserId, TournamentId) ->
+    {ok,User} = nsm_db:get(user, UserId),
+    {ok,Team} = nsm_db:get(team, User#user.team),
+    case find_play_record(Team#team.play_record, UserId, TournamentId) of
+        notfound ->
+            ?INFO(" Entry for team ~p  user ~p  and tournament ~p  not found for removal", [User#user.team, UserId, TournamentId]);
+        PRId ->
+            case nsm_db:get(play_record, PRId) of
+                {ok, #play_record{prev = Prev, next = Next}}->
+                    case nsm_db:get(play_record, Next) of
+                        {ok, NE} -> nsm_db:put(NE#play_record{prev = Prev});
+                        _ -> ok
+                    end,
+                    case nsm_db:get(play_record, Prev) of
+                        {ok, PE} -> nsm_db:put(PE#play_record{next = Next});
+                        _ -> ok
+                    end,
+                    case Team#team.play_record of
+                        PRId -> nsm_db:put(Team#team{play_record = Next});
+                        _ -> ok
+                    end;
+                _ -> 
+                    ?INFO("WTF error in nsm_db:play_record_remove_team_entry. record ~p suddenly disappeared", [PRId])
+            end,
+            nsm_db:delete(play_record, PRId)
+    end.
+
+
+play_record_remove_tournament_entry(UserId, TournamentId) ->
+    {ok,Tournament} = nsm_db:get(tournament, erlang:integer_to_list(TournamentId)),
+    case find_play_record(Tournament#tournament.waiting_queue , UserId, TournamentId) of
+        notfound ->
+            ?INFO(" Entry for tournament ~p  user ~p  and tournament ~p  not found for removal", [TournamentId, UserId, TournamentId]);
+        PRId ->
+            case nsm_db:get(play_record, PRId) of
+                {ok, #play_record{prev = Prev, next = Next}}->
+                    case nsm_db:get(play_record, Next) of
+                        {ok, NE} -> nsm_db:put(NE#play_record{prev = Prev});
+                        _ -> ok
+                    end,
+                    case nsm_db:get(play_record, Prev) of
+                        {ok, PE} -> nsm_db:put(PE#play_record{next = Next});
+                        _ -> ok
+                    end,
+                    case Tournament#tournament.waiting_queue  of
+                        PRId -> nsm_db:put(Tournament#tournament{waiting_queue  = Next});
+                        _ -> ok
+                    end;
+                _ -> 
+                    ?INFO("WTF error in nsm_db:play_record_remove_tournament_entry. record ~p suddenly disappeared", [PRId])
+            end,
+            nsm_db:delete(play_record, PRId)
+    end.
+
+
 tournament_pop_waiting_player(TournamentID) ->
     {ok,Tournament} = nsm_db:get(tournament, erlang:integer_to_list(TournamentID)),
     Top = case Tournament#tournament.waiting_queue of
@@ -1193,6 +1259,12 @@ join_tournament(UserId, TournamentId) ->
         ok ->
             {ok, Entry}
     end.
+
+
+leave_tournament(UserId, TournamentId) ->
+    play_record_remove_team_entry(UserId, TournamentId),
+    play_record_remove_tournament_entry(UserId, TournamentId).
+
 
 user_tournaments(UID) -> user_tournaments_list(UID).
 
