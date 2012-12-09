@@ -1216,14 +1216,14 @@ join_tournament(UserId, TournamentId) ->
     {ok,User} = nsm_db:get(user, UserId),
     play_record_add_entry(User#user.team,User#user.username,TournamentId,undefined),
     EntryId = nsm_db:next_id("play_record",1),
-    Next = undefined,
-    case Tournament#tournament.last of
+    Prev = undefined,
+    case Tournament#tournament.waiting_queue of
         undefined ->
-            Prev = undefined;
+            Next = undefined;
         X ->
             case nsm_db:get(play_record, erlang:integer_to_list(X)) of
                 {ok, TopEntry} ->
-                    Prev = TopEntry#play_record.id,
+                    Next = TopEntry#play_record.id,
                     EditedEntry = #play_record{
                         id = TopEntry#play_record.id,
                         team = TopEntry#play_record.team,
@@ -1231,20 +1231,16 @@ join_tournament(UserId, TournamentId) ->
                         game_id = TopEntry#play_record.game_id,
                         score_points = TopEntry#play_record.score_points,
                         who = TopEntry#play_record.who,
-                        next = EntryId,
-                        prev = TopEntry#play_record.prev},
+                        next = TopEntry#play_record.next,
+                        prev = EntryId},
                     nsm_db:put(EditedEntry); % update prev entry
-                {error,notfound} -> Prev = undefined
+                {error,notfound} -> Next = undefined
             end
     end,
 
 
     nsm_db:put(Tournament#tournament{
-                    waiting_queue = case Tournament#tournament.waiting_queue of
-                                        undefined -> EntryId;
-                                        _NotEmpty -> _NotEmpty
-                                    end,
-                    last = EntryId
+                    waiting_queue = EntryId
                    }),
 
     Entry  = #play_record{id = EntryId,
