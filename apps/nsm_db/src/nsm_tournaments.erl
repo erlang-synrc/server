@@ -57,7 +57,7 @@ get(TID) ->
 start(_TID) -> ok.
 destroy(_TID) -> erlang:error(notimpl).
 join(UID, TID) -> nsm_db:join_tournament(UID, TID).
-remove(_UID, _TID) -> ok.
+remove(UID, TID) -> nsm_db:leave_tournament(UID, TID).
 waiting_player(TID) -> nsm_db:tournament_pop_waiting_player(TID).
 joined_users(TID) -> nsm_db:tournament_waiting_queue(TID).
 user_tournaments(UID) -> nsm_db:user_tournaments(UID).

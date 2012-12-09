@@ -490,6 +490,7 @@ feed_direct_messages(FId, StartFrom, Count) ->  DBA=?DBA, DBA:entries_in_feed(FI
 
 tournament_waiting_queue(TID) -> DBA=?DBA, DBA:tournament_waiting_queue(TID).
 join_tournament(UID,TID) -> DBA=?DBA, DBA:join_tournament(UID,TID).
+leave_tournament(UID,TID) -> DBA=?DBA, DBA:leave_tournament(UID,TID).
 tournament_pop_waiting_player(TID) -> DBA=?DBA, DBA:tournament_pop_waiting_player(TID).
 play_record_add_entry(TeamId, UserId, Tournament, GameId) -> DBA=?DBA, DBA:play_record_add_entry(TeamId, UserId, Tournament, GameId).
 user_tournaments(UID) -> DBA=?DBA, DBA:user_tournaments(UID).
