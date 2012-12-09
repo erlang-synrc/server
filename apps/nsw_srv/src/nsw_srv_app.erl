@@ -26,8 +26,14 @@ start(_StartType, _StartArgs) ->
     start_cowboy(HttpOpts),
     case nsw_srv_sup:start_link() of
                  {ok, Pid} ->
-    [ rpc:call(?GAMESRVR_NODE,nsm_srv_tournament_lobby_sup,start_lobby,[erlang:integer_to_list(Tour#tournament.id)])
-                                     || Tour <- nsm_tournaments:all() ],
+
+    Pool = nsx_opt:get_env(nsx_idgen,game_pool,1000000),
+    ?INFO("Game Pool: ~p", [Pool]),
+
+    [ begin
+        ?INFO("Tournament Lobby Started ~p",[Tour#tournament.id]),
+        rpc:call(?GAMESRVR_NODE,nsm_srv_tournament_lobby_sup,start_lobby,[erlang:integer_to_list(Tour#tournament.id)])
+                end || Tour <- nsm_tournaments:all(), ((Tour#tournament.id div 1000000) * 1000000) == Pool ],
                 spawn(nsw_srv_app,spawn_tables,[]),
                               io:format("Web Started OK\n."), {ok, Pid};
          {error, shutdown} -> {ok, Port} = application:get_env(webmachine, port),
