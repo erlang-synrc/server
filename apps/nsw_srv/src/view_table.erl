@@ -334,7 +334,7 @@ start_pre_comet_process(Id, Skip) ->
                                  [] -> #game_table{creator = wf:user()}; {ok,A}-> A end,
                             TableName = proplists:get_value(table_name, Settings, "no table"),
                             Rounds = proplists:get_value(rounds, Settings, 1),
-                            GameMode = proplists:get_value(game_mode, Settings, standard),
+                            GameMode = proplists:get_value(game_mode, Settings, Table#game_table.game_mode),
                             GameSpeed = proplists:get_value(speed, Settings, normal),
                             FeelLucky = proplists:get_value(feel_lucky, Settings, false),
                             TourType = case GameMode of 
@@ -718,6 +718,8 @@ update_table_info(ATable) ->
     MaxUser = proplists:get_value(max_users, game_requirements(Table)),
     CurrentUser = length(Table#game_table.users),
     CurrentState = io_lib:fwrite("~b/~b", [CurrentUser, MaxUser]),
+    ?INFO("Max Users: ~p",[MaxUser]),
+    ?INFO("Current Users: ~p",[CurrentUser]),
     UsersList = [ html_user_info(Name,IsOwner,false,OwnerName,GameType) || Name <- Table#game_table.users ]
                  ++ case IsOwner of
 		           true -> [ html_user_info(robot,IsOwner,true,OwnerName,GameType) 
@@ -841,7 +843,9 @@ rss_container() -> [ #panel { class="silver rss", body=rss() } ].
 rss() -> [ "Feeds" ].
 
 game_type() -> list_to_existing_atom("game_"++wf:q('__submodule__')).
-game_requirements(Table) -> rpc:call(?GAMESRVR_NODE,game_manager, get_requirements, [Table#game_table.game_type,Table#game_table.game_mode]).
+game_requirements(Table) -> 
+    ?INFO("Game: ~p:~p",[Table#game_table.game_type,Table#game_table.game_mode]),
+    rpc:call(?GAMESRVR_NODE,game_manager, get_requirements, [Table#game_table.game_type,Table#game_table.game_mode]).
 binarize_name(robot) -> robot;
 binarize_name(Name) -> list_to_binary(Name).
 

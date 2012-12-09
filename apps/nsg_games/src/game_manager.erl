@@ -34,6 +34,8 @@ get_relay_mod_pid(GameId) -> case get_tables(GameId) of [] -> undefined;
     [#game_table{game_process = P, game_module = M} | _] ->  ?INFO("GameRelay: ~p",[{M,P}]), {M,P} end.
 get_relay(GameId) -> gen_server:call(?MODULE, {get_relay, GameId}).
 game_requirements(GameAtom) -> GameAtom:get_requirements().
+game_requirements(game_tavla,paired) -> paired_tavla:get_requirements();
+game_requirements(GameAtom,_) -> GameAtom:get_requirements().
 counter(Game) -> PL = supervisor:count_children(case Game of game_okey -> okey_sup; game_tavla -> tavla_sup; _ -> game_sup end),
                  proplists:get_value(active, PL, 0).
 
@@ -342,10 +344,11 @@ start_tournament(TourId,NumberOfTournaments,NumberOfPlayers,Quota,Tours,Speed,Gi
     RealPlayers = [ erlang:list_to_binary(U#play_record.who) || U <- nsm_tournaments:joined_users(TourId)],
 
     Registrants = case NumberOfPlayers > length(RealPlayers) of
-                       true -> RealPlayers ++
-                                [ erlang:list_to_binary(nsm_auth:ima_gio(N,ImagioUsers)) ||
-                                      N <- lists:seq(1, NumberOfPlayers - length(RealPlayers))];
-                       false -> RealPlayers
+                       true -> nsm_db:put(Tournament#tournament{status=canceled}), RealPlayers
+                                %++ [ erlang:list_to_binary(nsm_auth:ima_gio(N,ImagioUsers)) ||
+                                %      N <- lists:seq(1, NumberOfPlayers - length(RealPlayers))]
+                                ;
+                       false -> [lists:nth(N,RealPlayers)||N<-lists:seq(1,NumberOfPlayers)]
                    end,
 
     OkeyTournaments =
@@ -365,6 +368,9 @@ start_tournament(TourId,NumberOfTournaments,NumberOfPlayers,Quota,Tours,Speed,Gi
 %             [ proc_lib:spawn_link(fun() ->
 %                                           test_okey:init_with_join_game(self(), '127.0.0.1', 9000, GameId, Id, 1, normal)
 %                                   end) || Id <- Registrants ],
+
+             nsm_db:put(Tournament#tournament{status=activated}),
+
              {ok,GameId,A}
          end || _ <-lists:seq(1,NumberOfTournaments)],
     [{ok,OP1,_}|_] = OkeyTournaments,

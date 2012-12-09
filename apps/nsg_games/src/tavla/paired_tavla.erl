@@ -102,7 +102,7 @@ init([Topic, {lobby, GameFSM}, Params0, PlayerIds, Manager]) ->
 
     TableName = proplists:get_value(table_name, Settings, "no table"),
     Rounds = proplists:get_value(rounds, Settings, 1),
-    GameMode = proplists:get_value(game_mode, Settings, standard),
+    GameMode = proplists:get_value(game_mode, Settings, paired),
     MainUsers = proplists:get_value(main_users, Settings, []),
     GameSpeed = proplists:get_value(speed, Settings, normal),
     Owner = proplists:get_value(owner, Settings, "maxim"), %% FIXME
