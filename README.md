@@ -238,6 +238,36 @@ Go to srv1/srv2/srv3:
 And perform steps described in Fast Local Start. 
 Check if everything is OK and Enjoy!
 
+###SRV3 deployment plan 
+
+1. Join RabbitMQ cluster
+
+To include the rabbitmq node in the cluster we need just to join it to any node of this cluster.
+The joined node (rabbit@srv3) will be automatically reset.
+Make sure the /var/lib/rabbitmq/.erlang.cookie has the same value on rabbit@srv1, rabbit@srv2 and rabit@srv3.
+
+Stop the rabbit@srv3 node, join cluster with rabbit@srv2, start node, check the cluster status:
+
+  $ rabbitmqctl stop_app
+  $ rabbitmqctl join_cluster rabbit@srv2.kakaranet.com
+  $ rabbitmqctl start_app
+  $ rabbitmqctl cluster_status
+
+2. Apply srv3 production configuration files
+
+Apply the cluster configuration files for the app, game and web nodes.
+* nsm_bg distributed application nodes
+* nsm_db nodes
+* nsm_db pass initialization
+
+3. Delete the srv3 database 
+
+Delete the riak directories on srv3 nodes
+
+4. Add srv3 nodes to riak cluster
+
+Start srv3 nodes (app@srv3.kakaranet.com, game@srv3.kakaranet.com, web@srv3.kakanet.com) and add one by one to riak cluster from admin interface https://srv1.kakaranet.com:8150/admin .
+
 Profiling
 ---------
 
