@@ -43,13 +43,15 @@ render_normal_element(#view_entry{entry=E, anchor=Anchor}) ->
     Comments = comment:select_by_entry_id(E#entry.id),
 
     %% Get avatar
-    {ok, User} = nsm_users:get_user(E#entry.from),
-    Avatar = #image{image = avatar:get_avatar(User, small), style="width:48px;height:48px", class = 
-        case nsm_accounts:user_paid(E#entry.from) of
+    case nsm_users:get_user(E#entry.from) of
+      {ok, User} ->
+        Avatar = #image{image = avatar:get_avatar(User, small), style="width:48px;height:48px", class = 
+          case nsm_accounts:user_paid(E#entry.from) of
             true -> "paid_user_avatar";
             _ -> ""
-        end
-    },
+          end};
+      {error, notfound}-> Avatar = #image{style="width:48px;height:48px"}
+    end,
 
     %% Get attachments
     ViewMediaPanelId = wf:temp_id(),
