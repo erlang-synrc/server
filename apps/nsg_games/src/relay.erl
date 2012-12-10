@@ -428,7 +428,8 @@ handle_info({get_second_level_relay, {Pid, Ref}, _UserId}, State) ->
     {noreply, State};
 
 handle_info(Info, State) ->
-    {stop, {unknown_info, Info}, State}.
+    ?INFO("handle_info: Unknown message: ~p", [Info]),
+    {noreply, State}.
 
 terminate(_Reason, _State) ->
     ?INFO("Terminating relay. Unknown Reason: ~p", [_Reason]),

@@ -209,7 +209,13 @@ list_subscr_me(UId) when is_list(UId) ->
     lists:sort( nsm_db:all_by_index(subs, <<"subs_whom_bin">>, list_to_binary(UId)) ).
 
 is_user_subscr(Who, Whom) ->
-    lists:member({subs, Who, Whom}, list_subscr(Who)).
+    case nsm_db:get(subs, {Who, Whom}) of
+        {ok, _} -> ?INFO("User ~p is a friend of user ~p", [Whom, Who]), true;
+        _Response -> ?INFO("User ~p is not a friend of user ~p. Response: ~p", [Whom, Who, _Response]), false
+    end.
+%% 
+%% is_user_subscr(Who, Whom) ->
+%%     lists:member({subs, Who, Whom}, list_subscr(Who)).
 
 
 

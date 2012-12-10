@@ -33,6 +33,7 @@ body() ->
     ?INFO("body"),
     case wf:q("__submodule__") of
          "basarili" -> process_result(success);
+         "success" -> process_result(success);
          "basarisiz" -> process_result(failure);
          _ -> buy:shared_body()
     end.
@@ -51,7 +52,7 @@ process_result(success) ->
 
     Site = case Referer of
          undefined -> "local";
-         _ -> {_Proto, _No, S, _Port, _Page, _} = http_uri:parse(Referer), S
+         _ -> {ok,{_Proto, _No, S, _Port, _Page, _}} = http_uri:parse(Referer), S
     end,
 
     case ((Site =:= "www.mikro-odeme.com") orelse true) of
@@ -89,18 +90,18 @@ form()->
 	  }.
 
 event({buy_clicked, PurchaseId}) ->
-    ?INFO("Buy Clicked: ~p", [PurchaseId]),
     Package = buy:package(),
+    ?INFO("Buy Clicked: ~p, Package ~p", [PurchaseId,Package]),
     Product = case Package#membership_package.id of
-          64 -> 5086;
-          65 -> 5087;
-          66 -> 5088;
-          67 -> 5089;
-          68 -> 5090;
-          69 -> 5091;
-          70 -> 5092;
-          71 -> 5093;
-          72 -> 5128;
+          "64" -> 5086;
+          "65" -> 5087;
+          "66" -> 5088;
+          "67" -> 5089;
+          "68" -> 5090;
+          "69" -> 5091;
+          "70" -> 5092;
+          "71" -> 5093;
+          "72" -> 5128;
           _ -> 5128
 
     end,

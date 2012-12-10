@@ -85,6 +85,7 @@ content() ->
                 #label{class="newtour_title_label", body=?_T("CREATE TOURNAMENT")}
             ]
         },
+        #panel{body=[#label{id=plan_desc,style="margin-left:300px;margin-top:50px;font-size:16pt;",body=[""]}]},
         #panel{id=top_selectors, style="height:420px; font-size:16px; ", body=[
             #label{style="position:absolute; left:-18px; top:84px; width:150px; text-align:right;", text=?_T("Tour. Name:")},
             #textbox{style="position:absolute; left:137px; top:77px; width:140px; height:28px; font-size:16px;", class="newtour_textbox", id=tournament_name},
@@ -347,6 +348,14 @@ event({newtour_slider}) ->
     wf:wire(#event{postback=update_product_list});
 
 event(update_product_list) ->
+    Players = list_to_integer(wf:q(tour_players)),
+    Quota = list_to_integer(wf:q(tour_quota)),
+    Tours = list_to_integer(wf:q(tour_tours)),
+
+   {ok,PlanDesc1} = rpc:call(?GAMESRVR_NODE, game_okey_ng_trn_elim,get_plan_desc,[Quota,Players,Tours]),
+    PlanDesc = ling:join(PlanDesc1," / "),
+
+    wf:update(plan_desc, PlanDesc),
     wf:update(product_list, product_list_paged(1));
 
 event({page, Page}) ->

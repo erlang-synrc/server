@@ -77,13 +77,17 @@ main_authorized() ->
                                 wf:state(joined, false),
                                 wf:state(table_id, {error, Error})
                            end;
-                 _ ->      ?INFO("TableId: ~p: ~p",[Id,Tables]),
-                           case length(Tables) > 0 of 
-                                true -> H = lists:nth(1,Tables),
-                                        wf:state(table, H),
-                                        wf:state(joined, true),
-					wf:state(table_id, Id);
-		                false -> ok
+                 [H |_] -> ?INFO("TableId: ~p: ~p",[Id,Tables]),
+                           Owner = H#game_table.owner,
+                           Private = H#game_table.private,
+                           FriendCheck = nsm_users:is_user_subscr(Owner, User#user.username),
+                           if Private andalso FriendCheck == false ->
+                                  wf:state(joined, false),
+                                  wf:state(table_id, {error, not_a_friend});
+                              true ->
+                                  wf:state(table, H),
+                                  wf:state(joined, true),
+                                  wf:state(table_id, Id)
                            end
             end,
 
@@ -181,8 +185,10 @@ table({error, Error}, _) ->
                too_much_users ->
 		   ?_T("This table is full. Try another one.");
                quota_hard_limit ->
-                   ?_T("Quota hard limit reached")
-	  end,
+                   ?_T("Quota hard limit reached");
+               not_a_friend ->
+                   ?_T("The table is private. You're not allowed to join...")
+           end,
     [#grid_8{id=error_info, prefix=1, alpha=true, body=[Msg]},
      #grid_clear{}
     ];
@@ -366,7 +372,7 @@ start_pre_comet_process(Id, Skip) ->
                                     [ begin 
                                             {ok,User1} = nsm_users:get_user(wf:user()),
                                             ?INFO("join ~p to table ~p owner ~p",[wf:user(), Id, Table2#game_table.owner]), 
-                                            Table2#game_table.game_process ! {join, User1, Table2}
+                                            Table2#game_table.game_process ! {join, User1, Table2} % XXX
                                       end || Table2 <- Tables],
     
                                     [ begin 
@@ -720,8 +726,9 @@ update_table_info(ATable) ->
     CurrentState = io_lib:fwrite("~b/~b", [CurrentUser, MaxUser]),
     ?INFO("Max Users: ~p",[MaxUser]),
     ?INFO("Current Users: ~p",[CurrentUser]),
+    RobotsAllowed = Table#game_table.deny_robots == false,
     UsersList = [ html_user_info(Name,IsOwner,false,OwnerName,GameType) || Name <- Table#game_table.users ]
-                 ++ case IsOwner of
+                 ++ case IsOwner andalso RobotsAllowed of
 		           true -> [ html_user_info(robot,IsOwner,true,OwnerName,GameType) 
                                      || _  <- lists:seq(1,MaxUser-CurrentUser) ];
 			   false -> ""
