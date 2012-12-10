@@ -4,32 +4,6 @@
 -include("user.hrl").
 -include_lib("nsx_config/include/log.hrl").
 
-register(#user{} = RegisterData) ->
-    case nsm_users:register(RegisterData) of
-                 {ok, register} -> {ok, register};
-                 {error, Error} -> {error, Error}
-            end.
-
-login_fb(Data) ->
-    FbId =  proplists:get_value(username, Data),
-    UserName =
-        case nsm_users:get_user({facebook, FbId}) of
-            {ok, User} ->
-                case User#user.status of
-                    ok ->
-%                        nsm_users:init_mq_for_user(User#user.username), this doesn't belong here!
-                        nsm_users:login_posthook(User#user.username),
-                        {ok, User#user.username};
-                    banned ->
-                        {error, banned};
-                    _ ->
-                        {error, unknown}
-                end;
-            Other ->
-                Other
-        end,
-    UserName.
-
 login(Data) ->
     UserName = proplists:get_value(username, Data),
     Password = proplists:get_value(password, Data),

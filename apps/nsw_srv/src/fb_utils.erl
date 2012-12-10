@@ -195,24 +195,39 @@ api_event(fbLogin, _, [Args])->
       wf:redirect( ?_U("/index/message/") ++ site_utils:base64_encode_to_url(ErrorMsg));
     _ ->
       CurrentUser = wf:user(),
-      case nsm_db:user_by_facebook_id(proplists:get_value(id, Args)) of
+      FbId = proplists:get_value(id, Args),
+      UserName = proplists:get_value(username, Args),
+      BirthDay = list_to_tuple([list_to_integer(X) || X <- string:tokens(proplists:get_value(birthday, Args), "/")]),
+
+      case nsm_db:get(user_by_facebook_id, FbId) of
         {error, notfound} ->
-          case wf:session(fb_registration) of
-            undefined ->
+          RegData = #user{
+            username = ling:replace(UserName,".","_"),
+            password = undefined,
+            email = proplists:get_value(email, Args),
+            name = proplists:get_value(first_name, Args),
+            surname = proplists:get_value(last_name, Args),
+            facebook_id = FbId,
+            team = nsm_db:create_team("team"),
+            verification_code = undefined,
+            age = {element(3, BirthDay), element(1, BirthDay), element(2, BirthDay)},
+            register_date = erlang:now(),
+            sex = undefined,
+            status = ok
+          },
+          case nsm_users:register(RegData) of
+            {ok, Name} ->
+              login:login_user(Name),
+              wf:redirect_from_login(?_U("/dashboard"));
+            {error, _Error} ->
+              Msg = ?_T("This email it taken by other user. If You already have the kakaranet.com account, please login and connect the to facebook."),
               wf:session(fb_registration, Args),
-              wf:redirect([?HTTPS_ADDRESS,?_U("/login/register")]);
-            _ -> ok
+              wf:redirect([?HTTPS_ADDRESS,?_U("/login/register/msg/")++site_utils:base64_encode_to_url(Msg)])
           end;
         {ok, User} when User#user.username == CurrentUser -> ok;
         {ok, User} ->
-          case same_or_undefined(wf:user(), User#user.username) of
-            true ->
-              login:login_user(User#user.username),
-              wf:session(logged_with_fb, true),
-              wf:redirect_from_login(?_U("/dashboard"));
-              %webutils:redirect_to_tcp(?_U("dashboard"));
-            _ -> ok
-          end
+          login:login_user(element(2, User)),
+          wf:redirect_from_login(?_U("/dashboard"))
       end
   end;
 api_event(fbNotifyOverLimit, _, _)->
@@ -251,10 +266,6 @@ api_event(fbAddAsService, _, [Id])->
 update_access_token(Id)->
   nsx_msg:notify(["db", "user", wf:user(), "put"], #facebook_oauth{user_id=Id, access_token=get_access_token()}),
   wf:update(fbServiceButton, del_service_btn()).
-
-same_or_undefined(undefined, _) -> true;
-same_or_undefined(User, FbUser) when User =:= FbUser -> true;
-same_or_undefined(_,_) -> false.
 
 get_access_token()->
   Url = "https://graph.facebook.com/oauth/access_token?client_id=" ++ ?FB_APP_ID

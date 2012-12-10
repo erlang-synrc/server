@@ -54,7 +54,11 @@ render_element(#register{}) ->
 
 title()-> #panel{text=?_T("Sign Up"), class="dlg-title"}.
 
-register_hintbox()-> #label {class="login_hintBox", id=register_hintbox, style="color:red"}.
+register_hintbox()->
+  case wf:q(msg) of
+    undefined -> #label {class="login_hintBox", id=register_hintbox, style="color:red"};
+    Msg -> #label {class="login_hintBox", id=register_hintbox, style="color:red", body=[site_utils:base64_decode_from_url(Msg)]}
+  end.
 
 field(username)-> 
     [#label{text=?_T("Username")},
@@ -218,48 +222,37 @@ finish_register_(Invite) ->
 	    throw({msg, ?_T("You must be at least 18 to use this site.")})
     end,
 
-    case Password of
-	CPassword when Password /= "" ->
-	    case nsm_auth:register(RegData) of
-		{ok, register} ->
-                    case  Invite of
-                        #invite_code{code = Code} ->
-                            nsx_msg:notify(["system", "use_invite"], {Code, User});
-                        %% we skip inventation code when register without code
-                        _ ->
-                            ok
-                    end,
-                    {Subject, PlpainText} = mail_construction:welcome(User, Password, Mail),
-                    nsx_msg:notify_email(Subject, PlpainText, Mail),
+  case Password of
+    CPassword when Password /= "" ->
+      case nsm_users:register(RegData) of
+        {ok, _RegisteredName} ->
+          case  Invite of
+            #invite_code{code = Code} ->
+              nsx_msg:notify(["system", "use_invite"], {Code, User});
+              %% we skip inventation code when register without code
+            _ -> ok
+          end,
+          {Subject, PlpainText} = mail_construction:welcome(User, Password, Mail),
+          nsx_msg:notify_email(Subject, PlpainText, Mail),
 
-                    case Status of
-                        %% if email isn't verified, send verification message
-                        not_verified ->
-                            {VSubject, VPlpainText} = mail_construction:verification(Mail, VerificationCode),
-                            nsx_msg:notify_email(VSubject, VPlpainText, Mail);
-                        _ ->
-                            ok
-                    end,
+          case Status of
+            %% if email isn't verified, send verification message
+            not_verified ->
+              {VSubject, VPlpainText} = mail_construction:verification(Mail, VerificationCode),
+              nsx_msg:notify_email(VSubject, VPlpainText, Mail);
+            _ -> ok
+          end,
 
-                    event({register_success, User});
-                {error, email_taken} ->
-		    wf:update(register_hintbox,
-			      ?_T("This e-mail already taken by other user."));
-		{error, facebook_taken} ->
-		    wf:update(register_hintbox,
-			      ?_T("This facebook account already used by some user."));
-		{error, user_exist} ->
-		    wf:update(register_hintbox,
-			      ?_TS("User <b><i>'$username$'</i></b> exist!",
-				   [{username, User}]));
-		    %% TODO: add error for taken facebook account
-		Other -> ?ERROR("unexpected error: ~p", [Other]),
-                         wf:update(register_hintbox,
-			      ?_T("Unexpected application error. Please, try later."))
-	    end;
-	_ ->
-	    wf:update(register_hintbox, ?_T("Passwords should match!"))
-    end.
+          event({register_success, User});
+        {error, email_taken} -> wf:update(register_hintbox, ?_T("This e-mail already taken by other user."));
+        {error, user_exist} ->  wf:update(register_hintbox, ?_TS("User <b><i>'$username$'</i></b> exist!", [{username, User}]));
+        Other ->
+          ?ERROR("unexpected error: ~p", [Other]),
+          wf:update(register_hintbox, ?_T("Unexpected application error. Please, try later."))
+      end;
+    _ ->
+      wf:update(register_hintbox, ?_T("Passwords should match!"))
+  end.
 
 event({birthday_changed}) ->
     SDay=wf:q(reg_day),

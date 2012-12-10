@@ -41,9 +41,7 @@ get_user_age(#user{age = UAge}) ->
             Age
     end.
 
-check_register_data_(#user{username = UserName,
-			   password = Password,
-			   email = Email} = RegisterData) ->
+check_register_data_(#user{username = UserName, email = Email} = RegisterData) ->
     case length(UserName) >= 3 of
 	true -> ok;
 	_ -> throw({error, username_too_short})
@@ -52,10 +50,7 @@ check_register_data_(#user{username = UserName,
 	{match, _} -> ok;
 	nomatch -> throw({error, wrong_username})
     end,
-    case length(Password) >= 6 of
-	true -> ok;
-	_ -> throw({error, password_to_short})
-    end,
+    check_password(RegisterData),
     case rpc:call(?WEBSERVER_NODE,validator_is_email,validate,["", Email]) of
 	true -> ok;
 	_ -> throw({error, wrong_email})
@@ -66,74 +61,75 @@ check_register_data_(#user{username = UserName,
 	_ -> throw({error, user_too_young})
     end.
 
-do_register(#user{username=U, email=Email, facebook_id=FBId} = RegisterData0) ->
-    case check_register_data(RegisterData0) of
-         ok ->
-            PlainPassword  = RegisterData0#user.password,
-            HashedPassword = utils:sha(PlainPassword),
+check_password(#user{facebook_id = FbId}) when FbId =/= undefined -> ok;
+check_password(#user{password = Password}) ->
+  case length(Password) >= 6 of
+    true -> ok;
+    _ -> throw({error, password_to_short})
+  end.
 
-            RegisterData = RegisterData0#user{feed     = nsm_db:feed_create(),
-                                              direct   = nsm_db:feed_create(),
-                                              pinned   = nsm_db:feed_create(),
-                                              starred  = nsm_db:feed_create(),
-                                              password = HashedPassword},
-            %ok = nsm_db:put(RegisterData),
-            nsx_msg:notify(["system", "put"], RegisterData),
-            nsm_accounts:create_account(U),
-            % assign quota
-            {ok, DefaultQuota} = nsm_db:get(config, "accounts/default_quota",  300),
-            nsm_accounts:transaction(U, ?CURRENCY_QUOTA,
-                                         DefaultQuota,
-                                         #ti_default_assignment{}),
-            %% init message queues infrastructure
-            init_mq(U, []),
-            login_posthook(U),
-            {ok, register};
-         {error, Error} ->
-            {error, Error}
-    end.
+do_register(#user{username=U} = RegisterData0) ->
+  case check_register_data(RegisterData0) of
+    ok ->
+      HashedPassword = case RegisterData0#user.password of
+        undefined -> undefined;
+        PlainPassword -> utils:sha(PlainPassword)
+      end,
+      RegisterData = RegisterData0#user{
+        feed     = nsm_db:feed_create(),
+        direct   = nsm_db:feed_create(),
+        pinned   = nsm_db:feed_create(),
+        starred  = nsm_db:feed_create(),
+        password = HashedPassword},
+
+      %ok = nsm_db:put(RegisterData),
+      nsx_msg:notify(["system", "put"], RegisterData),
+      nsm_accounts:create_account(U),
+      % assign quota
+      {ok, DefaultQuota} = nsm_db:get(config, "accounts/default_quota",  300),
+      nsm_accounts:transaction(U, ?CURRENCY_QUOTA, DefaultQuota, #ti_default_assignment{}),
+      %% init message queues infrastructure
+      init_mq(U, []),
+      login_posthook(U),
+      {ok, U};
+    {error, Error} -> {error, Error}
+  end.
 
 
 -spec register(record(user)) -> {ok, register} | {error, any()}.
-register(#user{username=U, email=Email, facebook_id=FBId} = RegisterData0) ->
-    FindUser =
-	case get_user(U) of
-	    {error, _NotFound} ->
-		case get_user({email, Email}) of
-		    {error, _NotFound} ->
-			case FBId of
-			    undefined -> ok; %% no one took this username or e-mail
-			    _ ->
-				case get_user({facebook, FBId}) of
-				    {error, _NotFound} -> ok;
-				    {ok, _} -> {error, facebook_taken}
-				end
-			end;
-		    {ok, _} -> {error, email_taken}
-		end;
-	    {ok, _} ->
-		{error, username_taken}
-	end,
+register(#user{username=U, email=Email, facebook_id = FbId} = RegisterData0) ->
+  FindUser = case check_username(U, FbId) of
+    {error, E} -> {error, E};
+    {ok, NewName} ->
+      case get_user({email, Email}) of
+        {error, _NotFound} -> {ok, NewName};
+        {ok, _} -> {error, email_taken}
+      end
+  end,
 
-    % have to check groups for this name now
-    FindUser2 = case FindUser of
-    	ok ->
-            case nsm_groups:get_group(U) of
-                {error, notfound} ->
-                    ok; % it means username is free
-                _ ->
-                    {error, username_taken}
-            end;
-        SomethingElse ->
-            SomethingElse
-    end,
+  % have to check groups for this name now
+  FindUser2 = case FindUser of
+    {ok, UserName} ->
+      case nsm_groups:get_group(UserName) of
+        {error, notfound} -> {ok, UserName}; % it means username is free
+        _ -> {error, username_taken}
+      end;
+    SomethingElse -> SomethingElse
+  end,
 
-    case FindUser2 of
-         ok -> do_register(RegisterData0);
-         {error, username_taken} -> {error, user_exist};
-         {error, facebook_taken} -> {error, facebook_taken};
-         {error, email_taken} ->    {error, email_taken}
-    end.
+  case FindUser2 of
+    {ok, Name} -> do_register(RegisterData0#user{username=Name});
+    {error, username_taken} -> {error, user_exist};
+    {error, email_taken} ->    {error, email_taken}
+  end.
+
+check_username(Name, FbId) ->
+  case get_user(Name) of
+    {error, notfound} -> {ok, Name};
+    {ok, User} when FbId =/= undefined ->
+      check_username(User#user.username  ++ integer_to_list(random:uniform(100)), FbId);
+    {ok, _User}-> {error, username_taken}
+  end.
 
 % @doc
 % Removes user with all tigth connected entries relying on user_id
