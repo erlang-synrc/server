@@ -51,7 +51,7 @@ process_result(success) ->
 
     Site = case Referer of
          undefined -> "local";
-         _ -> {_Proto, _No, S, _Port, _Page, _} = http_uri:parse(Referer), S
+         _ -> {ok,{_Proto, _No, S, _Port, _Page, _}} = http_uri:parse(Referer), S
     end,
 
     case ((Site =:= "www.mikro-odeme.com") orelse true) of
