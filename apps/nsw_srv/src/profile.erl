@@ -250,6 +250,8 @@ section_body(user_tournaments) ->
 section_body(account) ->
     Username = wf:user(),
     {ok, Quota}  = nsm_accounts:balance(Username, ?CURRENCY_QUOTA),
+    {ok, Kakush}  = nsm_accounts:balance(Username, ?CURRENCY_KAKUSH),
+    {ok, KakushCurrency}  = nsm_accounts:balance(Username, ?CURRENCY_KAKUSH_CURRENCY),
 %    Id = wf:temp_id(),
 %    ApiSave = #api{anchor = Id, tag = Id, name = savePackage, delegate = ?MODULE},
 %    wf:wire(ApiSave),
@@ -266,10 +268,9 @@ section_body(account) ->
     [
 	#h1{text=?_T("Account")},
 	#panel{class="inform-block", body = [
-	    "<dl>
-	    <dt>"++ ?_T("Remaining Quota") ++":</dt>
-	    <dd>"++wf:to_list(Quota)++"</dd>
-	    </dl>",
+	    "<dt><dl>"++ ?_T("Remaining Kakush") ++":<dd>"++wf:to_list(Kakush)++"</dd></dl>",
+	    "<dl>"++ ?_T("Remaining Kakush Currency") ++":<dd>"++wf:to_list(KakushCurrency)++"</dd></dl>",
+	    "<dl>"++ ?_T("Remaining Quota") ++":<dd>"++wf:to_list(Quota)++"</dd></dl></dt>",
 	    #link{class=btn, url=[?HTTP_ADDRESS,?_U("/price-table/credit-card")], text=?_T("Üyelİk Yenİle")}
 	]},
 	#panel{class="profile-info", body = [
