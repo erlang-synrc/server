@@ -1,4 +1,3 @@
-
 KAKARANET DEPLOY
 ================
 
@@ -248,10 +247,10 @@ Make sure the /var/lib/rabbitmq/.erlang.cookie has the same value on rabbit@srv1
 
 Stop the rabbit@srv3 node, join cluster with rabbit@srv2, start node, check the cluster status:
 
-  $ rabbitmqctl stop_app
-  $ rabbitmqctl join_cluster rabbit@srv2.kakaranet.com
-  $ rabbitmqctl start_app
-  $ rabbitmqctl cluster_status
+    $ rabbitmqctl stop_app
+    $ rabbitmqctl join_cluster rabbit@srv2.kakaranet.com
+    $ rabbitmqctl start_app
+    $ rabbitmqctl cluster_status
 
 2. Apply srv3 production configuration files
 
