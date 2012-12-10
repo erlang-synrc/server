@@ -324,8 +324,8 @@ ui_add_checkboxes() ->
 					 value=?_T("Private"), text=?_T("Private table, only friends")}),
 		  construct_id(#checkbox{class="chk", postback={tag,{slang,true}},
 					 value=?_T("Slang"), text=?_T("Slang is accepted")}),
-		  construct_id(#checkbox{class="chk", postback={tag,{deny_observers,true}},
-					 value=?_T("No observers"), text=?_T("I don't accept observers")}),
+          %construct_id(#checkbox{class="chk", postback={tag,{deny_observers,true}},
+          %           value=?_T("No observers"), text=?_T("I don't accept observers")}),
 		  case wf:state(user_paid) of
                 true ->
                     construct_id(#checkbox{class="chk", postback={tag,{paid_only,true}},
