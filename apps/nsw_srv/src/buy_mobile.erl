@@ -33,6 +33,7 @@ body() ->
     ?INFO("body"),
     case wf:q("__submodule__") of
          "basarili" -> process_result(success);
+         "success" -> process_result(success);
          "basarisiz" -> process_result(failure);
          _ -> buy:shared_body()
     end.
