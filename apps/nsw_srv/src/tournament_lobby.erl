@@ -405,9 +405,7 @@ start_comet() ->
     TournamentId = wf:state(tournament_id),
     {ok, Pid} = wf:comet(fun()->
         CometProcess = self(),
-
-        %% TODO: error handling when unable to subscribe
-        (catch nsx_msg:subscribe_for_tournament(TournamentId, User, CometProcess)),
+        nsx_msg:subscribe_for_tournament(TournamentId, User, CometProcess),
         comet_update(wf:user(), wf:state(tournament_id))
     end,  ?COMET_POOL),
     wf:state(comet_pid, Pid).
