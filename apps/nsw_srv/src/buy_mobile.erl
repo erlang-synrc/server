@@ -89,18 +89,18 @@ form()->
 	  }.
 
 event({buy_clicked, PurchaseId}) ->
-    ?INFO("Buy Clicked: ~p", [PurchaseId]),
     Package = buy:package(),
+    ?INFO("Buy Clicked: ~p, Package ~p", [PurchaseId,Package]),
     Product = case Package#membership_package.id of
-          64 -> 5086;
-          65 -> 5087;
-          66 -> 5088;
-          67 -> 5089;
-          68 -> 5090;
-          69 -> 5091;
-          70 -> 5092;
-          71 -> 5093;
-          72 -> 5128;
+          "64" -> 5086;
+          "65" -> 5087;
+          "66" -> 5088;
+          "67" -> 5089;
+          "68" -> 5090;
+          "69" -> 5091;
+          "70" -> 5092;
+          "71" -> 5093;
+          "72" -> 5128;
           _ -> 5128
 
     end,
