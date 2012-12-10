@@ -454,7 +454,8 @@ event({start_tournament, TourName, TourDesc, TourDate, TourTime, TourPlayers, To
     TID = nsm_tournaments:create(wf:user(), TourName, TourDesc, TourDate, TourTime, TourPlayers, TourQuota, [Prize1, Prize2, Prize3], TourType, TourGame, TourGameType, Tours, TourSpeed),
     nsm_tournaments:join(wf:user(), TID),
     AllowedUsers = lists:subtract(["doxtop","demo1","maxim","sustel","ahmettez",
-                    "kunthar","alice","kate","serg","imagia","willbe","commonuser","demo2","nata88"], [wf:user()]),
+                    "kunthar","alice","kate","serg","imagia",
+                    "willbe","commonuser","demo2","nata88"], [wf:user()]),
     [case nsm_db:get(user,User) of
            {ok, _} -> nsm_tournaments:join(User,TID);
            {error, _} -> ?INFO("TOURNAMENT DEFAULT USERS SKIP: ~p",[User])

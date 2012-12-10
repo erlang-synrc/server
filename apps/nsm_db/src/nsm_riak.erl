@@ -1258,8 +1258,8 @@ join_tournament(UserId, TournamentId) ->
 
 
 leave_tournament(UserId, TournamentId) ->
-    play_record_remove_team_entry(UserId, TournamentId),
-    play_record_remove_tournament_entry(UserId, TournamentId).
+    play_record_remove_tournament_entry(UserId, TournamentId),
+    play_record_remove_team_entry(UserId, TournamentId).
 
 
 user_tournaments(UID) -> user_tournaments_list(UID).
@@ -1393,6 +1393,7 @@ riak_entry_traversal(Next, Count)->
             Count1 = case Count of 
                 C when is_integer(C) -> case R#entry.type of
                     {_, system} -> C;   % temporal entries are entries too, but they shouldn't be counted
+                    {_, system_note} -> C;
                     _ -> C - 1
                 end;
                 _-> Count 

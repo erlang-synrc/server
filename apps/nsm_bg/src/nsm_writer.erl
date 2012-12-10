@@ -153,20 +153,31 @@ handle_notice(["system", "game_begins_note"] = Route, Message, State) ->    % th
 
 handle_notice(["system", "tournament_tour_note"] = Route, Message, State) ->
     ?INFO("feed(~p): tournament_tour_note: Route=~p, Message=~p", [self(), Route, Message]),
-    {TId, TourNum, TotalTours, TourType, TourRes} = Message,
+    {TId, TourNum, TotalTours, _TourType, TourRes} = Message,
     {ok, Tour} = nsm_db:get(tournament, TId),
     Desc = case Tour#tournament.description of
         "" -> "";
         D -> " (" ++ D ++ ")"
-    end,    
+    end,
+    Winners = [W || W = {_, _, _, Status} <- TourRes, Status == active],
+    SNum = integer_to_list(length(Winners)),
     [begin
-        SNum = case TourType of
-            ne -> integer_to_list(length(TourRes));
-            {te, Num} -> integer_to_list(Num);
-            {ce, Num} -> integer_to_list(Num)
-        end,
-        NoteString = "tourtour" ++ "|name=" ++ Tour#tournament.name ++ "|desc=" ++ Desc ++ "|total=" ++ SNum ++
-            "|player=" ++ UId ++ "|pos=" ++ integer_to_list(CommonPos) ++ "|points=" ++ integer_to_list(Points) ++ "|tourstatus=" ++ atom_to_list(Status),
+        case TotalTours == TourNum of
+            false ->
+                NoteString = "tourtour" ++ "|name=" ++ Tour#tournament.name ++ "|desc=" ++ Desc ++ "|total=" ++ SNum ++
+                    "|player=" ++ UId ++ "|pos=" ++ integer_to_list(CommonPos) ++ "|points=" ++ integer_to_list(Points) ++ "|tourstatus=" ++ atom_to_list(Status);
+            true ->
+                NoteString = "tourtour_with_winners" ++ "|name=" ++ Tour#tournament.name ++ "|desc=" ++ Desc ++ "|total=" ++ SNum ++
+                    "|player=" ++ UId ++ "|pos=" ++ integer_to_list(CommonPos) ++ "|points=" ++ integer_to_list(Points) ++ "|tourstatus=" ++ atom_to_list(Status) ++
+                    "|player_count=" ++ SNum ++
+                lists:flatten([
+                    begin
+                        {RUId, RPos, RPoints, _Status} = lists:nth(N, Winners),
+                        SN = integer_to_list(N),
+                        "|n"++SN++"=" ++ integer_to_list(N) ++ "|winner"++SN++"="++RUId++"|pos"++SN++"="++integer_to_list(RPos)++"|points"++SN++"="++integer_to_list(RPoints)
+                    end
+                    || N <- lists:seq(1, length(Winners))])
+        end,                
         nsx_msg:notify(["feed", "user", UId, "post_note"], NoteString)
     end
     || {UId, CommonPos, Points, Status} <- TourRes],
