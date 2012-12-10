@@ -122,6 +122,7 @@ get_media_thumb(E, ViewMediaPanelId) ->
 
 
 entry_element(E, Comments, Avatar, {MediaThumb, MediaLists0}, _TargetMedia, Anchor) ->
+    ?PRINT(E),
     LocalTime = calendar:now_to_local_time(E#entry.created_time),
     Time = site_utils:feed_time_tuple(LocalTime),
     case E#entry.type of 
@@ -138,40 +139,66 @@ entry_element(E, Comments, Avatar, {MediaThumb, MediaLists0}, _TargetMedia, Anch
                 "active" -> proplists:delete(tourstatus, Args2) ++ [{tourstatus, ?_T("proceeds in")}];
                 "eliminated" -> proplists:delete(tourstatus, Args2) ++ [{tourstatus, ?_T("leaves")}]
             end,
-            {Title, Desc} = case lists:nth(1, Title_Desc_Args) of 
-                "tour1" -> {?_T("Tournament finished"), ?_TS("Tournament $name$$desc$ just finished.<br>$winner1$ won $kakush1$ worth $prize1$.", Args)};
-                "tour2" -> {?_T("Tournament finished"), ?_TS("Tournament $name$$desc$ just finished.<br>$winner1$ won $kakush1$ worth $prize1$.<br>$winner2$ won $kakush2$ worth $prize2$.", Args)};
-                "tour3" -> {?_T("Tournament finished"), ?_TS("Tournament $name$$desc$ just finished.<br>$winner1$ won $kakush1$ worth $prize1$.<br>$winner2$ won $kakush2$ worth $prize2$.<br>$winner3$ won $kakush3$ worth $prize3$.", Args)};
+            {Temp, Title, Desc} = case lists:nth(1, Title_Desc_Args) of 
+                "tour1" -> {false, ?_T("Tournament finished"), ?_TS("Tournament $name$$desc$ just finished.<br>$winner1$ won $kakush1$ worth $prize1$.", Args)};
+                "tour2" -> {false, ?_T("Tournament finished"), ?_TS("Tournament $name$$desc$ just finished.<br>$winner1$ won $kakush1$ worth $prize1$.<br>$winner2$ won $kakush2$ worth $prize2$.", Args)};
+                "tour3" -> {false, ?_T("Tournament finished"), ?_TS("Tournament $name$$desc$ just finished.<br>$winner1$ won $kakush1$ worth $prize1$.<br>$winner2$ won $kakush2$ worth $prize2$.<br>$winner3$ won $kakush3$ worth $prize3$.", Args)};
                 "game_ended1" ->
-                    {?_T("Game ended"),
+                    {false, ?_T("Game ended"),
                     ?_TS("Game $tablename$ of $gametype$ just ended.<br>$winner1$ won $points1$ game points and $kakush1$ kakush.", Args)};
                 "game_ended2" ->
-                    {?_T("Game ended"),
+                    {false, ?_T("Game ended"),
                     ?_TS("Game $tablename$ of $gametype$ just ended.<br> &mdash; $winner1$ won $points1$ game points and $kakush1$ kakush;<br> &mdash; $winner2$ won $points2$ game points and $kakush2$ kakush.", Args)};
                 "game_ended3" ->
-                    {?_T("Game ended"),
+                    {false, ?_T("Game ended"),
                     ?_TS("Game $tablename$ of $gametype$ just ended.<br> &mdash; $winner1$ won $points1$ game points and $kakush1$ kakush;<br> &mdash; $winner2$ won $points2$ game points and $kakush2$ kakush;<br> &mdash; $winner3$ won $points3$ game points and $kakush3$ kakush.", Args)};
                 "game_ended4" ->
-                    {?_T("Game ended"),
+                    {false, ?_T("Game ended"),
                     ?_TS("Game $tablename$ of $gametype$ just ended.<br> &mdash; $winner1$ won $points1$ game points and $kakush1$ kakush;<br> &mdash; $winner2$ won $points2$ game points and $kakush2$ kakush;<br> &mdash; $winner3$ won $points3$ game points and $kakush3$ kakush;<br> &mdash; $winner4$ won $points4$ game points and $kakush4$ kakush.", Args)};
                 "game_won1" ->
-                    {?_T("Game won!"),
+                    {false, ?_T("Game won!"),
                     ?_TS("Our player $winner$ just won $points$ game points and $kakush$ kakush in $tablename$ of $gametype$.", Args)};
                 "game_won2" ->
-                    {?_T("Game won!"),
+                    {false, ?_T("Game won!"),
                     ?_TS("Our player $winner$ just won $points$ game points and $kakush$ kakush in $tablename$ of $gametype$.<br>All the winners are:<br> &mdash; $winner1$ won $points1$ game points and $kakush1$ kakush;<br> &mdash; $winner2$ won $points2$ game points and $kakush2$ kakush.", Args)};
                 "game_won3" ->
-                    {?_T("Game won!"),
+                    {false, ?_T("Game won!"),
                     ?_TS("Our player $winner$ just won $points$ game points and $kakush$ kakush in $tablename$ of $gametype$.<br>All the winners are:<br> &mdash; $winner1$ won $points1$ game points and $kakush1$ kakush;<br> &mdash; $winner2$ won $points2$ game points and $kakush2$ kakush;<br> &mdash; $winner3$ won $points3$ game points and $kakush3$ kakush.", Args)};
                 "game_won4" ->
-                    {?_T("Game won!"),
+                    {false, ?_T("Game won!"),
                     ?_TS("Our player $winner$ just won $points$ game points and $kakush$ kakush in $tablename$ of $gametype$.<br>All the winners are:<br> &mdash; $winner1$ won $points1$ game points and $kakush1$ kakush;<br> &mdash; $winner2$ won $points2$ game points and $kakush2$ kakush;<br> &mdash; $winner3$ won $points3$ game points and $kakush3$ kakush;<br> &mdash; $winner4$ won $points4$ game points and $kakush4$ kakush.", Args)};
                 "tourtour" -> 
-                    {?_T("Tour finished"),
+                    {true, ?_T("Tour finished"),
                     ?_TS("Our player $player$ $tourstatus$ tournament $name$$desc$ on $pos$ position with $points$ game points. Tournament goes on with $total$ players.", Args)};
+                "tourtour_with_winners" ->
+                    {true, ?_T("Tour finished"),
+                    ?_TS("Our player $player$ $tourstatus$ tournament $name$$desc$ on $pos$ position with $points$ game points. Tournament goes on with $total$ finalists:
+                    <br>&nbsp;$pos1$. $winner1$ with $points1$ points;
+                    <br>&nbsp;$pos2$. $winner2$ with $points2$ points;
+                    <br>&nbsp;$pos3$. $winner3$ with $points3$ points;
+                    <br>&nbsp;$pos4$. $winner4$ with $points4$ points.", Args)};
                 _ -> {?_T("Unsupported note type!"), E#entry.description}
             end,
-            #notice{type=message, position=left, title=Title, body=[Desc, #br{}, #br{}, #span{class="entry-time", text=Time}]};
+            MessageSecs = calendar:datetime_to_gregorian_seconds( calendar:now_to_datetime(E#entry.created_time) ),
+            NowSecs = calendar:datetime_to_gregorian_seconds( calendar:now_to_datetime(erlang:now()) ),
+            case Temp of
+                true ->
+                    case NowSecs - MessageSecs > ?SYSTEM_MESSAGE_EXPIRES of
+                        true -> [];
+                        false -> 
+                            TimeLeft = ?SYSTEM_MESSAGE_EXPIRES - (NowSecs - MessageSecs),
+                            TimeLeftAndSomeMore = case TimeLeft < ?SYSTEM_MESSAGE_STAYS_FOR_READING of
+                                true -> ?SYSTEM_MESSAGE_STAYS_FOR_READING;
+                                _ -> TimeLeft
+                            end,
+                            #notice{type=message, position=left, title=Title, 
+                                body=[Desc, #br{}, #br{}, #span{class="entry-time", text=Time}],
+                                delay = TimeLeftAndSomeMore * 1000
+                            }
+                    end;
+                false ->
+                    #notice{type=message, position=left, title=Title, body=[Desc, #br{}, #br{}, #span{class="entry-time", text=Time}]}
+            end;
 
         {_, system} ->
             MessageSecs = calendar:datetime_to_gregorian_seconds( calendar:now_to_datetime(E#entry.created_time) ),

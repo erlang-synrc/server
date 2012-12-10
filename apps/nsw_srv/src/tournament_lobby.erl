@@ -120,10 +120,17 @@ content() ->
     JoinedList = [P#play_record.who || P <- nsm_tournaments:joined_users(Id)],
     UserJoined = lists:member(wf:user(), JoinedList),
 
-    [  
+    {ok,PlanDesc1} = rpc:call(?GAMESRVR_NODE, game_okey_ng_trn_elim,get_plan_desc,[T#tournament.quota,
+                                                                                   T#tournament.players_count,
+                                                                                   T#tournament.tours]),
+    PlanDesc = ling:join(PlanDesc1," / "),
+
+    [
         #panel{class="tourlobby_title", body=[
             #label{class="tourlobby_title_label", body=?_T("TOURNAMENT LOBBY")}
         ]},
+
+        #panel{body=[#label{style="margin-left:300px;margin-top:10px;font-size:16pt;",body=[lists:flatten(PlanDesc)]}]},
 
 
         % left top block
@@ -398,9 +405,7 @@ start_comet() ->
     TournamentId = wf:state(tournament_id),
     {ok, Pid} = wf:comet(fun()->
         CometProcess = self(),
-
-        %% TODO: error handling when unable to subscribe
-        (catch nsx_msg:subscribe_for_tournament(TournamentId, User, CometProcess)),
+        nsx_msg:subscribe_for_tournament(TournamentId, User, CometProcess),
         comet_update(wf:user(), wf:state(tournament_id))
     end,  ?COMET_POOL),
     wf:state(comet_pid, Pid).

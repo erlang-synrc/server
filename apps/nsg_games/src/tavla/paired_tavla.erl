@@ -380,7 +380,8 @@ handle_info(die, State) ->
 
 
 handle_info(Info, State) ->
-    {stop, {unknown_info, Info}, State}.
+    ?INFO("handle_info: Unknown message: ~p", [Info]),
+    {noreply, State}.
 
 terminate(_Reason, _State) ->
     ?INFO("Terminating first level relay ~w. Unknown Reason: ~p", [self(), _Reason]),

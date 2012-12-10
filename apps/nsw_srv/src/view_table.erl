@@ -366,7 +366,7 @@ start_pre_comet_process(Id, Skip) ->
                                     [ begin 
                                             {ok,User1} = nsm_users:get_user(wf:user()),
                                             ?INFO("join ~p to table ~p owner ~p",[wf:user(), Id, Table2#game_table.owner]), 
-                                            Table2#game_table.game_process ! {join, User1, Table2}
+                                            Table2#game_table.game_process ! {join, User1, Table2} % XXX
                                       end || Table2 <- Tables],
     
                                     [ begin 
@@ -720,8 +720,9 @@ update_table_info(ATable) ->
     CurrentState = io_lib:fwrite("~b/~b", [CurrentUser, MaxUser]),
     ?INFO("Max Users: ~p",[MaxUser]),
     ?INFO("Current Users: ~p",[CurrentUser]),
+    RobotsAllowed = Table#game_table.deny_robots == false,
     UsersList = [ html_user_info(Name,IsOwner,false,OwnerName,GameType) || Name <- Table#game_table.users ]
-                 ++ case IsOwner of
+                 ++ case IsOwner andalso RobotsAllowed of
 		           true -> [ html_user_info(robot,IsOwner,true,OwnerName,GameType) 
                                      || _  <- lists:seq(1,MaxUser-CurrentUser) ];
 			   false -> ""
