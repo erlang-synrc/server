@@ -138,7 +138,8 @@ init([Topic, {lobby, GameFSM}, Params0, PlayerIds, Manager]) ->
                            pointing_rules   = P,
                            pointing_rules_ex = PE,
                            users = [ case User of robot -> robot; _ -> erlang:binary_to_list(User) end || User <- PlayerIds],
-                           name = TableName
+                           name = TableName,
+                           game_state = started
                },
 
     ?INFO("relay.erl GProc Registration: ~p",[GProcVal]),

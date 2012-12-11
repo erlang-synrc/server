@@ -510,14 +510,17 @@ convert_to_map(Data,_Setting,UId,GameFSM) ->
               {join, Action},
               UserOwner,
               Users,
-              {delete_table, TId, ProcId} ]
+              {delete_table, TId, ProcId},
+              GameState ]
       end || #game_table{ name = Name,
                           id = TId,
                           rounds = _Rounds,
                           users = Users,
                           game_process = ProcId,
                           owner = _Owner,
-                          creator = Owner} = _Tab <- Data ].
+                          creator = Owner,
+                          game_state = GameState
+                          } = _Tab <- Data ].
 
 
 
@@ -592,14 +595,14 @@ show_table(Tables) ->
                     end,
                     JoinOrCrate = case Action of
                         {join, Act} ->
-                            case length(RealUsers) of
-                                MaxUsers -> "";
-                                _ ->
-                                    #link{id=joinTable,
-                                        actions=Act,
-                                        text=?_T("Join"),
-                                        class="join-button"
-                                    }
+                            if length(RealUsers) == MaxUsers -> "";
+                               GameState == started -> "";
+                               true ->
+                                   #link{id=joinTable,
+                                         actions=Act,
+                                         text=?_T("Join"),
+                                         class="join-button"
+                                        }
                             end;
                         {create, Act} ->
                             #link{id=joinTable,
@@ -641,7 +644,8 @@ show_table(Tables) ->
                     Action,
                     UserOwner,
                     Users,
-                    DeleteAction] <- Tables
+                    DeleteAction,
+                    GameState] <- Tables
             ]}
     end.
 

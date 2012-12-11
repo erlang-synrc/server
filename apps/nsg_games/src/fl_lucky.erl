@@ -141,7 +141,8 @@ init([GameId, Params, _Manager]) ->
                            pointing_rules_ex = [],
                            users = [],
                            name = "I'm Feeling Lucky " ++ game_type_to_str(GameType) ++
-                                      " " ++erlang:integer_to_list(GameId) ++ " "
+                                      " " ++erlang:integer_to_list(GameId) ++ " ",
+                           game_state = started
                           },
     ?INFO("Lucky game started. GameId: ~p GameType:~p Pid:~p",[GameId, GameType, self()]),
     ?INFO("GProc Registration: ~p",[GProcVal]),

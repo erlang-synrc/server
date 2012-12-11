@@ -132,7 +132,8 @@ init([Topic, {lobby, GameFSM}, Params0, PlayerIds, Manager]) ->
                            pointing_rules_ex = PE,
                            users = [ case User of robot -> robot; _ -> erlang:binary_to_list(User) end || User <- PlayerIds],
                            name = TableName,
-                           tournament_type = paired
+                           tournament_type = paired,
+                           game_state = started
                },
 
     ?INFO(" +++ paired_tavla.erl GProc Registration: ~p",[GProcVal]),
