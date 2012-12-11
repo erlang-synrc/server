@@ -51,7 +51,8 @@
         city = "",
         district = "",
         postal_code = "",
-        phone = ""
+        phone = "",
+        personal_id = ""
     }).
 
 -record(user_type,

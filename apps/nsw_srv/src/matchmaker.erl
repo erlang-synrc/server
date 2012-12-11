@@ -489,8 +489,15 @@ filter_tables(QLC,UId,GameFSM,Setting,Convert) ->
         end, QLC),
 
     FilteredQLC2 = [GT || GT = #game_table{users = Users} <- FilteredQLC1, Users /= []],
-   
-    case Convert of convert -> convert_to_map(FilteredQLC2, Setting,UId,GameFSM); _ -> FilteredQLC2 end.
+    F = fun(T = #game_table{id = TId}, {TAcc, IdAcc}) ->
+                case lists:member(TId, IdAcc) of
+                    true -> {TAcc, IdAcc};
+                    false -> {[T | TAcc], [TId | IdAcc]}
+                end
+        end,
+    {FilteredQLC3, _} = lists:foldl(F, {[], []}, FilteredQLC2),
+    FilteredQLC4= lists:reverse(FilteredQLC3),
+    case Convert of convert -> convert_to_map(FilteredQLC4, Setting,UId,GameFSM); _ -> FilteredQLC4 end.
 
 convert_to_map(Data,_Setting,UId,GameFSM) ->
     [ begin Url = lists:concat([?_U("/view-table/"),GameFSM,"/id/", TId]),

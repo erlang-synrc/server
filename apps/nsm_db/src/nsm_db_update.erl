@@ -244,3 +244,12 @@ dec_update() -> % december update
    nsm_gifts_tools:clean_and_import_all(), % recreate gifts from two sources
    nsm_db_update:clear_team_in_users(), % update users to be able to participate tournaments
    ok.
+
+update_user_address() ->
+    AllAddresses = nsm_db:all(user_address),
+    [case Address of
+        {user_address, UId, A, C, D, PC} -> nsm_db:put({user_address, UId, A, C, D, PC, "", ""});
+        {user_address, UId, A, C, D, PC, P} -> nsm_db:put({user_address, UId, A, C, D, PC, P, ""});
+        _ -> ok
+    end || Address <- AllAddresses].
+
