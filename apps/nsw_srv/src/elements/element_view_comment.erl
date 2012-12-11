@@ -20,7 +20,8 @@ render_element(_R = #view_comment{comment=C}) ->
 
     %ViewMediaPanelId = wf:temp_id(),
 
-    {ok, User} = nsm_users:get_user(Author),
+    case nsm_users:get_user(Author) of
+    {ok, User} ->
     Avatar = #image{image = avatar:get_avatar(User, tiny), style="width:30px;height:30px", class = 
         case nsm_accounts:user_paid(Author) of
             true -> "paid_user_avatar";
@@ -52,7 +53,7 @@ render_element(_R = #view_comment{comment=C}) ->
 %	    ]}
 %    ]},
 %    #panel{style="float:left;height:3px;width:500px;", body=[]}
-    ].
+    ]; _ -> "" end.
 
 
 render_comment_media(C) ->

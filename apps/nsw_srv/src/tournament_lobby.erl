@@ -461,7 +461,14 @@ get_tour_user_list() ->
                     _ -> list_to_atom(GameSrv)
                end,
 %    ?INFO("NodeAtom: ~p",[NodeAtom]),
-    ActiveUsers = sets:from_list([U#user.username || U <- rpc:call(NodeAtom,nsm_srv_tournament_lobby,active_users,[TID])]),
+    Rpc = case rpc:call(NodeAtom,nsm_srv_tournament_lobby,active_users,[TID]) of
+                {badrpc,_} -> [];
+                X -> X
+          end,
+     
+    ActiveUsers = sets:from_list([U#user.username || U <- Rpc]),
+
+%    ActiveUsers = sets:from_list([U#user.username || U <- rpc:call(NodeAtom,nsm_srv_tournament_lobby,active_users,[TID])]),
     JoinedUsers = sets:from_list([U#play_record.who || U <- nsm_tournaments:joined_users(TID)]),
     List = [begin 
                S1 = case nsm_accounts:balance(U, ?CURRENCY_GAME_POINTS) of
