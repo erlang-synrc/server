@@ -491,38 +491,12 @@ get_tour_user_list() ->
                     4 -> nsx_opt:get_env(nsm_db, game_srv_node, 'game@doxtop.cc');
                     _ -> list_to_atom(GameSrv)
                end,
-<<<<<<< HEAD
-%    ?INFO("NodeAtom: ~p",[NodeAtom]),
-    Rpc = case rpc:call(NodeAtom,nsm_srv_tournament_lobby,active_users,[TID]) of
-                {badrpc,_} -> [];
-                X -> X
-          end,
-     
-    ActiveUsers = sets:from_list([U#user.username || U <- Rpc]),
 
-%    ActiveUsers = sets:from_list([U#user.username || U <- rpc:call(NodeAtom,nsm_srv_tournament_lobby,active_users,[TID])]),
-    JoinedUsers = sets:from_list([U#play_record.who || U <- nsm_tournaments:joined_users(TID)]),
-    List = [begin 
-               S1 = case nsm_accounts:balance(U, ?CURRENCY_GAME_POINTS) of
-                         {ok,AS1} -> AS1;
-                         {error,_} -> 0 end,
-               S2 = case nsm_accounts:balance(U,  ?CURRENCY_KAKUSH) of
-                         {ok,AS2} -> AS2;
-                         {error,_} -> 0 end,
-%               ?INFO("User: ~p",[U]),
-               {U,S1,S2,
-                     case sets:is_element(U,JoinedUsers) of
-                          false -> yellow;
-                          true -> case sets:is_element(U,ActiveUsers) orelse wf:user() == U of
-                                        true -> green;
-                                        false -> red
-                                end
-                     end, site_utils:decode_letters(nsm_users:user_realname(U))}
-    end || U <- sets:to_list(sets:union(JoinedUsers,ActiveUsers)) ++ 
-                case sets:is_element(wf:user(),JoinedUsers) of true -> []; false -> [wf:user()] end],
-    lists:usort(List).
-=======
-    ActiveUsers = sets:from_list([U#user.username || U <- rpc:call(NodeAtom,nsm_srv_tournament_lobby,active_users,[TID])]),
+    Rpc = case rpc:call(NodeAtom,nsm_srv_tournament_lobby,active_users,[TID]) of
+        {badrpc,_} -> [];
+        X -> X
+    end,   
+    ActiveUsers = sets:from_list([U#user.username || U <- Rpc]),
     JoinedUsersList = lists:usort(nsm_tournaments:joined_users(TId)),
     JoinedUsers = sets:from_list([U#play_record.who || U <- JoinedUsersList]),
     CUId = wf:user(),
@@ -546,7 +520,6 @@ get_tour_user_list() ->
         end, RN}
     || #play_record{who=U, kakush=K, game_points=GP, realname=RN} <- JoinedUsersList, U /= wf:user()],
     [CurUser] ++ OtherUsers.
->>>>>>> Switch play_record to leveldb (bus rule commit: wokrs ok, but requires severe testing)
 
 event(chat) ->
     User = wf:user(),
