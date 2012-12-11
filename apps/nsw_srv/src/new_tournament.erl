@@ -85,8 +85,7 @@ content() ->
                 #label{class="newtour_title_label", body=?_T("CREATE TOURNAMENT")}
             ]
         },
-        #panel{body=[#label{id=plan_desc,style="margin-left:300px;margin-top:50px;font-size:16pt;",body=[""]}]},
-        #panel{id=top_selectors, style="height:420px; font-size:16px; ", body=[
+        #panel{id=top_selectors, style="height:440px; font-size:16px; ", body=[
             #label{style="position:absolute; left:-18px; top:84px; width:150px; text-align:right;", text=?_T("Tour. Name:")},
             #textbox{style="position:absolute; left:137px; top:77px; width:140px; height:28px; font-size:16px;", class="newtour_textbox", id=tournament_name},
             #label{style="position:absolute; left:300px; top:84px; width:100px; text-align:right;", text=?_T("Description:")},
@@ -157,34 +156,38 @@ content() ->
                         #option { text="8" }
             ]},
 
-            #panel{style="height:1px; background-color:#c2c2c2; width:960px; margin-left:-25px; position:absolute; top:282px;", body=[]},
-            #panel{class="newtour_title", style="top:257px;", body=[
+
+            #label{style="position:absolute; left:200px; top:250px; width:100px; text-align:right;", text=?_T("Plan")++":"},
+            #panel{style="position:absolute; left:310px; top:250px;", id=plan_desc, body=["..."]},
+
+            #panel{style="height:1px; background-color:#c2c2c2; width:960px; margin-left:-25px; position:absolute; top:332px;", body=[]},
+            #panel{class="newtour_title", style="top:307px;", body=[
                     #label{class="newtour_title_label", body=?_T("PRIZES TO CHOOSE")}
                 ]
             },
-            #label{style="position:absolute; left:42px; top:350px;", text=?_T("Cost Range:")},
-            #label{id=slider_min_value, style="position:absolute; left:160px; top:329px;", text=""},
-            #label{id=slider_max_value, style="position:absolute; left:260px; top:329px; text-align:right; width:100px;", text=""},
-            #panel{id=slider_panel, style="position:absolute; left:160px; top:352px; width:200px; height:20px;", body=[
+            #label{style="position:absolute; left:42px; top:400px;", text=?_T("Cost Range:")},
+            #label{id=slider_min_value, style="position:absolute; left:160px; top:379px;", text=""},
+            #label{id=slider_max_value, style="position:absolute; left:260px; top:379px; text-align:right; width:100px;", text=""},
+            #panel{id=slider_panel, style="position:absolute; left:160px; top:402px; width:200px; height:20px;", body=[
                 #slider{range = true, id=newtour_slider, max=1000,
                     postback={?MODULE, {newtour_slider}},
                     values=[{min,0}, {max,1000}]
                 }
             ]},
-            #label{style="position:absolute; left:550px; top:350px;", text=?_T("Prizes:")},
-            #panel{id=prize_1, style="position:absolute; left:620px; top:315px;", body=[
+            #label{style="position:absolute; left:550px; top:390px;", text=?_T("Prizes:")},
+            #panel{id=prize_1, style="position:absolute; left:620px; top:365px;", body=[
                 #label{style="position:absolute; left:36px; top:-20px;", text="1"},
                 #panel{class="newtour_prize_holder", body=
                     #link{postback=deselect_1_prize, body=#image{id=img_prize_1, style="max-width:80px; max-height:80px;", image="/images/tournament/new_tournament/question.png"}}
                 }
             ]},
-            #panel{id=prize_2, style="position:absolute; left:710px; top:315px;", body=[
+            #panel{id=prize_2, style="position:absolute; left:710px; top:365px;", body=[
                 #label{style="position:absolute; left:36px; top:-20px;", text="2"},
                 #panel{class="newtour_prize_holder", body=
                     #link{postback=deselect_2_prize, body=#image{id=img_prize_2, style="max-width:80px; max-height:80px;", image="/images/tournament/new_tournament/question.png"}}
                 }
             ]},
-            #panel{id=prize_3, style="position:absolute; left:800px; top:315px;", body=[
+            #panel{id=prize_3, style="position:absolute; left:800px; top:365px;", body=[
                 #label{style="position:absolute; left:36px; top:-20px;", text="3"},
                 #panel{class="newtour_prize_holder", body=
                     #link{postback=deselect_3_prize, body=#image{id=img_prize_3, style="max-width:80px; max-height:80px;", image="/images/tournament/new_tournament/question.png"}}
@@ -352,7 +355,8 @@ event(update_product_list) ->
     Quota = list_to_integer(wf:q(tour_quota)),
     Tours = list_to_integer(wf:q(tour_tours)),
 
-   {ok,PlanDesc1} = rpc:call(?GAMESRVR_NODE, game_okey_ng_trn_elim,get_plan_desc,[Quota,Players,Tours]),
+    {ok,PlanDesc1} = rpc:call(?GAMESRVR_NODE, game_okey_ng_trn_elim,get_plan_desc,[Quota,Players,Tours]),
+    ?INFO(" +++ Plan ~p", [PlanDesc1]),
     PlanDesc = ling:join(PlanDesc1," / "),
 
     wf:update(plan_desc, PlanDesc),

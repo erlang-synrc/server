@@ -162,11 +162,9 @@ handle_notice(["system", "tournament_tour_note"] = Route, Message, State) ->
     Winners = [W || W = {_, _, _, Status} <- TourRes, Status == active],
     SNum = integer_to_list(length(Winners)),
     [begin
-        case TotalTours == TourNum of
-            false ->
-                NoteString = "tourtour" ++ "|name=" ++ Tour#tournament.name ++ "|desc=" ++ Desc ++ "|total=" ++ SNum ++
-                    "|player=" ++ UId ++ "|pos=" ++ integer_to_list(CommonPos) ++ "|points=" ++ integer_to_list(Points) ++ "|tourstatus=" ++ atom_to_list(Status);
-            true ->
+        case TotalTours - TourNum of
+            0 -> ok;
+            1 ->
                 NoteString = "tourtour_with_winners" ++ "|name=" ++ Tour#tournament.name ++ "|desc=" ++ Desc ++ "|total=" ++ SNum ++
                     "|player=" ++ UId ++ "|pos=" ++ integer_to_list(CommonPos) ++ "|points=" ++ integer_to_list(Points) ++ "|tourstatus=" ++ atom_to_list(Status) ++
                     "|player_count=" ++ SNum ++
@@ -176,9 +174,13 @@ handle_notice(["system", "tournament_tour_note"] = Route, Message, State) ->
                         SN = integer_to_list(N),
                         "|n"++SN++"=" ++ integer_to_list(N) ++ "|winner"++SN++"="++RUId++"|pos"++SN++"="++integer_to_list(RPos)++"|points"++SN++"="++integer_to_list(RPoints)
                     end
-                    || N <- lists:seq(1, length(Winners))])
-        end,                
-        nsx_msg:notify(["feed", "user", UId, "post_note"], NoteString)
+                    || N <- lists:seq(1, length(Winners))]),
+                nsx_msg:notify(["feed", "user", UId, "post_note"], NoteString);
+            _ ->
+                NoteString = "tourtour" ++ "|name=" ++ Tour#tournament.name ++ "|desc=" ++ Desc ++ "|total=" ++ SNum ++
+                    "|player=" ++ UId ++ "|pos=" ++ integer_to_list(CommonPos) ++ "|points=" ++ integer_to_list(Points) ++ "|tourstatus=" ++ atom_to_list(Status),
+                nsx_msg:notify(["feed", "user", UId, "post_note"], NoteString)
+        end
     end
     || {UId, CommonPos, Points, Status} <- TourRes],
     {noreply, State};    

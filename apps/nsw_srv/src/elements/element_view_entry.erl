@@ -173,17 +173,22 @@ entry_element(E, Comments, Avatar, {MediaThumb, MediaLists0}, _TargetMedia, Anch
                     {true, ?_T("Tour finished"),
                     ?_TS("Our player $player$ $tourstatus$ tournament $name$$desc$ on $pos$ position with $points$ game points. Tournament goes on with $total$ players.", Args)};
                 "tourtour_with_winners" ->
-                    {true, ?_T("Tour finished"),
-                    ?_TS("Our player $player$ $tourstatus$ tournament $name$$desc$ on $pos$ position with $points$ game points. Tournament goes on with $total$ finalists:
-                    <br>&nbsp;$pos1$. $winner1$ with $points1$ points;
-                    <br>&nbsp;$pos2$. $winner2$ with $points2$ points;
-                    <br>&nbsp;$pos3$. $winner3$ with $points3$ points;
-                    <br>&nbsp;$pos4$. $winner4$ with $points4$ points.", Args)};
+                    case proplists:get_value(winner2, Args2, "") of
+                        "" -> {never, "", ""};
+                        _ ->
+                            {true, ?_T("Tour finished"),
+                            ?_TS("Our player $player$ $tourstatus$ tournament $name$$desc$ on $pos$ position with $points$ game points. Tournament goes on with $total$ finalists:
+                            <br>&nbsp;$pos1$. $winner1$ with $points1$ points;
+                            <br>&nbsp;$pos2$. $winner2$ with $points2$ points;
+                            <br>&nbsp;$pos3$. $winner3$ with $points3$ points;
+                            <br>&nbsp;$pos4$. $winner4$ with $points4$ points.", Args)}
+                    end;
                 _ -> {?_T("Unsupported note type!"), E#entry.description}
             end,
             MessageSecs = calendar:datetime_to_gregorian_seconds( calendar:now_to_datetime(E#entry.created_time) ),
             NowSecs = calendar:datetime_to_gregorian_seconds( calendar:now_to_datetime(erlang:now()) ),
             case Temp of
+                never -> [];
                 true ->
                     case NowSecs - MessageSecs > ?SYSTEM_MESSAGE_EXPIRES of
                         true -> [];
