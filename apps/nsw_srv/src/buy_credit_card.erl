@@ -241,7 +241,7 @@ process_result("failure")->
 
 process_result("basarili") -> process_result("success");
 process_result("success")->
-    ?INFO("Buy Credit card: Process ыгссуыы result~n"),
+    ?INFO("Buy Credit card: Process result~n"),
     HashDataIn = wf:q(hash),
     HashParamsIn = wf:q(hashparams),
     SCH = cc_security_check(HashDataIn, HashParamsIn, ?CC_SECURE_KEY),
@@ -436,8 +436,8 @@ construct_provision_xml() ->
       {'InstallmentCnt', [InstallmentCount]},
       {'Amount', [Amount]},
       {'CurrencyCode', [CurrencyCode]},
-      {'CardholderPresentCode', [""]},
-      {'MotoInd', [""]},
+      {'CardholderPresentCode', [13]},
+      {'MotoInd', ["H"]},
       {'Secure3D', [
         {'AuthenticationCode', [AuthCode]},
         {'SecurityLevel', [SecurityLevel]},
