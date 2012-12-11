@@ -349,7 +349,7 @@ ui_paginate() ->
 %%%%%%%%%%%%%%% Users list  %%%%%%%%%%%%%%
 
 users_list() ->
-    Users = lists:sort(fun(#user{register_date=A}, #user{register_date=B}) -> A>B end,nsm_db:all(user)).
+    Users = lists:sort(fun(#user{register_date=A}, #user{register_date=B}) -> A>B end,nsm_db:all(user)),
     FirstCursor = cursor:new(Users, 2),
     {ok, Result, Cursor} = cursor:page_next(?USER_LIST_PAGE_SIZE, FirstCursor),
     wf:state(user_list_cursor, Cursor),
