@@ -1939,7 +1939,7 @@ div.post:first-child {background:none !important}
 .gallery-game {
 	width:176px;
 	height:52px;
-	background:url(/images/bg-gallery-game.gif?jcb=1354889893) no-repeat;
+	background:url(/images/bg-gallery-game.gif?jcb=1354895534) no-repeat;
 	margin:-3px 0 13px 9px;
 	padding:7px 0 0 25px;
 	position:relative;
@@ -3199,7 +3199,7 @@ div.post:first-child {background:none !important}
 .inform-block dd {
 	display:inline;
 	margin:0;
-	font-size:2.5em;
+	font-size:1.5em;
 }
 .inform-block .btn {
 	float:right;
