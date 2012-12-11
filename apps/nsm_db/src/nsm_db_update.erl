@@ -253,3 +253,12 @@ update_user_address() ->
         _ -> ok
     end || Address <- AllAddresses].
 
+update_play_records() ->
+    AllPlayRecords = nsm_db:all(play_record),
+    nsm_riak:riak_clean(play_record),
+    [case E of 
+        {play_record, Who, _Id, Tournament, Team, Game_id, Entry_id, _Score_points, _Next, _Prev} when is_integer(Entry_id) == false ->
+            PR = {play_record, Who, Tournament, Team, Game_id, Who, 0, 0, 0, 0},
+            nsm_db:put(PR);
+         _ -> nsm_db:put(E)
+     end || E <- AllPlayRecords].

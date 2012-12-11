@@ -42,6 +42,7 @@ init_indexes() ->
     ok = C:set_bucket(t_to_b(subs), [{backend, leveldb_backend}]),
     ok = C:set_bucket(t_to_b(group_subs), [{backend, leveldb_backend}]),
     ok = C:set_bucket(t_to_b(user_bought_gifts), [{backend, leveldb_backend}]),
+    ok = C:set_bucket(t_to_b(play_record), [{backend, leveldb_backend}]),
     ok = nsm_gifts_db:init_indexes().
 
 init_db() ->
@@ -58,7 +59,7 @@ dir() ->
     [binary_to_list(X)||X<-Buckets].
 
 clean() ->
-    riak_clean(affiliates_contracts), riak_clean(affiliates_rels), riak_clean(affiliates_counters),
+    riak_clean(affiliates_contracts), riak_clean(affiliates_rels), riak_clean(affiliates_counters), riak_clean(affiliates_purchases), riak_clean(affiliates_contract_types),
     riak_clean(gifts_counters), riak_clean(gifts_config), riak_clean(gifts),
     riak_clean(play_record), riak_clean(player_scoring), riak_clean(scoring_record), riak_clean(personal_score), riak_clean(pointing_rule),
     riak_clean(tournament), riak_clean(team),
@@ -79,6 +80,7 @@ clean() ->
     riak_clean(game_table),
     riak_clean(entry), riak_clean(likes), riak_clean(one_like), riak_clean(feed), riak_clean(comment),
     riak_clean(group_member), riak_clean(group_member_rev), riak_clean(subscription), riak_clean(subscription_rev),
+    riak_clean(subs), riak_clean(group_subs), riak_clean(user_bought_gifts),
     riak_clean(ut_word), riak_clean(ut_translation),
     riak_clean(active_users_top),
     riak_clean(user_counter),
@@ -130,6 +132,8 @@ make_indices(#subs{who=Who, whom=Whom}) -> [{<<"subs_who_bin">>, key_to_bin(Who)
                                             {<<"subs_whom_bin">>, key_to_bin(Whom)}];
 make_indices(#group_subs{user_id=UId, group_id=GId}) -> [{<<"group_subs_user_id_bin">>, key_to_bin(UId)},
                                             {<<"group_subs_group_id_bin">>, key_to_bin(GId)}];
+make_indices(#play_record{who=UId, tournament=TId, team=TEId}) -> [{<<"play_record_who_bin">>, key_to_bin(UId)},
+                                            {<<"play_record_tournament_bin">>, key_to_bin(TId)}];
 make_indices(#user_bought_gifts{username=UId}) -> [{<<"user_bought_gifts_username_bin">>, key_to_bin(UId)}];
 
 make_indices(_Record) -> [].
@@ -143,6 +147,7 @@ make_obj(T, affiliates_purchases) -> #affiliates_purchases{contract_id = Contrac
 make_obj(T, affiliates_rels) -> riak_object:new(r_to_b(T), key_to_bin(T#affiliates_rels.user), T);
 make_obj(T, subs) -> [Key] = io_lib:format("~p", [{T#subs.who, T#subs.whom}]), riak_object:new(r_to_b(T), list_to_binary(Key), T);
 make_obj(T, group_subs) -> [Key] = io_lib:format("~p", [{T#group_subs.user_id, T#group_subs.group_id}]), riak_object:new(r_to_b(T), list_to_binary(Key), T);
+make_obj(T, play_record) -> [Key] = io_lib:format("~p", [{T#play_record.who, T#play_record.tournament}]), riak_object:new(r_to_b(T), list_to_binary(Key), T);
 make_obj(T, user_bought_gifts) -> [Key] = io_lib:format("~p", [{T#user_bought_gifts.username, T#user_bought_gifts.timestamp}]), riak_object:new(r_to_b(T), list_to_binary(Key), T);
 make_obj(T, account) -> [Key] = io_lib:format("~p", [T#account.id]), riak_object:new(<<"account">>, list_to_binary(Key), T);
 make_obj(T, feed) -> riak_object:new(<<"feed">>, list_to_binary(integer_to_list(T#feed.id)), T);
@@ -165,7 +170,6 @@ make_obj(T = {_,Key,_}, id_seq) -> riak_object:new(<<"id_seq">>, key_to_bin(Key)
 make_obj(T, group) -> riak_object:new(<<"group">>, list_to_binary(T#group.username), T);
 make_obj(T, tournament) -> riak_object:new(<<"tournament">>, list_to_binary(integer_to_list(T#tournament.id)), T);
 make_obj(T, team) -> riak_object:new(<<"team">>, list_to_binary(integer_to_list(T#team.id)), T);
-make_obj(T, play_record) -> riak_object:new(<<"play_record">>, list_to_binary(integer_to_list(T#play_record.id)), T);
 make_obj(T, acl) -> [Key] = io_lib:format("~p", [T#acl.id]), riak_object:new(<<"acl">>, list_to_binary(Key), T);
 make_obj(T, acl_entry) -> [Key] = io_lib:format("~p", [T#acl_entry.id]), riak_object:new(<<"acl_entry">>, list_to_binary(Key), T);
 make_obj(T, group_member) -> riak_object:new(<<"group_member">>, list_to_binary(T#group_member.who), T);
@@ -1091,217 +1095,51 @@ acl_add_entry(Resource, Accessor, Action) ->
     end.
 
 
-play_record_add_entry(TeamId, UserId, TournamentId, GameId) ->
-    {ok,Team} = nsm_db:get(team, TeamId),
-    EntryId = nsm_db:next_id("play_record",1),
-    Prev = undefined,
-    case Team#team.play_record of
-        undefined ->
-            Next = undefined;
-        X ->
-            case nsm_db:get(play_record, erlang:integer_to_list(X)) of
-                {ok, TopEntry} ->
-                    Next = TopEntry#play_record.id,
-                    EditedEntry = #play_record{
-                      id = TopEntry#play_record.id,
-                      team = TopEntry#play_record.team,
-                      tournament = TopEntry#play_record.tournament,
-                      game_id = TopEntry#play_record.game_id,
-                      score_points = TopEntry#play_record.score_points,
-                      who = TopEntry#play_record.who,
-                      next = TopEntry#play_record.next,
-                      prev = EntryId},
-                    nsm_db:put(EditedEntry); % update prev entry
-            {error,notfound} -> Next = undefined
-            end
-    end,
-
-    nsm_db:put(#team{ id = TeamId, name = Team#team.name, play_record = EntryId}), % update teaam top with current
-
-    Entry  = #play_record{id = EntryId,
-                    team = TeamId,
-                    who = UserId,
-                    tournament = TournamentId,
-                    game_id = GameId,
-                    next = Next,
-                    prev = Prev},
-
-    case nsm_db:put(Entry) of
-        ok -> {ok, Entry}
-    end.
-
-
-find_play_record(Top, UId, TId) ->
-    case nsm_db:get(play_record, Top) of
-        {error, notfound} -> notfound;
-        {ok, PR} -> case (PR#play_record.who == UId) and (PR#play_record.tournament == TId) of
-                true -> PR#play_record.id;
-                false -> find_play_record(PR#play_record.next, UId, TId)
-            end
-    end.
-
-
-play_record_remove_team_entry(UserId, TournamentId) ->
-    {ok,User} = nsm_db:get(user, UserId),
-    {ok,Team} = nsm_db:get(team, User#user.team),
-    case find_play_record(Team#team.play_record, UserId, TournamentId) of
-        notfound ->
-            ?INFO(" Entry for team ~p  user ~p  and tournament ~p  not found for removal", [User#user.team, UserId, TournamentId]);
-        PRId ->
-            case nsm_db:get(play_record, PRId) of
-                {ok, #play_record{prev = Prev, next = Next}}->
-                    case nsm_db:get(play_record, Next) of
-                        {ok, NE} -> nsm_db:put(NE#play_record{prev = Prev});
-                        _ -> ok
-                    end,
-                    case nsm_db:get(play_record, Prev) of
-                        {ok, PE} -> nsm_db:put(PE#play_record{next = Next});
-                        _ -> ok
-                    end,
-                    case Team#team.play_record of
-                        PRId -> nsm_db:put(Team#team{play_record = Next});
-                        _ -> ok
-                    end;
-                _ -> 
-                    ?INFO("WTF error in nsm_db:play_record_remove_team_entry. record ~p suddenly disappeared", [PRId])
-            end,
-            nsm_db:delete(play_record, PRId)
-    end.
-
-
-play_record_remove_tournament_entry(UserId, TournamentId) ->
-    {ok,Tournament} = nsm_db:get(tournament, erlang:integer_to_list(TournamentId)),
-    case find_play_record(Tournament#tournament.waiting_queue , UserId, TournamentId) of
-        notfound ->
-            ?INFO(" Entry for tournament ~p  user ~p  and tournament ~p  not found for removal", [TournamentId, UserId, TournamentId]);
-        PRId ->
-            case nsm_db:get(play_record, PRId) of
-                {ok, #play_record{prev = Prev, next = Next}}->
-                    case nsm_db:get(play_record, Next) of
-                        {ok, NE} -> nsm_db:put(NE#play_record{prev = Prev});
-                        _ -> ok
-                    end,
-                    case nsm_db:get(play_record, Prev) of
-                        {ok, PE} -> nsm_db:put(PE#play_record{next = Next});
-                        _ -> ok
-                    end,
-                    case Tournament#tournament.waiting_queue  of
-                        PRId -> nsm_db:put(Tournament#tournament{waiting_queue  = Next});
-                        _ -> ok
-                    end;
-                _ -> 
-                    ?INFO("WTF error in nsm_db:play_record_remove_tournament_entry. record ~p suddenly disappeared", [PRId])
-            end,
-            nsm_db:delete(play_record, PRId)
-    end.
-
-
-tournament_pop_waiting_player(TournamentID) ->
-    {ok,Tournament} = nsm_db:get(tournament, erlang:integer_to_list(TournamentID)),
-    Top = case Tournament#tournament.waiting_queue of
-        undefined ->
-            Prev = undefined;
-        X ->
-            case nsm_db:get(play_record, erlang:integer_to_list(X)) of
-                {ok,TopEntry} -> Prev = TopEntry#play_record.next, TopEntry;
-                {error, notfound} -> Prev = undefined
-            end
-    end,
-
-    nsm_db:put(Tournament#tournament{id = TournamentID, waiting_queue = Prev }),
-    Top.
-
 join_tournament(UserId, TournamentId) ->
-    {ok,Tournament} = nsm_db:get(tournament,erlang:integer_to_list(TournamentId)),
-    {ok,User} = nsm_db:get(user, UserId),
-    play_record_add_entry(User#user.team,User#user.username,TournamentId,undefined),
-    EntryId = nsm_db:next_id("play_record",1),
-    Prev = undefined,
-    case Tournament#tournament.waiting_queue of
-        undefined ->
-            Next = undefined;
-        X ->
-            case nsm_db:get(play_record, erlang:integer_to_list(X)) of
-                {ok, TopEntry} ->
-                    Next = TopEntry#play_record.id,
-                    EditedEntry = #play_record{
-                        id = TopEntry#play_record.id,
-                        team = TopEntry#play_record.team,
-                        tournament = TopEntry#play_record.tournament,
-                        game_id = TopEntry#play_record.game_id,
-                        score_points = TopEntry#play_record.score_points,
-                        who = TopEntry#play_record.who,
-                        next = TopEntry#play_record.next,
-                        prev = EntryId},
-                    nsm_db:put(EditedEntry); % update prev entry
-                {error,notfound} -> Next = undefined
-            end
-    end,
+    case nsm_db:get(user, UserId) of
+        {ok, User} ->
+            GP = case nsm_accounts:balance(UserId, ?CURRENCY_GAME_POINTS) of
+                     {ok, AS1} -> AS1;
+                     {error, _} -> 0 end,
+            K = case nsm_accounts:balance(UserId,  ?CURRENCY_KAKUSH) of
+                     {ok, AS2} -> AS2;
+                     {error, _} -> 0 end,
+            KC = case nsm_accounts:balance(UserId,  ?CURRENCY_KAKUSH_CURRENCY) of
+                     {ok, AS3} -> AS3;
+                     {error, _} -> 0 end,
+            Q = case nsm_accounts:balance(UserId,  ?CURRENCY_QUOTA) of
+                     {ok, AS4} -> AS4;
+                     {error, _} -> 0 end,
+            RN = nsm_users:user_realname(UserId),
+            nsm_db:put(#play_record{
+                 who = UserId,
+                 tournament = TournamentId,
+                 team = User#user.team,
+                 game_id = undefined, 
 
-
-    nsm_db:put(Tournament#tournament{
-                    waiting_queue = EntryId
-                   }),
-
-    Entry  = #play_record{id = EntryId,
-                    team = undefined,
-                    who = UserId,
-                    game_id = undefined,
-                    tournament = TournamentId,
-                    next = Next,
-                    prev = Prev},
-
-    case nsm_db:put(Entry) of
-        ok ->
-            {ok, Entry}
+                 realname = RN,
+                 game_points = GP,
+                 kakush = K,
+                 kakush_currency = KC,
+                 quota = Q});
+        _ ->
+            ?INFO(" User ~p not found for joining tournament ~p", [UserId, TournamentId])
     end.
-
 
 leave_tournament(UserId, TournamentId) ->
-    play_record_remove_tournament_entry(UserId, TournamentId),
-    play_record_remove_team_entry(UserId, TournamentId).
-
-
-user_tournaments(UID) -> user_tournaments_list(UID).
-
-tournament_waiting_queue(TID) ->
-    C = riak_client(),
-    RA = nsm_db:get(tournament, TID),
-    case RA of
-        {ok,RO} -> riak_read_tournament_waiting_queue(C, RO#tournament.waiting_queue, []);
-        {error, _} -> []
+    case nsm_db:get(play_record, {UserId, TournamentId}) of
+        {ok, _} -> 
+            nsm_db:delete(play_record, {UserId, TournamentId}),
+            leave_tournament(UserId, TournamentId); % due to WTF error with old records
+        _ -> ok
     end.
 
-user_tournaments_list(TID) when is_list(TID) ->
-    C = riak_client(),
-    RA = nsm_db:get(user,TID),
-    case RA of
-        {ok,RO} ->
-             case nsm_db:get(team,RO#user.team) of
-                {ok,RO2} -> List = riak_read_tournament_waiting_queue(C, RO2#team.play_record, []),
-                            case List of
-                               [] -> [];
-                               _X ->
-                                 [ begin
-                                     {ok,Tour} = nsm_db:get(tournament, El#play_record.tournament),
-                                     {Tour, 0}
-                                   end || El <- List]
-                            end;
-                {error, _} -> []
-             end;
-        {error, _} -> []
-    end;
-user_tournaments_list(TID) ->
-    user_tournaments_list(TID#user.username).
+user_tournaments(UId) -> 
+    nsm_db:all_by_index(play_record, <<"play_record_who_bin">>, list_to_binary(UId)).
 
-riak_read_tournament_waiting_queue(_, undefined, Result) -> Result;
-riak_read_tournament_waiting_queue(C, Next, Result) ->
-    RA = nsm_db:get(play_record,Next),
-    case RA of
-        {ok,RO} ->
-            riak_read_tournament_waiting_queue(C, RO#play_record.next, Result ++ [RO]);
-        {error,notfound} -> Result
-    end.
+tournament_waiting_queue(TId) ->
+    nsm_db:all_by_index(play_record, <<"play_record_tournament_bin">>, list_to_binary(integer_to_list(TId))).
+
 
 -spec entry_by_id(term()) -> {ok, #entry{}} | {error, not_found}.
 entry_by_id(EntryId) -> nsm_db:get(entry, EntryId).
