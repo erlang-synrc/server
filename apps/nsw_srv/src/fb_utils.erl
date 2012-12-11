@@ -228,7 +228,7 @@ api_event(fbLogin, _, [Args])->
           end;
         {ok, User} when User#user.username == CurrentUser -> ok;
         {ok, User} ->
-          login:login_user(element(2, User));
+          login:login_user(element(2, User))
       end
   end;
 api_event(fbNotifyOverLimit, _, _)->
