@@ -78,9 +78,9 @@ main_authorized() ->
                                 wf:state(table_id, {error, Error})
                            end;
                  [H |_] -> ?INFO("TableId: ~p: ~p",[Id,Tables]),
-                           Owner = H#game_table.owner,
+                           Creator = H#game_table.creator,
                            Private = H#game_table.private,
-                           FriendCheck = nsm_users:is_user_subscr(Owner, User#user.username),
+                           FriendCheck = nsm_users:is_user_subscr(Creator, User#user.username),
                            if Private andalso FriendCheck == false ->
                                   wf:state(joined, false),
                                   wf:state(table_id, {error, not_a_friend});
