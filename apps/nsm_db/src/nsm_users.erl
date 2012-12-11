@@ -82,8 +82,8 @@ do_register(#user{username=U} = RegisterData0) ->
         starred  = nsm_db:feed_create(),
         password = HashedPassword},
 
-      %ok = nsm_db:put(RegisterData),
-      nsx_msg:notify(["system", "put"], RegisterData),
+      nsm_db:put(RegisterData),
+      %nsx_msg:notify(["system", "put"], RegisterData),
       nsm_accounts:create_account(U),
       % assign quota
       {ok, DefaultQuota} = nsm_db:get(config, "accounts/default_quota",  300),
