@@ -232,7 +232,7 @@ api_event(fbLogin, _, [Args])->
               wf:session(fb_registration, Args),
               wf:redirect([?HTTPS_ADDRESS,?_U("/login/register/msg/")++site_utils:base64_encode_to_url(Msg)])
           end;
-        {ok, User} when User#user.username == CurrentUser -> ok;
+        {ok, User} when element(2,User) == CurrentUser -> ok;
         {ok, User} ->
           login:login_user(element(2, User))
       end
