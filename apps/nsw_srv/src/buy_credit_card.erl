@@ -436,7 +436,7 @@ construct_provision_xml() ->
       {'InstallmentCnt', [InstallmentCount]},
       {'Amount', [Amount]},
       {'CurrencyCode', [CurrencyCode]},
-      {'CardholderPresentCode', [13]},
+      {'CardholderPresentCode', ["13"]},
       {'MotoInd', ["H"]},
       {'Secure3D', [
         {'AuthenticationCode', [AuthCode]},
