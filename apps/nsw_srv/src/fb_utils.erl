@@ -9,6 +9,7 @@
 
 init()->
   wf:wire(#api{name=setFbIframe, tag=fb}),
+  wf:wire(#api{name=fbAutoLogin, tag=fb}),
   wf:wire(#api{name=fbLogin, tag=fb}),
   wf:wire(#api{name=fbPreLogin, tag=fb}),
   wf:wire(#api{name=fbSignedRequest, tag=fb}),
@@ -29,7 +30,7 @@ init()->
           "if(inIframe && response.status == 'connected' && page.fbLogin){",
             "FB.api(\"/me?fields=id,username,first_name,last_name,email,birthday\",",
             "function(response){",
-              "page.fbLogin(response);",
+              "page.fbAutoLogin(response);",
             "});",
           "}",
         "}",
@@ -188,6 +189,8 @@ event(Event)->
   ?INFO("Fbutils: ~p", [Event]).
 api_event(fbPreLogin, _, _)->
   wf:session(fb_registration, undefined);
+api_event(fbAutoLogin, Tag, [Args])->
+  api_event(fbLogin, Tag, [Args]);
 api_event(fbLogin, _, [Args])->
   case Args of
     [{error, E}] ->
@@ -217,8 +220,7 @@ api_event(fbLogin, _, [Args])->
           },
           case nsm_users:register(RegData) of
             {ok, Name} ->
-              login:login_user(Name),
-              wf:redirect_from_login(?_U("/dashboard"));
+              login:login_user(Name);
             {error, _Error} ->
               Msg = ?_T("This email it taken by other user. If You already have the kakaranet.com account, please login and connect the to facebook."),
               wf:session(fb_registration, Args),
@@ -226,8 +228,7 @@ api_event(fbLogin, _, [Args])->
           end;
         {ok, User} when User#user.username == CurrentUser -> ok;
         {ok, User} ->
-          login:login_user(element(2, User)),
-          wf:redirect_from_login(?_U("/dashboard"))
+          login:login_user(element(2, User));
       end
   end;
 api_event(fbNotifyOverLimit, _, _)->

@@ -579,10 +579,9 @@ comet_update()->
   wf:flush(),
   comet_update().
 
-api_event(Name, fb, Args)->
-  fb_utils:api_event(Name, fb, Args);
-api_event(Name, Tag, Args)->
-  ?INFO("API event in webutils: ~p ~p ~p ~n", [Name, Tag, Args]).
+api_event(fbAutoLogin, fb, Args)-> skip;
+api_event(Name, fb, Args)-> fb_utils:api_event(Name, fb, Args);
+api_event(Name, Tag, Args)-> skip.
 
 user_count(GameH) ->
 %  GCounts = nsm_queries:map_reduce(game_manager,counter,[

@@ -56,6 +56,11 @@ body() ->
 event(Other) ->
   webutils:event(Other).
 
+api_event(fbAutoLogin, Tag, Args)->
+  case wf:q(message) of
+    undefined -> fb_utils:api_event(fbAutoLogin, Tag, Args);
+    _ -> skip
+  end;
 api_event(Name, Tag, Args)->
   webutils:api_event(Name, Tag, Args).
 
