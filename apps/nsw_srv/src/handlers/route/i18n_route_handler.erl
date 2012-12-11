@@ -25,6 +25,7 @@
 -define(REGEXP_TO_BROWSER, [
         {"Konqueror" , "Konqueror"},
         {"Chrome"    , "Chrome"},
+        {"Googlebot" , "Googlebot"},
         {"Safari"    , "Safari"},
         {"MSIE"      , "IE"},
         {"Opera"     , "Opera"},
@@ -105,7 +106,8 @@ route(Path) ->
                          matchmaker -> skip;
                          tournament_lobby -> skip;
                          buy -> skip;
-                         _ -> ?INFO("URLPATH: ~s:~s:~s:~s",[inet_parse:ntoa(RequestBridge:peer_ip()),Path,OS,HC])
+                         _ -> ?INFO("URLPATH: ~s:~s:~s:~s",[inet_parse:ntoa(RequestBridge:peer_ip()),Path, case OS of undefined -> ""; X->X end,
+                                                                                                           case HC of undefined -> UA; Y->Y end])
                     end,
                     {Module, PathInfo};
                 undefined ->
