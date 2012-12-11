@@ -199,8 +199,14 @@ api_event(fbLogin, _, [Args])->
     _ ->
       CurrentUser = wf:user(),
       FbId = proplists:get_value(id, Args),
-      UserName = proplists:get_value(username, Args),
-      BirthDay = list_to_tuple([list_to_integer(X) || X <- string:tokens(proplists:get_value(birthday, Args), "/")]),
+      UserName = case proplists:get_value(username, Args) of
+        A when is_atom(A) -> atom_to_list(A);
+        N -> N
+      end,
+      BirthDay = case proplists:get_value(birthday, Args) of
+        undefined -> {1, 1, 1970};
+        BD -> list_to_tuple([list_to_integer(X) || X <- string:tokens(BD, "/")])
+      end,
 
       case nsm_db:get(user_by_facebook_id, FbId) of
         {error, notfound} ->
