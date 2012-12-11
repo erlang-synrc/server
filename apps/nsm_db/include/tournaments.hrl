@@ -29,12 +29,13 @@
 
 -record(play_record, % { tournament_player, game_record, tournament_info, choose your name :) }
         {who, % { user }
-         id,
          tournament, % { tournament in which user played }
          team, % { team under which user player tournament }
          game_id, % { game id that user played under that team }
-         entry_id,
-         score_points,
-         next,
-         prev}).
+
+         realname,
+         game_points,
+         kakush,
+         kakush_currency,
+         quota }).
 

@@ -133,7 +133,6 @@ add_seq_ids() ->
     Init("user_transaction"),
     Init("transaction"),
     Init("team"),
-    Init("play_record"),
     Init("membership_purchase"),
     Init("table"),
     Init("acl"),
@@ -492,7 +491,7 @@ tournament_waiting_queue(TID) -> DBA=?DBA, DBA:tournament_waiting_queue(TID).
 join_tournament(UID,TID) -> DBA=?DBA, DBA:join_tournament(UID,TID).
 leave_tournament(UID,TID) -> DBA=?DBA, DBA:leave_tournament(UID,TID).
 tournament_pop_waiting_player(TID) -> DBA=?DBA, DBA:tournament_pop_waiting_player(TID).
-play_record_add_entry(TeamId, UserId, Tournament, GameId) -> DBA=?DBA, DBA:play_record_add_entry(TeamId, UserId, Tournament, GameId).
+%play_record_add_entry(TeamId, UserId, Tournament, GameId) -> DBA=?DBA, DBA:play_record_add_entry(TeamId, UserId, Tournament, GameId).
 user_tournaments(UID) -> DBA=?DBA, DBA:user_tournaments(UID).
 
 groups_184_update() -> % predefined group creation
@@ -660,6 +659,13 @@ load_db(Path) ->
                          _ -> put(E)
                         end;
                 tournament -> skip;
+                play_record -> 
+                    ?INFO("PR: ~p",[E]),
+                        case E of {play_record, Who, _Id, Tournament, Team, Game_id, Entry_id, _Score_points, _Next, _Prev} when is_integer(Entry_id) == false ->
+                            PR = {play_record, Who, Tournament, Team, Game_id, Who, 0, 0, 0, 0},
+                        put(PR);
+                        _ -> put(E)
+                        end;
                 membership_purchase ->
                     ?INFO("Mp: ~p",[E]),
                         case E of {membership_purchase,Id,T,User,S,Pkg,Time,Time2,L,Type} ->

@@ -5299,14 +5299,13 @@ msgid "Remaining Kakush"
 msgstr "Kalan kakuş"
 #
 msgid "The table is private. You're not allowed to join..."
-msgstr "The table is private. You're not allowed to join..."
+msgstr "Bu masa ÖZEL. Sadece davetliler için..."
 #
 msgid ""
 "This email it taken by other user. If You already have the kakaranet.com "
 "account, please login and connect the to facebook."
 msgstr ""
-"This email it taken by other user. If You already have the kakaranet.com "
-"account, please login and connect the to facebook."
+"Kakaranet üyeliği için adres onayı verdiyseniz bu e-posta başkası tarafından yönlendirilmiş olabilir. Dikkate almayınız..."
 #
 msgid ""
 "User $uname$ $usurname$ ($user$) wants his $gname$ ($vendor_id$, $gift_id$) "

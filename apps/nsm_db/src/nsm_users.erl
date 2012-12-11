@@ -414,7 +414,7 @@ user_realname_user(User) ->
         Name=="undefined", Surname=="undefined" -> User#user.username;
         Name=="undefined" -> Surname;
         Surname=="undefined" -> Name;
-        true -> Name ++ [" "] ++ Surname
+        true -> Name ++ " " ++ Surname
     end.
 
 user_realname(UId) ->
