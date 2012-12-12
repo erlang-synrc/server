@@ -157,8 +157,8 @@ content() ->
             ]},
 
 
-            #label{style="position:absolute; left:200px; top:250px; width:100px; text-align:right;", text=?_T("Plan")++":"},
-            #panel{style="position:absolute; left:310px; top:250px;", id=plan_desc, body=["..."]},
+            #label{style="position:absolute; left:200px; top:255px; width:100px; text-align:right;", text=?_T("Plan")++":"},
+            #panel{style="position:absolute; left:310px; top:255px;", id=plan_desc, body=["..."]},
 
             #panel{style="height:1px; background-color:#c2c2c2; width:960px; margin-left:-25px; position:absolute; top:332px;", body=[]},
             #panel{class="newtour_title", style="top:307px;", body=[
@@ -357,8 +357,26 @@ event(update_product_list) ->
 
     {ok,PlanDesc1} = rpc:call(?GAMESRVR_NODE, game_okey_ng_trn_elim,get_plan_desc,[Quota,Players,Tours]),
     ?INFO(" +++ Plan ~p", [PlanDesc1]),
-    PlanDesc = ling:join(PlanDesc1," / "),
 
+    PlanI = lists:seq(1, length(PlanDesc1)),
+    PlanDesc = #table{rows=[
+        #tablerow{cells=
+            [#tablecell{body=integer_to_list(I), style=case I of
+                    1 -> "padding-bottom:4px; text-align:center; border-bottom:1px solid #AAA;";
+                    _ -> "padding-bottom:4px; text-align:center; border-bottom:1px solid #AAA; border-left:1px solid #AAA;"
+                end
+            }
+            || I <- PlanI]
+        },
+        #tablerow{cells=
+            [#tablecell{body=lists:nth(I, PlanDesc1), style=case I of
+                    1 -> "padding-left:6px; padding-right:6px; padding-top:4px; text-align:center;";
+                    _ -> "padding-left:6px; padding-right:6px; padding-top:4px; text-align:center; border-left:1px solid #AAA;"
+                end
+            }
+            || I <- PlanI]
+        }
+    ], style="margin-top:-13px;"},
     wf:update(plan_desc, PlanDesc),
     wf:update(product_list, product_list_paged(1));
 

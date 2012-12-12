@@ -658,11 +658,11 @@ load_db(Path) ->
                          put(Usr);
                          _ -> put(E)
                         end;
-                tournament -> skip;
+%                tournament -> skip;
                 play_record -> 
                     ?INFO("PR: ~p",[E]),
-                        case E of {play_record, Who, _Id, Tournament, Team, Game_id, Entry_id, _Score_points, _Next, _Prev} when is_integer(Entry_id) == false ->
-                            PR = {play_record, Who, Tournament, Team, Game_id, Who, 0, 0, 0, 0},
+                        case E of {play_record, Who, _Id, Tournament, Team, Game_id, Entry_id, _Score_points, _Next, _Prev} ->
+                            PR = {play_record, Who, Tournament, Team, Game_id, Who, 0, 0, 0, 0, []},
                         put(PR);
                         _ -> put(E)
                         end;
