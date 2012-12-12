@@ -177,7 +177,7 @@ event(fb_remove_service)->
               URL = "https://graph.facebook.com/" ++ FbId ++ "/permissions/publish_stream?access_token="++ T,
               httpc:request(delete, {URL, []}, [], [])
           end,
-          nsm_db:delete(facebook_oauth, FbId),
+          nsm_db:delete(facebook_oauth, FbId);
           %nsx_msg:notify(["system", "delete"], #facebook_oauth{user_id=FbId});
         {error, notfound} -> ok
       end,
@@ -265,7 +265,7 @@ api_event(fbAddAsService, _, [Id])->
       case nsm_users:get_user({facebook, Id}) of
         {error, notfound}-> ok;
         {ok, ExUser} when ExUser#user.username =/= User#user.username ->
-          nsm_db:put(ExUser#user{facebook_id=undefined}),
+          nsm_db:put(ExUser#user{facebook_id=undefined});
           %nsx_msg:notify(["system", "put"], ExUser#user{facebook_id=undefined});
         _-> ok
       end,
