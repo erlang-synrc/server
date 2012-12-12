@@ -12,7 +12,7 @@
 -include("common.hrl").
 
 %% FIXME: move ip to configs
--define(CC_IP, "188.40.111.156").
+-define(CC_IP, nsx_opt:get_env(nsw_srv, web_ip, "188.40.111.152")).
 -define(CC_GATE, "https://sanalposprov.garanti.com.tr/servlet/gt3dengine").
 -define(CC_CONFIRM_GATE, "https://sanalposprov.garanti.com.tr/VPServlet").
 -define(CC_REQ_TIMEOUT, 15000).
