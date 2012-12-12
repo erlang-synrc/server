@@ -80,7 +80,8 @@ handle_cast(start_tournament, State) ->
             case length(nsm_tournaments:joined_users(TId)) /= NumberOfUsers of 
                 true -> % canceled
                     ?INFO("Tournament ~p canceled", [TId]),
-                    nsx_msg:notify(["system", "put"], Tour#tournament{status=canceled});
+%                    nsx_msg:notify(["system", "put"], Tour#tournament{status=canceled});
+                    nsm_db:put(Tour#tournament{status=canceled});
                 false ->
                     TourId = game_manager:start_tournament(TIDinDB,1,NumberOfUsers,Quota,Tours,Speed,Gifts),
                     ?INFO("Tournament ~p started as ~p", [TId, TIDinDB]),

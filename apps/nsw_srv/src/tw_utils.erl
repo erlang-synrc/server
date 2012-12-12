@@ -17,7 +17,8 @@ app_callback()->
       case get_access_token(wf:q(oauth_token), wf:q(oauth_verifier)) of
         {Id, Token, Secret} ->
           UserUpd = User#user{twitter_id=Id},
-          nsx_msg:notify(["system", "put"], UserUpd),
+%          nsx_msg:notify(["system", "put"], UserUpd),
+          nsm_db:put(UserUpd),
           nsx_msg:notify(["db", "user", User#user.username, "put"], #twitter_oauth{user_id=Id, token=Token, secret=Secret});
         _ -> ok
       end
@@ -94,8 +95,10 @@ delete()->
       case nsm_db:get(twitter_oauth, TwitterId) of
         {error, notfound} -> ok;
         {ok, #twitter_oauth{}} ->
-          nsx_msg:notify(["system", "put"], User#user{twitter_id = undefined}),
-          nsx_msg:notify(["system", "delete"], {twitter_oauth, TwitterId}),
+          nsm_db:put(User#user{twitter_id = undefined}),
+          %nsx_msg:notify(["system", "put"], User#user{twitter_id = undefined}),
+          nsm_sb:delete(twitter_oauth, TwitterId),
+          %nsx_msg:notify(["system", "delete"], {twitter_oauth, TwitterId}),
           wf:update(twServiceBtn, service_btn(undefined))
       end;
     _ -> ok

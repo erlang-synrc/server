@@ -7,6 +7,7 @@
 -export([
             create_group_directly_to_db/5,
             add_to_group_directly_to_db/3,
+            delete_group_directly_from_db/1,
 
             list_groups_per_user/1,
             list_group_members/1, % I need to store group user count somewhere!
@@ -49,6 +50,10 @@ add_to_group_directly_to_db(UId, GId, Type) ->
     {ok, Group} = nsm_db:get(group, GId),
     GU = Group#group.users_count,
     nsm_db:put(Group#group{users_count = GU+1}).
+
+delete_group_directly_from_db(GId) ->
+    [nsm_db:delete(group_subs, {UId, GId}) || UId <- list_group_members(GId)],
+    nsm_db:delete(group, GId).
 
 list_groups_per_user(UId) ->
     [GId || #group_subs{group_id=GId} <- nsm_db:all_by_index(group_subs, <<"group_subs_user_id_bin">>, list_to_binary(UId)) ].

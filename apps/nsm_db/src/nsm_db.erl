@@ -659,6 +659,13 @@ load_db(Path) ->
                          _ -> put(E)
                         end;
 %                tournament -> skip;
+                user_address -> 
+                    ?INFO("UA: ~p",[E]),
+                        case E of
+                            {user_address, UId, A, C, D, PC} -> put({user_address, UId, A, C, D, PC, "", ""});
+                            {user_address, UId, A, C, D, PC, P} -> put({user_address, UId, A, C, D, PC, P, ""});
+                            _ -> put(E)
+                        end;
                 play_record -> 
                     ?INFO("PR: ~p",[E]),
                         case E of {play_record, Who, _Id, Tournament, Team, Game_id, Entry_id, _Score_points, _Next, _Prev} ->

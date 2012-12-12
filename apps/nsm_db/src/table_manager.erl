@@ -716,8 +716,8 @@ save_table(UId, Settings) ->
                          name = Name,
                          create_time = erlang:now(),
                          settings = Settings},
-    nsx_msg:notify(["system", "put"], R).
-    %nsm_db:put(R).
+    %nsx_msg:notify(["system", "put"], R).
+    nsm_db:put(R).
 
 get_save_tables(UId) ->
     nsm_db:get_save_tables(UId).
@@ -731,8 +731,8 @@ get_save_table(Id) ->
 
 delete_save_table(Id) ->
     {ok, Table} = get_save_table(Id),
-    nsx_msg:notify(["system", "delete"], Table).
-    %nsm_db:delete(Table).
+    %nsx_msg:notify(["system", "delete"], Table).
+    nsm_db:delete(Table).
 
 create_example_table() ->
     Alice = #user{username = "alice", password="1",
