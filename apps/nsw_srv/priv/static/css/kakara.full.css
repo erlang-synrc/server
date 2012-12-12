@@ -5493,7 +5493,7 @@ body.view_table .user-list .user .table_paid_user_avatar {  /* this from add sty
 }
 
 .tourlobby_left_bottom_block {
-    width:212px; height:102px; background-color:#565656;
+    width:212px; height:154px; background-color:#565656;
     position:absolute; left:29px; top:462px;
     -moz-border-radius:3px;
     -webkit-border-radius:3px;
@@ -5567,7 +5567,7 @@ body.view_table .user-list .user .table_paid_user_avatar {  /* this from add sty
 }
 
 .tourlobby_chat {
-    width:663px; height:191px; background-color:#fff;
+    width:663px; height:243px; background-color:#fff;
     position:absolute; left:275px; top:372px;
     -moz-border-radius:2px;
     -webkit-border-radius:2px;
@@ -5601,7 +5601,7 @@ body.view_table .user-list .user .table_paid_user_avatar {  /* this from add sty
 }
 
 .tourlobby_chat_window {
-    width:640px; height:100px; background-color:#fff;
+    width:640px; height:152px; background-color:#fff;
     position:absolute; left:10px; top:36px;
     font-size:14px; line-height:20px;
     overflow:auto;
@@ -5615,7 +5615,7 @@ body.view_table .user-list .user .table_paid_user_avatar {  /* this from add sty
 .tourlobby_chat_textarea {
     width:557px; height:24px; background-color:#fff;
     padding:5px;
-    position:absolute; left:10px; top:145px;
+    position:absolute; left:10px; top:197px;
     -moz-border-radius:2px;
     -webkit-border-radius:2px;
     border-radius:2px;
@@ -5626,14 +5626,14 @@ body.view_table .user-list .user .table_paid_user_avatar {  /* this from add sty
 }
 
 .tourlobby_chat_button {
-    position:absolute; left:577px; top:145px;
+    position:absolute; left:577px; top:197px;
     display:block; width:74px; height:36px; background: url(/images/tournament/lobby/btn_chat_normal.png?jcb=1353306884);
     font-size:16px; color:#121212; line-height:35px;
     text-align:center;
 }
 
 .tourlobby_chat_button:hover {
-    position:absolute; left:577px; top:145px;
+    position:absolute; left:577px; top:197px;
     display:block; width:74px; height:36px; background: url(/images/tournament/lobby/btn_chat_hover.png?jcb=1353306884);
     font-size:16px; color:#121212; line-height:35px;
     text-align:center;
@@ -5641,7 +5641,7 @@ body.view_table .user-list .user .table_paid_user_avatar {  /* this from add sty
 }
 
 .tourlobby_chat_button:active {
-    position:absolute; left:577px; top:145px;
+    position:absolute; left:577px; top:197px;
     display:block; width:74px; height:36px; background: url(/images/tournament/lobby/btn_chat_pressed.png?jcb=1353306884);
     font-size:16px; color:#121212; line-height:35px;
     text-align:center;
@@ -5650,7 +5650,7 @@ body.view_table .user-list .user .table_paid_user_avatar {  /* this from add sty
 .tourlobby_table_panel {
     width:958px;
     margin-left:-24px;
-    margin-top:575px;
+    margin-top:627px;
 }
 
 .tourlobby_table {

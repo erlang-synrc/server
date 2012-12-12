@@ -125,15 +125,35 @@ content() ->
     {ok,PlanDesc1} = rpc:call(?GAMESRVR_NODE, game_okey_ng_trn_elim,get_plan_desc,[T#tournament.quota,
                                                                                    T#tournament.players_count,
                                                                                    T#tournament.tours]),
-    PlanDesc = ling:join(PlanDesc1," / "),
+%    PlanDesc1 = ["yok","yok","yok","yok","yok","yok","yok","Final"],
+
+%    PlanDesc = ling:join(PlanDesc1," / "),
+    PlanI = lists:seq(1, length(PlanDesc1)),
+    PlanTable = #table{rows=[
+        #tablerow{cells=
+            [#tablecell{body=integer_to_list(I), style=case I of
+                    1 -> "padding-bottom:2px; text-align:center; border-bottom:1px solid #888;";
+                    _ -> "padding-bottom:2px; text-align:center; border-bottom:1px solid #888; border-left:1px solid #888;"
+                end
+            }
+            || I <- PlanI]
+        },
+        #tablerow{cells=
+            [#tablecell{body=lists:nth(I, PlanDesc1), style=case I of
+                    1 -> "padding-left:3px; padding-right:3px; padding-top:2px; text-align:center;";
+                    _ -> "padding-left:3px; padding-right:3px; padding-top:2px; text-align:center; border-left:1px solid #888;"
+                end
+            }
+            || I <- PlanI]
+        }
+    ], style="font-size:9px; color:#fff;"},
 
     [
         #panel{class="tourlobby_title", body=[
             #label{class="tourlobby_title_label", body=?_T("TOURNAMENT LOBBY")}
         ]},
 
-        #panel{body=[#label{style="margin-left:300px;margin-top:10px;font-size:16pt;",body=[lists:flatten(PlanDesc)]}]},
-
+%        #panel{body=[#label{style="margin-left:300px;margin-top:10px;font-size:16pt;",body=[lists:flatten(PlanDesc)]}]},
 
         % left top block
         #panel{class="tourlobby_left_top_block", body=[
@@ -185,7 +205,12 @@ content() ->
                 #br{},
                 #label{class="tourlobby_left_bottom_block_label", body=?_T("Game Type: ") ++ Game},
                 #br{},
-                #label{class="tourlobby_left_bottom_block_label", body=?_T("Quota: ") ++ integer_to_list(Quota)}
+                #label{class="tourlobby_left_bottom_block_label", body=?_T("Quota: ") ++ integer_to_list(Quota)},
+                #br{},
+                #label{class="tourlobby_left_bottom_block_label", body=?_T("Plan: ")},
+                #panel{style="position:absolute; left:16px; top:110px;", body=
+                    PlanTable
+                }
             ]
          },
     
