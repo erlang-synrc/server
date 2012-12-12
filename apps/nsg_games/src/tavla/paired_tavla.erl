@@ -73,6 +73,7 @@
           cur_move_color :: undefined | 1 | 2,
           moves_counter :: integer(),        %% How many tables should make move before next dices roll
           confirm_wl :: list('PlayerId'()),
+          msg_acc :: list(),
           rounds_counter :: integer()        %% How many rounds left to play
          }).
 
@@ -306,7 +307,8 @@ handle_cast({publish, _Sender, #game_event{event = tavla_rolls, args = Args} = M
              end || {TabId, _TabPid} <- Tables],
             {noreply, State#state{tstate = ?STATE_MOVES,
                                   cur_move_color = FirstMoveColor,
-                                  moves_counter = RoundTablesCounter
+                                  moves_counter = RoundTablesCounter,
+                                  msg_acc = []
                                  }};
         false ->
             ?INFO("PAIRED_TAVLA A dace rolled: ~p", [Dices]),
@@ -328,22 +330,29 @@ handle_cast({publish, _Sender, #game_event{event = tavla_rolls, args = Args} = M
     MoveColor = proplists:get_value(color, Args),
     {noreply, State#state{tstate = ?STATE_MOVES,
                           cur_move_color = MoveColor,
-                          moves_counter = RoundTablesCounter
+                          moves_counter = RoundTablesCounter,
+                          msg_acc = []
                          }};
 
 handle_cast({publish, _Sender, #game_event{event = tavla_next_turn, args = Args} = Msg},
             #state{tstate = ?STATE_MOVES,
-                   moves_counter = MovesCounter} = State) ->
-    ?INFO("PAIRED_TAVLA Table ~p made his move. Tables left:~p", [proplists:get_value(table_id, Args), MovesCounter - 1]),
-    publish0(Msg, State),
+                   moves_counter = MovesCounter,
+                   msg_acc = MsgAcc} = State) ->
+    ?INFO("PAIRED_TAVLA Table ~p made his move. Msg: ~p Tables left:~p", [proplists:get_value(table_id, Args), Msg, MovesCounter - 1]),
+    Args2 = lists:keyreplace(player, 1, Args, {player, <<"">>}),
+    Msg2 = #game_event{event = tavla_next_turn, args = Args2},
+    publish0(Msg2, State), %% Try to stop countdown. Should be removed after the fix in the client
+    NewMsgAcc = [Msg | MsgAcc],
     if MovesCounter == 1 -> %% Last table moves
            ?INFO("PAIRED_TAVLA All tables made their moves. Waiting for dices roll.", []),
-           init_next_move(State);
+           init_next_move(State#state{msg_acc = NewMsgAcc});
        true ->
-           {noreply, State#state{moves_counter = MovesCounter - 1}}
+           {noreply, State#state{moves_counter = MovesCounter - 1,
+                                 msg_acc = NewMsgAcc}}
     end;
 
 handle_cast({publish, _Sender, Msg}, State) ->
+%%    ?INFO("PAIRED_TAVLA Table ~p publishes unhandled message: ~p", [proplists:get_value(table_id, Args), Msg]),
     publish0(Msg, State),
     {noreply, State};
 
@@ -407,7 +416,9 @@ roll(N) ->
 init_next_move(#state{dices_mode = DicesMode,
                       cur_move_color = CurMoveColor,
                       tables_pids = Tables,
-                      round_tables_counter = RoundTablesCounter} = State) ->
+                      round_tables_counter = RoundTablesCounter,
+                      msg_acc = MsgAcc} = State) ->
+    [publish0(Msg, State) || Msg <- MsgAcc], %% Pass delayed next_turn events
     if DicesMode == tournament_master -> %% Pass tavla_rolls event to clients
            MoveColor = next_color(CurMoveColor),
            Dices = roll(2),
@@ -418,7 +429,8 @@ init_next_move(#state{dices_mode = DicesMode,
             end || {TabId, _TabPid} <- Tables],
            {noreply, State#state{tstate = ?STATE_MOVES,
                                  moves_counter = RoundTablesCounter,
-                                 cur_move_color = MoveColor
+                                 cur_move_color = MoveColor,
+                                 msg_acc = []
                                 }};
        true ->
            ?INFO("PAIRED_TAVLA Waiting for main table roll.", []),
