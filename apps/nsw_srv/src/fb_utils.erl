@@ -177,11 +177,14 @@ event(fb_remove_service)->
               URL = "https://graph.facebook.com/" ++ FbId ++ "/permissions/publish_stream?access_token="++ T,
               httpc:request(delete, {URL, []}, [], [])
           end,
-          nsx_msg:notify(["system", "delete"], #facebook_oauth{user_id=FbId});
+          nsm_db:delete(facebook_oauth, FbId),
+          %nsx_msg:notify(["system", "delete"], #facebook_oauth{user_id=FbId});
         {error, notfound} -> ok
       end,
-      nsx_msg:notify(["system", "delete"], {user_by_facebook_id, FbId}),
-      nsx_msg:notify(["system", "put"], User#user{facebook_id=undefined}),
+      nsm_db:delete(user_by_facebook_id, FbId),
+      %nsx_msg:notify(["system", "delete"], {user_by_facebook_id, FbId}),
+      nsm_db:put(User#user{facebook_id=undefined}),
+      %nsx_msg:notify(["system", "put"], User#user{facebook_id=undefined}),
       wf:update(fbServiceButton, add_service_btn());
     _ -> no_service
   end;
@@ -262,10 +265,12 @@ api_event(fbAddAsService, _, [Id])->
       case nsm_users:get_user({facebook, Id}) of
         {error, notfound}-> ok;
         {ok, ExUser} when ExUser#user.username =/= User#user.username ->
-          nsx_msg:notify(["system", "put"], ExUser#user{facebook_id=undefined});
+          nsm_db:put(ExUser#user{facebook_id=undefined}),
+          %nsx_msg:notify(["system", "put"], ExUser#user{facebook_id=undefined});
         _-> ok
       end,
-      nsx_msg:notify(["system", "put"], User#user{facebook_id=Id}),
+      nsm_db:put(User#user{facebook_id=Id}),
+      %nsx_msg:notify(["system", "put"], User#user{facebook_id=Id}),
       update_access_token(Id);
     {ok, User} -> update_access_token(User#user.facebook_id)
   end.
