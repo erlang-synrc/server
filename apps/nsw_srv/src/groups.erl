@@ -240,13 +240,13 @@ group_row(GL) when is_list(GL)->
 group_row(GL) ->
     #list{class="group-list-mkh", body=show_group_ul(GL)}.
 
-show_group_ul(#group{username=GName, description=GDesc, users_count=GroupMembersCount}) ->
-    show_group_ul_view(GName, GDesc, GroupMembersCount);
+show_group_ul(#group{username=GName, description=GDesc, name=GFullName, users_count=GroupMembersCount}) ->
+    show_group_ul_view(GName, GFullName, GDesc, GroupMembersCount);
 show_group_ul(GId) ->
     {ok, Group} = nsm_groups:get_group(GId),
     show_group_ul(Group).
 
-show_group_ul_view(GName, GDesc, GroupMembersCount) ->
+show_group_ul_view(GName, GFullName, GDesc, GroupMembersCount) ->
     RealGroupMembersCount = case GroupMembersCount of   % patch for freshly created groups
         {error, notfound} -> 1;
         _ -> GroupMembersCount
@@ -256,7 +256,7 @@ show_group_ul_view(GName, GDesc, GroupMembersCount) ->
         #panel{class="img", body=#link{url=site_utils:group_link(GName),
             body=#image{image=webutils:get_group_avatar(GName, "big"), style="width:96px; height:96px"}}},
         #panel{class="descr", style="overflow:hidden;", body=[
-            #link{url=site_utils:group_link(GName), body=#h3{text=GName}},
+            #link{url=site_utils:group_link(GName), body=#h3{text=GFullName}},
             io_lib:format("<p>~s</p>", [GDesc]),
             io_lib:format("<p><i>~p ~s</i></p>", [RealGroupMembersCount, ?_T("members")])
         ]}
