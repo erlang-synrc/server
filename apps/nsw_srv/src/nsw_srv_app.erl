@@ -37,7 +37,7 @@ start(_StartType, _StartArgs) ->
                 end || Tour <- nsm_tournaments:all(), ((Tour#tournament.id div 1000000) * 1000000) == Pool ]),
 
 
-                spawn(nsw_srv_app,spawn_tables,[]),
+%                spawn(nsw_srv_app,spawn_tables,[]),
                               io:format("Web Started OK\n."), {ok, Pid};
          {error, shutdown} -> {ok, Port} = application:get_env(webmachine, port),
                               io:format("Nnitrogen_sup can't start. Tried port ~p\n", [Port]),
