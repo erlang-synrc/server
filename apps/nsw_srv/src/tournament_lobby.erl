@@ -18,6 +18,8 @@
 -define(MAX_CHAT_LENGTH, 1024). % 1024 bytes
 -define(COMET_POOL, tournament_lobby).
 -define(MAX_USERS_TO_SWITH_MODE, 32).
+-define(JOINEDPERPAGE, 128). 
+
 
 main() ->
     case wf:user() /= undefined of
@@ -26,9 +28,9 @@ main() ->
     end.
 
 main_authorized() ->
+    wf:session(this_must_be_unique_joined_page, 1),
     TournamentId = wf:q(id),
     wf:state(tournament_id, TournamentId),
-    wf:state(tournament_int_id, list_to_integer(TournamentId)),
 
     TournamentInfo = nsm_tournaments:get(TournamentId),
     wf:state(tournament, TournamentInfo),
@@ -298,7 +300,9 @@ user_table(Users) ->
             ]},
             #link{class="tourlobby_view_mode_link", text=?_T("Full view"), postback={change_view, full}}];
         _ ->
-            NdUsers = [{lists:nth(N, Users), N} || N <- lists:seq(1, length(Users))],
+            Page = wf:session(this_must_be_unique_joined_page),
+            PUsers = lists:sublist(Users, (Page-1) * ?JOINEDPERPAGE + 1, ?JOINEDPERPAGE),
+            NdUsers = [{lists:nth(N, PUsers), N} || N <- lists:seq(1, length(PUsers))],
             [#table{class="tourlobby_table", rows=[
                 #tablerow{class="tourlobby_table_head", cells=[
                     #tableheader{style="padding-left:16px;", text=?_T("USER")},
@@ -310,6 +314,33 @@ user_table(Users) ->
                     user_table_row(Name, Score1, Score2, Color, N, RealName)
                 ] || {{Name, Score1, Score2, Color, RealName}, N} <- NdUsers]
             ]},
+
+            case length(Users) > ?JOINEDPERPAGE of
+                    true ->
+                        #panel{class="paging-2", style="padding: 10px 0px 0px 0px;", body=[
+                            #panel{class="center", body=[
+                                #list{body=[
+                                   case Page of
+                                       1 -> #listitem{body=#link{text="<", postback={nothing}, class="inactive"}};
+                                       _ -> #listitem{body=#link{text="<", postback={page, Page - 1}}}
+                                    end,
+                                    [case N of
+                                        Page -> #listitem{body=#link{text=integer_to_list(N), postback={nothing}, class="inactive", 
+                                            style="color:#444444; font-weight:bold;"}};
+                                        _ -> #listitem{body=#link{text=integer_to_list(N), postback={page, N}}}
+                                    end
+                                    || N <- lists:seq(1, (length(Users) - 1) div ?JOINEDPERPAGE + 1)],
+                                    case Page * ?JOINEDPERPAGE >= length(Users) of                 
+                                        true -> #listitem{body=#link{text=">", postback={nothing}, class="inactive"}};
+                                        false -> #listitem{body=#link{text=">", postback={page, Page + 1}}}
+                                    end
+                               ]}
+                           ]}
+                        ]};
+                   false ->
+                        []
+                end,
+
             #link{class="tourlobby_view_mode_link", text=?_T("Short view"), postback={change_view, short}}]
     end.
 
@@ -460,35 +491,35 @@ get_tour_user_list() ->
                     4 -> nsx_opt:get_env(nsm_db, game_srv_node, 'game@doxtop.cc');
                     _ -> list_to_atom(GameSrv)
                end,
-%    ?INFO("NodeAtom: ~p",[NodeAtom]),
-    Rpc = case rpc:call(NodeAtom,nsm_srv_tournament_lobby,active_users,[TID]) of
-                {badrpc,_} -> [];
-                X -> X
-          end,
-     
-    ActiveUsers = sets:from_list([U#user.username || U <- Rpc]),
 
-%    ActiveUsers = sets:from_list([U#user.username || U <- rpc:call(NodeAtom,nsm_srv_tournament_lobby,active_users,[TID])]),
-    JoinedUsers = sets:from_list([U#play_record.who || U <- nsm_tournaments:joined_users(TID)]),
-    List = [begin 
-               S1 = case nsm_accounts:balance(U, ?CURRENCY_GAME_POINTS) of
-                         {ok,AS1} -> AS1;
-                         {error,_} -> 0 end,
-               S2 = case nsm_accounts:balance(U,  ?CURRENCY_KAKUSH) of
-                         {ok,AS2} -> AS2;
-                         {error,_} -> 0 end,
-%               ?INFO("User: ~p",[U]),
-               {U,S1,S2,
-                     case sets:is_element(U,JoinedUsers) of
-                          false -> yellow;
-                          true -> case sets:is_element(U,ActiveUsers) orelse wf:user() == U of
-                                        true -> green;
-                                        false -> red
-                                end
-                     end, site_utils:decode_letters(nsm_users:user_realname(U))}
-    end || U <- sets:to_list(sets:union(JoinedUsers,ActiveUsers)) ++ 
-                case sets:is_element(wf:user(),JoinedUsers) of true -> []; false -> [wf:user()] end],
-    lists:usort(List).
+    Rpc = case rpc:call(NodeAtom,nsm_srv_tournament_lobby,active_users,[TID]) of
+        {badrpc,_} -> [];
+        X -> X
+    end,   
+    ActiveUsers = sets:from_list([U#user.username || U <- Rpc]),
+    JoinedUsersList = lists:usort(nsm_tournaments:joined_users(TId)),
+    JoinedUsers = sets:from_list([U#play_record.who || U <- JoinedUsersList]),
+    CUId = wf:user(),
+    CurUser = {CUId,
+        case nsm_accounts:balance(CUId, ?CURRENCY_GAME_POINTS) of
+            {ok,AS1} -> AS1;
+            {error,_} -> 0 end,
+        case nsm_accounts:balance(CUId,  ?CURRENCY_KAKUSH) of
+            {ok,AS2} -> AS2;
+            {error,_} -> 0 end,
+        case sets:is_element(CUId, JoinedUsers) of
+              false -> yellow;
+              true -> green
+        end, 
+        site_utils:decode_letters(nsm_users:user_realname(CUId))
+    },
+    OtherUsers = [
+        {U, GP, K, case sets:is_element(U, ActiveUsers) of
+            false -> red;
+            true -> green
+        end, RN}
+    || #play_record{who=U, kakush=K, game_points=GP, realname=RN} <- JoinedUsersList, U /= wf:user()],
+    [CurUser] ++ OtherUsers.
 
 event(chat) ->
     User = wf:user(),
@@ -539,8 +570,8 @@ event(join_tournament) ->
 event(actualy_join_tournament) ->
     UId = wf:user(),
     TId = wf:state(tournament_id),
-    nsx_msg:notify(["system", "tournament_join"], {UId, list_to_integer(TId)}),
-%    nsm_tournaments:join(UId, list_to_integer(TId)),
+%    nsx_msg:notify(["system", "tournament_join"], {UId, list_to_integer(TId)}),
+    nsm_tournaments:join(UId, list_to_integer(TId)),
     wf:replace(join_button, #panel{id=join_button, class="tourlobby_orange_button_disabled", text=?_T("JOIN TOURNAMENT")}),
     wf:replace(leave_button, #link{id=leave_button, class="tourlobby_red_button", text=?_T("LEAVE TOURNAMENT"), postback=leave_tournament}),
     update_userlist();
@@ -548,8 +579,8 @@ event(actualy_join_tournament) ->
 event(leave_tournament) ->
     UId = wf:user(),
     TId = wf:state(tournament_id),
-    nsx_msg:notify(["system", "tournament_remove"], {UId, list_to_integer(TId)}),
-%    nsm_tournaments:remove(UId, list_to_integer(TID)),
+%    nsx_msg:notify(["system", "tournament_remove"], {UId, list_to_integer(TId)}),
+    nsm_tournaments:remove(UId, list_to_integer(TId)),
     wf:replace(join_button, #link{id=join_button, class="tourlobby_orange_button", text=?_T("JOIN TOURNAMENT"), postback=join_tournament}),
     wf:replace(leave_button, #panel{id=leave_button, class="tourlobby_red_button_disabled", text=?_T("LEAVE TOURNAMENT")}),
     update_userlist();
@@ -582,6 +613,10 @@ event(attach) ->
 event(change_timer) ->
     wf:update(lobby_timer, get_timer_for_now()),
     wf:wire(#event{type=timer, delay=1000, postback=change_timer});
+
+event({page, Page}) ->
+    wf:session(this_must_be_unique_joined_page, Page),
+    update_userlist();
 
 event(Any)->
     webutils:event(Any).
@@ -620,14 +655,13 @@ get_timer_for_now() ->
                             end,
                             case DTime =< 0 of
                                 true -> 
-                                    TId = wf:state(tournament_int_id),
-                                    Zone = TId div 1000000,
+                                    Zone = Id div 1000000,
                                     GameSrv = "game@srv" ++ integer_to_list(Zone) ++ ".kakaranet.com",
                                     NodeAtom = case Zone of
                                                4 -> nsx_opt:get_env(nsm_db, game_srv_node, 'game@doxtop.cc');
                                                _ -> list_to_atom(GameSrv)
                                     end,
-                                    case rpc:call(NodeAtom, game_manager,get_tournament,[TId]) of
+                                    case rpc:call(NodeAtom, game_manager,get_tournament,[Id]) of
                                         [] -> ?_T("FINISHED");
                                         _ -> ?_T("NOW")
                                     end;

@@ -247,6 +247,15 @@ Make sure the /var/lib/rabbitmq/.erlang.cookie has the same value on rabbit@srv1
 
 Stop the rabbit@srv3 node, join cluster with rabbit@srv2, start node, check the cluster status:
 
+For rabbitmq v2.7.1
+
+    $ rabbitmqctl stop_app
+    $ rabbitmqctl reset
+    $ rabbitmqctl cluster rabbit@srv2.kakaranet.com rabbit@srv3.kakaranet.com
+    $ rabbitmqctl start_app
+    
+For rabbitmq v3.0.0:
+
     $ rabbitmqctl stop_app
     $ rabbitmqctl join_cluster rabbit@srv2.kakaranet.com
     $ rabbitmqctl start_app

@@ -250,14 +250,14 @@ tavla_roll(Pid,State) ->
     {reply, ok, state_move, State}.
 
 
-tavla_move(Moves, Player, _Pid, #state{game_mode = Mode, table_id = TabId, relay = Relay} = State) ->
+tavla_move(Moves, Player, _Pid, #state{table_id = TableId, relay = Relay, vido = Vido} = State) ->
     ?INFO("tavla_move{} received from client ~p",[{Moves,Player}]),
     TP1 = lists:nth(1,State#state.players),
     TP2 = lists:nth(2,State#state.players),
     P1 = TP1#'TavlaPlayer'.player_id,
     P2 = TP2#'TavlaPlayer'.player_id,
     Incs = lists:map(fun(A) ->
-        publish_event(Relay, #tavla_moves{table_id = TabId, player = Player,
+        publish_event(Relay, #tavla_moves{table_id = TableId, player = Player,
                                          from = A#'TavlaAtomicMove'.from, 
                                          to = A#'TavlaAtomicMove'.to}),
         {Player, case A#'TavlaAtomicMove'.to of
@@ -271,17 +271,19 @@ tavla_move(Moves, Player, _Pid, #state{game_mode = Mode, table_id = TabId, relay
     P2Collected = lists:foldl(fun({_,D}, Sum2) -> Sum2 + D end,TP2#'TavlaPlayer'.collected,P2Incs),
     NewState = State#state{players=[TP1#'TavlaPlayer'{collected=P1Collected},
                                     TP2#'TavlaPlayer'{collected=P2Collected}]},
-    case check_game_ended(P1Collected, P2Collected, P1, P2, Relay, Player,State) of
+    case check_game_ended(P1Collected, P2Collected, P1, P2) of
         no ->
-            case check_can_roll(Mode,TabId) of
-                true ->
-                   {reply, ok, state_move, NewState};
-                false->
-                   {reply, ok, state_rolls, NewState}
-            end;
-        {yes, Results} -> 
-               %game_stats:assign_points(Results, State#state.game_info),
-               next_round(NewState#state{series_results = NewState#state.series_results ++ [Results]}, Results) 
+            publish_event(Relay, #tavla_next_turn{table_id = TableId, player = case Player of P1 -> P2; P2 -> P1 end}),
+            {reply, ok, state_rolls, NewState};
+        {yes, Winner, Score} ->
+            PlRes = if Winner == P1 -> [#'TavlaPlayerScore'{player_id = P1, score = Score * Vido, winner = <<"true">>},
+                                        #'TavlaPlayerScore'{player_id = P2, score = 0}];
+                       Winner == P2 -> [#'TavlaPlayerScore'{player_id = P2, score = Score * Vido, winner = <<"true">>},
+                                        #'TavlaPlayerScore'{player_id = P1, score = 0}]
+                    end,
+            Results = #'TavlaGameResults'{players = PlRes},
+            publish_event(Relay, #tavla_game_ended{table_id = TableId, winner = Winner, results = Results}),
+            next_round(NewState#state{series_results = NewState#state.series_results ++ [Results]}, Results)
                % {reply, ok, state_finished, NewState}
     end.
 
@@ -290,34 +292,14 @@ tavla_move(Moves, Player, _Pid, #state{game_mode = Mode, table_id = TabId, relay
 check_can_roll(Mode, TableId) ->
     Mode==paired andalso TableId=/=1 andalso ?PAIRED_TAVLA_ASYNC == false.
 
-check_game_ended(P1Collected, P2Collected, P1, P2, Relay, Player,State) ->
+check_game_ended(P1Collected, P2Collected, P1, P2) ->
     ?INFO("GAME_TAVLA check_game_ending P1Collected: ~p P2Collected: ~p", [P1Collected, P2Collected]),
-    TableId = State#state.table_id,
-    Vido = State#state.vido,
-    {Message,Results} =
-        case {P1Collected, P2Collected} of
-            {15, 0} -> R = #'TavlaGameResults'
-                           {players = [#'TavlaPlayerScore'{player_id = P1, score = 2 * Vido, winner = <<"true">>}, 
-                                       #'TavlaPlayerScore'{player_id = P2, score = 0}]},
-                       {#tavla_game_ended{table_id = TableId, winner = P1, results = R}, R};
-            {15, _} -> R = #'TavlaGameResults'
-                           {players = [#'TavlaPlayerScore'{player_id = P1, score = 1 * Vido, winner = <<"true">>}, 
-                                       #'TavlaPlayerScore'{player_id = P2, score = 0}]},
-                       {#tavla_game_ended{table_id = TableId, winner = P1, results = R}, R};
-            {0, 15} -> R = #'TavlaGameResults'
-                           {players = [#'TavlaPlayerScore'{player_id = P2, score = 2 * Vido, winner = <<"true">>}, 
-                                       #'TavlaPlayerScore'{player_id = P1, score = 0}]},
-                       {#tavla_game_ended{table_id = TableId, winner = P2, results = R}, R};
-            {_, 15} -> R = #'TavlaGameResults'
-                           {players = [#'TavlaPlayerScore'{player_id = P2, score = 1 * Vido, winner = <<"true">>}, 
-                                       #'TavlaPlayerScore'{player_id = P1, score = 0}]},
-                       {#tavla_game_ended{table_id = TableId, winner = P2, results = R}, R};
-            _ ->  {#tavla_next_turn{table_id = TableId, player = case Player of P1 -> P2; P2 -> P1 end}, 0}
-        end,
-    publish_event(Relay, Message),
-    case Message of
-        #tavla_next_turn{} -> no;
-        _ -> {yes, Results}
+    case {P1Collected, P2Collected} of
+        {15, 0} -> {yes, P1, 2};
+        {15, _} -> {yes, P1, 1};
+        {0, 15} -> {yes, P2, 2};
+        {_, 15} -> {yes, P2, 1};
+        _ -> no
     end.
 
 state_move({#tavla_vido_answer{from=From,to=To,answer=A}, Pid}, _, State) ->
