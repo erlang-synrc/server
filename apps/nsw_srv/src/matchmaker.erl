@@ -228,17 +228,18 @@ ui_game_type() ->
         _ -> "list1"
     end,
     GameType =
-	   case wf:q(game_name) of
-	       "okey" ->
-		   [{?_T("Standard"),	  standard},
-		    {?_T("Even/Odd"),	  evenodd},
-		    {?_T("Color"),	  color},
-		    {?_T("Countdown from 10"), countdown}];
-	       "tavla" ->
-		   [{?_T("Standard"),  standard},
-		    {?_T("Pair"),      paired},
-		    {?_T("Kakara Tavla"),    kakaratavla}]
-	   end,
+        case wf:q(game_name) of
+            "okey" ->
+                [{?_T("Standard"),	  standard},
+                 {?_T("Even/Odd"),	  evenodd},
+                 {?_T("Color"),	  color},
+                 {?_T("Countdown from 10"), countdown}];
+            "tavla" ->
+                [{?_T("Standard"),  standard},
+                 {?_T("Pair"),      paired}
+%%                {?_T("Kakara Tavla"),    kakaratavla} %% Not supported yet
+                ]
+        end,
     [
         "<span id='guidersitem2'>",
         "<span id='guiderstab1gametype'>",
@@ -246,7 +247,7 @@ ui_game_type() ->
         #h3{text=?_T("Game Type")},
         "</span>",
         #list{class=ThisClass, body=[ #listitem{body=construct_id(#link{text=Text, postback={tag,{game_mode,Value}}})}
-				|| {Text, Value} <- GameType ]}
+                                               || {Text, Value} <- GameType ]}
     ].
 
 ui_double_game() ->
