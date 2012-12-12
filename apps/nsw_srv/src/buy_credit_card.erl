@@ -134,6 +134,10 @@ form()->
                         #panel{class="text", body = #form_textbox{id=cardnumber, name=cardnumber, size=16, maxlength=16,  text = PrevCardNo}}
                     ]},
                     expiration_date_row(PrevExpMonth, PrevExpYear),
+                    #panel{class="row", body=[
+                      #label{text=?_T("CVV2 code")},
+                      #panel{class="text", body=#form_textbox{id=cardcvv2, name=cardcvv2, size=3, maxlength=3, text=""}}
+                    ]},
                     #panel{class="row", body = [
                         #label{text= ?_T("Cardholder name")},
                         #panel{class="text", body = #form_textbox{id=cardholdername, text = PrevHolderName}}
@@ -281,40 +285,32 @@ process_result(_) -> process_result("failure").
 
 
 make_provision_request(OrderId, Amount) ->
-    HostAddress = ?CC_CONFIRM_GATE,
+  HostAddress = ?CC_CONFIRM_GATE,
 
-    {ok, XML} = construct_provision_xml(),
-    ?INFO("XML constructed: ~p~n", [XML]),
-    ?INFO("XML constructed list: ~p~n", [binary_to_list(XML)]),
-    case buy:http_request(post, "application/x-www-form-urlencoded", [], HostAddress, "data="
-%++buy:iolist_to_string(XML)
-++ erlang:binary_to_list(XML)
-, 10000) of
-        {ok, Res} ->
-	    ?INFO("Provisioning response ~p~n", [Res]),
-            Parsed = parse_xml(Res),
-	    ?INFO("Parsed ~p~n", [Parsed]),
-            Response = extract_response(Parsed),
-	    ?INFO("Extraxted ~p~n", [Response]),
-            IntCode = (catch list_to_integer(?gv(code, Response))),
-            case IntCode of
-                %% all ok, store purchase and show success message
-                0 ->
-                    process_success(OrderId, [{amount, Amount}|Response]),
-                    %% delete package from session. Purchase completed
-                    buy:package(undefined),
-                    %% redirect to dashboard to show success message
-                    wf:redirect(?_U("/dashboard/buy/success"));
+  {ok, XML} = construct_provision_xml(),
+  case buy:http_request(post, "application/x-www-form-urlencoded", [], HostAddress, "data="++ erlang:binary_to_list(XML), 10000) of
+    {ok, Res} ->
+      Parsed = parse_xml(Res),
+      Response = extract_response(Parsed),
+      ?INFO("Response: ~p~n", [Response]),
+      IntCode = (catch list_to_integer(?gv(code, Response))),
+      case IntCode of
+        %% all ok, store purchase and show success message
+        0 ->
+          process_success(OrderId, [{amount, Amount}|Response]),
+          %% delete package from session. Purchase completed
+          buy:package(undefined),
+          wf:redirect(?_U("/profile/account"));
 
-                OtherCode ->
-                    Reason = error_descr(OtherCode),
-                    error_handler(OrderId, OtherCode, Reason)
-            end;
+        OtherCode ->
+          Reason = error_descr(OtherCode),
+          error_handler(OrderId, OtherCode, Reason)
+      end;
 
-        {error, Reason} ->
-            Reason = ?_T("Unable to connect to bank server.<br/> Please try later."),
-            error_handler(OrderId, -1, Reason)
-    end.
+      {error, Reason} ->
+        Reason = ?_T("Unable to connect to bank server.<br/> Please try later."),
+        error_handler(OrderId, -1, Reason)
+  end.
 
 %% process case when all ok and purchase completed
 process_success(OrderId, Response) ->
@@ -403,9 +399,10 @@ construct_provision_xml() ->
     AuthCode = wf:q(cavv),
     SecurityLevel = wf:url_encode(wf:q(eci)),
     TxnId = wf:url_encode(wf:q(xid)),
-    MD= wf:url_encode(wf:q(md)),
+    MD = wf:url_encode(wf:q(md)),
     SecurityData = utils:sha_upper(ProvisionPassword++add_zeros(9, TerminalId)),
     HashData = utils:sha_upper(OrderId++TerminalId++Amount++SecurityData),
+    CVV2 = wf:q(cardcvv2),
 
     Terminal = {'Terminal', [
       {'ProvUserID', [ProvUserId]},
@@ -446,7 +443,7 @@ construct_provision_xml() ->
       ]}]},
 
     Customer = {'Customer', [{'IPAddress', [IP]}, {'EmailAddress', [Email]}]},
-    Card = {'Card', [{'Number', [""]}, {'ExpireDate', [""]}, {'CVV2', [""]}]},
+    Card = {'Card', [{'Number', [""]}, {'ExpireDate', [""]}, {'CVV2', [CVV2]}]},
 
     GVPSRequest = {'GVPSRequest', [], [
       {'Mode', [Mode]},
@@ -460,31 +457,7 @@ construct_provision_xml() ->
 
     XML_X = xmerl:export_simple([GVPSRequest], xmerl_xml, [{prolog, ?xml_prolog}]),
     Resp = unicode:characters_to_binary(XML_X),
-    ?INFO("Provision XML - xmerl ~p~n", [Resp]),
-
-    TplParams = [
-        {mode, Mode},
-        {version, Version},
-        {prov_user_id, ProvUserId},
-        {hash_data, HashData},
-        {user_id, UserId},
-        {terminal_id, TerminalId},
-        {merchant_id, MerchantId},
-        {ip, IP},
-        {email, Email},
-        {order_id, OrderId},
-        {txn_type, TxnType},
-        {installment, InstallmentCount},
-        {amount, Amount},
-        {currency, CurrencyCode},
-        {auth_code, AuthCode},
-        {security_level, SecurityLevel},
-        {md, MD},
-        {txn_id, TxnId}
-    ],
-    {ok, XML} = '3D_inquiry_request_dtl':render(TplParams),
-    ?INFO("Provision XML - DTL~p~n", [XML]),
-%    {ok, XML}.
+    ?INFO("Provision XML: ~p~n", [Resp]),
     {ok, Resp}.
 
 %% Events
