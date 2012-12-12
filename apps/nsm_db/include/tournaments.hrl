@@ -37,5 +37,6 @@
          game_points,
          kakush,
          kakush_currency,
-         quota }).
+         quota,
+         other }).
 

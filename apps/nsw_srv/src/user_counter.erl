@@ -43,12 +43,14 @@ handle_info({inc_user, Pid}, State)->
 %  ?INFO("Inc users: ~p ~p~n", [State, Pid]),
   erlang:monitor(process, Pid),
   Count = #user_count{count=State#state.user_count+1},
-  nsx_msg:notify(["system", "put"], Count),
+  nsm_db:put(Count),
+  %nsx_msg:notify(["system", "put"], Count),
   {noreply, State#state{user_count=Count#user_count.count}};
 handle_info({'DOWN', _Ref, process, Pid, _Reason}, State)->
 %  ?INFO("Dec users: ~p ~p~n", [State, Pid]),
   Count = #user_count{count=State#state.user_count-1},
-  nsx_msg:notify(["system", "put"], Count),
+  nsm_db:put(Count),
+  %nsx_msg:notify(["system", "put"], Count),
   {noreply, State#state{user_count=Count#user_count.count}};
 handle_info(_Info, State) ->
   {noreply, State}.

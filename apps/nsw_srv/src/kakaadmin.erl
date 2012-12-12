@@ -858,7 +858,8 @@ u_event(delete_old_invites) ->
 
             case {CUser, Expired > 0} of
                 {undefined, true} ->
-                    nsx_msg:notify(["system", "delete"], {invite_code, Code}),
+                    nsm_db:delete(invite_code, Code),
+                    %nsx_msg:notify(["system", "delete"], {invite_code, Code}),
                     {Counter + 1, Acc};
                 _ ->
                     {Counter, [I|Acc]}
@@ -994,7 +995,8 @@ u_event(config_save_new) ->
                           _ -> skip
                      end,
 
-            nsx_msg:notify(["system", "put"], #config{key = Key,value=NewValue}),
+            nsm_db:put(#config{key = Key,value=NewValue}),
+            %nsx_msg:notify(["system", "put"], #config{key = Key,value=NewValue}),
 %		    wf:flash(?_TS("Value of $key$ set to $value$",[{key,wf:f("~w",[Key])},{value,NewValue}])); %% "
 		    wf:flash(?_TS("Value of $key$ set to $value$",[{key,Key},{value,NewValue}])); %% "
 		{msg, Msg} ->

@@ -12,7 +12,7 @@
 -include("common.hrl").
 
 %% FIXME: move ip to configs
--define(CC_IP, "188.40.111.156").
+-define(CC_IP, nsx_opt:get_env(nsw_srv, web_ip, "188.40.111.152")).
 -define(CC_GATE, "https://sanalposprov.garanti.com.tr/servlet/gt3dengine").
 -define(CC_CONFIRM_GATE, "https://sanalposprov.garanti.com.tr/VPServlet").
 -define(CC_REQ_TIMEOUT, 15000).
@@ -112,7 +112,7 @@ form()->
                 %% predefined fields
                 #form_hidden{name=mode, text="PROD"},
                 #form_hidden{name=secure3dsecuritylevel, text="3D"},
-                #form_hidden{name=apiversion, text="v.0.1"},
+                #form_hidden{name=apiversion, text="v0.01"},
                 #form_hidden{name=terminalprovuserid, text="PROVAUT"},
                 #form_hidden{name=terminaluserid, text="PROVAUT"},
                 #form_hidden{name=terminalmerchantid, text=MerchantId},
@@ -408,11 +408,11 @@ construct_provision_xml() ->
     HashData = utils:sha_upper(OrderId++TerminalId++Amount++SecurityData),
 
     Terminal = {'Terminal', [
-      {'ProvUserId', [ProvUserId]},
+      {'ProvUserID', [ProvUserId]},
       {'HashData', [HashData]},
       {'UserID', [UserId]},
       {'ID', [TerminalId]},
-      {'MerchantId', [MerchantId]} ]},
+      {'MerchantID', [MerchantId]} ]},
 
     Order = {'Order', [
       {'OrderID', [OrderId]},
