@@ -1,7 +1,7 @@
 -name game@srv3.kakaranet.com
 -setcookie nitrogen
 +K true
-+A 5
++A 20
 -env ERL_MAX_PORTS 20000
 -env ERL_FULLSWEEP_AFTER 0
 -env ERL_MAX_ETS_TABLES 20000
