@@ -449,9 +449,9 @@ handle_notice(["subscription", "user", UId, "add_to_group"] = Route,
     Message, #state{owner = Owner, type =Type} = State) ->
     ?INFO("queue_action(~p): add_to_group: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),
     {GId, UType} = Message,
+    add_to_group(UId, GId, UType),
     ?INFO("add ~p to group ~p", [UId, GId]),
     nsm_users:subscribe_user_mq(group, UId, GId),
-    add_to_group(UId, GId, UType),
     {noreply, State};
 
 handle_notice(["subscription", "user", UId, "remove_from_group"] = Route,
