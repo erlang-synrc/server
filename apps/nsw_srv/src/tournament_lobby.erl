@@ -60,8 +60,10 @@ body() ->
 
 
 content() ->
-    Id = list_to_integer(wf:q("id")),
-    {ok, T} = nsm_db:get(tournament, Id),
+  case nsm_db:get(tournament, wf:q(id)) of
+  {error, notfound} ->
+      #panel{class="form-001", body=[?_T("Tournament not found"), #panel{style="height:10px;clear:both"}]};
+  {ok, T} ->
     Title = T#tournament.name,
     Tours = T#tournament.tours,
     Game = case T#tournament.game_type of
@@ -70,13 +72,13 @@ content() ->
         game_batak -> "BATAK";
         _ -> ?_T("Unknown")
     end,
-    Zone = Id div 1000000,
+    Zone = T#tournament.id div 1000000,
     GameSrv = "game@srv" ++ integer_to_list(Zone) ++ ".kakaranet.com",
     NodeAtom = case Zone of
                     4 -> nsx_opt:get_env(nsm_db, game_srv_node, 'game@doxtop.cc');
                     _ -> list_to_atom(GameSrv)
                end,
-    TourId = rpc:call(NodeAtom,game_manager,get_tournament,[Id]),
+    TourId = rpc:call(NodeAtom,game_manager,get_tournament,[T#tournament.id]),
     wf:session(TourId,TourId),
     wf:state(tour_long_id, TourId),
 
@@ -111,7 +113,7 @@ content() ->
     {PN2, PI2} = hd(tl(Prizes)),
     {PN3, PI3} = hd(tl(tl(Prizes))),
 
-    case rpc:call(NodeAtom,nsm_srv_tournament_lobby,chat_history,[Id]) of
+    case rpc:call(NodeAtom,nsm_srv_tournament_lobby,chat_history,[T#tournament.id]) of
         H when is_list(H) ->
             add_chat_history(H);
         _ ->
@@ -119,7 +121,7 @@ content() ->
     end,
 
     % is user joined already
-    JoinedList = [P#play_record.who || P <- nsm_tournaments:joined_users(Id)],
+    JoinedList = [P#play_record.who || P <- nsm_tournaments:joined_users(T#tournament.id)],
     UserJoined = lists:member(wf:user(), JoinedList),
 
     {ok,PlanDesc1} = rpc:call(?GAMESRVR_NODE, game_okey_ng_trn_elim,get_plan_desc,[T#tournament.quota,
@@ -189,7 +191,7 @@ content() ->
                      true ->
                         case TourId of
                             "" ->
-                                #link{id=start_button, text=?_T("MANUAL START"), postback={start_tour, Id, NPlayers,Quota,Tours,Speed,T#tournament.awards}};
+                                #link{id=start_button, text=?_T("MANUAL START"), postback={start_tour, T#tournament.id, NPlayers,Quota,Tours,Speed,T#tournament.awards}};
                             _ -> ""
                         end;
                     _ -> ""
@@ -301,8 +303,8 @@ content() ->
         #panel{id=players_table, class="tourlobby_table_panel", body=[
             user_table(get_tour_user_list())
         ]},
-        ""
-    ].
+        ""]
+  end.
 
 
 user_table(Users) ->
