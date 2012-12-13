@@ -4219,13 +4219,13 @@ msgid "Real Price"
 msgstr "Real Price"
 #
 msgid "Resend"
-msgstr "Resend"
+msgstr "Tekrar Gönder"
 #
 msgid "Retailer Price"
 msgstr "Retailer Price"
 #
 msgid "Sent invites"
-msgstr "Sent invites"
+msgstr "Gönderilmiş Davetler"
 #
 msgid "Sorry"
 msgstr "Sorry"
@@ -4842,7 +4842,7 @@ msgid "Home"
 msgstr "Ana Sayfa"
 #
 msgid "Del"
-msgstr "Del"
+msgstr "KALDIR"
 #
 msgid "Deliver!"
 msgstr "Hediyeni al!"
@@ -5239,13 +5239,6 @@ msgid "Sorry, all tables are full, you can create one youself!"
 msgstr "Maalesef şu anda tüm masalar dolu. Kendi masanızı kurabilirsiniz!"
 #
 msgid ""
-"Dear visitor, we respect your enthusiasm, but we can't sell more then $limit"
-"$ TL worth packages a month to a single person. Sorry."
-msgstr ""
-"Dear visitor, we respect your enthusiasm, but we can't sell more then $limit"
-"$ TL worth packages a month to a single person. Sorry."
-#
-msgid ""
 "Our player $player$ $tourstatus$ tournament $name$$desc$ on $pos$ position "
 "with $points$ game points. Tournament goes on with $total$ finalists:\n"
 "                    <br>&nbsp;$pos1$. $winner1$ with $points1$ points;\n"
@@ -5323,3 +5316,32 @@ msgid ""
 msgstr ""
 "User $user$ wants his $gname$ ($vendor_id$, $gift_id$) delivered to $address"
 "$, $city$, $district$, $postal_code$."
+#
+msgid "CVV2 code"
+msgstr "CVV2 code"
+#
+msgid "Plan: "
+msgstr "Plan: "
+#
+msgid "<b>$name$</b> worth $kakush$ kakush"
+msgstr "$kakush$ kakuş değerinde <b>$name$</b> ürününü seçtiniz"
+#
+msgid ""
+"Dear visitor, we respect your enthusiasm, but we can't sell more then $limit"
+"$ TL worth packages a month to a single person. Sorry."
+msgstr ""
+"Dear visitor, we respect your enthusiasm, but we can't sell more then $limit"
+"$ TL worth packages a month to a single person. Sorry."
+#
+msgid "You can see all the prizes here"
+msgstr "Burada hediye ürünlerini görebilirsiniz"
+#
+msgid ""
+"User $uname$ $usurname$ ($user$) wants his $gname$ ($vendor_id$, $gift_id$) "
+"delivered to $address$, $city$, $postal_code$. Tel.: $phone$. Pesonal id # "
+"of Turkish citizen: $personal_id$"
+msgstr ""
+"Talep eden: $uname$ $usurname$ ($user$).\n"
+"Ürün: $gname$, ($vendor_id$, $gift_id$).\n"
+"Adres: $address$, $city$, $postal_code$, $phone$.\n"
+"T.C. Kimlik no.: $personal_id$"

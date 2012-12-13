@@ -157,18 +157,19 @@ section_body(gifts) ->
         #h1{text=?_T("Gifts")},
         #list{class="history-list", id=orders_list, body = [
             begin
-                SDate = site_utils:feed_time_tuple(calendar:now_to_local_time(BoughtTime)),
+%                SDate = site_utils:feed_time_tuple(calendar:now_to_local_time(BoughtTime)),
                 GiftIfAny = nsm_gifts_db:get_gift(GiftId),
                 case element(1, GiftIfAny) of
                     ok ->
                         {ok, {ThisGift, _}} = GiftIfAny,
                         SName = site_utils:decode_letters(ThisGift#gift.gift_name),
                         SKakush = integer_to_list(ThisGift#gift.kakush_point),
-                        SPrice = integer_to_list(ThisGift#gift.kakush_currency),
+%                        SPrice = integer_to_list(ThisGift#gift.kakush_currency),
                         #listitem{body = [
                             #span{body=[
-                                "<b>" ++ SName ++ " </b><font style='color:#777;'>(" ++ SDate ++ ")</font> " ++ ?_T("worth") ++ " " ++
-                                SPrice ++ " <font size=-1>TL</font> " ++ ?_T("for") ++ " " ++ SKakush ++ " " ++ ?_T("kakush")
+                                 ?_TS("<b>$name$</b> worth $kakush$ kakush", [{name, SName}, {kakush, SKakush}])
+%                                "<b>" ++ SName ++ " </b><font style='color:#777;'>(" ++ SDate ++ ")</font> " ++ ?_T("worth") ++ " " ++
+%                                SPrice ++ " <font size=-1>TL</font> " ++ ?_T("for") ++ " " ++ SKakush ++ " " ++ ?_T("kakush")
                             ]},
                             #link{class=btn, postback={deliver, GiftId, BoughtTime, SName, SKakush},  text=?_T("Deliver")}
                         ]};
@@ -262,9 +263,9 @@ section_body(account) ->
     {_, UA} = nsm_db:get(user_address, wf:user()),
     case UA of
         notfound ->
-            Address="", City="", District="", PostalCode="", Phone="", PersonalId="";
+            Address="", City="", PostalCode="", Phone="", PersonalId="";
         _ -> 
-            #user_address{address = Address, city = City, district = District, postal_code = PostalCode, phone = Phone, personal_id = PersonalId} = UA
+            #user_address{address = Address, city = City, postal_code = PostalCode, phone = Phone, personal_id = PersonalId} = UA
     end,
     [
 	#h1{text=?_T("Account")},
@@ -285,9 +286,6 @@ section_body(account) ->
                     #panel{class=row, body = [
                         #label{text = ?_T("City")},
                         #panel{class=text, body = #textbox{id=user_city, text=City}} ]},
-                    #panel{class=row, body = [
-                        #label{text = ?_T("District")},
-                        #panel{class=text, body = #textbox{id=user_district, text=District}} ]},
                     #panel{class=row, body = [
                         #label{text = ?_T("Postal code")},
                         #panel{class=text, body = #textbox{id=user_postal_code, text=PostalCode}} ]},
@@ -760,7 +758,6 @@ u_event(convert_kakush_to_quota) ->
 u_event(user_address_save) ->
     Address = site_utils:decode_letters(wf:q(user_address)),
     City = site_utils:decode_letters(wf:q(user_city)),
-    District = site_utils:decode_letters(wf:q(user_district)),
     PostalCode = wf:q(user_postal_code),
     Phone = wf:q(user_phone),
     PersonalId = wf:q(user_personal_id),
@@ -768,7 +765,6 @@ u_event(user_address_save) ->
         username=wf:user(),
         address = Address,
         city = City,
-        district = District,
         postal_code = PostalCode,
         phone = Phone,
         personal_id = PersonalId
@@ -778,17 +774,15 @@ u_event(user_address_save) ->
 u_event(user_address_cancel) ->
     {_, UA} = nsm_db:get(user_address, wf:user()),
     case UA of
-        #user_address{address = Address, city = City, district = District, postal_code = PostalCode, phone = Phone, personal_id = PersonalId} ->
+        #user_address{address = Address, city = City, postal_code = PostalCode, phone = Phone, personal_id = PersonalId} ->
             wf:set(user_address, Address),
             wf:set(user_city, City),
-            wf:set(user_district, District),
             wf:set(user_postal_code, PostalCode),
             wf:set(user_phone, Phone),
             wf:set(user_personal_id, PersonalId);
         _ ->
             wf:set(user_address, ""),
             wf:set(user_city, ""),
-            wf:set(user_district, ""),
             wf:set(user_postal_code, ""),
             wf:set(user_phone, ""),
             wf:set(user_personal_id, "")
@@ -798,9 +792,9 @@ u_event({deliver, GiftId, GiftTimestamp, SName, SKakush}) ->
     {_, UA} = nsm_db:get(user_address, wf:user()),
     case UA of
         notfound ->
-            Address="", City="", District="", PostalCode="", Phone="", PersonalId="";
+            Address="", City="", PostalCode="", Phone="", PersonalId="";
         _ -> 
-            #user_address{address = Address, city = City, district = District, postal_code = PostalCode, phone = Phone, personal_id = PersonalId} = UA
+            #user_address{address = Address, city = City, postal_code = PostalCode, phone = Phone, personal_id = PersonalId} = UA
     end,
     {_, UInfo} = nsm_users:get_user(wf:user()),
     case UInfo of   
@@ -836,9 +830,6 @@ u_event({deliver, GiftId, GiftTimestamp, SName, SKakush}) ->
                     #panel{class=row, body = [
                         #label{text = ?_T("City")},
                         #panel{class=text, body = #textbox{id=delivery_city, text=City}} ]},
-                    #panel{class=row, body = [
-                        #label{text = ?_T("District")},
-                        #panel{class=text, body = #textbox{id=delivery_district, text=District}} ]},
                     #panel{class=row, body = [
                         #label{text = ?_T("Postal code")},
                         #panel{class=text, body = #textbox{id=delivery_postal_code, text=PostalCode}} ]},
@@ -893,13 +884,12 @@ u_event({process_delivery, UId, GiftId, GiftTimestamp, SName}) ->
                     USurname = wf:q(delivery_surname),
                     Address = wf:q(delivery_address),
                     City = wf:q(delivery_city),
-                    District = wf:q(delivery_district),
                     PostalCode = wf:q(delivery_postal_code),
                     Phone = wf:q(delivery_phone),
                     PersonalId = wf:q(delivery_personal_id),
                     {Vendor, Gift} = GiftId,
-                    MailContent = ?_TS("User $uname$ $usurname$ ($user$) wants his $gname$ ($vendor_id$, $gift_id$) delivered to $address$, $city$, $district$, $postal_code$. Tel.: $phone$. Pesonal id # of Turkish citizen: $personal_id$", 
-                        [{uname, UName}, {usurname, USurname}, {user, UId}, {gname, SName}, {vendor_id, Vendor}, {gift_id, Gift}, {address, Address}, {city, City}, {district, District}, {postal_code, PostalCode}, {phone, Phone}, {personal_id, PersonalId}]),
+                    MailContent = ?_TS("User $uname$ $usurname$ ($user$) wants his $gname$ ($vendor_id$, $gift_id$) delivered to $address$, $city$, $postal_code$. Tel.: $phone$. Pesonal id # of Turkish citizen: $personal_id$", 
+                        [{uname, UName}, {usurname, USurname}, {user, UId}, {gname, SName}, {vendor_id, Vendor}, {gift_id, Gift}, {address, Address}, {city, City}, {postal_code, PostalCode}, {phone, Phone}, {personal_id, PersonalId}]),
                     MailSubj = ?_T("Kakaranet: new delivery"),
                     nsx_msg:notify_email(MailSubj, MailContent, Email),
                     wf:wire(#alert{text=?_T("Ok, the delivery is on its' way now!")}),
