@@ -450,7 +450,7 @@ handle_notice(["subscription", "user", UId, "add_to_group"] = Route,
     ?INFO("queue_action(~p): add_to_group: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),
     {GId, UType} = Message,
     add_to_group(UId, GId, UType),
-    ?INFO("add ~p to group ~p", [UId, GId]),
+    ?INFO("add ~p to group ~p with Type ~p", [UId, GId,UType]),
     nsm_users:subscribe_user_mq(group, UId, GId),
     {noreply, State};
 
@@ -903,6 +903,7 @@ add_comment(#state{feed = Feed, direct = Direct}, From, EntryId, ParentComment,
 
 
 add_to_group(UId, GId, Type) ->
+    ?INFO("U:~p G:~p T:~p",[UId, GId, Type]),
     case nsm_db:get(group_subs, {UId, GId}) of
         {error, notfound} ->
             {ok, Group} = nsm_db:get(group, GId),
@@ -911,7 +912,8 @@ add_to_group(UId, GId, Type) ->
         _ ->
             ok
     end,
-    nsm_db:put(#group_subs{user_id=UId, group_id=GId, user_type=Type}).
+    OK = nsm_db:put({group_subs,UId,GId,Type,0}),
+    ?INFO("RES:~p",[OK]).
 
 remove_from_group(UId, GId) ->
     nsm_db:delete(group_subs, {UId, GId}),

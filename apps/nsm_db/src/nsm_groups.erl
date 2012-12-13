@@ -95,17 +95,12 @@ join_group(GId, User) ->
             {ok, joined};
         #group{username = GId, publicity = _, feed=Feed} ->
             case group_user_type(User, GId) of
-                invsent ->
-                    % Invite was sent to user -- join
-                    add_to_group(User, GId, member),
-                    {ok, joined};
-                req ->
-                    % Request was already sent in past
-                    {error, already_sent};
-                not_in_group ->
-%                    feed:add_direct_message(Feed, User, "Please let me join your group!"),
-                    add_to_group(User, GId, invreq),
-                    {ok, requested}
+                invsent -> add_to_group(User, GId, member), {ok, joined};
+                admin ->   add_to_group(User, GId, member), {ok, joined};
+                member ->  add_to_group(User, GId, member), {ok, joined};
+                req ->     {error, already_sent};
+                invreq ->  {error, already_sent};
+                not_in_group ->  add_to_group(User, GId, invreq), {ok, requested}
             end;
         _ -> {error, notfound}
     end.

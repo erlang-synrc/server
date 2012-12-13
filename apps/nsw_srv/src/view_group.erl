@@ -137,6 +137,7 @@ get_members() ->
     [
         case nsm_groups:group_user_type(UId, GId) of
             moder -> incoming_invites();
+            member -> incoming_invites();
             admin -> incoming_invites();
             _ -> []
         end,
@@ -326,8 +327,9 @@ event(hide_group) ->
 
 event({approve, Who}) ->
     GId = wf:q(id),
-    User = wf:user(),
-    nsx_msg:notify(["subscription", "user", User, "invite_to_group"], {GId, Who}),
+%    User = wf:user(),
+%    nsx_msg:notify(["subscription", "user", User, "invite_to_group"], {GId, Who}),
+    nsm_groups:join_group(GId,Who),
     wf:replace(incoming_invites, incoming_invites()),
     wf:wire(simple_lightbox, #hide{});
 
@@ -373,8 +375,8 @@ event(join_group) ->
     wf:replace(join_notice, Replace);
 %    wf:wire("location.reload()");
 
-event({invite_act, WhoName, Who}) ->
-    wf:update(simple_panel, invition_form(WhoName, Who)),
+event({invite_act, WhoName, GId}) ->
+    wf:update(simple_panel, invition_form(WhoName, GId)),
     wf:wire(simple_lightbox, #show{});
 
 event({leave_group, Group}) when is_record(Group, group) ->
