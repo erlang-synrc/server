@@ -331,7 +331,8 @@ announce_tournament(UserName, Id)->
           AccessToken = case FO#facebook_oauth.access_token of
             undefined ->
               AT = get_access_token(),
-              nsx_msg:notify(["db", "user", UserName , "put"], #facebook_oauth{user_id=FacebookId, access_token=AT});
+              nsx_msg:notify(["db", "user", UserName , "put"], #facebook_oauth{user_id=FacebookId, access_token=AT}),
+              AT;
             AT -> AT
           end,
           Url ="https://graph.facebook.com/"++ FacebookId ++"/kakaranet:create",
