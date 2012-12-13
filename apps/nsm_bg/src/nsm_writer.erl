@@ -396,25 +396,26 @@ handle_notice(["db", "group", GroupId, "update_group"] = Route,
     case catch nsm_groups:group_user_type(UId, GroupId) of
         admin ->
             %% Sanitize input to be sure we don't overwrite any other group
-            SaneUsername = case Username of
-                undefined -> undefined;
-                GroupId -> undefined; % No need to rename if it same
-                _ ->
-                    LCUName = string:to_lower(Username),
-                    case LCUName of
-                        GroupId -> undefined;
-                        _ ->
-                            case nsm_db:get(group, LCUName) of
-                                {ok, #group{}} -> throw({error, already_exists});
-                                {error, _} ->
-                                    case re:run(LCUName, "^[a-z0-9][-a-z0-9_]*$", [dollar_endonly]) of
-                                        nomatch -> throw({error, invalid_username});
-                                        match -> LCUName;
-                                        {match, _} -> LCUName
-                                    end
-                            end
-                    end
-            end,
+            SaneUsername = Username,
+%            SaneUsername = case Username of
+%                undefined -> undefined;
+%                GroupId -> undefined; % No need to rename if it same
+%                _ ->
+%                    LCUName = string:to_lower(Username),
+%                    case LCUName of
+%                        GroupId -> undefined;
+%                        _ ->
+%                            case nsm_db:get(group, LCUName) of
+%                                {ok, #group{}} -> throw({error, already_exists});
+%                                {error, _} ->
+%                                    case re:run(LCUName, "^[a-z0-9][-a-z0-9_]*$", [dollar_endonly]) of
+%                                        nomatch -> throw({error, invalid_username});
+%                                        match -> LCUName;
+%                                        {match, _} -> LCUName
+%                                    end
+%                            end
+%                    end
+%            end,
             SaneName = Name,
             SaneDescription = Description,
             SaneOwner = Owner,
@@ -433,15 +434,15 @@ handle_notice(["db", "group", GroupId, "update_group"] = Route,
                            publicity = coalesce(SanePublicity,Group#group.publicity)},
             ok = nsm_db:put(NewGroup),
             % If username changed, need to update users membership from old group to new one, and remove old group
-            case Username of
-                undefined -> ok;
-                _ ->
-                    ok = nsm_db:delete(group, Group#group.username),
-                    ok = nsm_db:move_group_members(GroupId, Username, coalesce(Name,Group#group.name))
+%            case Username of
+%                undefined -> ok;
+%                _ ->
+%                    ok = nsm_db:delete(group, Group#group.username),
+%                    ok = nsm_db:move_group_members(GroupId, Username, coalesce(Name,Group#group.name))
                     % TODO: change in members' message copies
-            end,
+%            end,
             % Update group name in cache
-            Name =/= undefined andalso nsm_db:change_group_name(coalesce(Username,GroupId), Name),
+%            Name =/= undefined andalso nsm_db:change_group_name(coalesce(Username,GroupId), Name),
             case Owner of
                 undefined -> ok;
                 _ ->
