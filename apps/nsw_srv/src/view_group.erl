@@ -154,7 +154,7 @@ incoming_invites() ->
         begin
             RealName = nsm_users:user_realname(UId),
             #listitem{body=[
-                #link{ text = RealName, postback={invite_act, RealName, GId} }
+                #link{ text = RealName, postback={invite_act, UId, GId} }
             ]}
         end
     || {UId, UType} <- MemberTypes, UType == invreq ],
@@ -292,9 +292,9 @@ editgroup_form(Group) ->
         #grid_clear{}
     ]}].
 
-invition_form(WhoName, Who) ->
-    io:format("Invition form: ~p ~p~n", [WhoName, Who]),
-    Title = #h1{class = "head", text = ?_TS("Invite request from $user$", [{user, WhoName}])},
+invition_form(Who, GId) ->
+    ?INFO("Invition form: ~p ~p", [Who, GId]),
+    Title = #h1{class = "head", text = ?_TS("Invite request from $user$", [{user, Who}])},
     Body = [Title,
             #panel{class=holder, body=
              [#cool_button{postback={approve, Who}, text=?_T("Approve")},
@@ -329,6 +329,7 @@ event({approve, Who}) ->
     GId = wf:q(id),
 %    User = wf:user(),
 %    nsx_msg:notify(["subscription", "user", User, "invite_to_group"], {GId, Who}),
+    ?INFO("Approve: ~p to ~p",[Who,GId]),
     nsm_groups:join_group(GId,Who),
     wf:replace(incoming_invites, incoming_invites()),
     wf:wire(simple_lightbox, #hide{});

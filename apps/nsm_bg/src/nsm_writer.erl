@@ -448,10 +448,10 @@ handle_notice(["db", "group", GId, "remove_group"] = Route,
 handle_notice(["subscription", "user", UId, "add_to_group"] = Route,
     Message, #state{owner = Owner, type =Type} = State) ->
     ?INFO("queue_action(~p): add_to_group: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),
-    {GId, UType} = Message,
-    add_to_group(UId, GId, UType),
-    ?INFO("add ~p to group ~p with Type ~p", [UId, GId,UType]),
-    nsm_users:subscribe_user_mq(group, UId, GId),
+    {GId, Who, UType} = Message,
+    add_to_group(Who, GId, UType),
+    ?INFO("add ~p to group ~p with Type ~p by ~p", [Who, GId,UType,UId]),
+    nsm_users:subscribe_user_mq(group, Who, GId),
     {noreply, State};
 
 handle_notice(["subscription", "user", UId, "remove_from_group"] = Route,

@@ -42,8 +42,8 @@ create_group_directly_to_db(UId, GId, Name, Desc, Publicity) ->
     nsm_groups:add_to_group_directly_to_db(UId, GId, admin),
     GId.
 
-add_to_group(UId, GId, Type) -> % for internal use only
-    nsx_msg:notify(["subscription", "user", UId, "add_to_group"], {GId, Type}).
+add_to_group(Who, GId, Type, Owner) -> % for internal use only
+    nsx_msg:notify(["subscription", "user", Owner, "add_to_group"], {GId, Who, Type}).
 
 add_to_group_directly_to_db(UId, GId, Type) ->
     nsm_db:put(#group_subs{user_id=UId, group_id=GId, user_type=Type}),
@@ -91,22 +91,22 @@ join_group(GId, User) ->
     case Group of
         #group{username = GId, publicity = public} ->
             % Join to this group
-            add_to_group(User, GId, member),
+            add_to_group(User, GId, member, Group#group.creator),
             {ok, joined};
         #group{username = GId, publicity = _, feed=Feed} ->
             case group_user_type(User, GId) of
-                invsent -> add_to_group(User, GId, member), {ok, joined};
-                admin ->   add_to_group(User, GId, member), {ok, joined};
-                member ->  add_to_group(User, GId, member), {ok, joined};
+                invsent -> add_to_group(User, GId, member, Group#group.creator), {ok, joined};
+                admin ->   add_to_group(User, GId, member, Group#group.creator), {ok, joined};
+                member ->  add_to_group(User, GId, member, Group#group.creator), {ok, joined};
                 req ->     {error, already_sent};
-                invreq ->  {error, already_sent};
-                not_in_group ->  add_to_group(User, GId, invreq), {ok, requested}
+                invreq ->  ?INFO("JOIN_GROUP: ~p",[{User,GId}]), add_to_group(User, GId, member, Group#group.creator), {ok, joined};
+                not_in_group ->  add_to_group(User, GId, invreq, Group#group.creator), {ok, requested}
             end;
         _ -> {error, notfound}
     end.
 
 change_group_user_type(UId, GId, Type) ->
-    nsx_msg:notify(["subscription", "user", UId, "add_to_group"], {GId, Type}).
+    nsx_msg:notify(["subscription", "user", UId, "add_to_group"], {GId, UId, Type}).
 
 group_exists(GId) ->
     {_, Group} = get_group(GId),
