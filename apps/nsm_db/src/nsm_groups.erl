@@ -103,7 +103,7 @@ join_group(GId, User) ->
                     % Request was already sent in past
                     {error, already_sent};
                 not_in_group ->
-                    feed:add_direct_message(Feed, User, "Please let me join your group!"),
+%                    feed:add_direct_message(Feed, User, "Please let me join your group!"),
                     add_to_group(User, GId, invreq),
                     {ok, requested}
             end;
