@@ -325,31 +325,22 @@ announce_tournament(UserName, Id)->
   case nsm_db:get(user, UserName) of
     {error, notfound}-> fail;
     {ok, #user{facebook_id=FacebookId}} when FacebookId =/= undefined->
-      case nsm_db:get(facebook_oauth, FacebookId) of
-        {error, notfound}-> fail;
-        {ok, #facebook_oauth{} = FO}->
-          AccessToken = case FO#facebook_oauth.access_token of
-            undefined ->
-              AT = get_access_token(),
-              nsx_msg:notify(["db", "user", UserName , "put"], #facebook_oauth{user_id=FacebookId, access_token=AT}),
-              AT;
-            AT -> AT
-          end,
-          Url ="https://graph.facebook.com/"++ FacebookId ++"/kakaranet:create",
+      AccessToken = get_access_token(),
+      nsx_msg:notify(["db", "user", UserName , "put"], #facebook_oauth{user_id=FacebookId, access_token=AccessToken}),
+      Url ="https://graph.facebook.com/"++ FacebookId ++"/kakaranet:create",
 
-          case nsm_db:get(tournament, Id) of
-            {error, not_found} -> fail;
-            {ok, #tournament{} = T} ->
-              {{Y, M, D}, {H, Min, _}} = Now  = calendar:now_to_local_time(now()),
-              TournamentTime = calendar:datetime_to_gregorian_seconds({T#tournament.start_date, T#tournament.start_time}),
-              MessageTime = calendar:datetime_to_gregorian_seconds(Now),
-              CreatedTime = lists:flatten(io_lib:format("~p-~p-~pT~p:~p", [Y,M,D,H,Min])),
-              Body = "access_token="++AccessToken++
-              "&tournament="++ ?HTTP_ADDRESS ++ "/tournament/lobby/public/id/" ++ integer_to_list(Id)
-              ++"&created_time="++CreatedTime
-              ++"&expires_in="++integer_to_list(TournamentTime-MessageTime),
-              httpc:request(post, {Url, [], "application/x-www-form-urlencoded", Body}, [], [])
-            end
+      case nsm_db:get(tournament, Id) of
+        {error, not_found} -> fail;
+        {ok, #tournament{} = T} ->
+          {{Y, M, D}, {H, Min, _}} = Now  = calendar:now_to_local_time(now()),
+          TournamentTime = calendar:datetime_to_gregorian_seconds({T#tournament.start_date, T#tournament.start_time}),
+          MessageTime = calendar:datetime_to_gregorian_seconds(Now),
+          CreatedTime = lists:flatten(io_lib:format("~p-~p-~pT~p:~p", [Y,M,D,H,Min])),
+          Body = "access_token="++AccessToken
+            ++ "&tournament="++ ?HTTP_ADDRESS ++ "/tournament/lobby/public/id/" ++ integer_to_list(Id)
+            ++ "&created_time="++CreatedTime
+            ++ "&expires_in="++integer_to_list(TournamentTime-MessageTime),
+          httpc:request(post, {Url, [], "application/x-www-form-urlencoded", Body}, [], [])
       end;
     _ -> fail
   end.
