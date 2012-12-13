@@ -349,24 +349,12 @@ process_failure(OrderId, IntCode, Reason) when
     IntCode == 63;   %% you are not authorized to do this
     IntCode == 75    %% password entry limit exceed
     ->
-    case nsm_membership_packages:get_purchase(OrderId) of
-        {ok, Purchase} ->
-            %% FIXME: add user blocking
-            wf:logout(),
-            UserId = Purchase#membership_purchase.user_id,
-            ?ERROR("payment ~p critical error: ~p, User ~p will be blocked.", [OrderId, IntCode, UserId]),
-            UserId;
-        _ ->
-            ?ERROR("unexpected payment ~p critical error: ~p. Purchase not found.
-                Logged in user ~p will be blocked ", [OrderId, IntCode, wf:user()]),
-            wf:user()
-    end,
-    nsx_msg:notify(["purchase", "user", wf:user(), "set_purchase_state"], 
+    nsx_msg:notify(["purchase", "user", wf:user(), "set_purchase_state"],
         {OrderId, ?MP_STATE_FAILED, [[{code, IntCode}, {reason, Reason}]]}),
     Message = ?_TS("Your account is blocked.<br/> Reason: $reason$ <br/> Please, contact with administration to unblock account.",
         [{reason, Reason}]),
     EncodedMessage = encode_reason(Message),
-    wf:redirect(?_U("/index/message/")++EncodedMessage);
+    wf:redirect(?_U("/buy/credit_card/failure/")++EncodedMessage);
 process_failure(OrderId, IntCode, Reason) ->
     nsx_msg:notify(["purchase", "user", wf:user(), "set_purchase_state"], 
         {OrderId, ?MP_STATE_FAILED, [[{code, IntCode}, {reason, Reason}]]}).
