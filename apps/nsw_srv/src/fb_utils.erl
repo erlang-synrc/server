@@ -326,6 +326,7 @@ announce_tournament(UserName, Id)->
     {error, notfound}-> fail;
     {ok, #user{facebook_id=FacebookId}} when FacebookId =/= undefined->
       AccessToken = get_access_token(),
+      ?INFO("Access token received: ~p", [AccessToken]),
       nsx_msg:notify(["db", "user", UserName , "put"], #facebook_oauth{user_id=FacebookId, access_token=AccessToken}),
       Url ="https://graph.facebook.com/"++ FacebookId ++"/kakaranet:create",
 
@@ -340,7 +341,8 @@ announce_tournament(UserName, Id)->
             ++ "&tournament="++ ?HTTP_ADDRESS ++ "/tournament/lobby/public/id/" ++ integer_to_list(Id)
             ++ "&created_time="++CreatedTime
             ++ "&expires_in="++integer_to_list(TournamentTime-MessageTime),
-          httpc:request(post, {Url, [], "application/x-www-form-urlencoded", Body}, [], [])
+          Resp = httpc:request(post, {Url, [], "application/x-www-form-urlencoded", Body}, [], []),
+          ?INFO("Send announcement: ~p", [Resp])
       end;
     _ -> fail
   end.
