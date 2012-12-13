@@ -341,6 +341,8 @@ set_prize(No, Id, ImageUrl) ->
     AImg = list_to_atom("img_prize_"++SNo),
     wf:replace(AImg, #image{id=AImg, style="max-width:80px; max-height:80px;", image=ImageUrl}).
 
+api_event(Name, Tag, Args) ->  webutils:api_event(Name, Tag, Args).
+
 event({newtour_slider}) ->
     Min1000 = list_to_integer(wf:q(newtour_slider_values_min)),
     Max1000 = list_to_integer(wf:q(newtour_slider_values_max)),

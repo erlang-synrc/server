@@ -546,6 +546,8 @@ get_tour_user_list() ->
     || #play_record{who=U, kakush=K, game_points=GP, realname=RN} <- JoinedUsersList, U /= wf:user()],
     [CurUser] ++ OtherUsers.
 
+api_event(Name, Tag, Args) -> webutils:api_event(Name, Tag, Args).
+
 event(chat) ->
     User = wf:user(),
     TID = wf:state(tournament_id),
