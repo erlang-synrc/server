@@ -168,7 +168,187 @@ okey_rules() ->
 
                     #panel{style="padding:10px 30px;", text="Oyun ve puanlama seçenekleri masa açılışında set edilir. Masa açılışında herhangi bir oyun seçilmez ise standart oyun yüklenir."},
 
-                    okey_puan_table_tr()
+                    okey_puan_table_tr(),
+
+                    #h1{text="Hediye puanı (kakuş), kota ve oyun puanı parametreleri aşağıdaki gibidir.", style="font-size:20px; margin-bottom:4px;"},
+                    #table { rows=[
+                        #tablerow { cells=[
+                            #tablecell {style="padding:3px;", body=#panel{style="background-color:#FB7; padding:0 6px;", body="1"}},
+                            #tablecell {style="padding-left:10px;", body="kakuş (sistemin verdiği hediye puanı &mdash; oyunun 1.si için)"}
+                        ]},
+                        #tablerow { cells=[
+                            #tablecell {style="padding:3px;", body=#panel{style="background-color:#FB7; padding:0 6px;", body="2"}},
+                            #tablecell {style="padding-left:10px;", body="kakuş (sistemin verdiği hediye puanı &mdash; masadaki diğerleri için)"}
+                        ]},
+                        #tablerow { cells=[
+                            #tablecell {style="padding:3px;", body=#panel{style="background-color:#FB7; padding:0 6px;", body="3"}},
+                            #tablecell {style="padding-left:10px;", body="kota (oyuncudan düşülecek kota sayısı)"}
+                        ]},
+                        #tablerow { cells=[
+                            #tablecell {style="padding:3px;", body=#panel{style="background-color:#FB7; padding:0 6px;", body="4"}},
+                            #tablecell {style="padding-left:10px;", body="oyun puanı (oyun sonunda kazananın elde edeceği oyun puanı)"}
+                        ]}
+                    ]},
+    
+                    #br{},
+
+                    #table {rows=[
+                        #tablerow {cells=[
+                            #tablecell {style="padding:5px; background-color:#BE8; font-weight:bold;", body="seçilen oyun sayısı", align=right},
+                            #tablecell {style="padding:5px;", body=""},
+                            #tablecell {style="padding:5px; background-color:#BE8;", colspan=4, body="10", align=center},
+                            #tablecell {style="padding:5px;", body=" "},
+                            #tablecell {style="padding:5px; background-color:#BE8;", colspan=4, body="20", align=center},
+                            #tablecell {style="padding:5px;", body=" "},
+                            #tablecell {style="padding:5px; background-color:#BE8;", colspan=4, body="40", align=center},
+                            #tablecell {style="padding:5px;", body=" "},
+                            #tablecell {style="padding:5px; background-color:#BE8;", colspan=4, body="60", align=center},
+                            #tablecell {style="padding:5px;", body=" "},
+                            #tablecell {style="padding:5px; background-color:#BE8;", colspan=4, body="80", align=center}
+                        ]},
+                        #tablerow {cells=[
+                            #tablecell {style="padding:5px;", body=""},
+                            #tablecell {style="padding:5px;", body=""},
+                            #tablecell {style="padding:5px; background-color:#FB7; min-width:16px;", body="1", align=center},
+                            #tablecell {style="padding:5px; background-color:#FB7; min-width:16px;", body="2", align=center},
+                            #tablecell {style="padding:5px; background-color:#FB7; min-width:16px;", body="3", align=center},
+                            #tablecell {style="padding:5px; background-color:#FB7; min-width:16px;", body="4", align=center},
+                            #tablecell {style="padding:5px;", body=""},
+                            #tablecell {style="padding:5px; background-color:#FB7; min-width:16px;", body="1", align=center},
+                            #tablecell {style="padding:5px; background-color:#FB7; min-width:16px;", body="2", align=center},
+                            #tablecell {style="padding:5px; background-color:#FB7; min-width:16px;", body="3", align=center},
+                            #tablecell {style="padding:5px; background-color:#FB7; min-width:16px;", body="4", align=center},
+                            #tablecell {style="padding:5px;", body=""},
+                            #tablecell {style="padding:5px; background-color:#FB7; min-width:16px;", body="1", align=center},
+                            #tablecell {style="padding:5px; background-color:#FB7; min-width:16px;", body="2", align=center},
+                            #tablecell {style="padding:5px; background-color:#FB7; min-width:16px;", body="3", align=center},
+                            #tablecell {style="padding:5px; background-color:#FB7; min-width:16px;", body="4", align=center},
+                            #tablecell {style="padding:5px;", body=""},
+                            #tablecell {style="padding:5px; background-color:#FB7; min-width:16px;", body="1", align=center},
+                            #tablecell {style="padding:5px; background-color:#FB7; min-width:16px;", body="2", align=center},
+                            #tablecell {style="padding:5px; background-color:#FB7; min-width:16px;", body="3", align=center},
+                            #tablecell {style="padding:5px; background-color:#FB7; min-width:16px;", body="4", align=center},
+                            #tablecell {style="padding:5px;", body=""},
+                            #tablecell {style="padding:5px; background-color:#FB7; min-width:16px;", body="1", align=center},
+                            #tablecell {style="padding:5px; background-color:#FB7; min-width:16px;", body="2", align=center},
+                            #tablecell {style="padding:5px; background-color:#FB7; min-width:16px;", body="3", align=center},
+                            #tablecell {style="padding:5px; background-color:#FB7; min-width:16px;", body="4", align=center}
+                        ]},
+                        #tablerow {cells=[
+                            #tablecell {style="padding:5px; font-weight:bold;", body="standart türü", align=right},
+                            #tablecell {style="padding:5px;", body=""},
+                            #tablecell {style="padding:5px;", body="6", align=center},
+                            #tablecell {style="padding:5px;", body="2", align=center},
+                            #tablecell {style="padding:5px;", body="10", align=center},
+                            #tablecell {style="padding:5px;", body="8", align=center},
+                            #tablecell {style="padding:5px;", body=""},
+                            #tablecell {style="padding:5px;", body="15", align=center},
+                            #tablecell {style="padding:5px;", body="3", align=center},
+                            #tablecell {style="padding:5px;", body="20", align=center},
+                            #tablecell {style="padding:5px;", body="15", align=center},
+                            #tablecell {style="padding:5px;", body=""},
+                            #tablecell {style="padding:5px;", body="32", align=center},
+                            #tablecell {style="padding:5px;", body="7", align=center},
+                            #tablecell {style="padding:5px;", body="40", align=center},
+                            #tablecell {style="padding:5px;", body="30", align=center},
+                            #tablecell {style="padding:5px;", body=""},
+                            #tablecell {style="padding:5px;", body="50", align=center},
+                            #tablecell {style="padding:5px;", body="11", align=center},
+                            #tablecell {style="padding:5px;", body="60", align=center},
+                            #tablecell {style="padding:5px;", body="60", align=center},
+                            #tablecell {style="padding:5px;", body=""},
+                            #tablecell {style="padding:5px;", body="70", align=center},
+                            #tablecell {style="padding:5px;", body="15", align=center},
+                            #tablecell {style="padding:5px;", body="80", align=center},
+                            #tablecell {style="padding:5px;", body="120", align=center}
+                        ]},
+                        #tablerow {cells=[
+                            #tablecell {style="padding:5px; font-weight:bold;", body="tek-çift", align=right},
+                            #tablecell {style="padding:5px;", body=""},
+                            #tablecell {style="padding:5px;", body="6", align=center},
+                            #tablecell {style="padding:5px;", body="2", align=center},
+                            #tablecell {style="padding:5px;", body="10", align=center},
+                            #tablecell {style="padding:5px;", body="10", align=center},
+                            #tablecell {style="padding:5px;", body=""},
+                            #tablecell {style="padding:5px;", body="15", align=center},
+                            #tablecell {style="padding:5px;", body="3", align=center},
+                            #tablecell {style="padding:5px;", body="20", align=center},
+                            #tablecell {style="padding:5px;", body="20", align=center},
+                            #tablecell {style="padding:5px;", body=""},
+                            #tablecell {style="padding:5px;", body="32", align=center},
+                            #tablecell {style="padding:5px;", body="7", align=center},
+                            #tablecell {style="padding:5px;", body="40", align=center},
+                            #tablecell {style="padding:5px;", body="40", align=center},
+                            #tablecell {style="padding:5px;", body=""},
+                            #tablecell {style="padding:5px;", body="50", align=center},
+                            #tablecell {style="padding:5px;", body="11", align=center},
+                            #tablecell {style="padding:5px;", body="60", align=center},
+                            #tablecell {style="padding:5px;", body="80", align=center},
+                            #tablecell {style="padding:5px;", body=""},
+                            #tablecell {style="padding:5px;", body="70", align=center},
+                            #tablecell {style="padding:5px;", body="15", align=center},
+                            #tablecell {style="padding:5px;", body="80", align=center},
+                            #tablecell {style="padding:5px;", body="160", align=center}
+                        ]},
+                        #tablerow {cells=[
+                            #tablecell {style="padding:5px; font-weight:bold;", body="renkli", align=right},
+                            #tablecell {style="padding:5px;", body=""},
+                            #tablecell {style="padding:5px;", body="6", align=center},
+                            #tablecell {style="padding:5px;", body="2", align=center},
+                            #tablecell {style="padding:5px;", body="10", align=center},
+                            #tablecell {style="padding:5px;", body="15", align=center},
+                            #tablecell {style="padding:5px;", body=""},
+                            #tablecell {style="padding:5px;", body="15", align=center},
+                            #tablecell {style="padding:5px;", body="3", align=center},
+                            #tablecell {style="padding:5px;", body="20", align=center},
+                            #tablecell {style="padding:5px;", body="30", align=center},
+                            #tablecell {style="padding:5px;", body=""},
+                            #tablecell {style="padding:5px;", body="32", align=center},
+                            #tablecell {style="padding:5px;", body="7", align=center},
+                            #tablecell {style="padding:5px;", body="40", align=center},
+                            #tablecell {style="padding:5px;", body="60", align=center},
+                            #tablecell {style="padding:5px;", body=""},
+                            #tablecell {style="padding:5px;", body="50", align=center},
+                            #tablecell {style="padding:5px;", body="11", align=center},
+                            #tablecell {style="padding:5px;", body="60", align=center},
+                            #tablecell {style="padding:5px;", body="120", align=center},
+                            #tablecell {style="padding:5px;", body=""},
+                            #tablecell {style="padding:5px;", body="70", align=center},
+                            #tablecell {style="padding:5px;", body="15", align=center},
+                            #tablecell {style="padding:5px;", body="80", align=center},
+                            #tablecell {style="padding:5px;", body="240", align=center}
+                        ]},
+                        #tablerow {cells=[
+                            #tablecell {colspan=26, style="padding:5px;", body=" "}
+                        ]},
+                        #tablerow {cells=[
+                            #tablecell {style="padding:5px;", body=""},
+                            #tablecell {style="padding:5px;", body=""},
+                            #tablecell {style="padding:5px; background-color:#FB7;", body="1", align=center},
+                            #tablecell {style="padding:5px; background-color:#FB7;", body="2", align=center},
+                            #tablecell {style="padding:5px; background-color:#FB7;", body="3", align=center},
+                            #tablecell {style="padding:5px; background-color:#FB7;", body="4", align=center},
+                            #tablecell {colspan=20}
+                        ]},
+                        #tablerow {cells=[
+                            #tablecell {style="padding:5px; font-weight:bold;", body="10 dan düşmeli", align=right},
+                            #tablecell {style="padding:5px;", body="", align=center},
+                            #tablecell {style="padding:5px;", body="5", align=center},
+                            #tablecell {style="padding:5px;", body="2", align=center},
+                            #tablecell {style="padding:5px;", body="8", align=center},
+                            #tablecell {style="padding:5px;", body="10", align=center},
+                            #tablecell {colspan=20}
+                        ]},
+                        #tablerow {cells=[
+                            #tablecell {style="padding:5px; font-weight:bold;", body="Hemen Oyna", align=right},
+                            #tablecell {style="padding:5px;", body="", align=center},
+                            #tablecell {style="padding:5px;", body="0", align=center},
+                            #tablecell {style="padding:5px;", body="0", align=center},
+                            #tablecell {style="padding:5px;", body="0", align=center},
+                            #tablecell {style="padding:5px;", body="0", align=center},
+                            #tablecell {colspan=20}
+                        ]}
+                    ]}
 
                 ]},
                 #link{text=?_T("Hide"), class="matchmaker_game_rules", style="float:right", postback=hide_rules},
@@ -222,7 +402,7 @@ okey_rules() ->
                             #tablecell { style="padding:5px; margin-top:5px; text-align:left; ", body="7 doubles can also open a hand. These doubles must be made of a
                                 set of two tiles that have the same color
                                 and number. ( 7- 7 both
-                                red or 4-4 both green etc....) This is called going double. It is required to arrange
+                                red or 4-4 both green etc...) This is called going double. It is required to arrange
                                 the tiles 2 by 2 with a gap in between them. When the 15th tile is drawn and
                                 placed upon the pile, you can declare that you have completed the hand."}
                         ]},
