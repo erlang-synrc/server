@@ -391,7 +391,8 @@ handle_notice(["system", "create_group"] = Route,
 handle_notice(["db", "group", GroupId, "update_group"] = Route, 
     Message, #state{owner=ThisGroupOwner, type=Type} = State) ->
     ?INFO("queue_action(~p): update_group: Owner=~p, Route=~p, Message=~p", [self(), {Type, ThisGroupOwner}, Route, Message]),    
-    {UId, Username, Name, Description, Owner, Publicity} = Message,
+    {UId, Username2, Name, Description, Owner, Publicity} = Message,
+    Username = ThisGroupOwner, % quick fix maxim@synrc.com
     case catch nsm_groups:group_user_type(UId, GroupId) of
         admin ->
             %% Sanitize input to be sure we don't overwrite any other group
