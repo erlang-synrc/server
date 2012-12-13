@@ -349,7 +349,7 @@ process_failure(OrderId, IntCode, Reason) when
     IntCode == 63;   %% you are not authorized to do this
     IntCode == 75    %% password entry limit exceed
     ->
-    User = case nsm_membership_packages:get_purchase(OrderId) of
+    case nsm_membership_packages:get_purchase(OrderId) of
         {ok, Purchase} ->
             %% FIXME: add user blocking
             wf:logout(),
@@ -363,10 +363,6 @@ process_failure(OrderId, IntCode, Reason) when
     end,
     nsx_msg:notify(["purchase", "user", wf:user(), "set_purchase_state"], 
         {OrderId, ?MP_STATE_FAILED, [[{code, IntCode}, {reason, Reason}]]}),
-    BlockedUser = User#user{status = banned},
-    nsx_msg:notify(["db", "user", wf:user(), "put"], {BlockedUser}),
-    wf:logout(),
-
     Message = ?_TS("Your account is blocked.<br/> Reason: $reason$ <br/> Please, contact with administration to unblock account.",
         [{reason, Reason}]),
     EncodedMessage = encode_reason(Message),
