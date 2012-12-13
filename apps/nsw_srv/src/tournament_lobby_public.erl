@@ -226,9 +226,10 @@ get_timer_for_now() ->
           end;
         false -> 0
       end,
+      ?INFO("Facebook Lobby Redirect:~p",[Id]),
+      TId = Id,
       case DTime =< 0 of
         true -> 
-          TId = wf:state(tournament_int_id),
           Zone = TId div 1000000,
           GameSrv = "game@srv" ++ integer_to_list(Zone) ++ ".kakaranet.com",
           NodeAtom = case Zone of
@@ -243,7 +244,7 @@ get_timer_for_now() ->
               end;
             _ -> ?_T("NOW")
           end;
-        false ->
+         false ->
           S = DTime rem 60,
           M = (DTime div 60) rem 60,
           H = (DTime div 3600),
