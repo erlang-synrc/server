@@ -151,7 +151,7 @@ incoming_invites() ->
     MemberTypes = nsm_groups:list_group_members_with_types(GId),
     Invites = [
         begin
-            RealName = nsm_users:real_name(UId),
+            RealName = nsm_users:user_realname(UId),
             #listitem{body=[
                 #link{ text = RealName, postback={invite_act, RealName, GId} }
             ]}
