@@ -111,149 +111,111 @@ UI.admin.RowEditor = Ext.extend(Ext.ux.grid.RowEditor, {
 });
 
 UI.admin.PackagesGrid = Ext.extend(Ext.grid.EditorGridPanel, {
-			onPackageSave : function(data) {
-			},
-			initComponent : function() {
-				var self = this;
+  onPackageSave : function(data) {},
+  initComponent : function() {
+    var self = this;
 
-				var ds = new Ext.data.ArrayStore({
-							idIndex : 0,
-							fields : ['id', 'name', 'payment', 'gifts_points',
-									'net_membership', 'quota', {
-										name : 'available',
-										type : 'boolean'
-									}, 'price'],
-							data : this.data || []
-						});
+    var ds = new Ext.data.ArrayStore({
+      idIndex : 0,
+      fields : ['id', 'name', 'payment', 'gifts_points', 'net_membership', 'quota', {name : 'available', type : 'boolean'}, 'price'],
+      data : this.data || [] 
+    });
 
-				this.rowEditor = new UI.admin.RowEditor({
-							saveText : 'Save',
-							errorSummary : false,
-							clicksToEdit : 2,
-							listeners : {
-								beforeedit : function(ed, rowIdx) {
-								},
+    this.rowEditor = new UI.admin.RowEditor({
+      saveText : 'Save',
+      errorSummary : false,
+      clicksToEdit : 2,
+      listeners : {
+        beforeedit : function(ed, rowIdx) {},
+        afteredit : function(roweditor, changes, record, rowIndex) {
+          // if id undefined - we create new record
+          if (!record.get("id")) {
+            data = changes;
+          } else {
+            data = record.data;
+          }
+          self.onPackageSave(data);
+          self.getStore().commitChanges();
+        },
+        canceledit : function(ed) {
+          var r = ed.record, st = self.getStore();
+          if (!r.get('id')) {
+            st.remove(r);
+          }
+          st.rejectChanges();
+        }
+      }
+    });
 
-								afteredit : function(roweditor, changes,
-										record, rowIndex) {
-									// if id undefined - we create new record
-									if (!record.get("id")) {
-										data = changes;
-									} else {
-										data = record.data;
-									}
-									self.onPackageSave(data);
-									self.getStore().commitChanges();
-								},
-								canceledit : function(ed) {
-									var r = ed.record, st = self.getStore();
-									if (!r.get('id')) {
-										st.remove(r);
-									}
-									st.rejectChanges();
-								}
-							}
-						});
+    paymentEditor = new Ext.form.ComboBox({
+      typeAhead : true,
+      triggerAction : 'all',
+      lazyRender : true,
+      mode : 'local',
+      store : new Ext.data.ArrayStore({
+        id : 0,
+        fields : ['id'],
+        data : [['credit_card'], ['mobile'], ['paypal'], ['wire_transfer'], ['facebook']]
+      }),
+      valueField : 'id',
+      displayField : 'id'
+    });
 
-				paymentEditor = new Ext.form.ComboBox({
-							typeAhead : true,
-							triggerAction : 'all',
-							lazyRender : true,
-							mode : 'local',
-							store : new Ext.data.ArrayStore({
-										id : 0,
-										fields : ['id'],
-										data : [['credit_card'], ['mobile'],
-												['paypal'], ['wire_transfer'],
-												['facebook']]
-									}),
-							valueField : 'id',
-							displayField : 'id'
-						})
+  Ext.apply(this, {
+    sm : this.sm || new Ext.grid.RowSelectionModel({ singleSelect : true }),
+    store : ds,
+    plugins : [this.rowEditor],
+    view : new Ext.ux.grid.BufferView({ cacheSize : 50 }),
+    colModel : new Ext.grid.ColumnModel({
+      defaults : {
+        sortable : true
+      },
+      columns : [
+        { header : 'No',
+          id : 'name',
+          dataIndex : 'name',
+          editor : new Ext.form.NumberField({allowBlank : false})},
+        { header : 'Payment type',
+          id : 'payment',
+          dataIndex : 'payment',
+          editor : paymentEditor},
+        { header : 'Deducted for gifts',
+          id : 'gifts_points',
+          dataIndex : 'gifts_points',
+          editor : new Ext.form.NumberField({allowBlank : false})},
+        { header : 'Net membership',
+          id : 'net_membership',
+          dataIndex : 'net_membership',
+          editor : new Ext.form.NumberField({allowBlank : false})},
+        { header : 'Quota',
+          id : 'quota',
+          dataIndex : 'quota',
+          editor : new Ext.form.NumberField({allowBlank : false})},
+        { header : 'Price',
+          id : 'price',
+          dataIndex : 'price',
+          editor : new Ext.form.NumberField({allowBlank : false})},
+        { header : 'Available for sale',
+          id : 'available',
+          dataIndex : 'available',
+          editor : new Ext.form.Checkbox()}]
+    }),
 
-				Ext.apply(this, {
-							sm : this.sm || new Ext.grid.RowSelectionModel({
-										singleSelect : true
-									}),
-							store : ds,
-							plugins : [this.rowEditor],
-							view : new Ext.ux.grid.BufferView({
-										cacheSize : 50
-									}),
-							colModel : new Ext.grid.ColumnModel({
-										defaults : {
-											sortable : true
-										},
-										columns : [{
-													header : 'Name',
-													id : 'name',
-													dataIndex : 'name',
-													editor : new Ext.form.TextField(
-															{
-																allowBlank : false
-															})
-												}, {
-													header : 'Payment type',
-													id : 'payment',
-													dataIndex : 'payment',
-													editor : paymentEditor
-												}, {
-													header : 'Deducted for gifts',
-													id : 'gifts_points',
-													dataIndex : 'gifts_points',
-													editor : new Ext.form.NumberField(
-															{
-																allowBlank : false
-															})
-												}, {
-													header : 'Net membership',
-													id : 'net_membership',
-													dataIndex : 'net_membership',
-													editor : new Ext.form.NumberField(
-															{
-																allowBlank : false
-															})
-												}, {
-													header : 'Quota',
-													id : 'quota',
-													dataIndex : 'quota',
-													editor : new Ext.form.NumberField(
-															{
-																allowBlank : false
-															})
-												}, {
-													header : 'Price',
-													id : 'price',
-													dataIndex : 'price',
-													editor : new Ext.form.NumberField(
-															{
-																allowBlank : false
-															})
-												}, {
-													header : 'Available for sale',
-													id : 'available',
-													dataIndex : 'available',
-													editor : new Ext.form.Checkbox()
-												}]
-									}),
+    tbar : [{
+      iconCls : 'icon-new',
+      text : 'Add',
+      handler : function() {
+        var defaultData = { id : -1 };
+        self.rowEditor.stopEditing();
 
-							tbar : [{
-										iconCls : 'icon-new',
-										text : 'Add',
-										handler : function() {
-											var defaultData = {
-												id : -1
-											};
-											self.rowEditor.stopEditing();
-
-											store = self.getStore();
-											n = new store.recordType(defaultData);
-											store.insert(0, n);
-											self.getView().refresh();
-											self.rowEditor.startEditing(0);
-										}
-									}]
-						});
+        store = self.getStore();
+        n = new store.recordType(defaultData);
+        store.insert(0, n);
+        self.getView().refresh();
+        self.rowEditor.startEditing(0);
+      }
+    }]
+});
 
 				UI.admin.PackagesGrid.superclass.initComponent.call(this);
 			}

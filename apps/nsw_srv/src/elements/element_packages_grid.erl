@@ -95,42 +95,39 @@ callback(#api{anchor = Id, name = Name}, DataVar) ->
 
 
 api_event(savePackage, Anchor, [Data]) ->
-    ?DBG("Anchor: ~p, Data: ~p", [Anchor, Data]),
-    case proplists:get_value(id, Data, undefined) of
-        %% new record
-        RawId when is_integer(RawId) andalso RawId < 0  ->
-            MP = create_record(Data),
-            PrevId = nsm_db:get(id_seq, "membership_package"),  % this is bad
-            Id = case PrevId of
-                {error,notfound} -> 0;
-            	{ok,{id_seq, _, DBId}} -> DBId
-            end,
-            nsx_msg:notify(["system", "add_package"], {MP}),
-            wf:wire(wf:f("obj('~s').grid.updateId('~p')", [Anchor, Id]));   
+  MP = create_record(Data),
+  case proplists:get_value(id, Data, undefined) of
+    RawId when is_integer(RawId) andalso RawId < 0  ->
+      PrevId = nsm_db:get(id_seq, "membership_package"),  % this is bad
+      Id = case PrevId of
+        {error,notfound} -> 0;
+        {ok,{id_seq, _, DBId}} -> DBId
+      end,
+      nsx_msg:notify(["system", "add_package"], {MP}),
+      wf:wire(wf:f("obj('~s').grid.updateId('~p')", [Anchor, Id]));
 
-        %% for already defined packages only available_for_sale property
-        %% can be changed
-        Id ->
-            AFS = proplists:get_value(available, Data, false),
-            case nsm_membership_packages:available_for_sale(Id, AFS) of
-                ok ->
-                    ok;
-                {error, Reason} ->
-                    ?ERROR("~p: unable to update availability to ~p ~p",
-                           [Id, AFS, Reason])
-            end
-    end.
+    Id ->
+      case nsm_db:get(membership_package, Id) of
+        {error, notfound} -> fail;
+        {ok, _} -> nsm_db:put(MP#membership_package{id=Id})
+      end
+  end.
 
 create_record(Data) ->
-    GV = fun(K, Def) -> proplists:get_value(K, Data, Def) end,
-
-    #membership_package{no           = list_to_integer(GV(name, "-1")),
-                        payment_type = payment_type(GV(payment, "paypal")),
-						quota        = GV(quota, 0),
-                        amount       = GV(price, 0),
-						deducted_for_gifts = GV(gifts_points, 0),
-						net_membership     = GV(net_membership, 0),
-                        available_for_sale = GV(available, false)}.
+  GV = fun(K, Def) -> proplists:get_value(K, Data, Def) end,
+  No = case GV(name, -1) of
+    N when is_integer(N) -> N;
+    N2 when is_list(N2) -> list_to_integer(N2);
+    _ -> -1
+  end,
+  #membership_package{
+    no           = No,
+    payment_type = payment_type(GV(payment, "paypal")),
+    quota        = GV(quota, 0),
+    amount       = GV(price, 0),
+    deducted_for_gifts = GV(gifts_points, 0),
+    net_membership     = GV(net_membership, 0),
+    available_for_sale = GV(available, false)}.
 
 
 payment_type("mobile")        -> mobile;
