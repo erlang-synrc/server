@@ -261,3 +261,13 @@ update_play_records() -> % this fails!
             nsm_db:put(PR);
         _ -> nsm_db:put(E)
     end || E <- AllPlayRecords].
+
+extend_tournaments_future_stub() ->
+    All = nsm_db:all(tournament),
+    [ case T of {tournament, Name,Id,GT,Desc,Creator,Created,SD,ST,ED,
+                             Status,Q,T,A,Teams,WQ,Awatar,Owner,PC,Speed,Type,GM} ->
+            ET = {tournament, Name,Id,GT,Desc,Creator,Created,SD,ST,ED,
+                             Status,Q,T,A,Teams,WQ,Awatar,Owner,PC,Speed,Type,GM,"additional fields"},
+            nsm_db:put(ET);
+        _ -> nsm_db:put(T)
+          end || T <- All].

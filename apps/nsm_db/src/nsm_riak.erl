@@ -1116,7 +1116,7 @@ join_tournament(UserId, TournamentId) ->
                  tournament = TournamentId,
                  team = User#user.team,
                  game_id = undefined, 
-
+		 other = now(),
                  realname = RN,
                  game_points = GP,
                  kakush = K,
