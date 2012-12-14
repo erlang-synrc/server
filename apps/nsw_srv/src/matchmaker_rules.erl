@@ -5,7 +5,7 @@
 -include("gettext.hrl").
 
 okey_rules() ->
-    case site_utils:detect_language() of    % I'd move this somewhere separate in a while, but right now I don't want to mess anything so...
+    case site_utils:detect_language() of
         "tr" ->
             [
                 #link{text=?_T("Hide"), class="matchmaker_game_rules", style="float:right;", postback=hide_rules},
@@ -189,12 +189,20 @@ okey_rules() ->
                             #tablecell {style="padding-left:10px;", body="oyun puanı (oyun sonunda kazananın elde edeceği oyun puanı)"}
                         ]}
                     ]},
-    
-                    #br{},
+                    #br{}
+                ]},
 
+                #panel{class=holder, style="margin-left:30px; width:900px; font-size:14px;", body=[
                     #table {rows=[
                         #tablerow {cells=[
-                            #tablecell {style="padding:5px; background-color:#BE8; font-weight:bold;", body="seçilen oyun sayısı", align=right},
+                            #tablecell {style="padding:5px;", body=""},
+                            #tablecell {style="padding:5px; font-weight:bold; font-size:16px; background-color:#ABF;", align=center, body="oyun"},
+                            #tablecell {style="padding:5px; font-weight:bold; font-size:16px; background-color:#89C;", align=center, body="türü"},
+                            #tablecell {style="padding:5px;", colspan=25, body=""}
+                        ]},
+                        #tablerow {cells=[
+                            #tablecell {style="padding:5px; background-color:#BE8; font-weight:bold;", rowspan=2, body="seçilen<br>oyun sayısı", align=right},
+                            #tablecell {style="padding:5px; background-color:#BE8; ", colspan=2, body=""},
                             #tablecell {style="padding:5px;", body=""},
                             #tablecell {style="padding:5px; background-color:#BE8;", colspan=4, body="10", align=center},
                             #tablecell {style="padding:5px;", body=" "},
@@ -207,6 +215,7 @@ okey_rules() ->
                             #tablecell {style="padding:5px; background-color:#BE8;", colspan=4, body="80", align=center}
                         ]},
                         #tablerow {cells=[
+                            #tablecell {style="padding:5px;", body=""},
                             #tablecell {style="padding:5px;", body=""},
                             #tablecell {style="padding:5px;", body=""},
                             #tablecell {style="padding:5px; background-color:#FB7; min-width:16px;", body="1", align=center},
@@ -235,7 +244,9 @@ okey_rules() ->
                             #tablecell {style="padding:5px; background-color:#FB7; min-width:16px;", body="4", align=center}
                         ]},
                         #tablerow {cells=[
-                            #tablecell {style="padding:5px; font-weight:bold;", body="standart türü", align=right},
+                            #tablecell {style="padding:5px;", rowspan=8, body=""},
+                            #tablecell {style="padding:5px; font-weight:bold; background-color:#ABF;", rowspan=8, body="OKEY"},
+                            #tablecell {style="padding:5px; font-weight:bold; background-color:#89C;", body="standart", align=right},
                             #tablecell {style="padding:5px;", body=""},
                             #tablecell {style="padding:5px;", body="6", align=center},
                             #tablecell {style="padding:5px;", body="2", align=center},
@@ -263,7 +274,7 @@ okey_rules() ->
                             #tablecell {style="padding:5px;", body="120", align=center}
                         ]},
                         #tablerow {cells=[
-                            #tablecell {style="padding:5px; font-weight:bold;", body="tek-çift", align=right},
+                            #tablecell {style="padding:5px; font-weight:bold; background-color:#89C;", body="tek-çift", align=right},
                             #tablecell {style="padding:5px;", body=""},
                             #tablecell {style="padding:5px;", body="6", align=center},
                             #tablecell {style="padding:5px;", body="2", align=center},
@@ -291,7 +302,7 @@ okey_rules() ->
                             #tablecell {style="padding:5px;", body="160", align=center}
                         ]},
                         #tablerow {cells=[
-                            #tablecell {style="padding:5px; font-weight:bold;", body="renkli", align=right},
+                            #tablecell {style="padding:5px; font-weight:bold; background-color:#89C;", body="renkli", align=right},
                             #tablecell {style="padding:5px;", body=""},
                             #tablecell {style="padding:5px;", body="6", align=center},
                             #tablecell {style="padding:5px;", body="2", align=center},
@@ -331,7 +342,7 @@ okey_rules() ->
                             #tablecell {colspan=20}
                         ]},
                         #tablerow {cells=[
-                            #tablecell {style="padding:5px; font-weight:bold;", body="10 dan düşmeli", align=right},
+                            #tablecell {style="padding:5px; font-weight:bold; background-color:#89C;", body="10 dan düşmeli", align=right},
                             #tablecell {style="padding:5px;", body="", align=center},
                             #tablecell {style="padding:5px;", body="5", align=center},
                             #tablecell {style="padding:5px;", body="2", align=center},
@@ -340,7 +351,7 @@ okey_rules() ->
                             #tablecell {colspan=20}
                         ]},
                         #tablerow {cells=[
-                            #tablecell {style="padding:5px; font-weight:bold;", body="Hemen Oyna", align=right},
+                            #tablecell {style="padding:5px; font-weight:bold; background-color:#89C;", body="Hemen Oyna", align=right},
                             #tablecell {style="padding:5px;", body="", align=center},
                             #tablecell {style="padding:5px;", body="0", align=center},
                             #tablecell {style="padding:5px;", body="0", align=center},
@@ -349,7 +360,6 @@ okey_rules() ->
                             #tablecell {colspan=20}
                         ]}
                     ]}
-
                 ]},
                 #link{text=?_T("Hide"), class="matchmaker_game_rules", style="float:right", postback=hide_rules},
                 #br{},

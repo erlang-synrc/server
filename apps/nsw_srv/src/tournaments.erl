@@ -99,7 +99,7 @@ content() ->
                 #label{class="alltour_title_label", body=?_T("TOURNAMENTS PAGE")}
             ]
         },        
-        #panel{id=explaination_holder, body=[]},
+        #panel{id=explaination_holder, style="font-size:14px;", body=[]},
 
         #panel{style="position:relative; left:-25px; width:960px;", body=[
             #panel{id=top_selectors, style="height:700px; font-size:16px; ", body=[
@@ -195,7 +195,8 @@ content() ->
                 all_tours(1)
             ]}
         ]},
-        #link{text="TURNUVAYA KATILMAK..!", class="matchmaker_game_rules", style="float:none; position:absolute; left:650px; top:15px;", postback=show_page_1}
+        #link{text="TURNUVAYA KATILMAK..!", class="matchmaker_game_rules", style="float:none; position:absolute; left:550px; top:15px;", postback=show_page_1},
+        #link{text="YENİ TURNUVA KURMAK..!", class="matchmaker_game_rules", style="float:none; position:absolute; left:750px; top:15px;", postback=show_page_2}
     ].
 
 featured_tours() ->
@@ -518,7 +519,21 @@ event({bar, B}) ->
 
 event(show_page_1) ->
     wf:update(explaination_holder, [
+        #br{},
+        #br{},
+        #link{text=?_T("Hide"), class="matchmaker_game_rules", postback=hide_explaination},
         #template{file=code:priv_dir(nsw_srv)++"/templates/tournament_exp_1.html"},
+        #link{text=?_T("Hide"), class="matchmaker_game_rules", postback=hide_explaination},
+        #br{},
+        #br{}
+    ]);
+
+event(show_page_2) ->
+    wf:update(explaination_holder, [
+        #br{},
+        #br{},
+        #link{text=?_T("Hide"), class="matchmaker_game_rules", postback=hide_explaination},
+        #template{file=code:priv_dir(nsw_srv)++"/templates/tournament_exp_2.html"},
         #link{text=?_T("Hide"), class="matchmaker_game_rules", postback=hide_explaination},
         #br{},
         #br{}
