@@ -568,7 +568,7 @@ fast_timeouts() ->
     nsm_db:put({config,"games/okey/turn_timeout_normal",200}).
 
 make_admin(User) ->
-    {ok,U} = nsm_db:get(User),
+    {ok,U} = nsm_db:get(user, User),
     nsm_db:put(U#user{type = admin}).
 
 make_rich(User) -> 
