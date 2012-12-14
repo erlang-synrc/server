@@ -569,7 +569,10 @@ fast_timeouts() ->
 
 make_admin(User) ->
     {ok,U} = nsm_db:get(user, User),
-    nsm_db:put(U#user{type = admin}).
+    nsm_db:put(U#user{type = admin}),
+    nsm_acl:define_access({user, U#user.username}, {feature, admin}, allow),
+    nsm_acl:define_access({user_type, admin}, {feature, admin}, allow),
+    ok.
 
 make_rich(User) -> 
     Q = nsm_db:get_config("accounts/default_quota",  300),
