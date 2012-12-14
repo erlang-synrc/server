@@ -104,14 +104,15 @@ content() ->
         #panel{style="position:relative; left:-25px; width:960px;", body=[
             #panel{id=top_selectors, style="height:700px; font-size:16px; ", body=[
                 #panel{style="position:absolute; background-color:#e4e8e9; top:84px; height:360px; width:960px;", body=[]},
-                #link{style="position:absolute; top:52px; left:-1px;", class="alltour_bars alltour_bar_1", text=?_T("FEATURED"), postback={bar, featured}},
-                #link{style="position:absolute; top:52px; left:149px;", class="alltour_bars alltour_bar_2", text=?_T("TIME APPROACHING"), postback={bar, soon}},
-                #link{style="position:absolute; top:52px; left:356px;", class="alltour_bars alltour_bar_3", text=?_T("NOT FILL UP"), postback={bar, filled}},
-                #panel{style="position:absolute; top:52px; left:548px;", class="alltour_bars alltour_bar_4", body=[]},
                 #panel{style="position:absolute; top:52px; left:772px;", class="alltour_bars alltour_bar_5", body=[]},
-                #image{image="/images/tournament/tournaments_page/bar_dividers.png", style="position:absolute; top:61px; left:148px;"},
-                #image{image="/images/tournament/tournaments_page/bar_dividers.png", style="position:absolute; top:61px; left:355px;"},
-                #image{image="/images/tournament/tournaments_page/bar_dividers.png", style="position:absolute; top:61px; left:547px;"},
+                #link{style="position:absolute; top:52px; left:0px; width:300px;", class="alltour_bars alltour_bar_2", text=?_T("FINISHED IN PAST"), postback={bar, past}},
+                #link{style="position:absolute; top:52px; left:300px;width:300px;", class="alltour_bars alltour_bar_2", text=?_T("NOW PLAYING"), postback={bar, present}},
+                #link{style="position:absolute; top:52px; left:600px;width:300px;", class="alltour_bars alltour_bar_2", text=?_T("FUTURE TOURNAMENTS"), postback={bar, future}},
+%                #panel{style="position:absolute; top:52px; left:900px;", class="alltour_bars alltour_bar_4", body=[]},
+%                #image{image="/images/tournament/tournaments_page/bar_dividers.png", style="position:absolute; top:61px	; left:900px;"},
+%                #image{image="/images/tournament/tournaments_page/bar_dividers.png", style="position:absolute; top:61px; left:355px;"},
+%                #image{image="/images/tournament/tournaments_page/bar_dividers.png", style="position:absolute; top:61px; left:547px;"},
+
     %            #image{image="/images/tournament/tournaments_page/bar_dividers.png", style="position:absolute; top:61px; left:771px;"},
                 
                 #panel{id=featured_tours, style="position:absolute; top:112px; left:43px; width:880px;", body=[
@@ -201,6 +202,20 @@ content() ->
 
 featured_tours() ->
     AllTours = nsm_db:all(tournament),
+    Online = lists:flatten([ begin 
+                                    Id = T#tournament.id,
+                                    Zone = Id div 1000000,
+                                    GameSrv = "game@srv" ++ integer_to_list(Zone) ++ ".kakaranet.com",
+                                    NodeAtom = case Zone of
+                                               4 -> nsx_opt:get_env(nsm_db, game_srv_node, 'game@doxtop.cc');
+                                               _ -> list_to_atom(GameSrv)
+                                    end,
+                                    case rpc:call(NodeAtom, game_manager,get_tournament,[Id]) of
+                                         [] -> [];
+                                         _ -> T
+                                    end
+             end || T=#tournament{id=Id} <- AllTours]),
+
     FilteredTours = case wf:state(bar) of
         featured -> 
             PreFiltered = [{T, new_tournament:get_prizes_total(A)} || T=#tournament{awards=A} <- AllTours],
@@ -212,6 +227,12 @@ featured_tours() ->
         filled ->
             PreFiltered = [{T, 100 * length(nsm_tournaments:joined_users(Id)) / PC} || T=#tournament{id=Id, players_count=PC} <- AllTours],
             [T || {T, F} <- PreFiltered, F >= ?BAR_FILL_PERCENT];
+        past ->
+            [ T || T=#tournament{id=Id,status=Status} <- AllTours, Status =/= created];
+        future ->
+            [ T || T=#tournament{status=created} <- AllTours];
+        present ->
+            Online;
         _ ->
             AllTours
     end,
@@ -306,7 +327,7 @@ test_tourblock() ->
         "/images/tournament/tournaments_page/tournament_default_avatar.png",
         ["http://www.enilginc.com/images/products/00/08/45/845_buyuk.jpg", 
          "http://www.enilginc.com/images/products/00/02/12/212_buyuk.jpg",
-         "http://www.enilginc.com/images/products/00/07/31/731_buyuk.jpg"]).
+         "http://www.enilginc.com/images/products/00/07/31/731_buyuk.jpg"],16).
 
 tourblock(Id) ->
     {ok, T} = nsm_db:get(tournament, Id),
@@ -317,6 +338,7 @@ tourblock(Id) ->
         game_batak -> "BATAK";
         _ -> "WTF"
     end,
+
     Date = integer_to_list(element(3, T#tournament.start_date)) ++ "." ++ 
            integer_to_list(element(2, T#tournament.start_date)) ++ "." ++ 
            integer_to_list(element(1, T#tournament.start_date)),
@@ -336,14 +358,24 @@ tourblock(Id) ->
              "/images/tournament/new_tournament/question.png",
              "/images/tournament/new_tournament/question.png"]
     end,
-    tourblock(Id, Title, Game, Date, NPlayers, Quota, Avatar, Prizes).
+    tourblock(Id, Title, Game, Date, NPlayers, Quota, Avatar, Prizes, NPlayers).
 
-tourblock(Id, Title, Game, Date, NGames, Quota, Avatar, Prizes) ->
+tourblock(Id, Title, Game, Date, NGames, Quota, Avatar, Prizes,PlayersCount) ->
+    Color = case PlayersCount of 
+         16   -> "#fff000";
+         64   -> "#ffd000";
+         128  -> "#ffb000";
+         256  -> "#ff7F00";
+         512  -> "#ff5000";
+         1024 -> "#ff3000";
+         2048 -> "#ff1000"
+    end,
+ 
     #link{url=?_U("tournament/lobby/id/")++integer_to_list(Id), body=[
         #panel{style="width:200px; height:308px; border:1px solid #adb1b0; background-color:#f6f9ff; position:relative;", body=[
             #panel{style="width:200px; height:28; position:absolute; left:-1px; top:-1px; 
                     font:14px 'Gotham Rounded Bold','Trebuchet MS'; color:#fff; text-shadow:0 1px 1px #353535; text-align:center; padding-top:6px;
-                    background-color:#595959; border:1px solid #adb1b0;", body=[Title]},
+                    background-color:"++Color++"; border:1px solid #adb1b0;", body=[Title]},
             #image{image=Avatar, style="width: 184px; position:absolute; left:7px; top:34px;
                     -moz-border-radius:2px;
                     -webkit-border-radius:2px;

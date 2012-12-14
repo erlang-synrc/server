@@ -5717,50 +5717,51 @@ body.view_table .user-list .user .table_paid_user_avatar {  /* this from add sty
 }
 
 .alltour_bars {
-    display:block; 
+    display:block;
+    width:300px; height:60px;
     font:15px 'Gotham Rounded Bold','Trebuchet MS'; color:#fff; text-shadow:0 1px 1px #353535;
     border:0px; line-height:46px; text-align:center;
 }
 
 .alltour_bar_1 {
-    width:152px; height:60px; background: url(/images/tournament/tournaments_page/bar_1_normal.png);
+    background: url(/images/tournament/tournaments_page/bar_1_normal.png);
 }
 
 .alltour_bar_1:hover {
-    width:152px; height:60px; background: url(/images/tournament/tournaments_page/bar_1_hover.png);
+    background: url(/images/tournament/tournaments_page/bar_1_hover.png);
     text-decoration:none;
 }
 
 .alltour_bar_1:active {
-    width:152px; height:60px; background: url(/images/tournament/tournaments_page/bar_1_pressed.png);
+    background: url(/images/tournament/tournaments_page/bar_1_pressed.png);
     text-decoration:none; line-height:48px;
 }
 
 .alltour_bar_2 {
-    width:209px; height:60px; background: url(/images/tournament/tournaments_page/bar_2_normal.png);
+    background: url(/images/tournament/tournaments_page/bar_1_normal.png);
 }
 
 .alltour_bar_2:hover {
-    width:209px; height:60px; background: url(/images/tournament/tournaments_page/bar_2_hover.png);
+    background: url(/images/tournament/tournaments_page/bar_1_hover.png);
     text-decoration:none;
 }
 
 .alltour_bar_2:active {
-    width:209px; height:60px; background: url(/images/tournament/tournaments_page/bar_2_pressed.png);
+    background: url(/images/tournament/tournaments_page/bar_1_pressed.png);
     text-decoration:none; line-height:48px;
 }
 
 .alltour_bar_3 {
-    width:194px; height:60px; background: url(/images/tournament/tournaments_page/bar_3_normal.png);
+    background: url(/images/tournament/tournaments_page/bar_1_normal.png);
 }
 
 .alltour_bar_3:hover {
-    width:194px; height:60px; background: url(/images/tournament/tournaments_page/bar_3_hover.png);
+    background: url(/images/tournament/tournaments_page/bar_1_hover.png);
     text-decoration:none;
 }
 
 .alltour_bar_3:active {
-    width:194px; height:60px; background: url(/images/tournament/tournaments_page/bar_3_pressed.png);
+    height:60px; background: url(/images/tournament/tournaments_page/bar_1_pressed.png);
     text-decoration:none; line-height:48px;
 }
 

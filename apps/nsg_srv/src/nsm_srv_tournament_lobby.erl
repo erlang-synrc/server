@@ -69,18 +69,17 @@ handle_call(chat_history, _From, #state{chat_history = ChatHistory} = State) ->
 handle_cast(start_tournament, State) ->  
     Tour = State#state.tournament,
     TId = Tour#tournament.id,
-    case game_manager:get_tournament(TId) of % to prevent cancelling running tournament
-        "" ->
+    case game_manager:get_tournament(TId) of
+        [] ->
             NumberOfUsers = Tour#tournament.players_count,
             TIDinDB = Tour#tournament.id,
             Quota = Tour#tournament.quota,
             Tours = Tour#tournament.tours,
             Speed = Tour#tournament.speed,
-            Gifts = Tour#tournament.awards, % this is now a list of ids, but it might change in a while!
-            case length(nsm_tournaments:joined_users(TId)) /= NumberOfUsers of 
-                true -> % canceled
+            Gifts = Tour#tournament.awards,
+            case length(nsm_tournaments:joined_users(TId)) < NumberOfUsers of
+                true ->
                     ?INFO("Tournament ~p canceled", [TId]),
-%                    nsx_msg:notify(["system", "put"], Tour#tournament{status=canceled});
                     nsm_db:put(Tour#tournament{status=canceled});
                 false ->
                     TourId = game_manager:start_tournament(TIDinDB,1,NumberOfUsers,Quota,Tours,Speed,Gifts),

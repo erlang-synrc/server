@@ -338,10 +338,11 @@ create_standalone_game(Game, Params, Users) ->
 start_tournament(TourId,NumberOfTournaments,NumberOfPlayers,Quota,Tours,Speed,GiftIds) ->
 
     {ok,Tournament} = nsm_db:get(tournament,TourId),
-
     ImagioUsers = nsm_auth:imagionary_users(),
-
-    RealPlayers = [ erlang:list_to_binary(U#play_record.who) || U <- nsm_tournaments:joined_users(TourId)],
+    RealPlayersUnsorted = nsm_tournaments:joined_users(TourId),
+    RealPlayersPR = lists:sort(fun(#play_record{other=AX},#play_record{other=BX}) -> AX < BX end,RealPlayersUnsorted),
+    ?INFO("Head: ~p",[hd(RealPlayersPR)]),
+    RealPlayers = [list_to_binary(Who)||#play_record{who=Who}<-RealPlayersPR],
 
     Registrants = case NumberOfPlayers > length(RealPlayers) of
                        true -> nsm_db:put(Tournament#tournament{status=canceled}), RealPlayers

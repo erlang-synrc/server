@@ -124,9 +124,13 @@ content() ->
     JoinedList = [P#play_record.who || P <- nsm_tournaments:joined_users(T#tournament.id)],
     UserJoined = lists:member(wf:user(), JoinedList),
 
-    {ok,PlanDesc1} = rpc:call(?GAMESRVR_NODE, game_okey_ng_trn_elim,get_plan_desc,[T#tournament.quota,
+    {ok,PlanDesc1} = case rpc:call(?GAMESRVR_NODE, game_okey_ng_trn_elim,get_plan_desc,[T#tournament.quota,
                                                                                    T#tournament.players_count,
-                                                                                   T#tournament.tours]),
+                                                                                   T#tournament.tours]) of
+                            {ok,PX} -> {ok,PX};
+                             _ -> {ok,[]}
+                        end,
+
 %    PlanDesc1 = ["yok","yok","yok","yok","yok","yok","yok","Final"],
 
 %    PlanDesc = ling:join(PlanDesc1," / "),
