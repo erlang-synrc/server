@@ -5345,3 +5345,21 @@ msgstr ""
 "Ürün: $gname$, ($vendor_id$, $gift_id$).\n"
 "Adres: $address$, $city$, $postal_code$, $phone$.\n"
 "T.C. Kimlik no.: $personal_id$"
+#
+msgid "FINISHED IN PAST"
+msgstr " KAZANANLAR"
+#
+msgid "FUTURE TOURNAMENTS"
+msgstr "GELENLER"
+#
+msgid "NOW PLAYING"
+msgstr "DEVAM EDENLER"
+#
+msgid "Tournament not found"
+msgstr "Tournament not found"
+#
+msgid "Tournament Setup!"
+msgstr "YENİ TURNUVA KURMAK!"
+#
+msgid "Turnament Rules!"
+msgstr "TURNUVAYA KATILMAK!"

@@ -90,13 +90,10 @@ route(Path) ->
     RequestBridge = wf_context:request_bridge(),
     case IsStatic of
         true ->
-            % Serve this up as a static file.
             {static_file, Path};
-
         false ->
             Path1 = string:strip(Path, both, $/),
             Tokens = string:tokens(Path1, "/"),
-            % Check for a loaded module. If not found, then try to load it.
             case try_load_module(Tokens) of
                 {Module, PathInfo} ->
                     UA = RequestBridge:header(user_agent),

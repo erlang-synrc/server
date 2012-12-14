@@ -196,8 +196,8 @@ content() ->
                 all_tours(1)
             ]}
         ]},
-        #link{text="TURNUVAYA KATILMAK..!", class="matchmaker_game_rules", style="float:none; position:absolute; left:550px; top:15px;", postback=show_page_1},
-        #link{text="YENİ TURNUVA KURMAK..!", class="matchmaker_game_rules", style="float:none; position:absolute; left:750px; top:15px;", postback=show_page_2}
+        #link{text=?_T("Turnament Rules!"), class="matchmaker_game_rules", style="float:none; position:absolute; left:550px; top:15px;", postback=show_page_1},
+        #link{text=?_T("Tournament Setup!"), class="matchmaker_game_rules", style="float:none; position:absolute; left:750px; top:15px;", postback=show_page_2}
     ].
 
 featured_tours() ->
