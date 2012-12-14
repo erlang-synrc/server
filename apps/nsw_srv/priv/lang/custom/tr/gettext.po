@@ -3784,7 +3784,7 @@ msgid "and"
 msgstr "ve"
 #
 msgid "gunsandbutter"
-msgstr "grup kısa adını yazın"
+msgstr "grup_kısa_adını_yazın"
 #
 msgid "like this."
 msgstr "bunu beğenenler."

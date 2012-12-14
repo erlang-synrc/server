@@ -20,7 +20,7 @@
          awards, 
          teams :: list(#team{}), % { bulk list of fixed teams/placeholders created on tournament start from waiting_queue }
          waiting_queue, % { play_record, added here when user wants to join tournament }
-         last,
+         avatar,
          owner,
          players_count,
          speed,
