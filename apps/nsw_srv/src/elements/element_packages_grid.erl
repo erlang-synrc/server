@@ -107,6 +107,7 @@ api_event(savePackage, Anchor, [Data]) ->
       wf:wire(wf:f("obj('~s').grid.updateId('~p')", [Anchor, Id]));
 
     Id ->
+      ?INFO("Update package: id= ~p  base=~p~n", [Id, MP]),
       case nsm_db:get(membership_package, Id) of
         {error, notfound} -> fail;
         {ok, _} -> nsm_db:put(MP#membership_package{id=Id})
@@ -132,7 +133,7 @@ create_record(Data) ->
 
 payment_type("mobile")        -> mobile;
 payment_type("paypal")        -> paypal;
-payment_type("faceboook")     -> facebook;
+payment_type("facebook")     -> facebook;
 payment_type("wire_transfer") -> wire_transfer;
 payment_type("credit_card")   -> credit_card;
-payment_type(_)               -> error.
+payment_type(T)               -> ?INFO("Payment type ~p", [T]),error.
