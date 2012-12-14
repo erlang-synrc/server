@@ -124,7 +124,6 @@ get_media_thumb(E, ViewMediaPanelId) ->
 
 
 entry_element(E, Comments, Avatar, {MediaThumb, MediaLists0}, _TargetMedia, Anchor) ->
-    ?PRINT(E),
     LocalTime = calendar:now_to_local_time(E#entry.created_time),
     Time = site_utils:feed_time_tuple(LocalTime),
     case E#entry.type of 
