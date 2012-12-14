@@ -18,7 +18,7 @@
          quota,
          tours,
          awards, 
-         teams :: list(#team{}), % { bulk list of fixed teams/placeholders created on tournament start from waiting_queue }
+         winners :: list(), % [{UserId, Position, GiftId}]
          waiting_queue, % { play_record, added here when user wants to join tournament }
          avatar,
          owner,
