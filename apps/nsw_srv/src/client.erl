@@ -29,19 +29,18 @@ adobe_client() ->
 
 token() ->
     U = wf:user(),
-%    T = rpc:call(?GAMESRVR_NODE,auth_server,store_token,[generate_token0(),U]),
     GameType = ["flashvars.gameType = \"", ?_U(wf:q(game_name)),"\";"],
 
     Debug = case nsm_db:get(config,"is_production",false) of
-                 {ok,true} -> "";
-                 {ok,false} -> wf:f("flashvars.debugMode = \"true\";\n")
+                 {ok,true} -> "flashvars.debugMode = \"false\";\n";
+                 {ok,false} -> "flashvars.debugMode = \"true\";\n"
             end,
 
     ?INFO("Starting CLient: ~p",[{?SERVER_HOST,?SERVER_PORT}]),
 
     [
         io_lib:fwrite("var flashvars = {};~n", []),
-        Debug,
+        io_lib:fwrite(Debug,[]),
         io_lib:fwrite("flashvars.port = ~b;~n", [?SERVER_PORT]),
         io_lib:fwrite("flashvars.locale = '~s';~n", [site_utils:detect_language()]),
         io_lib:fwrite(GameType, []),
