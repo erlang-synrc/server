@@ -1,15 +1,5 @@
 -module(cursor).
-
--export([size/1,
-         current_size/1,
-         pos/1,
-         new/1,
-         new/2,
-         next/2,
-         prev/2,
-         page_next/2,
-         page_prev/2,
-         get_page/3]).
+-compile(export_all).
 
 -include("types.hrl").
 -include_lib("eunit/include/eunit.hrl").
@@ -27,6 +17,9 @@ new(List) ->
 
 new(List, K) ->
     #cursor{cafter = lists:keysort(K, List), data_size = length(List)}.
+
+new_fun(List, Fun) ->
+    #cursor{cafter = lists:sort(Fun, List), data_size = length(List)}.
 
 size(Cursor) ->
     Cursor#cursor.data_size.
