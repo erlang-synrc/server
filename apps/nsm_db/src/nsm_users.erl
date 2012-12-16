@@ -493,8 +493,6 @@ build_user_relations(User, Groups) ->
      rk( [db, user, User, put] ),
      rk( [subscription, user, User, add_to_group]),
      rk( [subscription, user, User, remove_from_group]),
-     rk( [subscription, user, User, invite_to_group]),
-     rk( [subscription, user, User, reject_invite_to_group]),
      rk( [subscription, user, User, leave_group]),
      rk( [login, user, User, update_after_login]),
      rk( [likes, user, User, add_like]),

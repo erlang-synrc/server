@@ -36,13 +36,13 @@ getPageContent(Page) ->
 
 get_members() ->
     [
-        incoming_invites(),
+        incoming_requests(),
         outgoing_invites(),
         []
     ].
 
-incoming_invites() ->
-    view_group:incoming_invites().
+incoming_requests() ->
+    view_group:incoming_requests().
 
 outgoing_invites() ->
     [].

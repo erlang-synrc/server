@@ -38,8 +38,9 @@ req_invite() ->
     UId = wf:user(),
     case {nsm_groups:group_publicity(GId), nsm_groups:group_user_type(UId, GId)} of
         {_, member} -> [];
-        {_, admin} -> [];
         {public, _} -> join_form();
+        {private, req} -> requested();
+        {private, reqrejected} -> req_rejected_form(GId);
         {_, _} -> req_invite_form()
     end.
 
@@ -92,6 +93,15 @@ req_invite_form() ->
             ]}
     ].
 
+req_rejected_form(GId) ->
+    [
+        #panel{id=join_notice, class="join-notice", body=[
+                ?_T("Your request have been rejected "),
+                #cool_button{postback={do_leave, GId}, text=?_T("Leave group")},
+                #grid_clear{}
+            ]}
+    ].
+
 %TODO
 hidden_form() ->
     [
@@ -135,10 +145,8 @@ get_members() ->
     GId = wf:q(id),
     UId = wf:user(),
     [
-        case nsm_groups:group_user_type(UId, GId) of
-            moder -> incoming_invites();
-            member -> incoming_invites();
-            admin -> incoming_invites();
+        case nsm_groups:user_is_owner(UId, GId) of
+            true -> incoming_requests();
             _ -> []
         end,
         case nsm_groups:user_has_access(UId, GId) of
@@ -147,24 +155,24 @@ get_members() ->
         end
     ].
 
-incoming_invites() ->
+incoming_requests() ->
     GId = wf:q(id),
     MemberTypes = nsm_groups:list_group_members_with_types(GId),
-    Invites = [
+    Requests = [
         begin
             RealName = nsm_users:user_realname(UId),
             #listitem{body=[
                 #link{ text = RealName, postback={invite_act, UId, GId} }
             ]}
         end
-    || {UId, UType} <- MemberTypes, UType == invreq ],
-    case Invites of
+    || {UId, UType} <- MemberTypes, UType == req ],
+    case Requests of
         [] ->
             [];
         _ ->
-            [#panel{class="box", id=incoming_invites, body=[
+            [#panel{class="box", id=incoming_requests, body=[
                #h3{text=?_T("Invite requests")},
-               #list{class="list-photo", body=[ Invites ]}
+               #list{class="list-photo", body=[ Requests ]}
             ]}]
     end.
 
@@ -327,18 +335,19 @@ event(hide_group) ->
 
 event({approve, Who}) ->
     GId = wf:q(id),
-%    User = wf:user(),
-%    nsx_msg:notify(["subscription", "user", User, "invite_to_group"], {GId, Who}),
+    Owner = wf:user(),
     ?INFO("Approve: ~p to ~p",[Who,GId]),
-    nsm_groups:join_group(GId,Who),
-    wf:replace(incoming_invites, incoming_invites()),
+    nsm_groups:approve_request(Who, GId, Owner),
+%    Res = nsm_groups:join_group(GId,Who),
+    wf:replace(incoming_requests, incoming_requests()),
     wf:wire(simple_lightbox, #hide{});
 
 event({reject, Who}) ->
     GId = wf:q(id),
-    User = wf:user(),
-    nsx_msg:notify(["subscription", "user", User, "reject_invite_to_group"], {GId, Who, ?_T("Sorry")}),
-    wf:replace(incoming_invites, incoming_invites()),
+    Owner = wf:user(),
+    nsm_groups:reject_request(Who, GId, Owner),
+%    nsx_msg:notify(["subscription", "user", User, "reject_invite_to_group"], {GId, Who, ?_T("Sorry")}),
+    wf:replace(incoming_requests, incoming_requests()),
     wf:wire(simple_lightbox, #hide{});
 
 event(update_group) ->

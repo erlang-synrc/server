@@ -457,18 +457,6 @@ invite_code_by_user(User) -> DBA=?DBA,DBA:invite_code_by_user(User).
 get_save_tables(Id) -> DBA=?DBA,DBA:get_save_tables(Id).
 save_game_table_by_id(Id) -> DBA=?DBA,DBA:save_game_table_by_id(Id).
 
-% groups
-
-list_membership(U) -> DBA=?DBA,DBA:list_membership(U).
-list_membership_count(U) -> DBA=?DBA,DBA:list_membership_count(U).
-list_group_users(U) -> DBA=?DBA,DBA:list_group_users(U).
-membership(UserId, GroupId) -> DBA=?DBA,DBA:membership(UserId, GroupId).
-move_group_members(Old, New, Name) -> DBA=?DBA,DBA:move_group_members(Old,New,Name).
-get_group_members(GId) -> DBA=?DBA,DBA:get_group_members(GId).
-get_group_members_count(GId) -> DBA=?DBA,DBA:get_group_members_count(GId).
-change_group_name(GId,GName) -> DBA=?DBA,DBA:change_group_name(GId,GName).
-update_user_name(UId,Name,Surname) -> DBA=?DBA,DBA:update_user_name(UId,Name,Surname).
-
 % feeds
 
 feed_add_direct_message(FId, User, To, EntryId, Desc, Medias) -> DBA=?DBA,DBA:feed_add_direct_message(FId, User, To, EntryId, Desc, Medias).
