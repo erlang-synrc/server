@@ -385,6 +385,7 @@ event(create_new_group) ->
                         {ok, _} ->
                             wf:wire(#alert{text=?_TS("User '$username$' exist!", [{username, GId}]) });
                         {error, _} ->
+%                            nsm_groups:create_group_directly_to_db(wf:user(), GId, GName, GDesc, GPublicity),
                             nsx_msg:notify(["system", "create_group"], {wf:user(), GId, GName, GDesc, GPublicity}),
                             wf:wire(#alert{text=?_T("New group created!")}),
                             wf:redirect("")

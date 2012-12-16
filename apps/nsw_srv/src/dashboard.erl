@@ -395,8 +395,8 @@ inner_event({remove_entry, EId, _PanelId, _ETo, From, true}, _) ->
       _Any when From == CurrentUser ->
         nsx_msg:notify([feed, Type, Owner, entry, EId, delete], [From]);
       group ->
-        case nsm_groups:group_user_type(CurrentUser, Owner) of
-          admin -> nsx_msg:notify([feed, Type, Owner, entry, EId, delete], [From]);
+        case nsm_groups:user_is_owner(CurrentUser, Owner) of
+          true -> nsx_msg:notify([feed, Type, Owner, entry, EId, delete], [From]);
           _ -> ok
         end;
       user when CurrentUser == Owner ->

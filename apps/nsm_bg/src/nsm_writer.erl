@@ -16,6 +16,7 @@ init(Params) ->
     ?INFO("Init worker with start params: ~p", [Params]),
     case Owner of
         "system" ->
+            ?INFO(" +++ system worker started"),
             {ok, #state{owner = Owner,
                                 type = system,
                                 feed = -1,
@@ -369,13 +370,13 @@ handle_notice(["system", "delete"] = Route,
     nsm_db:delete(Where, What),
     {noreply, State};
 
+
 handle_notice(["system", "create_group"] = Route, 
     Message, #state{owner = Owner, type =Type} = State) ->
     ?INFO("queue_action(~p): create_group: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),
     {UId, GId, Name, Desc, Publicity} = Message,
     FId = nsm_db:feed_create(),
     CTime = erlang:now(),
-    %%FIX: match results of such calls for success case
     ok = nsm_db:put(#group{username = GId,
                               name = Name,
                               description = Desc,
@@ -386,64 +387,49 @@ handle_notice(["system", "create_group"] = Route,
                               feed = FId}),
     nsx_msg:notify([group, init], {GId, FId}),
     nsm_users:init_mq_for_group(GId),
-    nsx_msg:notify(["subscription", "user", UId, "add_to_group"], {GId, admin}),
+    add_to_group(UId, GId, member),
     {noreply, State};
 
 handle_notice(["db", "group", GroupId, "update_group"] = Route, 
     Message, #state{owner=ThisGroupOwner, type=Type} = State) ->
     ?INFO("queue_action(~p): update_group: Owner=~p, Route=~p, Message=~p", [self(), {Type, ThisGroupOwner}, Route, Message]),    
-    {UId, Username2, Name, Description, Owner, Publicity} = Message,
-    Username = ThisGroupOwner, % quick fix maxim@synrc.com
-    case catch nsm_groups:group_user_type(UId, GroupId) of
-        admin ->
-            SanePublicity = case Publicity of
-                "public" -> public;
-                "moderated" -> moderated;
-                "private" -> private;
-                _ -> undefined
-            end,
-            {ok, #group{}=Group} = nsm_db:get(group, GroupId),
-            NewGroup = Group#group{
-                           name = coalesce(Name,Group#group.name),
-                           description = coalesce(Description,Group#group.description),
-                           publicity = coalesce(SanePublicity,Group#group.publicity)},
-            nsm_db:put(NewGroup);
-        _ ->
-            ?ERROR("Group update error: user ~p doesn't have permission to!", [UId])
+    {_UId, _GroupUsername, Name, Description, Owner, Publicity} = Message,
+    SanePublicity = case Publicity of
+        "public" -> public;
+        "moderated" -> moderated;
+        "private" -> private;
+        _ -> undefined
     end,
+    SaneOwner = case nsm_db:get(user, Owner) of
+        {ok, _} -> Owner;
+        _ -> undefined
+    end,
+    {ok, #group{}=Group} = nsm_db:get(group, GroupId),
+    NewGroup = Group#group{
+                   name = coalesce(Name,Group#group.name),
+                   description = coalesce(Description,Group#group.description),
+                   publicity = coalesce(SanePublicity,Group#group.publicity),
+                   owner = coalesce(SaneOwner,Group#group.owner)},
+    nsm_db:put(NewGroup),
     {noreply, State};
 
 handle_notice(["db", "group", GId, "remove_group"] = Route, 
     Message, #state{owner = Owner, type =Type} = State) ->
     ?INFO("queue_action(~p): remove_group: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),
-    nsx_msg:notify([feed, delete, GId], empty),
-    Group = nsm_groups:get_group(GId),
-    lists:foreach(
-        fun(#entry{feed_id=F,entry_id=E})-> feed:remove_entry(F, E) end,
-        nsm_db:select(feed, fun(#entry{feed_id=Fid}) when Fid=:=Group#group.feed->true;(_)->false end)),
-    {ok, UsersEntry} = nsm_db:get(group_member_rev, GId),
-    UsersEntryList = UsersEntry#group_member_rev.who,
-    UserList = [GMR#group_member_rev.who || GMR <- UsersEntryList],
-    ProcessUser = fun(User) ->
-        {ok, GM} = nsm_db:get(group_member, User),
-        UserGroupList = GM#group_member.group,
-        NewList = lists:filter(fun(#group_member{group=GMGId}) when GMGId=:=GId->false;(_)->true end, UserGroupList),
-        case NewList == [] of
-            true -> % user is not in a single group
-                nsm_db:delete(group_member, GM#group_member.who);
-            false -> % user is still in some other groups
-                nsm_db:put(#group_member{who = GM#group_member.who, group = NewList})
-        end
+    {_, Group} = nsm_groups:get_group(GId),
+    case Group of 
+        notfound -> ok;
+        _ ->
+            nsx_msg:notify([feed, delete, GId], empty),
+            nsm_db:delete_by_index(group_subs, <<"group_subs_group_id_bin">>, GId),         
+            nsm_db:delete(feed, Group#group.feed),
+            nsm_db:delete(group, GId),
+            % unbind exchange
+            {ok, Channel} = nsm_mq:open([]),
+            Routes = nsm_users:rk_group_feed(GId),
+            nsm_users:unbind_group_exchange(Channel, GId, Routes),
+            nsm_mq_channel:close(Channel)
     end,
-    lists:map(ProcessUser, UserList),
-    nsm_db:delete(group_member_rev, GId),
-    nsm_db:delete(feed, Group#group.feed),
-    nsm_db:delete(group, GId),
-    % unbind exchange
-    {ok, Channel} = nsm_mq:open([]),
-    Routes = nsm_users:rk_group_feed(GId),
-    nsm_users:unbind_group_exchange(Channel, GId, Routes),
-    nsm_mq_channel:close(Channel),
     {noreply, State};
 
 handle_notice(["subscription", "user", UId, "add_to_group"] = Route,
@@ -464,62 +450,20 @@ handle_notice(["subscription", "user", UId, "remove_from_group"] = Route,
     remove_from_group(UId, GId),
     {noreply, State};
 
-handle_notice(["subscription", "user", UId, "invite_to_group"] = Route,
-    Message, #state{owner = Owner, type =Type} = State) ->
-    ?INFO("queue_action(~p): invite_to_group: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),
-    {GId, Invited} = Message,
-    case nsm_groups:group_user_type(Invited, GId) of
-        req -> % User requested in past; just join him
-            nsx_msg:notify(["subscription", "user", Invited, "add_to_group"], {GId, member});
-        invsent -> % Invite already sent in past
-            ?ERROR("Invite to user ~p already sent!", [Invited]);
-        _ ->
-            case nsm_users:get_user(Invited) of
-                {ok, #user{feed=Feed}} ->
-                    feed:add_direct_message(Feed, UId, "Let's join us in group!"),
-                    nsx_msg:notify(["subscription", "user", Invited, "add_to_group"], {GId, invsent});
-                _ ->
-                    ?ERROR("Invitation error: user ~p not found!", [Invited])
-            end
-    end,
-    {noreply, State};
-
-handle_notice(["subscription", "user", UId, "reject_invite_to_group"] = Route,
-    Message, #state{owner = Owner, type =Type} = State) ->
-    ?INFO("queue_action(~p): invite_to_group: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),
-    {GId, Invited, Reason} = Message,
-    case nsm_groups:group_user_type(Invited, GId) of
-        req -> % User requested, reject
-            case nsm_users:get_user(Invited) of
-                {ok, #user{feed=Feed}} ->
-                    feed:add_direct_message(Feed, UId, "Invite rejected: " ++ Reason),
-                    nsx_msg:notify(["subscription", "user", Invited, "add_to_group"], {GId, rejected});
-                _ ->
-                    ?ERROR("Invitation error: user ~p not found!", [Invited])
-            end;
-        invsent -> % Invite was sent to user -- just remove invite
-            nsx_msg:notify(["subscription", "user", Invited, "add_to_group"], {GId, rejected});
-        _ ->
-            ?ERROR("Invitation error: user ~p has no request!", [Invited])
-    end,
-    {noreply, State};
-
 handle_notice(["subscription", "user", UId, "leave_group"] = Route,
     Message, #state{owner = Owner, type =Type} = State) ->
     ?INFO(" queue_action(~p): leave_group: Owner=~p, Route=~p, Message=~p", [self(), {Type, Owner}, Route, Message]),
     {GId} = Message,
-    case nsm_groups:group_user_type(UId, GId) of
-        admin -> % user is admin, check is it owner
-            {ok, #group{}=Group} = nsm_db:get(group, GId),
+    {R, Group} = nsm_db:get(group, GId),
+    case R of 
+        error -> ?ERROR(" Error reading group ~p for leave_group", [GId]);
+        ok ->
             case Group#group.owner of
                 UId -> % User is owner, transfer ownership to someone else
-                    Members = nsm_db:get_group_members(GId),
-                    Sorted = slice_members(Members, UId, admin) ++ slice_members(Members, UId, moder) ++ slice_members(Members, UId, member),
-                    case Sorted of
-                        [ #group_member_rev{who=Who} | _ ] ->
-                            NewOwner = Who,
-                            ok = add_to_group(NewOwner, GId, admin),
-                            ok = nsm_db:put(Group#group{owner = NewOwner}),
+                    Members = nsm_groups:list_group_members(GId),
+                    case Members of
+                        [ FirstOne | _ ] ->
+                            ok = nsm_db:put(Group#group{owner = FirstOne}),
                             nsx_msg:notify(["subscription", "user", UId, "remove_from_group"], {GId});
                         [] ->
                             % Nobody left in group, remove group at all
@@ -880,9 +824,6 @@ get_opts(#state{type = system, owner = Owner}) ->
 coalesce(undefined, B) -> B;
 coalesce(A, _) -> A.
 
-slice_members(Members,SkipUser,ReqType) ->
-    lists:filter(fun(#group_member_rev{type=Type,who=Who}) -> Type==ReqType andalso Who /= SkipUser end, Members).
-
 queue_options() ->
     [durable,
      {ttl, 10000},
@@ -907,9 +848,13 @@ add_to_group(UId, GId, Type) ->
     ?INFO("U:~p G:~p T:~p",[UId, GId, Type]),
     case nsm_db:get(group_subs, {UId, GId}) of
         {error, notfound} ->
-            {ok, Group} = nsm_db:get(group, GId),
-            GU = Group#group.users_count,
-            nsm_db:put(Group#group{users_count = GU+1});
+            {R, Group} = nsm_db:get(group, GId),
+            case R of 
+                error -> ?INFO("Add to group failed reading group");
+                _ ->
+                    GU = Group#group.users_count,
+                    nsm_db:put(Group#group{users_count = GU+1})
+            end;
         _ ->
             ok
     end,
@@ -918,8 +863,12 @@ add_to_group(UId, GId, Type) ->
 
 remove_from_group(UId, GId) ->
     nsm_db:delete(group_subs, {UId, GId}),
-    {ok, Group} = nsm_db:get(group, GId),
-    GU = Group#group.users_count,
-    nsm_db:put(Group#group{users_count = GU-1}).
+    {R, Group} = nsm_db:get(group, GId),
+    case R of
+        error -> ?INFO("Remove ~p from group failed reading group ~p", [UId, GId]);
+        _ ->
+            GU = Group#group.users_count,
+            nsm_db:put(Group#group{users_count = GU-1})
+    end.
 
 

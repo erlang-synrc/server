@@ -15,6 +15,7 @@ create() ->
     ok = nsm_db:put(#feed{id = FId} ),
     FId.
 
+add_direct_message(FId, User, Desc) -> add_direct_message(FId, User, utils:uuid_ex(), Desc).
 add_direct_message(FId, User, EntryId, Desc) -> add_direct_message(FId, User, undefined, EntryId, Desc, []).
 add_direct_message(FId, User, To, EntryId, Desc, Medias) -> nsm_db:feed_add_direct_message(FId, User, To, EntryId, Desc, Medias).
 add_group_entry(FId, User, EntryId, Desc, Medias) -> nsm_db:feed_add_entry(FId, User, EntryId, Desc, Medias).
