@@ -5683,14 +5683,242 @@ body.view_table .user-list .user .table_paid_user_avatar {  /* this from add sty
 
 
 /* tournaments */
+.tournaments_title {
+  width:250px;
+  height:43px;
+  background: url(/images/tournament/lobby/top_plask.png);
+  text-align:center;
+  font-size:18px;
+  color:#fff;
+  font-weight:bold;
+  line-height:43px;
+  margin-top:-21px;
+  margin-left:-3px;
+}
+
+.tournaments_second_title{
+  width:92px;
+  height:43px;
+  background: url(/images/tournament/tournaments_page/orange_plask_short.png);
+  text-align:center;
+  line-height:43px;
+  font-size:18px;
+  color:#fff;
+  font-weight:bold;
+  margin-top:-21px;
+  margin-left: -3px;
+}
+
+.tournaments_header{
+  width:100%;
+  height:40px;
+  float:left;
+  margin-top: -20px;
+}
+
+.tournaments_header .tournament_rules, .tournaments_header .tournament_setup {float:right;}
+
+hr.tournaments_hr{
+  clear:both;
+  width:958px;
+  margin-left:-25px;
+  margin-top:40px;
+  color:#c2c2c2;
+}
+
+.tournaments_top_selector{
+  font-size:16px;
+  width:959px;
+  margin-left:-25px;
+  pagging:0;
+  display:table;
+  padding:0;
+}
+
+.tournaments_top_selector li{
+  display:table-cell;
+  width:33%;
+}
+
+.tournaments_top_selector a {
+  background:url(/images/tournament/tournaments_page/bar_1_normal.png) top center no-repeat;
+  background-size:100% auto;
+  font:15px 'Gotham Rounded Bold','Trebuchet MS';
+  color:#fff;
+  text-shadow:0 1px 1px #353535;
+  text-align:center;
+  margin:0;
+  padding:0;
+  padding-top:15px;
+  display:block;
+  height:56px;
+  background-color:#e4e8e9;
+}
+
+.tournaments_top_selector a:hover{
+  text-decoration:none;
+  background: url(/images/tournament/tournaments_page/bar_1_hover.png)  no-repeat bottom center;
+  background-size:100% auto;
+  background-position: 0 0;
+  background-color:#e4e8e9;
+}
+
+.tournaments_top_selector a:active{
+  text-decoration:none;
+  background: url(/images/tournament/tournaments_page/bar_1_hover.png)  no-repeat bottom center;
+  background-size:100% auto;
+  background-position: 0 0;
+  background-color:#e4e8e9;
+}
+
+
+.tournaments_featured {
+  width:959px;
+  margin: 0 -25px;
+  padding:0;
+  display:table;
+  margin-top:-17px;
+  padding-bottom:10px;
+  background-color:#e4e8e9;
+}
+
+.tournaments_featured_tours{
+  display:table-cell;
+  width:880px;
+  padding-left:5px;
+}
+
+.tournaments_featured_arrow{
+  display:table-cell;
+  width:40px;
+  text-align:center;
+  vertical-align:middle;
+}
+
+.tournaments_featured_arrow a{
+  width:15px;
+  height:22px;
+}
+
+.tournaments_filter_block{
+  margin: 20px auto;
+  padding:0;
+  text-align:center;
+  width:100%;
+}
+
+.tournaments_filter_block label{
+  width:120px;
+  text-align:right;
+  font-size:16px;
+  line-height:32px;
+  margin-right: 10px;
+}
+
+.tournaments_filter_block select{
+  width:110px;
+  height:32px;
+  font-size:16px;
+  margin-right:15px;
+  margin-top:0;
+}
+
+.tournaments_filter_block .alltour_btns_blue{
+  display:inline-block;
+}
+
+.tournaments_filter_block .alltour_big_buttons{
+  display:inline-block;
+}
+
+.tournaments_all_block {
+  width:100%;
+  float:left;
+  margin: 20px auto;
+}
+
+.tournaments_all_block .tts_tournament {margin:12px}
+
+.tts_tournament {
+  width:200px;
+  height:320px;
+  border:1px solid #adb1b0;
+  background-color:#f6f9ff;
+  float:left;
+  margin:0 8px;
+  text-align:center;
+  margin-bottom:8px;
+}
+
+.tts_title {
+  font:14px 'Gotham Rounded Bold','Trebuchet MS';
+  color:#fff;
+  text-shadow:0 1px 1px #353535;
+  text-align:center;
+  padding-top: 6px;
+}
+
+img.tts_avatar{
+  width: 184px;
+  -moz-border-radius:2px;
+  -webkit-border-radius:2px;
+  border-radius:2px;
+  border:1px solid #7e7f83;
+  margin:8px auto;
+}
+
+.tts_tournament label {
+  color:#f67436;
+  font-size:12px;
+  font-weight:bold;
+  display:inline-block;
+  width:100%;
+  text-align:left;
+  margin: 0 5px;
+}
+
+.tts_tournament span {
+  color:#222;
+  font-weight:normal;
+  margin-left: 5px;
+}
+
+.tts_prizes{
+  width:100%;
+  display:table;
+  margin:0;
+}
+
+.tts_prize{
+  display: table-cell;
+  text-align:center;
+}
+
+.tts_prize span {font-size: 14px;}
+.tts_prize hr {width: 55px;}
+
+.tts_prize_icon {
+  height:55px;
+  width:55px;
+  border:1px solid #ccd0d3;
+  background-color:#fff;
+  display:table-cell;
+  vertical-align: middle;
+}
+
+.tts_prize_icon img {
+  max-width:55px;
+  max-height:55px;
+}
+
 .alltour_title {
-    width:250px; 
-    height:43px; 
-    background: url(/images/tournament/lobby/top_plask.png);
-    position:absolute; 
-    left:21px; 
-    top:-7px; 
-    text-align:center;
+  width:250px;
+  height:43px;
+  background: url(/images/tournament/lobby/top_plask.png);
+  position:absolute;
+  left:21px;
+  top:-7px;
+  text-align:center;
 }
 
 .alltour_second_title {
