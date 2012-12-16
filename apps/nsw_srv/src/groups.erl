@@ -362,7 +362,7 @@ event(hide_new_group_edit) ->
     wf:wire(simple_lightbox, #hide{});
 
 event(create_new_group) ->
-    GId = wf:q(new_group_username),
+    PGId = wf:q(new_group_username),
     GName = wf:q(new_group_name),
     GDesc = wf:q(new_group_desc),
     GPublic = wf:q(new_group_is_public),
@@ -370,6 +370,7 @@ event(create_new_group) ->
         "on" -> public;
         _ -> private
     end,    
+    GId = site_utils:validate_group_id(PGId),
     ?INFO("New group: ~p ~p ~p ~p",[GId, GName, GDesc, GPublicity]),
     AllGroups = [G#group.username || G <- nsm_groups:get_all_groups()],
     case GId of 

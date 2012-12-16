@@ -444,3 +444,28 @@ decode_html(In) ->
         {"<--", "<!--"},
         {"/images/cuzdan", "http://www.enilginc.com/images/cuzdan"}
     ]).
+
+clean_stuff([]) -> [];
+clean_stuff([H | T]) -> 
+    case ((H >= $a) and (H =< $z)) or ((H >= $A) and (H =< $Z)) or ((H >= $0) and (H =< $9)) or (H == $_) of
+        true -> [H] ++ clean_stuff(T);
+        false -> clean_stuff(T)
+    end.
+
+validate_group_id(GId) ->
+    clean_stuff(ling:replace_a_lot(GId, [
+        {"Ğ", "G"},
+        {"ğ", "g"},
+        {"İ", "I"},
+        {"ı", "i"},
+        {"Ş", "S"},
+        {"ş", "s"},
+        {"ö", "o"},
+        {"Ö", "O"},
+        {"ü", "u"},
+        {"Ü", "U"},
+        {"ç", "c"},
+        {"Ç", "C"},
+        {" ", "_"}])).
+
+

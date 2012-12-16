@@ -926,7 +926,21 @@ u_event(clear_selection) ->
 u_event(show_game_rules) ->
     case wf:q(game_name) of
         "okey" ->
-            wf:update(rules_container, matchmaker_rules:okey_rules());
+            wf:update(rules_container, [
+                #link{text=?_T("Hide"), class="matchmaker_game_rules", style="float:right;", postback=hide_rules},
+                #br{},
+                case site_utils:detect_language() of
+                    "tr" ->
+                        #template{file=code:priv_dir(nsw_srv)++"/templates/matchmaker_rules_okey_tr.html"};
+                    "en" ->
+                        #template{file=code:priv_dir(nsw_srv)++"/templates/matchmaker_rules_okey_en.html"}
+                end,
+                #br{},
+                #link{text=?_T("Hide"), class="matchmaker_game_rules", style="float:right;", postback=hide_rules},
+                #br{},
+                #br{},
+                #br{}
+        ]);
         "tavla" ->
             wf:wire("
                 guiders.createGuider({
