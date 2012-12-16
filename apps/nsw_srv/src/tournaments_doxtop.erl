@@ -175,6 +175,39 @@ content() ->
           ]
       end
     ]},
+    #hr{},
+
+    #panel{class="tournaments_filter_block", body=[
+      #panel{class=criteria, body=[
+        #panel{class=area, body=[
+          #list{id=criteria_field, class="row", body=""}
+        ]}
+      ]},
+
+      #panel{class="create-block", body=[
+        #panel{class=article1, body=[
+          #h3{text=?_T("Game Type")},
+          #list{class="list1 size1", body=[
+            #listitem{body=X} || X <- [
+              #link{text=?_T("OKEY"), id= site_utils:simple_pickle({game, okey}),  postback={add,{game,okey}}},
+              #link{text=?_T("TAVLA"), id= site_utils:simple_pickle({game, tavla}), postback={add,{game, tavla}}}
+          ]]},
+
+          #h3{text=?_T("Players Count:")},
+          #list{class="list1 size1", id=tour_players, body=[
+            #listitem{body=#link{text=T, id=site_utils:simple_pickle({count, list_to_atom(T)}),
+                postback={add, {count, list_to_atom(T)}} } } || T <- ["16", "32", "64", "128", "256", "512", "1024"]
+          ]},
+
+          #h3{text=?_T("Quota:")},
+          #list{id=tour_quota, class="list1 size1", body=[
+            #listitem{body=#link{text=T, id=site_utils:simple_pickle({quota, list_to_atom(T)}),
+              postback={add, {quota, list_to_atom(T)}} } } || T <- ["2","4","6","8","10"]
+          ]}
+
+        ]}
+      ]}
+    ]},
 
     #hr{style="width:700px;"},
     #panel{class="tournaments_all_block", id=alltour_container, body=all_tours(1)}
@@ -516,8 +549,27 @@ event(show_page_2) ->
 event(hide_explaination) ->
     wf:update(explaination_holder, []);
 
+event({add, {Key, Value} = Setting}) ->
+  process_add(Setting);
+
+event({del,{Key, Value}=Setting})->
+  process_remove(Setting);
+
 event(Any) ->
     webutils:event(Any).
 
 api_event(Name, Tag, Data) ->
   webutils:api_event(Name, Tag, Data).
+
+process_add({Key, Value} = Setting) ->
+  Id = site_utils:simple_pickle({Key, Value}),
+  SpanElement = #span{actions="var e=objs('"++Id++"'); objs('me').text( e.text() ? e.text() : e.attr('value') )"},
+  CriteriaElement = #listitem{id="for_"++Id, class="for_"++wf:to_list(Key),
+    body=["<em>", SpanElement, #link{text="X", postback={del, {Key, Value}}}, "</em>"]},
+  wf:insert_bottom(criteria_field, CriteriaElement),
+  ok.
+
+process_remove({Key, Value} = Setting)->
+  Id = site_utils:simple_pickle({Key, Value}),
+  wf:remove("for_"++Id),
+  ok.

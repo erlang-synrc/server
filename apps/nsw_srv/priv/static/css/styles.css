@@ -5831,6 +5831,19 @@ hr.tournaments_hr{
   display:inline-block;
 }
 
+.tournaments_filter_block .criteria{
+  padding:8px;  width:896px;
+}
+
+.tournaments_filter_block .criteria .area .row {
+  width:889px;
+}
+
+.tournaments_filter_block .create-block{
+  width: 864px;
+}
+
+
 .tournaments_all_block {
   width:100%;
   float:left;
