@@ -1069,176 +1069,24 @@ guiders_script() ->
     wf:wire(Guiders).
 
 add_game_settings_guiders() ->
+    StdButtons = [{s_T("<< Back"), prev}, {s_T("Continue"), next}],
+    FinButtons = [{s_T("<< Back"), prev}, {s_T("Ok"), hide}],
     case webutils:guiders_ok("matchmaker_tab_1_guiders_shown") of
         false ->
             "";
         true ->
-        "<script>
-        guiders.hideAll();
-        ////////// detailed settings tab 1
-        guiders.createGuider({
-            attachTo: '#guiderscriteria',
-            buttons: [{name: '"++s_T("Continue")++"', onclick: guiders.next}],
-            position: 12,
-            description: '"++s_T("Criteria description")++"',
-            id: 'guider_110',
-            next: 'guider_130',
-            overlay: false,
-            xButton: true,
-            title: '"++s_T("Criteria")++"'
-        }).show();
-
-        guiders.createGuider({  // do we want it here?
-            attachTo: '#guiderstab1createbutton',
-            buttons: [
-                {name: '"++s_T("<< Back")++"', onclick: guiders.prev},
-                {name: '"++s_T("Continue")++"', onclick: guiders.next}
-            ],
-            position: 12,
-            description: '"++s_T("Detailed settings create description")++"',
-            id: 'guider_120',
-            next: 'guider_130',
-            overlay: false,
-            xButton: true,
-            title: '"++s_T("Detailed settings create")++"'
-        });
-
-        guiders.createGuider({
-            attachTo: '#guiderstab1tablename',
-            buttons: [
-                {name: '"++s_T("<< Back")++"', onclick: guiders.prev},
-                {name: '"++s_T("Continue")++"', onclick: guiders.next}
-            ],
-            position: 11,
-            description: '"++s_T("Table name description")++"',
-            id: 'guider_130',
-            next: 'guider_140',
-            overlay: false,
-            xButton: true,
-            title: '"++s_T("Table name")++"'
-        });
-
-        guiders.createGuider({
-            attachTo: '#guiderstab1set',
-            buttons: [
-                {name: '"++s_T("<< Back")++"', onclick: guiders.prev},
-                {name: '"++s_T("Continue")++"', onclick: guiders.next}
-            ],
-            position: 1,
-            description: '"++s_T("Table name set description")++"',
-            id: 'guider_140',
-            next: 'guider_150',
-            overlay: false,
-            xButton: true,
-            title: '"++s_T("Table name set")++"'
-        });
-
-        guiders.createGuider({
-            attachTo: '#guiderstab1gamespeed',
-            buttons: [
-                {name: '"++s_T("<< Back")++"', onclick: guiders.prev},
-                {name: '"++s_T("Continue")++"', onclick: guiders.next}
-            ],
-            position: 11,
-            description: '"++s_T("Detailed game speed description")++"',
-            id: 'guider_150',
-            next: 'guider_160',
-            overlay: false,
-            xButton: true,
-            title: '"++s_T("Detailed game speed")++"'
-        });
-
-        guiders.createGuider({
-            attachTo: '#guiderstab1gametype',
-            buttons: [
-                {name: '"++s_T("<< Back")++"', onclick: guiders.prev},
-                {name: '"++s_T("Continue")++"', onclick: guiders.next}
-            ],
-            position: 11,
-            description: '"++s_T("Detailed game type description")++"',
-            id: 'guider_160',
-            next: 'guider_170',
-            overlay: false,
-            xButton: true,
-            title: '"++s_T("Detailed game type")++"'
-        });
-
-        guiders.createGuider({
-            attachTo: '#guiderstab1paired',
-            buttons: [
-                {name: '"++s_T("<< Back")++"', onclick: guiders.prev},
-                {name: '"++s_T("Continue")++"', onclick: guiders.next}
-            ],
-            position: 12,
-            description: '"++s_T("Detailed paired description")++"',
-            id: 'guider_170',
-            next: 'guider_180',
-            overlay: false,
-            xButton: true,
-            title: '"++s_T("Detailed paired")++"'
-        });
-
-        guiders.createGuider({
-            attachTo: '#guiderstab1rounds',
-            buttons: [
-                {name: '"++s_T("<< Back")++"', onclick: guiders.prev},
-                {name: '"++s_T("Continue")++"', onclick: guiders.next}
-            ],
-            position: 11,
-            description: '"++s_T("Detailed rounds description")++"',
-            id: 'guider_180',
-            next: 'guider_185',
-            overlay: false,
-            xButton: true,
-            title: '"++s_T("Detailed rounds")++"'
-        });
-
-        guiders.createGuider({
-            attachTo: '#guiderstab1double',
-            buttons: [
-                {name: '"++s_T("<< Back")++"', onclick: guiders.prev},
-                {name: '"++s_T("Continue")++"', onclick: guiders.next}
-            ],
-            position: 11,
-            description: '"++s_T("Double quota description")++"',
-            id: 'guider_185',
-            next: 'guider_190',
-            overlay: false,
-            xButton: true,
-            title: '"++s_T("Double quota")++"'
-        });
-
-        guiders.createGuider({
-            attachTo: '#guiderstab1additional',
-            buttons: [
-                {name: '"++s_T("<< Back")++"', onclick: guiders.prev},
-                {name: '"++s_T("Continue")++"', onclick: guiders.next}
-            ],
-            position: 11,
-            description: '"++s_T("Additional options description")++"',
-            id: 'guider_190',
-            next: 'guider_195',
-            overlay: false,
-            xButton: true,
-            title: '"++s_T("Additional options")++"'
-        });
-
-        guiders.createGuider({
-            attachTo: '#guiderstab1hide',
-            buttons: [
-                {name: '"++s_T("<< Back")++"', onclick: guiders.prev},
-                {name: '"++s_T("Ok")++"', onclick: guiders.hideAll}
-            ],
-            position: 1,
-            description: '"++s_T("Hide button description")++"',
-            id: 'guider_195',
-            next: 'guider_199',
-            overlay: false,
-            xButton: true,
-            title: '"++s_T("Hide button options")++"'
-        });
-
-        </script>"
+            [   
+                "<script>guiders.hideAll();",
+                make_guider(show, s_T("Criteria"), s_T("Criteria description"), [{s_T("Continue"),next}], guider_110, guider_150, false, true, guiderscriteria, 12),
+                make_guider(hide, s_T("Detailed game speed"), s_T("Detailed game speed description"), StdButtons, guider_150, guider_160, false, true, guiderstab1gamespeed, 11),
+                make_guider(hide, s_T("Detailed game type"), s_T("Detailed game type description"), StdButtons, guider_160, guider_170, false, true, guiderstab1gametype, 11),
+                make_guider(hide, s_T("Detailed paired"), s_T("Detailed paired description"), StdButtons, guider_170, guider_180, false, true, guiderstab1paired, 12),
+                make_guider(hide, s_T("Detailed rounds"), s_T("Detailed rounds description"), StdButtons, guider_180, guider_185, false, true, guiderstab1rounds, 11),
+                make_guider(hide, s_T("Double quota"), s_T("Double quota description"), StdButtons, guider_185, guider_190, false, true, guiderstab1double, 11),
+                make_guider(hide, s_T("Additional options"), s_T("Additional options description"), StdButtons, guider_190, guider_195, false, true, guiderstab1additional, 11),
+                make_guider(hide, s_T("Hide"), s_T("Hide button description"), FinButtons, guider_195, guider_199, false, true, guiderstab1hide, 1),
+                "</script>"
+            ]
     end.
 
 
@@ -1250,58 +1098,30 @@ show_tab_guiders(ID) ->
                 false ->
                     ok;
                 true ->
-                    wf:wire("                        
-                        guiders.hideAll;
-                        guiders.createGuider({
-                            attachTo: '#guidersgroupfiltername',    // this wouldn't work
-                            buttons: [
-                                {name: '"++s_T("Ok")++"', onclick: guiders.hideAll},
-                            ],
-                            description: '"++s_T("Group settings description.")++"',
-                            id: 'guider_200',
-                            next: 'guider_210',
-                            overlay: true,
-                            title: '"++s_T("Group Settings")++"'
-                        }).show();
-                    ")
+                    wf:wire([
+                        "guiders.hideAll;",
+                        make_guider(show, s_T("Group Settings"), s_T("Group settings description."), [{s_T("Ok"), hide}], guider_200, guider_210, false, true, none, none)
+                    ])
             end;
         "tab_3" ->
             case webutils:guiders_ok("matchmaker_tab_3_guiders_shown") of
                 false ->
                     ok;
                 true ->
-                    wf:wire("
-                        guiders.hideAll;
-                        guiders.createGuider({
-                            buttons: [
-                                {name: '"++s_T("Ok")++"', onclick: guiders.hideAll},
-                            ],
-                            description: '"++s_T("Friend settings description.")++"',
-                            id: 'guider_300',
-                            next: 'guider_310',
-                            overlay: true,
-                            title: '"++s_T("Friend Settings")++"'
-                        }).show();
-                    ")
+                    wf:wire([
+                        "guiders.hideAll;",
+                        make_guider(show, s_T("Friend Settings"), s_T("Friend settings description."), [{s_T("Ok"), hide}], guider_300, guider_310, false, true, none, none)
+                    ])
             end;
         "tab_4" ->
             case webutils:guiders_ok("matchmaker_tab_4_guiders_shown") of
                 false ->
                     ok;
                 true ->
-                    wf:wire("
-                        guiders.hideAll;
-                        guiders.createGuider({
-                            buttons: [
-                                {name: '"++s_T("Ok")++"', onclick: guiders.hideAll},
-                            ],
-                            description: '"++s_T("Personal settings description.")++"',
-                            id: 'guider_400',
-                            next: 'guider_410',
-                            overlay: true,
-                            title: '"++s_T("Personal Settings")++"'
-                        }).show();
-                    ")
+                    wf:wire([
+                        "guiders.hideAll;",
+                        make_guider(show, s_T("Personal Settings"), s_T("Personal settings description."), [{s_T("Ok"), hide}], guider_400, guider_410, false, true, none, none)
+                    ])
             end;
         _ ->
             ok

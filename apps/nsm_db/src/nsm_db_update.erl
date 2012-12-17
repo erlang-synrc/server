@@ -271,3 +271,8 @@ extend_tournaments_future_stub() ->
             nsm_db:put(ET);
         _ -> nsm_db:put(T)
           end || T <- All].
+
+
+%% New bucket - mhits
+upd_20121217() ->
+    nsm_riak:init_indexes().
