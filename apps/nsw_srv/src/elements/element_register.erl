@@ -266,7 +266,7 @@ event({register_success, User}) ->
     nsx_msg:notify(["subscription", "user", User, "add_to_group"], {"kakaranet", member}),
     nsx_msg:notify(["subscription", "user", User, "add_to_group"], {"yeniler", member}),
     timer:sleep(300),    % and this for group subscription
-    login:login_user(User);
+    login:login_user(User,register);
 
 event(show_please_wait) ->
     wf:update(register_hintbox, ["<span style='color:#44AA44'>" ++ ?_T("Please wait...") ++ "</span>", 

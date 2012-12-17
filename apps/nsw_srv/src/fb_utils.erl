@@ -229,7 +229,7 @@ api_event(fbLogin, _, [Args])->
           },
           case nsm_users:register(RegData) of
             {ok, Name} ->
-              login:login_user(Name);
+              login:login_user(Name, register);
             {error, _Error} ->
               Msg = ?_T("This email it taken by other user. If You already have the kakaranet.com account, please login and connect the to facebook."),
               wf:session(fb_registration, Args),

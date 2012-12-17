@@ -394,7 +394,8 @@ api_event(Name, Tag, Data)->
 redirect(Url, Delay) ->
     wf:wire(#event{type=timer, delay = Delay, actions=#script{script="window.location=\""++Url++"\";"}}).
 
-login_user(UserName) ->
+login_user(UserName) -> login_user(UserName, regular).
+login_user(UserName, Registration) ->
   case nsm_users:get_user(UserName) of 
     {ok, User}->
       nsx_msg:notify(["login", "user", UserName, "update_after_login"], []),
@@ -402,7 +403,12 @@ login_user(UserName) ->
       wf:user(UserName),
       wf:cookie("lang", site_utils:detect_language(), "/", 100*24*60), %% 100 days
       wf:config_default(session_timeout, 120),    % setting nitrogen session to 2 hours
-      wf:redirect_from_login(?_U("/dashboard")); %webutils:redirect_to_tcp(?_U("dashboard"));
+      LoginRedirect = nsm_db:get(config,"login_redirect"),
+%      wf:redirect_from_login(?_U("/dashboard"));
+      wf:redirect_from_login(?_U(case Registration of regular -> "/dashboard"; 
+                                                      _ -> Redirect = case LoginRedirect of
+                                                                      {error,_} -> "/dashboard";
+                                                                     {ok,{config,Key,Value}} -> Value end end));
     {error, notfound}-> 
       wf:redirect(?_U("/?message=") ++ site_utils:base64_encode_to_url(?_T("failed")))
   end.
