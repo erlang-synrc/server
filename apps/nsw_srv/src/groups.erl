@@ -422,7 +422,7 @@ inner_event({page, N}, _) ->
 %    wf:update(groups_content, Searched);
 
 inner_event({subscribe, User1, GName, SUId}, _User) ->
-    nsx_msg:notify(["subscription", "user", User1, "add_to_group"], {GName, user}),
+    nsx_msg:notify(["subscription", "user", User1, "add_to_group"], {GName, User1, member}),
     wf:update(SUId, #link{url="javascript:void(0)", text=?_T("Unsubscribe"), postback={unsubscribe, User1, GName, SUId}});
 
 inner_event({unsubscribe, User1, GName, SUId}, _User) ->

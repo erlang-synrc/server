@@ -16,7 +16,6 @@ init(Params) ->
     ?INFO("Init worker with start params: ~p", [Params]),
     case Owner of
         "system" ->
-            ?INFO(" +++ system worker started"),
             {ok, #state{owner = Owner,
                                 type = system,
                                 feed = -1,
