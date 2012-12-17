@@ -63,6 +63,7 @@
          reveal_confirmation_timeout    :: integer(),
          ready_timeout        :: integer(),
          round_timeout        :: infinity | integer(),
+         set_timeout          :: infinity | integer(),
          game_type            :: standard | color | evenodd | countdown,
          rounds               :: undefined | integer(), %% Not defined for countdown game type
          reveal_confirmation  :: boolean(),
@@ -85,6 +86,7 @@
          timeout_timer        :: undefined | reference(),
          timeout_magic        :: term(),
          round_timer          :: undefined | reference(),
+         set_timer            :: undefined | reference(),
          paused_statename     :: atom(), %% For storing a statename before pause
          paused_timeout_value :: integer() %% For storing remain timeout value
         }).
@@ -103,6 +105,7 @@
 -define(STATE_REVEAL_CONFIRMATION, state_reveal_confirmation).
 -define(STATE_FINISHED, state_finished).
 -define(STATE_PAUSE, state_pause).
+-define(STATE_SET_FINISHED, state_set_finished).
 
 -define(HAND_SIZE, 14).
 -define(SEATS_NUM, 4).
@@ -149,6 +152,7 @@ init([GameId, TableId, Params]) ->
     RevConfirmTimeout = proplists:get_value(reveal_confirmation_timeout, Params, get_timeout(challenge, Speed)), %% TODO Set this param explictly
     ReadyTimeout = proplists:get_value(ready_timeout, Params, get_timeout(ready, Speed)), %% TODO Set this param explictly
     RoundTimeout = proplists:get_value(round_timeout, Params),
+    SetTimeout = proplists:get_value(set_timeout, Params),
     GameType = proplists:get_value(game_type, Params),
     Rounds = proplists:get_value(rounds, Params),
     RevealConfirmation = proplists:get_value(reveal_confirmation, Params),
@@ -187,6 +191,7 @@ init([GameId, TableId, Params]) ->
                                           reveal_confirmation_timeout = RevConfirmTimeout,
                                           ready_timeout = ReadyTimeout,
                                           round_timeout = RoundTimeout,
+                                          set_timeout = SetTimeout,
                                           game_type = GameType,
                                           rounds = Rounds,
                                           reveal_confirmation = RevealConfirmation,
@@ -236,6 +241,11 @@ handle_info({timeout, Magic}, ?STATE_PLAYING,
 handle_info({round_timeout, Round}, ?STATE_PLAYING,
             #state{cur_round = Round, desk_state = DeskState} = StateData) ->
      finalize_round(StateData#state{desk_state = DeskState#desk_state{finish_reason = timeout}});
+
+handle_info(set_timeout, StateName,
+            #state{desk_state = DeskState} = StateData) when
+  StateName =/= ?STATE_SET_FINISHED ->
+     finalize_round(StateData#state{desk_state = DeskState#desk_state{finish_reason = set_timeout}});
 
 handle_info({timeout, Magic}, ?STATE_REVEAL_CONFIRMATION,
             #state{timeout_magic = Magic, wait_list = WL,
@@ -288,8 +298,8 @@ handle_parent_message(start_round, StateName,
                              gosterge_finish_allowed = GostergeFinishAllowed,
                              start_seat = StartSeat, players = Players,
                              relay = Relay, turn_timeout = TurnTimeout,
-                             round_timeout = RoundTimeout,
-                             scoring_state = ScoringState} = StateData)
+                             round_timeout = RoundTimeout, set_timeout = SetTimeout,
+                             set_timer = SetTRef, scoring_state = ScoringState} = StateData)
   when StateName == ?STATE_WAITING_FOR_START;
        StateName == ?STATE_FINISHED ->
     NewCurRound = CurRound + 1,
@@ -314,27 +324,36 @@ handle_parent_message(start_round, StateName,
               {have_8_tashes_enabled, Have8TashesEnabled}],
     {ok, Desk} = ?DESK:start(Params),
     DeskState = init_desk_state(Desk),
-    %% Send notifications to clients
-    [begin
-         GameStartedMsg = create_okey_game_started(N, DeskState, NewCurRound, StateData),
-         PlayerId = get_player_id_by_seat_num(N, Players),
-         send_to_client_ge(Relay, PlayerId, GameStartedMsg)
-     end || N <- lists:seq(1, ?SEATS_NUM)],
-    CurSeatNum = DeskState#desk_state.cur_seat,
-    relay_publish_ge(Relay, create_okey_next_turn(CurSeatNum, Players)),
+    %% Init timers
     {Magic, TRef} = start_timer(TurnTimeout),
     RoundTRef = if is_integer(RoundTimeout) ->
                        erlang:send_after(RoundTimeout, self(), {round_timeout, NewCurRound});
                    true -> undefined
                 end,
-    {next_state, ?STATE_PLAYING, StateData#state{cur_round = NewCurRound,
-                                                 desk_rule_pid = Desk,
-                                                 desk_state = DeskState,
-                                                 timeout_timer = TRef,
-                                                 timeout_magic = Magic,
-                                                 round_timer = RoundTRef}};
+    NewSetTRef = if NewCurRound == 1 ->
+                        if is_integer(SetTimeout) -> erlang:send_after(SetTimeout, self(), set_timeout);
+                           true -> undefined
+                        end;
+                    true -> SetTRef
+                 end,
+    NewStateData = StateData#state{cur_round = NewCurRound,
+                                   desk_rule_pid = Desk,
+                                   desk_state = DeskState,
+                                   timeout_timer = TRef,
+                                   timeout_magic = Magic,
+                                   round_timer = RoundTRef,
+                                   set_timer = NewSetTRef},
+    %% Send notifications to clients
+    [begin
+         GameStartedMsg = create_okey_game_started(N, DeskState, NewCurRound, NewStateData),
+         PlayerId = get_player_id_by_seat_num(N, Players),
+         send_to_client_ge(Relay, PlayerId, GameStartedMsg)
+     end || N <- lists:seq(1, ?SEATS_NUM)],
+    CurSeatNum = DeskState#desk_state.cur_seat,
+    relay_publish_ge(Relay, create_okey_next_turn(CurSeatNum, Players)),
+    {next_state, ?STATE_PLAYING, NewStateData};
 
-handle_parent_message(show_round_result, ?STATE_FINISHED,
+handle_parent_message(show_round_result, StateName,
                       #state{relay = Relay, scoring_state = ScoringState,
                              game_id = GameId, table_id = TableId} = StateData) ->
     {FinishInfo, RoundScore, AchsPoints, TotalScore} = ?SCORING:last_round_result(ScoringState),
@@ -352,20 +371,23 @@ handle_parent_message(show_round_result, ?STATE_FINISHED,
               timeout ->
                   create_okey_round_ended_tashes_out(RoundScore, TotalScore, AchsPoints,
                                                      StateData);
+              set_timeout ->
+                  create_okey_round_ended_tashes_out(RoundScore, TotalScore, AchsPoints,
+                                                     StateData);
               {gosterge_finish, Winner} ->
                   create_okey_round_ended_gosterge_finish(Winner, RoundScore, TotalScore,
                                                           AchsPoints, StateData)
           end,
     relay_publish_ge(Relay, Msg),
-    {next_state, ?STATE_FINISHED, StateData#state{}};
+    {next_state, StateName, StateData#state{}};
 
 %% Results = [{PlayerId, Position, Score, Status}] Status = winner | loser | eliminated | none
-handle_parent_message({show_series_result, Results}, ?STATE_FINISHED,
+handle_parent_message({show_series_result, Results}, StateName,
                       #state{relay = Relay, players = Players,
                              next_series_confirmation = Confirm} = StateData) ->
     Msg = create_okey_series_ended(Results, Players, Confirm),
     relay_publish_ge(Relay, Msg),
-    {next_state, ?STATE_FINISHED, StateData#state{}};
+    {next_state, StateName, StateData#state{}};
 
 %% Results = [{UserId, Position, Score, Status}] Status = active | eliminated
 handle_parent_message({tour_result, TourNum, Results}, StateName,
@@ -734,6 +756,7 @@ finalize_round(#state{desk_state = #desk_state{finish_reason = FinishReason,
     FR = case FinishReason of
              tashes_out -> tashes_out;
              timeout -> timeout;
+             set_timeout -> set_timeout;
              reveal ->
                  {Revealer, Tashes, Discarded} = FinishInfo,
                  ConfirmationList = if RevealConfirmation -> CList; true -> [] end,
@@ -747,10 +770,13 @@ finalize_round(#state{desk_state = #desk_state{finish_reason = FinishReason,
     {_, RoundScore, _, TotalScore} = ?SCORING:last_round_result(NewScoringState),
     RoundScorePl = [{get_player_id_by_seat_num(SeatNum, Players), Points} || {SeatNum, Points} <- RoundScore],
     TotalScorePl = [{get_player_id_by_seat_num(SeatNum, Players), Points} || {SeatNum, Points} <- TotalScore],
-    if GameOver -> parent_send_game_res(Parent, TableId, NewScoringState, RoundScorePl, TotalScorePl);
-       true -> parent_send_round_res(Parent, TableId, NewScoringState, RoundScorePl, TotalScorePl)
-    end,
-    {next_state, ?STATE_FINISHED, StateData#state{scoring_state = NewScoringState}}.
+    if GameOver ->
+           parent_send_game_res(Parent, TableId, NewScoringState, RoundScorePl, TotalScorePl),
+           {next_state, ?STATE_SET_FINISHED, StateData#state{scoring_state = NewScoringState}};
+       true ->
+           parent_send_round_res(Parent, TableId, NewScoringState, RoundScorePl, TotalScorePl),
+           {next_state, ?STATE_FINISHED, StateData#state{scoring_state = NewScoringState}}
+    end.
 
 
 
@@ -1000,8 +1026,12 @@ create_okey_game_info(#state{table_name = TName, mult_factor = MulFactor,
 
 
 create_okey_game_player_state(_PlayerId, ?STATE_WAITING_FOR_START,
-                              #state{cur_round = CurRound, scoring_state = ScoringState}) ->
+                              #state{cur_round = CurRound, scoring_state = ScoringState,
+                                     set_timeout = SetTimeout1, set_timer = SetTRef}) ->
     Chanak = ?SCORING:chanak(ScoringState),
+    SetTimeout = if SetTimeout1 == infinity -> null;
+                    true -> calc_timeout_comp(SetTRef, 2000)
+                 end,
     #okey_game_player_state{whos_move = null,
                             game_state = game_initializing,
                             piles = null,
@@ -1012,13 +1042,15 @@ create_okey_game_player_state(_PlayerId, ?STATE_WAITING_FOR_START,
                             next_turn_in = 0,
                             paused = false,
                             chanak_points = Chanak,
-                            round_timeout = null};
+%%                            round_timeout = null,
+                            round_timeout = SetTimeout};
 
 create_okey_game_player_state(PlayerId, ?STATE_PLAYING,
                               #state{timeout_timer = TRef, cur_round = CurRound,
                                      players = Players, desk_state = DeskState,
                                      scoring_state = ScoringState, round_timer = RoundTRef,
-                                     round_timeout = RoundTimeout1}) ->
+                                     round_timeout = RoundTimeout1, set_timer = SetTRef,
+                                     set_timeout = SetTimeout1}) ->
     #player{seat_num = SeatNum} = fetch_player(PlayerId, Players),
     #desk_state{state = DeskStateName,
                 hands = Hands,
@@ -1041,12 +1073,11 @@ create_okey_game_player_state(PlayerId, ?STATE_PLAYING,
     GameState = statename_to_api_string(DeskStateName),
     Chanak = ?SCORING:chanak(ScoringState),
     RoundTimeout = if RoundTimeout1 == infinity -> null;
-                      true -> case erlang:read_timer(RoundTRef) of
-                                  false -> 0;
-                                  T when T < 2000 -> 0; %% Latency time compensation
-                                  T -> T - 2000
-                              end
+                      true -> calc_timeout_comp(RoundTRef, 2000)
                    end,
+    SetTimeout = if SetTimeout1 == infinity -> null;
+                    true -> calc_timeout_comp(SetTRef, 2000)
+                 end,
     #okey_game_player_state{whos_move = CurUserId,
                             game_state = GameState,
                             piles = Piles,
@@ -1057,12 +1088,14 @@ create_okey_game_player_state(PlayerId, ?STATE_PLAYING,
                             next_turn_in = Timeout,
                             paused = false,
                             chanak_points = Chanak,
-                            round_timeout = RoundTimeout};
+%%                            round_timeout = RoundTimeout};
+                            round_timeout = SetTimeout};
 
 create_okey_game_player_state(PlayerId, ?STATE_REVEAL_CONFIRMATION,
                               #state{timeout_timer = TRef, cur_round = CurRound,
                                      players = Players, desk_state = DeskState,
-                                     scoring_state = ScoringState}) ->
+                                     scoring_state = ScoringState,
+                                     set_timeout = SetTimeout1, set_timer = SetTRef}) ->
     #player{seat_num = SeatNum} = fetch_player(PlayerId, Players),
     #desk_state{hands = Hands,
                 discarded = Discarded,
@@ -1082,6 +1115,9 @@ create_okey_game_player_state(PlayerId, ?STATE_REVEAL_CONFIRMATION,
         end,
     {Piles, _} = lists:mapfoldl(F, prev_seat_num(SeatNum), lists:seq(1, ?SEATS_NUM)),
     Chanak = ?SCORING:chanak(ScoringState),
+    SetTimeout = if SetTimeout1 == infinity -> null;
+                    true -> calc_timeout_comp(SetTRef, 2000)
+                 end,
     #okey_game_player_state{whos_move = CurUserId,
                             game_state = do_okey_challenge,
                             piles = Piles,
@@ -1092,11 +1128,16 @@ create_okey_game_player_state(PlayerId, ?STATE_REVEAL_CONFIRMATION,
                             next_turn_in = Timeout,
                             paused = false,
                             chanak_points = Chanak,
-                            round_timeout = null};
+%%                            round_timeout = null,
+                            round_timeout = SetTimeout};
 
 create_okey_game_player_state(_PlayerId, ?STATE_FINISHED,
-                              #state{cur_round = CurRound, scoring_state = ScoringState}) ->
+                              #state{cur_round = CurRound, scoring_state = ScoringState,
+                                     set_timeout = SetTimeout1, set_timer = SetTRef}) ->
     Chanak = ?SCORING:chanak(ScoringState),
+    SetTimeout = if SetTimeout1 == infinity -> null;
+                    true -> calc_timeout_comp(SetTRef, 2000)
+                 end,
     #okey_game_player_state{whos_move = null,
                             game_state = game_initializing,
                             piles = null,
@@ -1107,7 +1148,8 @@ create_okey_game_player_state(_PlayerId, ?STATE_FINISHED,
                             next_turn_in = 0,
                             paused = false,
                             chanak_points = Chanak,
-                            round_timeout = null};
+%%                            round_timeout = null,
+                            round_timeout = SetTimeout};
 
 create_okey_game_player_state(PlayerId, ?STATE_PAUSE,
                               #state{paused_statename = PausedStateName,
@@ -1118,8 +1160,9 @@ create_okey_game_player_state(PlayerId, ?STATE_PAUSE,
                                paused = true}.
 
 
-create_okey_game_started(SeatNum, DeskState, CurRound, #state{scoring_state = ScoringState,
-                                                              round_timeout = RoundTimeout1}) ->
+create_okey_game_started(SeatNum, DeskState, CurRound,
+                         #state{scoring_state = ScoringState, round_timeout = RoundTimeout1,
+                                set_timeout = SetTimeout1, set_timer = SetTRef}) ->
     Chanak = ?SCORING:chanak(ScoringState),
     #desk_state{hands = Hands,
                 gosterge = Gosterge,
@@ -1127,16 +1170,19 @@ create_okey_game_started(SeatNum, DeskState, CurRound, #state{scoring_state = Sc
     {_, PlayerHand} = lists:keyfind(SeatNum, 1, Hands),
     Hand = [tash_to_ext(Tash) || Tash <- PlayerHand],
     RoundTimeout = if RoundTimeout1 == infinity -> null;
-                      RoundTimeout1 < 2000 -> 0;   %% Latency time compensation
                       true -> RoundTimeout1 - 2000
                    end,
+    SetTimeout = if SetTimeout1 == infinity -> null;
+                    true -> calc_timeout_comp(SetTRef, 2000)
+                 end,
     #okey_game_started{tiles = Hand,
                        gosterge = tash_to_ext(Gosterge),
                        pile_height = length(DeskDeck),
                        current_round = CurRound,
                        current_set = 1,        %% XXX Concept of sets is deprecated
                        chanak_points = Chanak,
-                       round_timeout = RoundTimeout}.
+%%                       round_timeout = RoundTimeout,
+                       round_timeout = SetTimeout}.
 
 
 create_okey_next_turn(CurSeat, Players) ->
@@ -1379,6 +1425,15 @@ calc_timeout(TRef) ->
     case erlang:read_timer(TRef) of
         false -> 0;
         Timeout -> Timeout
+    end.
+
+calc_timeout_comp(TRef, Compensation) ->
+    if TRef == undefined -> null;
+       true -> case erlang:read_timer(TRef) of
+                   false -> 0;
+                   T when T < Compensation -> 0; %% Latency time compensation
+                   T -> T - Compensation
+               end
     end.
 
 %%===================================================================

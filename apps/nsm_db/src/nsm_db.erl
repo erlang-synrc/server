@@ -362,7 +362,17 @@ add_configs() ->
     nsm_db:put(#config{key= "purchase/notifications/email",  value=["maxim@synrc.com"]}),
 
     %%  delivery
-    nsm_db:put(#config{key= "delivery/notifications/email",  value=["maxim@synrc.com"]}).
+    nsm_db:put(#config{key= "delivery/notifications/email",  value=["maxim@synrc.com"]}),
+
+    %% tournament, elimination, Tour time limit
+    nsm_db:put(#config{key= "games/okey/trn/elim/tour_time_limit/1", value = 30*60*1000}),
+    nsm_db:put(#config{key= "games/okey/trn/elim/tour_time_limit/2", value = 30*60*1000}),
+    nsm_db:put(#config{key= "games/okey/trn/elim/tour_time_limit/3", value = 30*60*1000}),
+    nsm_db:put(#config{key= "games/okey/trn/elim/tour_time_limit/4", value = 25*60*1000}),
+    nsm_db:put(#config{key= "games/okey/trn/elim/tour_time_limit/5", value = 25*60*1000}),
+    nsm_db:put(#config{key= "games/okey/trn/elim/tour_time_limit/6", value = 25*60*1000}),
+    nsm_db:put(#config{key= "games/okey/trn/elim/tour_time_limit/7", value = 20*60*1000}),
+    nsm_db:put(#config{key= "games/okey/trn/elim/tour_time_limit/8", value = 20*60*1000}).
 
 % put
 
