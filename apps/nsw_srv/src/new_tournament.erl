@@ -1,4 +1,3 @@
-%% -*- mode: nitrogen -*-
 -module(new_tournament).
 -compile(export_all).
 
@@ -90,12 +89,6 @@ content() ->
             #textbox{style="position:absolute; left:137px; top:77px; width:140px; height:28px; font-size:16px;", class="newtour_textbox", id=tournament_name},
             #label{style="position:absolute; left:300px; top:84px; width:100px; text-align:right;", text=?_T("Description:")},
             #textbox{style="position:absolute; left:405px; top:77px; width:508px; height:28px; font-size:16px;", class="newtour_textbox", id=tournament_desc},
-
-%            #panel{id=upload, class=file, body=[
-%                #label{style="position:absolute; left:575px; top:84px;", text="Turnuva Resmi:"},
-%                #textbox{style="position:absolute; left:692px; top:77px; width:110px; height:28px; font-size:16px;", class="newtour_textbox", id=tournament_official},
-%                #button{style="position:absolute; left:806px; top:77px; width:110px; height:32px; font-size:16px;", text="BROWSE", id=browse, postback=browse_pressed}
-%            ]},
 
             #label{style="position:absolute; left:-28px; top:145px; width:150px; text-align:right;", text=?_T("Game Type:")},
             #dropdown {id=tour_game, style="position:absolute; left:126px; top:138px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
@@ -296,8 +289,6 @@ get_prizes_total(Prizes) ->
     || Id <- Prizes]).
 
 get_cur_prize_fund() ->
-%    case wf:q(tour_type) of
-%        "elimination" ->
             NPlayers = list_to_integer(wf:q(tour_players)),
             Quota = case wf:state(workaround_quota) of 
                 undefined -> 
@@ -317,12 +308,6 @@ get_cur_prize_fund() ->
                 {ok, PrizeFund} -> 100*PrizeFund;
                 _ -> 0
             end.
-%        "pointing" ->
-%            P = list_to_integer(wf:q(tour_players)),
-%            Q = list_to_integer(wf:q(tour_quota)),
-%            T = list_to_integer(wf:q(tour_tours)),
-%            point_prize(P, Q, T)
-%    end.
 
 reset_slider() ->
     PrizeFund = get_cur_prize_fund(),
@@ -588,9 +573,6 @@ event(prize_fund_and_tours_and_quota_changed) ->
                         #option { text="4" },
                         #option { text="2" }
                     ]})
-%            wf:replace(tour_quota, #dropdown {postback=prize_fund_and_tours_changed, id=tour_quota, style="position:absolute; left:807px; top:138px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
-%                #option { text=integer_to_list(Q) }
-%            || Q <- point_quota(P) ]})
              end
     end,
     wf:wire(#event{postback=prize_fund_and_tours_changed});
@@ -601,8 +583,6 @@ event(prize_fund_and_tours_changed) ->
     Tours = game_okey_ng_trn_elim:get_tours(list_to_integer(wf:q(tour_quota)), list_to_integer(wf:q(tour_players)) ), 
 
    ?INFO("Tours: ~p",[Tours]),
-%    case wf:q(tour_type) of
-%        "elimination" ->
             case Tours of
                 [] -> ?ERROR("No sush plan: ~p quota, ~p players!", [list_to_integer(wf:q(tour_quota)), list_to_integer(wf:q(tour_players))]);
                 _ ->
@@ -612,12 +592,6 @@ event(prize_fund_and_tours_changed) ->
                     || T <- Tours]}),
                     event(prize_fund_changed)
             end;
-%        "pointing" ->
-%            wf:replace(tour_tours, #dropdown {postback=prize_fund_changed, id=tour_tours, style="position:absolute; left:827px; top:190px; width:90px; height:32px; font-size:16px; padding-top:2px;", options=[
-%                 #option { text=integer_to_list(T) }
-%            || T <- point_tours(P, Q)]}),
-%            event(prize_fund_changed)
-%    end;
 
 event(prize_fund_changed) ->
     set_prize(1, undefined, "/images/tournament/new_tournament/question.png"),
@@ -642,27 +616,3 @@ event(hide_details) ->
 
 event(Any) ->
     webutils:event(Any).
-
-
-%point_players() ->
-%    lists:usort([P || {P, _, _, _} <- point_tour_plan()]).
-
-%point_quota(Players) ->
-%    lists:usort([Q || {P, Q, _, _} <- point_tour_plan(), P == Players]).
-
-%point_tours(Players, Quota) ->
-%    lists:usort([T || {P, Q, T, _} <- point_tour_plan(), P == Players, Q == Quota]).
-
-%point_prize(Players, Quota, Tours) ->
-%    hd([Pr || {P, Q, T, Pr} <- point_tour_plan(), P == Players, Q == Quota, T == Tours]).
-
-% players, quota, tours, prize
-%point_tour_plan() ->
-%    [{40, 10, 3, 96550},
-%     {40, 10, 1, 144808},
-%     {60, 6,  7, 130327},
-%     {60, 8,  5, 115847},
-%     {60, 4,  1, 173770}].
-
-
-
