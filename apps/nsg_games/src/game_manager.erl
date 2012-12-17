@@ -137,10 +137,8 @@ get_tournament(TrnId) ->
     Table.
 
 create_tables(Num) ->
-%    Users = ["maxim","kate","alice","sustel","ahmettez","shyronnie","kunthar"], % TODO: chose randomly
 
     Users = nsm_auth:imagionary_users(),
-
 
     TavlaTwoPlayers = [ begin
 
@@ -191,7 +189,6 @@ create_tables(Num) ->
     [{ok,OB2,_}|_] = lists:reverse(OkeyBots),
     ?INFO("Okey bot rooms: ~p~n",[{OB1,OB2}]),
 
-
     OkeyPlayers = [begin
 
     T2U1 = nsm_auth:ima_gio(crypto:rand_uniform(0,2048),Users),
@@ -209,8 +206,11 @@ create_tables(Num) ->
                                            list_to_binary(T2U3),list_to_binary(T2U4)]) end ||X<-lists:seq(2,Num)],
     [{ok,OP1,_}|_] = OkeyPlayers,
     [{ok,OP2,_}|_] = lists:reverse(OkeyPlayers),
-    ?INFO("Okey two players bot rooms: ~p~n",[{OP1,OP2}]),
+    ?INFO("Okey two players bot rooms: ~p~n",[{OP1,OP2}]).
 
+create_paired(Num) ->
+
+    Users = nsm_auth:imagionary_users(),
 
     TavlaPairedPlayers = [begin
 

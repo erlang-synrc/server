@@ -222,11 +222,14 @@ featured_tours(AllTours) ->
                                     end,
                                     case rpc:call(NodeAtom, game_manager,get_tournament,[Id]) of
                                          [] -> [];
-                                         _ -> T
+                                         _ -> ?INFO("T: ~p",[T]), T
                                     end
              end || T=#tournament{id=Id} <- AllTours]),
 
     FilteredTours = case wf:state(bar) of
+        past ->     [ T || T=#tournament{id=Id,winners=Winners} <- AllTours, Winners =/= undefined];
+        future ->   [ T || T=#tournament{status=created} <- AllTours];
+        present ->  Online;
         featured -> 
             PreFiltered = [{T, new_tournament:get_prizes_total(A)} || T=#tournament{awards=A} <- AllTours],
             [T || {T, G} <- PreFiltered, G >= ?BAR_PRIZE_FUND];
@@ -237,14 +240,7 @@ featured_tours(AllTours) ->
         filled ->
             PreFiltered = [{T, 100 * length(nsm_tournaments:joined_users(Id)) / PC} || T=#tournament{id=Id, players_count=PC} <- AllTours],
             [T || {T, F} <- PreFiltered, F >= ?BAR_FILL_PERCENT];
-        past ->
-            [ T || T=#tournament{id=Id,winners=Winners} <- AllTours, Winners =/= undefined];
-        future ->
-            [ T || T=#tournament{status=created} <- AllTours];
-        present ->
-            Online;
-        _ ->
-            AllTours
+        _ ->        AllTours
     end,
     SortedTours = lists:sort(fun(#tournament{start_date=SD1, start_time=ST1, id=Id1}, #tournament{start_date=SD2, start_time=ST2, id=Id2}) ->
         {SD1, ST1, Id1} > {SD2, ST2, Id2} end, FilteredTours),
