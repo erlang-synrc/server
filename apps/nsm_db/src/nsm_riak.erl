@@ -13,6 +13,7 @@
 -include("membership_packages.hrl").
 -include("accounts.hrl").
 -include("scoring.hrl").
+-include("mhits.hrl").
 -include_lib("nsx_config/include/config.hrl").
 -include_lib("stdlib/include/qlc.hrl").
 -include_lib("nsx_config/include/log.hrl").
@@ -34,6 +35,7 @@ initialize() ->
 
 init_indexes() ->
     C = riak_client(),
+    ok = C:set_bucket(t_to_b(mhits), [{backend, leveldb_backend}]),
     ok = C:set_bucket(t_to_b(affiliates_rels), [{backend, leveldb_backend}]),
     ok = C:set_bucket(t_to_b(affiliates_contracts), [{backend, leveldb_backend}]),
     ok = C:set_bucket(t_to_b(affiliates_purchases), [{backend, leveldb_backend}]),
@@ -59,6 +61,7 @@ dir() ->
     [binary_to_list(X)||X<-Buckets].
 
 clean() ->
+    riak_clean(mhits),
     riak_clean(affiliates_contracts), riak_clean(affiliates_rels), riak_clean(affiliates_counters), riak_clean(affiliates_purchases), riak_clean(affiliates_contract_types),
     riak_clean(gifts_counters), riak_clean(gifts_config), riak_clean(gifts),
     riak_clean(play_record), riak_clean(player_scoring), riak_clean(scoring_record), riak_clean(personal_score), riak_clean(pointing_rule),
@@ -122,6 +125,11 @@ t_to_b(T) ->
     erlang:list_to_binary(StringBucket).
 
 %% Create indicies for the record
+make_indices(#mhits{word = Word, ip = IP, date = Date}) -> [{<<"mhits_word_date_bin">>, key_to_bin({Word, Date})},
+                                                            {<<"mhits_date_bin">>, key_to_bin(Date)},
+                                                            {<<"mhits_word_bin">>, key_to_bin(Word)},
+                                                            {<<"mhits_ip_bin">>, key_to_bin(IP)},
+                                                            {<<"mhits_ip_date_bin">>, key_to_bin({IP, Date})}];
 make_indices(#affiliates_contracts{owner = OwnerId}) -> [{<<"owner_bin">>, key_to_bin(OwnerId)}];
 make_indices(#affiliates_purchases{owner_id = OwnerId, contract_id = ContractId}) -> [{<<"owner_bin">>, key_to_bin(OwnerId)},
                                                                                       {<<"contract_bin">>, key_to_bin(ContractId)}];
@@ -139,6 +147,7 @@ make_indices(#user_bought_gifts{username=UId}) -> [{<<"user_bought_gifts_usernam
 make_indices(_Record) -> [].
 
 
+make_obj(#mhits{word=W, ip=IP, date=D}=T, mhits) -> riak_object:new(r_to_b(T), key_to_bin({W,IP,D}), T);
 make_obj(T, affiliates_contract_types) -> riak_object:new(r_to_b(T), key_to_bin(T#affiliates_contract_types.id), T);
 make_obj(T, affiliates_contracts) -> riak_object:new(r_to_b(T), key_to_bin(T#affiliates_contracts.id), T);
 make_obj(T, affiliates_look_perms) -> riak_object:new(r_to_b(T), key_to_bin(T#affiliates_look_perms.user_id), T);
