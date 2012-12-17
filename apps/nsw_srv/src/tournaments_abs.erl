@@ -1,5 +1,5 @@
 %% -*- mode: nitrogen -*-
--module(tournaments_doxtop).
+-module(tournaments).
 -compile(export_all).
 
 -include_lib("nitrogen_core/include/wf.hrl").
@@ -80,138 +80,125 @@ main_authorized() ->
     "}),
     #template { file=code:priv_dir(nsw_srv)++"/templates/bare.html" }.
 
+   
 title() -> webutils:title(?MODULE).
 
 body() ->
     #template{file=code:priv_dir(nsw_srv)++"/templates/info_page.html"}.
 
 content() ->
-  {{Y, M, D}, _} = calendar:now_to_datetime(erlang:now()),
-  SY = integer_to_list(Y),
-  SM = integer_to_list(M),
-  SD = integer_to_list(D),
-  wf:state(alltour_arrow_shift, 0),
-  wf:state(sort_order, descend),
-  wf:state(per_page, 12),
-  [
-    #panel{class="tournaments_title", body=?_T("TOURNAMENTS PAGE")},
-    #panel{class="tournaments_header", body=[
-      #link{text=?_T("Tournament Setup!"), class="matchmaker_game_rules tournament_setup", postback=show_page_2},
-      #link{text=?_T("Turnament Rules!"), class="matchmaker_game_rules tournament_rules",  postback=show_page_1}
-    ]},
-    #panel{id=explaination_holder, style="font-size:14px;", body=[]},
+    {{Y, M, D}, _} = calendar:now_to_datetime(erlang:now()),
+    SY = integer_to_list(Y),
+    SM = integer_to_list(M),
+    SD = integer_to_list(D),
+    wf:state(alltour_arrow_shift, 0),
+    wf:state(sort_order, descend),
+    wf:state(per_page, 12),
+    [
+        #panel{class="alltour_title", body=[
+                #label{class="alltour_title_label", body=?_T("TOURNAMENTS PAGE")}
+            ]
+        },        
+        #panel{id=explaination_holder, style="font-size:14px;", body=[]},
 
-    #list{class="tournaments_top_selector", body=[
-      #listitem{body=#link{text=?_T("FINISHED IN PAST"), postback={bar, past}}},
-      #listitem{body=#link{text=?_T("NOW PLAYING"), postback={bar, present}}},
-      #listitem{body=#link{text=?_T("FUTURE TOURNAMENTS"), postback={bar, future}}}
-    ]},
+        #panel{style="position:relative; left:-25px; width:960px;", body=[
+            #panel{id=top_selectors, style="height:700px; font-size:16px; ", body=[
+                #panel{style="position:absolute; background-color:#e4e8e9; top:84px; height:360px; width:960px;", body=[]},
+                #panel{style="position:absolute; top:52px; left:772px;", class="alltour_bars alltour_bar_5", body=[]},
+                #link{style="position:absolute; top:52px; left:0px; width:300px;", class="alltour_bars alltour_bar_2", text=?_T("FINISHED IN PAST"), postback={bar, past}},
+                #link{style="position:absolute; top:52px; left:300px;width:300px;", class="alltour_bars alltour_bar_2", text=?_T("NOW PLAYING"), postback={bar, present}},
+                #link{style="position:absolute; top:52px; left:600px;width:300px;", class="alltour_bars alltour_bar_2", text=?_T("FUTURE TOURNAMENTS"), postback={bar, future}},
+%                #panel{style="position:absolute; top:52px; left:900px;", class="alltour_bars alltour_bar_4", body=[]},
+%                #image{image="/images/tournament/tournaments_page/bar_dividers.png", style="position:absolute; top:61px	; left:900px;"},
+%                #image{image="/images/tournament/tournaments_page/bar_dividers.png", style="position:absolute; top:61px; left:355px;"},
+%                #image{image="/images/tournament/tournaments_page/bar_dividers.png", style="position:absolute; top:61px; left:547px;"},
 
-    #panel{class="tournaments_featured", body=[
-        #panel{class="tournaments_featured_arrow", body=[
-          #link{postback=arrow_left,
-            body=#image{image="/images/tournament/tournaments_page/arrow_left.png?jcb=1353663519"}}
+    %            #image{image="/images/tournament/tournaments_page/bar_dividers.png", style="position:absolute; top:61px; left:771px;"},
+                
+                #panel{id=featured_tours, style="position:absolute; top:112px; left:43px; width:880px;", body=[
+                    featured_tours()
+                ]},
+
+                #panel{style="height:1px; background-color:#c2c2c2; width:960px; position:absolute; top:482px;", body=[]},
+                #panel{class="alltour_second_title", style="top:472px;", body=[
+                        #label{class="alltour_title_label", body=?_T("FILTER")}
+                    ]
+                },
+
+                %filters
+                #label{style="position:absolute; left:22px; top:540px; width:100px; text-align:right;", text=?_T("Game Type:")},
+                #dropdown {id=tour_game, style="position:absolute; left:126px; top:533px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
+                            #option { text="—" },
+                            #option { text="OKEY" },
+                            #option { text="TAVLA" }
+                ]},
+                #label{style="position:absolute; left:422px; top:540px; width:150px; text-align:right;", text=?_T("Players Count:")},
+                #dropdown {id=tour_players, style="position:absolute; left:576px; top:533px; width:160px; height:32px; font-size:16px; padding-top:2px;", options=[
+                            #option { text="—" },
+                            #option { text="16" },
+                            #option { text="32" },
+                            #option { text="64" },
+                            #option { text="128" },
+                            #option { text="256" },
+                            #option { text="512" },
+                            #option { text="1024" }
+                ]},
+                #label{style="position:absolute; left:703px; top:540px; width:100px; text-align:right;", text=?_T("Quota:")},
+                #dropdown {id=tour_quota, style="position:absolute; left:807px; top:533px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
+                            #option { text="—" },
+                            #option { text="2" },
+                            #option { text="4" },
+                            #option { text="6" },
+                            #option { text="8" },
+                            #option { text="10" }
+                ]},
+                #label{style="position:absolute; left:225px; top:540px; width:100px; text-align:right;", text=?_T("Date:")},
+                #checkbox{id=tour_date_check, style="position:absolute; left:262px; top:536px; width:20px; height:20px;", checked=false},
+                #textbox{id=tour_date, class="alltour_textbox",
+                    style="position:absolute; left:330px; top:532px; width:120px; height:28px; font-size:16px;
+                           background:url(../images/tournament/new_tournament/calendar_icon.png) no-repeat 98px 2px;",
+                    text= (SD ++ "." ++ SM ++ "." ++ SY)},
+
+                #link{style="position:absolute; top:590px; left:166px;", class="alltour_btns_blue alltour_btn_blue_1", text=?_T("ACCORDING TO FRIENDS"), postback={sort_by, friends}},
+                #link{style="position:absolute; top:590px; left:392px;", class="alltour_btns_blue alltour_btn_blue_2", text=?_T("BY GIFTS"), postback={sort_by, gifts}},
+                #link{style="position:absolute; top:590px; left:564px;", class="alltour_btns_blue alltour_btn_blue_3", text=?_T("PARTICIPATION PERCENTAGE"), postback={sort_by, participation}},
+
+                #label{style="position:absolute; left:203px; top:674px; width:150px; text-align:right;", text=?_T("Sort by type:")},
+                #dropdown {postback=sort_order_set, id=sort_order, style="position:absolute; left:357px; top:667px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
+                            #option { text=?_T("DESC") },
+                            #option { text=?_T("ASC") }
+                ]},
+                #label{style="position:absolute; left:463px; top:674px; width:100px; text-align:right;", text=?_T("View:")},
+                #dropdown {postback=per_page_set, id=per_page, style="position:absolute; left:567px; top:667px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
+                            #option { text="12 " ++ ?_T("PCS") },
+                            #option { text="24 " ++ ?_T("PCS") },
+                            #option { text="24 " ++ ?_T("ALL") }
+                ]},
+
+                case nsm_accounts:user_paid(wf:user()) of
+                    true ->
+                        [
+                            #link{style="position:absolute; top:726px; left:226px;", class="alltour_big_buttons alltour_gray_button", text=?_T("FILTER"), postback=filter_pressed},
+                            #link{style="position:absolute; top:726px; left:392px;", class="alltour_big_buttons alltour_gray_button", text=?_T("RESET"), postback=clean_filter_pressed},
+                            #link{style="position:absolute; top:726px; left:558px;", class="alltour_big_buttons alltour_orange_button", text=?_T("NEW"), postback=new_pressed}
+                        ];
+                    false ->
+                        [
+                            #link{style="position:absolute; top:726px; left:309px;", class="alltour_big_buttons alltour_gray_button", text=?_T("FILTER"), postback=filter_pressed},
+                            #link{style="position:absolute; top:726px; left:475px;", class="alltour_big_buttons alltour_gray_button", text=?_T("RESET"), postback=clean_filter_pressed}
+                        ]
+                end,
+                #link{style="position:absolute; top:268px; left:20px;", class="alltour_arrow_left", postback=arrow_left},
+                #link{style="position:absolute; top:268px; left:925px;", class="alltour_arrow_right", postback=arrow_right},
+                #link{} % this is WTF fix. Something with the Nitrogen I suppose. Delete it and the last link will appear twise on a page.
+            ]},
+            #panel{id=alltour_container, style="margin-top:105px; margin-left:10px; width:950px;", body=[
+                all_tours(1)
+            ]}
         ]},
-        #panel{id=featured_tours, class="tournaments_featured_tours", body=featured_tours()},
-        #panel{class="tournaments_featured_arrow", body=[
-          #link{postback=arrow_right,
-            body=#image{image="/images/tournament/tournaments_page/arrow_right.png?jcb=1353663519"}}
-        ]}
-    ]},
-
-    #hr{class="tournaments_hr"},
-    #panel{class="tournaments_second_title", body=?_T("FILTER")},
-
-    #panel{class="tournaments_filter_block", body=[
-      #label{text=?_T("Game Type:")},
-      #dropdown {id=tour_game, options=[#option{text=T} || T <- ["-", "OKEY", "TAVLA"]]},
-
-      #label{text=?_T("Players Count:")},
-      #dropdown {id=tour_players, options=[#option { text=T } || T <- ["-", "16", "32", "64", "128", "256", "512", "1024"]]},
-
-      #label{text=?_T("Quota:")},
-      #dropdown {id=tour_quota, options=[#option{text=T} || T <- ["-", "2","4","6","8", "10"]]},
-
-      #label{text=?_T("Date:")},
-      #checkbox{id=tour_date_check, style="width:20px; height:20px;", checked=false},
-      #textbox{id=tour_date, class="alltour_textbox",
-        style="width:120px; height:28px; font-size:16px;
-               background:url(../images/tournament/new_tournament/calendar_icon.png) no-repeat 98px 2px;",
-        text= (SD ++ "." ++ SM ++ "." ++ SY)}
-    ]},
-
-    #panel{class="tournaments_filter_block", body=[
-      #label{text=?_T("Sort by type:")},
-      #dropdown {postback=sort_order_set, id=sort_order, options=[
-        #option { text=?_T("DESC") },
-        #option { text=?_T("ASC") }
-      ]},
-      #label{text=?_T("View:")},
-      #dropdown {postback=per_page_set, id=per_page,     options=[
-        #option { text="12 " ++ ?_T("PCS") },
-        #option { text="24 " ++ ?_T("PCS") },
-        #option { text="24 " ++ ?_T("ALL") }
-      ]}
-    ]},
-
-    #panel{class="tournaments_filter_block", body=[
-      #link{class="alltour_btns_blue alltour_btn_blue_1", text=?_T("ACCORDING TO FRIENDS"), postback={sort_by, friends}},
-      #link{class="alltour_btns_blue alltour_btn_blue_2", text=?_T("BY GIFTS"), postback={sort_by, gifts}},
-      #link{class="alltour_btns_blue alltour_btn_blue_3", text=?_T("PARTICIPATION PERCENTAGE"), postback={sort_by, participation}}
-    ]},
-
-    #panel{class="tournaments_filter_block", body=[
-      case nsm_accounts:user_paid(wf:user()) of
-        true ->
-          [
-            #link{style="", class="alltour_big_buttons alltour_gray_button", text=?_T("FILTER"), postback=filter_pressed},
-            #link{style="", class="alltour_big_buttons alltour_gray_button", text=?_T("RESET"), postback=clean_filter_pressed},
-            #link{style="", class="alltour_big_buttons alltour_orange_button", text=?_T("NEW"), postback=new_pressed}
-          ];
-        false ->
-          [
-            #link{style="", class="alltour_big_buttons alltour_gray_button", text=?_T("FILTER"), postback=filter_pressed},
-            #link{style="", class="alltour_big_buttons alltour_gray_button", text=?_T("RESET"), postback=clean_filter_pressed}
-          ]
-      end
-    ]},
-    #hr{},
-
-    #panel{class="tournaments_filter_block", body=[
-      #panel{class=criteria, body=[
-        #panel{class=area, body=[
-          #list{id=criteria_field, class="row", body=""}
-        ]}
-      ]},
-
-      #panel{class="create-block", body=[
-        #panel{class=article1, body=[
-          #h3{text=?_T("Game Type")},
-          #list{class="list1 size1", body=[
-            #listitem{body=X} || X <- [
-              #link{text=?_T("OKEY"), id= site_utils:simple_pickle({game, okey}),  postback={add,{game,okey}}},
-              #link{text=?_T("TAVLA"), id= site_utils:simple_pickle({game, tavla}), postback={add,{game, tavla}}}
-          ]]},
-
-          #h3{text=?_T("Players Count:")},
-          #list{class="list1 size1", id=tour_players, body=[
-            #listitem{body=#link{text=T, id=site_utils:simple_pickle({count, list_to_atom(T)}),
-                postback={add, {count, list_to_atom(T)}} } } || T <- ["16", "32", "64", "128", "256", "512", "1024"]
-          ]},
-
-          #h3{text=?_T("Quota:")},
-          #list{id=tour_quota, class="list1 size1", body=[
-            #listitem{body=#link{text=T, id=site_utils:simple_pickle({quota, list_to_atom(T)}),
-              postback={add, {quota, list_to_atom(T)}} } } || T <- ["2","4","6","8","10"]
-          ]}
-
-        ]}
-      ]}
-    ]},
-
-    #hr{style="width:700px;"},
-    #panel{class="tournaments_all_block", id=alltour_container, body=all_tours(1)}
-  ].
+        #link{text=?_T("Turnament Rules!"), class="matchmaker_game_rules", style="float:none; position:absolute; left:550px; top:15px;", postback=show_page_1},
+        #link{text=?_T("Tournament Setup!"), class="matchmaker_game_rules", style="float:none; position:absolute; left:750px; top:15px;", postback=show_page_2}
+    ].
 
 featured_tours() ->
     AllTours = nsm_db:all(tournament),
@@ -254,7 +241,7 @@ featured_tours() ->
     TourIds = [TId || #tournament{id=TId} <- SortedTours],
     wf:state(last_bar_tours, length(TourIds)),
     ShiftedTours = lists:sublist(TourIds, 1+wf:state(alltour_arrow_shift), 4),
-    [tourblock(Id) || Id <- ShiftedTours].
+    [#panel{style="margin:8px; float:left", body=tourblock(Id)} || Id <- ShiftedTours].
 
 all_tours(Page) ->
     ToursPerPage = wf:state(per_page),
@@ -327,8 +314,12 @@ all_tours(Page) ->
     TourIds = [TId || #tournament{id=TId} <- FilteredTours4],
     PageTourIds = lists:sublist(TourIds, (Page-1)*ToursPerPage+1, ToursPerPage),
     [
-      [tourblock(TId) || TId <- PageTourIds],
-      buttons(Page, length(AllTours))
+        "<center>",
+        #panel{style="height:1px; background-color:#c2c2c2; width:700px;", body=[]},
+        [#panel{style="margin:16px; float:left", body=tourblock(TId)} || TId <- PageTourIds],
+        #panel{style="display:block; height:100px;", body=[]},
+        buttons(Page, length(AllTours)),
+        "</center>"
     ].
 
 test_tourblock() ->
@@ -379,33 +370,67 @@ tourblock(Id, Title, Game, Date, NGames, Quota, Avatar, Prizes,PlayersCount) ->
          1024 -> "#ff3000";
          2048 -> "#ff1000"
     end,
+ 
+    #link{url=?_U("tournament/lobby/id/")++integer_to_list(Id), body=[
+        #panel{style="width:200px; height:308px; border:1px solid #adb1b0; background-color:#f6f9ff; position:relative;", body=[
+            #panel{style="width:200px; height:28; position:absolute; left:-1px; top:-1px; 
+                    font:14px 'Gotham Rounded Bold','Trebuchet MS'; color:#fff; text-shadow:0 1px 1px #353535; text-align:center; padding-top:6px;
+                    background-color:"++Color++"; border:1px solid #adb1b0;", body=[Title]},
+            #image{image=Avatar, style="width: 184px; position:absolute; left:7px; top:34px;
+                    -moz-border-radius:2px;
+                    -webkit-border-radius:2px;
+                    border-radius:2px;
+                    border:1px solid #7e7f83;"},
+            #panel{style="width:200px; height:1px; position:absolute; left:0px; top:134px; background-color:#9c9da2;", body=[]},
+            #panel{style="width:200px; height:1px; position:absolute; left:0px; top:198px; background-color:#9c9da2;", body=[]},
+ 																
+            #label{style="position:absolute; left:79px; top:177px; color:#f67436; font-size:12px; font-weight:bold;", 
+                body=[?_T("Game Type:"), " <span style='color:#222; font-weight:normal;'>" ++ Game ++ "</span>"] },
 
-  #panel{class="tts_tournament", body=[
-  #link{url=?_U("tournament/lobby/id/")++integer_to_list(Id), body=[
-    #panel{style="background-color:"++Color++";", class="tts_title", body=[Title]},
-    #image{image=Avatar, class="tts_avatar"},
+            #label{style="position:absolute; left:9px; top:143px; color:#f67436; font-size:12px; font-weight:bold;", 
+                body=[?_T("Start Date: "), " <span style='color:#222; font-weight:normal;'>" ++ Date ++ "</span>"] },
+            #label{style="position:absolute; left:9px; top:160px; color:#f67436; font-size:12px; font-weight:bold;", 
+                body=[?_T("Players total:"), " <span style='color:#222; font-weight:normal;'>" ++ integer_to_list(NGames) ++ "</span>"] },
+            #label{style="position:absolute; left:9px; top:177px; color:#f67436; font-size:12px; font-weight:bold;", 
+                body=[?_T("Quota:"), " <span style='color:#222; font-weight:normal;'>" ++ integer_to_list(Quota) ++ "</span>"] },
 
-    #hr{},
-    #label{body=[?_T("Game Type:"), #span{body=Game}]},
-    #label{body=[?_T("Start Date: "), #span{body=Date}]},
-    #label{body=[?_T("Players total:"), #span{body=integer_to_list(NGames)}]},
-    #label{body=[?_T("Quota:"), #span{body=integer_to_list(Quota)}]},
+            #label{style="position:absolute; left:9px; top:203px; color:#f67436; font-size:14px; font-weight:bold;", text=?_T("Prizes:")},
 
-    #hr{},
-    #label{text=?_T("Prizes:")},
-    #panel{class="tts_prizes", body=
-    [begin
-      #panel{class="tts_prize", body =[
-        #span{body=integer_to_list(I)},
-        #hr{},
-        "<center>",
-        #panel{class="tts_prize_icon", body=#image{image=P}},
-        "</center>"
-      ]}
-     end || {P, I} <- lists:zip(Prizes, lists:seq(1, length(Prizes))) ]
-    }
-  ]}
-  ]}.
+            #label{style="position:absolute; left:34px; top:224px; color:#222; font-size:14px;", text="1"},
+            #panel{style="position:absolute; left:9px; top:240px; background-color:#9c9da2; width:55px; height:1px;", body=[]},
+            #panel{style="position:absolute; left:9px; top:246px;",
+                body=#panel{class="alltour_prize_icon_holder",
+                    body=[
+                        "<center>",
+                        #image{class="alltour_prize_icon", image=lists:nth(1, Prizes)},
+                        "</center>"
+                    ]
+                }
+            },
+            #label{style="position:absolute; left:97px; top:224px; color:#222; font-size:14px;", text="2"},
+            #panel{style="position:absolute; left:72px; top:240px; background-color:#9c9da2; width:55px; height:1px;", body=[]},
+            #panel{style="position:absolute; left:72px; top:246px;",
+                body=#panel{class="alltour_prize_icon_holder",
+                    body=[
+                        "<center>",
+                        #image{class="alltour_prize_icon", image=lists:nth(2, Prizes)},
+                        "</center>"
+                    ]
+                }
+            },
+            #label{style="position:absolute; left:159px; top:224px; color:#222; font-size:14px;", text="3"},
+            #panel{style="position:absolute; left:135px; top:240px; background-color:#9c9da2; width:55px; height:1px;", body=[]},
+            #panel{style="position:absolute; left:135px; top:246px;",
+                body=#panel{class="alltour_prize_icon_holder",
+                    body=[
+                        "<center>",
+                        #image{class="alltour_prize_icon", image=lists:nth(3, Prizes)},
+                        "</center>"
+                    ]
+                }
+            }
+        ]}
+    ]}.
 
 buttons(Page, AllN) ->
     ToursPerPage = wf:state(per_page),
@@ -492,7 +517,7 @@ event(clean_filter_pressed) ->
     wf:set(tour_game, "—"),
     wf:set(tour_players, "—"),
     wf:set(tour_quota, "—"),
-    wf:replace(tour_date_check, #checkbox{id=tour_date_check, style="width:20px; height:20px;", checked=false}),
+    wf:replace(tour_date_check, #checkbox{id=tour_date_check, style="position:absolute; left:262px; top:536px; width:20px; height:20px;", checked=false}),
     wf:state(game_filter, undefined),
     wf:state(players_filter, undefined),
     wf:state(quota_filter, undefined),
@@ -549,27 +574,8 @@ event(show_page_2) ->
 event(hide_explaination) ->
     wf:update(explaination_holder, []);
 
-event({add, {Key, Value} = Setting}) ->
-  process_add(Setting);
-
-event({del,{Key, Value}=Setting})->
-  process_remove(Setting);
-
 event(Any) ->
     webutils:event(Any).
 
 api_event(Name, Tag, Data) ->
   webutils:api_event(Name, Tag, Data).
-
-process_add({Key, Value} = Setting) ->
-  Id = site_utils:simple_pickle({Key, Value}),
-  SpanElement = #span{actions="var e=objs('"++Id++"'); objs('me').text( e.text() ? e.text() : e.attr('value') )"},
-  CriteriaElement = #listitem{id="for_"++Id, class="for_"++wf:to_list(Key),
-    body=["<em>", SpanElement, #link{text="X", postback={del, {Key, Value}}}, "</em>"]},
-  wf:insert_bottom(criteria_field, CriteriaElement),
-  ok.
-
-process_remove({Key, Value} = Setting)->
-  Id = site_utils:simple_pickle({Key, Value}),
-  wf:remove("for_"++Id),
-  ok.
