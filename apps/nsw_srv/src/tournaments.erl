@@ -8,7 +8,7 @@
 -include("common.hrl").
 -include("elements/records.hrl").
 
--define(BAR_PRIZE_FUND, 500).   % this should go to config, stays here for now
+-define(BAR_PRIZE_FUND, 500).
 -define(BAR_SOON_SECONDS, 24*60*60).
 -define(BAR_FILL_PERCENT, 80).
 
@@ -53,14 +53,6 @@ main_authorized() ->
         };
         new Image('/images/tournament/tournaments_page/bar_1_pressed.png');
         new Image('/images/tournament/tournaments_page/bar_1_hover.png');
-        new Image('/images/tournament/tournaments_page/bar_2_pressed.png');
-        new Image('/images/tournament/tournaments_page/bar_2_hover.png');
-        new Image('/images/tournament/tournaments_page/bar_3_pressed.png');
-        new Image('/images/tournament/tournaments_page/bar_3_hover.png');
-        new Image('/images/tournament/tournaments_page/bar_4_pressed.png');
-        new Image('/images/tournament/tournaments_page/bar_4_hover.png');
-        new Image('/images/tournament/tournaments_page/bar_5_pressed.png');
-        new Image('/images/tournament/tournaments_page/bar_5_hover.png');
         new Image('/images/tournament/tournaments_page/btn_blue_1_pressed.png');
         new Image('/images/tournament/tournaments_page/btn_blue_1_hover.png');
         new Image('/images/tournament/tournaments_page/btn_blue_2_pressed.png');
@@ -77,6 +69,7 @@ main_authorized() ->
         new Image('/images/tournament/tournaments_page/btn_gray_hover.png');
         </script>
     "}),
+
     #template { file=code:priv_dir(nsw_srv)++"/templates/bare.html" }.
 
 title() -> webutils:title(?MODULE).
@@ -85,6 +78,9 @@ body() ->
     #template{file=code:priv_dir(nsw_srv)++"/templates/info_page.html"}.
 
 content() ->
+  
+  AllTours = nsm_db:all(tournament),
+  wf:state(all_fetch,AllTours),
   {{Y, M, D}, _} = calendar:now_to_datetime(erlang:now()),
   SY = integer_to_list(Y),
   SM = integer_to_list(M),
@@ -111,7 +107,7 @@ content() ->
           #link{postback=arrow_left,
             body=#image{image="/images/tournament/tournaments_page/arrow_left.png?jcb=1353663519"}}
         ]},
-        #panel{id=featured_tours, class="tournaments_featured_tours", body=featured_tours()},
+        #panel{id=featured_tours, class="tournaments_featured_tours", body=featured_tours(AllTours)},
         #panel{class="tournaments_featured_arrow", body=[
           #link{postback=arrow_right,
             body=#image{image="/images/tournament/tournaments_page/arrow_right.png?jcb=1353663519"}}
@@ -179,7 +175,7 @@ content() ->
 %    prototype_doxtop_panel(),
 %    #hr{style="width:700px;"},
 
-    #panel{class="tournaments_all_block", id=alltour_container, body=all_tours(1)}
+    #panel{class="tournaments_all_block", id=alltour_container, body=all_tours(AllTours,1)}
   ].
 
 prototype_doxtop_panel() ->
@@ -215,8 +211,7 @@ prototype_doxtop_panel() ->
       ]}
     ]}.
 
-featured_tours() ->
-    AllTours = nsm_db:all(tournament),
+featured_tours(AllTours) ->
     Online = lists:flatten([ begin 
                                     Id = T#tournament.id,
                                     Zone = Id div 1000000,
@@ -243,7 +238,7 @@ featured_tours() ->
             PreFiltered = [{T, 100 * length(nsm_tournaments:joined_users(Id)) / PC} || T=#tournament{id=Id, players_count=PC} <- AllTours],
             [T || {T, F} <- PreFiltered, F >= ?BAR_FILL_PERCENT];
         past ->
-            [ T || T=#tournament{id=Id,status=Status} <- AllTours, Status =/= created];
+            [ T || T=#tournament{id=Id,winners=Winners} <- AllTours, Winners =/= undefined];
         future ->
             [ T || T=#tournament{status=created} <- AllTours];
         present ->
@@ -255,12 +250,11 @@ featured_tours() ->
         {SD1, ST1, Id1} > {SD2, ST2, Id2} end, FilteredTours),
     TourIds = [TId || #tournament{id=TId} <- SortedTours],
     wf:state(last_bar_tours, length(TourIds)),
-    ShiftedTours = lists:sublist(TourIds, 1+wf:state(alltour_arrow_shift), 4),
+    ShiftedTours = lists:sublist(SortedTours, 1+wf:state(alltour_arrow_shift), 4),
     [tourblock(Id) || Id <- ShiftedTours].
 
-all_tours(Page) ->
+all_tours(AllTours,Page) ->
     ToursPerPage = wf:state(per_page),
-    AllTours = nsm_db:all(tournament),
     PreSortedTours = case wf:state(sort_by) of
         friends ->
             Friends = [UId || {_, _, UId} <- nsm_users:list_subscr(wf:user())],
@@ -326,7 +320,7 @@ all_tours(Page) ->
         Date -> [T || T = #tournament{start_date=D} <- FilteredTours3, D==Date]
     end,
 
-    TourIds = [TId || #tournament{id=TId} <- FilteredTours4],
+    TourIds = [T || T=#tournament{id=TId} <- FilteredTours4],
     PageTourIds = lists:sublist(TourIds, (Page-1)*ToursPerPage+1, ToursPerPage),
     [
       [tourblock(TId) || TId <- PageTourIds],
@@ -338,10 +332,10 @@ test_tourblock() ->
         "/images/tournament/tournaments_page/tournament_default_avatar.png",
         ["http://www.enilginc.com/images/products/00/08/45/845_buyuk.jpg", 
          "http://www.enilginc.com/images/products/00/02/12/212_buyuk.jpg",
-         "http://www.enilginc.com/images/products/00/07/31/731_buyuk.jpg"],16).
+         "http://www.enilginc.com/images/products/00/07/31/731_buyuk.jpg"],16,[]).
 
-tourblock(Id) ->
-    {ok, T} = nsm_db:get(tournament, Id),
+tourblock(T) ->
+    Id = T#tournament.id,
     Title = T#tournament.name,
     Game = case T#tournament.game_type of
         game_okey -> "OKEY";
@@ -355,6 +349,7 @@ tourblock(Id) ->
            integer_to_list(element(1, T#tournament.start_date)),
     NPlayers = T#tournament.players_count,
     Quota = T#tournament.quota,
+    Winners = T#tournament.winners,
     Avatar = game_type_image(T#tournament.game_type,"/images/tournament"),
              %"/images/tournament/tournaments_page/tournament_default_avatar.png",
     Prizes = case is_list(T#tournament.awards) of
@@ -369,9 +364,10 @@ tourblock(Id) ->
              "/images/tournament/new_tournament/question.png",
              "/images/tournament/new_tournament/question.png"]
     end,
-    tourblock(Id, Title, Game, Date, NPlayers, Quota, Avatar, Prizes, NPlayers).
+    tourblock(Id, Title, Game, Date, NPlayers, Quota, Avatar, Prizes, NPlayers, Winners).
 
-tourblock(Id, Title, Game, Date, NGames, Quota, Avatar, Prizes,PlayersCount) ->
+tourblock(Id, Title, Game, Date, NGames, Quota, Avatar, Prizes,PlayersCount, Winners) ->
+
     Color = case PlayersCount of 
          16   -> "#fff000";
          40   -> "#ffe000";
@@ -391,6 +387,13 @@ tourblock(Id, Title, Game, Date, NGames, Quota, Avatar, Prizes,PlayersCount) ->
          _ -> "#ff1000"
     end,
 
+    Places = case Winners of
+                  undefined -> [integer_to_list(X)||X<-lists:seq(1, length(Prizes))];
+                  L -> [Name||{Name,Pos,Gift}<-L] ++ [[]||X<-lists:seq(1,3-length(L))] end,
+
+   ?INFO("Places: ~p",[Places]),
+   ?INFO("Prizes: ~p",[Prizes]),
+    
   #panel{class="tts_tournament", body=[
   #link{url=?_U("tournament/lobby/id/")++integer_to_list(Id), body=[
     #panel{style="background-color:"++Color++";", class="tts_title", body=[Title]},
@@ -402,18 +405,19 @@ tourblock(Id, Title, Game, Date, NGames, Quota, Avatar, Prizes,PlayersCount) ->
     #label{body=[?_T("Players total:"), #span{body=integer_to_list(NGames)}]},
     #label{body=[?_T("Quota:"), #span{body=integer_to_list(Quota)}]},
 
+
     #hr{},
     #label{text=?_T("Prizes:")},
     #panel{class="tts_prizes", body=
     [begin
       #panel{class="tts_prize", body =[
-        #span{body=integer_to_list(I)},
+        #span{body=I},
         #hr{},
         "<center>",
         #panel{class="tts_prize_icon", body=#image{image=P}},
         "</center>"
       ]}
-     end || {P, I} <- lists:zip(Prizes, lists:seq(1, length(Prizes))) ]
+     end || {P, I} <- lists:zip(Prizes, Places) ]
     }
   ]}
   ]}.
@@ -446,23 +450,26 @@ buttons(Page, AllN) ->
     end.
 
 event({page, Page}) ->
-    wf:update(alltour_container, all_tours(Page));
+    AllTours = wf:state(all_fetch),
+    wf:update(alltour_container, all_tours(AllTours,Page));
 
 event(arrow_left) ->
+    AllTours = wf:state(all_fetch),
     Shift = wf:state(alltour_arrow_shift),
     case Shift of
         0 -> ok;
         _ -> 
             wf:state(alltour_arrow_shift, Shift-1),
-            wf:update(featured_tours, featured_tours())
+            wf:update(featured_tours, featured_tours(AllTours))
     end;
 
 event(arrow_right) ->
+    AllTours = wf:state(all_fetch),
     Shift = wf:state(alltour_arrow_shift),    
     case wf:state(last_bar_tours) > (4+Shift) of
         true ->
             wf:state(alltour_arrow_shift, Shift+1),
-            wf:update(featured_tours, featured_tours());
+            wf:update(featured_tours, featured_tours(AllTours));
         false ->
             ok
     end;
@@ -531,9 +538,10 @@ event({sort_by, C}) ->
     event({page, 1});
 
 event({bar, B}) ->
+    AllTours = wf:state(all_fetch),
     wf:state(bar, B),
     wf:state(alltour_arrow_shift, 0),
-    wf:update(featured_tours, featured_tours());
+    wf:update(featured_tours, featured_tours(AllTours));
 
 event(show_page_1) ->
     wf:update(explaination_holder, [

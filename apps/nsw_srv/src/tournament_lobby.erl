@@ -136,7 +136,6 @@ content() ->
         _ ->
             ok
     end,
-
     % is user joined already
     JoinedList = [P#play_record.who || P <- nsm_tournaments:joined_users(T#tournament.id)],
     UserJoined = lists:member(wf:user(), JoinedList),
@@ -147,7 +146,6 @@ content() ->
                             {ok,PX} -> {ok,PX};
                              _ -> {ok,[]}
                         end,
-
 %    PlanDesc1 = ["yok","yok","yok","yok","yok","yok","yok","Final"],
 
 %    PlanDesc = ling:join(PlanDesc1," / "),
@@ -484,8 +482,10 @@ start_comet() ->
     TournamentId = wf:state(tournament_id),
     {ok, Pid} = wf:comet(fun()->
         CometProcess = self(),
+        ?INFO("subscribe"),
         nsx_msg:subscribe_for_tournament(TournamentId, User, CometProcess),
-        comet_update(wf:user(), wf:state(tournament_id))
+        comet_update(wf:user(), wf:state(tournament_id)),
+        ?INFO("ok")
     end,  ?COMET_POOL),
     wf:state(comet_pid, Pid).
 
@@ -539,11 +539,12 @@ get_tour_user_list() ->
                     4 -> nsx_opt:get_env(nsm_db, game_srv_node, 'game@doxtop.cc');
                     _ -> list_to_atom(GameSrv)
                end,
-
+    ?INFO("userlist"),
     Rpc = case rpc:call(NodeAtom,nsm_srv_tournament_lobby,active_users,[TID]) of
         {badrpc,_} -> [];
         X -> X
-    end,   
+    end,
+    ?INFO("ok"),
     ActiveUsers = sets:from_list([U#user.username || U <- Rpc]),
     JoinedUsersList = lists:usort(nsm_tournaments:joined_users(TId)),
     JoinedUsers = sets:from_list([U#play_record.who || U <- JoinedUsersList]),
