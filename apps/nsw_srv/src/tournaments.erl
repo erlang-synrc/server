@@ -176,6 +176,13 @@ content() ->
     ]},
     #hr{},
 
+%    prototype_doxtop_panel(),
+%    #hr{style="width:700px;"},
+
+    #panel{class="tournaments_all_block", id=alltour_container, body=all_tours(1)}
+  ].
+
+prototype_doxtop_panel() ->
     #panel{class="tournaments_filter_block", body=[
       #panel{class=criteria, body=[
         #panel{class=area, body=[
@@ -206,11 +213,7 @@ content() ->
 
         ]}
       ]}
-    ]},
-
-    #hr{style="width:700px;"},
-    #panel{class="tournaments_all_block", id=alltour_container, body=all_tours(1)}
-  ].
+    ]}.
 
 featured_tours() ->
     AllTours = nsm_db:all(tournament),
