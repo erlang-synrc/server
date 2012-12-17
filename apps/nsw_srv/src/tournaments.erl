@@ -374,12 +374,21 @@ tourblock(Id) ->
 tourblock(Id, Title, Game, Date, NGames, Quota, Avatar, Prizes,PlayersCount) ->
     Color = case PlayersCount of 
          16   -> "#fff000";
+         40   -> "#ffe000";
+         60   -> "#ffe700";
          64   -> "#ffd000";
+         100  -> "#ffb000";
          128  -> "#ffb000";
+         200  -> "#ff7F00";
          256  -> "#ff7F00";
-         512  -> "#ff5000";
+         300  -> "#ff6000";
+         400  -> "#ff5000";
+         500  -> "#ff5000";
+         512  -> "#ff4000";
          1024 -> "#ff3000";
-         2048 -> "#ff1000"
+         1020 -> "#ff3000";
+         2048 -> "#ff1000";
+         _ -> "#ff1000"
     end,
 
   #panel{class="tts_tournament", body=[
