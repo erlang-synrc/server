@@ -263,8 +263,8 @@ event({birthday_changed}) ->
 event({register_success, User}) ->
     wf:session(fb_registration, undefined),
     timer:sleep(200),   % rarely, but sometimes it simply can't find new user with login:login_user, so I put a delay here
-    nsx_msg:notify(["subscription", "user", User, "add_to_group"], {"kakaranet", member}),
-    nsx_msg:notify(["subscription", "user", User, "add_to_group"], {"yeniler", member}),
+    nsx_msg:notify(["subscription", "user", User, "add_to_group"], {"kakaranet", User, member}),
+    nsx_msg:notify(["subscription", "user", User, "add_to_group"], {"yeniler", User, member}),
     timer:sleep(300),    % and this for group subscription
     login:login_user(User,register);
 
