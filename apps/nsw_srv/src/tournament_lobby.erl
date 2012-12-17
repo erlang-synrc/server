@@ -32,10 +32,19 @@ main_authorized() ->
     TournamentId = wf:q(id),
     wf:state(tournament_id, TournamentId),
 
+    webutils:add_raw("<link href='/nitrogen/guiders-js/guiders-1.2.8.css' rel='stylesheet'>
+                                 <script src='/nitrogen/guiders-js/guiders-1.2.8.js'></script>"),
+                 case webutils:guiders_ok("matchmaker_guiders_shown") of
+                      true -> guiders_script();
+                      false -> []
+                 end,
+
     TournamentInfo = nsm_tournaments:get(TournamentId),
     wf:state(tournament, TournamentInfo),
 
     start_comet(),
+
+
 
     webutils:js_for_main_authorized_game_stats_menu(),
     webutils:add_to_head({raw,              % this goes to styles.css. Still here for convenience of editing
@@ -55,11 +64,19 @@ main_authorized() ->
 
 title() -> webutils:title(?MODULE).
 
+guiders_script() ->
+   StdButtons = [{?_T("OK"),hide}],
+    Guiders = [
+        matchmaker:make_guider(show,?_T("JOIN TOURNAMENT"), ?_T("Join, Leave or Play tournaments here."), StdButtons,guider_20,guider_30,false,true,tournament_control,12)
+    ],
+    wf:wire(Guiders).
+
 body() ->
     #template{file=code:priv_dir(nsw_srv)++"/templates/info_page.html"}.
 
-
 content() ->
+
+
   case nsm_db:get(tournament, wf:q(id)) of
   {error, notfound} ->
       #panel{class="form-001", body=[?_T("Tournament not found"), #panel{style="height:10px;clear:both"}]};
@@ -169,16 +186,16 @@ content() ->
                 #image{image="/images/tournament/lobby/tour_avatar.png"},
                 #br{},
                 #br{},
+                "<span id='tournament_control'>",
                 case UserJoined of
                     true ->
-                        [
-                            #panel{id=join_button, class="tourlobby_orange_button_disabled", text=?_T("JOIN TOURNAMENT")},
+                        [   #panel{id=join_button, class="tourlobby_orange_button_disabled", text=?_T("JOIN TOURNAMENT")},"</span>",
                             #br{},
                             #link{id=leave_button, class="tourlobby_red_button", text=?_T("LEAVE TOURNAMENT"), postback=leave_tournament}
                         ];
                     false ->
                         [
-                            #link{id=join_button, class="tourlobby_orange_button", text=?_T("JOIN TOURNAMENT"), postback=join_tournament},
+                            #link{id=join_button, class="tourlobby_orange_button", text=?_T("JOIN TOURNAMENT"), postback=join_tournament},"</span>",
                             #br{},
                             #panel{id=leave_button, class="tourlobby_red_button_disabled", text=?_T("LEAVE TOURNAMENT")}
                         ]

@@ -128,9 +128,9 @@ content() ->
             ]},
 
             #label{style="position:absolute; left:-9px; top:197px; width:150px; text-align:right;", text=?_T("Tournament Type:")},
-            #dropdown {id=tour_type, style="position:absolute; left:146px; top:190px; width:90px; height:32px; font-size:16px; padding-top:2px;", options=[
-                        #option { text="Elemeli" }
-%                        #option { text="—" }
+            #dropdown {postback=tournament_type_changed, id=tour_type, style="position:absolute; left:146px; top:190px; width:90px; height:32px; font-size:16px; padding-top:2px;", options=[
+                        #option { text="Elemeli", value=elimination },
+                        #option { text="POINTING", value=pointing }
             ]},
 
             #label{style="position:absolute; left:252px; top:197px; width:100px; text-align:right;", text=?_T("Game Speed")++":"},
@@ -297,24 +297,32 @@ get_prizes_total(Prizes) ->
     || Id <- Prizes]).
 
 get_cur_prize_fund() ->
-    NPlayers = list_to_integer(wf:q(tour_players)),
-    Quota = case wf:state(workaround_quota) of 
-        undefined -> 
-            list_to_integer(wf:q(tour_quota));
-        Q -> 
-            wf:state(workaround_quota, undefined),
-            Q
-    end,
-    Tours = case wf:state(workaround_tours) of
-        undefined ->
-            list_to_integer(wf:q(tour_tours));
-        T ->
-            wf:state(workaround_tours, undefined),
-            T
-    end,
-    case game_okey_ng_trn_elim:get_prize_fund(Quota, NPlayers, Tours) of
-        {ok, PrizeFund} -> 100*PrizeFund;
-        _ -> 0
+    case wf:q(tour_type) of
+        "elimination" ->
+            NPlayers = list_to_integer(wf:q(tour_players)),
+            Quota = case wf:state(workaround_quota) of 
+                undefined -> 
+                    list_to_integer(wf:q(tour_quota));
+                Q -> 
+                    wf:state(workaround_quota, undefined),
+                    Q
+            end,
+            Tours = case wf:state(workaround_tours) of
+                undefined ->
+                    list_to_integer(wf:q(tour_tours));
+                T ->
+                    wf:state(workaround_tours, undefined),
+                    T
+            end,
+            case game_okey_ng_trn_elim:get_prize_fund(Quota, NPlayers, Tours) of
+                {ok, PrizeFund} -> 100*PrizeFund;
+                _ -> 0
+            end;
+        "pointing" ->
+            P = list_to_integer(wf:q(tour_players)),
+            Q = list_to_integer(wf:q(tour_quota)),
+            T = list_to_integer(wf:q(tour_tours)),
+            point_prize(P, Q, T)
     end.
 
 reset_slider() ->
@@ -358,7 +366,6 @@ event(update_product_list) ->
     Tours = list_to_integer(wf:q(tour_tours)),
 
     {ok,PlanDesc1} = rpc:call(?GAMESRVR_NODE, game_okey_ng_trn_elim,get_plan_desc,[Quota,Players,Tours]),
-    ?INFO(" +++ Plan ~p", [PlanDesc1]),
 
     PlanI = lists:seq(1, length(PlanDesc1)),
     PlanDesc = #table{rows=[
@@ -441,10 +448,7 @@ event(create_pressed) ->
         "OKEY" ->  {game_okey, case wf:q(tour_esli) of A when is_list(A) -> list_to_atom(A); _ -> standard end};
         "TAVLA" -> {game_tavla, standard}
     end,
-    TourType = case wf:q(tour_type) of
-        "Elemeli" -> elimination;
-        _ -> unknown
-    end,
+    TourType = wf:q(tour_type),
     TFast = ?_T("Fast"),
     TNormal = ?_T("Normal"),
     TSlow = ?_T("Slow"),
@@ -526,33 +530,64 @@ event({start_tournament, TourName, TourDesc, TourDate, TourTime, TourPlayers, To
     webutils:post_user_system_message(Desc),
     wf:redirect(URL);
 
+event(tournament_type_changed) ->
+    case wf:q(tour_type) of
+        "elimination" ->
+            wf:replace(tour_players, #dropdown {postback=prize_fund_and_tours_and_quota_changed, id=tour_players, style="position:absolute; left:610px; top:138px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
+                #option { text=integer_to_list(P) }
+            || P <- [2048, 1025, 512, 256, 128, 64, 32, 16] ]});
+        "pointing" ->
+            wf:replace(tour_players, #dropdown {postback=prize_fund_and_tours_and_quota_changed, id=tour_players, style="position:absolute; left:610px; top:138px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
+                #option { text=integer_to_list(P) }
+            || P <- point_players() ]})
+    end,
+    wf:wire(#event{postback=prize_fund_and_tours_and_quota_changed});
+
 event(prize_fund_and_tours_and_quota_changed) ->
-    case wf:q(tour_players) of
-        "16" -> wf:state(workaround_quota, 10),
+    P = list_to_integer(wf:q(tour_players)),
+    case wf:q(tour_type) of
+        "elimination" ->
+            case wf:q(tour_players) of
+                "16" -> wf:state(workaround_quota, 10),
+                    wf:replace(tour_quota, #dropdown {postback=prize_fund_and_tours_changed, id=tour_quota, style="position:absolute; left:807px; top:138px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
+                        #option { text="10" },
+                        #option { text="8" }
+                    ]});
+                _ -> wf:state(workaround_quota, 10),
+                    wf:replace(tour_quota, #dropdown {postback=prize_fund_and_tours_changed, id=tour_quota, style="position:absolute; left:807px; top:138px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
+                        #option { text="10" },
+                        #option { text="8" },
+                        #option { text="6" },
+                        #option { text="4" },
+                        #option { text="2" }
+                    ]})
+            end;
+        "pointing" ->
             wf:replace(tour_quota, #dropdown {postback=prize_fund_and_tours_changed, id=tour_quota, style="position:absolute; left:807px; top:138px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
-                #option { text="10" },
-                #option { text="8" }
-            ]});
-        _ -> wf:state(workaround_quota, 10),
-            wf:replace(tour_quota, #dropdown {postback=prize_fund_and_tours_changed, id=tour_quota, style="position:absolute; left:807px; top:138px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
-                #option { text="10" },
-                #option { text="8" },
-                #option { text="6" },
-                #option { text="4" },
-                #option { text="2" }
-            ]})
+                #option { text=integer_to_list(Q) }
+            || Q <- point_quota(P) ]})
     end,
     wf:wire(#event{postback=prize_fund_and_tours_changed});
 
 event(prize_fund_and_tours_changed) ->
-    Tours = game_okey_ng_trn_elim:get_tours(list_to_integer(wf:q(tour_quota)), list_to_integer(wf:q(tour_players)) ),
-    case Tours of
-        [] -> ?ERROR("No sush plan: ~p quota, ~p players!", [list_to_integer(wf:q(tour_quota)), list_to_integer(wf:q(tour_players))]);
-        _ ->
-            wf:state(workaround_tours, hd(Tours)),
+    P = list_to_integer(wf:q(tour_players)),
+    Q = list_to_integer(wf:q(tour_quota)),
+    case wf:q(tour_type) of
+        "elimination" ->
+            Tours = game_okey_ng_trn_elim:get_tours(list_to_integer(wf:q(tour_quota)), list_to_integer(wf:q(tour_players)) ),
+            case Tours of
+                [] -> ?ERROR("No sush plan: ~p quota, ~p players!", [list_to_integer(wf:q(tour_quota)), list_to_integer(wf:q(tour_players))]);
+                _ ->
+                    wf:state(workaround_tours, hd(Tours)),
+                    wf:replace(tour_tours, #dropdown {postback=prize_fund_changed, id=tour_tours, style="position:absolute; left:827px; top:190px; width:90px; height:32px; font-size:16px; padding-top:2px;", options=[
+                         #option { text=integer_to_list(T) }
+                    || T <- Tours]}),
+                    event(prize_fund_changed)
+            end;
+        "pointing" ->
             wf:replace(tour_tours, #dropdown {postback=prize_fund_changed, id=tour_tours, style="position:absolute; left:827px; top:190px; width:90px; height:32px; font-size:16px; padding-top:2px;", options=[
                  #option { text=integer_to_list(T) }
-            || T <- Tours]}),
+            || T <- point_tours(P, Q)]}),
             event(prize_fund_changed)
     end;
 
@@ -579,4 +614,27 @@ event(hide_details) ->
 
 event(Any) ->
     webutils:event(Any).
+
+
+point_players() ->
+    lists:usort([P || {P, _, _, _} <- point_tour_plan()]).
+
+point_quota(Players) ->
+    lists:usort([Q || {P, Q, _, _} <- point_tour_plan(), P == Players]).
+
+point_tours(Players, Quota) ->
+    lists:usort([T || {P, Q, T, _} <- point_tour_plan(), P == Players, Q == Quota]).
+
+point_prize(Players, Quota, Tours) ->
+    hd([Pr || {P, Q, T, Pr} <- point_tour_plan(), P == Players, Q == Quota, T == Tours]).
+
+% players, quota, tours, prize
+point_tour_plan() ->
+    [{40, 10, 40, 96550},
+     {40, 10, 60, 144808},
+     {60, 6, 60, 130327},
+     {60, 8, 40, 115847},
+     {60, 8, 60, 173770}].
+
+
 

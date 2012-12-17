@@ -18,6 +18,14 @@ main() ->
   case wf:q(id) of
     undefined -> [];
     Id ->
+
+ webutils:add_raw("<link href='/nitrogen/guiders-js/guiders-1.2.8.css' rel='stylesheet'>
+                                   <script src='/nitrogen/guiders-js/guiders-1.2.8.js'></script>"),
+                 case webutils:guiders_ok("matchmaker_guiders_shown") of
+                      true -> tournament_lobby:guiders_script();
+                      false -> []
+                 end,
+
       wf:state(tournament_int_id, Id),
       case nsm_db:get(tournament, Id) of 
         {error, notfound} -> [];
