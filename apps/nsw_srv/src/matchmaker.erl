@@ -1093,36 +1093,17 @@ add_game_settings_guiders() ->
 
 show_tab_guiders(ID) ->
     case ID of
-        "tab_2" ->
-            case webutils:guiders_ok("matchmaker_tab_2_guiders_shown") of
-                false ->
-                    ok;
-                true ->
-                    wf:wire([
-                        "guiders.hideAll;",
-                        make_guider(show, s_T("Group Settings"), s_T("Group settings description."), [{s_T("Ok"), hide}], guider_200, guider_210, false, true, none, none)
-                    ])
-            end;
-        "tab_3" ->
-            case webutils:guiders_ok("matchmaker_tab_3_guiders_shown") of
-                false ->
-                    ok;
-                true ->
-                    wf:wire([
-                        "guiders.hideAll;",
-                        make_guider(show, s_T("Friend Settings"), s_T("Friend settings description."), [{s_T("Ok"), hide}], guider_300, guider_310, false, true, none, none)
-                    ])
-            end;
-        "tab_4" ->
-            case webutils:guiders_ok("matchmaker_tab_4_guiders_shown") of
-                false ->
-                    ok;
-                true ->
-                    wf:wire([
-                        "guiders.hideAll;",
-                        make_guider(show, s_T("Personal Settings"), s_T("Personal settings description."), [{s_T("Ok"), hide}], guider_400, guider_410, false, true, none, none)
-                    ])
-            end;
-        _ ->
-            ok
+        "tab_2" -> case webutils:guiders_ok("matchmaker_tab_2_guiders_shown") of
+                false -> ok;
+                true -> wf:wire(["guiders.hideAll;", make_guider(show, s_T("Group Settings"), s_T("Group settings description."), 
+                                                     [{s_T("Ok"), hide}], guider_200, guider_210, false, true, none, none)]) end;
+        "tab_3" -> case webutils:guiders_ok("matchmaker_tab_3_guiders_shown") of
+                false -> ok;
+                true -> wf:wire(["guiders.hideAll;", make_guider(show, s_T("Friend Settings"), s_T("Friend settings description."),
+                                                     [{s_T("Ok"), hide}], guider_300, guider_310, false, true, none, none)]) end;
+        "tab_4" -> case webutils:guiders_ok("matchmaker_tab_4_guiders_shown") of
+                false -> ok;
+                true -> wf:wire(["guiders.hideAll;", make_guider(show, s_T("Personal Settings"), s_T("Personal settings description."), 
+                                                     [{s_T("Ok"), hide}], guider_400, guider_410, false, true, none, none)]) end;
+        _ -> ok
     end.
