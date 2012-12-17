@@ -1,5 +1,4 @@
-%% -*- mode: nitrogen -*-
--module(tournaments_doxtop).
+-module(tournaments).
 -compile(export_all).
 
 -include_lib("nitrogen_core/include/wf.hrl").
