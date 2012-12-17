@@ -161,7 +161,7 @@ init([GameId, Params, _Manager]) ->
 
     RegistrantsNum = length(Registrants),
     {ok, TurnsPlan} = get_plan(QuotaPerRound, RegistrantsNum, Tours),
-    TableParams = table_parameters(?MODULE, self(), Speed, GameType),
+    TableParams = table_parameters(?MODULE, self(), Speed, GameType, Tours),
 
     Players = setup_players(Registrants),
     PlayersIds = get_players_ids(Players),
@@ -987,7 +987,7 @@ spawn_table(GameId, TableId, Params) -> ?TAB_MOD:start(GameId, TableId, Params).
 send_to_table(TabPid, Message) -> ?TAB_MOD:parent_message(TabPid, Message).
 
 %% table_parameters(ParentMod, ParentPid, Speed) -> Proplist
-table_parameters(ParentMod, ParentPid, Speed, GameType) ->
+table_parameters(ParentMod, ParentPid, Speed, GameType, Tours) ->
     [
      {parent, {ParentMod, ParentPid}},
      {seats_num, 4},
@@ -1001,7 +1001,7 @@ table_parameters(ParentMod, ParentPid, Speed, GameType) ->
      {reveal_confirmation_timeout, get_timeout(reveal_confirmation, Speed)},
      {ready_timeout, get_timeout(ready, Speed)},
      {round_timeout, get_timeout(round, Speed)},
-%     {round_timeout, 10*1000},
+     {set_timeout, get_timeout(tour, Tours)},
      {speed, Speed},
      {game_type, GameType},
      {rounds, ?ROUNDS_PER_TOUR},
@@ -1117,6 +1117,8 @@ get_timeout(ready, fast) -> {ok, Val}   = nsm_db:get(config,"games/okey/ready_ti
 get_timeout(ready, normal) -> {ok, Val} = nsm_db:get(config,"games/okey/ready_timeout_normal", 25*1000), Val;
 get_timeout(ready, slow) -> {ok, Val}   = nsm_db:get(config,"games/okey/ready_timeout_slow",   45*1000), Val;
 
-get_timeout(round, fast) -> {ok, Val}   = nsm_db:get(config,"games/okey/tour/round_limit",  5*60*1000), Val;
-get_timeout(round, normal) -> {ok, Val} = nsm_db:get(config,"games/okey/tour/round_limit",  7*60*1000), Val;
-get_timeout(round, slow) -> {ok, Val}   = nsm_db:get(config,"games/okey/tour/round_limit", 10*60*1000), Val.
+get_timeout(round, fast) -> {ok, Val}   = nsm_db:get(config,"games/okey/trn/elim/round_time_limit_fast",   infinity), Val;
+get_timeout(round, normal) -> {ok, Val} = nsm_db:get(config,"games/okey/trn/elim/round_time_limit_normal", infinity), Val;
+get_timeout(round, slow) -> {ok, Val}   = nsm_db:get(config,"games/okey/trn/elim/round_time_limit_slow",   infinity), Val;
+
+get_timeout(tour, Tours) -> {ok, Val}   = nsm_db:get(config,"games/okey/trn/elim/tour_time_limit/"++integer_to_list(Tours), 20*60*1000), Val.

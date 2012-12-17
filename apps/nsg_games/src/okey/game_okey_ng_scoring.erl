@@ -98,7 +98,7 @@ init(Mode, SeatsInfo, RoundsNum) ->
 %%                                          no_rounds_played
 %% @end
 %% Types:
-%%     FinishInfo =  tashes_out | timeout |
+%%     FinishInfo =  tashes_out | timeout | set_timeout |
 %%                   {win_reveal, Revealer, WrongRejects, RevealWithColor, RevealWithOkey, RevealWithPairs} |
 %%                   {fail_reveal, Revealer} |
 %%                   {gosterge_finish, Winner}
@@ -215,10 +215,12 @@ is_chanak_winner(Achs) ->
     lists:any(F, Achs).
 
 
-detect_game_finish(#state{mode = GameMode, last_round_num = RoundNum,
+detect_game_finish(#state{mode = GameMode, last_round_num = RoundNum, finish_info = FinishInfo,
                           rounds_num = MaxRoundNum, total_score = TotalScore}) ->
     if GameMode == ?MODE_COUNTDOWN ->
            lists:any(fun({_, Points}) -> Points >= ?COUNTDOWN_MAX_POINTS end, TotalScore);
+       FinishInfo == set_timeout ->
+           true;
        true ->
            RoundNum == MaxRoundNum
     end.
@@ -232,6 +234,11 @@ players_achivements(Mode, Seats, Hands, WhoHasGosterge, Has8Tashes, FinishInfo) 
                  {SeatNum, Achivements}
              end || SeatNum <- Seats];
         timeout ->
+            [begin
+                 Achivements = player_achivements_no_winner(Mode, SeatNum, WhoHasGosterge, Has8Tashes),
+                 {SeatNum, Achivements}
+             end || SeatNum <- Seats];
+        set_timeout ->
             [begin
                  Achivements = player_achivements_no_winner(Mode, SeatNum, WhoHasGosterge, Has8Tashes),
                  {SeatNum, Achivements}
@@ -263,6 +270,7 @@ players_achivements(Mode, Seats, Hands, WhoHasGosterge, Has8Tashes, FinishInfo) 
 %% finish_info(GameMode, FinishReason, Gosterge) ->
 %%      tashes_out |
 %%      timeout |
+%%      set_timeout |
 %%      {win_reveal, Revealer, WrongRejects, RevealWithColor, RevealWithOkey, RevealWithPairs} |
 %%      {fail_reveal, Revealer} |
 %%      {gosterge_finish, Winner}
@@ -270,6 +278,7 @@ finish_info(GameMode, FinishReason, Gosterge) ->
     case FinishReason of
         tashes_out -> tashes_out;
         timeout -> timeout;
+        set_timeout -> set_timeout;
         {reveal, Revealer, Tashes, Discarded, ConfirmationList} ->
             {RightReveal, RevealWithPairs, WithColor} = check_reveal(Tashes, Gosterge),
             WinReveal = RightReveal orelse lists:all(fun({_, Answer}) -> Answer == true end, ConfirmationList),
