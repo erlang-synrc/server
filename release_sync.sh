@@ -23,9 +23,13 @@ done
 for key in ${!apps[@]}; do 
     echo "release sync processing $key -> ${apps[$key]}";
     rm -rf "$key/ebin"
+    rm -rf "$key/include"
     rm -rf "$key/priv"
     if [ -d "${apps[$key]}/ebin" ]; then
          ln -s  "$wd/${apps[$key]}/ebin" "$wd/$key/ebin"
+    fi
+    if [ -d "${apps[$key]}/include" ]; then
+         ln -s  "$wd/${apps[$key]}/include" "$wd/$key/include"
     fi
     if [ -d "${apps[$key]}/priv" ]; then
          ln -s  "$wd/${apps[$key]}/priv" "$wd/$key/priv"
