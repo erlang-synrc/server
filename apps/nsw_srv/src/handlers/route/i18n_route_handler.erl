@@ -97,14 +97,15 @@ route(Path) ->
             case try_load_module(Tokens) of
                 {Module, PathInfo} ->
                     UA = RequestBridge:header(user_agent),
-                    OS = platform(UA),
-                    HC = browser(UA),
+                    OS = case platform(UA) of undefined -> ""; X->X end,
+                    HC = case browser(UA) of undefined -> UA; Y->Y end,
+                    IP = inet_parse:ntoa(RequestBridge:peer_ip()),
+                    {Date,Time} = calendar:local_time(),
                     case Module of
                          matchmaker -> skip;
                          tournament_lobby -> skip;
                          buy -> skip;
-                         _ -> ?INFO("URLPATH: ~s:~s:~s:~s",[inet_parse:ntoa(RequestBridge:peer_ip()),Path, case OS of undefined -> ""; X->X end,
-                                                                                                           case HC of undefined -> UA; Y->Y end])
+                         _ -> nsm_mhits:store(Path,IP,Date), ?INFO("URLPATH: ~s:~s:~s:~s",[IP,Path,OS,HC])
                     end,
                     {Module, PathInfo};
                 undefined ->
