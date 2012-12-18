@@ -5834,14 +5834,16 @@ hr.tournaments_hr{
 .tournaments_filter_block h3 {
   margin: 0;
   color: #DF4426;
-  font-size: 14px;
-  line-height: 18px;
+  font-size: 18px;
   padding-bottom: 1px;
+  width:100%;
+  text-align:center;
 }
 
 .tournaments_filter_block .alltour_textbox1 {
-  width: 100px;
+  width: 120px;
   padding: 4px;
+  margin-top:8px;
   -webkit-box-shadow: 0 0 4px #C6C6C6 inset;
   -moz-box-shadow: 0 0 4px #c6c6c6 inset;
   box-shadow: 0 0 4px #C6C6C6 inset;
@@ -5849,16 +5851,14 @@ hr.tournaments_hr{
   -moz-border-radius: 4px;
   border-radius: 4px;
   border: 1px solid #C6C6C6;
-  background:url(../images/tournament/new_tournament/calendar_icon.png) no-repeat 84px 1px;
+  background:url(../images/tournament/new_tournament/calendar_icon.png) no-repeat 104px 1px;
   background-color: white;
-  font-size: 14px;
+  font-size: 16px;
 }
 
 .tournaments_filter_block .create-block{
-  width: 50%;
-  float:left;
-  margin: 0;
   padding: 0;
+  margin:0 15px;
   background: white;
   -webkit-box-shadow: none;
   -moz-box-shadow: none;
@@ -5868,15 +5868,18 @@ hr.tournaments_hr{
   border-radius: none;
   border: none;
   text-align:left;
+  width:initial;
+  display:inline-block;
 }
 
 .tournaments_filter_block .create-block .article1 {
-  height:300px;
   border:none;
 }
 
-.create-block .article1 .list1  a {
-  padding:0 10px;
+.create-block .article1 .list1_green  a {
+  padding:3px 10px;
+  font-size:16px;
+  margin-right:5px;
 }
 
 .tournaments_all_block {

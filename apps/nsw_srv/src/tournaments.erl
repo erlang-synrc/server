@@ -63,6 +63,7 @@ main_authorized() ->
 	            onChange: function(formated, dates){
 		            $('.wfid_tour_date1').val(formated).change();
 		            $('.wfid_tour_date1').DatePickerHide();
+                    $('.wfid_tour_date_check1').prop('checked', true).change();
 	            }
             });
         };
@@ -132,7 +133,7 @@ content() ->
     #hr{class="tournaments_hr"},
     #panel{class="tournaments_second_title", body=?_T("FILTER")},
 
-%    prototype_doxtop_panel(SD, SM, SY),
+    %prototype_doxtop_panel(SD, SM, SY),
 
     #panel{class="tournaments_filter_block", body=[
       #label{text=?_T("Game Type:")},
@@ -192,61 +193,114 @@ content() ->
   ].
 
 prototype_doxtop_panel(SD, SM, SY) ->
-    #panel{class="tournaments_filter_block", body=[
-      #panel{class="create-block", body =[
-        #panel{class=article1, body=[
-          #h3{text=?_T("Game Type")},
-          #list{class="list1 size1", body=[
-            #listitem{body=X} || X <- [
-              #link{text=?_T("OKEY"), id = site_utils:simple_pickle({game, okey}),  postback={filter,{game, okey}}},
-              #link{text=?_T("TAVLA"), id = site_utils:simple_pickle({game, tavla}), postback={filter, {game, tavla}}}
-          ]]},
-          #h3{text=?_T("Players Count:")},
-          #list{class="list1 size1", body=[
-            #listitem{body=#link{text=T, id=site_utils:simple_pickle({players, list_to_atom(T)}),
-                postback={filter,{players, list_to_atom(T)}} } } || T <- ["16", "32", "64", "128", "256", "512", "1024"]
-          ]},
-          #h3{text=?_T("Quota:")},
-          #list{class="list1 size1", body=[
-              #listitem{body=#link{text=T, id=site_utils:simple_pickle({quota, list_to_atom(T)}),
-              postback={filter, {quota, list_to_atom(T)}} } } || T <- ["2","4","6","8","10"]
-          ]},
+  #panel{class="tournaments_filter_block", body=[
+    game_type_filter(),
+    players_filter(),
+    tournament_type_filter(),
+    date_filter(SD, SM, SY),
+    quota_filter(),
+    sort_filter(),
+    view_filter(),
+    by_filter(),
+    #hr{}
+  ]}.
 
-          #h3{text=?_T("Date:")},
-          #textbox{id=tour_date1, class="alltour_textbox1",
-            actions=#event{type=change, postback={filter,{date, ok}}},
-            text= (SD ++ "." ++ SM ++ "." ++ SY)}
-        ]}
-      ]},
-      #panel{class="create-block", body=[
-        #panel{class=article1, body=[
-          #h3{text=?_T("Sort by type:")},
-          #list{class="list1 size1", body=[
-            #listitem{body=#link{text=T, id=site_utils:simple_pickle({sort_order1, list_to_atom(T)}),
-              postback={filter, {sort_order1, list_to_atom(T)}} } } || T <- [?_T("DESC"),?_T("ASC")]
-          ]},
-          #h3{text=?_T("View:")},
-          #list{class="list1 size1", body=[
-            #listitem{body=#link{text=T, id=site_utils:simple_pickle({per_page1, list_to_atom(T)}),
-              postback={filter, {per_page1, list_to_atom(T)}} } } 
-            || T <- ["12 " ++ ?_T("PCS"), "24 " ++ ?_T("PCS"), "24 " ++ ?_T("ALL")]
-          ]},
-          #h3{text=?_T("Select by:")},
-          #list{class="list1 size1", body=[
-            #listitem{body=#link{class="alltour_btns_blue",
-              id=site_utils:simple_pickle({sort_by1, gifts}), 
-              text=?_T("BY GIFTS"), postback={filter, {sort_by1, gifts}}}},
-            #listitem{body=#link{class="alltour_btns_blue",
-              id=site_utils:simple_pickle({sort_by1, friends}),
-              text=?_T("ACCORDING TO FRIENDS"), postback={filter, {sort_by1, friends}}}},
-            #listitem{body=#link{class="alltour_btns_blue",
-              id=site_utils:simple_pickle({sort_by1, participation}),
-              text=?_T("PARTICIPATION PERCENTAGE"), postback={filter, {sort_by1, participation}}}}
+players_filter()->
+  #panel{class="create-block", body =[
+      #panel{class=article1, body=[
+        #h3{text=?_T("Players Count:")},
+        #list{class="list1_green size1", body=[
+          #listitem{body=#link{text=T, id=site_utils:simple_pickle({players, list_to_atom(T)}),
+            postback={filter,{players, list_to_atom(T)}} } } || T <- ["16", "32", "64", "128", "256", "512", "1024", "2048"]
           ]}
         ]}
-      ]},
-      #hr{}
-    ]}.
+  ]}.
+
+quota_filter()->
+  #panel{class="create-block", body =[
+      #panel{class=article1, body=[
+        #h3{text=?_T("Quota:")},
+        #list{class="list1_green size1", body=[
+          #listitem{body=#link{text=T, id=site_utils:simple_pickle({quota, list_to_atom(T)}),
+            postback={filter, {quota, list_to_atom(T)}} } } || T <- ["2","4","6","8","10"]
+        ]}
+      ]}
+  ]}.
+
+by_filter()->
+  #panel{class="create-block", body =[
+      #panel{class=article1, body=[
+        #h3{text=?_T("Select by:")},
+        #list{class="list1_green size1", body=[
+          #listitem{body=#link{id=site_utils:simple_pickle({sort_by1, gifts}),
+              text=?_T("BY GIFTS"), postback={filter, {sort_by1, gifts}}}},
+          #listitem{body=#link{id=site_utils:simple_pickle({sort_by1, friends}),
+              text=?_T("ACCORDING TO FRIENDS"), postback={filter, {sort_by1, friends}}}},
+          #listitem{body=#link{id=site_utils:simple_pickle({sort_by1, participation}),
+              text=?_T("PARTICIPATION PERCENTAGE"), postback={filter, {sort_by1, participation}}}}
+        ]}
+      ]}
+  ]}.
+
+view_filter()->
+  #panel{class="create-block", body=[
+    #panel{class=article1, body=[
+      #h3{text=?_T("View:")},
+      #list{class="list1_green size1", body=[
+        #listitem{body=#link{text=T, id=site_utils:simple_pickle({per_page1, list_to_atom(T)}),
+          postback={filter, {per_page1, list_to_atom(T)}} } }
+        || T <- ["12 " ++ ?_T("PCS"), "24 " ++ ?_T("PCS")]
+      ]}
+    ]}
+  ]}.
+
+sort_filter()->
+  #panel{class="create-block", body=[
+    #panel{class=article1, body=[
+      #h3{text=?_T("Sort by type:")},
+      #list{class="list1_green size1", body=[
+        #listitem{body=#link{text=T, id=site_utils:simple_pickle({sort_order1, list_to_atom(T)}),
+          postback={filter, {sort_order1, list_to_atom(T)}} } } || T <- [?_T("DESC"),?_T("ASC")]
+        ]}
+    ]}
+  ]}.
+
+game_type_filter()->
+  #panel{class="create-block", body =[
+      #panel{class=article1, body=[
+        #h3{text=?_T("Game Type")++":"},
+        #list{class="list1_green size1", body=[
+          #listitem{body=X} || X <- [
+            #link{text=?_T("OKEY"), id = site_utils:simple_pickle({game, okey}),  postback={filter,{game, okey}}},
+            #link{text=?_T("TAVLA"), id = site_utils:simple_pickle({game, tavla}), postback={filter, {game, tavla}}}
+          ]
+        ]}
+      ]}
+  ]}.
+
+tournament_type_filter()->
+  #panel{class="create-block", body =[
+      #panel{class=article1, body=[
+        #h3{text=?_T("Tournament Type")++":"},
+        #list{class="list1_green size1", body=[
+          #listitem{body=X} || X <- [
+            #link{text=?_T("Normal"), id = site_utils:simple_pickle({tournament, normal}),  postback={filter,{tournament, normal}}},
+            #link{text=?_T("other"), id = site_utils:simple_pickle({tournament, other}), postback={filter, {tournamet, other}}}
+          ]
+        ]}
+      ]}
+  ]}.
+
+date_filter(SD, SM, SY)->
+  #panel{class="create-block", body =[
+      #panel{class=article1, body=[
+        #h3{text=?_T("Date:")},
+        #checkbox{id=tour_date_check1, checked=false, postback={filter, {date, ok}}}, 
+        #textbox{id=tour_date1, class="alltour_textbox1",
+          actions=#event{type=change, postback={filter,{date, ok}}},
+          text= (SD ++ "." ++ SM ++ "." ++ SY)}
+      ]}
+  ]}.
 
 featured_tours(AllTours) ->
     Online = [ T || T=#tournament{id=Id,status=St} <- AllTours, St == activated],
@@ -274,6 +328,7 @@ featured_tours(AllTours) ->
     [tourblock(Id) || Id <- ShiftedTours].
 
 all_tours(AllTours,Page) ->
+  ?INFO("Tours per page: ~p~n", [wf:state(per_page)]),
     ToursPerPage = wf:state(per_page),
     PreSortedTours = case wf:state(sort_by) of
         friends ->
@@ -592,10 +647,13 @@ event({filter, {Key, Value}})->
   ?INFO("Filter:  ~p : ~p", [Key, Value]),
   case Key of
     date ->
-      Date = begin
-        SDate = wf:q(tour_date1),
-        list_to_tuple([list_to_integer(N) || N <- lists:reverse(ling:split(SDate, "."))])
+      Date = case wf:q(tour_date_check1) of
+        undefined -> undefined;
+        _ ->
+          SDate = wf:q(tour_date1),
+          list_to_tuple([list_to_integer(N) || N <- lists:reverse(ling:split(SDate, "."))])
       end,
+      ?INFO("Date: ~p~n", [Date]),
       wf:state(date_filter, Date);
     _ ->
       case wf:state(Key) of
@@ -643,7 +701,6 @@ convert_state(sort_by1, State) -> State;
 convert_state(per_page1, State) -> 
   PCS12 = list_to_atom("12 " ++ ?_T("PCS")),
   PCS24 = list_to_atom("24 " ++ ?_T("PCS")),
-  %ALL = list_to_atom("24 " ++ ?_T("ALL")),
   case State of
     PCS12 -> ?INFO("12 PER PAGE"), 12;
     PCS24 -> ?INFO("24 PER PAGE"), 24;
