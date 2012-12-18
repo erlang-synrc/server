@@ -189,9 +189,8 @@ handle_notice(["system", "tournament_ends_note"] = Route, Message, State) ->
     ?INFO("feed(~p): tournament_ends_note: Route=~p, Message=~p", [self(), Route, Message]),
     {TId, Results} = Message,
     {ok, Tour} = nsm_db:get(tournament, TId),
-    ok = nsm_db:put(Tour#tournament{winners = Results}),
+    ok = nsm_db:put(Tour#tournament{winners = Results, status = finished}),
     Users = [UId || #play_record{who=UId} <- nsm_tournaments:joined_users(TId)],
-    nsm_db:put(Tour#tournament{status=finished}),
     Desc = case Tour#tournament.description of
         "" -> "";
         D -> " (" ++ D ++ ")"
