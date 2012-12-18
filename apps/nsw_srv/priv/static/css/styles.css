@@ -5831,18 +5831,47 @@ hr.tournaments_hr{
   display:inline-block;
 }
 
-.tournaments_filter_block .criteria{
-  padding:8px;  width:896px;
+.tournaments_filter_block h3 {
+  margin: 0;
+  color: #DF4426;
+  font-size: 14px;
+  line-height: 18px;
+  padding-bottom: 1px;
 }
 
-.tournaments_filter_block .criteria .area .row {
-  width:889px;
+.tournaments_filter_block .alltour_textbox1 {
+  width: 100px;
+  padding: 4px;
+  -webkit-box-shadow: 0 0 4px #C6C6C6 inset;
+  -moz-box-shadow: 0 0 4px #c6c6c6 inset;
+  box-shadow: 0 0 4px #C6C6C6 inset;
+  -webkit-border-radius: 4px;
+  -moz-border-radius: 4px;
+  border-radius: 4px;
+  border: 1px solid #C6C6C6;
+  background:url(../images/tournament/new_tournament/calendar_icon.png) no-repeat 84px 1px;
+  background-color: white;
+  font-size: 14px;
 }
 
 .tournaments_filter_block .create-block{
-  width: 864px;
+  width: 500px;
+  margin: 0;
+  padding: 0;
+  background: white;
+  -webkit-box-shadow: none;
+  -moz-box-shadow: none;
+  box-shadow: none;
+  -webkit-border-radius: none;
+  -moz-border-radius: none;
+  border-radius: none;
+  border: none;
+  text-align:left;
 }
 
+.create-block .article1 .list1  a {
+  padding:0 10px;
+}
 
 .tournaments_all_block {
   width:100%;
@@ -6151,4 +6180,81 @@ img.tts_avatar{
     max-width:55px; 
     max-height:55px; 
     display:block;
+}
+
+/* matchmaker rules */
+.matchmaker_rules .left_col {
+    width:150px; 
+    font-weight:bold; 
+    text-align:right; 
+    vertical-align:top;
+}
+
+.matchmaker_rules .games_col1 {
+    background-color:#ddddff; 
+    text-align:center;
+}
+
+.matchmaker_rules .games_col2 {
+    background-color:#ffbbcc;
+    text-align:center;
+}
+
+.matchmaker_rules .games_col3 {
+    background-color:#ddbbff; 
+    text-align:center;
+}
+
+.matchmaker_rules .games_col4 {
+    background-color:#ddffdd; 
+    text-align:center;
+}
+
+.matchmaker_rules .games_col5 {
+    text-align:center;
+}
+
+.matchmaker_rules .point_red {
+    background-color:#FB7; 
+    min-width:15px;
+}
+
+.matchmaker_rules .point_blue {
+    font-weight:bold; 
+    background-color:#89C;
+    text-align:right;
+}
+
+.matchmaker_rules .point_green {
+    background-color:#BE8;
+    text-align:center;
+}
+
+.matchmaker_rules .point_no {
+    background-color:#FB7; 
+    padding:0 6px;
+}
+
+.rules_okey .games_col1 {
+    background-color:#ddddff; 
+    text-align:center;
+}
+
+.rules_okey .games_col2 {
+    background-color:#ffbbcc;
+    text-align:center;
+}
+
+.rules_okey .games_col3 {
+    background-color:#ddbbff; 
+    text-align:center;
+}
+
+.rules_okey .games_col4 {
+    background-color:#ddffdd; 
+    text-align:center;
+}
+
+.rules_okey .games_col5 {
+    text-align:center;
 }
