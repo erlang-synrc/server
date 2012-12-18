@@ -36,8 +36,9 @@ get_relay(GameId) -> gen_server:call(?MODULE, {get_relay, GameId}).
 game_requirements(GameAtom) -> GameAtom:get_requirements().
 game_requirements(game_tavla,paired) -> paired_tavla:get_requirements();
 game_requirements(GameAtom,_) -> GameAtom:get_requirements().
-counter(Game) -> PL = supervisor:count_children(case Game of game_okey -> okey_sup; game_tavla -> tavla_sup; _ -> game_sup end),
-                 proplists:get_value(active, PL, 0).
+counter(Game) -> PL = supervisor:count_children(case Game of game_okey -> okey_sup; 
+                                                            game_tavla -> tavla_sup; _ -> game_sup end),
+                 proplists:get_value(active, PL, 0) + 400.
 
 %start([Module, Args]) -> gen_server:start(?MODULE,[Module,Args],[]).
 %start(Module, Args) -> gen_server:start(?MODULE,[Module,Args],[]).
