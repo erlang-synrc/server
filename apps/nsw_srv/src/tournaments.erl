@@ -175,7 +175,7 @@ content() ->
 %          ]
 %      end
 %    ]},
-    #hr{},
+%    #hr{},
     #panel{class="tournaments_all_block", id=alltour_container, body=all_tours(AllTours,1)}
   ].
 
