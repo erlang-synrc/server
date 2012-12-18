@@ -198,26 +198,54 @@ prototype_doxtop_panel(SD, SM, SY) ->
           #h3{text=?_T("Game Type")},
           #list{class="list1 size1", body=[
             #listitem{body=X} || X <- [
-              #link{text=?_T("OKEY"), id = site_utils:simple_pickle({game, okey}),  postback={game, okey}},
-              #link{text=?_T("TAVLA"), id = site_utils:simple_pickle({game, tavla}), postback={game, tavla}}
+              #link{text=?_T("OKEY"), id = site_utils:simple_pickle({game, okey}),  postback={filter,{game, okey}}},
+              #link{text=?_T("TAVLA"), id = site_utils:simple_pickle({game, tavla}), postback={filter, {game, tavla}}}
           ]]},
           #h3{text=?_T("Players Count:")},
           #list{class="list1 size1", body=[
             #listitem{body=#link{text=T, id=site_utils:simple_pickle({players, list_to_atom(T)}),
-                postback={players, list_to_atom(T)} } } || T <- ["16", "32", "64", "128", "256", "512", "1024"]
+                postback={filter,{players, list_to_atom(T)}} } } || T <- ["16", "32", "64", "128", "256", "512", "1024"]
           ]},
           #h3{text=?_T("Quota:")},
           #list{class="list1 size1", body=[
               #listitem{body=#link{text=T, id=site_utils:simple_pickle({quota, list_to_atom(T)}),
-              postback={quota, list_to_atom(T)} } } || T <- ["2","4","6","8","10"]
+              postback={filter, {quota, list_to_atom(T)}} } } || T <- ["2","4","6","8","10"]
           ]},
 
           #h3{text=?_T("Date:")},
           #textbox{id=tour_date1, class="alltour_textbox1",
-            actions=#event{type=change, postback={date, ok}},
+            actions=#event{type=change, postback={filter,{date, ok}}},
             text= (SD ++ "." ++ SM ++ "." ++ SY)}
         ]}
-      ]}
+      ]},
+      #panel{class="create-block", body=[
+        #panel{class=article1, body=[
+          #h3{text=?_T("Sort by type:")},
+          #list{class="list1 size1", body=[
+            #listitem{body=#link{text=T, id=site_utils:simple_pickle({sort_order1, list_to_atom(T)}),
+              postback={filter, {sort_order1, list_to_atom(T)}} } } || T <- [?_T("DESC"),?_T("ASC")]
+          ]},
+          #h3{text=?_T("View:")},
+          #list{class="list1 size1", body=[
+            #listitem{body=#link{text=T, id=site_utils:simple_pickle({per_page1, list_to_atom(T)}),
+              postback={filter, {per_page1, list_to_atom(T)}} } } 
+            || T <- ["12 " ++ ?_T("PCS"), "24 " ++ ?_T("PCS"), "24 " ++ ?_T("ALL")]
+          ]},
+          #h3{text=?_T("Select by:")},
+          #list{class="list1 size1", body=[
+            #listitem{body=#link{class="alltour_btns_blue",
+              id=site_utils:simple_pickle({sort_by1, gifts}), 
+              text=?_T("BY GIFTS"), postback={filter, {sort_by1, gifts}}}},
+            #listitem{body=#link{class="alltour_btns_blue",
+              id=site_utils:simple_pickle({sort_by1, friends}),
+              text=?_T("ACCORDING TO FRIENDS"), postback={filter, {sort_by1, friends}}}},
+            #listitem{body=#link{class="alltour_btns_blue",
+              id=site_utils:simple_pickle({sort_by1, participation}),
+              text=?_T("PARTICIPATION PERCENTAGE"), postback={filter, {sort_by1, participation}}}}
+          ]}
+        ]}
+      ]},
+      #hr{}
     ]}.
 
 featured_tours(AllTours) ->
@@ -560,7 +588,8 @@ event(show_page_2) ->
 event(hide_explaination) ->
     wf:update(explaination_holder, []);
 
-event({Key, Value})->
+event({filter, {Key, Value}})->
+  ?INFO("Filter:  ~p : ~p", [Key, Value]),
   case Key of
     date ->
       Date = begin
@@ -581,16 +610,65 @@ event({Key, Value})->
           ui_select({Key, Value}),
           wf:state(Key, Value)
         end
-    end,
-    event({page, 1});
+  end,
+
+  wf:state(game_filter, convert_state(game, wf:state(game))),
+  wf:state(player_filter, convert_state(players, wf:state(players))),
+  wf:state(quota_filter, convert_state(quota, wf:state(quota))),
+  wf:state(sort_by, convert_state(sort_by1, wf:state(sort_by1))),
+  wf:state(per_page, convert_state(per_page1, wf:state(per_page1))),
+  wf:state(sort_order, convert_state(sort_order1, wf:state(sort_order1))),
+  event({page, 1});
 
 event(Any) ->
     webutils:event(Any).
+
+convert_state(game, State) ->
+  case State of
+    okey -> game_okey;
+    tavla -> game_tavla;
+    _ -> undefined
+  end;
+convert_state(players, State) ->
+  case State of
+    undefined -> undefined;
+    P -> list_to_integer(atom_to_list(P))
+  end;
+convert_state(qouta, State) ->
+  case State of
+    undefined -> undefined;
+    Q -> list_to_integer(atom_to_list(Q))
+  end;
+convert_state(sort_by1, State) -> State;
+convert_state(per_page1, State) -> 
+  PCS12 = list_to_atom("12 " ++ ?_T("PCS")),
+  PCS24 = list_to_atom("24 " ++ ?_T("PCS")),
+  %ALL = list_to_atom("24 " ++ ?_T("ALL")),
+  case State of
+    PCS12 -> ?INFO("12 PER PAGE"), 12;
+    PCS24 -> ?INFO("24 PER PAGE"), 24;
+    _ -> 480
+  end;
+convert_state(sort_order1, State)->
+  case State of
+    undefined -> undefined;
+    A ->
+      L = atom_to_list(A),
+      ASC = ?_T("ASC"),
+      DESC = ?_T("DESC"),
+      case L of
+        ASC -> ascend;
+        DESC -> descend;
+        _-> undefined
+      end
+  end;
+convert_state(_, _) -> undefined.
 
 api_event(Name, Tag, Data) ->
   webutils:api_event(Name, Tag, Data).
 
 ui_select({Key, Value}) ->
+  ?INFO("UI SELECT ~p~n", [{Key, Value}]),
   Id = site_utils:simple_pickle({Key, Value}),
   JSId = wf:js_escape(wf:to_list(Id)),
   wf:wire("objs('"++JSId++"').parent('li').addClass('active');").

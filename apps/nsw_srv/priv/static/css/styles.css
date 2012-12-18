@@ -5855,7 +5855,8 @@ hr.tournaments_hr{
 }
 
 .tournaments_filter_block .create-block{
-  width: 500px;
+  width: 50%;
+  float:left;
   margin: 0;
   padding: 0;
   background: white;
@@ -5867,6 +5868,11 @@ hr.tournaments_hr{
   border-radius: none;
   border: none;
   text-align:left;
+}
+
+.tournaments_filter_block .create-block .article1 {
+  height:300px;
+  border:none;
 }
 
 .create-block .article1 .list1  a {
@@ -6059,6 +6065,12 @@ img.tts_avatar{
     font-size:12px; font-weight:bold; color:#111;
     border:0px; text-align:center; line-height:52px;
     height:52px;
+}
+
+.create-block .article1 .list1 li a.alltour_btns_blue{
+  line-height:40px;
+  height:40px;
+  color:#111;
 }
 
 .alltour_btn_blue_1 {
