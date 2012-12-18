@@ -50,6 +50,21 @@ main_authorized() ->
                     $('.wfid_tour_date_check').prop('checked', true);
 	            }
             });
+
+            $('.wfid_tour_date1').DatePicker({
+	            format:'d.m.Y',
+	            date: $('.wfid_tour_date1').val(),
+	            current: $('.wfid_tour_date1').val(),
+	            starts: 1,
+	            position: 'bottom',
+	            onBeforeShow: function(){
+		            $('.wfid_tour_date1').DatePickerSetDate($('.wfid_tour_date1').val(), true);
+	            },
+	            onChange: function(formated, dates){
+		            $('.wfid_tour_date1').val(formated).change();
+		            $('.wfid_tour_date1').DatePickerHide();
+	            }
+            });
         };
         new Image('/images/tournament/tournaments_page/bar_1_pressed.png');
         new Image('/images/tournament/tournaments_page/bar_1_hover.png');
@@ -117,6 +132,8 @@ content() ->
     #hr{class="tournaments_hr"},
     #panel{class="tournaments_second_title", body=?_T("FILTER")},
 
+%    prototype_doxtop_panel(SD, SM, SY),
+
     #panel{class="tournaments_filter_block", body=[
       #label{text=?_T("Game Type:")},
       #dropdown {id=tour_game, options=[#option{text=T} || T <- ["-", "OKEY", "TAVLA"]]},
@@ -171,42 +188,34 @@ content() ->
       end
     ]},
     #hr{},
-
-%    prototype_doxtop_panel(),
-%    #hr{style="width:700px;"},
-
     #panel{class="tournaments_all_block", id=alltour_container, body=all_tours(AllTours,1)}
   ].
 
-prototype_doxtop_panel() ->
+prototype_doxtop_panel(SD, SM, SY) ->
     #panel{class="tournaments_filter_block", body=[
-      #panel{class=criteria, body=[
-        #panel{class=area, body=[
-          #list{id=criteria_field, class="row", body=""}
-        ]}
-      ]},
-
-      #panel{class="create-block", body=[
+      #panel{class="create-block", body =[
         #panel{class=article1, body=[
           #h3{text=?_T("Game Type")},
           #list{class="list1 size1", body=[
             #listitem{body=X} || X <- [
-              #link{text=?_T("OKEY"), id= site_utils:simple_pickle({game, okey}),  postback={add,{game,okey}}},
-              #link{text=?_T("TAVLA"), id= site_utils:simple_pickle({game, tavla}), postback={add,{game, tavla}}}
+              #link{text=?_T("OKEY"), id = site_utils:simple_pickle({game, okey}),  postback={game, okey}},
+              #link{text=?_T("TAVLA"), id = site_utils:simple_pickle({game, tavla}), postback={game, tavla}}
           ]]},
-
           #h3{text=?_T("Players Count:")},
-          #list{class="list1 size1", id=tour_players, body=[
-            #listitem{body=#link{text=T, id=site_utils:simple_pickle({count, list_to_atom(T)}),
-                postback={add, {count, list_to_atom(T)}} } } || T <- ["16", "32", "64", "128", "256", "512", "1024"]
+          #list{class="list1 size1", body=[
+            #listitem{body=#link{text=T, id=site_utils:simple_pickle({players, list_to_atom(T)}),
+                postback={players, list_to_atom(T)} } } || T <- ["16", "32", "64", "128", "256", "512", "1024"]
+          ]},
+          #h3{text=?_T("Quota:")},
+          #list{class="list1 size1", body=[
+              #listitem{body=#link{text=T, id=site_utils:simple_pickle({quota, list_to_atom(T)}),
+              postback={quota, list_to_atom(T)} } } || T <- ["2","4","6","8","10"]
           ]},
 
-          #h3{text=?_T("Quota:")},
-          #list{id=tour_quota, class="list1 size1", body=[
-            #listitem{body=#link{text=T, id=site_utils:simple_pickle({quota, list_to_atom(T)}),
-              postback={add, {quota, list_to_atom(T)}} } } || T <- ["2","4","6","8","10"]
-          ]}
-
+          #h3{text=?_T("Date:")},
+          #textbox{id=tour_date1, class="alltour_textbox1",
+            actions=#event{type=change, postback={date, ok}},
+            text= (SD ++ "." ++ SM ++ "." ++ SY)}
         ]}
       ]}
     ]}.
@@ -564,11 +573,29 @@ event(show_page_2) ->
 event(hide_explaination) ->
     wf:update(explaination_holder, []);
 
-event({add, {Key, Value} = Setting}) ->
-  process_add(Setting);
-
-event({del,{Key, Value}=Setting})->
-  process_remove(Setting);
+event({Key, Value})->
+  case Key of
+    date ->
+      Date = begin
+        SDate = wf:q(tour_date1),
+        list_to_tuple([list_to_integer(N) || N <- lists:reverse(ling:split(SDate, "."))])
+      end,
+      wf:state(date_filter, Date);
+    _ ->
+      case wf:state(Key) of
+        Value ->
+          ui_deselect({Key, Value}),
+          wf:state(Key, undefined);
+        undefined ->
+          ui_select({Key, Value}),
+          wf:state(Key, Value);
+        Rest ->
+          ui_deselect({Key, Rest}),
+          ui_select({Key, Value}),
+          wf:state(Key, Value)
+        end
+    end,
+    event({page, 1});
 
 event(Any) ->
     webutils:event(Any).
@@ -576,15 +603,13 @@ event(Any) ->
 api_event(Name, Tag, Data) ->
   webutils:api_event(Name, Tag, Data).
 
-process_add({Key, Value} = Setting) ->
+ui_select({Key, Value}) ->
   Id = site_utils:simple_pickle({Key, Value}),
-  SpanElement = #span{actions="var e=objs('"++Id++"'); objs('me').text( e.text() ? e.text() : e.attr('value') )"},
-  CriteriaElement = #listitem{id="for_"++Id, class="for_"++wf:to_list(Key),
-    body=["<em>", SpanElement, #link{text="X", postback={del, {Key, Value}}}, "</em>"]},
-  wf:insert_bottom(criteria_field, CriteriaElement),
-  ok.
+  JSId = wf:js_escape(wf:to_list(Id)),
+  wf:wire("objs('"++JSId++"').parent('li').addClass('active');").
 
-process_remove({Key, Value} = Setting)->
+ui_deselect({Key, Value})->
   Id = site_utils:simple_pickle({Key, Value}),
   wf:remove("for_"++Id),
-  ok.
+  JSId = wf:js_escape(wf:to_list(Id)),
+  wf:wire("objs('"++JSId++"').parent('li').removeClass('active');").
