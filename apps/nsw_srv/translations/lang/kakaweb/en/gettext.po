@@ -2255,6 +2255,11 @@ msgstr ""
 "Join it NOW!"
 
 msgid ""
+"Join, Leave or Play tournaments here."
+msgstr ""
+"Join, Leave or Play tournaments here."
+
+msgid ""
 "KAKARANET üyesi olmalısın!"
 msgstr ""
 "KAKARANET üyesi olmalısın!"
@@ -2333,6 +2338,11 @@ msgstr ""
 
 msgid ""
 "Kakush Points"
+msgstr ""
+"Kakush Points"
+
+msgid ""
+"KakushPoints"
 msgstr ""
 "Kakush Points"
 
@@ -5703,6 +5713,11 @@ msgid ""
 "people here!"
 msgstr ""
 "people here!"
+
+msgid ""
+"pointing"
+msgstr ""
+"pointing"
 
 msgid ""
 "points to claim the prize you want."

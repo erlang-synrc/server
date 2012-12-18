@@ -135,7 +135,7 @@ import_all() ->
     [begin
          {ok, VendGifts} = nsm_gifts_vendor:get_gifts(VendorId),
          dumb_store(VendGifts, CurDateTime, A, B, C, D)
-     end || VendorId <- [1,2]].
+     end || VendorId <- [Pos||{Pos,Name}<-nsm_gifts_vendor_spec:list()]].
 %%
 %% Local Functions
 %%

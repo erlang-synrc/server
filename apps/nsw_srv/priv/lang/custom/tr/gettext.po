@@ -1609,7 +1609,7 @@ msgid "Post"
 msgstr "Gönder"
 #
 msgid "Price"
-msgstr "Fiyat"
+msgstr "Kakuş Hesap"
 #
 msgid "Print"
 msgstr "Yazdır"
@@ -4185,7 +4185,7 @@ msgid "Kakush Currency"
 msgstr "Biriktirme hesap"
 #
 msgid "Kakush Points"
-msgstr "Kakush Points"
+msgstr "Puan"
 #
 msgid "Key"
 msgstr "Key"
@@ -5350,3 +5350,12 @@ msgstr "TURNUVAYA KATILMAK!"
 #
 msgid "Your request have been rejected "
 msgstr "Your request have been rejected "
+#
+msgid "Join, Leave or Play tournaments here."
+msgstr "Join, Leave or Play tournaments here."
+#
+msgid "KakushPoints"
+msgstr "Kakuş Puan"
+#
+msgid "pointing"
+msgstr "pointing"
