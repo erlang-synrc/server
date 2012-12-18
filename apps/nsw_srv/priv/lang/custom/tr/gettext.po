@@ -5352,7 +5352,7 @@ msgid "Your request have been rejected "
 msgstr "Your request have been rejected "
 #
 msgid "Join, Leave or Play tournaments here."
-msgstr "Join, Leave or Play tournaments here."
+msgstr "Kaydınızı yapmak için burayı tıklayın. Başlama saatinde Turnuva Kulisinde bulunmanız yeterli."
 #
 msgid "KakushPoints"
 msgstr "Kakuş Puan"
