@@ -132,7 +132,7 @@ content() ->
     #hr{class="tournaments_hr"},
     #panel{class="tournaments_second_title", body=?_T("FILTER")},
 
-%    prototype_doxtop_panel(SD, SM, SY),
+    prototype_doxtop_panel(SD, SM, SY),
 
     #panel{class="tournaments_filter_block", body=[
       #label{text=?_T("Game Type:")},
