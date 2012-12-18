@@ -6181,3 +6181,80 @@ img.tts_avatar{
     max-height:55px; 
     display:block;
 }
+
+/* matchmaker rules */
+.matchmaker_rules .left_col {
+    width:150px; 
+    font-weight:bold; 
+    text-align:right; 
+    vertical-align:top;
+}
+
+.matchmaker_rules .games_col1 {
+    background-color:#ddddff; 
+    text-align:center;
+}
+
+.matchmaker_rules .games_col2 {
+    background-color:#ffbbcc;
+    text-align:center;
+}
+
+.matchmaker_rules .games_col3 {
+    background-color:#ddbbff; 
+    text-align:center;
+}
+
+.matchmaker_rules .games_col4 {
+    background-color:#ddffdd; 
+    text-align:center;
+}
+
+.matchmaker_rules .games_col5 {
+    text-align:center;
+}
+
+.matchmaker_rules .point_red {
+    background-color:#FB7; 
+    min-width:15px;
+}
+
+.matchmaker_rules .point_blue {
+    font-weight:bold; 
+    background-color:#89C;
+    text-align:right;
+}
+
+.matchmaker_rules .point_green {
+    background-color:#BE8;
+    text-align:center;
+}
+
+.matchmaker_rules .point_no {
+    background-color:#FB7; 
+    padding:0 6px;
+}
+
+.rules_okey .games_col1 {
+    background-color:#ddddff; 
+    text-align:center;
+}
+
+.rules_okey .games_col2 {
+    background-color:#ffbbcc;
+    text-align:center;
+}
+
+.rules_okey .games_col3 {
+    background-color:#ddbbff; 
+    text-align:center;
+}
+
+.rules_okey .games_col4 {
+    background-color:#ddffdd; 
+    text-align:center;
+}
+
+.rules_okey .games_col5 {
+    text-align:center;
+}
