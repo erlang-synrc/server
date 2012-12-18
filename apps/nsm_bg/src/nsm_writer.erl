@@ -191,6 +191,7 @@ handle_notice(["system", "tournament_ends_note"] = Route, Message, State) ->
     {ok, Tour} = nsm_db:get(tournament, TId),
     ok = nsm_db:put(Tour#tournament{winners = Results}),
     Users = [UId || #play_record{who=UId} <- nsm_tournaments:joined_users(TId)],
+    nsm_db:put(Tour#tournament{status=finished}),
     Desc = case Tour#tournament.description of
         "" -> "";
         D -> " (" ++ D ++ ")"
