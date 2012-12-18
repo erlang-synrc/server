@@ -205,7 +205,7 @@ product_list_paged(Page) ->
     MinPrice = wf:state(slider_min),
     MaxPrice = wf:state(slider_max),
     AllGiftsData = nsm_gifts_db:get_all_gifts(),
-    FilteredGiftsData = [Gift || {Gift, _Obj} <- AllGiftsData, Gift#gift.enabled_on_site, (Gift#gift.our_price / 100 >= MinPrice) and (Gift#gift.our_price / 100 =< MaxPrice)],
+    FilteredGiftsData = [Gift || {Gift, _Obj} <- AllGiftsData, Gift#gift.enabled_on_site, (Gift#gift.real_price >= MinPrice * 100) and (Gift#gift.real_price =< MaxPrice * 100)],
     PageGiftsData = lists:sublist( 
         lists:sort(
             fun(A, B) -> 
@@ -289,25 +289,25 @@ get_prizes_total(Prizes) ->
     || Id <- Prizes]).
 
 get_cur_prize_fund() ->
-            NPlayers = list_to_integer(wf:q(tour_players)),
-            Quota = case wf:state(workaround_quota) of 
-                undefined -> 
-                    list_to_integer(wf:q(tour_quota));
-                Q -> 
-                    wf:state(workaround_quota, undefined),
-                    Q
-            end,
-            Tours = case wf:state(workaround_tours) of
-                undefined ->
-                    list_to_integer(wf:q(tour_tours));
-                T ->
-                    wf:state(workaround_tours, undefined),
-                    T
-            end,
-            case game_okey_ng_trn_elim:get_prize_fund(Quota, NPlayers, Tours) of
-                {ok, PrizeFund} -> 100*PrizeFund;
-                _ -> 0
-            end.
+    NPlayers = list_to_integer(wf:q(tour_players)),
+    Quota = case wf:state(workaround_quota) of 
+        undefined -> 
+            list_to_integer(wf:q(tour_quota));
+        Q -> 
+            wf:state(workaround_quota, undefined),
+            Q
+    end,
+    Tours = case wf:state(workaround_tours) of
+        undefined ->
+            list_to_integer(wf:q(tour_tours));
+        T ->
+            wf:state(workaround_tours, undefined),
+            T
+    end,
+    case game_okey_ng_trn_elim:get_prize_fund(Quota, NPlayers, Tours) of
+        {ok, PrizeFund} -> 100*PrizeFund;
+        _ -> 0
+    end.
 
 reset_slider() ->
     PrizeFund = get_cur_prize_fund(),
@@ -520,7 +520,7 @@ event(tournament_type_changed) ->
         "elimination" ->
             wf:replace(tour_players, #dropdown {postback=prize_fund_and_tours_and_quota_changed, id=tour_players, style="position:absolute; left:610px; top:138px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
                 #option { text=integer_to_list(P) }
-            || P <- [2048, 1025, 512, 256, 128, 64, 32, 16] ]});
+            || P <- [2048, 1024, 512, 256, 128, 64, 32, 16] ]});
         "pointing" ->
             wf:replace(tour_players, #dropdown {postback=prize_fund_and_tours_and_quota_changed, id=tour_players, style="position:absolute; left:610px; top:138px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
                 #option { text=integer_to_list(P) }
@@ -529,7 +529,6 @@ event(tournament_type_changed) ->
     wf:wire(#event{postback=prize_fund_and_tours_and_quota_changed});
 
 event(prize_fund_and_tours_and_quota_changed) ->
-    P = list_to_integer(wf:q(tour_players)),
     case wf:q(tour_type) of
         "elimination" ->
             case wf:q(tour_players) of
@@ -578,11 +577,9 @@ event(prize_fund_and_tours_and_quota_changed) ->
     wf:wire(#event{postback=prize_fund_and_tours_changed});
 
 event(prize_fund_and_tours_changed) ->
-    P = list_to_integer(wf:q(tour_players)),
-    Q = list_to_integer(wf:q(tour_quota)),
     Tours = game_okey_ng_trn_elim:get_tours(list_to_integer(wf:q(tour_quota)), list_to_integer(wf:q(tour_players)) ), 
 
-   ?INFO("Tours: ~p",[Tours]),
+    ?INFO("Tours: ~p",[Tours]),
             case Tours of
                 [] -> ?ERROR("No sush plan: ~p quota, ~p players!", [list_to_integer(wf:q(tour_quota)), list_to_integer(wf:q(tour_players))]);
                 _ ->
