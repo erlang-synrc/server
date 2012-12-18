@@ -634,7 +634,7 @@ convert_state(players, State) ->
     undefined -> undefined;
     P -> list_to_integer(atom_to_list(P))
   end;
-convert_state(qouta, State) ->
+convert_state(quota, State) ->
   case State of
     undefined -> undefined;
     Q -> list_to_integer(atom_to_list(Q))
