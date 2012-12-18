@@ -33,7 +33,11 @@
          {?VENDOR_ARISTO,
           <<"ARISTO">>,
           <<"ARISTO">>,
-          nsm_gifts_plugin_aristo}
+          nsm_gifts_plugin_aristo},
+         {?VENDOR_KAKARA,
+          <<"Kakaranet">>,
+          <<"Kakaranet">>,
+          nsm_gifts_plugin_kakara}
         ]).
 %%
 %% API Functions

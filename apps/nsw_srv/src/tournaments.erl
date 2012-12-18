@@ -221,20 +221,7 @@ prototype_doxtop_panel(SD, SM, SY) ->
     ]}.
 
 featured_tours(AllTours) ->
-    Online = lists:flatten([ begin 
-                                    Id = T#tournament.id,
-                                    Zone = Id div 1000000,
-                                    GameSrv = "game@srv" ++ integer_to_list(Zone) ++ ".kakaranet.com",
-                                    NodeAtom = case Zone of
-                                               4 -> nsx_opt:get_env(nsm_db, game_srv_node, 'game@doxtop.cc');
-                                               _ -> list_to_atom(GameSrv)
-                                    end,
-                                    case rpc:call(NodeAtom, game_manager,get_tournament,[Id]) of
-                                         [] -> [];
-                                         _ -> ?INFO("T: ~p",[T]), T
-                                    end
-             end || T=#tournament{id=Id} <- AllTours]),
-
+    Online = [ T || T=#tournament{id=Id,status=St} <- AllTours, St == activated],
     FilteredTours = case wf:state(bar) of
         past ->     [ T || T=#tournament{id=Id,winners=Winners} <- AllTours, Winners =/= undefined];
         future ->   [ T || T=#tournament{status=created} <- AllTours];

@@ -1,2 +1,3 @@
 -define(VENDOR_ENILGINC, 1).
 -define(VENDOR_ARISTO, 2).
+-define(VENDOR_KAKARA, 3).
