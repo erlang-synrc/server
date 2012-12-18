@@ -121,8 +121,8 @@ content() ->
 
             #label{style="position:absolute; left:-9px; top:197px; width:150px; text-align:right;", text=?_T("Tournament Type:")},
             #dropdown {postback=tournament_type_changed, id=tour_type, style="position:absolute; left:146px; top:190px; width:90px; height:32px; font-size:16px; padding-top:2px;", options=[
-                        #option { text="Elemeli", value=elimination },
-                        #option { text="POINTING", value=pointing }
+                        #option { text="Elemeli", value=elimination }
+%                        #option { text="POINTING", value=pointing }
             ]},
 
             #label{style="position:absolute; left:252px; top:197px; width:100px; text-align:right;", text=?_T("Game Speed")++":"},
