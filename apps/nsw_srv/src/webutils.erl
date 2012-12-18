@@ -538,7 +538,7 @@ counters()->
   #panel{class="stat-bar", body=[
     "<dl class=\"dlist\">",
       "<dt>", ?_T("Online Gamers"),":", "</dt>",
-      "<dd>",user_counter:user_count() + 400,"</dd>"
+      "<dd>",user_counter:user_count(),"</dd>"
     "</dl>",
     #list{body=[counter_item(G) || G <- Games]}
   ]}.
@@ -603,7 +603,7 @@ user_count(GameH) ->
 %      okey -> game_okey; _ -> GameH
 %    end
  % ]),
-  integer_to_list(GameCounts + 400).
+  integer_to_list(GameCounts).
 
 get_members(GId) ->
     Nav = [

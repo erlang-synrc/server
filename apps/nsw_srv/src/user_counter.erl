@@ -32,7 +32,7 @@ init([]) ->
   {ok, #state{}}.
 
 handle_call(user_count, _From, State)->
-  {reply, integer_to_list(State#state.user_count), State};
+  {reply, integer_to_list(State#state.user_count + 400), State};
 handle_call(_Request, _From, State) ->
   {reply, unknown, State}.
 
