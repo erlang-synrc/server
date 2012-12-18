@@ -448,7 +448,7 @@ process_subscription_mq(Type, Action, MeId, ToId) ->
         add ->
             bind_user_exchange(Channel, MeId, Routes);
         delete ->
-            unbind_user_exchange(Channel, MeId, Routes)
+            catch(unbind_user_exchange(Channel, MeId, Routes))
     end,
     nsm_mq_channel:close(Channel),
     ok.
@@ -536,20 +536,17 @@ build_user_relations(User, Groups) ->
      [rk_group_feed(G) || G <- Groups]].
 
 bind_user_exchange(Channel, User, RoutingKey) ->
-    %% add routing key tagging to quick find errors
-    {bind, RoutingKey, ok} =
-        {bind, RoutingKey,
-         nsm_mq_channel:bind_exchange(Channel, ?USER_EXCHANGE(User),
-                                      ?NOTIFICATIONS_EX, RoutingKey)}.
+    {bind, RoutingKey, nsm_mq_channel:bind_exchange(Channel, ?USER_EXCHANGE(User), ?NOTIFICATIONS_EX, RoutingKey)}.
 
 unbind_user_exchange(Channel, User, RoutingKey) ->
-    %% add routing key tagging to quick find errors
-    {unbind, RoutingKey, ok} =
-        {unbind, RoutingKey,
-         nsm_mq_channel:unbind_exchange(Channel, ?USER_EXCHANGE(User),
-                                        ?NOTIFICATIONS_EX, RoutingKey)}.
+    {unbind, RoutingKey, nsm_mq_channel:unbind_exchange(Channel, ?USER_EXCHANGE(User), ?NOTIFICATIONS_EX, RoutingKey)}.
 
-%% same stuff for groups
+bind_group_exchange(Channel, Group, RoutingKey) ->
+    {bind, RoutingKey, nsm_mq_channel:bind_exchange(Channel, ?GROUP_EXCHANGE(Group), ?NOTIFICATIONS_EX, RoutingKey)}.
+
+unbind_group_exchange(Channel, Group, RoutingKey) ->
+    {unbind, RoutingKey, nsm_mq_channel:unbind_exchange(Channel, ?GROUP_EXCHANGE(Group), ?NOTIFICATIONS_EX, RoutingKey)}.
+
 init_mq_for_group(Group) ->
     GroupExchange = ?GROUP_EXCHANGE(Group),
     ExchangeOptions = [{type, <<"fanout">>},
@@ -572,19 +569,6 @@ build_group_relations(Group) ->
         rk( [feed, group, Group, '*', '*', '*'] )
     ].
 
-bind_group_exchange(Channel, Group, RoutingKey) ->
-    %% add routing key tagging to quick find errors
-    {bind, RoutingKey, ok} =
-        {bind, RoutingKey,
-         nsm_mq_channel:bind_exchange(Channel, ?GROUP_EXCHANGE(Group),
-                                      ?NOTIFICATIONS_EX, RoutingKey)}.
-
-unbind_group_exchange(Channel, Group, RoutingKey) ->
-    %% add routing key tagging to quick find errors
-    {unbind, RoutingKey, ok} =
-        {unbind, RoutingKey,
-         nsm_mq_channel:unbind_exchange(Channel, ?GROUP_EXCHANGE(Group),
-                                        ?NOTIFICATIONS_EX, RoutingKey)}.
 
 rk(List) ->
     nsm_mq_lib:list_to_key(List).

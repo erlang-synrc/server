@@ -138,12 +138,13 @@ get_tournament(TrnId) ->
 
 create_tables(Num) ->
 
-    Users = nsm_auth:imagionary_users(),
+    Users = nsm_auth:imagionary_users2(),
+    L = length(Users),
 
     TavlaTwoPlayers = [ begin
 
-    T2U1 = nsm_auth:ima_gio(crypto:rand_uniform(0,2048),Users),
-    T2U2 = nsm_auth:ima_gio(crypto:rand_uniform(0,2048),Users),
+    T2U1 = nsm_auth:ima_gio2(crypto:rand_uniform(0,L),Users),
+    T2U2 = nsm_auth:ima_gio2(crypto:rand_uniform(0,L),Users),
 
     game_manager:create_table(game_tavla,
                          [{table_name,"tavla two players"},
@@ -159,15 +160,15 @@ create_tables(Num) ->
 
     TavlaRobot = [ begin
 
-    T2U1 = nsm_auth:ima_gio(crypto:rand_uniform(0,2048),Users),
-    T2U2 = nsm_auth:ima_gio(crypto:rand_uniform(0,2048),Users),
+    T2U1 = nsm_auth:ima_gio2(crypto:rand_uniform(0,L),Users),
+    T2U2 = nsm_auth:ima_gio2(crypto:rand_uniform(0,L),Users),
 
     game_manager:create_table(game_tavla,[{table_name,"tavla one player"},
                           {speed,normal},
                           {rounds,3},
                           {default_pr,yes},
                           {game_mode,standard},
-                          {owner,"maxim"}],[list_to_binary(T2U1),robot]) end ||X<-lists:seq(2,Num)],
+                          {owner,"maxim"}],[list_to_binary(T2U1),robot]) end ||X<-lists:seq(2,Num div 2)],
     [{ok,TR1,_}|_] = TavlaRobot,
     [{ok,TR2,_}|_] = lists:reverse(TavlaRobot),
     ?INFO("Tavla bot rooms: ~p",[{TR1,TR2}]),
@@ -175,8 +176,8 @@ create_tables(Num) ->
 
     OkeyBots = [begin
 
-    T2U1 = nsm_auth:ima_gio(crypto:rand_uniform(0,2048),Users),
-    T2U2 = nsm_auth:ima_gio(crypto:rand_uniform(0,2048),Users),
+    T2U1 = nsm_auth:ima_gio2(crypto:rand_uniform(0,L),Users),
+    T2U2 = nsm_auth:ima_gio2(crypto:rand_uniform(0,L),Users),
 
     game_manager:create_table(game_okey,[{table_name,"okey one player"},
                           {speed,fast},
@@ -184,17 +185,17 @@ create_tables(Num) ->
                           {sets,1},
                           {default_pr,yes},
                           {game_mode,color},
-                          {owner,"maxim"}],[list_to_binary(T2U1),robot,robot,robot]) end||X<-lists:seq(2,5)],
+                          {owner,"maxim"}],[list_to_binary(T2U1),robot,robot,robot]) end||X<-lists:seq(2,Num)],
     [{ok,OB1,_}|_] = OkeyBots,
     [{ok,OB2,_}|_] = lists:reverse(OkeyBots),
     ?INFO("Okey bot rooms: ~p~n",[{OB1,OB2}]),
 
     OkeyPlayers = [begin
 
-    T2U1 = nsm_auth:ima_gio(crypto:rand_uniform(0,2048),Users),
-    T2U2 = nsm_auth:ima_gio(crypto:rand_uniform(0,2048),Users),
-    T2U3 = nsm_auth:ima_gio(crypto:rand_uniform(0,2048),Users),
-    T2U4 = nsm_auth:ima_gio(crypto:rand_uniform(0,2048),Users),
+    T2U1 = nsm_auth:ima_gio2(crypto:rand_uniform(0,L),Users),
+    T2U2 = nsm_auth:ima_gio2(crypto:rand_uniform(0,L),Users),
+    T2U3 = nsm_auth:ima_gio2(crypto:rand_uniform(0,L),Users),
+    T2U4 = nsm_auth:ima_gio2(crypto:rand_uniform(0,L),Users),
 
     game_manager:create_table(game_okey,[{table_name,"okey four players"},
                           {speed,normal},
@@ -210,12 +211,14 @@ create_tables(Num) ->
 
 create_paired(Num) ->
 
-    Users = nsm_auth:imagionary_users(),
+    Users = nsm_auth:imagionary_users2(),
+
+    L = length(Users),
 
     TavlaPairedPlayers = [begin
 
-    T2U1 = nsm_auth:ima_gio(crypto:rand_uniform(0,2048),Users),
-    T2U2 = nsm_auth:ima_gio(crypto:rand_uniform(0,2048),Users),
+    T2U1 = nsm_auth:ima_gio2(crypto:rand_uniform(0,L),Users),
+    T2U2 = nsm_auth:ima_gio2(crypto:rand_uniform(0,L),Users),
 
     game_manager:create_table(game_tavla,[{table_name,"paired tavla two tables"},
                           {speed, normal},
@@ -230,16 +233,16 @@ create_paired(Num) ->
 
     TavlaPairedPlayers5Tables = [begin
 
-    T2U1 = nsm_auth:ima_gio(crypto:rand_uniform(0,2048),Users),
-    T2U2 = nsm_auth:ima_gio(crypto:rand_uniform(0,2048),Users),
-    T2U3 = nsm_auth:ima_gio(crypto:rand_uniform(0,2048),Users),
-    T2U4 = nsm_auth:ima_gio(crypto:rand_uniform(0,2048),Users),
-    T2U5 = nsm_auth:ima_gio(crypto:rand_uniform(0,2048),Users),
-    T2U6 = nsm_auth:ima_gio(crypto:rand_uniform(0,2048),Users),
-    T2U7 = nsm_auth:ima_gio(crypto:rand_uniform(0,2048),Users),
-    T2U8 = nsm_auth:ima_gio(crypto:rand_uniform(0,2048),Users),
-    T2U9 = nsm_auth:ima_gio(crypto:rand_uniform(0,2048),Users),
-    T2U10 = nsm_auth:ima_gio(crypto:rand_uniform(0,2048),Users),
+    T2U1 = nsm_auth:ima_gio2(crypto:rand_uniform(0,L),Users),
+    T2U2 = nsm_auth:ima_gio2(crypto:rand_uniform(0,L),Users),
+    T2U3 = nsm_auth:ima_gio2(crypto:rand_uniform(0,L),Users),
+    T2U4 = nsm_auth:ima_gio2(crypto:rand_uniform(0,L),Users),
+    T2U5 = nsm_auth:ima_gio2(crypto:rand_uniform(0,L),Users),
+    T2U6 = nsm_auth:ima_gio2(crypto:rand_uniform(0,L),Users),
+    T2U7 = nsm_auth:ima_gio2(crypto:rand_uniform(0,L),Users),
+    T2U8 = nsm_auth:ima_gio2(crypto:rand_uniform(0,L),Users),
+    T2U9 = nsm_auth:ima_gio2(crypto:rand_uniform(0,L),Users),
+    T2U10 = nsm_auth:ima_gio2(crypto:rand_uniform(0,L),Users),
 
     game_manager:create_table(game_tavla,[{table_name,"paired tavla 5 tables"},
                           {speed, normal},
@@ -338,19 +341,15 @@ create_standalone_game(Game, Params, Users) ->
 start_tournament(TourId,NumberOfTournaments,NumberOfPlayers,Quota,Tours,Speed,GiftIds) ->
 
     {ok,Tournament} = nsm_db:get(tournament,TourId),
-    ImagioUsers = nsm_auth:imagionary_users(),
+    ImagioUsers = nsm_auth:imagionary_users2(),
     RealPlayersUnsorted = nsm_tournaments:joined_users(TourId),
     RealPlayersPR = lists:sort(fun(#play_record{other=AX},#play_record{other=BX}) -> AX < BX end,RealPlayersUnsorted),
     ?INFO("Head: ~p",[hd(RealPlayersPR)]),
     RealPlayers = [list_to_binary(Who)||#play_record{who=Who}<-RealPlayersPR],
 
     Registrants = case NumberOfPlayers > length(RealPlayers) of
-                       true -> nsm_db:put(Tournament#tournament{status=canceled}), RealPlayers
-                                %++ [ erlang:list_to_binary(nsm_auth:ima_gio(N,ImagioUsers)) ||
-                                %      N <- lists:seq(1, NumberOfPlayers - length(RealPlayers))]
-                                ;
-                       false -> [lists:nth(N,RealPlayers)||N<-lists:seq(1,NumberOfPlayers)]
-                   end,
+                       true -> nsm_db:put(Tournament#tournament{status=canceled}), RealPlayers;
+                       false -> [lists:nth(N,RealPlayers)||N<-lists:seq(1,NumberOfPlayers)] end,
 
     OkeyTournaments =
         [begin
@@ -365,10 +364,6 @@ start_tournament(TourId,NumberOfTournaments,NumberOfPlayers,Quota,Tours,Speed,Gi
                                                                {awards, GiftIds},
                                                                {trn_id,TourId},
                                                                {demo_mode, false}]),
-            % TODO: fix test_okey robot
-%             [ proc_lib:spawn_link(fun() ->
-%                                           test_okey:init_with_join_game(self(), '127.0.0.1', 9000, GameId, Id, 1, normal)
-%                                   end) || Id <- Registrants ],
 
              nsm_db:put(Tournament#tournament{status=activated}),
 

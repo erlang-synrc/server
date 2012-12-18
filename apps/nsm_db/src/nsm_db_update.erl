@@ -3,6 +3,7 @@
 -include("user.hrl").
 -include("feed.hrl").
 -include("nsm_bg.hrl").
+-include_lib("nsx_config/include/log.hrl").
 -include("affiliates.hrl").
 
 -compile(export_all).
@@ -276,3 +277,16 @@ extend_tournaments_future_stub() ->
 %% New bucket - mhits
 upd_20121217() ->
     nsm_riak:init_indexes().
+
+clear_imagioanary() ->
+    {ok, {G1, G2, G3, G4, G5, G6, G7, G8, G9, G10, G11}} = nsm_db:get(group, "kakaranet"),
+    AllUIds = [nsm_auth:ima_gio(X) || X <- lists:seq(1,2520)],
+    UIds = [U || U <- AllUIds, nsm_groups:user_in_group(U, "kakaranet")],
+    [nsx_msg:notify(["subscription", "user", UId, "remove_from_group"], {"kakaranet"}) || UId <- UIds],
+    [nsm_db:delete(group_subs, {UId, "kakaranet"}) || UId <- UIds],
+    nsm_db:put({G1, G2, G3, G4, G5, G6, G7, G8, G9, G10 - length(UIds), G11}).
+
+actual_group_usernum(Group) ->
+    {ok, {G1, G2, G3, G4, G5, G6, G7, G8, G9, G10, G11}} = nsm_db:get(group, Group),
+    L = length( nsm_groups:list_group_members(Group)),
+    nsm_db:put({G1, G2, G3, G4, G5, G6, G7, G8, G9, L, G11}).
