@@ -1131,7 +1131,8 @@ tournament_matrix() ->
      { {  4,  200,2}, 0759, [ne      , {te,1}                                                              ], []},
      { {  6,  200,3}, 0659, [ne      , ne       , {te,1}                                                   ], []},
      { {  8,  200,4}, 0559, [ne      , ne       , ne     , {te,1}                                          ], []},
-     { { 10,  200,6}, 0459, [ne      , ne       , ne     , ne      , ne      , {te,1}                      ], []}
+     { { 10,  200,6}, 0459, [ne      , ne       , ne     , ne      , ne      , {te,1}                      ], []},
+     { { 10,   40,2}, 0459, [ne      , {te,1}                                                              ], []}
   ].
 
 get_timeout(turn, fast) -> {ok, Val}   = nsm_db:get(config,"games/okey/tour/timeout_fast",   15*1000), Val;
