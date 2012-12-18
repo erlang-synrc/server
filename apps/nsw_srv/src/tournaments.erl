@@ -139,7 +139,7 @@ content() ->
       #dropdown {id=tour_game, options=[#option{text=T} || T <- ["-", "OKEY", "TAVLA"]]},
 
       #label{text=?_T("Players Count:")},
-      #dropdown {id=tour_players, options=[#option { text=T } || T <- ["-", "16", "32", "64", "128", "256", "512", "1024"]]},
+      #dropdown {id=tour_players, options=[#option { text=T } || T <- ["-", "16", "32", "64", "128", "256", "512", "1024", "2048"]]},
 
       #label{text=?_T("Quota:")},
       #dropdown {id=tour_quota, options=[#option{text=T} || T <- ["-", "2","4","6","8", "10"]]},
@@ -613,7 +613,7 @@ event({filter, {Key, Value}})->
   end,
 
   wf:state(game_filter, convert_state(game, wf:state(game))),
-  wf:state(player_filter, convert_state(players, wf:state(players))),
+  wf:state(players_filter, convert_state(players, wf:state(players))),
   wf:state(quota_filter, convert_state(quota, wf:state(quota))),
   wf:state(sort_by, convert_state(sort_by1, wf:state(sort_by1))),
   wf:state(per_page, convert_state(per_page1, wf:state(per_page1))),
