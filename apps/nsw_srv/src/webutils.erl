@@ -538,7 +538,7 @@ counters()->
   #panel{class="stat-bar", body=[
     "<dl class=\"dlist\">",
       "<dt>", ?_T("Online Gamers"),":", "</dt>",
-      "<dd>",user_counter:user_count(),"</dd>"
+      "<dd>",user_counter:user_count() + 400,"</dd>"
     "</dl>",
     #list{body=[counter_item(G) || G <- Games]}
   ]}.
