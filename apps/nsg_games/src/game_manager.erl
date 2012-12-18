@@ -38,7 +38,7 @@ game_requirements(game_tavla,paired) -> paired_tavla:get_requirements();
 game_requirements(GameAtom,_) -> GameAtom:get_requirements().
 counter(Game) -> PL = supervisor:count_children(case Game of game_okey -> okey_sup; 
                                                             game_tavla -> tavla_sup; _ -> game_sup end),
-                 Res = proplists:get_value(active, PL, 0) + 400,
+                 Res = proplists:get_value(active, PL, 0),
                  case Game of
                       game_okey -> Res;
                       game_tavla -> Res;

@@ -603,7 +603,7 @@ user_count(GameH) ->
 %      okey -> game_okey; _ -> GameH
 %    end
  % ]),
-  integer_to_list(GameCounts).
+  integer_to_list(GameCounts + 400).
 
 get_members(GId) ->
     Nav = [
