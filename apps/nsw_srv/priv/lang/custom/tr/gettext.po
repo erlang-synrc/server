@@ -5121,7 +5121,9 @@ msgstr ""
 "Üzgünüz, Turnuvaya katılmak için bir “ÜYELİK PAKETİ” Satın Almak gerekiyor."
 #
 msgid "Sorry, only paid users can play two tournaments in a time."
-msgstr "Üzgünüz, sadece “ÜYELİK PAKETİ” Satın Alan üyelere uygundur."
+msgstr "Bir turnuva kaydınız olduğu için 2.sine kayıt olamıyorsunuz."
+"Eğer bu turnuvaya katılmak isterseniz önceki turnuva kaydınızı iptal etmelisiniz."
+"Bkn. Adres; ’Turnuvalar sayfası/turnuvaya katılmak!"
 #
 msgid "Sorry, you need a bigger tournament for this prize."
 msgstr "Sorry, you need a bigger tournament for this prize."
