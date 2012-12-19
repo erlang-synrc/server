@@ -652,8 +652,8 @@ init_replacement_robot(UId, State) ->
     BM = bot_module(State#state.rules_module),
     RPid = State#state.rules_pid,
     RMod = State#state.rules_module,
-    {Msgs, RobotInfo} = RMod:signal(RPid, {replace_player, UId, NUId, User, SPid}),
-    BM:init_state(NPid, {Msgs, RobotInfo}),
+    {_Msgs, _RobotInfo} = RMod:signal(RPid, {replace_player, UId, NUId, User, SPid}),
+    BM:join_game(NPid),
     {SPid, NUId, User}.
 
 add_robot(State) ->
