@@ -170,6 +170,8 @@ get_user(UId) ->
 get_all_users() ->
     nsm_db:all(user).
 
+subscribe_user(Who, Whom) -> subscr_user(Who, Whom).
+unsubscribe_user(Who, Whom) -> unsubscr_user(Who, Whom).
 
 
 subscr_user(Who, Whom) ->
