@@ -335,6 +335,7 @@ content() ->
 
 
 user_table(Users) ->
+    ?INFO("Users: ~p",[Users]),
     case wf:session(tourlobby_view_mode) of
         short ->
             [#panel{style="font-size:16px; line-height:24px; margin-left:25px; margin-right:25px; text-align:justify;", body = [
