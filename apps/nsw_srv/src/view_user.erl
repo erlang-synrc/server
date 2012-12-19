@@ -78,13 +78,13 @@ user_info() ->
         undefined ->
             ?_T("not entered");
         _ ->
-            Info#user.name
+            site_utils:decode_letters( Info#user.name )
     end,
     UserSurname = case Info#user.surname of
         undefined ->
             ?_T("not entered");
         _ ->
-            Info#user.surname
+            site_utils:decode_letters( Info#user.surname )
     end,
     UserSex = case utils:convert_if(Info#user.sex, list) of
         undefined ->
