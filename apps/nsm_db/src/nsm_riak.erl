@@ -125,9 +125,11 @@ t_to_b(T) ->
     erlang:list_to_binary(StringBucket).
 
 %% Create indicies for the record
-make_indices(#mhits{word = Word, ip = IP, date = Date}) -> [{<<"mhits_word_date_bin">>, key_to_bin({Word, Date})},
-                                                            {<<"mhits_date_bin">>, key_to_bin(Date)},
+make_indices(#mhits{word = Word, ip = IP, date = Date}) -> [{<<"mhits_date_bin">>, key_to_bin(Date)},
+                                                            {<<"mhits_word_date_bin">>, key_to_bin({Word, Date})},
+                                                            {<<"mhits_word_ip_date_bin">>, key_to_bin({Word,IP,Date})},
                                                             {<<"mhits_word_bin">>, key_to_bin(Word)},
+                                                            {<<"mhits_word_ip_bin">>, key_to_bin({Word,IP})},
                                                             {<<"mhits_ip_bin">>, key_to_bin(IP)},
                                                             {<<"mhits_ip_date_bin">>, key_to_bin({IP, Date})}];
 make_indices(#affiliates_contracts{owner = OwnerId}) -> [{<<"owner_bin">>, key_to_bin(OwnerId)}];

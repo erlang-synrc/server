@@ -4,6 +4,7 @@
 -include_lib("nsm_db/include/feed.hrl").
 -include_lib("nsm_db/include/user.hrl").
 -include_lib("nsm_db/include/table.hrl").
+-include_lib("nsm_db/include/mhits.hrl").
 -include_lib("nsm_db/include/tournaments.hrl").
 -include_lib("nsm_gifts/include/common.hrl").
 -include("nsm_bg.hrl").
@@ -207,6 +208,12 @@ handle_notice(["system", "tournament_ends_note"] = Route, Message, State) ->
     [nsx_msg:notify(["feed", "user", UId, "post_note"], NoteString) || UId <- Users],
     {noreply, State};
 
+handle_notice(["system", "count_user"] = Route, Message, State) ->
+    case nsm_mhits:stat_word_ip_date(Message#mhits.word,Message#mhits.ip,Message#mhits.date) of
+                [] -> nsm_db:put(Message#mhits{count = 1});
+                DB -> DB1 = lists:nth(1,DB), nsm_db:put(Message#mhits{count = Message#mhits.count + DB1#mhits.count}) end,
+    ?INFO("feed(~p): count_user: Route=~p, Message=~p", [self(), Route, Message]),
+    {noreply, State};
 
 handle_notice(["system", "game_ends_note"] = Route, Message, State) ->
     ?INFO("feed(~p): game_ends_note: Route=~p, Message=~p", [self(), Route, Message]),
@@ -806,6 +813,7 @@ get_opts(#state{type = system, owner = Owner}) ->
                 [system, add_package],
                 % invites
                 [system, use_invite],
+                [system, count_user],
                 % notifications
                 [system, game_begins_note], % out of order
                 [system, tournament_tour_note],

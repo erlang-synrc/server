@@ -36,8 +36,13 @@ get_relay(GameId) -> gen_server:call(?MODULE, {get_relay, GameId}).
 game_requirements(GameAtom) -> GameAtom:get_requirements().
 game_requirements(game_tavla,paired) -> paired_tavla:get_requirements();
 game_requirements(GameAtom,_) -> GameAtom:get_requirements().
-counter(Game) -> PL = supervisor:count_children(case Game of game_okey -> okey_sup; game_tavla -> tavla_sup; _ -> game_sup end),
-                 proplists:get_value(active, PL, 0).
+counter(Game) -> PL = supervisor:count_children(case Game of game_okey -> okey_sup; 
+                                                            game_tavla -> tavla_sup; _ -> game_sup end),
+                 Res = proplists:get_value(active, PL, 0),
+                 case Game of
+                      game_okey -> Res;
+                      game_tavla -> Res;
+                      _ -> 0 end.
 
 %start([Module, Args]) -> gen_server:start(?MODULE,[Module,Args],[]).
 %start(Module, Args) -> gen_server:start(?MODULE,[Module,Args],[]).
@@ -136,7 +141,7 @@ get_tournament(TrnId) ->
     ?INFO("~w:get_tournament Table = ~p", [?MODULE, Table]),
     Table.
 
-create_tables(Num) ->
+tavla_create_tables(Num) ->
 
     Users = nsm_auth:imagionary_users2(),
     L = length(Users),
@@ -171,8 +176,13 @@ create_tables(Num) ->
                           {owner,"maxim"}],[list_to_binary(T2U1),robot]) end ||X<-lists:seq(2,Num div 2)],
     [{ok,TR1,_}|_] = TavlaRobot,
     [{ok,TR2,_}|_] = lists:reverse(TavlaRobot),
-    ?INFO("Tavla bot rooms: ~p",[{TR1,TR2}]),
+    ?INFO("Tavla bot rooms: ~p",[{TR1,TR2}]).
 
+
+okey_create_tables(Num) ->
+
+    Users = nsm_auth:imagionary_users2(),
+    L = length(Users),
 
     OkeyBots = [begin
 

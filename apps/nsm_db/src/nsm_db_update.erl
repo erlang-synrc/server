@@ -257,7 +257,7 @@ update_user_address() ->
 update_play_records() -> % this fails!
     AllPlayRecords = nsm_db:all(play_record),
     nsm_riak:riak_clean(play_record),
-    [case E of {play_record, Who, _Id, Tournament, Team, Game_id, Entry_id, _Score_points, _Next, _Prev} ->
+    [case E of {play_record, Who, _Id, Tournament, Team, Game_id, _Entry_id, _Score_points, _Next, _Prev} ->
             PR = {play_record, Who, Tournament, Team, Game_id, Who, 0, 0, 0, 0, []},
             nsm_db:put(PR);
         _ -> nsm_db:put(E)
@@ -287,6 +287,24 @@ clear_imagioanary() ->
     nsm_db:put({G1, G2, G3, G4, G5, G6, G7, G8, G9, G10 - length(UIds), G11}).
 
 actual_group_usernum(Group) ->
-    {ok, {G1, G2, G3, G4, G5, G6, G7, G8, G9, G10, G11}} = nsm_db:get(group, Group),
+    {ok, {G1, G2, G3, G4, G5, G6, G7, G8, G9, _G10, G11}} = nsm_db:get(group, Group),
     L = length( nsm_groups:list_group_members(Group)),
     nsm_db:put({G1, G2, G3, G4, G5, G6, G7, G8, G9, L, G11}).
+
+
+% cleanup
+delete_temp_entries() ->
+    NowSecs = calendar:datetime_to_gregorian_seconds( calendar:now_to_datetime(erlang:now()) ),
+    [begin
+        MessageSecs = calendar:datetime_to_gregorian_seconds( calendar:now_to_datetime(E#entry.created_time) ),
+        {_, Type} = E#entry.type,
+        case (Type == system) and (NowSecs - MessageSecs > 600) of
+            true ->
+                feed:remove_entry(E#entry.feed_id, E#entry.entry_id);
+            _ ->
+                ok
+        end
+    end || E <- nsm_db:all(entry)].
+
+delete_old_play_record() ->
+    [nsm_db:delete(play_record, {element(2, PR), element(3,PR)}) || PR <- nsm_db:all(play_record), element(3, PR)<1000000].

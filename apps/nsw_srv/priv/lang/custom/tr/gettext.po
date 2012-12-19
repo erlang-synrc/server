@@ -2911,7 +2911,7 @@ msgid "$username$ table, $date$ "
 msgstr "$username$ masası, $date$ "
 #
 msgid "All friends of "
-msgstr "Tüm arkadaşlar"
+msgstr "Tüm arkadaşlar "
 #
 msgid ""
 "All your own and your friends posts. And your favourite groups' posts too."
@@ -4766,7 +4766,7 @@ msgid "create your own!"
 msgstr "create your own!"
 #
 msgid "day"
-msgstr "day"
+msgstr "dün"
 #
 msgid "elimination"
 msgstr "elimination"
@@ -5408,3 +5408,9 @@ msgstr ""
 "                    <br>&nbsp;$pos2$. $winner2$ with $points2$ points;\n"
 "                    <br>&nbsp;$pos3$. $winner3$ with $points3$ points;\n"
 "                    <br>&nbsp;$pos4$. $winner4$ with $points4$ points."
+#
+msgid "Katılım: "
+msgstr "Katılım: "
+#
+msgid "Starting: "
+msgstr "Starting: "

@@ -300,7 +300,7 @@ add_sample_users() ->
     GId1  = nsm_groups:create_group_directly_to_db("ahmettez", "kakaranet", "Kakaranet", "Kakaranet'e Hoşgeldiniz", public),
     GId2  = nsm_groups:create_group_directly_to_db("ahmettez", "yeniler", "Yeniler", "So, you must be new here.", public),
 
-    create_tour_users(1,2048,[GId1,GId2]),
+    create_tour_users(1,386,[GId1,GId2]),
 
     ?INFO("adding users accounts"),
     [ begin
