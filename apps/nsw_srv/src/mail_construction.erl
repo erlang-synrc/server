@@ -6,8 +6,8 @@ tournament(User, Mail, Date, Time, Gift, Tournament) ->
     Subject = ?_T("Kakaranet Okey Turnuva Duyuru"),
     PlainText = ?_TS("Değerli $username$!\n\n"
 
-        "Bugün $date$ saat $time$ de başlayacak $gift$ ödüllü Kakaranet in"
-        "$tour$ okey turnuvasını hatırlatmak için bu e postayı gönderdik"
+        "Bugün $date$ saat $time$ de başlayacak $gift$ ödüllü Kakaranet in "
+        "$tour$ okey turnuvasını hatırlatmak için bu e postayı gönderdik "
         "$gift$ e ulaşmak için lütfen zamanında yerinizi alın.\n\n"
 
         "İyi oyunlar dileriz.\n\n"

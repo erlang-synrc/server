@@ -739,11 +739,13 @@ send_email(TID) ->
     Time = convert_time(T#tournament.start_time),
     Gifts = [case nsm_gifts_db:get_gift(A) of
                 {error,_} -> no;
-                {ok,{Gift,_}} -> Gift#gift.gift_name end || A <- T#tournament.awards],
+                {ok,{Gift,_}} -> [G]=Gift#gift.gift_name, G end || A <- T#tournament.awards],
     MainGift = lists:nth(1,Gifts),
+    ?INFO("Main Gift: ~p",[MainGift]),
      [ begin
             Mail = User#user.email,
             Username = User#user.username,
        {Subject, PlainText} = mail_construction:tournament(Username, Mail, Date, Time, MainGift, Tournament),
-            ?INFO("Mail ~p",[{User#user.email,Subject,PlainText}])
+            ?INFO("Mail ~p",[{User#user.email,Subject,PlainText}]),
+            nsx_msg:notify_email(Subject, PlainText, Mail)
      end || User <- Users].
