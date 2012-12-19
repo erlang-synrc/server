@@ -234,7 +234,7 @@ content() ->
                 #label{class="tourlobby_left_bottom_block_label", body=?_T("Quota: ") ++ integer_to_list(Quota)},
                 #label{class="tourlobby_left_bottom_block_label", body=?_T("Katılım: ") ++ integer_to_list(Length)},
                 #br{},
-                #label{class="tourlobby_left_bottom_block_label", body=?_T("Starting: ") ++ DateTime},
+                #label{class="tourlobby_left_bottom_block_label", body=?_T("Starting") ++ ": " ++ DateTime},
                 #br{},
 %                #label{class="tourlobby_left_bottom_block_label", body=?_T("Plan: ")},
                 #panel{style="left:26px; top:110px;", body=
