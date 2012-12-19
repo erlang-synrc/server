@@ -414,7 +414,7 @@ user_table_row(UId, P1, P2, Color, N, RealName) ->
                 #tablecell{body=[
                     #link{style="font-weight:bold;", url=URL, text=UId},
                     " &mdash; ",
-                    RealName
+                    site_utils:decode_letters( RealName )
                 ]}
             ]}
         ]},
