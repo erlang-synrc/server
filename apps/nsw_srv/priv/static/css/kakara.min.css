@@ -2015,7 +2015,7 @@ div.post:first-child {background:none !important}
 	line-height:31px;
 	padding:0 13px;
 	border-bottom:1px solid #dedfdf;
-    letter-spacing:2px;
+    letter-spacing:0px;
     text-transform: uppercase;
 }
 #aside .box h3 span,
@@ -2336,19 +2336,22 @@ div.post:first-child {background:none !important}
 .create-block .article1 .item3 .list1 a{padding:0 6px;}
 
 /* green buttons hack */
-.create-block .article1 .list1_green{
+.create-block .article1 .list1_blue,
+.create-block .article1 .list1_green {
 	margin:5px 0 0 -1px;
 	padding:0;
 	list-style:none;
 	overflow:hidden;
 }
-.create-block .article1 .list1_green li{
+.create-block .article1 .list1_green li,
+.create-block .article1 .list1_blue li {
 	float:left;
 	padding:0 2px 2px;
 	font-size:12px;
 	line-height:24px;
 	font-weight:bold;
 }
+.create-block .article1 .list1_blue a,
 .create-block .article1 .list1_green a{
 	float:left;
 	border:1px solid #f5b74e;
@@ -2373,6 +2376,8 @@ div.post:first-child {background:none !important}
 	box-shadow:0 1px 1px #689333;
 	position:relative;
 }
+.create-block .article1 .list1_blue .active a,
+.create-block .article1 .list1_blue a:hover,
 .create-block .article1 .list1_green .active a,
 .create-block .article1 .list1_green a:hover{
 	color:#a6a6a6;
@@ -2384,7 +2389,10 @@ div.post:first-child {background:none !important}
 	background:#eaeaea;
 	text-shadow:-1px 0 #d9d9d9;
 }
-.create-block .article1 .item3 .list1_green a{padding:0 6px;}
+.create-block .article1 .item3 .list1_blue a,
+.create-block .article1 .item3 .list1_green a {
+  padding:0 6px;
+}
 /* hack ends */
 
 .create-block .choose-form{
@@ -5868,7 +5876,7 @@ hr.tournaments_hr{
   border-radius: none;
   border: none;
   text-align:left;
-  width: auto;
+  width:auto;
   display:inline-block;
 }
 
@@ -5876,10 +5884,41 @@ hr.tournaments_hr{
   border:none;
 }
 
-.tournaments_filter_block .create-block .article1 .list1_green  a {
+.tournaments_filter_block .create-block .article1 .list1_green  a,
+.tournaments_filter_block .create-block .article1 .list1_blue  a {
   padding:3px 10px;
   font-size:16px;
   margin-right:5px;
+}
+
+.tournaments_filter_block .create-block .article1 .list1_blue a {
+  border: 1px solid #4B97CE;
+  background: #5CB6D8;
+  background: -moz-linear-gradient(top, rgba(92, 182, 216, 1) 0%, rgba(48, 120, 187, 1) 100%);
+  background: -webkit-linear-gradient(top, rgba(92, 182, 216, 1) 0%,rgba(48, 120, 187, 1) 100%);
+  background: -o-linear-gradient(top, rgba(92, 182, 216, 1) 0%,rgba(48, 120, 187, 1) 100%);
+  background: -ms-linear-gradient(top, rgba(92, 182, 216, 1) 0%,rgba(48, 120, 187, 1) 100%);
+  background: linear-gradient(top, rgba(92, 182, 216, 1) 0%,rgba(48, 120, 187, 1) 100%);
+  color: #ffffff;
+  text-shadow: 0 1px #6d6d6d;
+  -webkit-border-radius: 5px;
+  -moz-border-radius: 5px;
+  border-radius: 5px;
+  -webkit-box-shadow: 0 1px 1px #3674AA;
+  -moz-box-shadow: 0 1px 1px #3674AA;
+  box-shadow: 0 1px 1px #3674AA;
+}
+
+.tournaments_filter_block .create-block .article1 .list1_blue a:hover,
+.tournaments_filter_block .create-block .article1 .list1_blue .active a {
+  color: #A6A6A6;
+  text-decoration: none;
+  border-color: #9D9D9D;
+  -webkit-box-shadow: 0 0 4px #9D9D9D inset;
+  -moz-box-shadow: 0 0 4px #9d9d9d inset;
+  box-shadow: 0 0 4px #9D9D9D inset;
+  background: #EAEAEA;
+  text-shadow: -1px 0 #D9D9D9;
 }
 
 .tournaments_all_block {

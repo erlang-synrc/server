@@ -141,6 +141,8 @@ content() ->
     % is user joined already
     JoinedList = [P#play_record.who || P <- nsm_tournaments:joined_users(T#tournament.id)],
     UserJoined = lists:member(wf:user(), JoinedList),
+    Length = length(JoinedList),
+    DateTime = Date ++ " " ++ Time,
 
     {ok,PlanDesc1} = case rpc:call(?GAMESRVR_NODE, game_okey_ng_trn_elim,get_plan_desc,[T#tournament.quota,
                                                                                    T#tournament.players_count,
@@ -150,7 +152,7 @@ content() ->
                         end,
 %    PlanDesc1 = ["yok","yok","yok","yok","yok","yok","yok","Final"],
 
-%    PlanDesc = ling:join(PlanDesc1," / "),
+    PlanDesc = ling:join(PlanDesc1," / "),
     PlanI = lists:seq(1, length(PlanDesc1)),
     PlanTable = #table{rows=[
         #tablerow{cells=
@@ -176,7 +178,8 @@ content() ->
             #label{class="tourlobby_title_label", body=?_T("TOURNAMENT LOBBY")}
         ]},
 
-%        #panel{body=[#label{style="margin-left:300px;margin-top:10px;font-size:16pt;",body=[lists:flatten(PlanDesc)]}]},
+%        #panel{body=[#label{style="margin-left:300px;margin-top:10px;font-size:16pt;",body=[%lists:flatten(PlanDesc)
+%                                                                                           PlanTable]}]},
 
         % left top block
         #panel{class="tourlobby_left_top_block", body=[
@@ -229,9 +232,12 @@ content() ->
                 #label{class="tourlobby_left_bottom_block_label", body=?_T("Game Type: ") ++ Game},
                 #br{},
                 #label{class="tourlobby_left_bottom_block_label", body=?_T("Quota: ") ++ integer_to_list(Quota)},
+                #label{class="tourlobby_left_bottom_block_label", body=?_T("Katılım: ") ++ integer_to_list(Length)},
                 #br{},
-                #label{class="tourlobby_left_bottom_block_label", body=?_T("Plan: ")},
-                #panel{style="position:absolute; left:16px; top:110px;", body=
+                #label{class="tourlobby_left_bottom_block_label", body=?_T("Starting") ++ ": " ++ DateTime},
+                #br{},
+%                #label{class="tourlobby_left_bottom_block_label", body=?_T("Plan: ")},
+                #panel{style="left:26px; top:110px;", body=
                     PlanTable
                 }
             ]
@@ -408,7 +414,7 @@ user_table_row(UId, P1, P2, Color, N, RealName) ->
                 #tablecell{body=[
                     #link{style="font-weight:bold;", url=URL, text=UId},
                     " &mdash; ",
-                    RealName
+                    site_utils:decode_letters( RealName )
                 ]}
             ]}
         ]},

@@ -218,7 +218,7 @@ by_filter()->
   #panel{class="create-block", body =[
       #panel{class=article1, body=[
         #h3{text=?_T("Select by:")},
-        #list{class="list1_green size1", body=[
+        #list{class="list1_blue  size1", body=[
           #listitem{body=#link{id=site_utils:simple_pickle({sort_by1, gifts}),
               text=?_T("BY GIFTS"), postback={filter, {sort_by1, gifts}}}},
           #listitem{body=#link{id=site_utils:simple_pickle({sort_by1, friends}),
@@ -390,7 +390,7 @@ all_tours(AllTours,Page) ->
     ].
 
 test_tourblock() ->
-    tourblock(0,"OKEY TURNUVASI", "TAVLA", "7.11.2012", 64, 5000, 
+    tourblock(0,"OKEY TURNUVASI", "TAVLA", "7.11.2012 00:00:00", 64, 5000, 
         "/images/tournament/tournaments_page/tournament_default_avatar.png",
         ["http://www.enilginc.com/images/products/00/08/45/845_buyuk.jpg", 
          "http://www.enilginc.com/images/products/00/02/12/212_buyuk.jpg",
@@ -409,6 +409,14 @@ tourblock(T) ->
     Date = integer_to_list(element(3, T#tournament.start_date)) ++ "." ++ 
            integer_to_list(element(2, T#tournament.start_date)) ++ "." ++ 
            integer_to_list(element(1, T#tournament.start_date)),
+    Time = integer_to_list(element(1, T#tournament.start_time)) ++ ":" ++ 
+           integer_to_list(element(2, T#tournament.start_time)) ++
+           case element(2, T#tournament.start_time) of 
+                0 -> "0";
+                _ -> ""
+           end,
+
+    DateTime = Date ++ " " ++ Time,
     NPlayers = T#tournament.players_count,
     Quota = T#tournament.quota,
     Winners = T#tournament.winners,
@@ -426,9 +434,9 @@ tourblock(T) ->
              "/images/tournament/new_tournament/question.png",
              "/images/tournament/new_tournament/question.png"]
     end,
-    tourblock(Id, Title, Game, Date, NPlayers, Quota, Avatar, Prizes, NPlayers, Winners).
+    tourblock(Id, Title, Game, DateTime, NPlayers, Quota, Avatar, Prizes, NPlayers, Winners).
 
-tourblock(Id, Title, Game, Date, NGames, Quota, Avatar, Prizes,PlayersCount, Winners) ->
+tourblock(Id, Title, Game, DateTime, NGames, Quota, Avatar, Prizes,PlayersCount, Winners) ->
 
     Color = case PlayersCount of 
          16   -> "#fff000";
@@ -460,10 +468,9 @@ tourblock(Id, Title, Game, Date, NGames, Quota, Avatar, Prizes,PlayersCount, Win
 
     #hr{},
     #label{body=[?_T("Game Type:"), #span{body=Game}]},
-    #label{body=[?_T("Start Date: "), #span{body=Date}]},
+    #label{body=[?_T("Starting") ++ ": ", #span{body=DateTime}]},
     #label{body=[?_T("Players total:"), #span{body=integer_to_list(NGames)}]},
     #label{body=[?_T("Quota:"), #span{body=integer_to_list(Quota)}]},
-
 
     #hr{},
     #label{text=?_T("Prizes:")},
