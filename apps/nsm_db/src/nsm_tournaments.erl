@@ -56,3 +56,4 @@ destroy(TID) -> nsm_db:delete_by_index(play_record, <<"play_record_tournament_bi
                           nsm_db:delete(tournament,TID).
 clear() -> [destroy(T#tournament.id) || T <- nsm_db:all(tournament)].
 lost() -> lists:usort([erlang:element(3, I) || I <- nsm_db:all(play_record)]).
+fake_join(TID) -> [nsm_tournaments:join(nsm_auth:ima_gio2(X),TID)||X<-lists:seq(1,30)].
