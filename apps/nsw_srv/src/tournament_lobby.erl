@@ -346,7 +346,8 @@ user_table(Users) ->
                             style = "font-weight:bold; margin-right:5px;" ++ case Color of
                                 yellow ->  "color:#938b03;";
                                 red -> "color:#c22323;";
-                                green -> "color:#5ba108;"
+                                green -> "color:#5ba108;";
+                                _ -> ""
                             end}
                         }
                         end
