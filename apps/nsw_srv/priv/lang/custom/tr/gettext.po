@@ -4561,7 +4561,7 @@ msgid "PARTICIPATION PERCENTAGE"
 msgstr "KATILIM ORANINA GÖRE"
 #
 msgid "PCS"
-msgstr "PCS"
+msgstr "tane"
 #
 msgid "Players can create their own tournaments and set the"
 msgstr "Players can create their own tournaments and set the"
