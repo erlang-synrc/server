@@ -340,14 +340,16 @@ user_table(Users) ->
             [#panel{style="font-size:16px; line-height:24px; margin-left:25px; margin-right:25px; text-align:justify;", body = [
                 [#span{style="font-size:24px; font-weight:bold;", body=[?_T("Players"), ": "]},
                     [begin
-                        URL = site_utils:user_link(UId),
-                        #span{body=#link{url=URL, text=UId ++ " ",
+                        case UId of udefined -> ""; _ -> 
+                          URL = site_utils:user_link(UId),
+                          #span{body=#link{url=URL, text=UId ++ " ",
                             style = "font-weight:bold; margin-right:5px;" ++ case Color of
                                 yellow ->  "color:#938b03;";
                                 red -> "color:#c22323;";
                                 green -> "color:#5ba108;"
                             end}
                         }
+                        end
                     end
                     || {UId, _S1, _S2, Color, _} <- Users]
                 ]
