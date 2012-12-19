@@ -111,7 +111,8 @@ game_mode_to_string(evenodd) -> ?_T("Even/Odd");
 game_mode_to_string(standard) -> ?_T("Standard");
 game_mode_to_string(paired) -> ?_T("Pair");
 game_mode_to_string(countdown) -> ?_T("Countdown from 10");
-game_mode_to_string(kakaratavla) -> ?_T("Kakara Tavla").
+game_mode_to_string(kakaratavla) -> ?_T("Kakara Tavla");
+game_mode_to_string(_) -> ?INFO("Uknown Game Speed!!!"), ?_T("Unknown").
 
 -spec game_to_string(atom()) -> string().
 game_to_string(game_okey) -> ?_T("okey");
