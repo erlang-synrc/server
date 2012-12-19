@@ -1,18 +1,22 @@
-%%----------------------------------------------------------------------
-%% @author Pawel Flis <pawel_flis@silversoft.pl>
-%% @copyright Paynet Internet ve Bilisim Hizmetleri A.S. All Rights Reserved.
-%% @doc
-%% This module constructs an email message
-%% 28/06/2011
-%% @end
-%%----------------------------------------------------------------------
-
 -module(mail_construction).
-
 -include("gettext.hrl").
+-compile(export_all).
 
--export([welcome/3, verification/2]).
+tournament(User, Mail, Date, Time, Gift, Tournament) ->
+    Subject = ?_T("Kakaranet Okey Turnuva Duyuru"),
+    PlainText = ?_TS("Değerli $username$!\n\n"
 
+        "Bugün $date$ saat $time$ de başlayacak $gift$ ödüllü Kakaranet in"
+        "$tour$ okey turnuvasını hatırlatmak için bu e postayı gönderdik"
+        "$gift$ e ulaşmak için lütfen zamanında yerinizi alın.\n\n"
+
+        "İyi oyunlar dileriz.\n\n"
+
+        "Kakaranet ekibi",
+        [{username, User}, {gift, Gift},{tour, Tournament},{time,Time},{date,Date}]
+    ),
+
+    {Subject, PlainText}.
 
 welcome(User, Password, _Mail) ->
     Subject = ?_T("Welcome to Kakaranet"),
@@ -33,6 +37,7 @@ welcome(User, Password, _Mail) ->
     ),
 
     {Subject, PlainText}.
+
 
 
 verification(Mail, VerificationCode) ->

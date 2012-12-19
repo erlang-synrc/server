@@ -400,9 +400,11 @@ user_table(Users) ->
 
 user_table_row(UId, P1, P2, Color, N, RealName) ->
     Avatar = avatar:get_avatar_by_username(UId, tiny),
+    case site_utils:user_link(UId) of undefined -> ""; _ -> 
+
     URL = site_utils:user_link(UId),
 
-    #tablerow{cells=[
+         #tablerow{cells=[
         #tablecell{body=[
             #singlerow{cells=[
                 #tablecell{style="padding: 5px 5px 5px 16px;", body=#image{image=Avatar, class=
@@ -437,7 +439,7 @@ user_table_row(UId, P1, P2, Color, N, RealName) ->
     ], style = case N rem 2 of
         0 -> "";
         1 -> "background-color:#f5f5f5;"
-    end}.
+    end} end.
 
 
 

@@ -4,6 +4,7 @@
 -include_lib("nitrogen_core/include/wf.hrl").
 -include_lib("nsm_db/include/common.hrl").
 -include_lib("nsm_db/include/tournaments.hrl").
+-include_lib("nsm_db/include/user.hrl").
 -include("setup.hrl").
 -include("common.hrl").
 -include("elements/records.hrl").
@@ -396,6 +397,19 @@ test_tourblock() ->
          "http://www.enilginc.com/images/products/00/02/12/212_buyuk.jpg",
          "http://www.enilginc.com/images/products/00/07/31/731_buyuk.jpg"],16,[]).
 
+convert_date(Date) ->
+    integer_to_list(element(3, Date)) ++ "." ++ 
+    integer_to_list(element(2, Date)) ++ "." ++ 
+    integer_to_list(element(1, Date)).
+
+convert_time(Time) ->
+    integer_to_list(element(1, Time)) ++ ":" ++ 
+    integer_to_list(element(2, Time)) ++
+           case element(2, Time) of 
+                0 -> "0";
+                _ -> ""
+           end.
+
 tourblock(T) ->
     Id = T#tournament.id,
     Title = T#tournament.name,
@@ -406,15 +420,8 @@ tourblock(T) ->
         _ -> "WTF"
     end,
 
-    Date = integer_to_list(element(3, T#tournament.start_date)) ++ "." ++ 
-           integer_to_list(element(2, T#tournament.start_date)) ++ "." ++ 
-           integer_to_list(element(1, T#tournament.start_date)),
-    Time = integer_to_list(element(1, T#tournament.start_time)) ++ ":" ++ 
-           integer_to_list(element(2, T#tournament.start_time)) ++
-           case element(2, T#tournament.start_time) of 
-                0 -> "0";
-                _ -> ""
-           end,
+    Date = convert_date(T#tournament.start_date),
+    Time = convert_time(T#tournament.start_time),
 
     DateTime = Date ++ " " ++ Time,
     NPlayers = T#tournament.players_count,
@@ -723,3 +730,20 @@ ui_deselect({Key, Value})->
   wf:remove("for_"++Id),
   JSId = wf:js_escape(wf:to_list(Id)),
   wf:wire("objs('"++JSId++"').parent('li').removeClass('active');").
+
+send_email(TID) ->
+    Users = [begin {ok,U}=nsm_db:get(user,X#play_record.who), U end||X<-nsm_tournaments:joined_users(TID)],
+    {ok,T} = nsm_db:get(tournament,TID),
+    Tournament = T#tournament.description,
+    Date = convert_date(T#tournament.start_date),
+    Time = convert_time(T#tournament.start_time),
+    Gifts = [case nsm_gifts_db:get_gift(A) of
+                {error,_} -> no;
+                {ok,{Gift,_}} -> Gift#gift.gift_name end || A <- T#tournament.awards],
+    MainGift = lists:nth(1,Gifts),
+     [ begin
+            Mail = User#user.email,
+            Username = User#user.username,
+       {Subject, PlainText} = mail_construction:tournament(Username, Mail, Date, Time, MainGift, Tournament),
+            ?INFO("Mail ~p",[{User#user.email,Subject,PlainText}])
+     end || User <- Users].
