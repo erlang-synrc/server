@@ -496,6 +496,10 @@ show_table(Tables) ->
                                     _ -> list_to_atom(WebSrv)
                                end,
                     {ok, WholeTable} = rpc:call(NodeAtom,view_table,get_table,[TId,wf:state(table)]),
+
+                    case WholeTable of
+                          #game_table{} ->
+
                     MaxUsers = case wf:q(game_name) of 
                         "tavla" -> case WholeTable#game_table.tournament_type of
                             paired -> 10;
@@ -564,6 +568,8 @@ show_table(Tables) ->
                             [#image{image="/images/free.png"} || _N <- lists:seq(1,MaxUsers-length(RealUsers))] ++ 
                             [Info, JoinOrCrate, DeleteTable]
                     ]},
+
+
                     #tablerow{id=RowId, cells=[
                         #tablecell{ class=cell1,
                             body=[
@@ -577,7 +583,10 @@ show_table(Tables) ->
                                 "<nobr>", Buttons, "</nobr>"
                             ]
                         }
-                    ]}
+                    ]};
+
+                      X -> ?INFO("Matchmaker #game_table rpc:call failed: ~p",[X]), "" 
+                     end
                 end
                 || [_TableNameLabel,
                     OwnerLabel,
