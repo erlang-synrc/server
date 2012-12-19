@@ -123,7 +123,9 @@ game_to_string(_) -> ?_T("unsupported").
 
 
 user_link(Username) when is_list(Username) ->
-    lists:concat([?_U("/view-user"), "/id/", Username]).
+    lists:concat([?_U("/view-user"), "/id/", Username]);
+
+user_link(Username) -> "".
 
 group_link(Gid) when is_list(Gid) ->
     lists:concat([?_U("/view/group"), "/id/", Gid]).
