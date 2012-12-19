@@ -232,8 +232,8 @@ ui_game_type() ->
                  {?_T("Color"), color},
                  {?_T("Countdown from 10"), countdown}];
             "tavla" ->
-                [{?_T("Standard"),  standard},
-                 {?_T("Pair"),      paired}
+                [{?_T("Standard"),  standard} %,
+%                 {?_T("Pair"),      paired}
                 ]
         end,
     [

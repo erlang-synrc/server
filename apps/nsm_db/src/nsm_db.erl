@@ -574,7 +574,9 @@ make_admin(User) ->
 
 make_rich(User) -> 
     Q = nsm_db:get_config("accounts/default_quota",  300),
-    nsm_accounts:transaction(User, ?CURRENCY_QUOTA, Q * 100, #ti_default_assignment{}).
+    nsm_accounts:transaction(User, ?CURRENCY_QUOTA, Q * 100, #ti_default_assignment{}),
+    nsm_accounts:transaction(User, ?CURRENCY_KAKUSH, Q, #ti_default_assignment{}),
+    nsm_accounts:transaction(User, ?CURRENCY_KAKUSH_CURRENCY, Q * 2, #ti_default_assignment{}).
 
 feed_create() ->
     FId = nsm_db:next_id("feed", 1),

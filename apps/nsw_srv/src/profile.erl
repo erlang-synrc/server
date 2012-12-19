@@ -735,18 +735,19 @@ u_event({more_orders, PurchaseId}) ->
 
 u_event(convert_kakush_to_quota) ->
     SKakush = wf:q(kakush_to_quota),
+    Koef = 100 / nsm_db:get_config("curr_qouta_k", 2.39),
     try
         Kakush = list_to_integer(SKakush),
-        {ok, HasKakush} = nsm_accounts:balance(wf:user(), ?CURRENCY_KAKUSH),
+        {ok, HasKakush} = nsm_accounts:balance(wf:user(), ?CURRENCY_KAKUSH_CURRENCY),
         if 
             Kakush > HasKakush ->
                 wf:wire(#alert{text=?_T("Sorry, you don't have that much kakush.")});
             Kakush =< 0 ->
                 wf:wire(#alert{text=?_T("No.")});
             true ->
-                nsm_accounts:transaction(wf:user(), ?CURRENCY_KAKUSH, -Kakush, "Buying "++SKakush++" quota: give kakush"),
-                nsm_accounts:transaction(wf:user(), ?CURRENCY_QUOTA, Kakush, "Buying "++SKakush++" quota: get quota"),
-                wf:wire(#alert{text=?_T("You bought" ++ " " ++ SKakush ++ " " ++ "quota" ++ ".")}),
+                nsm_accounts:transaction(wf:user(), ?CURRENCY_KAKUSH_CURRENCY, -Kakush, "Buying "++SKakush++" quota: give kakush"),
+                nsm_accounts:transaction(wf:user(), ?CURRENCY_QUOTA, round(Kakush * Koef), "Buying "++SKakush++" quota: get quota"),
+                wf:wire(#alert{text=?_T("You bought" ++ " " ++ integer_to_list(round(Kakush * Koef)) ++ " " ++ "quota" ++ ".")}),
                 wf:redirect("/profile/account")
         end
     catch
