@@ -218,7 +218,7 @@ by_filter()->
   #panel{class="create-block", body =[
       #panel{class=article1, body=[
         #h3{text=?_T("Select by:")},
-        #list{class="list1_green size1", body=[
+        #list{class="list1_blue  size1", body=[
           #listitem{body=#link{id=site_utils:simple_pickle({sort_by1, gifts}),
               text=?_T("BY GIFTS"), postback={filter, {sort_by1, gifts}}}},
           #listitem{body=#link{id=site_utils:simple_pickle({sort_by1, friends}),
