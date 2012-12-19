@@ -391,13 +391,13 @@ handle_info({'DOWN', _, process, Pid, _}, State = #state{gamestate = GS}) when G
     {noreply, State2};
 
 handle_info({'DOWN', _, process, Pid, _}, State) ->
-    ?INFO("relay session died (wait for user reconnection), Pid: ~p", [Pid]),
-    try 
-    gproc:unreg({p,l,self()}),
-    State#state.manager ! {remove_game, State#state.rules_module},
-    ?INFO("game manager notified ~p ! ~p",[State#state.manager,{remove_game, State#state.rules_module}])
-    catch _:_ -> noting
-    end,
+    ?INFO("game session died (wait for user reconnection), Pid: ~p", [Pid]),
+%    try 
+%    gproc:unreg({p,l,self()}),
+%    State#state.manager ! {remove_game, State#state.rules_module},
+%    ?INFO("game manager notified ~p ! ~p",[State#state.manager,{remove_game, State#state.rules_module}])
+%    catch _:_ -> noting
+%    end,
     {ok, _}=timer:send_after(?DISCONNECT_TIMEOUT, {disconnect, Pid}),
     {noreply, State};
 
@@ -522,7 +522,7 @@ lobby_leave(Pid, State) ->
 notify_if_user_leaving(Pid, State) ->
     DenyRobots = proplists:get_value(deny_robots, State#state.table_settings, false) == true,
     AllowRobots = not DenyRobots,
-    AllowReplacement = proplists:get_value(allow_replacement, State#state.table_settings, false),
+    AllowReplacement = proplists:get_value(allow_replacement, State#state.table_settings, true),
     Player = lists:keyfind(Pid, #player.pid, State#state.players),
     LastHuman = is_last_human_player(Pid, State#state.players),
     GameAtom = State#state.rules_module,
@@ -619,11 +619,15 @@ replace_with_robot(Player, Pid, State) ->
     ?INFO("replacement with robot. Player left: ~p", [PlayerId]),
     {NPid, NUId, User} = init_replacement_robot(PlayerId, State),
     subscribe(self(), NPid, User),
+    ?INFO("new bot has been spawned: ~p", [NUId]),
     Msg = #player_left{player = PlayerId, bot_replaced = true, replacement = User},
     publish(self(), #game_event{event = api_utils:name(Msg), args = api_utils:members(Msg)}),
     NewPlayer = #player{is_bot = true, pid = NPid, id = NUId, info = User, monref = erlang:monitor(process, NPid)},
     Players = utils:lists_replace(Player, NewPlayer, State#state.players),
-    RL = utils:lists_replace(Pid, NPid, State#state.rematch_list),
+    ?INFO("players list has been updated", []),
+%%    RL = utils:lists_replace(Pid, NPid, State#state.rematch_list),
+    RL = [],
+    ?INFO("rematch_list list has been updated", []),
     State#state{players = Players, rematch_list = RL}.
 
 game_ended(PlayerId, Pid, State) ->
@@ -648,8 +652,8 @@ init_replacement_robot(UId, State) ->
     BM = bot_module(State#state.rules_module),
     RPid = State#state.rules_pid,
     RMod = State#state.rules_module,
-    {Msgs, RobotInfo} = RMod:signal(RPid, {replace_player, UId, NUId, User, SPid}),
-    BM:init_state(NPid, {Msgs, RobotInfo}),
+    {_Msgs, _RobotInfo} = RMod:signal(RPid, {replace_player, UId, NUId, User, SPid}),
+    BM:join_game(NPid),
     {SPid, NUId, User}.
 
 add_robot(State) ->
@@ -663,7 +667,7 @@ create_robot(State) ->
     NUId = User#'PlayerInfo'.id,
     ?INFO("Created Fake Credentials for Robot : ~p",[User]),
     BM = bot_module(State#state.rules_module),
-    {ok, NPid} = BM:start_link(self(), User, State#state.topic),
+    {ok, NPid} = BM:start(self(), User, State#state.topic),
     SPid = BM:get_session(NPid),
     {NPid, SPid, NUId, User}.
 
