@@ -468,7 +468,7 @@ tourblock(Id, Title, Game, DateTime, NGames, Quota, Avatar, Prizes,PlayersCount,
 
     #hr{},
     #label{body=[?_T("Game Type:"), #span{body=Game}]},
-    #label{body=[?_T("Starting: "), #span{body=DateTime}]},
+    #label{body=[?_T("Starting") ++ ": ", #span{body=DateTime}]},
     #label{body=[?_T("Players total:"), #span{body=integer_to_list(NGames)}]},
     #label{body=[?_T("Quota:"), #span{body=integer_to_list(Quota)}]},
 

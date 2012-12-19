@@ -5408,3 +5408,9 @@ msgstr ""
 "                    <br>&nbsp;$pos2$. $winner2$ with $points2$ points;\n"
 "                    <br>&nbsp;$pos3$. $winner3$ with $points3$ points;\n"
 "                    <br>&nbsp;$pos4$. $winner4$ with $points4$ points."
+#
+msgid "Katılım: "
+msgstr "Katılım: "
+#
+msgid "Starting: "
+msgstr "Starting: "

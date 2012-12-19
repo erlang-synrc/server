@@ -2357,6 +2357,11 @@ msgstr ""
 "Kapali beta asamasindaki simetize hos geldiniz."
 
 msgid ""
+"Katılım: "
+msgstr ""
+"Katılım: "
+
+msgid ""
 "Kaybeden de kazanır, kazanan daha da çok kazanır."
 msgstr ""
 "Kaybeden de kazanır, kazanan daha da çok kazanır."
@@ -4131,6 +4136,11 @@ msgid ""
 "Starting date"
 msgstr ""
 "Starting date"
+
+msgid ""
+"Starting: "
+msgstr ""
+"Starting: "
 
 msgid ""
 "Statistics"
