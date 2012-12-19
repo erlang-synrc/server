@@ -4766,7 +4766,7 @@ msgid "create your own!"
 msgstr "create your own!"
 #
 msgid "day"
-msgstr "day"
+msgstr "dün"
 #
 msgid "elimination"
 msgstr "elimination"
