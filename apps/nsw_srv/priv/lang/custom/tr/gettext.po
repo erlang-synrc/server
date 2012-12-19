@@ -2911,7 +2911,7 @@ msgid "$username$ table, $date$ "
 msgstr "$username$ masası, $date$ "
 #
 msgid "All friends of "
-msgstr "Tüm arkadaşlar"
+msgstr "Tüm arkadaşlar "
 #
 msgid ""
 "All your own and your friends posts. And your favourite groups' posts too."
