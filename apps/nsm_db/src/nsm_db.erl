@@ -156,6 +156,30 @@ add_translations() ->
     end, ?URI_DICTIONARY).
 
 create_tour_users(A,B,Groups) ->
+    ImagioUsers = nsm_auth:imagionary_users(),
+    TourUsers =  [#user{username = nsm_auth:ima_gio(N,ImagioUsers),
+                            password="password",
+                            feed = feed_create(),
+                            name = nsm_auth:ima_gio(N,ImagioUsers),
+                            team = create_team("tours"), direct = feed_create(),
+                            status=ok,
+                            age={1981,9,29},
+                            register_date={1345,14071,852889}
+                           } || N <- lists:seq(A, B)],
+    [ begin
+          [nsm_groups:add_to_group_directly_to_db(Me#user.username, GId, member)||GId<-Groups],
+          nsm_users:init_mq(Me#user.username, Groups),
+          nsm_accounts:create_account(Me#user.username),
+          nsm_accounts:transaction(Me#user.username,
+                                   ?CURRENCY_QUOTA,
+                                   nsm_db:get_config("accounts/default_quota",  300),
+                                   #ti_default_assignment{}),
+          nsm_db:put(Me#user{password = utils:sha(Me#user.password),
+                                starred = feed_create(),
+                                pinned = feed_create()})
+      end || Me <- TourUsers].
+
+create_tour_users2(A,B,Groups) ->
     ImagioUsers = nsm_auth:imagionary_users2(),
     TourUsers =  [#user{username = nsm_auth:ima_gio2(N,ImagioUsers),
                             password="password",
