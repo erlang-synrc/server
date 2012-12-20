@@ -558,7 +558,8 @@ handle_sync_event({signal, {replace_player, UId, _, _, _} = Msg},
     ?INFO("AAA proper replacing", []),
     handle_sync_event({signal, Msg}, F, StateName, NewState);
 
-handle_sync_event({signal, {replace_player, UId, NUId, NUserInfo, NPid}}, _, StateName, State) ->
+handle_sync_event({signal, {replace_player, UId, NUId, NUserInfo, NPid}}, _, StateName,
+                  #state{relay = Relay} = State) ->
     ?INFO("RobotDelay 2 = ~p", [State#state.robot_delay]),
     ?INFO("Replace player: UId:~p NUId: ~p ", [UId, NUId]),
     P = get_player(UId, State),
@@ -602,7 +603,8 @@ handle_sync_event({signal, {replace_player, UId, NUId, NUserInfo, NPid}}, _, Sta
       game_sub_type = game_okey:get_scoring_mode(Mode, Gosterge),
       next_turn_in = NewTimeout
      },
-    PS = {[GI, PlayerState], {S2#state.next, S2#state.robot_delay}},
+    message_session(Relay, NPid, [GI, PlayerState]),
+    PS = {[GI, PlayerState], {S2#state.next, S2#state.robot_delay}}, %% TODO replace by 'ok'
     {reply, PS, StateName, S2, NewTimeout};
 
 handle_sync_event({signal, do_rematch}, From, StateName, State) ->
