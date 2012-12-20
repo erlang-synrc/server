@@ -829,16 +829,18 @@ timeout_discard(Events, TashTaken, State) ->
     {NextPlayer, NState1} = set_next(NState),
     NextPlayer1 = NextPlayer#okey_player{pile = [DiscardTash |  NextPlayer#okey_player.pile]},
     NState2 = update_current(NextPlayer1, NState1),
-    C = #okey_next_turn{player = NextPlayer#okey_player.player_id},
-    publish_ge(Relay, Events ++ [B, C]),
+    publish_ge(Relay, Events ++ [B]),
     NState2.
 
-check_timeout_game_end(State) ->
+check_timeout_game_end(#state{relay = Relay} = State) ->
     case length(State#state.pile0) of
         0 ->
             {ok, Next, NewState} = game_nowinner_results(State),
             before_state_wait(next_state, state_wait, NewState#state{next = Next, wait_list = get_players_pids(NewState)});
         _ ->
+            #okey_player{player_id = CurPlayerId} = get_current(State),
+            Msg = #okey_next_turn{player = CurPlayerId},
+            publish_ge(Relay, Msg),
             {next_state, state_take, State#state{time_mark = timeout_at(State#state.turn_timeout)}, State#state.turn_timeout}
     end.
 
