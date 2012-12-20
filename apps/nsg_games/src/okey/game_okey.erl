@@ -257,7 +257,12 @@ state_wait({#okey_ready{}, Pid}=Event, _, #state{wait_list = List} = State) ->
         false ->
             ?INFO("okey_ready B 2.", []),
             {reply, {error, you_are_not_a_player}, state_wait, State, calc_timeout(State)}
-    end.
+    end;
+
+state_wait(Request, From, State) ->
+    ?INFO("OKEY GAME state_wait: Unexpected request: ~p from: ~p", [Request, From]),
+    {reply, {error, unexpected_request}, state_wait, State, calc_timeout(State)}.
+
 
 state_wait(timeout=Event, State) ->
     ?INFO("OKEY GAME state_wait: ~p", [Event]),
@@ -269,7 +274,11 @@ state_wait(timeout=Event, State) ->
     update_table_state(State, State#state.next),
     {next_state, state_finished, State#state{start_timestamp = mnow(),
                                        wait_list = [],
-                                       time_mark = timeout_at(State#state.turn_timeout)}, State#state.turn_timeout}.
+                                       time_mark = timeout_at(State#state.turn_timeout)}, State#state.turn_timeout};
+
+state_wait(Event, State) ->
+    ?INFO("OKEY GAME state_wait: Unexpected event: ~p. Ignoring", [Event]),
+    {next_state, state_wait, State, calc_timeout(State)}.
 
 add_tash_to_hand(#okey_player{can_show_gosterge = Old,
                               hand = OldHand} = Player, PileNum, DrawnTash, State) ->
@@ -558,7 +567,8 @@ handle_sync_event({signal, {replace_player, UId, _, _, _} = Msg},
     ?INFO("AAA proper replacing", []),
     handle_sync_event({signal, Msg}, F, StateName, NewState);
 
-handle_sync_event({signal, {replace_player, UId, NUId, NUserInfo, NPid}}, _, StateName, State) ->
+handle_sync_event({signal, {replace_player, UId, NUId, NUserInfo, NPid}}, _, StateName,
+                  #state{relay = Relay} = State) ->
     ?INFO("RobotDelay 2 = ~p", [State#state.robot_delay]),
     ?INFO("Replace player: UId:~p NUId: ~p ", [UId, NUId]),
     P = get_player(UId, State),
@@ -602,7 +612,8 @@ handle_sync_event({signal, {replace_player, UId, NUId, NUserInfo, NPid}}, _, Sta
       game_sub_type = game_okey:get_scoring_mode(Mode, Gosterge),
       next_turn_in = NewTimeout
      },
-    PS = {[GI, PlayerState], {S2#state.next, S2#state.robot_delay}},
+    message_session(Relay, NPid, [GI, PlayerState]),
+    PS = {[GI, PlayerState], {S2#state.next, S2#state.robot_delay}}, %% TODO replace by 'ok'
     {reply, PS, StateName, S2, NewTimeout};
 
 handle_sync_event({signal, do_rematch}, From, StateName, State) ->
