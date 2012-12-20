@@ -257,7 +257,12 @@ state_wait({#okey_ready{}, Pid}=Event, _, #state{wait_list = List} = State) ->
         false ->
             ?INFO("okey_ready B 2.", []),
             {reply, {error, you_are_not_a_player}, state_wait, State, calc_timeout(State)}
-    end.
+    end;
+
+state_wait(Request, From, State) ->
+    ?INFO("OKEY GAME state_wait: Unexpected request: ~p from: ~p", [Request, From]),
+    {reply, {error, unexpected_request}, state_wait, State, calc_timeout(State)}.
+
 
 state_wait(timeout=Event, State) ->
     ?INFO("OKEY GAME state_wait: ~p", [Event]),
