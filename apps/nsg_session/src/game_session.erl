@@ -307,20 +307,20 @@ handle_call(#join_game{game = GameId}, _From, #state{user = User, rpc = RPC} = S
     end;
 
 
-%% handle_call(#rematch{game = GameId}, _From, State) -> %% XXX WTF?
-%%     ?INFO("rematch", []),
-%%     UId = (State#state.user)#'PlayerInfo'.id,
-%%     Participation = get_relay(GameId, State#state.games),
-%%     ?INFO("ID: ~p, request rematch: ~p, my games: ~p", [UId, GameId, State#state.games]),
-%%     case Participation of
-%%         false ->
-%%             ?INFO("A", []),
-%%             {reply, {error, game_not_found}, State};
-%%         #participation{pid = Pid, module = RMod} ->
-%%             Res = RMod:do_rematch(Pid, self()),
-%%             ?INFO("B. Res: ~p", [Res]),
-%%             {reply, Res, State}
-%%     end;
+handle_call(#rematch{game = GameId}, _From, State) -> %% XXX WTF?
+    ?INFO("rematch", []),
+    UId = (State#state.user)#'PlayerInfo'.id,
+    Participation = get_relay(GameId, State#state.games),
+    ?INFO("ID: ~p, request rematch: ~p, my games: ~p", [UId, GameId, State#state.games]),
+    case Participation of
+        false ->
+            ?INFO("A", []),
+            {reply, {error, game_not_found}, State};
+        #participation{rel_pid = Pid, rel_module = RMod} ->
+            Res = RMod:do_rematch(Pid, self()),
+            ?INFO("B. Res: ~p", [Res]),
+            {reply, Res, State}
+    end;
 
 handle_call(#game_action{game = GameId} = Msg, _From, State) ->
 %    ?INFO("game action ~p", [{GameId,Msg,_From}]),
