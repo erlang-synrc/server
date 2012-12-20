@@ -269,7 +269,11 @@ state_wait(timeout=Event, State) ->
     update_table_state(State, State#state.next),
     {next_state, state_finished, State#state{start_timestamp = mnow(),
                                        wait_list = [],
-                                       time_mark = timeout_at(State#state.turn_timeout)}, State#state.turn_timeout}.
+                                       time_mark = timeout_at(State#state.turn_timeout)}, State#state.turn_timeout};
+
+state_wait(Event, State) ->
+    ?INFO("OKEY GAME state_wait: Unexpected event: ~p. Ignoring", [Event]),
+    {next_state, state_wait, State, calc_timeout(State)}.
 
 add_tash_to_hand(#okey_player{can_show_gosterge = Old,
                               hand = OldHand} = Player, PileNum, DrawnTash, State) ->
