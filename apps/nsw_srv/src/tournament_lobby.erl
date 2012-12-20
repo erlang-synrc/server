@@ -495,10 +495,9 @@ start_comet() ->
     TournamentId = wf:state(tournament_id),
     {ok, Pid} = wf:comet(fun()->
         CometProcess = self(),
-        ?INFO("subscribe"),
+        garbage_collect(self()),
         nsx_msg:subscribe_for_tournament(TournamentId, User, CometProcess),
-        comet_update(wf:user(), wf:state(tournament_id)),
-        ?INFO("ok")
+        comet_update(wf:user(), wf:state(tournament_id))
     end,  ?COMET_POOL),
     wf:state(comet_pid, Pid).
 
@@ -552,12 +551,10 @@ get_tour_user_list() ->
                     4 -> nsx_opt:get_env(nsm_db, game_srv_node, 'game@doxtop.cc');
                     _ -> list_to_atom(GameSrv)
                end,
-    ?INFO("userlist"),
     Rpc = case rpc:call(NodeAtom,nsm_srv_tournament_lobby,active_users,[TID]) of
         {badrpc,_} -> [];
         X -> X
     end,
-    ?INFO("ok"),
     ActiveUsers = sets:from_list([U#user.username || U <- Rpc]),
     JoinedUsersList = lists:usort(nsm_tournaments:joined_users(TId)),
     JoinedUsers = sets:from_list([U#play_record.who || U <- JoinedUsersList]),
@@ -664,7 +661,6 @@ event({start_tour, Id, NPlayers,Q,T,S,P}) ->
 
 event(attach) ->
     TourId = wf:state(tour_long_id),
-    ?INFO("TourId: ~p",[TourId]),
     case TourId of 
          [] ->  
             wf:wire(#alert{text=?_T("Please wait for Tournament start or Start it Mannually.")});

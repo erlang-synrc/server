@@ -103,6 +103,7 @@ route(Path) ->
                     {Date,Time} = calendar:local_time(),
                     case Module of
                          matchmaker -> skip;
+                         dashboard -> skip;
                          tournament_lobby -> skip;
                          buy -> skip;
                          _ -> nsm_mhits:store(Path,IP,Date), ?INFO("URLPATH: ~s:~s:~s:~s",[IP,Path,OS,HC])

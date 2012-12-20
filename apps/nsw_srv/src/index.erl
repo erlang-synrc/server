@@ -24,7 +24,7 @@ main() ->
     </script>"),
     #template { file=code:priv_dir(nsw_srv)++"/templates/bare_no_uservoice.html"}.
 
-title() -> "Main Page".
+title() -> "Kakaranet Okey".
 
 %% template specific for main
 body() ->
