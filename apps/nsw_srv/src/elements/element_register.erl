@@ -170,7 +170,8 @@ finish_register_(Invite) ->
         F =  wf:to_list(proplists:get_value(id, Data)),
         {N,S,F}
     end,
-  wf:info("Registration element:finish_register: name:~p surname:~p fbid:~p", [Name, Surname, FbId]),
+  ?INFO("Registration: facebook data(session): ~p~n Name: ~p Surname: ~p FbId: ~p~n",
+    [wf:session(fb_registration), Name, Surname, FbId]),
   Day = site_utils:element_value(reg_day),
   Month = site_utils:element_value(reg_month),
   Year = site_utils:element_value(reg_year),
@@ -191,36 +192,34 @@ finish_register_(Invite) ->
             {not_verified, site_utils:generate_code()}
     end,
 
-    RegData = #user{username = wf:q(reg_username),
-        password = wf:q(reg_passwd),
-        email = Mail,
-        name = Name,
-        surname = Surname,
-        facebook_id = FbId,
-        team = nsm_db:create_team("team"),
-        verification_code = VerificationCode,
-        age = BirthDay,
-        register_date = erlang:now(),
-        sex = wf:q(reg_sex),
-        status = Status
-    },
-    User = wf:q(reg_username),
-    Password = wf:q(reg_passwd),
-    CPassword = wf:q(reg_con_passwd),
+  User = ling:replace(wf:q(reg_username), ".", "_"),
+  ?INFO("Username ~p replaced with ~p~n", [wf:q(reg_username), User]),
+  Password = wf:q(reg_passwd),
+  CPassword = wf:q(reg_con_passwd),
 
-    case nsm_users:check_register_data(RegData) of
-	ok -> ok;
-	{error, username_too_short} ->
-	    throw({msg, ?_T("Username is too short.")});
-	{error, wrong_username} ->
-	    throw({msg, ?_T("Username is in wrong format.")});
-	{error, wrong_email} ->
-	    throw({msg, ?_T("Email is in wrong format.")});
-	{error, password_to_short} ->
-	    throw({msg, ?_T("Password is too short.")});
-	{error, user_too_young} ->
-	    throw({msg, ?_T("You must be at least 18 to use this site.")})
-    end,
+  RegData = #user{
+    username = User,
+    password = Password,
+    email = Mail,
+    name = Name,
+    surname = Surname,
+    facebook_id = FbId,
+    team = nsm_db:create_team("team"),
+    verification_code = VerificationCode,
+    age = BirthDay,
+    register_date = erlang:now(),
+    sex = wf:q(reg_sex),
+    status = Status
+  },
+
+  case nsm_users:check_register_data(RegData) of
+    ok -> ok;
+    {error, username_too_short} ->  throw({msg, ?_T("Username is too short.")});
+    {error, wrong_username} ->      throw({msg, ?_T("Username is in wrong format.")});
+    {error, wrong_email} ->         throw({msg, ?_T("Email is in wrong format.")});
+    {error, password_to_short} ->   throw({msg, ?_T("Password is too short.")});
+    {error, user_too_young} ->      throw({msg, ?_T("You must be at least 18 to use this site.")})
+  end,
 
   case Password of
     CPassword when Password /= "" ->
