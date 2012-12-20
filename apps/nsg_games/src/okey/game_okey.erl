@@ -256,7 +256,7 @@ state_wait({#okey_ready{}, Pid}=Event, _, #state{wait_list = List} = State) ->
             {reply, ok, state_wait, State#state{wait_list = List--[Pid]}, calc_timeout(State)};
         false ->
             ?INFO("okey_ready B 2.", []),
-            {reply, {error, you_are_not_a_player}, state_wait, calc_timeout(State)}
+            {reply, {error, you_are_not_a_player}, state_wait, State, calc_timeout(State)}
     end.
 
 state_wait(timeout=Event, State) ->
