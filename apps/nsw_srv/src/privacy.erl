@@ -29,5 +29,8 @@ privacy_body(_) ->
     %% TODO: add english translation
     privacy_body("tr").
 
+api_event(Name, Tag, Args)->
+    webutils:api_event(Name, Tag, Args).
+
 event(Event) ->
     webutils:event(Event).
