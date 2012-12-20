@@ -147,4 +147,4 @@ publish(Channel, Exchange, RoutingKey, Message) ->
     end,
     ok = nsm_mq_channel:publish(Channel, Exchange, BinaryRoutingKey, Message).
 
-gproc_key(Name) -> {p, g, Name}.
+gproc_key(Name) -> {p, l, Name}.
