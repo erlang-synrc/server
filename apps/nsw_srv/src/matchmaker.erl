@@ -585,7 +585,8 @@ show_table(Tables) ->
                         }
                     ]};
 
-                      X -> ?INFO("Matchmaker #game_table rpc:call failed: ~p",[X]), "" 
+                      X ->% ?INFO("Matchmaker #game_table rpc:call failed: ~p",[X]), 
+                           "" 
                      end
                 end
                 || [_TableNameLabel,
