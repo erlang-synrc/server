@@ -743,13 +743,9 @@ send_email(TID) ->
     MainGift = lists:nth(1,Gifts),
     ?INFO("Main Gift: ~p",[MainGift]),
      [ begin
-         try
             Mail = User#user.email,
             Username = User#user.username,
        {Subject, PlainText} = mail_construction:tournament(Username, Mail, Date, Time, MainGift, Tournament),
             ?INFO("Mail ~p",[{User#user.email,Subject,PlainText}]),
             nsx_msg:notify_email(Subject, PlainText, Mail)
-         catch Error:Reason
-            ?INFO("Error: ~p",[{Error,Reason}])
-         end
      end || User <- Users].
