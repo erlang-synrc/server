@@ -340,16 +340,17 @@ user_table(Users) ->
             [#panel{style="font-size:16px; line-height:24px; margin-left:25px; margin-right:25px; text-align:justify;", body = [
                 [#span{style="font-size:24px; font-weight:bold;", body=[?_T("Players"), ": "]},
                     [begin
-                        case site_utils:user_link(UId) of undefined -> ""; _ -> 
-                          URL = site_utils:user_link(UId),
-                          #span{body=#link{url=URL, text=UId ++ " ",
-                            style = "font-weight:bold; margin-right:5px;" ++ case Color of
+                        case site_utils:user_link(UId) of
+                          "" -> "";
+                          URL ->
+                            #span{body=#link{url=URL, text=UId ++ " ",
+                              style = "font-weight:bold; margin-right:5px;" ++ case Color of
                                 yellow ->  "color:#938b03;";
                                 red -> "color:#c22323;";
                                 green -> "color:#5ba108;";
                                 _ -> ""
-                            end}
-                        }
+                              end}
+                            }
                         end
                     end
                     || {UId, _S1, _S2, Color, _} <- Users]
@@ -403,24 +404,23 @@ user_table(Users) ->
 
 user_table_row(UId, P1, P2, Color, N, RealName) ->
     Avatar = avatar:get_avatar_by_username(UId, tiny),
-    case site_utils:user_link(UId) of undefined -> ""; _ -> 
-
-    URL = site_utils:user_link(UId),
-
-         #tablerow{cells=[
-        #tablecell{body=[
+    case site_utils:user_link(UId) of
+      "" -> "";
+      URL ->
+        #tablerow{cells=[
+          #tablecell{body=[
             #singlerow{cells=[
-                #tablecell{style="padding: 5px 5px 5px 16px;", body=#image{image=Avatar, class=
-                    case nsm_accounts:user_paid(UId) of
-                        true -> "paid_user_avatar";
-                        _ -> ""
-                    end
-                } },
-                #tablecell{body=[
-                    #link{style="font-weight:bold;", url=URL, text=UId},
-                    " &mdash; ",
-                    site_utils:decode_letters( RealName )
-                ]}
+              #tablecell{style="padding: 5px 5px 5px 16px;", body=#image{image=Avatar, class=
+                case nsm_accounts:user_paid(UId) of
+                  true -> "paid_user_avatar";
+                  _ -> ""
+                end
+              }},
+              #tablecell{body=[
+                #link{style="font-weight:bold;", url=URL, text=UId},
+                " &mdash; ",
+                site_utils:decode_letters( RealName )
+              ]}
             ]}
         ]},
         #tablecell{style="text-align:center;", body=[
