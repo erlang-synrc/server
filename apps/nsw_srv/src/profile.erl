@@ -576,7 +576,7 @@ u_event(profile_save) ->
     OrigUser = webutils:user_info(),
     NewName = site_utils:decode_letters(wf:q(profile_name)),
     NewSurname = site_utils:decode_letters(wf:q(profile_surname)),
-    NewEmail = wf:q(profile_email),
+%    NewEmail = wf:q(profile_email),
     Passwd1 = wf:q(password1),
     Passwd2 = wf:q(password2),
 
@@ -608,13 +608,14 @@ u_event(profile_save) ->
 		      end;
 		  _ -> throw({error, ?_T("Passwords don't match.")})
 	      end,
-	  User3 =
-	      case validator_is_email:validate("", NewEmail) of
-		  true ->
-		      User2#user{email = NewEmail};
-		  false ->
-		      throw({error, ?_T("Email is not valid.")})
-	      end,
+%      ?INFO(" +++ ~p", [NewEmail]),
+	  User3 = User2,
+%	      case validator_is_email:validate("", NewEmail) of
+%		  true ->
+%		      User2#user{email = NewEmail};
+%		  false ->
+%		      throw({error, ?_T("Email is not valid.")})
+%	      end,
 
 	      case wf:state(new_avatar) /= undefined of
 		  true -> User3#user{avatar = wf:state(new_avatar)};
