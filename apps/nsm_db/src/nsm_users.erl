@@ -127,7 +127,7 @@ check_username(Name, FbId) ->
   case get_user(Name) of
     {error, notfound} -> {ok, Name};
     {ok, User} when FbId =/= undefined ->
-      check_username(User#user.username  ++ integer_to_list(random:uniform(100)), FbId);
+      check_username(User#user.username  ++ integer_to_list(crypto:rand_uniform(0,10)), FbId);
     {ok, _User}-> {error, username_taken}
   end.
 
