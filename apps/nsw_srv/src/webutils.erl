@@ -534,11 +534,14 @@ show_if(remove_entry, Entry) ->
 show_if(_, _Entry) -> false.
 
 counters()->
+  catch(gproc:reg({p,l,self()},case wf:user() of undefined -> "undefined"; X -> X end)),
+  WebSrvCounters = nsm_queries:map_reduce(user_counter,user_count,[]),
+  OnlineCount = integer_to_list(lists:foldl(fun(X, Sum) -> X + Sum end, 0, WebSrvCounters)),
   Games = [okey, tavla, king, batak, sorbi],
   #panel{class="stat-bar", body=[
     "<dl class=\"dlist\">",
       "<dt>", ?_T("Online Gamers"),":", "</dt>",
-      "<dd>",user_counter:user_count(),"</dd>"
+      "<dd>",OnlineCount,"</dd>"
     "</dl>",
     #list{body=[counter_item(G) || G <- Games]}
   ]}.
@@ -552,57 +555,16 @@ counter_item(Game)->
     "</dl>"
   ]}.
 
-count_user()->
-  case wf:user() of
-    undefined -> [];
-    _User ->
-      {ok, CometPid} = wf:comet(fun()-> comet_update() end, user_count),
-      [ case Child of
-          undefined -> ok;
-          restarting -> ok;
-          Pid -> Pid ! {inc_user, CometPid}
-        end
-      || {_Id, Child, _Type, _Modules} <- nsm_queries:map_reduce(supervisor, which_children, [nsw_srv_sup])],
-      ["<script type=\"text/javascript\">",
-        "$(window).bind('beforeunload', function(){",
-            "$.post(\"user/counter\", {dec_user: \""++pid_to_list(CometPid)++"\"});",
-            "return void(0);",
-        "});",
-      "</script>"]
-  end.
-
-comet_update()->
-  receive
-    _Msg -> ok
-  end,
-  wf:flush(),
-  comet_update().
-
 api_event(fbAutoLogin, fb, Args)-> skip;
 api_event(Name, fb, Args)-> fb_utils:api_event(Name, fb, Args);
 api_event(Name, Tag, Args)-> skip.
 
 user_count(GameH) ->
-%  GCounts = nsm_queries:map_reduce(game_manager,counter,[
-%    case GameH of
-%      tavla -> game_tavla;
-%      okey -> game_okey; _ -> GameH
-%    end
- % ]),
-%    ?INFO("GAME COUNT: ~p~n", [GCount]),
   A= nsm_queries:map_reduce(game_manager,counter,[case GameH of
       tavla -> game_tavla;
       okey -> game_okey; _ -> GameH
     end]),
-%  ?INFO("Overal Game Count ~p: ~p",[GameH,A]),
   GameCounts = lists:foldl(fun(X, Sum) -> X + Sum end, 0, A),
-  
-%  rpc:call(?GAMESRVR_NODE,game_manager,counter,[
-%    case GameH of
-%      tavla -> game_tavla;
-%      okey -> game_okey; _ -> GameH
-%    end
- % ]),
   integer_to_list(GameCounts).
 
 get_members(GId) ->

@@ -1,61 +1,27 @@
 -module(user_counter).
+-author('Maxim Sokhatsky <maxim@synrc.com>').
 -behaviour(gen_server).
--include("setup.hrl").
--include("common.hrl").
--include_lib("nitrogen_core/include/wf.hrl").
--include_lib("nsm_db/include/config.hrl").
 -include_lib("nsm_db/include/user.hrl").
-
--export([start_link/0, main/0, event/1, user_count/0]).
+-export([start_link/0, user_count/0]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
-
 -define(SERVER, ?MODULE).
--record(state, {user_count=0}).
+-record(state, {user_count=0,last_check={0,0,0}}).
 
-main()->
-  case wf:q(dec_user) of
-    undefined -> [];
-    PidStr ->
-      ?INFO("kill comet process: ~p~n", [PidStr]),
-      exit(list_to_pid(PidStr), kill),[]
-  end.
+user_count() -> gen_server:call(?SERVER, user_count).
+start_link() -> gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
 
-event(_) -> ok.
-
-user_count() ->
-  gen_server:call(?SERVER, user_count).
-
-start_link() ->
-  gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
-
-init([]) ->
-  {ok, #state{}}.
+init([]) -> {ok, #state{last_check=now()}}.
 
 handle_call(user_count, _From, State)->
-  {reply, integer_to_list(State#state.user_count + 400), State};
-handle_call(_Request, _From, State) ->
-  {reply, unknown, State}.
+  {L,T} = case timer:now_diff(now(),State#state.last_check) div 1000000 > 60 * 1 of
+       true ->  {Users,B} = lists:partition(fun({_,_,A}) -> is_list(A) end, qlc:e(gproc:table())),
+                {length(Users),now()};
+       false -> {State#state.user_count,State#state.last_check}
+   end,
+  {reply, L, #state{user_count = L, last_check = T}};
 
-handle_cast(_Msg, State) ->
-  {noreply, State}.
-
-handle_info({inc_user, Pid}, State)->
-%  ?INFO("Inc users: ~p ~p~n", [State, Pid]),
-  erlang:monitor(process, Pid),
-  Count = #user_count{count=State#state.user_count+1},
-  nsm_db:put(Count),
-  %nsx_msg:notify(["system", "put"], Count),
-  {noreply, State#state{user_count=Count#user_count.count}};
-handle_info({'DOWN', _Ref, process, Pid, _Reason}, State)->
-%  ?INFO("Dec users: ~p ~p~n", [State, Pid]),
-  Count = #user_count{count=State#state.user_count-1},
-  nsm_db:put(Count),
-  %nsx_msg:notify(["system", "put"], Count),
-  {noreply, State#state{user_count=Count#user_count.count}};
-handle_info(_Info, State) ->
-  {noreply, State}.
-
+handle_call(_Request, _From, State) -> {reply, unknown, State}.
+handle_cast(_Msg, State) -> {noreply, State}.
+handle_info(_Info, State) -> {noreply, State}.
 terminate(_Reason, _State) -> ok.
-
-code_change(_OldVsn, State, _Extra) ->
-  {ok, State}.
+code_change(_OldVsn, State, _Extra) -> {ok, State}.

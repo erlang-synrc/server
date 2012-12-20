@@ -31,6 +31,7 @@ main() ->
   end.
 
 body() ->
+  %catch(gproc:reg({p,l,self()},wf:user())),
   #template{file=code:priv_dir(nsw_srv)++"/templates/inner_page.html"}.
 
 content() -> dashboard:view_feed_mkh().
