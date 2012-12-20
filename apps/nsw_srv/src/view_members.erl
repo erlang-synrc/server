@@ -54,6 +54,9 @@ group_edit_form(Owner) ->
 show_editgroup_content() ->
     view_group:show_editgroup_content().
 
+api_event(Name, Tag, Args)->
+  webutils:api_event(Name, Tag, Args).
+
 event(filter_by_nick) ->
     Filter = wf:q(nick_filter),
     GId = wf:q(id),

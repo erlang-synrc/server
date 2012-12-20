@@ -127,6 +127,9 @@ tr() ->
 en() ->
     #template { file=code:priv_dir(nsw_srv)++"/templates/info_gifts_en.html" }.
 
+api_event(Name, Tag, Args)->
+  webutils:api_event(Name, Tag, Args).
+
 event(Any)->
     webutils:event(Any).
 

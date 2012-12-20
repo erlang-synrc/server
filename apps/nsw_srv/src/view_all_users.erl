@@ -52,6 +52,9 @@ group_info() ->
 get_members() ->
     [].
 
+api_event(Name, Tag, Args)->
+  webutils:api_event(Name, Tag, Args).
+
 event(filter_by_nick) ->
     Filter = wf:q(nick_filter),
     UserList = nsm_groups:list_group_members(?FRIENDSOURCE),

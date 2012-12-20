@@ -20,5 +20,8 @@ body() ->
 	#h1{class="", text=wf:f(?_T("~p not found~n"), [PathInfo])}
 	]}.
 
+api_event(Name, Tag, Args)->
+  webutils:api_event(Name, Tag, Args).
+
 event(Other) ->
     webutils:event(Other).

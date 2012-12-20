@@ -33,5 +33,8 @@ body() ->
 			  #link{url="http://kakaranet.uservoice.com/", text="http://kakaranet.uservoice.com/"}]}
 		 ]}}].
 
+api_event(Name, Tag, Args)->
+  webutils:api_event(Name, Tag, Args).
+
 event(Other) ->
     webutils:event(Other).
