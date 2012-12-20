@@ -822,30 +822,30 @@ is_option_present(Key, Value) ->
     Settings = wf:session({wf:q(game_name), wf:user()}),
     proplists:is_defined(Key, Settings) andalso Value == proplists:get_value(Key, Settings).
 
-comet_update() -> comet_update(empty).
-comet_update(State) ->
-  case wf:user() of
-       undefined -> wf:redirect_to_login(?_U("/login"));
-       _UId -> timer:sleep(?TABLE_UPDATE_QUANTUM),
-            X = rpc:call(?GAMESRVR_NODE,game_manager,get_lucky_table,[list_to_atom("game_"++?_U(wf:q(game_name)))]),
-            wf:state(lucky,X),
-            garbage_collect(self()),
-            Tables = get_tables(),
-            wf:update(tables, show_table(Tables)),
-            ui_paginate(),
-            wf:flush(),
-            comet_update(State)
-  end.
+%comet_update() -> comet_update(empty).
+%comet_update(State) ->
+%  case wf:user() of
+%       undefined -> wf:redirect_to_login(?_U("/login"));
+%       _UId -> timer:sleep(?TABLE_UPDATE_QUANTUM),
+%            X = rpc:call(?GAMESRVR_NODE,game_manager,get_lucky_table,[list_to_atom("game_"++?_U(wf:q(game_name)))]),
+%            wf:state(lucky,X),
+%            garbage_collect(self()),
+%            Tables = get_tables(),
+%            wf:update(tables, show_table(Tables)),
+%            ui_paginate(),
+%            wf:flush(),
+%            comet_update(State)
+% end.
 
-%comet_update() ->
-%    wf:state(comet_pid,self()),
-%    receive 
-%        Z -> Tables = get_tables(),
-%             wf:update(tables, show_table(Tables)),
-%             ui_paginate(),
-%             wf:flush()
-%    end,
-%    comet_update().
+comet_update() ->
+    wf:state(comet_pid,self()),
+    receive 
+        Z -> Tables = get_tables(),
+             wf:update(tables, show_table(Tables)),
+             ui_paginate(),
+             wf:flush()
+    end,
+    comet_update().
 
 can_be_multiple(age)   -> false;
 can_be_multiple(users) -> true;

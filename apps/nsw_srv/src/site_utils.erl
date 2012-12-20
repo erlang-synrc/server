@@ -102,7 +102,8 @@ show_if(X) ->
 -spec game_speed_to_string(atom()) -> string().
 game_speed_to_string(fast) -> ?_T("Fast");
 game_speed_to_string(normal) -> ?_T("Normal");
-game_speed_to_string(slow) -> ?_T("Slow").
+game_speed_to_string(slow) -> ?_T("Slow");
+game_speed_to_string(_) -> ?INFO("Uknown Game Speed!!!"), ?_T("Unknown").
 
 
 -spec game_mode_to_string(atom()) -> string().
@@ -112,7 +113,7 @@ game_mode_to_string(standard) -> ?_T("Standard");
 game_mode_to_string(paired) -> ?_T("Pair");
 game_mode_to_string(countdown) -> ?_T("Countdown from 10");
 game_mode_to_string(kakaratavla) -> ?_T("Kakara Tavla");
-game_mode_to_string(_) -> ?INFO("Uknown Game Speed!!!"), ?_T("Unknown").
+game_mode_to_string(_) -> ?INFO("Uknown Game Mode!!!"), ?_T("Unknown").
 
 -spec game_to_string(atom()) -> string().
 game_to_string(game_okey) -> ?_T("okey");
