@@ -168,34 +168,33 @@ body() ->
 
     wf:state(tour_user_list,TourUserList),
 
-    {ok,PlanDesc1} = case rpc:call(?GAMESRVR_NODE, game_okey_ng_trn_elim,get_plan_desc,[T#tournament.quota,
-                                                                                   T#tournament.players_count,
-                                                                                   T#tournament.tours]) of
-                            {ok,PX} -> {ok,PX};
-                             _ -> {ok,[]}
-                        end,
-%    PlanDesc1 = ["yok","yok","yok","yok","yok","yok","yok","Final"],
+%    {ok,PlanDesc1} = case rpc:call(?GAMESRVR_NODE, game_okey_ng_trn_elim,get_plan_desc,[T#tournament.quota,
+%                                                                                   T#tournament.players_count,
+%                                                                                   T#tournament.tours]) of
+%                            {ok,PX} -> {ok,PX};
+%                             _ -> {ok,[]}
+%                        end,
 
-    PlanDesc = ling:join(PlanDesc1," / "),
-    PlanI = lists:seq(1, length(PlanDesc1)),
-    PlanTable = #table{rows=[
-        #tablerow{cells=
-            [#tablecell{body=integer_to_list(I), style=case I of
-                    1 -> "padding-bottom:2px; text-align:center; border-bottom:1px solid #888;";
-                    _ -> "padding-bottom:2px; text-align:center; border-bottom:1px solid #888; border-left:1px solid #888;"
-                end
-            }
-            || I <- PlanI]
-        },
-        #tablerow{cells=
-            [#tablecell{body=lists:nth(I, PlanDesc1), style=case I of
-                    1 -> "padding-left:3px; padding-right:3px; padding-top:2px; text-align:center;";
-                    _ -> "padding-left:3px; padding-right:3px; padding-top:2px; text-align:center; border-left:1px solid #888;"
-                end
-            }
-            || I <- PlanI]
-        }
-    ], style="font-size:9px; color:#fff;"},
+%    PlanDesc = ling:join(PlanDesc1," / "),
+%    PlanI = lists:seq(1, length(PlanDesc1)),
+%    PlanTable = #table{rows=[
+%        #tablerow{cells=
+%            [#tablecell{body=integer_to_list(I), style=case I of
+%                    1 -> "padding-bottom:2px; text-align:center; border-bottom:1px solid #888;";
+%                    _ -> "padding-bottom:2px; text-align:center; border-bottom:1px solid #888; border-left:1px solid #888;"
+%                end
+%            }
+%            || I <- PlanI]
+%        },
+%        #tablerow{cells=
+%            [#tablecell{body=lists:nth(I, PlanDesc1), style=case I of
+%                    1 -> "padding-left:3px; padding-right:3px; padding-top:2px; text-align:center;";
+%                    _ -> "padding-left:3px; padding-right:3px; padding-top:2px; text-align:center; border-left:1px solid #888;"
+%                end
+%            }
+%            || I <- PlanI]
+%        }
+%    ], style="font-size:9px; color:#fff;"},
 
     [   "<br><br><section id='main'>",
         #panel{class="tourlobby_title", body=[
@@ -257,11 +256,11 @@ body() ->
                 #label{class="tourlobby_left_bottom_block_label", body=?_T("Katılım: ") ++ integer_to_list(Length)},
                 #br{},
                 #label{class="tourlobby_left_bottom_block_label", body=?_T("Starting") ++ ": " ++ DateTime},
-                #br{},
+                #br{}
 %                #label{class="tourlobby_left_bottom_block_label", body=?_T("Plan: ")},
-                #panel{style="left:26px; top:110px;", body=
-                    PlanTable
-                }
+%                #panel{style="left:26px; top:110px;", body=
+%                    PlanTable
+%                }
             ]
          },
     
