@@ -18,7 +18,7 @@
 -define(MAX_CHAT_LENGTH, 1024). % 1024 bytes
 -define(COMET_POOL, tournament_lobby).
 -define(MAX_USERS_TO_SWITH_MODE, 32).
--define(JOINEDPERPAGE, 128). 
+-define(JOINEDPERPAGE, 32). 
 
 
 main() ->
