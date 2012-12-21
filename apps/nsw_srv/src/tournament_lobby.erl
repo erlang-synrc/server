@@ -76,7 +76,6 @@ body() ->
 
 content() ->
 
-
   case nsm_db:get(tournament, wf:q(id)) of
   {error, notfound} ->
       #panel{class="form-001", body=[?_T("Tournament not found"), #panel{style="height:10px;clear:both"}]};
@@ -98,6 +97,16 @@ content() ->
     TourId = case rpc:call(NodeAtom,game_manager,get_tournament,[T#tournament.id]) of
                   {error,_} -> 0;
                   X -> X end,
+
+   JoinedUsers = case rpc:call(NodeAtom,nsm_srv_tournament_lobby,joined_users,[T#tournament.id]) of
+                  {error,_} -> [];
+                  JU -> JU end,
+
+    JoinedNames = [P#play_record.who || P <- JoinedUsers],
+
+    wf:state(joined_users, JoinedUsers),
+    wf:state(joined_names, JoinedNames),
+
     wf:session(TourId,TourId),
     wf:state(tour_long_id, TourId),
 
@@ -139,7 +148,8 @@ content() ->
             ok
     end,
     % is user joined already
-    JoinedList = [P#play_record.who || P <- nsm_tournaments:joined_users(T#tournament.id)],
+    JoinedList = wf:state(joined_names), %[P#play_record.who || P <- JoinedUsers],
+%    JoinedList = [P#play_record.who || P <- nsm_tournaments:joined_users(T#tournament.id)],
     UserJoined = lists:member(wf:user(), JoinedList),
     Length = length(JoinedList),
     DateTime = Date ++ " " ++ Time,
@@ -556,8 +566,11 @@ get_tour_user_list() ->
         X -> X
     end,
     ActiveUsers = sets:from_list([U#user.username || U <- Rpc]),
-    JoinedUsersList = lists:usort(nsm_tournaments:joined_users(TId)),
-    JoinedUsers = sets:from_list([U#play_record.who || U <- JoinedUsersList]),
+    JoinedUsers = wf:state(joined_users),
+    JoinedNames = wf:state(joined_names),
+    ?INFO("Users: ~p",[JoinedNames]),
+    JoinedUsersList = JoinedUsers, % lists:usort(nsm_tournaments:joined_users(TId)),
+    JoinedUsersSet = sets:from_list(JoinedNames), % [U#play_record.who || U <- JoinedUsersList]),
     CUId = wf:user(),
     CurUser = {CUId,
         case nsm_accounts:balance(CUId, ?CURRENCY_GAME_POINTS) of
@@ -566,7 +579,7 @@ get_tour_user_list() ->
         case nsm_accounts:balance(CUId,  ?CURRENCY_KAKUSH) of
             {ok,AS2} -> AS2;
             {error,_} -> 0 end,
-        case sets:is_element(CUId, JoinedUsers) of
+        case sets:is_element(CUId, JoinedUsersSet) of
               false -> yellow;
               true -> green
         end, 

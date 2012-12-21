@@ -110,7 +110,7 @@ connect(WithSSL, Server, Port) ->
                    false ->
                        gen_tcp
                end,
-    {ok, Socket} = SockType:connect(Server, Port, [{active, false}], 10000),
+    {ok, Socket} = SockType:connect(Server, Port, [{active, false}], 140000),
     recv(SockType, Socket),
     {ok, SockType, Socket}.
 
@@ -128,7 +128,7 @@ close(SockType, Socket) ->
 
 
 recv(SockType, Socket) ->
-    case SockType:recv(Socket, 0, 40000) of
+    case SockType:recv(Socket, 0, 140000) of
         {ok, Return}    -> ?INFO("SERVER: ~p", [Return]);
         {error, Reason} -> ?INFO("ERROR: ~p",  [Reason])
     end.

@@ -2,6 +2,22 @@
 -include("gettext.hrl").
 -compile(export_all).
 
+excuse(User) ->
+    Subject = ?_T("Kakaranet Okey Turnuva Duyuru"),
+    PlainText = ?_TS("Değerli $username$!\n\n"
+
+    "Değerli Kakaranet Üyeleri..!\n\n"
+
+    "Sitemize göstermiş olduğunuz yoğun ilginize öncelikle teşekkür ederiz.\n"
+    "Elimizde olmayan nedenlerden ötürü bu ilginize sizleri memnun edecek şekilde cevap veremedik.\n"
+    "Ancak kısa sürede sizlere yaşattığımız bu olumsuzluğu telafi ederek hizmetinizde olacağız.\n"
+    "(Daha nice iphone 5 ler size kurban(!) olacak . Hiç endişeniz olmasın.\n\n"
+
+    "Tekrar görüşmek üzere.\n\n"
+
+    "Kakaranet.", [{username,User}] ),
+    {Subject, PlainText}.
+
 tournament(User, Mail, Date, Time, Gift, Tournament) ->
     Subject = ?_T("Kakaranet Okey Turnuva Duyuru"),
     PlainText = ?_TS("Değerli $username$!\n\n"

@@ -12,7 +12,9 @@
                 tournament_id,
                 server,
                 chat_history,    %% place to store chart messages
+                joined_users,
                 start_date,
+                last_check,
                 start_time,
                 tournament}).
 
@@ -29,6 +31,7 @@ heartbeat_finish(Server) -> gen_server:cast(Server, heartbeat_finish).
 messages_callback(Envelope, Server) -> 	gen_server:cast(Server, {messages_callback, Envelope}).
 active_users(TID) -> Server = tid_to_atom(TID), gen_server:call(Server, active_users).
 chat_history(TID) -> Server = tid_to_atom(TID), gen_server:call(Server, chat_history).
+joined_users(TID) -> Server = tid_to_atom(TID), gen_server:call(Server, joined_users).
 
 init([TID]) ->
     Tour = nsm_tournaments:get(TID),
@@ -39,14 +42,23 @@ init([TID]) ->
     nsx_msg:subscribe_tournament_lobby(TID, {?MODULE, messages_callback}, Server),
     ?MODULE:heartbeat(Server),
     ?INFO("~w: started", [Server]),
-    {ok, #state{tournament_id = TID, active_users = dict:new(), heartbeat_users = empty,
-                server = Server, chat_history = queue:new(), start_date = Tour#tournament.start_date,
+    {ok, #state{tournament_id = TID, active_users = dict:new(), heartbeat_users = empty, last_check = now(),
+                server = Server, chat_history = queue:new(), start_date = Tour#tournament.start_date, 
+                joined_users = nsm_tournaments:joined_users(Tour#tournament.id),
                 start_time = Tour#tournament.start_time, tournament = Tour}}.
 
 handle_call(active_users, _From, #state{active_users = AU} = State) ->
     List = dict:to_list(AU),
     ?INFO("active users request. Active users count: ~p", [length(List)]),
     {reply, [User || {_, User} <- List], State};
+
+handle_call(joined_users, _From, State) ->
+    {JU,T} = case timer:now_diff(now(),State#state.last_check) div 1000000 > 30 of
+        true ->  {nsm_tournaments:joined_users(State#state.tournament_id),now()};
+        false -> {State#state.joined_users,State#state.last_check}
+    end,
+    ?INFO("Joined users request."),
+    {reply, JU, State#state{joined_users = JU, last_check = T}};
 
 handle_call(check_tournament_time, _From, State) ->
     StartDate = State#state.start_date,

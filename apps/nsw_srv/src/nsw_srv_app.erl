@@ -30,11 +30,11 @@ start(_StartType, _StartArgs) ->
     Pool = nsx_opt:get_env(nsx_idgen,game_pool,1000000),
     ?INFO("Game Pool: ~p", [Pool]),
 
-    (catch 
-    [ begin
-        ?INFO("Tournament Lobby Started ~p",[Tour#tournament.id]),
-        rpc:call(?GAMESRVR_NODE,nsm_srv_tournament_lobby_sup,start_lobby,[erlang:integer_to_list(Tour#tournament.id)])
-                end || Tour <- nsm_tournaments:all(), ((Tour#tournament.id div 1000000) * 1000000) == Pool ]),
+%    (catch 
+%    [ begin
+%        ?INFO("Tournament Lobby Started ~p",[Tour#tournament.id]),
+%        rpc:call(?GAMESRVR_NODE,nsm_srv_tournament_lobby_sup,start_lobby,[erlang:integer_to_list(Tour#tournament.id)])
+%                end || Tour <- nsm_tournaments:all(), ((Tour#tournament.id div 1000000) * 1000000) == Pool ]),
 
 
 %                spawn(nsw_srv_app,spawn_tables,[]),
