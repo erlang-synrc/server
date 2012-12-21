@@ -32,34 +32,18 @@ main_authorized() ->
     TournamentId = wf:q(id),
     wf:state(tournament_id, TournamentId),
 
-%    webutils:add_raw("<link href='/nitrogen/guiders-js/guiders-1.2.8.css' rel='stylesheet'>
-%                                 <script src='/nitrogen/guiders-js/guiders-1.2.8.js'></script>"),
-%                 case webutils:guiders_ok("matchmaker_guiders_shown") of
-%                      true -> guiders_script();
-%                      false -> []
-%                 end,
+    webutils:add_raw("<link href='/nitrogen/guiders-js/guiders-1.2.8.css' rel='stylesheet'>
+                                 <script src='/nitrogen/guiders-js/guiders-1.2.8.js'></script>"),
+                 case webutils:guiders_ok("matchmaker_guiders_shown") of
+                      true -> guiders_script();
+                      false -> []
+                 end,
 
     TournamentInfo = nsm_tournaments:get(TournamentId),
     wf:state(tournament, TournamentInfo),
 
-%    start_comet(),
+    start_comet(),
 
-
-
-%    webutils:js_for_main_authorized_game_stats_menu(),
-%    webutils:add_to_head({raw,              % this goes to styles.css. Still here for convenience of editing
-%    "
-%        <script>
-%            new Image('/images/tournament/lobby/btn_orange_hover.png');
-%            new Image('/images/tournament/lobby/btn_orange_pressed.png');
-%            new Image('/images/tournament/lobby/btn_red_hover.png');
-%            new Image('/images/tournament/lobby/btn_red_pressed.png');
-%            new Image('/images/tournament/lobby/btn_yellow_hover.png');
-%            new Image('/images/tournament/lobby/btn_yellow_pressed.png');
-%            new Image('/images/tournament/lobby/btn_chat_hover.png');
-%            new Image('/images/tournament/lobby/btn_chat_pressed.png');
-%        </script>
-%    "}),
     #template { file=code:priv_dir(nsw_srv)++"/templates/bare.html" }.
 
 title() -> webutils:title(?MODULE).
@@ -72,15 +56,11 @@ guiders_script() ->
     wf:wire(Guiders).
 
 body() ->
-%    #template{file=code:priv_dir(nsw_srv)++"/templates/info_page.html"}.
 
-%content() ->
-   
   T = wf:state(tournament),
   case T#tournament.id of
    undefined ->
-   
- 
+
       #panel{class="form-001", body=[?_T("Tournament not found"), #panel{style="height:10px;clear:both"}]};
   _ ->
     Title = T#tournament.name,
@@ -150,18 +130,12 @@ body() ->
             ok
     end,
     % is user joined already
-    JoinedList = wf:state(joined_names), %[P#play_record.who || P <- JoinedUsers],
-%    JoinedList = [P#play_record.who || P <- nsm_tournaments:joined_users(T#tournament.id)],
+    JoinedList = wf:state(joined_names),
     UserJoined = lists:member(wf:user(), JoinedList),
     Length = length(JoinedList),
     DateTime = Date ++ " " ++ Time,
 
-    %TourUserList = get_tour_user_list(),
-
-%    {TimeMeasure, TourUserList} = timer:tc(tournament_lobby, get_tour_user_list, []),
-%    ?INFO("Get Tour User List Time: ~p",[TimeMeasure]),
-
-    TourUserList = [],
+    TourUserList = get_tour_user_list(),
 
     wf:state(tour_user_list,TourUserList),
 
@@ -206,8 +180,6 @@ body() ->
         #panel{class="tourlobby_left_top_block", body=[
                 "<center>",
                 #label{class="tourlobby_left_top_block_label", body=Title},
-                #br{},
-%                #image{image="/images/tournament/lobby/tour_avatar.png"},
                 #br{},
                 #br{},
                 "<span id='tournament_control'>",
@@ -598,10 +570,10 @@ get_tour_user_list() ->
         site_utils:decode_letters(nsm_users:user_realname(CUId))
     },
     OtherUsers = [
-        {U, GP, K, red %case sets:is_element(U, ActiveUsers) of
-            %false -> red;
-            %true -> green
-        %end
+        {U, GP, K, case sets:is_element(U, ActiveUsers) of
+            false -> red;
+            true -> green
+        end
          , RN}
     || #play_record{who=U, kakush=K, game_points=GP, realname=RN} <- JoinedUsersList, U /= wf:user()],
     [CurUser] ++ OtherUsers.
@@ -719,7 +691,6 @@ str_plus_0(N) ->
 
 get_timer_for_now() ->
     Id = list_to_integer(wf:q("id")),
-%    {ok, T} = nsm_db:get(tournament, Id),
    T =  wf:state(tournament),
     case T#tournament.status of
         canceled -> ?_T("CANCELED");
