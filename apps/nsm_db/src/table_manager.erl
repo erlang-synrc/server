@@ -651,7 +651,10 @@ game_table_to_settings(#game_table{name           = Name,
                                   pointing_rules = GeneralPointingRule,
                                   pointing_rules_ex = AdditionalPointingRules
                                                     }) ->
-
+    AllowReplacement = case GameType of
+                           game_okey -> true;
+                           game_tavla -> false
+                       end,
     Setting =
         [{table_name, Name},
          {game, GameType},
@@ -677,7 +680,8 @@ game_table_to_settings(#game_table{name           = Name,
          {double_points, DoublePoints},
          {pointing_rules, GeneralPointingRule},
          {pointing_rules_ex, AdditionalPointingRules},
-         {paid_only, Paid}],
+         {paid_only, Paid},
+         {allow_replacement, AllowReplacement}],
     lists:flatten(Setting).
 
 -spec save_game_table_to_settings(record(save_game_table)) -> proplist().
