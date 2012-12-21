@@ -79,7 +79,17 @@ body() ->
                end,
     TourId = T#tournament.id,
 
-   JoinedUsers = user_counter:joined_users(T#tournament.id), %binary_to_term(case rpc:call(NodeAtom,nsm_srv_tournament_lobby,joined_users,[T#tournament.id]) of {error,_} -> []; JU -> JU end),
+
+    wf:state(user_game_points, case nsm_accounts:balance(wf:user(), ?CURRENCY_GAME_POINTS) of
+            {ok,AS1} -> AS1;
+            {error,_} -> 0 end),
+
+    wf:state(user_kakush, case nsm_accounts:balance(wf:user(),  ?CURRENCY_KAKUSH) of
+            {ok,AS2} -> AS2;
+            {error,_} -> 0 end),
+
+   {TimerCheck,JoinedUsers} = timer:tc(user_counter,joined_users,[T#tournament.id]), % binary_to_term(case rpc:call(NodeAtom,nsm_srv_tournament_lobby,joined_users,[T#tournament.id]) of {error,_} -> []; JU -> JU end),
+    ?INFO("Joined List Retrieved: ~p",[TimerCheck]),
     ActiveUsers = case rpc:call(NodeAtom,nsm_srv_tournament_lobby,active_users,[T#tournament.id]) of {badrpc,_} -> []; X -> X end,
 
 
@@ -87,7 +97,7 @@ body() ->
 
     wf:state(joined_users, JoinedUsers),
     wf:state(joined_names, JoinedNames),
-    wf:state(active_users, ActiveUsers),
+    wf:state(active_users, [ AU#user.username || AU<-ActiveUsers]),
 
     wf:session(TourId,TourId),
     wf:state(tour_long_id, TourId),
@@ -135,7 +145,8 @@ body() ->
     Length = length(JoinedList),
     DateTime = Date ++ " " ++ Time,
 
-    TourUserList = get_tour_user_list(),
+    {TimerCheck2,TourUserList} = timer:tc(tournament_lobby,get_tour_user_list,[]),
+    ?INFO("List Active Recalculation: ~p",[TimerCheck2]),
 
     wf:state(tour_user_list,TourUserList),
 
@@ -542,40 +553,21 @@ update_userlist() ->
     wf:flush().
 
 get_tour_user_list() ->
-    TID = wf:state(tournament_id),
-    TId = list_to_integer(TID),
-    Zone = TId div 1000000,
-    GameSrv = "game@srv" ++ integer_to_list(Zone) ++ ".kakaranet.com",
-%    NodeAtom = case Zone of
-%                    4 -> nsx_opt:get_env(nsm_db, game_srv_node, 'game@doxtop.cc');
-%                    _ -> list_to_atom(GameSrv)
-%               end,
-    ActiveUsers = sets:from_list([U#user.username || U <- wf:state(active_users)]),
+    ActiveUsers = wf:state(active_users),
     JoinedUsers = wf:state(joined_users),
     JoinedNames = wf:state(joined_names),
-    JoinedUsersList = JoinedUsers, % lists:usort(nsm_tournaments:joined_users(TId)),
-    JoinedUsersSet = sets:from_list(JoinedNames), % [U#play_record.who || U <- JoinedUsersList]),
     CUId = wf:user(),
-    CurUser = {CUId,
-        case nsm_accounts:balance(CUId, ?CURRENCY_GAME_POINTS) of
-            {ok,AS1} -> AS1;
-            {error,_} -> 0 end,
-        case nsm_accounts:balance(CUId,  ?CURRENCY_KAKUSH) of
-            {ok,AS2} -> AS2;
-            {error,_} -> 0 end,
-        case sets:is_element(CUId, JoinedUsersSet) of
-              false -> yellow;
-              true -> green
-        end, 
-        site_utils:decode_letters(nsm_users:user_realname(CUId))
+    CurUser = {CUId, wf:state(user_game_points), wf:state(user_kakush), case lists:member(CUId, JoinedNames) of
+                     false -> yellow;
+                    true -> green end, site_utils:decode_letters(nsm_users:user_realname(CUId))
     },
     OtherUsers = [
-        {U, GP, K, case sets:is_element(U, ActiveUsers) of
+        {U, GP, K, case lists:member(U, ActiveUsers) of
             false -> red;
             true -> green
         end
          , RN}
-    || #play_record{who=U, kakush=K, game_points=GP, realname=RN} <- JoinedUsersList, U /= wf:user()],
+    || #play_record{who=U, kakush=K, game_points=GP, realname=RN} <- JoinedUsers, U /= CUId],
     [CurUser] ++ OtherUsers.
 
 api_event(Name, Tag, Args) -> webutils:api_event(Name, Tag, Args).
@@ -673,8 +665,8 @@ event(change_timer) ->
     wf:wire(#event{type=timer, delay=1000, postback=change_timer});
 
 event({page, Page}) ->
-    wf:session(this_must_be_unique_joined_page, Page);%,
-%    update_userlist();
+    wf:session(this_must_be_unique_joined_page, Page),
+    update_userlist();
 
 event(Any)->
     webutils:event(Any).
