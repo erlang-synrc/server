@@ -32,34 +32,34 @@ main_authorized() ->
     TournamentId = wf:q(id),
     wf:state(tournament_id, TournamentId),
 
-    webutils:add_raw("<link href='/nitrogen/guiders-js/guiders-1.2.8.css' rel='stylesheet'>
-                                 <script src='/nitrogen/guiders-js/guiders-1.2.8.js'></script>"),
-                 case webutils:guiders_ok("matchmaker_guiders_shown") of
-                      true -> guiders_script();
-                      false -> []
-                 end,
+%    webutils:add_raw("<link href='/nitrogen/guiders-js/guiders-1.2.8.css' rel='stylesheet'>
+%                                 <script src='/nitrogen/guiders-js/guiders-1.2.8.js'></script>"),
+%                 case webutils:guiders_ok("matchmaker_guiders_shown") of
+%                      true -> guiders_script();
+%                      false -> []
+%                 end,
 
     TournamentInfo = nsm_tournaments:get(TournamentId),
     wf:state(tournament, TournamentInfo),
 
-    start_comet(),
+%    start_comet(),
 
 
 
-    webutils:js_for_main_authorized_game_stats_menu(),
-    webutils:add_to_head({raw,              % this goes to styles.css. Still here for convenience of editing
-    "
-        <script>
-            new Image('/images/tournament/lobby/btn_orange_hover.png');
-            new Image('/images/tournament/lobby/btn_orange_pressed.png');
-            new Image('/images/tournament/lobby/btn_red_hover.png');
-            new Image('/images/tournament/lobby/btn_red_pressed.png');
-            new Image('/images/tournament/lobby/btn_yellow_hover.png');
-            new Image('/images/tournament/lobby/btn_yellow_pressed.png');
-            new Image('/images/tournament/lobby/btn_chat_hover.png');
-            new Image('/images/tournament/lobby/btn_chat_pressed.png');
-        </script>
-    "}),
+%    webutils:js_for_main_authorized_game_stats_menu(),
+%    webutils:add_to_head({raw,              % this goes to styles.css. Still here for convenience of editing
+%    "
+%        <script>
+%            new Image('/images/tournament/lobby/btn_orange_hover.png');
+%            new Image('/images/tournament/lobby/btn_orange_pressed.png');
+%            new Image('/images/tournament/lobby/btn_red_hover.png');
+%            new Image('/images/tournament/lobby/btn_red_pressed.png');
+%            new Image('/images/tournament/lobby/btn_yellow_hover.png');
+%            new Image('/images/tournament/lobby/btn_yellow_pressed.png');
+%            new Image('/images/tournament/lobby/btn_chat_hover.png');
+%            new Image('/images/tournament/lobby/btn_chat_pressed.png');
+%        </script>
+%    "}),
     #template { file=code:priv_dir(nsw_srv)++"/templates/bare.html" }.
 
 title() -> webutils:title(?MODULE).
@@ -75,11 +75,13 @@ body() ->
     #template{file=code:priv_dir(nsw_srv)++"/templates/info_page.html"}.
 
 content() ->
-
-  case nsm_db:get(tournament, wf:q(id)) of
-  {error, notfound} ->
+  T = wf:state(tournament),
+  case T#tournament.id of
+   undefined ->
+   
+ 
       #panel{class="form-001", body=[?_T("Tournament not found"), #panel{style="height:10px;clear:both"}]};
-  {ok, T} ->
+  _ ->
     Title = T#tournament.name,
     Tours = T#tournament.tours,
     Game = case T#tournament.game_type of
@@ -208,7 +210,7 @@ content() ->
                 "<center>",
                 #label{class="tourlobby_left_top_block_label", body=Title},
                 #br{},
-                #image{image="/images/tournament/lobby/tour_avatar.png"},
+%                #image{image="/images/tournament/lobby/tour_avatar.png"},
                 #br{},
                 #br{},
                 "<span id='tournament_control'>",
@@ -353,6 +355,7 @@ content() ->
             user_table(TourUserList)
         ]},
         ""]
+   
   end.
 
 
