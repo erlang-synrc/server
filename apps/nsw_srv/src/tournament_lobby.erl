@@ -361,7 +361,7 @@ user_table(Users) ->
         short ->
             [#panel{style="font-size:16px; line-height:24px; margin-left:25px; margin-right:25px; text-align:justify;", body = [
                 [#span{style="font-size:24px; font-weight:bold;", body=[?_T("Players"), ": "]},
-                    [begin
+                    [begin case UId of undefined -> ""; _ ->
                         case site_utils:user_link(UId) of
                           undefined -> "";
                           "" -> "";
@@ -374,7 +374,7 @@ user_table(Users) ->
                                 _ -> ""
                               end}
                             }
-                        end
+                        end end
                     end
                     || {UId, _S1, _S2, Color, _} <- Users]
                 ]
