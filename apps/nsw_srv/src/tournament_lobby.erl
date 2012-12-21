@@ -562,10 +562,10 @@ get_tour_user_list() ->
     TId = list_to_integer(TID),
     Zone = TId div 1000000,
     GameSrv = "game@srv" ++ integer_to_list(Zone) ++ ".kakaranet.com",
-    NodeAtom = case Zone of
-                    4 -> nsx_opt:get_env(nsm_db, game_srv_node, 'game@doxtop.cc');
-                    _ -> list_to_atom(GameSrv)
-               end,
+%    NodeAtom = case Zone of
+%                    4 -> nsx_opt:get_env(nsm_db, game_srv_node, 'game@doxtop.cc');
+%                    _ -> list_to_atom(GameSrv)
+%               end,
     ActiveUsers = sets:from_list([U#user.username || U <- wf:state(active_users)]),
     JoinedUsers = wf:state(joined_users),
     JoinedNames = wf:state(joined_names),
@@ -615,8 +615,8 @@ event(chat) ->
     end;
 
 event({change_view, Mode}) ->
-    wf:session(tourlobby_view_mode, Mode),
-    update_userlist();
+    wf:session(tourlobby_view_mode, Mode);%,
+%    update_userlist();
 
 event(join_tournament) ->
     UId = wf:user(),
@@ -647,8 +647,9 @@ event(actualy_join_tournament) ->
 %    nsx_msg:notify(["system", "tournament_join"], {UId, list_to_integer(TId)}),
     nsm_tournaments:join(UId, list_to_integer(TId)),
     wf:replace(join_button, #panel{id=join_button, class="tourlobby_orange_button_disabled", text=?_T("JOIN TOURNAMENT")}),
-    wf:replace(leave_button, #link{id=leave_button, class="tourlobby_red_button", text=?_T("LEAVE TOURNAMENT"), postback=leave_tournament}),
-    update_userlist();
+    wf:replace(leave_button, #link{id=leave_button, class="tourlobby_red_button", text=?_T("LEAVE TOURNAMENT"), postback=leave_tournament});
+%,
+%    update_userlist();
 
 event(leave_tournament) ->
     UId = wf:user(),
@@ -656,8 +657,9 @@ event(leave_tournament) ->
 %    nsx_msg:notify(["system", "tournament_remove"], {UId, list_to_integer(TId)}),
     nsm_tournaments:remove(UId, list_to_integer(TId)),
     wf:replace(join_button, #link{id=join_button, class="tourlobby_orange_button", text=?_T("JOIN TOURNAMENT"), postback=join_tournament}),
-    wf:replace(leave_button, #panel{id=leave_button, class="tourlobby_red_button_disabled", text=?_T("LEAVE TOURNAMENT")}),
-    update_userlist();
+    wf:replace(leave_button, #panel{id=leave_button, class="tourlobby_red_button_disabled", text=?_T("LEAVE TOURNAMENT")});
+%,
+%    update_userlist();
 
 event({start_tour, Id, NPlayers,Q,T,S,P}) ->
     wf:state(tour_start_time, time()),
@@ -688,8 +690,8 @@ event(change_timer) ->
     wf:wire(#event{type=timer, delay=1000, postback=change_timer});
 
 event({page, Page}) ->
-    wf:session(this_must_be_unique_joined_page, Page),
-    update_userlist();
+    wf:session(this_must_be_unique_joined_page, Page);%,
+%    update_userlist();
 
 event(Any)->
     webutils:event(Any).
