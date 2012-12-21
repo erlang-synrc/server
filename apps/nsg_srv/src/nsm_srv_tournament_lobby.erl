@@ -54,7 +54,8 @@ handle_call(active_users, _From, #state{active_users = AU} = State) ->
 
 handle_call(joined_users, _From, State) ->
     {JU,T} = case timer:now_diff(now(),State#state.last_check) div 1000000 > 30 of
-        true ->  {nsm_tournaments:joined_users(list_to_integer(State#state.tournament_id)),now()};
+        true ->  Full = nsm_tournaments:joined_users(list_to_integer(State#state.tournament_id)),
+                 {lists:sublist(Full,100),now()};
         false -> {State#state.joined_users,State#state.last_check}
     end,
     ?INFO("Joined users request."),
