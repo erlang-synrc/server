@@ -59,7 +59,7 @@ handle_call(joined_users, _From, State) ->
         false -> {State#state.joined_users,State#state.last_check}
     end,
     ?INFO("Joined users request."),
-    {reply, JU, State#state{joined_users = JU, last_check = T}};
+    {reply, term_to_binary(JU), State#state{joined_users = JU, last_check = T}};
 
 handle_call(check_tournament_time, _From, State) ->
     StartDate = State#state.start_date,

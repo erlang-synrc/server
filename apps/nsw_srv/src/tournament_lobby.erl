@@ -79,7 +79,7 @@ body() ->
                end,
     TourId = T#tournament.id,
 
-   JoinedUsers = case rpc:call(NodeAtom,nsm_srv_tournament_lobby,joined_users,[T#tournament.id]) of {error,_} -> []; JU -> JU end,
+   JoinedUsers = user_counter:joined_users(T#tournament.id), %binary_to_term(case rpc:call(NodeAtom,nsm_srv_tournament_lobby,joined_users,[T#tournament.id]) of {error,_} -> []; JU -> JU end),
     ActiveUsers = case rpc:call(NodeAtom,nsm_srv_tournament_lobby,active_users,[T#tournament.id]) of {badrpc,_} -> []; X -> X end,
 
 
@@ -632,9 +632,8 @@ event(actualy_join_tournament) ->
 %    nsx_msg:notify(["system", "tournament_join"], {UId, list_to_integer(TId)}),
     nsm_tournaments:join(UId, list_to_integer(TId)),
     wf:replace(join_button, #panel{id=join_button, class="tourlobby_orange_button_disabled", text=?_T("JOIN TOURNAMENT")}),
-    wf:replace(leave_button, #link{id=leave_button, class="tourlobby_red_button", text=?_T("LEAVE TOURNAMENT"), postback=leave_tournament});
-%,
-%    update_userlist();
+    wf:replace(leave_button, #link{id=leave_button, class="tourlobby_red_button", text=?_T("LEAVE TOURNAMENT"), postback=leave_tournament}),
+    update_userlist();
 
 event(leave_tournament) ->
     UId = wf:user(),
@@ -642,9 +641,8 @@ event(leave_tournament) ->
 %    nsx_msg:notify(["system", "tournament_remove"], {UId, list_to_integer(TId)}),
     nsm_tournaments:remove(UId, list_to_integer(TId)),
     wf:replace(join_button, #link{id=join_button, class="tourlobby_orange_button", text=?_T("JOIN TOURNAMENT"), postback=join_tournament}),
-    wf:replace(leave_button, #panel{id=leave_button, class="tourlobby_red_button_disabled", text=?_T("LEAVE TOURNAMENT")});
-%,
-%    update_userlist();
+    wf:replace(leave_button, #panel{id=leave_button, class="tourlobby_red_button_disabled", text=?_T("LEAVE TOURNAMENT")}),
+    update_userlist();
 
 event({start_tour, Id, NPlayers,Q,T,S,P}) ->
     wf:state(tour_start_time, time()),
