@@ -79,8 +79,8 @@ body() ->
                end,
     TourId = T#tournament.id,
 
-   JoinedUsers = [],%case rpc:call(NodeAtom,nsm_srv_tournament_lobby,joined_users,[T#tournament.id]) of {error,_} -> []; JU -> JU end,
-    ActiveUsers = [],%case rpc:call(NodeAtom,nsm_srv_tournament_lobby,active_users,[T#tournament.id]) of {badrpc,_} -> []; X -> X end,
+   JoinedUsers = case rpc:call(NodeAtom,nsm_srv_tournament_lobby,joined_users,[T#tournament.id]) of {error,_} -> []; JU -> JU end,
+    ActiveUsers = case rpc:call(NodeAtom,nsm_srv_tournament_lobby,active_users,[T#tournament.id]) of {badrpc,_} -> []; X -> X end,
 
 
     JoinedNames = [P#play_record.who || P <- JoinedUsers],
