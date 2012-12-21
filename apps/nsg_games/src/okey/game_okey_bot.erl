@@ -176,8 +176,9 @@ okey_client_loop(State) ->
             do_challenge(State),
             okey_client_loop(State);
         #game_event{event = <<"okey_series_ended">>} ->
-            S = State#state.conn,
-            call_rpc(S, #logout{});
+%%            S = State#state.conn,
+%%            call_rpc(S, #logout{});
+            okey_client_loop(State);
         #game_event{event = <<"okey_round_ended">>, args = Args} ->
             NextAction = proplists:get_value(next_action, Args),
             ?INFO("ID: ~p round ended", [Id]),
@@ -266,8 +267,9 @@ do_challenge(State) ->
 
 okey_client_round(<<"done">>, State = #state{}) ->
     %% series of sets ended, do rematch, if needed.
-    S = State#state.conn,
-    call_rpc(S, #logout{});
+    okey_client_loop(State);
+%%    S = State#state.conn,
+%%    call_rpc(S, #logout{});
     %okey_client_rematch(State),
     %init_set(State);
 okey_client_round(<<"next_set">>, State = #state{}) ->
