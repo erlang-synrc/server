@@ -12,14 +12,12 @@
 -include("setup.hrl").
 -include("common.hrl").
 
-
 %% time to wait after heartbeat request to update userlist
 -define(SLEEP, 5000). 
 -define(MAX_CHAT_LENGTH, 1024). % 1024 bytes
 -define(COMET_POOL, tournament_lobby).
 -define(MAX_USERS_TO_SWITH_MODE, 32).
 -define(JOINEDPERPAGE, 32). 
-
 
 main() ->
     case wf:user() /= undefined of
@@ -31,7 +29,7 @@ main_authorized() ->
     wf:session(this_must_be_unique_joined_page, 1),
     TournamentId = wf:q(id),
     wf:state(tournament_id, TournamentId),
-
+    webutils:add_script("/nitrogen/jquery.paginatetable.js"),
     webutils:add_raw("<link href='/nitrogen/guiders-js/guiders-1.2.8.css' rel='stylesheet'>
                                  <script src='/nitrogen/guiders-js/guiders-1.2.8.js'></script>"),
                  case webutils:guiders_ok("matchmaker_guiders_shown") of
@@ -157,6 +155,7 @@ body() ->
         _ ->
             ok
     end,
+
     % is user joined already
     JoinedList = wf:state(joined_names),
     UserJoined = lists:member(wf:user(), JoinedList),
@@ -167,6 +166,8 @@ body() ->
     ?INFO("List Active Recalculation: ~p",[TimerCheck2]),
 
     wf:state(tour_user_list,TourUserList),
+
+    ui_paginate(),
 
 %    {ok,PlanDesc1} = case rpc:call(?GAMESRVR_NODE, game_okey_ng_trn_elim,get_plan_desc,[T#tournament.quota,
 %                                                                                   T#tournament.players_count,
@@ -197,9 +198,7 @@ body() ->
 %    ], style="font-size:9px; color:#fff;"},
 
     [   "<br><br><section id='main'>",
-        #panel{class="tourlobby_title", body=[
-            #label{class="tourlobby_title_label", body=?_T("TOURNAMENT LOBBY")}
-        ]},
+        #panel{class="tourlobby_title", body=[#label{class="tourlobby_title_label", body=?_T("TOURNAMENT LOBBY")} ]},
 
 %        #panel{body=[#label{style="margin-left:300px;margin-top:10px;font-size:16pt;",body=[%lists:flatten(PlanDesc)
 %                                                                                           PlanTable]}]},
@@ -207,38 +206,23 @@ body() ->
         % left top block
         #panel{class="tourlobby_left_top_block", body=[
                 "<center>",
-                #label{class="tourlobby_left_top_block_label", body=Title},
-                #br{},
-                #br{},
-                "<span id='tournament_control'>",
+                #label{class="tourlobby_left_top_block_label", body=Title}, #br{}, #br{},
+                "<span id='tournament_control'>", 
                 case UserJoined of
-                    true ->
-                        [   #panel{id=join_button, class="tourlobby_orange_button_disabled", text=?_T("JOIN TOURNAMENT")},"</span>",
-                            #br{},
-                            #link{id=leave_button, class="tourlobby_red_button", text=?_T("LEAVE TOURNAMENT"), postback=leave_tournament}
-                        ];
-                    false ->
-                        [
-                            #link{id=join_button, class="tourlobby_orange_button", text=?_T("JOIN TOURNAMENT"), postback=join_tournament},"</span>",
-                            #br{},
-                            #panel{id=leave_button, class="tourlobby_red_button_disabled", text=?_T("LEAVE TOURNAMENT")}
-                        ]
-                end,
+                    true ->  [ #panel{id=join_button, class="tourlobby_orange_button_disabled", text=?_T("JOIN TOURNAMENT")},"</span>",
+                               #br{}, #link{id=leave_button, class="tourlobby_red_button", text=?_T("LEAVE TOURNAMENT"), postback=leave_tournament} ];
+                    false -> [ #link{id=join_button, class="tourlobby_orange_button", text=?_T("JOIN TOURNAMENT"), postback=join_tournament},"</span>", 
+                               #br{}, #panel{id=leave_button, class="tourlobby_red_button_disabled", text=?_T("LEAVE TOURNAMENT")} ] end,
                 #br{},
                 case TourId of
-                    "" ->
-                        #panel{id=attach_button, class="tourlobby_yellow_button_disabled", text=?_T("TAKE MY SEAT")};
-                    _ ->
-                        #link{id=attach_button, class="tourlobby_yellow_button", text=?_T("TAKE MY SEAT"), postback=attach}
+                    "" ->  #panel{id=attach_button, class="tourlobby_yellow_button_disabled", text=?_T("TAKE MY SEAT")};
+                    _ ->   #link{id=attach_button, class="tourlobby_yellow_button", text=?_T("TAKE MY SEAT"), postback=attach}
                 end,
                 #br{},
                 case T#tournament.creator == wf:user() of
-                     true ->
-                        case TourId of
-                            "" ->
-                                #link{id=start_button, text=?_T("MANUAL START"), postback={start_tour, T#tournament.id, NPlayers,Quota,Tours,Speed,T#tournament.awards}};
-                            _ -> ""
-                        end;
+                     true -> case TourId of
+                            "" -> #link{id=start_button, text=?_T("MANUAL START"), postback={start_tour, T#tournament.id, NPlayers,Quota,Tours,Speed,T#tournament.awards}};
+                            _ -> "" end;
                     _ -> ""
                 end,
                 "</center>"
@@ -247,88 +231,46 @@ body() ->
 
         %left bottom block
         #panel{class="tourlobby_left_bottom_block", body=[
-                #br{},
-                #label{class="tourlobby_left_bottom_block_title", body=?_T("Tournament Info")},
-                #br{},
-                #label{class="tourlobby_left_bottom_block_label", body=?_T("Game Type: ") ++ Game},
-                #br{},
-                #label{class="tourlobby_left_bottom_block_label", body=?_T("Quota: ") ++ integer_to_list(Quota)},
-                #label{class="tourlobby_left_bottom_block_label", body=?_T("Katılım: ") ++ integer_to_list(Length)},
-                #br{},
-                #label{class="tourlobby_left_bottom_block_label", body=?_T("Starting") ++ ": " ++ DateTime},
-                #br{}
+                #br{}, #label{class="tourlobby_left_bottom_block_title", body=?_T("Tournament Info")},
+                #br{}, #label{class="tourlobby_left_bottom_block_label", body=?_T("Game Type: ") ++ Game},
+                #br{}, #label{class="tourlobby_left_bottom_block_label", body=?_T("Quota: ") ++ integer_to_list(Quota)},
+                       #label{class="tourlobby_left_bottom_block_label", body=?_T("Katılım: ") ++ integer_to_list(Length)},
+                #br{}, #label{class="tourlobby_left_bottom_block_label", body=?_T("Starting") ++ ": " ++ DateTime}, #br{}
 %                #label{class="tourlobby_left_bottom_block_label", body=?_T("Plan: ")},
 %                #panel{style="left:26px; top:110px;", body=
 %                    PlanTable
 %                }
-            ]
-         },
-    
-        %center - three panels with numbers
-        #panel{class="tourlobby_orange_plask", body=[
-                #label{class="tourlobby_every_plask_title", body=?_T("PARTICIPANTS")},
-                #br{},
-                #label{class="tourlobby_every_plask_label", body=integer_to_list(NPlayers)}
-            ]
-        },
+        ] },
 
-        #panel{class="tourlobby_sky_plask", body=[
-                #label{class="tourlobby_every_plask_title", body=?_T("START DATE")},
-                #br{},
-                #link{body=#label{class="tourlobby_every_plask_label", body=Date}, style="text-decoration:none", title=Time}
-            ]
-        },
+        %tournament parameters
+        #panel{class="tourlobby_orange_plask", body=[ #label{class="tourlobby_every_plask_title", body=?_T("PARTICIPANTS")}, #br{},
+                #label{class="tourlobby_every_plask_label", body=integer_to_list(NPlayers)} ] },
+        #panel{class="tourlobby_sky_plask", body=[#label{class="tourlobby_every_plask_title", body=?_T("START DATE")}, #br{},
+                #link{body=#label{class="tourlobby_every_plask_label", body=Date}, style="text-decoration:none", title=Time} ] },
+        #panel{class="tourlobby_blue_plask", body=[#label{class="tourlobby_every_plask_title", body=?_T("TIME LEFT")}, #br{}, 
+                                                   #label{id=lobby_timer, class="tourlobby_every_plask_label", body=Timer} ] },
 
-        #panel{class="tourlobby_blue_plask", body=[
-                #label{class="tourlobby_every_plask_title", body=?_T("TIME LEFT")},
-                #br{},
-                #label{id=lobby_timer, class="tourlobby_every_plask_label", body=Timer}
-            ]
-        },
-
-        %prizes
+	%gifts
         #panel{class="tourlobby_prizes", body=[
-                #panel{class="tourlobby_prize_1",body=[
-                        "<center>",
-                        #panel{
-                            style="background-color:888; height:135px; display:table-cell; vertical-align:middle;",
-                            body=#image{style="max-width:130px; max-height:130px;", image=PI1}
-                        },
-                        #label{style="font-size:12px; color:#000;", body=PN1},
-                        "</center>",
-                        #panel{class="tourlobby_prize_star tourlobby_prize_star_1", body=
-                            #label{class="tourlobby_prize_star_text", body="1"}
-                        }
-                    ]
-                },
-                #panel{class="tourlobby_prize_2", body=[
-                        "<center>",
-                        #panel{
-                            style="background-color:888; height:135px; display:table-cell; vertical-align:middle;",
-                            body=#image{style="max-width:130px; max-height:130px;", image=PI2}
-                        },
-                        #label{style="font-size:12px; color:#000;", body=PN2},
-                        "</center>",
-                        #panel{class="tourlobby_prize_star tourlobby_prize_star_2", body=
-                            #label{class="tourlobby_prize_star_text", body="2"}
-                        }
-                    ]
-                },
-                #panel{class="tourlobby_prize_3", body=[
-                        "<center>",
-                        #panel{
-                            style="background-color:888; height:135px; display:table-cell; vertical-align:middle;",
-                            body=#image{style="max-width:130px; max-height:130px;", image=PI3}
-                        },
-                        #label{style="font-size:12px; color:#000;", body=PN3},
-                        "</center>",
-                        #panel{class="tourlobby_prize_star tourlobby_prize_star_3", body=
-                            #label{class="tourlobby_prize_star_text", body="3"}
-                        }
-                    ]
-                }
-            ]
-         },
+
+                #panel{class="tourlobby_prize_1",body=[ "<center>", 
+                          #panel{style="background-color:888; height:135px; display:table-cell; vertical-align:middle;",
+                               body=#image{style="max-width:130px; max-height:130px;", image=PI1} },
+                           #label{style="font-size:12px; color:#000;", body=PN1}, "</center>",
+                        #panel{class="tourlobby_prize_star tourlobby_prize_star_1", body=#label{class="tourlobby_prize_star_text", body="1"} } ] },
+
+                #panel{class="tourlobby_prize_2", body=[ "<center>", 
+                           #panel{ style="background-color:888; height:135px; display:table-cell; vertical-align:middle;",
+                              body=#image{style="max-width:130px; max-height:130px;", image=PI2} }, 
+                           #label{style="font-size:12px; color:#000;", body=PN2}, "</center>",
+                        #panel{class="tourlobby_prize_star tourlobby_prize_star_2", body=#label{class="tourlobby_prize_star_text", body="2"} } ] },
+
+                #panel{class="tourlobby_prize_3", body=[ "<center>",
+                        #panel{ style="background-color:888; height:135px; display:table-cell; vertical-align:middle;",
+                            body=#image{style="max-width:130px; max-height:130px;", image=PI3} },
+                        #label{style="font-size:12px; color:#000;", body=PN3}, "</center>",
+                        #panel{class="tourlobby_prize_star tourlobby_prize_star_3", body=#label{class="tourlobby_prize_star_text", body="3"} } ] }
+        ] },
 
 
         %chat
@@ -357,9 +299,13 @@ body() ->
 
 
 user_table(Users) ->
-    case wf:session(tourlobby_view_mode) of
-        short ->
-            [#panel{style="font-size:16px; line-height:24px; margin-left:25px; margin-right:25px; text-align:justify;", body = [
+    Tournament = wf:state(tournament),
+%    case wf:session(tourlobby_view_mode) of
+    case Tournament#tournament.players_count > 500 of
+%       cawf:session(tourlobby_view_mode) of
+%        short ->
+         true ->
+            [ #panel{style="font-size:16px; line-height:24px; margin-left:25px; margin-right:25px; text-align:justify;", body = [
                 [#span{style="font-size:24px; font-weight:bold;", body=[?_T("Players"), ": "]},
                     [begin case UId of undefined -> ""; _ ->
                         case site_utils:user_link(UId) of
@@ -378,51 +324,30 @@ user_table(Users) ->
                     end
                     || {UId, _S1, _S2, Color, _} <- Users]
                 ]
-            ]},
-            #link{class="tourlobby_view_mode_link", text=?_T("Full view"), postback={change_view, full}}];
+            ]} ] ; %, #link{class="tourlobby_view_mode_link", text=?_T("Full view"), postback={change_view, full}}];
         _ ->
-            Page = wf:session(this_must_be_unique_joined_page),
-            PUsers = lists:sublist(Users, (Page-1) * ?JOINEDPERPAGE + 1, ?JOINEDPERPAGE),
-            NdUsers = [{lists:nth(N, PUsers), N} || N <- lists:seq(1, length(PUsers))],
-            [#table{class="tourlobby_table", rows=[
+
+        [
+          #panel{class="matchmaker-table-pager paging-2", body=[#panel{class="center", body=[
+          #list{body=[#listitem{body=[#link{class="prevPage", text="<"}]}]},"<ul class='pageNumbers'></ul>",
+          #list{body=[#listitem{body=[#link{class="nextPage", text=">"}]}]} ]} ]},
+
+          #table{style="width: 100%", rows=[
                 #tablerow{class="tourlobby_table_head", cells=[
-                    #tableheader{style="padding-left:16px;", text=?_T("USER")},
-                    #tableheader{style="text-align:center;", text=?_T("TOTAL SCORE")},
-                    #tableheader{style="text-align:center;", text=?_T("SKILL SCORE")},
-                    #tableheader{style="text-align:center;", text=?_T("STATUS")}
-                ]},
-                [[
-                    user_table_row(Name, Score1, Score2, Color, N, RealName)
-                ] || {{Name, Score1, Score2, Color, RealName}, N} <- NdUsers]
-            ]},
+                    #tableheader{style="width:40px; padding-left:16px;",text=""},
+                    #tableheader{style="text-align:left;", text=?_T("USER")},
+                    #tableheader{style="width:200px;text-align:center;", text=?_T("TOTAL SCORE")},
+                    #tableheader{style="width:200px;text-align:center;", text=?_T("SKILL SCORE")},
+                    #tableheader{style="width:100px;text-align:center;", text=?_T("STATUS")}
+                 ]} ] } ,
 
-            case length(Users) > ?JOINEDPERPAGE of
-                    true ->
-                        #panel{class="paging-2", style="padding: 10px 0px 0px 0px;", body=[
-                            #panel{class="center", body=[
-                                #list{body=[
-                                   case Page of
-                                       1 -> #listitem{body=#link{text="<", postback={nothing}, class="inactive"}};
-                                       _ -> #listitem{body=#link{text="<", postback={page, Page - 1}}}
-                                    end,
-                                    [case N of
-                                        Page -> #listitem{body=#link{text=integer_to_list(N), postback={nothing}, class="inactive", 
-                                            style="color:#444444; font-weight:bold;"}};
-                                        _ -> #listitem{body=#link{text=integer_to_list(N), postback={page, N}}}
-                                    end
-                                    || N <- lists:seq(1, (length(Users) - 1) div ?JOINEDPERPAGE + 1)],
-                                    case Page * ?JOINEDPERPAGE >= length(Users) of                 
-                                        true -> #listitem{body=#link{text=">", postback={nothing}, class="inactive"}};
-                                        false -> #listitem{body=#link{text=">", postback={page, Page + 1}}}
-                                    end
-                               ]}
-                           ]}
-                        ]};
-                   false ->
-                        []
-                end,
+          #table{class="paging-2 tourlobby_table", style="width: 100%", rows=[
+            [ user_table_row(Name, Score1, Score2, Color, N, RealName) ||
+                           {{Name, Score1, Score2, Color, RealName}, N} <- lists:zip(Users,lists:seq(1,length(Users))) ] ]}
 
-            #link{class="tourlobby_view_mode_link", text=?_T("Short view"), postback={change_view, short}}]
+            % #link{class="tourlobby_view_mode_link", text=?_T("Short view"), postback={change_view, short}}
+
+         ]
     end.
 
 user_table_row(UId, P1, P2, Color, N, RealName) ->
@@ -430,72 +355,25 @@ user_table_row(UId, P1, P2, Color, N, RealName) ->
     case site_utils:user_link(UId) of
       "" -> "";
       URL ->
-        #tablerow{cells=[
-          #tablecell{body=[
-            #singlerow{cells=[
-              #tablecell{style="padding: 5px 5px 5px 16px;", body=#image{image=Avatar, class=
-                case nsm_accounts:user_paid(UId) of
-                  true -> "paid_user_avatar";
-                  _ -> ""
-                end
-              }},
-              #tablecell{body=[
-                #link{style="font-weight:bold;", url=URL, text=UId},
-                " &mdash; ",
-                site_utils:decode_letters( RealName )
-              ]}
-            ]}
-        ]},
-        #tablecell{style="text-align:center;", body=[
-            integer_to_list(P1)
-        ]},
-        #tablecell{style="text-align:center;", body=[
-            integer_to_list(P2)
-        ]},
-        #tablecell{style="text-align:center;", body=[
+
+        #tablerow{id=integer_to_list(N),cells=[
+           #tablecell{class=cell1,style="width:40px;", body=#image{image=Avatar}},
+           #tablecell{class=cell2,body=[#link{style="font-weight:bold;", url=URL, text=UId}, " &mdash; ", site_utils:decode_letters( RealName ) ]},
+           #tablecell{class=cell3,style="width:200px;text-align:center;", body=[ integer_to_list(P1) ]},
+           #tablecell{class=cell4,style="width:200px;text-align:center;", body=[ integer_to_list(P2) ]},
+           #tablecell{class=cell5,style="width:100px;text-align:center;", body=[
             case Color of
-                red ->
-                    #image{image="/images/tournament/lobby/red_bullet.png"};
-                green ->
-                    #image{image="/images/tournament/lobby/green_bullet.png"};
-                _ ->
-                    #image{image="/images/tournament/lobby/yellow_bullet.png"}
-            end
-        ]}
-    ], style = case N rem 2 of
-        0 -> "";
-        1 -> "background-color:#f5f5f5;"
-    end} end.
+                red ->      #image{image="/images/tournament/lobby/red_bullet.png"};
+                green ->    #image{image="/images/tournament/lobby/green_bullet.png"};
+                _ ->        #image{image="/images/tournament/lobby/yellow_bullet.png"}
+            end ]} ], style = case N rem 2 of 0 -> ""; 1 -> "background-color:#f5f5f5;" end} end.
 
-
-
-add_chat_history(Messages) ->
-    [process_chat(Action, User, Message) || {User, Action, Message} <- Messages].
-
-process_chat("message", User, Message) ->
-    chat_new_msg(User, Message).
-
-
-chat_info(Info) ->
-    Terms = #panel{class="info", body = Info},
-    update_table_chat(Terms).
-
-chat_error(Message) ->
-    chat_info(#span{class=error, text= Message}).
-
-chat_user_in(Username) ->
-    Terms = #panel{class="user join",
-		   body = [
-			   ?_TS("User $username$ connected.", [{username, Username}])
-			  ]},
-    update_table_chat(Terms).
-
-chat_user_out(Username) ->
-    Terms = #panel{class="user left",
-		   body = [
-			   ?_TS("User $username$ has left.", [{username, Username}])
-			  ]},
-    update_table_chat(Terms).
+add_chat_history(Messages) -> [ process_chat(Action, User, Message) || {User, Action, Message} <- Messages ].
+process_chat("message", User, Message) -> chat_new_msg(User, Message).
+chat_info(Info) -> Terms = #panel{class="info", body = Info}, update_table_chat(Terms).
+chat_error(Message) -> chat_info(#span{class=error, text= Message}).
+chat_user_in(Username) -> Terms = #panel{class="user join", body = [ ?_TS("User $username$ connected.", [{username, Username}]) ]}, update_table_chat(Terms).
+chat_user_out(Username) -> Terms = #panel{class="user left", body = [ ?_TS("User $username$ has left.", [{username, Username}]) ]}, update_table_chat(Terms).
 
 chat_new_msg(User, Message) ->
     Terms = #panel{class="chat",
@@ -505,6 +383,8 @@ chat_new_msg(User, Message) ->
     ]},
     update_table_chat(Terms).
 
+ui_paginate() ->
+    wf:wire("$('.tourlobby_table').paginateTable({ rowsPerPage: 20, pager: '.matchmaker-table-pager', maxPageNumbers:100 });").%.find('tr:nth-child(2n)').addClass('color1');").
 
 update_table_chat(Terms) ->
     wf:insert_bottom(chat_history, Terms),
@@ -512,18 +392,15 @@ update_table_chat(Terms) ->
     wf:flush(),
     ok.
 
-
 start_comet() ->
     User = wf:user(),
     TournamentId = wf:state(tournament_id),
     {ok, Pid} = wf:comet(fun()->
         CometProcess = self(),
-        garbage_collect(self()),
         nsx_msg:subscribe_for_tournament(TournamentId, User, CometProcess),
         comet_update(wf:user(), wf:state(tournament_id))
-    end,  ?COMET_POOL),
+    end, ?COMET_POOL),
     wf:state(comet_pid, Pid).
-
 
 comet_update(User, TournamentId) ->
     receive
