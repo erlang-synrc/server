@@ -868,7 +868,6 @@ publish_okey_series_ended(#state{relay={RMod,RPid}}=State, Scoring) ->
     publish_ge(State#state.relay, A),
     game_stats:assign_points(#'OkeyGameResults'{series_results = Standings}, State#state.game_info),
     RMod:update_gamestate(RPid, state_finished),
-    RPid ! {unreg, RPid}, %% XXX WTF?
     ?INFO("SERVER SERIES ENDED: ~p", [A]),
     ok.
 
