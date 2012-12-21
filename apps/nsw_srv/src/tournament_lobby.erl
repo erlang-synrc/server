@@ -582,6 +582,7 @@ get_tour_user_list() ->
                      false -> yellow;
                     true -> green end, site_utils:decode_letters(nsm_users:user_realname(CUId))
     },
+    ?INFO("Active Users: ~p",[length(ActiveUsers)]),
     OtherUsers = [
         {U, GP, K, case lists:member(U, ActiveUsers) of
             false -> red;

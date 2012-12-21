@@ -14,7 +14,7 @@ start_link() -> gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
 init([]) -> {ok, #state{last_check=now(),tour_cache=dict:new()}}.
 
 handle_call(user_count, _From, State)->
-  {L,T} = case timer:now_diff(now(),State#state.last_check) div 1000000 > 60 * 1 of
+  {L,T} = case timer:now_diff(now(),State#state.last_check) div 1000000 > 60 * 5 of
        true ->  {Users,B} = lists:partition(fun({_,_,A}) -> is_list(A) end, qlc:e(gproc:table())),
                 {length(Users),now()};
        false -> {State#state.user_count,State#state.last_check}
@@ -25,7 +25,7 @@ handle_call({joined_users,TID}, _From, State)->
   {LS,TS} = case dict:find(TID,State#state.tour_cache) of 
        error -> {[],now()}; 
        {ok,Val} -> Val end,
-   {JU,T} = case timer:now_diff(now(),TS) div 1000000 > 30 of
+   {JU,T} = case timer:now_diff(now(),TS) div 1000000 > 60 * 2 of
         true ->  Full = nsm_tournaments:joined_users(TID),
                  {Full,now()};
         false -> {LS,TS}
