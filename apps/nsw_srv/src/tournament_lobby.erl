@@ -72,9 +72,10 @@ guiders_script() ->
     wf:wire(Guiders).
 
 body() ->
-    #template{file=code:priv_dir(nsw_srv)++"/templates/info_page.html"}.
+%    #template{file=code:priv_dir(nsw_srv)++"/templates/info_page.html"}.
 
-content() ->
+%content() ->
+   
   T = wf:state(tournament),
   case T#tournament.id of
    undefined ->
@@ -98,14 +99,8 @@ content() ->
                end,
     TourId = T#tournament.id,
 
-   JoinedUsers = case rpc:call(NodeAtom,nsm_srv_tournament_lobby,joined_users,[T#tournament.id]) of
-                  {error,_} -> [];
-                  JU -> JU end,
-
-    ActiveUsers = case rpc:call(NodeAtom,nsm_srv_tournament_lobby,active_users,[T#tournament.id]) of
-        {badrpc,_} -> [];
-        X -> X
-    end,
+   JoinedUsers = [],%case rpc:call(NodeAtom,nsm_srv_tournament_lobby,joined_users,[T#tournament.id]) of {error,_} -> []; JU -> JU end,
+    ActiveUsers = [],%case rpc:call(NodeAtom,nsm_srv_tournament_lobby,active_users,[T#tournament.id]) of {badrpc,_} -> []; X -> X end,
 
 
     JoinedNames = [P#play_record.who || P <- JoinedUsers],
@@ -163,10 +158,12 @@ content() ->
 
     %TourUserList = get_tour_user_list(),
 
-    {TimeMeasure, TourUserList} = timer:tc(tournament_lobby, get_tour_user_list, []),
-    ?INFO("Get Tour User List Time: ~p",[TimeMeasure]),
+%    {TimeMeasure, TourUserList} = timer:tc(tournament_lobby, get_tour_user_list, []),
+%    ?INFO("Get Tour User List Time: ~p",[TimeMeasure]),
 
-    wf:state(tour_user_list,[]),%TourUserList),
+    TourUserList = [],
+
+    wf:state(tour_user_list,TourUserList),
 
     {ok,PlanDesc1} = case rpc:call(?GAMESRVR_NODE, game_okey_ng_trn_elim,get_plan_desc,[T#tournament.quota,
                                                                                    T#tournament.players_count,
@@ -197,7 +194,7 @@ content() ->
         }
     ], style="font-size:9px; color:#fff;"},
 
-    [
+    [   "<br><br><section id='main'>",
         #panel{class="tourlobby_title", body=[
             #label{class="tourlobby_title_label", body=?_T("TOURNAMENT LOBBY")}
         ]},
@@ -354,7 +351,7 @@ content() ->
         #panel{id=players_table, class="tourlobby_table_panel", body=[
             user_table(TourUserList)
         ]},
-        ""]
+        "</section>"]
    
   end.
 
@@ -722,7 +719,8 @@ str_plus_0(N) ->
 
 get_timer_for_now() ->
     Id = list_to_integer(wf:q("id")),
-    {ok, T} = nsm_db:get(tournament, Id),
+%    {ok, T} = nsm_db:get(tournament, Id),
+   T =  wf:state(tournament),
     case T#tournament.status of
         canceled -> ?_T("CANCELED");
         _ ->
