@@ -164,7 +164,7 @@ content() ->
     {TimeMeasure, TourUserList} = timer:tc(tournament_lobby, get_tour_user_list, []),
     ?INFO("Get Tour User List Time: ~p",[TimeMeasure]),
 
-    wf:state(tour_user_list,TourUserList),
+    wf:state(tour_user_list,[]),%TourUserList),
 
     {ok,PlanDesc1} = case rpc:call(?GAMESRVR_NODE, game_okey_ng_trn_elim,get_plan_desc,[T#tournament.quota,
                                                                                    T#tournament.players_count,
