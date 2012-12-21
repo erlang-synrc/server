@@ -94,9 +94,10 @@ content() ->
                     4 -> nsx_opt:get_env(nsm_db, game_srv_node, 'game@doxtop.cc');
                     _ -> list_to_atom(GameSrv)
                end,
-    TourId = case rpc:call(NodeAtom,game_manager,get_tournament,[T#tournament.id]) of
-                  {error,_} -> 0;
-                  X -> X end,
+    TourId = T#tournament.id,
+                %case rpc:call(NodeAtom,game_manager,get_tournament,[T#tournament.id]) of
+                 % {error,_} -> 0;
+                 % X -> X end,
 
    JoinedUsers = case rpc:call(NodeAtom,nsm_srv_tournament_lobby,joined_users,[T#tournament.id]) of
                   {error,_} -> [];
