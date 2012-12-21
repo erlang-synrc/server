@@ -159,7 +159,11 @@ content() ->
     Length = length(JoinedList),
     DateTime = Date ++ " " ++ Time,
 
-    TourUserList = get_tour_user_list(),
+    %TourUserList = get_tour_user_list(),
+
+    {Time, TourUserList} = timer:tc(tournament_lobby, get_tour_user_list, []),
+    ?INFO("Get Tour User List Time: ~p",[Time]),
+
     wf:state(tour_user_list,TourUserList),
 
     {ok,PlanDesc1} = case rpc:call(?GAMESRVR_NODE, game_okey_ng_trn_elim,get_plan_desc,[T#tournament.quota,
@@ -590,10 +594,11 @@ get_tour_user_list() ->
         site_utils:decode_letters(nsm_users:user_realname(CUId))
     },
     OtherUsers = [
-        {U, GP, K, case sets:is_element(U, ActiveUsers) of
-            false -> red;
-            true -> green
-        end, RN}
+        {U, GP, K, red %case sets:is_element(U, ActiveUsers) of
+            %false -> red;
+            %true -> green
+        %end
+         , RN}
     || #play_record{who=U, kakush=K, game_points=GP, realname=RN} <- JoinedUsersList, U /= wf:user()],
     [CurUser] ++ OtherUsers.
 
