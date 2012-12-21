@@ -55,7 +55,24 @@ guiders_script() ->
     ],
     wf:wire(Guiders).
 
+update_data(T) ->
+    Zone = T#tournament.id div 1000000,
+    GameSrv = "game@srv" ++ integer_to_list(Zone) ++ ".kakaranet.com",
+    NodeAtom = case Zone of
+                    4 -> nsx_opt:get_env(nsm_db, game_srv_node, 'game@doxtop.cc');
+                    _ -> list_to_atom(GameSrv)
+               end,
+
+
+
+    ActiveUsers = case rpc:call(NodeAtom,nsm_srv_tournament_lobby,active_users,[T#tournament.id]) of {badrpc,_} -> []; X -> X end,
+
+
+    wf:state(active_users, ActiveUsers).
+
+
 body() ->
+
 
   T = wf:state(tournament),
   case T#tournament.id of
@@ -63,6 +80,9 @@ body() ->
 
       #panel{class="form-001", body=[?_T("Tournament not found"), #panel{style="height:10px;clear:both"}]};
   _ ->
+
+    TourId = T#tournament.id,
+
     Title = T#tournament.name,
     Tours = T#tournament.tours,
     Game = case T#tournament.game_type of
@@ -71,14 +91,6 @@ body() ->
         game_batak -> "BATAK";
         _ -> ?_T("Unknown")
     end,
-    Zone = T#tournament.id div 1000000,
-    GameSrv = "game@srv" ++ integer_to_list(Zone) ++ ".kakaranet.com",
-    NodeAtom = case Zone of
-                    4 -> nsx_opt:get_env(nsm_db, game_srv_node, 'game@doxtop.cc');
-                    _ -> list_to_atom(GameSrv)
-               end,
-    TourId = T#tournament.id,
-
 
     wf:state(user_game_points, case nsm_accounts:balance(wf:user(), ?CURRENCY_GAME_POINTS) of
             {ok,AS1} -> AS1;
@@ -88,16 +100,22 @@ body() ->
             {ok,AS2} -> AS2;
             {error,_} -> 0 end),
 
-   {TimerCheck,JoinedUsers} = timer:tc(user_counter,joined_users,[T#tournament.id]), % binary_to_term(case rpc:call(NodeAtom,nsm_srv_tournament_lobby,joined_users,[T#tournament.id]) of {error,_} -> []; JU -> JU end),
+
+   {TimerCheck,JoinedUsers} = timer:tc(user_counter,joined_users,[T#tournament.id]), 
     ?INFO("Joined List Retrieved: ~p",[TimerCheck]),
-    ActiveUsers = case rpc:call(NodeAtom,nsm_srv_tournament_lobby,active_users,[T#tournament.id]) of {badrpc,_} -> []; X -> X end,
-
-
-    JoinedNames = [P#play_record.who || P <- JoinedUsers],
 
     wf:state(joined_users, JoinedUsers),
+    JoinedNames = [P#play_record.who || P <- JoinedUsers],
     wf:state(joined_names, JoinedNames),
-    wf:state(active_users, [ AU#user.username || AU<-ActiveUsers]),
+
+    Zone = T#tournament.id div 1000000,
+    GameSrv = "game@srv" ++ integer_to_list(Zone) ++ ".kakaranet.com",
+    NodeAtom = case Zone of
+                    4 -> nsx_opt:get_env(nsm_db, game_srv_node, 'game@doxtop.cc');
+                    _ -> list_to_atom(GameSrv)
+               end,
+
+    update_data(T),
 
     wf:session(TourId,TourId),
     wf:state(tour_long_id, TourId),
@@ -513,11 +531,11 @@ comet_update(User, TournamentId) ->
         {delivery, _, tournament_heartbeat} ->
             UserRecord = webutils:user_info(),
 
-            nsx_msg:notify_tournament_heartbeat_reply(
-                TournamentId, UserRecord),
+            nsx_msg:notify_tournament_heartbeat_reply(TournamentId, UserRecord),
+            ok;
 
             %% afer sleep send update userlist message to self
-            timer:apply_after(?SLEEP, erlang, send, [self(), update_userlist]);
+%            timer:apply_after(?SLEEP, erlang, send, [self(), update_userlist]);
 
         %% start game section
         {delivery, ["tournament", TournamentId, "start"], {TourId}}  ->
@@ -537,12 +555,14 @@ comet_update(User, TournamentId) ->
 
         %% local request
         update_userlist ->
-            update_userlist();
+            update_active_users();
 
         {delivery, Route, Other}  ->
             ?PRINT({other_in_comet, Route, Other, wf:user()})
     end,
     comet_update(User, TournamentId).
+
+update_active_users() -> update_data(wf:state(tournament)), wf:state(tour_user_list, get_tour_user_list()), update_userlist().
 
 update_userlist() ->
     TourUserList = wf:state(tour_user_list),
@@ -556,6 +576,7 @@ get_tour_user_list() ->
     ActiveUsers = wf:state(active_users),
     JoinedUsers = wf:state(joined_users),
     JoinedNames = wf:state(joined_names),
+    case JoinedNames of undefined -> []; _ ->
     CUId = wf:user(),
     CurUser = {CUId, wf:state(user_game_points), wf:state(user_kakush), case lists:member(CUId, JoinedNames) of
                      false -> yellow;
@@ -568,7 +589,7 @@ get_tour_user_list() ->
         end
          , RN}
     || #play_record{who=U, kakush=K, game_points=GP, realname=RN} <- JoinedUsers, U /= CUId],
-    [CurUser] ++ OtherUsers.
+    [CurUser] ++ OtherUsers end.
 
 api_event(Name, Tag, Args) -> webutils:api_event(Name, Tag, Args).
 

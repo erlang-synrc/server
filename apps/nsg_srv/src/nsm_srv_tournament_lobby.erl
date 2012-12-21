@@ -50,7 +50,7 @@ init([TID]) ->
 handle_call(active_users, _From, #state{active_users = AU} = State) ->
     List = dict:to_list(AU),
     ?INFO("active users request. Active users count: ~p", [length(List)]),
-    {reply, [User || {_, User} <- List], State};
+    {reply, [User#user.username || {_, User} <- List], State};
 
 handle_call(joined_users, _From, State) ->
     {JU,T} = case timer:now_diff(now(),State#state.last_check) div 1000000 > 30 of
