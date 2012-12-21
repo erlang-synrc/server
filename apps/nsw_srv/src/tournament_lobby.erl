@@ -563,7 +563,10 @@ comet_update(User, TournamentId) ->
 
 update_userlist() ->
     TourUserList = wf:state(tour_user_list),
-    wf:update(players_table, user_table(TourUserList)),
+    case TourUserList of
+	undefined -> skip;
+        A when is_list(A) -> wf:update(players_table, user_table(TourUserList))
+    end,
     wf:flush().
 
 get_tour_user_list() ->
