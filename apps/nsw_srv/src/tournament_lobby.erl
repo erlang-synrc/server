@@ -159,6 +159,9 @@ content() ->
     Length = length(JoinedList),
     DateTime = Date ++ " " ++ Time,
 
+    TourUserList = get_tour_user_list(),
+    wf:state(tour_user_list,TourUserList),
+
     {ok,PlanDesc1} = case rpc:call(?GAMESRVR_NODE, game_okey_ng_trn_elim,get_plan_desc,[T#tournament.quota,
                                                                                    T#tournament.players_count,
                                                                                    T#tournament.tours]) of
@@ -343,7 +346,7 @@ content() ->
 
         %players table
         #panel{id=players_table, class="tourlobby_table_panel", body=[
-            user_table(get_tour_user_list())
+            user_table(TourUserList)
         ]},
         ""]
   end.
@@ -554,7 +557,8 @@ comet_update(User, TournamentId) ->
     comet_update(User, TournamentId).
 
 update_userlist() ->
-    wf:update(players_table, user_table(get_tour_user_list())),
+    TourUserList = wf:state(tour_user_list),
+    wf:update(players_table, user_table(TourUserList)),
     wf:flush().
 
 get_tour_user_list() ->
@@ -615,8 +619,8 @@ event(chat) ->
     end;
 
 event({change_view, Mode}) ->
-    wf:session(tourlobby_view_mode, Mode);%,
-%    update_userlist();
+    wf:session(tourlobby_view_mode, Mode),
+    update_userlist();
 
 event(join_tournament) ->
     UId = wf:user(),
