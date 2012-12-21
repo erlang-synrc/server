@@ -366,6 +366,11 @@ handle_cast(kill_bots, State) ->
     [ game_session:logout(Pid) || #player{pid = Pid} <- Bots ],
     {noreply, State#state{players = OtherPlayers}};
 
+handle_cast({stop_game, Reason} = Msg, State) ->
+    ?INFO("Received the directive to stop the game: ~p", [Msg]),
+    [ gen_server:cast(Pid, {disconnect, Reason}) || #player{pid = Pid} <- State#state.players],
+    {stop, normal, State#state{players = []}};
+
 handle_cast(Event, State) ->
     {stop, {unknown_cast, Event}, State}.
 
@@ -540,7 +545,7 @@ notify_if_user_leaving(Pid, State) ->
         {_, _, #player{id = PlayerId}, _} ->
             %% last human => stop operations
             ?INFO("last human or replacement not allowed => stop operations", []),
-            gen_server:cast(self(), kill_bots),
+            gen_server:cast(self(), {stop_game, opponent_out}),
             game_ended(PlayerId, Pid, State)
     end.
 

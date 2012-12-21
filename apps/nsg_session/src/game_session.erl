@@ -400,6 +400,11 @@ handle_cast({disconnect, table_closed} = Message, State = #state{rpc = RPC}) ->
     maybe_send_message(RPC, #disconnect{reason = <<"The table you are sitting on has been just closed">>}, State),
     {stop, normal, State};
 
+handle_cast({disconnect, opponent_out} = Message, State = #state{rpc = RPC}) ->
+    ?INFO("Recived a notification from the table: ~p", [Message]),
+    maybe_send_message(RPC, #disconnect{reason = <<"The table you are sitting on has been just closed because you opponent out">>}, State),
+    {stop, normal, State};
+
 
 handle_cast({bot_session_attach, UserInfo}, State = #state{user = undefined}) ->
 %    ?INFO("bot session attach", []),
