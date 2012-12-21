@@ -363,6 +363,7 @@ user_table(Users) ->
                 [#span{style="font-size:24px; font-weight:bold;", body=[?_T("Players"), ": "]},
                     [begin
                         case site_utils:user_link(UId) of
+                          undefined -> "";
                           "" -> "";
                           URL ->
                             #span{body=#link{url=URL, text=UId ++ " ",
