@@ -95,18 +95,22 @@ content() ->
                     _ -> list_to_atom(GameSrv)
                end,
     TourId = T#tournament.id,
-                %case rpc:call(NodeAtom,game_manager,get_tournament,[T#tournament.id]) of
-                 % {error,_} -> 0;
-                 % X -> X end,
 
    JoinedUsers = case rpc:call(NodeAtom,nsm_srv_tournament_lobby,joined_users,[T#tournament.id]) of
                   {error,_} -> [];
                   JU -> JU end,
 
+    ActiveUsers = case rpc:call(NodeAtom,nsm_srv_tournament_lobby,active_users,[T#tournament.id]) of
+        {badrpc,_} -> [];
+        X -> X
+    end,
+
+
     JoinedNames = [P#play_record.who || P <- JoinedUsers],
 
     wf:state(joined_users, JoinedUsers),
     wf:state(joined_names, JoinedNames),
+    wf:state(active_users, ActiveUsers),
 
     wf:session(TourId,TourId),
     wf:state(tour_long_id, TourId),
@@ -562,14 +566,9 @@ get_tour_user_list() ->
                     4 -> nsx_opt:get_env(nsm_db, game_srv_node, 'game@doxtop.cc');
                     _ -> list_to_atom(GameSrv)
                end,
-    Rpc = case rpc:call(NodeAtom,nsm_srv_tournament_lobby,active_users,[TID]) of
-        {badrpc,_} -> [];
-        X -> X
-    end,
-    ActiveUsers = sets:from_list([U#user.username || U <- Rpc]),
+    ActiveUsers = sets:from_list([U#user.username || U <- wf:state(active_users)]),
     JoinedUsers = wf:state(joined_users),
     JoinedNames = wf:state(joined_names),
-    ?INFO("Users: ~p",[JoinedNames]),
     JoinedUsersList = JoinedUsers, % lists:usort(nsm_tournaments:joined_users(TId)),
     JoinedUsersSet = sets:from_list(JoinedNames), % [U#play_record.who || U <- JoinedUsersList]),
     CUId = wf:user(),
