@@ -389,8 +389,12 @@ retrieve_tables(Setting, UId, GameType,Convert) ->
 process_tables(Setting, UId,GameType,Convert) ->
     receive
         {From, get} -> 
-            Tables = lists:flatten([nsm_queries:map_reduce(nsm_queries,get_single_tables,[Setting,UId,GameType,Convert,X]) ||
-                      X <- [one_own,one_other,two_own,two_other,three_own,three_other,more_own,more_other,nomore_own,nomore_other]]),
+            Tables = lists:flatten([
+                         nsm_queries:map_reduce(nsm_queries,
+                                                get_single_tables,
+                                                [Setting,UId,GameType,Convert,X]) ||
+                      X <- [one_own,one_other,two_own,two_other,three_own,three_other,
+                            more_own,more_other,nomore_own,nomore_other]]),
 
     Filtered = filter_tables(Tables,UId,GameType,Setting,Convert),
     From ! {self(), Filtered},stop end.

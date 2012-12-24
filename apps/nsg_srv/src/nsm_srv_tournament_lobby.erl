@@ -37,7 +37,7 @@ init([TID]) ->
     Tour = nsm_tournaments:get(TID),
     ?INFO("Lobby Starting: ~p",[Tour]),
     Server = self(),
-    timer:apply_interval(?HEARTBEAT_INTERVAL, ?MODULE, heartbeat, [Server]),
+%    timer:apply_interval(?HEARTBEAT_INTERVAL, ?MODULE, heartbeat, [Server]),
     timer:apply_after(?TOURNAMENT_START_QUANT, ?MODULE, check_tournament_time, [Server]),
     nsx_msg:subscribe_tournament_lobby(TID, {?MODULE, messages_callback}, Server),
     ?MODULE:heartbeat(Server),
@@ -105,9 +105,9 @@ handle_cast(start_tournament, State) ->
 
 handle_cast(heartbeat, State) ->
     TID = State#state.tournament_id,
-    nsx_msg:notify_tournament_heartbeat_request(TID),
+%    nsx_msg:notify_tournament_heartbeat_request(TID),
 
-    {ok, _} = timer:apply_after(?HEARTBEAT_TIMEOUT, ?MODULE, heartbeat_finish,  [State#state.server]),
+%    {ok, _} = timer:apply_after(?HEARTBEAT_TIMEOUT, ?MODULE, heartbeat_finish,  [State#state.server]),
     {noreply, State#state{heartbeat_users = dict:new()}};
 
 handle_cast(heartbeat_finish, #state{heartbeat_users = HU} = State) -> 

@@ -74,7 +74,10 @@ send_simple(Subject, Content, To, Options) ->
 
     ?INFO("Sibject:To: {~p,~p}", [Subject, To]),
 
-    {ok, SockType, Socket} = connect(WithSSL, Server, Port),
+    {ok, SockType, Sock} = connect(WithSSL, Server, Port),
+    case Sock of 
+         none -> ?INFO("ERROR: Can't send email to: ~p",[To]);
+         Socket ->
 
     ?INFO("Socket: ~p",[Socket]),
     send_data(SockType, Socket, "HELO kakaranet.com"),
@@ -88,7 +91,9 @@ send_simple(Subject, Content, To, Options) ->
     send_no_receive(SockType, Socket, ""),
     send_data(SockType, Socket, "."),
     send_data(SockType, Socket, "QUIT"),
-    close(SockType, Socket),
+    close(SockType, Socket)
+
+    end,
     ok.
 
 
@@ -110,8 +115,9 @@ connect(WithSSL, Server, Port) ->
                    false ->
                        gen_tcp
                end,
-    {ok, Socket} = SockType:connect(Server, Port, [{active, false}], 140000),
-    recv(SockType, Socket),
+    {ok, Socket} = case SockType:connect(Server, Port, [{active, false}], 140000) of
+                        {ok,S} -> recv(SockType, S), {ok,S};
+                        {error,_} -> {ok, none} end,
     {ok, SockType, Socket}.
 
 send_data(SockType, Socket, Data) ->

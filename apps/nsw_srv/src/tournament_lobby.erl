@@ -27,9 +27,8 @@ main() ->
 
 main_authorized() ->
     wf:session(this_must_be_unique_joined_page, 1),
-    TournamentId = wf:q(id),
-    wf:state(tournament_id, TournamentId),
-    webutils:add_script("/nitrogen/jquery.paginatetable.js"),
+    TID = wf:q(id),
+    wf:state(tournament_id, TID),
     webutils:add_raw("<link href='/nitrogen/guiders-js/guiders-1.2.8.css' rel='stylesheet'>
                                  <script src='/nitrogen/guiders-js/guiders-1.2.8.js'></script>"),
                  case webutils:guiders_ok("matchmaker_guiders_shown") of
@@ -37,10 +36,12 @@ main_authorized() ->
                       false -> []
                  end,
 
-    TournamentInfo = nsm_tournaments:get(TournamentId),
-    wf:state(tournament, TournamentInfo),
+    T = nsm_tournaments:get(TID),
+    wf:state(tournament, T),
 
-    start_comet(),
+    case T#tournament.players_count < 510 of
+         true -> webutils:add_script("/nitrogen/jquery.paginatetable.js");
+         false -> skip end,
 
     #template { file=code:priv_dir(nsw_srv)++"/templates/bare.html" }.
 
@@ -53,24 +54,17 @@ guiders_script() ->
     ],
     wf:wire(Guiders).
 
-update_data(T) ->
-    Zone = T#tournament.id div 1000000,
-    GameSrv = "game@srv" ++ integer_to_list(Zone) ++ ".kakaranet.com",
-    NodeAtom = case Zone of
-                    4 -> nsx_opt:get_env(nsm_db, game_srv_node, 'game@doxtop.cc');
-                    _ -> list_to_atom(GameSrv)
-               end,
-
-
-
-    ActiveUsers = case rpc:call(NodeAtom,nsm_srv_tournament_lobby,active_users,[T#tournament.id]) of {badrpc,_} -> []; X -> X end,
-
-
-    wf:state(active_users, ActiveUsers).
-
+node_by_id(Id, Type) ->
+    Zone = Id div 1000000,
+    GameSrv = atom_to_list(Type) ++ "@srv" ++ integer_to_list(Zone) ++ ".kakaranet.com",
+    case Zone of
+         4 -> nsx_opt:get_env(nsm_db, game_srv_node, 'game@doxtop.cc');
+         _ -> list_to_atom(GameSrv)
+    end.
 
 body() ->
 
+      TimeStampMeasure1 = now(),
 
   T = wf:state(tournament),
   case T#tournament.id of
@@ -79,7 +73,8 @@ body() ->
       #panel{class="form-001", body=[?_T("Tournament not found"), #panel{style="height:10px;clear:both"}]};
   _ ->
 
-    TourId = T#tournament.id,
+    TID = T#tournament.id,
+    CurrentUser = wf:user(),
 
     Title = T#tournament.name,
     Tours = T#tournament.tours,
@@ -90,33 +85,17 @@ body() ->
         _ -> ?_T("Unknown")
     end,
 
-    wf:state(user_game_points, case nsm_accounts:balance(wf:user(), ?CURRENCY_GAME_POINTS) of
+    GamePoints = case nsm_accounts:balance(CurrentUser, ?CURRENCY_GAME_POINTS) of
             {ok,AS1} -> AS1;
-            {error,_} -> 0 end),
+            {error,_} -> 0 end,
 
-    wf:state(user_kakush, case nsm_accounts:balance(wf:user(),  ?CURRENCY_KAKUSH) of
+    Kakush = case nsm_accounts:balance(CurrentUser,  ?CURRENCY_KAKUSH) of
             {ok,AS2} -> AS2;
-            {error,_} -> 0 end),
+            {error,_} -> 0 end,
 
+    JoinedUsers0 = user_counter:joined_users(T#tournament.id), 
 
-   {TimerCheck,JoinedUsers} = timer:tc(user_counter,joined_users,[T#tournament.id]), 
-    ?INFO("Joined List Retrieved: ~p",[TimerCheck]),
-
-    wf:state(joined_users, JoinedUsers),
-    JoinedNames = [P#play_record.who || P <- JoinedUsers],
-    wf:state(joined_names, JoinedNames),
-
-    Zone = T#tournament.id div 1000000,
-    GameSrv = "game@srv" ++ integer_to_list(Zone) ++ ".kakaranet.com",
-    NodeAtom = case Zone of
-                    4 -> nsx_opt:get_env(nsm_db, game_srv_node, 'game@doxtop.cc');
-                    _ -> list_to_atom(GameSrv)
-               end,
-
-    update_data(T),
-
-    wf:session(TourId,TourId),
-    wf:state(tour_long_id, TourId),
+    NodeAtom = node_by_id(T#tournament.id, game),
 
     Date = integer_to_list(element(3, T#tournament.start_date)) ++ "." ++ 
            integer_to_list(element(2, T#tournament.start_date)) ++ "." ++ 
@@ -149,25 +128,35 @@ body() ->
     {PN2, PI2} = hd(tl(Prizes)),
     {PN3, PI3} = hd(tl(tl(Prizes))),
 
-    case rpc:call(NodeAtom,nsm_srv_tournament_lobby,chat_history,[T#tournament.id]) of
-        H when is_list(H) ->
-            add_chat_history(H);
-        _ ->
-            ok
-    end,
-
-    % is user joined already
-    JoinedList = wf:state(joined_names),
-    UserJoined = lists:member(wf:user(), JoinedList),
-    Length = length(JoinedList),
+    {UserJoined,AddMe} = case lists:keyfind(CurrentUser,#play_record.who, JoinedUsers0) of
+                      false -> {false, [#play_record{who = CurrentUser, game_points = GamePoints,
+                                  kakush = Kakush, game_id = yellow,
+                                  realname = CurrentUser }]};
+                      #play_record{who = Who, game_id = yellow} -> {false,[]};
+                      X -> {X,[]} end,
+    Length = length(JoinedUsers0),
     DateTime = Date ++ " " ++ Time,
 
-    {TimerCheck2,TourUserList} = timer:tc(tournament_lobby,get_tour_user_list,[]),
-    ?INFO("List Active Recalculation: ~p",[TimerCheck2]),
+%    AddMe = case UserJoined of
+%         false -> UserPlayRecord = [#play_record{who = CurrentUser, game_points = GamePoints,
+%                                  kakush = Kakush, game_id = yellow,
+%                                  realname = CurrentUser }];
+%          _ -> [] end,
 
-    wf:state(tour_user_list,TourUserList),
 
-    ui_paginate(),
+    JoinedUsers = AddMe ++ JoinedUsers0,
+
+    start_comet(JoinedUsers,integer_to_list(T#tournament.id),CurrentUser,UserJoined),
+
+    case rpc:call(NodeAtom,nsm_srv_tournament_lobby,chat_history,[T#tournament.id]) of
+        H when is_list(H) -> add_chat_history(H);
+        _ -> ok
+    end,
+
+    ui_paginate(T),
+
+    TimeStampMeasure2 = now(),
+    ?INFO("Load Page ~p",[timer:now_diff( TimeStampMeasure2, TimeStampMeasure1)]),
 
 %    {ok,PlanDesc1} = case rpc:call(?GAMESRVR_NODE, game_okey_ng_trn_elim,get_plan_desc,[T#tournament.quota,
 %                                                                                   T#tournament.players_count,
@@ -209,19 +198,19 @@ body() ->
                 #label{class="tourlobby_left_top_block_label", body=Title}, #br{}, #br{},
                 "<span id='tournament_control'>", 
                 case UserJoined of
-                    true ->  [ #panel{id=join_button, class="tourlobby_orange_button_disabled", text=?_T("JOIN TOURNAMENT")},"</span>",
-                               #br{}, #link{id=leave_button, class="tourlobby_red_button", text=?_T("LEAVE TOURNAMENT"), postback=leave_tournament} ];
                     false -> [ #link{id=join_button, class="tourlobby_orange_button", text=?_T("JOIN TOURNAMENT"), postback=join_tournament},"</span>", 
-                               #br{}, #panel{id=leave_button, class="tourlobby_red_button_disabled", text=?_T("LEAVE TOURNAMENT")} ] end,
+                               #br{}, #panel{id=leave_button, class="tourlobby_red_button_disabled", text=?_T("LEAVE TOURNAMENT")} ] ;
+                    _ ->  [ #panel{id=join_button, class="tourlobby_orange_button_disabled", text=?_T("JOIN TOURNAMENT")},"</span>",
+                               #br{}, #link{id=leave_button, class="tourlobby_red_button", text=?_T("LEAVE TOURNAMENT"), postback=leave_tournament} ] end,
                 #br{},
-                case TourId of
-                    "" ->  #panel{id=attach_button, class="tourlobby_yellow_button_disabled", text=?_T("TAKE MY SEAT")};
+                case wf:state(tournament_started) of
+                    undefined ->  #panel{id=attach_button, class="tourlobby_yellow_button_disabled", text=?_T("TAKE MY SEAT")};
                     _ ->   #link{id=attach_button, class="tourlobby_yellow_button", text=?_T("TAKE MY SEAT"), postback=attach}
                 end,
                 #br{},
-                case T#tournament.creator == wf:user() of
-                     true -> case TourId of
-                            "" -> #link{id=start_button, text=?_T("MANUAL START"), postback={start_tour, T#tournament.id, NPlayers,Quota,Tours,Speed,T#tournament.awards}};
+                case T#tournament.creator == CurrentUser of
+                     true -> case wf:state(tournament_started) of
+                            undefined -> #link{id=start_button, text=?_T("MANUAL START"), postback={start_tour, T#tournament.id, NPlayers,Quota,Tours,Speed,T#tournament.awards}};
                             _ -> "" end;
                     _ -> ""
                 end,
@@ -250,7 +239,7 @@ body() ->
         #panel{class="tourlobby_blue_plask", body=[#label{class="tourlobby_every_plask_title", body=?_T("TIME LEFT")}, #br{}, 
                                                    #label{id=lobby_timer, class="tourlobby_every_plask_label", body=Timer} ] },
 
-	%gifts
+        %gifts
         #panel{class="tourlobby_prizes", body=[
 
                 #panel{class="tourlobby_prize_1",body=[ "<center>", 
@@ -291,38 +280,39 @@ body() ->
 
         %players table
         #panel{id=players_table, class="tourlobby_table_panel", body=[
-            user_table(TourUserList)
+            user_table(JoinedUsers,CurrentUser,UserJoined) %TourUserList)
         ]},
         "</section>"]
    
   end.
 
+user_table(Users,CurrentUser,CurrentJoined) ->
 
-user_table(Users) ->
     Tournament = wf:state(tournament),
-%    case wf:session(tourlobby_view_mode) of
     case Tournament#tournament.players_count > 500 of
-%       cawf:session(tourlobby_view_mode) of
-%        short ->
          true ->
             [ #panel{style="font-size:16px; line-height:24px; margin-left:25px; margin-right:25px; text-align:justify;", body = [
                 [#span{style="font-size:24px; font-weight:bold;", body=[?_T("Players"), ": "]},
-                    [begin case UId of undefined -> ""; _ ->
-                        case site_utils:user_link(UId) of
+                    [begin 
+                        case site_utils:user_link(Who) of
                           undefined -> "";
                           "" -> "";
                           URL ->
-                            #span{body=#link{url=URL, text=UId ++ " ",
-                              style = "font-weight:bold; margin-right:5px;" ++ case Color of
-                                yellow ->  "color:#938b03;";
-                                red -> "color:#c22323;";
-                                green -> "color:#5ba108;";
-                                _ -> ""
-                              end}
+                            #span{body=#link{url=URL, text=Who ++ " ",
+                              style = "font-weight:bold; margin-right:5px;" ++ 
+                                 case Who == CurrentUser of
+                                                  true -> case CurrentJoined of
+                                                                false -> "color:#938b03;"; % yellow
+                                                                 _ -> "color:#5ba108;" end; % green
+                                                  false -> case Color of 
+                                                                undefined -> "color:#c22323;";
+                                                                red -> "color:#c22323;";
+                                                                yellow -> "color:#938b03;";
+                                                                green -> "color:#5ba108;";
+                                                                _ -> "" end end}
                             }
-                        end end
-                    end
-                    || {UId, _S1, _S2, Color, _} <- Users]
+                        end
+                    end || #play_record{who=Who, game_id=Color} <- Users]
                 ]
             ]} ] ; %, #link{class="tourlobby_view_mode_link", text=?_T("Full view"), postback={change_view, full}}];
         _ ->
@@ -342,8 +332,18 @@ user_table(Users) ->
                  ]} ] } ,
 
           #table{class="paging-2 tourlobby_table", style="width: 100%", rows=[
-            [ user_table_row(Name, Score1, Score2, Color, N, RealName) ||
-                           {{Name, Score1, Score2, Color, RealName}, N} <- lists:zip(Users,lists:seq(1,length(Users))) ] ]}
+            [ user_table_row(Name, Score1, Score2, case CurrentUser == Name of
+                                                        false -> case Color of 
+                                                                      undefined -> red;
+                                                                      C -> C end;
+                                                        true -> case CurrentJoined of
+                                                                     false -> yellow;
+                                                                     _ -> green end end, N, RealName) ||
+                           {#play_record{who=Name, 
+                                         game_points=Score1, 
+                                         kakush=Score2, 
+                                         game_id=Color, 
+                                         realname=RealName}, N} <- lists:zip(Users,lists:seq(1,length(Users))) ] ]}
 
             % #link{class="tourlobby_view_mode_link", text=?_T("Short view"), postback={change_view, short}}
 
@@ -364,8 +364,9 @@ user_table_row(UId, P1, P2, Color, N, RealName) ->
            #tablecell{class=cell5,style="width:100px;text-align:center;", body=[
             case Color of
                 red ->      #image{image="/images/tournament/lobby/red_bullet.png"};
+                undefined ->      #image{image="/images/tournament/lobby/red_bullet.png"};
                 green ->    #image{image="/images/tournament/lobby/green_bullet.png"};
-                _ ->        #image{image="/images/tournament/lobby/yellow_bullet.png"}
+                yellow ->        #image{image="/images/tournament/lobby/yellow_bullet.png"}
             end ]} ], style = case N rem 2 of 0 -> ""; 1 -> "background-color:#f5f5f5;" end} end.
 
 add_chat_history(Messages) -> [ process_chat(Action, User, Message) || {User, Action, Message} <- Messages ].
@@ -383,90 +384,95 @@ chat_new_msg(User, Message) ->
     ]},
     update_table_chat(Terms).
 
-ui_paginate() ->
-    wf:wire("$('.tourlobby_table').paginateTable({ rowsPerPage: 20, pager: '.matchmaker-table-pager', maxPageNumbers:100 });").%.find('tr:nth-child(2n)').addClass('color1');").
+ui_paginate(T) ->
+    case T#tournament.players_count < 500 of
+         true -> wf:wire("$('.tourlobby_table').paginateTable({ rowsPerPage: 20, "
+                         "pager: '.matchmaker-table-pager', maxPageNumbers:100 });");
+                         %.find('tr:nth-child(2n)').addClass('color1');").
+         false -> skip end.
 
 update_table_chat(Terms) ->
+    ?INFO("X"),
     wf:insert_bottom(chat_history, Terms),
     wf:wire("obj('chat_history').scrollTop = obj('chat_history').scrollHeight;"),
-    wf:flush(),
-    ok.
-
-start_comet() ->
-    User = wf:user(),
-    TournamentId = wf:state(tournament_id),
-    {ok, Pid} = wf:comet(fun()->
-        CometProcess = self(),
-        nsx_msg:subscribe_for_tournament(TournamentId, User, CometProcess),
-        comet_update(wf:user(), wf:state(tournament_id))
-    end, ?COMET_POOL),
-    wf:state(comet_pid, Pid).
-
-comet_update(User, TournamentId) ->
-    receive
-        {delivery, _, tournament_heartbeat} ->
-            UserRecord = webutils:user_info(),
-
-            nsx_msg:notify_tournament_heartbeat_reply(TournamentId, UserRecord),
-            ok;
-
-            %% afer sleep send update userlist message to self
-%            timer:apply_after(?SLEEP, erlang, send, [self(), update_userlist]);
-
-        %% start game section
-        {delivery, ["tournament", TournamentId, "start"], {TourId}}  ->
-            wf:session(TourId,TourId),
-            wf:state(tour_long_id, TourId),
-            wf:replace(attach_button, #link{id=attach_button, class="tourlobby_yellow_button", text=?_T("TAKE MY SEAT"), postback=attach}),
-            wf:replace(start_button, ""),
-            ?INFO("(in comet): start game TId: ~p, User: ~p, Data: ~p", [TournamentId, User, TourId]),
-            Url = lists:concat([?_U("/client"), "/", ?_U("okey"), "/id/", TourId]),
-            StartClient = webutils:new_window_js(Url),
-            wf:wire(#script{script=StartClient}),
-            wf:flush();
-
-        %% chat section
-        {delivery, ["tournament", TournamentId, "chat", _Action], {UserName, Action, Message}}  ->
-            process_chat(Action, UserName, Message);
-
-        %% local request
-        update_userlist ->
-            update_active_users();
-
-        {delivery, Route, Other}  ->
-            ?PRINT({other_in_comet, Route, Other, wf:user()})
-    end,
-    comet_update(User, TournamentId).
-
-update_active_users() -> update_data(wf:state(tournament)), wf:state(tour_user_list, get_tour_user_list()), update_userlist().
-
-update_userlist() ->
-    TourUserList = wf:state(tour_user_list),
-    case TourUserList of
-	undefined -> skip;
-        A when is_list(A) -> wf:update(players_table, user_table(TourUserList))
-    end,
     wf:flush().
 
-get_tour_user_list() ->
-    ActiveUsers = wf:state(active_users),
-    JoinedUsers = wf:state(joined_users),
-    JoinedNames = wf:state(joined_names),
-    case JoinedNames of undefined -> []; _ ->
-    CUId = wf:user(),
-    CurUser = {CUId, wf:state(user_game_points), wf:state(user_kakush), case lists:member(CUId, JoinedNames) of
-                     false -> yellow;
-                    true -> green end, site_utils:decode_letters(nsm_users:user_realname(CUId))
-    },
-    ?INFO("Active Users: ~p",[length(ActiveUsers)]),
-    OtherUsers = [
-        {U, GP, K, case lists:member(U, ActiveUsers) of
-            false -> red;
-            true -> green
-        end
-         , RN}
-    || #play_record{who=U, kakush=K, game_points=GP, realname=RN} <- JoinedUsers, U /= CUId],
-    [CurUser] ++ OtherUsers end.
+active_users(TID,PID) ->
+    nsm_queries:map_reduce(tournament_lobby,active_users_raw,[TID,PID]).
+
+active_users_raw(TID,PID) ->
+    Check = fun(undefined, _Value) -> true; (Param, Value) ->  Param == Value end,
+    Cursor = qlc:cursor(qlc:q([V || {{_,_,ProcId},_, V = {ProcId,PagePid,TourId,User,Color}} <- gproc:table(props), 
+           Check(TourId, TID)])),
+    Tables = qlc:next_answers(Cursor).
+
+start_comet(TourUsers,TID,User,MeJoined) ->
+    PagePid = self(),
+    MyColor = case MeJoined of false -> yellow; _ -> green end,
+    {ok, CometPid} = wf:comet(fun()-> 
+        CometProcess = self(),
+        nsx_msg:subscribe_for_tournament(TID, User, CometProcess),
+        gproc:reg({p,l,CometProcess},{CometProcess,PagePid,TID,User,MyColor}),
+        comet_update(User, TID, PagePid, TourUsers) end, ?COMET_POOL),
+    ?INFO("COMET PID: ~p",[CometPid]),
+    ActiveUsers = active_users(TID,CometPid),
+    [ begin 
+        Pid ! {make_active, MyColor, User, noreply},
+        CometPid ! {make_active, Color, Joined, noreply}
+    end || {Pid,_,TID,Joined,Color} <- ActiveUsers, Joined =/= User],
+    wf:state(comet_pid, CometPid).
+
+make_active(User, Color, TournamentId,PageProc,TourUsers0,Joined) ->
+    Z = lists:keyfind(Joined,#play_record.who,TourUsers0),
+    MeJoined = case User == Joined of
+                    true -> case Color of
+                                 green -> Z;
+                                 _ -> false end;
+                    false -> case lists:keyfind(User,#play_record.who,TourUsers0) of
+                                  false -> false;
+                                  #play_record{game_id = yellow} -> false;
+                                  Me -> Me end 
+    end,
+    {TourUsers,A} = case Z of false -> AddNew = #play_record{who=Joined,game_id=Color},
+                                        {[AddNew] ++ TourUsers0,AddNew};
+                                X -> {TourUsers0,X} end,
+    NewTourList = lists:keyreplace(Joined,#play_record.who,TourUsers, A#play_record{game_id = Color}),
+    wf:update(players_table, user_table(NewTourList,User,MeJoined)),
+    wf:flush(),
+    {NewTourList,MeJoined}.
+
+comet_update(User, TournamentId,PageProc,TourList) ->
+    {U,T,P,L} = receive
+        {make_active, Color, Joined, Reply} -> 
+             ?INFO("~p make_active received ~p",[User,{Joined,Color}]),
+             {NewTourList,MeJoined} = make_active(User, Color, TournamentId,PageProc,TourList,Joined), 
+             case Reply of 
+                  noreply -> skip;
+                   _ -> Reply ! {make_active, case MeJoined of 
+                                                   false -> yellow;
+                                                    _ -> green end, User, noreply} end,
+             {User, TournamentId,PageProc,NewTourList};
+
+        {delivery, ["tournament", TournamentId, "start"], {TID}}  ->
+            wf:replace(attach_button, #link{id=attach_button, class="tourlobby_yellow_button", text=?_T("TAKE MY SEAT"), postback=attach}),
+            wf:replace(start_button, ""),
+            ?INFO("(in comet): start game TId: ~p, User: ~p, Data: ~p", [TournamentId, User, TID]),
+            Url = lists:concat([?_U("/client"), "/", ?_U("okey"), "/id/", TID]),
+            StartClient = webutils:new_window_js(Url),
+            wf:wire(#script{script=StartClient}),
+            wf:flush(),
+            {User,TournamentId,PageProc,TourList};
+
+        {delivery, ["tournament", TournamentId, "chat", _Action], {UserName, Action, Message}}  ->
+            process_chat(Action, UserName, Message),
+            {User,TournamentId,PageProc,TourList};
+
+        {delivery, Route, Other}  ->
+            ?PRINT({other_in_comet, Route, Other, wf:user()}),
+             {User,TournamentId,PageProc,TourList}
+
+    end,
+    comet_update(U,T,P,L).
 
 api_event(Name, Tag, Args) -> webutils:api_event(Name, Tag, Args).
 
@@ -491,7 +497,11 @@ event(chat) ->
 
 event({change_view, Mode}) ->
     wf:session(tourlobby_view_mode, Mode),
-    update_userlist();
+    wf:flush();
+
+event({update_tour_list, TourList}) ->
+    ?INFO("Update Tour List"),
+    wf:state(tour_user_list, TourList);
 
 event(join_tournament) ->
     UId = wf:user(),
@@ -517,22 +527,45 @@ event(join_tournament) ->
     end;
 
 event(actualy_join_tournament) ->
-    UId = wf:user(),
-    TId = wf:state(tournament_id),
+    User = wf:user(),
+    CometPid = wf:state(comet_pid),
+    TID = wf:state(tournament_id),
+    T = wf:state(tournament),
+    ActiveUsers = active_users(TID,CometPid),
+    JoinedUsers = user_counter:joined_users(T#tournament.id),
+    Found = case lists:keyfind(User,#play_record.who,JoinedUsers) of
+                 false -> #play_record{who = User};
+                 X -> X end,
+    user_counter:write_cache(T#tournament.id,Found#play_record{game_id=green}),
+    CometPid ! {make_active, green, User, noreply},
+    [ Pid ! {make_active, green, User, noreply} || {Pid,_,TID,Joined,Color} <- ActiveUsers, Joined =/= User],
+    ?INFO("JOIN sent to ~p and all",[CometPid]),
 %    nsx_msg:notify(["system", "tournament_join"], {UId, list_to_integer(TId)}),
-    nsm_tournaments:join(UId, list_to_integer(TId)),
+    nsm_tournaments:join(User, list_to_integer(TID)),
     wf:replace(join_button, #panel{id=join_button, class="tourlobby_orange_button_disabled", text=?_T("JOIN TOURNAMENT")}),
     wf:replace(leave_button, #link{id=leave_button, class="tourlobby_red_button", text=?_T("LEAVE TOURNAMENT"), postback=leave_tournament}),
-    update_userlist();
+    ok;
+%    wf:flush();
 
 event(leave_tournament) ->
-    UId = wf:user(),
-    TId = wf:state(tournament_id),
+    User = wf:user(),
+    CometPid = wf:state(comet_pid),
+    TID = wf:state(tournament_id),
+    T = wf:state(tournament),
+    CometPid ! {make_active, yellow, User, noreply},
+    ActiveUsers = active_users(TID,CometPid),
+    JoinedUsers = user_counter:joined_users(T#tournament.id),
+    Found = case lists:keyfind(User,#play_record.who,JoinedUsers) of
+                 false -> #play_record{who = User};
+                 X -> X end,
+    user_counter:write_cache(T#tournament.id,Found#play_record{game_id=yellow}),
+    [ Pid ! {make_active, yellow, User, noreply} || {Pid,_,TID,Joined,Color} <- ActiveUsers, Joined =/= User],
+    ?INFO("LEAVE sent to ~p and all",[CometPid]),
 %    nsx_msg:notify(["system", "tournament_remove"], {UId, list_to_integer(TId)}),
-    nsm_tournaments:remove(UId, list_to_integer(TId)),
+    nsm_tournaments:remove(User, list_to_integer(TID)),
     wf:replace(join_button, #link{id=join_button, class="tourlobby_orange_button", text=?_T("JOIN TOURNAMENT"), postback=join_tournament}),
     wf:replace(leave_button, #panel{id=leave_button, class="tourlobby_red_button_disabled", text=?_T("LEAVE TOURNAMENT")}),
-    update_userlist();
+    wf:flush();
 
 event({start_tour, Id, NPlayers,Q,T,S,P}) ->
     wf:state(tour_start_time, time()),
@@ -561,10 +594,6 @@ event(attach) ->
 event(change_timer) ->
     wf:update(lobby_timer, get_timer_for_now()),
     wf:wire(#event{type=timer, delay=1000, postback=change_timer});
-
-event({page, Page}) ->
-    wf:session(this_must_be_unique_joined_page, Page),
-    update_userlist();
 
 event(Any)->
     webutils:event(Any).
