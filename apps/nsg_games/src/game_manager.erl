@@ -319,6 +319,7 @@ create_standalone_game(Game, Params, Users) ->
                            {observers_allowed, ObserversAllowed},
                            {tournament_type, standalone},
                            {round_timeout, infinity},
+                           {set_timeout, infinity},
                            {speed, Speed},
                            {game_type, GameMode},
                            {rounds, Rounds},
