@@ -324,7 +324,7 @@ create_standalone_game(Game, Params, Users) ->
                            {game_type, GameMode},
                            {rounds, Rounds},
                            {reveal_confirmation, true},
-                           {next_series_confirmation, true},
+                           {next_series_confirmation, false},
                            {pause_mode, normal},
                            {social_actions_enabled, true},
                            {gosterge_finish_allowed, GostergeFinishAllowed}
