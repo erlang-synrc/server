@@ -18,6 +18,9 @@
 -export([start/1, table_message/2, table_request/2]).
 -export([stop/1, subscribe/4, unsubscribe/2, publish/2]).
 
+%% Compatebility API. Should be removed after tavla game redesign (because it uses relay.erl)
+-export([do_rematch/2]).
+
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 
@@ -77,6 +80,8 @@ client_request(Relay, Request) ->
 
 client_request(Relay, Request, Timeout) ->
     gen_server:call(Relay, {client_request, Request}, Timeout).
+
+do_rematch(_,_) -> ok. %% Only for compatebility. Should be removed.
 
 %% ====================================================================
 %% Server functions
