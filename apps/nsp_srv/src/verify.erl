@@ -32,4 +32,4 @@ verify_account(Code) ->
 
 -spec create_url(string()) -> iolist().
 create_url(Code) ->
-    lists:concat([?HTTPS_ADDRESS, ?_U("/login/verify"), "/code/", Code]).
+    lists:concat([?_U("/login/verify"), "/code/", Code]).
