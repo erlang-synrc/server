@@ -42,12 +42,15 @@
          trn_id            :: term(),
          game              :: atom(),
          game_mode         :: atom(),
-         mul_factor        :: integer(),
          seats_per_table   :: integer(),
          params            :: proplists:proplist(),
          table_module      :: atom(),
          bot_module        :: atom(),
          quota_per_round   :: integer(),
+         kakush_for_winners :: integer(),
+         kakush_for_loser  :: integer(),
+         win_game_points   :: integer(),
+         mul_factor        :: integer(),
          registrants       :: [robot | binary()],
          initial_points    :: integer(),
          common_params     :: proplists:proplist(),
@@ -108,7 +111,6 @@
 -define(STATE_FINISHED, state_finished).
 
 -define(TOURNAMENT_TYPE, standalone).
-%%-define(TAB_MOD, game_okey_ng_table_trn).
 
 -define(TABLE_STATE_INITIALIZING, initializing).
 -define(TABLE_STATE_READY, ready).
@@ -154,9 +156,12 @@ init([GameId, Params, _Manager]) ->
     ?INFO("OKEY_NG_TRN_STANDALONE <~p> Init started",[GameId]),
     Registrants =   get_param(registrants, Params),
     SeatsPerTable = get_param(seats, Params),
-    QuotaPerRound = get_param(quota_per_round, Params),
     Game =          get_param(game, Params),
     GameMode =      get_param(game_mode, Params),
+    QuotaPerRound = get_param(quota_per_round, Params),
+    KakushForWinners = get_param(kakush_for_winners, Params),
+    KakushForLoser = get_param(kakush_for_loser, Params),
+    WinGamePoints = get_param(win_game_points, Params),
     MulFactor =     get_param(mul_factor, Params),
     TableParams =   get_param(table_params, Params),
     TableModule =   get_param(table_module, Params),
@@ -171,12 +176,15 @@ init([GameId, Params, _Manager]) ->
     {ok, ?STATE_INIT, #state{game_id = GameId,
                              game = Game,
                              game_mode = GameMode,
-                             mul_factor = MulFactor,
                              seats_per_table = SeatsPerTable,
                              params = TableParams,
                              table_module = TableModule,
                              bot_module = BotModule,
                              quota_per_round = QuotaPerRound,
+                             kakush_for_winners = KakushForWinners,
+                             kakush_for_loser = KakushForLoser,
+                             win_game_points = WinGamePoints,
+                             mul_factor = MulFactor,
                              registrants = Registrants,
                              initial_points = InitialPoints,
                              table_id_counter = 1,
@@ -394,13 +402,23 @@ handle_table_message(TableId, {round_finished, NewScoringState, _RoundScore, _To
 handle_table_message(TableId, {game_finished, TableContext, _RoundScore, TableScore},
                      ?STATE_TURN_PROCESSING,
                      #state{tables = Tables, tables_results = TablesResults,
-                            table_module = TableMod} = StateData) ->
+                            table_module = TableMod, players = Players,
+                            kakush_for_winners = KakushForWinners, kakush_for_loser = KakushForLoser,
+                            win_game_points = WinGamePoints, game_id = GameId, game = GameType,
+                            game_mode = GameMode, mul_factor = MulFactor} = StateData) ->
+    ?INFO("OKEY_NG_TRN_STANDALONE <~p> Set is finished.", [GameId]),
     NewTablesResults = [{TableId, TableScore} | TablesResults],
     #table{pid = TablePid} = Table = fetch_table(TableId, Tables),
     NewTable = Table#table{context = TableContext, state = ?TABLE_STATE_FINISHED},
     NewTables = store_table(NewTable, Tables),
-    send_to_table(TableMod, TablePid, {show_series_result, series_result(TableScore)}),
-%%    send_to_table(TablePid, show_round_result),
+    SeriesResult = series_result(TableScore),
+    ?INFO("OKEY_NG_TRN_STANDALONE <~p> Set result: ~p", [GameId, SeriesResult]),
+    send_to_table(TableMod, TablePid, {show_series_result, SeriesResult}),
+    SeriesResult1 = [{PlayerId, Status} || {PlayerId, _Pos, _Points, Status} <- SeriesResult],
+    Points = calc_players_points(SeriesResult1, KakushForWinners, KakushForLoser, WinGamePoints, MulFactor, Players),
+    PointsWithUserId = [{user_id_to_string(get_user_id(PlayerId, Players)), K, G} || {PlayerId, K, G} <- Points],
+    ?INFO("OKEY_NG_TRN_STANDALONE <~p> Prizes: ~p", [GameId, PointsWithUserId]),
+    add_points_to_accounts(PointsWithUserId, GameId, GameType, GameMode, MulFactor),
     {TRef, Magic} = start_timer(?SHOW_TURN_RESULT_TIMEOUT),
     {next_state, ?STATE_SHOW_TURN_RESULT, StateData#state{tables = NewTables,
                                                           tables_results = NewTablesResults,
@@ -609,20 +627,6 @@ finalize_tournament(#state{game_id = GameId} = StateData) ->
           "Waiting some time (~p secs) before continue...",
           [GameId, ?SHOW_TOURNAMENT_RESULT_TIMEOUT div 1000]),
     {next_state, ?STATE_FINISHED, StateData#state{timer = TRef, timer_magic = Magic}}.
-
-deduct_quota(GameId, Game, GameMode, Amount, MulFactor, UsersIds) ->
-    RealAmount = Amount*MulFactor,
-    [begin
-         TI = #ti_game_event{id = GameId,
-                             type = start_round,
-                             tournament_type = ?TOURNAMENT_TYPE,
-                             game_name = Game,
-                             game_mode = GameMode,
-                             double_points = MulFactor},
-         nsm_accounts:transaction(binary_to_list(UserId), ?CURRENCY_QUOTA, -RealAmount, TI)
-     end
-     || UserId <- UsersIds].
-
 
 %% series_result(TableResult) -> WithPlaceAndStatus
 %% Types: TableResult = [{PlayerId, Points}] 
@@ -914,15 +918,75 @@ store_seat(#seat{table = TabId, seat_num = SeatNum, player_id = PlayerId,
     midict:store({TabId, SeatNum}, Seat, Indices, Seats).
 
 
+%% calc_players_points(SeriesResult, KakushForWinner, KakushForLoser,
+%%                     WinGamePoints, MulFactor, Players) -> Points
+%% Types:
+%%     SeriesResult = [{PlayerId, Status}]
+%%          Status = winner | looser
+%%     Points = [{PlayerId, KakushPoints, GamePoints}]
+calc_players_points(SeriesResult, KakushForWinners, KakushForLoser, WinGamePoints, MulFactor, Players) ->
+    SeriesResult1 = [begin
+                         #'PlayerInfo'{id = UserId, robot = Robot} = get_user_info(PlayerId, Players),
+                         Paid = is_paid(user_id_to_string(UserId)),
+                         Winner = Status == winner,
+                         {PlayerId, Winner, Robot, Paid}
+                     end || {PlayerId, Status} <- SeriesResult],
+    Paids   = [PlayerId || {PlayerId, _Winner, _Robot, _Paid = true} <- SeriesResult1],
+    Winners = [PlayerId || {PlayerId, _Winner = true, _Robot, _Paid} <- SeriesResult1],
+    TotalNum = length(SeriesResult),
+    PaidsNum = length(Paids),
+    WinnersNum = length(Winners),
+    KakushPerWinner = round(((KakushForWinners * MulFactor) * PaidsNum div TotalNum) / WinnersNum),
+    KakushPerLoser = (KakushForLoser * MulFactor) * PaidsNum div TotalNum,
+    WinGamePoints1 = WinGamePoints * MulFactor,
+    [begin
+         {KakushPoints, GamePoints} = calc_points(KakushPerWinner, KakushPerLoser, WinGamePoints1, Paid, Robot, Winner),
+         {PlayerId, KakushPoints, GamePoints}
+     end || {PlayerId, Winner, Robot, Paid} <- SeriesResult1].
+
+
+calc_points(KakushPerWinner, KakushPerLoser, WinGamePoints, Paid, Robot, Winner) ->
+    if Robot -> {0, 0};
+       not Paid andalso Winner -> {0, WinGamePoints};
+       not Paid -> {0, 0};
+       Paid andalso Winner -> {KakushPerWinner, WinGamePoints};
+       Paid -> {KakushPerLoser, 0}
+    end.
+
+is_paid(UserId) -> nsm_accounts:user_paid(UserId).
+
+deduct_quota(GameId, GameType, GameMode, Amount, MulFactor, UsersIds) ->
+    RealAmount = Amount * MulFactor,
+    [begin
+         TI = #ti_game_event{game_name = GameType, game_mode = GameMode,
+                             id = GameId, double_points = MulFactor,
+                             type = start_round, tournament_type = ?TOURNAMENT_TYPE},
+         nsm_accounts:transaction(binary_to_list(UserId), ?CURRENCY_QUOTA, -RealAmount, TI)
+     end || UserId <- UsersIds],
+    ok.
+
+
+%% add_points_to_accounts(Points, GameId, GameType, GameMode, MulFactor) -> ok
+%% Types: Points = [{UserId, KakushPoints, GamePoints}]
+add_points_to_accounts(Points, GameId, GameType, GameMode, MulFactor) ->
+    TI = #ti_game_event{game_name = GameType, game_mode = GameMode,
+                        id = GameId, double_points = MulFactor,
+                        type = game_end, tournament_type = ?TOURNAMENT_TYPE},
+    [begin
+         if KakushPoints =/= 0 ->
+                ok = nsm_accounts:transaction(UserId, ?CURRENCY_KAKUSH, KakushPoints, TI);
+            true -> do_nothing
+         end,
+         if GamePoints =/= 0 ->
+                ok = nsm_accounts:transaction(UserId, ?CURRENCY_GAME_POINTS, GamePoints, TI);
+            true -> do_nothing
+         end
+     end || {UserId, KakushPoints, GamePoints} <- Points],
+    ok.
+
+
 
 shuffle(List) -> deck:to_list(deck:shuffle(deck:from_list(List))).
-
-split_by_num(Num, List) -> split_by_num(Num, List, []).
-
-split_by_num(_, [], Acc) -> lists:reverse(Acc);
-split_by_num(Num, List, Acc) ->
-    {Group, Rest} = lists:split(Num, List),
-    split_by_num(Num, Rest, [Group | Acc]).
 
 
 create_decl_rec(CParams, GameId, Users) ->
