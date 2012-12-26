@@ -13,7 +13,7 @@ start_cowboy(HttpOpts) ->
     {ok, ParsedBindAddress} = inet_parse:address(BindAddress),
     {ok, Port} = application:get_env(webmachine, port),
     cowboy:start_listener(http, 1, cowboy_tcp_transport, [{port, Port}, {ip, ParsedBindAddress}], cowboy_http_protocol, HttpOpts),
-    cowboy:start_listener(https, 1, cowboy_ssl_transport, nsx_opt:get_env(nsw_srv, ssl, []) ++ [{ip, ParsedBindAddress}], cowboy_http_protocol, HttpOpts),
+    %cowboy:start_listener(https, 1, cowboy_ssl_transport, nsx_opt:get_env(nsw_srv, ssl, []) ++ [{ip, ParsedBindAddress}], cowboy_http_protocol, HttpOpts),
     ?INFO("Starting Cowboy Server on ~s:~p~n", [BindAddress, Port]).
 
 start(_StartType, _StartArgs) ->
