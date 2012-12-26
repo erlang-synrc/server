@@ -8,47 +8,75 @@
 -include("setup.hrl").
 
 main() ->
-    webutils:add_raw("<script type=\"text/javascript\">
-    $(document).ready(function() {
-	$('.slideshow').cycle({
-	    fx:		'fade',
-	    prev:	'.pager .prev',
-	    next:	'.pager .next',
-	    pager:	'.switcher ul',
-	    timeout:	5000,
-	    pagerAnchorBuilder: function(idx, slide) {
-		return '.switcher ul li:eq(' + idx + ') a';
-	    }
-	});
-    });
-    </script>"),
-    #template { file=code:priv_dir(nsw_srv)++"/templates/bare_no_uservoice.html"}.
+  webutils:add_raw("<script type=\"text/javascript\">
+  $(document).ready(function() {
+  $('.slideshow').cycle({
+    fx:     'fade',
+    prev:   '.pager .prev',
+    next:   '.pager .next',
+    pager:  '.switcher',
+    timeout: 5000,
+    pagerAnchorBuilder: function(idx, slide) {
+      return '.switcher li:eq(' + idx + ') a';
+    }
+  });
+  });
+  </script>"),
+  #template { file=code:priv_dir(nsw_srv)++"/templates/index.html"}.
 
 title() -> "Kakaranet Okey".
 
-%% template specific for main
 body() ->
-    case wf:depickle(wf:q(x)) of
-	Url when is_list(Url) ->
-	    case wf:user() of
-		undefined ->
-		    wf:redirect(?_U("/login"));
-		_User ->
-		    Dashboard = ?_U("/dashboard"),
-		    case Url of
-			"" -> wf:redirect(Dashboard);
-			_  -> wf:redirect_from_login(Dashboard)
-		    end
-	    end;
-	_ -> no_need_to_login
-    end,
-    case wf:q(message) of
-	undefined ->
-            ok;
-        Message ->
-            show_message(Message)
-    end,
-    #template { file=code:priv_dir(nsw_srv)++"/templates/"++site_utils:detect_language()++"/main.html"}.
+  case wf:depickle(wf:q(x)) of
+    Url when is_list(Url) ->
+      case wf:user() of
+        undefined -> wf:redirect(?_U("/login"));
+        _User ->
+          Dashboard = ?_U("/dashboard"),
+          case Url of
+            "" -> wf:redirect(Dashboard);
+            _  -> wf:redirect_from_login(Dashboard)
+          end
+      end;
+    _ -> no_need_to_login
+  end,
+  case wf:q(message) of
+    undefined -> ok;
+    Message -> show_message(Message)
+  end,
+  Slides = case site_utils:detect_language() of
+    "tr" -> [
+      {"BAŞLIYORUZ", "slide5_tr"},
+      {"HEMEN KATILIN", "slide6_tr"},
+      {"Hedİyeler", "slide1"},
+      {"Turnuvalar", "slide2"},
+      {"Sosyalleşİn!", "slide3"},
+      {"Nasıl İstİyorsanız Öyle", "slide4"}];
+    _ -> [
+      {"Gifts", "slide1"},
+      {"Tournaments", "slide2"},
+      {"Be Social!", "slide3" },
+      {"Matchmaker", "slide4"}
+    ]
+  end,
+  [
+  #panel{class="page-content", body=[
+    #list{class=slideshow, body=[
+      #listitem{class="slide "++S, body=[
+        #panel{class=btns, body=[
+          #link{text=?_T("More Info"), class="btn-dark", url=?_U("/info-gifts")}, %Detaylı Bilgi
+          #link{text=?_T("LET'S PLAY!"), class="btn-yellow", url=?_U("/login/register")} %ÜYE OL!
+        ]}
+      ]} || {_,S} <- Slides]}
+  ]},
+  #panel{class="slideshow-control", body=[
+    #panel{class="page-content", body=[
+    #list{class=switcher, body=[#listitem{body=#link{text=?_T(L)}} || {L,_} <- Slides]},
+    #list{class=pager, body=[
+      #listitem{body=#link{class=prev, text="prev"}},
+      #listitem{body=#link{class=next, text="next"}}
+    ]}]}
+  ]}].
 
 %event(show_register) ->
 %    wf:redirect(?_U("/login/register"));
