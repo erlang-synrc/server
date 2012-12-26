@@ -273,7 +273,7 @@ section_body(account) ->
 	    "<dt><dl>"++ ?_T("Remaining Kakush") ++": <dd>"++wf:to_list(Kakush)++"</dd>&nbsp;&nbsp;&nbsp;</dl>",
 	    "<dl> "++ ?_T("Kakush Currency") ++": <dd>"++wf:to_list(KakushCurrency)++"</dd>&nbsp;TL&nbsp;&nbsp;&nbsp;</dl>",
 	    "<dl> "++ ?_T("Quota") ++": <dd>"++wf:to_list(Quota)++"</dd></dl></dt>",
-	    #link{class=btn, url=[?HTTPS_ADDRESS,?_U("/price-table/credit-card")], text=?_T("Üyelİk Yenİle")}
+	    #link{class=btn, url=?_U("/price-table/credit-card"), text=?_T("Üyelİk Yenİle")}
 	]},
 	#panel{class="profile-info", body = [
 	    #panel{class="col-l",body=[
