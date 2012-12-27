@@ -1,5 +1,5 @@
 JS_FILES=priv/static/js/kakara.js
-CSS_FILES=priv/static/css/kakara.css
+CSS_FILES=priv/static/css/kakara.css priv/static/css/kindex.css
 ROOT_PATH=priv/static/
 #########################################################################
 MINIFIED_JS_FILES=$(JS_FILES:.js=.min.js)
