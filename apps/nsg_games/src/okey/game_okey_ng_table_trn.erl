@@ -200,7 +200,7 @@ init([GameId, TableId, Params]) ->
                                           gosterge_finish_allowed = GostergeFinishAllowed,
                                           social_actions_enabled = SocialActionsEnabled,
                                           players = Players,
-                                          start_seat = 1,
+                                          start_seat = crypto:rand_uniform(1, ?SEATS_NUM + 1),
                                           cur_round = CurRound,
                                           scoring_state = ScoringState,
                                           tournament_table = TTable
@@ -296,13 +296,14 @@ handle_parent_message({replace_player, RequestId, UserInfo, PlayerId, SeatNum}, 
 handle_parent_message(start_round, StateName,
                       #state{game_type = GameMode, cur_round = CurRound,
                              gosterge_finish_allowed = GostergeFinishAllowed,
-                             start_seat = StartSeat, players = Players,
+                             start_seat = LastStartSeat, players = Players,
                              relay = Relay, turn_timeout = TurnTimeout,
                              round_timeout = RoundTimeout, set_timeout = SetTimeout,
                              set_timer = SetTRef, scoring_state = ScoringState} = StateData)
   when StateName == ?STATE_WAITING_FOR_START;
        StateName == ?STATE_FINISHED ->
     NewCurRound = CurRound + 1,
+    StartSeat = next_seat_num(LastStartSeat),
     Deck = deck:shuffle(deck:init_deck(okey)),
     {Gosterge, Deck1} = choose_gosterge(Deck),
     F = fun(SeatNum, AccDeck) ->
@@ -337,6 +338,7 @@ handle_parent_message(start_round, StateName,
                     true -> SetTRef
                  end,
     NewStateData = StateData#state{cur_round = NewCurRound,
+                                   start_seat = StartSeat,
                                    desk_rule_pid = Desk,
                                    desk_state = DeskState,
                                    timeout_timer = TRef,
