@@ -116,3 +116,8 @@
   background:url(/images/btn-pager.gif) 0 50% no-repeat;
 }
 .pager .next {background:url(/images/btn-pager.gif) 100% 50% no-repeat;}
+
+.quicknav {  width:1040px; margin: 0 auto;  padding: 0;}
+.quicknav-page-content{display:table-cell;}
+.quick_nav_arrow{display:table-cell;  width:40px;  text-align:center;  vertical-align:middle;}
+.quick_nav_arrow a{  width:15px;  height:22px;}

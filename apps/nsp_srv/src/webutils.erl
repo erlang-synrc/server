@@ -1111,6 +1111,31 @@ get_hemen_nav(Page) ->
 	]
     ]}.
 
+quick_nav() ->
+  #list{class="quick-nav", body=[
+    begin
+      S = case Status of
+        inactive ->[#image{class=hover, image=Img2}, #span{class=soon, text=?_T("Very soon...")}];
+        _ -> []
+      end,
+    #listitem{class=Status, body=
+      #link{url=Url, postback=Postback, body=[
+        #image{class="game-title", image=Img3},
+        #image{class=current, image=Img1},
+        S,
+        #span{class="lets-play", text=?_T("Let's Play!")}
+      ]}
+    }
+    end
+    || {Status, Postback, Url, Img1, Img2, Img3} <-
+     [{active,{game, okey}, ?_U("/matchmaker/okey"), "/images/img-007.jpg", "/images/img-008.jpg", "/images/text-okey.png"},
+      {active, {game, tavla}, ?_U("/matchmaker/tavla"), "/images/img-005.jpg", "/images/img-006.jpg", "/images/text-tavla.png"},
+      {inactive, undefined, "#", "/images/img-003.jpg", "/images/img-004.jpg", "/images/text-king.png"},
+      {inactive,undefined, "#", "/images/img-001.jpg", "/images/img-002.jpg", "/images/text-batak.png"},
+      {inactive, undefined, "#", "/images/img-009.jpg", "/images/img-010.jpg", "/images/text-sorbi.png"}]
+  ]}.
+
+
 page_module() ->
     wf:to_list(wf_context:page_module()).
 
