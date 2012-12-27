@@ -11,6 +11,5 @@
 // @depends ../nitrogen/jquery.resize.custom.js
 // @depends ../nitrogen/js/jquery.cycle.all.js
 // @depends ../nitrogen/js/jquery.prettyPhoto.js
-// @depends ../nitrogen/slider.js
 
 
