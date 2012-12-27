@@ -77,16 +77,7 @@ body() ->
       #listitem{body=#link{class=next, text="next"}}
     ]}]}
   ]},
-
-  #panel{class="quicknav", body=[
-    #panel{class="quick_nav_arrow", body=[
-      #link{body=#image{image="/images/tournament/tournaments_page/arrow_left.png"}}
-    ]},
-    #panel{class="quicknav-page-content", body=webutils:quick_nav()},
-    #panel{class="quick_nav_arrow", body=[
-      #link{body=#image{image="/images/tournament/tournaments_page/arrow_right.png"}}
-    ]}
-  ]}
+  #panel{class="page-content", body=webutils:quick_nav()}
   ].
 
 %event(show_register) ->
