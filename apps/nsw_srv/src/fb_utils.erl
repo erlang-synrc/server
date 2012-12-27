@@ -233,7 +233,7 @@ api_event(fbLogin, _, [Args])->
             {error, _Error} ->
               Msg = ?_T("This email it taken by other user. If You already have the kakaranet.com account, please login and connect the to facebook."),
               wf:session(fb_registration, Args),
-              wf:redirect([?HTTPS_ADDRESS,?_U("/login/register/msg/")++site_utils:base64_encode_to_url(Msg)])
+              wf:redirect(?_U("/login/register/msg/")++site_utils:base64_encode_to_url(Msg))
           end;
         {ok, User} when element(2,User) == CurrentUser -> ok;
         {ok, User} ->

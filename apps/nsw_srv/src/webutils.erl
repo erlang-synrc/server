@@ -31,21 +31,22 @@ redirect_to_ssl(Page) ->
     end.
 
 redirect_to_tcp(Page) ->
-    Req = wf_context:request_bridge(),
-    Port = Req:peer_port(),
-    Host = hd(ling:split(proplists:get_value(host, wf_context:headers()), ":")),
-    ?INFO("Req ~p Port ~p Host ~p",[Req,Port,Host]),
-    case Port of
-        80 -> no_redirect;
-        8000 -> no_redirect;
-        _ ->
+%    Req = wf_context:request_bridge(),
+%    Port = Req:peer_port(),
+%    Host = hd(ling:split(proplists:get_value(host, wf_context:headers()), ":")),
+%    ?INFO("Req ~p Port ~p Host ~p",[Req,Port,Host]),
+%    case Port of
+%        80 -> no_redirect;
+%        8000 -> no_redirect;
+%        _ ->
 %            case Host == "kakaranet.com" orelse "srv2.kakaranet.com" == Host 
 %                orelse "srv1.kakaranet.com" == Host of
 %                 false ->  wf:redirect_from_login(?HTTP_ADDRESS ++ "/" ++ Page);
 %                 true ->  
-                      wf:redirect_from_login(?HTTP_ADDRESS ++ "/" ++Page)
+                      wf:redirect_from_login("/" ++Page)
 %            end 
-    end.
+  %  end
+   .
 
 main() -> [].
 
@@ -138,7 +139,7 @@ account_menu() ->
     _UserLoggedIn ->
         [#list{class="user-menu", body=[
           #listitem{body=fb_utils:login_btn()},
-          #listitem{body=#link{class=login, text=?_T("Login"), url=[?HTTPS_ADDRESS,?_U("/login")]}},
+          #listitem{body=#link{class=login, text=?_T("Login"), url=?_U("/login")}},
           #listitem{body=#link{class=signup, text=?_T("Signup"), postback=register}}
         ]}]
   end,
@@ -235,7 +236,7 @@ event(login) ->
     login(login,password,login_hintbox);
 event(register)->
     wf:session(fb_registration, undefined),
-    wf:redirect([?HTTPS_ADDRESS,?_T("/login/register")]);
+    wf:redirect(?_T("/login/register"));
 event(logout) ->
   wf:session(fb_registration, undefined),
   wf:session(logged_with_fb, undefined),
