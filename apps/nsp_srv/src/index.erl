@@ -9,13 +9,46 @@
 
 main() ->
   webutils:add_raw("<script type=\"text/javascript\">
+  var slides = [
+    '<img src=\"/images/slides/en/slide4.png\">',
+    '<img src=\"/images/slides/en/slide3.png\">',
+    '<img src=\"/images/slides/en/slide2.png\">'
+  ];
+  function loadedSlide(){
+    $('.slideshow').cycle('resume');
+  };
+
+  function beforeSlide(current, next, options, forward){
+    // works only from second item
+    var img = $(next).attr('src')[0];
+    if (slides[0] && options.addSlide) {
+      options.addSlide(slides.pop());};
+    };
+
+  function afterSlide(current, next, options, forward){
+    var img = $('.slideshow').find('img')[options.nextSlide];
+    if (img.complete !=true) {
+      $('.slideshow').cycle('pause');
+      loadingTimer = +new Date();
+      $(img).bind(\"load\",loadedSlide);
+    };
+    if (slides[0] && options.addSlide) {
+      options.addSlide(slides.pop());
+    };
+  };
+
   $(document).ready(function() {
-  $('.slideshow').cycle({
+  $('.slideshow').append(slides.pop()).cycle({
     fx:     'fade',
+    pause: true,
     prev:   '.pager .prev',
     next:   '.pager .next',
     pager:  '.switcher',
-    timeout: 5000,
+    after:    afterSlide,
+    before:   beforeSlide,
+    autostop: false,
+    autostopCount: slides.length+2,
+    timeout: 200,
     pagerAnchorBuilder: function(idx, slide) {
       return '.switcher li:eq(' + idx + ') a';
     }
@@ -61,13 +94,14 @@ body() ->
   end,
   [
   #panel{class="page-content", body=[
-    #list{class=slideshow, body=[
-      #listitem{class="slide "++S, body=[
-        #panel{class=btns, body=[
-          #link{text=?_T("More Info"), class="btn-dark", url=?_U("/info-gifts")}, %Detaylı Bilgi
-          #link{text=?_T("LET'S PLAY!"), class="btn-yellow", url=?_U("/login/register")} %ÜYE OL!
-        ]}
-      ]} || {_,S} <- Slides]}
+    "<div class=\"slideshow\"><img src=\"/images/slides/en/slide1.png\"></div>"
+%    #list{class=slideshow, body=[
+%      #listitem{class="slide "++S, body=[
+%        #panel{class=btns, body=[
+%          #link{text=?_T("More Info"), class="btn-dark", url=?_U("/info-gifts")}, %Detaylı Bilgi
+%          #link{text=?_T("LET'S PLAY!"), class="btn-yellow", url=?_U("/login/register")} %ÜYE OL!
+%        ]}
+%      ]} || {_,S} <- Slides]}
   ]},
   #panel{class="slideshow-control", body=[
     #panel{class="page-content", body=[
