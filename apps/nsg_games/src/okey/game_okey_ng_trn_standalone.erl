@@ -106,8 +106,9 @@
 -define(STATE_WAITING_FOR_TABLES, state_waiting_for_tables).
 -define(STATE_EMPTY_SEATS_FILLING, state_empty_seats_filling).
 -define(STATE_WAITING_FOR_PLAYERS, state_waiting_for_players).
--define(STATE_TURN_PROCESSING, state_turn_processing).
--define(STATE_SHOW_TURN_RESULT, state_show_turn_result).
+-define(STATE_SET_PROCESSING, state_set_processing).
+-define(STATE_SET_FINISHED, state_set_finished).
+-define(STATE_SHOW_SET_RESULT, state_show_set_result).
 -define(STATE_FINISHED, state_finished).
 
 -define(TOURNAMENT_TYPE, standalone).
@@ -117,9 +118,9 @@
 -define(TABLE_STATE_IN_PROGRESS, in_progress).
 -define(TABLE_STATE_FINISHED, finished).
 
--define(WAITING_PLAYERS_TIMEOUT, 3000) . %% Time between all table was created and starting a turn
+-define(WAITING_PLAYERS_TIMEOUT, 3000) . %% Time between a table was created and start of first round
 -define(REST_TIMEOUT, 5000).             %% Time between a round finish and start of a new one
--define(SHOW_TURN_RESULT_TIMEOUT, 15000).%% Time between a turn finish and start of a new one
+-define(SHOW_SET_RESULT_TIMEOUT, 15000). %% Time between a set finish and start of a new one
 -define(SHOW_TOURNAMENT_RESULT_TIMEOUT, 15000). %% Time between last tour result showing and the tournament finish
 
 %% ====================================================================
@@ -239,7 +240,7 @@ handle_info({'DOWN', MonRef, process, _Pid, _}, StateName,
     end;
 
 
-handle_info({rest_timeout, TableId}, StateName,
+handle_info({rest_timeout, TableId}, ?STATE_SET_PROCESSING = StateName,
             #state{game_id = GameId, game = Game, game_mode = GameMode,
                    quota_per_round = Amount, mul_factor = MulFactor, tables = Tables,
                    players = Players, seats = Seats, cur_table = TableId, bot_module = BotModule,
@@ -273,13 +274,35 @@ handle_info({rest_timeout, TableId}, StateName,
     end;
 
 
+handle_info({rest_timeout, TableId}, ?STATE_SET_FINISHED,
+            #state{game_id = GameId, game = GameType, game_mode = GameMode,
+                   tables_results = TablesResults, tables = Tables,
+                   players = Players, cur_table = TableId, table_module = TableMod,
+                   kakush_for_winners = KakushForWinners, kakush_for_loser = KakushForLoser,
+                   win_game_points = WinGamePoints, mul_factor = MulFactor} = StateData) ->
+    ?INFO("OKEY_NG_TRN_STANDALONE <~p> Time to determinate set results (table: <~p>).", [GameId, TableId]),
+    #table{pid = TablePid} = fetch_table(TableId, Tables),
+    {_, TableScore} = lists:keyfind(TableId, 1, TablesResults),
+    SeriesResult = series_result(TableScore),
+    ?INFO("OKEY_NG_TRN_STANDALONE <~p> Set result: ~p", [GameId, SeriesResult]),
+    send_to_table(TableMod, TablePid, {show_series_result, SeriesResult}),
+    SeriesResult1 = [{PlayerId, Status} || {PlayerId, _Pos, _Points, Status} <- SeriesResult],
+    Points = calc_players_points(SeriesResult1, KakushForWinners, KakushForLoser, WinGamePoints, MulFactor, Players),
+    PointsWithUserId = [{user_id_to_string(get_user_id(PlayerId, Players)), K, G} || {PlayerId, K, G} <- Points],
+    ?INFO("OKEY_NG_TRN_STANDALONE <~p> Prizes: ~p", [GameId, PointsWithUserId]),
+    add_points_to_accounts(PointsWithUserId, GameId, GameType, GameMode, MulFactor),
+    {TRef, Magic} = start_timer(?SHOW_SET_RESULT_TIMEOUT),
+    {next_state, ?STATE_SHOW_SET_RESULT, StateData#state{timer = TRef,
+                                                         timer_magic = Magic}};
+
+
 handle_info({timeout, Magic}, ?STATE_WAITING_FOR_PLAYERS,
             #state{timer_magic = Magic, game_id = GameId} = StateData) ->
-    ?INFO("OKEY_NG_TRN_STANDALONE <~p> Time to start new turn.", [GameId]),
-    start_turn(StateData);
+    ?INFO("OKEY_NG_TRN_STANDALONE <~p> Time to start new set.", [GameId]),
+    start_set(StateData);
 
 
-handle_info({timeout, Magic}, ?STATE_SHOW_TURN_RESULT,
+handle_info({timeout, Magic}, ?STATE_SHOW_SET_RESULT,
             #state{timer_magic = Magic, game_id = GameId} = StateData) ->
     ?INFO("OKEY_NG_TRN_STANDALONE <~p> Time to finalize the tournament.", [GameId]),
     finalize_tournament(StateData);
@@ -388,42 +411,34 @@ handle_table_message(TableId, {table_created, Relay},
     end;
 
 
-handle_table_message(TableId, {round_finished, NewScoringState, _RoundScore, _TotalScore},
-                     ?STATE_TURN_PROCESSING,
-                     #state{tables = Tables, table_module = TableMod} = StateData) ->
+handle_table_message(TableId, {round_finished, TableContext, _RoundScore, _TotalScore},
+                     ?STATE_SET_PROCESSING,
+                     #state{game_id = GameId, tables = Tables, table_module = TableMod} = StateData) ->
+    ?INFO("OKEY_NG_TRN_STANDALONE <~p> Round is finished (table: <~p>).", [GameId, TableId]),
     #table{pid = TablePid} = Table = fetch_table(TableId, Tables),
     TRef = erlang:send_after(?REST_TIMEOUT, self(), {rest_timeout, TableId}),
-    NewTable = Table#table{context = NewScoringState, state = ?TABLE_STATE_FINISHED, timer = TRef},
+    NewTable = Table#table{context = TableContext, state = ?TABLE_STATE_FINISHED, timer = TRef},
     NewTables = store_table(NewTable, Tables),
     send_to_table(TableMod, TablePid, show_round_result),
-    {next_state, ?STATE_TURN_PROCESSING, StateData#state{tables = NewTables}};
+    ?INFO("OKEY_NG_TRN_STANDALONE <~p> Waiting some time (~p secs) before start of next round.",
+          [GameId, ?REST_TIMEOUT div 1000]),
+    {next_state, ?STATE_SET_PROCESSING, StateData#state{tables = NewTables}};
 
 
 handle_table_message(TableId, {game_finished, TableContext, _RoundScore, TableScore},
-                     ?STATE_TURN_PROCESSING,
-                     #state{tables = Tables, tables_results = TablesResults,
-                            table_module = TableMod, players = Players,
-                            kakush_for_winners = KakushForWinners, kakush_for_loser = KakushForLoser,
-                            win_game_points = WinGamePoints, game_id = GameId, game = GameType,
-                            game_mode = GameMode, mul_factor = MulFactor} = StateData) ->
-    ?INFO("OKEY_NG_TRN_STANDALONE <~p> Set is finished.", [GameId]),
-    NewTablesResults = [{TableId, TableScore} | TablesResults],
+                     ?STATE_SET_PROCESSING,
+                     #state{game_id = GameId, tables = Tables, table_module = TableMod} = StateData) ->
+    ?INFO("OKEY_NG_TRN_STANDALONE <~p> Last round of the set is finished (table: <~p>).", [GameId, TableId]),
+    TablesResults = [{TableId, TableScore}],
     #table{pid = TablePid} = Table = fetch_table(TableId, Tables),
-    NewTable = Table#table{context = TableContext, state = ?TABLE_STATE_FINISHED},
+    TRef = erlang:send_after(?REST_TIMEOUT, self(), {rest_timeout, TableId}),
+    NewTable = Table#table{context = TableContext, state = ?TABLE_STATE_FINISHED, timer = TRef},
     NewTables = store_table(NewTable, Tables),
-    SeriesResult = series_result(TableScore),
-    ?INFO("OKEY_NG_TRN_STANDALONE <~p> Set result: ~p", [GameId, SeriesResult]),
-    send_to_table(TableMod, TablePid, {show_series_result, SeriesResult}),
-    SeriesResult1 = [{PlayerId, Status} || {PlayerId, _Pos, _Points, Status} <- SeriesResult],
-    Points = calc_players_points(SeriesResult1, KakushForWinners, KakushForLoser, WinGamePoints, MulFactor, Players),
-    PointsWithUserId = [{user_id_to_string(get_user_id(PlayerId, Players)), K, G} || {PlayerId, K, G} <- Points],
-    ?INFO("OKEY_NG_TRN_STANDALONE <~p> Prizes: ~p", [GameId, PointsWithUserId]),
-    add_points_to_accounts(PointsWithUserId, GameId, GameType, GameMode, MulFactor),
-    {TRef, Magic} = start_timer(?SHOW_TURN_RESULT_TIMEOUT),
-    {next_state, ?STATE_SHOW_TURN_RESULT, StateData#state{tables = NewTables,
-                                                          tables_results = NewTablesResults,
-                                                          timer = TRef,
-                                                          timer_magic = Magic}};
+    send_to_table(TableMod, TablePid, show_round_result),
+    ?INFO("OKEY_NG_TRN_STANDALONE <~p> Waiting some time (~p secs) before the set results calculation.",
+          [GameId, ?REST_TIMEOUT div 1000]),
+    {next_state, ?STATE_SET_FINISHED, StateData#state{tables = NewTables,
+                                                      tables_results = TablesResults}};
 
 
 handle_table_message(TableId, {response, RequestId, Response},
@@ -520,7 +535,7 @@ handle_client_request({join, UserInfo}, From, StateName,
                            NewRegRequests = dict:store(PlayerId, From, RegRequests),
                            {next_state, StateName, StateData#state{reg_requests = NewRegRequests}};
                        _ ->
-                           ?INFO("OKEY_NG_TRN_STANDALONE <~p> Return join response for player ~p immediately.",
+                           ?INFO("OKEY_NG_TRN_STANDALONE <~p> Return the join response for player ~p immediately.",
                                  [GameId, UserId]),
                            #table{relay = Relay, pid = TPid} = fetch_table(TableId, Tables),
                            {reply, {ok, {PlayerId, Relay, {TableMod, TPid}}}, StateName, StateData}
@@ -600,9 +615,9 @@ init_tour(Tour, #state{game_id = GameId, seats_per_table = SeatsPerTable,
                                                             tables_results = []
                                                            }}.
 
-start_turn(#state{game_id = GameId, game = Game, game_mode = GameMode, mul_factor = MulFactor,
-                  quota_per_round = Amount, tour = Tour, tables = Tables, players = Players,
-                  table_module = TableMod} = StateData) ->
+start_set(#state{game_id = GameId, game = Game, game_mode = GameMode, mul_factor = MulFactor,
+                 quota_per_round = Amount, tour = Tour, tables = Tables, players = Players,
+                 table_module = TableMod} = StateData) ->
     ?INFO("OKEY_NG_TRN_STANDALONE <~p> Starting tour <~p>...", [GameId, Tour]),
     UsersIds = [UserId || #player{user_id = UserId, is_bot = false} <- players_to_list(Players)],
     deduct_quota(GameId, Game, GameMode, Amount, MulFactor, UsersIds),
@@ -615,8 +630,8 @@ start_turn(#state{game_id = GameId, game = Game, game_mode = GameMode, mul_facto
     WL = [T#table.id || T <- TablesList],
     ?INFO("OKEY_NG_TRN_STANDALONE <~p> Tour <~p> is started. Processing...",
           [GameId, Tour]),
-    {next_state, ?STATE_TURN_PROCESSING, StateData#state{tables = NewTables,
-                                                         tables_wl = WL}}.
+    {next_state, ?STATE_SET_PROCESSING, StateData#state{tables = NewTables,
+                                                        tables_wl = WL}}.
 
 
 finalize_tournament(#state{game_id = GameId} = StateData) ->
