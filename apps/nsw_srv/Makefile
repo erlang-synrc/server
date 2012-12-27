@@ -53,8 +53,8 @@ include $(CSS_FILES:.css=.deps)
 	    juicer merge ${JS_JUICER} -m none -i --force $< -o $@
 
 %.min.css : %.css
-	    juicer merge -b -d ${ROOT_PATH} ${CSS_JUICER} -i --force $<
+	    juicer merge -b -d ${ROOT_PATH} -c none ${CSS_JUICER} -i --force $<
 
 %.full.css : %.css
-	    juicer merge -b -d ${ROOT_PATH} ${CSS_JUICER} -m none -i --force $< -o $@
+	    juicer merge -b -d ${ROOT_PATH} -c none ${CSS_JUICER} -m none -i --force $< -o $@
 
