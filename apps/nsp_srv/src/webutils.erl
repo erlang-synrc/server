@@ -160,19 +160,19 @@ menu_links() ->
 		#listitem{body=#link{text=?_T("Groups"), url=?_U("/groups"),
                                      title=?_T("You can manage your groups settings here"), id="mainmenugroups"}}
 	 ]},
-	 "</nav>
-      <script>
-      (function(){
-          var C = {text:false};
-          var P = {my:'top right', at:'bottom left'};
-          var S = {delay: "++?TOOLTIP_TIMEOUT++"};
-          objs('mainmenumainpage').qtip({content: C, position: P, show: S} );
-          objs('mainmenumypage').qtip({content: C, position: P, show: S});
-          objs('mainmenugifts').qtip({content: C, position: P, show: S});
-          objs('mainmenutournaments').qtip({content: C, position: P, show: S});
-          objs('mainmenugroups').qtip({content: C, position: P, show: S});
-      })();
-      </script>"
+	 "</nav>"
+%      "<script>
+%      (function(){
+%          var C = {text:false};
+%          var P = {my:'top right', at:'bottom left'};
+%          var S = {delay: "++?TOOLTIP_TIMEOUT++"};
+%          objs('mainmenumainpage').qtip({content: C, position: P, show: S} );
+%          objs('mainmenumypage').qtip({content: C, position: P, show: S});
+%          objs('mainmenugifts').qtip({content: C, position: P, show: S});
+%          objs('mainmenutournaments').qtip({content: C, position: P, show: S});
+%          objs('mainmenugroups').qtip({content: C, position: P, show: S});
+%      })();
+%      </script>"
 	 ].
 
 language() ->
