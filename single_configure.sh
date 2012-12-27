@@ -10,4 +10,4 @@ cd ../../../game/node/etc
 cd ../../../web/node/etc
 ./configure -ip $LOCAL_IP -app $APP -web web -web-port 8000 -game game -srv $LOCAL_IP -srv-host $LOCAL_IP -srv-port 9000 -mq-user guest -mq-pass guest -fb-app-id 154227314626053 -fb-app-secret cf9d49958ee536dd75f15bf8ca541965 -tw-consumer-key JWGMwKCc33KDRDulOljnPQ -tw-consumer-secret e7B7G2kVdj6pLd4otaGkIye4yCMI3nUJ31NBATzYM -jspack min -csspack min -sync true
 cd ../../../..
-chmod -R o+rX rels
+chmod -R o+rX apps
