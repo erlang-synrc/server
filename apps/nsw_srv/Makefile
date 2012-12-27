@@ -1,4 +1,4 @@
-JS_FILES=priv/static/js/kakara.js
+JS_FILES=priv/static/js/kakara.js priv/static/js/kindex.js
 CSS_FILES=priv/static/css/kakara.css priv/static/css/kindex.css
 ROOT_PATH=priv/static/
 #########################################################################
