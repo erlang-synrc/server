@@ -12,17 +12,6 @@
 }
 
 .slide {width: 960px;height:352px;}
-/*.slide1_tr {background: url("/images/slides/tr/slides.png") 0 702px !important;}
-.slide2_tr {background: url("/images/slides/tr/slides.png") 0 1053px !important;}
-.slide3_tr {background: url("/images/slides/tr/slides.png") 0 1404px !important;}
-.slide4_tr {background: url("/images/slides/tr/slides.png") 0 1755px !important;}
-.slide5_tr {background: url("/images/slides/tr/slides.png") 0 0 !important;}
-.slide6_tr {background: url("/images/slides/tr/slides.png") 0 351px !important;}
-.slide1 {background: url("/images/slides/en/slides.png") 0 0 !important;}
-.slide2 {background: url("/images/slides/en/slides.png") 0 1053px !important;}
-.slide3 {background: url("/images/slides/en/slides.png") 0 702px !important;}
-.slide4 {background: url("/images/slides/en/slides.png") 0 351px !important;}
-*/
 .btns {float:right; margin-top: -60px; margin-right:264px;position:relative;z-index:12;}
 
 .btns a {
