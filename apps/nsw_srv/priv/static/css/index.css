@@ -7,7 +7,7 @@
   width:960px;
   height:352px;
   overflow:hidden;
-  position:relative
+  position:relative;
   z-index:10;
 }
 
@@ -23,7 +23,7 @@
 .slide3 {background: url("/images/slides/en/slides.png") 0 702px !important;}
 .slide4 {background: url("/images/slides/en/slides.png") 0 351px !important;}
 */
-.btns {float:right; margin-top: 295px; margin-right:270px;}
+.btns {float:right; margin-top: -60px; margin-right:264px;position:relative;z-index:12;}
 
 .btns a {
     float:left;
