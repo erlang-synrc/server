@@ -103,12 +103,12 @@ content() ->
     #panel{class="tournaments_featured", body=[
         #panel{class="tournaments_featured_arrow", body=[
           #link{postback=arrow_left,
-            body=#image{image="/images/tournament/tournaments_page/arrow_left.png?jcb=1353663519"}}
+            body=#image{image="/images/tournament/tournaments_page/arrow_left.png"}}
         ]},
         #panel{id=featured_tours, class="tournaments_featured_tours", body=featured_tours(AllTours)},
         #panel{class="tournaments_featured_arrow", body=[
           #link{postback=arrow_right,
-            body=#image{image="/images/tournament/tournaments_page/arrow_right.png?jcb=1353663519"}}
+            body=#image{image="/images/tournament/tournaments_page/arrow_right.png"}}
         ]}
     ]},
     case nsm_accounts:user_paid(wf:user()) of
