@@ -12,7 +12,7 @@
 }
 
 .slide {width: 960px;height:352px;}
-.slide1_tr {background: url("/images/slides/tr/slides.png") 0 702px !important;}
+/*.slide1_tr {background: url("/images/slides/tr/slides.png") 0 702px !important;}
 .slide2_tr {background: url("/images/slides/tr/slides.png") 0 1053px !important;}
 .slide3_tr {background: url("/images/slides/tr/slides.png") 0 1404px !important;}
 .slide4_tr {background: url("/images/slides/tr/slides.png") 0 1755px !important;}
@@ -22,7 +22,7 @@
 .slide2 {background: url("/images/slides/en/slides.png") 0 1053px !important;}
 .slide3 {background: url("/images/slides/en/slides.png") 0 702px !important;}
 .slide4 {background: url("/images/slides/en/slides.png") 0 351px !important;}
-
+*/
 .btns {float:right; margin-top: 295px; margin-right:270px;}
 
 .btns a {
