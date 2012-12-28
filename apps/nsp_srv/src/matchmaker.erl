@@ -544,14 +544,19 @@ show_table(Tables) ->
                     end,
                     JoinOrCrate = case Action of
                         {join, Act} ->
-                            if length(RealUsers) == MaxUsers -> "";
-                               GameState == started -> "";
-                               true ->
+                            IsMember = lists:member(list_to_binary(wf:user()), Users),
+                            GameType = WholeTable#game_table.game_type,
+%%                            ?INFO("User: ~p, GameState: ~p, IsMember: ~p, Real users num: ~p, MaxUsers: ~p",
+%%                                  [wf:user(), GameState, IsMember, length(RealUsers), MaxUsers]),
+                            if GameState == started andalso IsMember;
+                               GameType == game_okey andalso GameState == started andalso length(RealUsers) < MaxUsers;
+                               GameState =/= started andalso length(RealUsers) < MaxUsers ->
                                    #link{id=joinTable,
                                          actions=Act,
                                          text=?_T("Join"),
                                          class="join-button"
-                                        }
+                                        };
+                               true -> ""
                             end;
                         {create, Act} ->
                             #link{id=joinTable,

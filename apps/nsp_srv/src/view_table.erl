@@ -95,7 +95,19 @@ main_authorized() ->
     end.
 
 main_template() ->
-    #template { file=code:priv_dir(nsp_srv)++"/templates/700.html" }.
+    Id = wf:state(table_id),
+    case wf:state(table) of
+        #game_table{game_state = started, id = GameId} when is_integer(Id) -> %% Game is already started => Run flex client
+            wf:session(integer_to_list(Id), integer_to_list(GameId)),
+            ?INFO("GameId: ~p, Id: ~p",[GameId,Id]),
+            Url = lists:concat([?_U("/client"), "/", ?_U(wf:q(game_name)), "/id/", Id]),
+            ?INFO("Starting Game: ~p",[Url]),
+            wf:wire("window.started=true;"),
+            wf:session({Id,wf:user()},undefined),
+            wf:redirect(Url);
+
+        _ -> #template { file=code:priv_dir(nsp_srv)++"/templates/700.html" }
+    end.
 
 title() -> ?_T("Game Page").
 
@@ -669,8 +681,8 @@ start_game() ->
     MinUsers = proplists:get_value(min_users, game_requirements(Table)),
     CurrentUser = length(Table#game_table.users),
     ?INFO("StartGame: Owner ~p wf:User ~p (~p of ~p) ~p",[Owner,CUser,CurrentUser,MaxUsers,Table]),
-    case ((CurrentUser >= MinUsers) and (CurrentUser =< MaxUsers)) of
-        true ->
+    if Table#game_table.game_type == game_okey andalso (CurrentUser =< MaxUsers);
+       (CurrentUser >= MinUsers) andalso (CurrentUser =< MaxUsers) ->
             case Table#game_table.creator of
                  CUser ->
                     io:fwrite("creating table: ~n", []),
@@ -679,20 +691,18 @@ start_game() ->
                     io:fwrite("params: ~p~n", [Params]),
                     GSPId = rpc:call(?GAMESRVR_NODE,
                                         game_manager,
-%%                                        create_standalone_game,  %% Replace next line to use new standalone tables implementation
-                                        create_table,
+                                        create_standalone_game,  %% Replace next line to use new standalone tables implementation
+%%                                        create_table,
                                         [Table#game_table.game_type, Params, UsersIdsAsBinaries]),
                     ?INFO("GameManager Create Table Pid: ~p",[GSPId]),
                     case GSPId of
                         {ok, GaId, _GamePid} when is_integer(GaId) ->
                             chat_info(?_T("starting game...")),
                             wf:state(table, Table#game_table{gameid = GaId, game_state = started}),
-			    
                             Tables = get_tables(wf:state(table_id)),
                             ?INFO("Launch Flex: ~p",[Tables]),
                             [ Table2#game_table.game_process ! {launch_client, GaId, wf:q(game_name)}
                                       || Table2 <- Tables];
-                            
                         _Any ->
                             chat_info(#span{class=error, text= ?_T("Error in communication with game server")}),
                             wf:flush()
@@ -701,7 +711,7 @@ start_game() ->
 %                    chat_info(#span{class=error, text= ?_T("Only owner can start the game")}),
                     update_table_info(Table)
             end;
-        _ ->
+        true ->
             chat_info(#span {class=error, text=?_T("You can't start game with this number of users.")}),
             update_table_info(Table)
     end.
