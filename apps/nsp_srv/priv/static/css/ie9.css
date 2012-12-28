@@ -1,0 +1,35 @@
+.create-block .steps-list .item1{filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#b33c08', endColorstr='#f16102',GradientType=0 );}
+.create-block .steps-list .item1 .link{filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#ffd00e', endColorstr='#ffaa09',GradientType=0 );}
+.create-block .steps-list .item2{filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#1b4f8f', endColorstr='#5babdc',GradientType=0 );}
+.create-block .steps-list .item2 .link{filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#cae285', endColorstr='#9fcb57',GradientType=0 );}
+.create-block .steps-list .item3{filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#4c7015', endColorstr='#8ec356',GradientType=0 );}
+.create-block .steps-list .item3 .link{filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#5cb6d8', endColorstr='#3078bb',GradientType=0 );}
+.create-block .article1 .items{filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#e1e0c7', endColorstr='#f4f3de',GradientType=0 );}
+.create-block .article1 .list1 a{filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#feda71', endColorstr='#febc4b',GradientType=0 );}
+.create-block .paging .center a:hover,
+.paging-2 .center a:hover,
+.create-block .article1 .list1 .active a,
+.create-block .article1 .list1 a:hover {filter:none;}
+.create-block .article-table ul a{filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#fbfbfb', endColorstr='#f0f0f0',GradientType=0 );}
+.create-block .paging .center a,
+.paging-2 .center a {filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#f9f9f9', endColorstr='#eaeaea',GradientType=0 );}
+.create-block .steps-list .unactive{filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#9e9e9e', endColorstr='#c4c4c4',GradientType=0 );}
+.create-block .steps-list .unactive .link{filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#cbcbcb', endColorstr='#bbbbbb',GradientType=0 );}
+.criteria{filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#e1e0c7', endColorstr='#f4f3de',GradientType=0 );}
+.criteria .area .row li em {filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#feda71', endColorstr='#febc4b',GradientType=0 );}
+.criteria .area .btn-create{filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#feda71', endColorstr='#febc4b',GradientType=0 );}
+.criteria .area .btn-create .disable{filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#cbcbcb', endColorstr='#bbbbbb',GradientType=0 );}
+.detail-block {filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#ffffff', endColorstr='#ededed',GradientType=0 );}
+.detail-block .box-r {filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#3f3f3f', endColorstr='#2f2f2f',GradientType=0 );}
+.tab-area .tabset a {filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#ffffff', endColorstr='#f7f7f7',GradientType=0 );}
+.tab-area .tabset li:hover a,
+.tab-area .tabset li.hover a,
+.tab-area .tabset li.ui-state-active a {filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#fefefe', endColorstr='#eeeeee',GradientType=0 );}
+.slide-area .slide-up {filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#feda71', endColorstr='#febc4b',GradientType=0 );}
+.profile-info .cell h3 {filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#fbfdfe', endColorstr='#e1f0f7',GradientType=0 );}
+.profile-block aside li.active,
+.profile-block aside li.hover,
+.profile-block aside li:hover {filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#383838', endColorstr='#696969',GradientType=0 );}
+.data th {filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#484848', endColorstr='#363636',GradientType=0 );}
+.data th .top {filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#484848', endColorstr='#373737',GradientType=0 );}
+.tooltip-5 {filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#d9d9d9', endColorstr='#cfcfcf',GradientType=0 );}

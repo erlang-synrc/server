@@ -1,0 +1,391 @@
+* html body {width: expression(document.documentElement.clientWidth < 1034 ? '1034px' : 'auto');}
+* html header .box {display:inline;}
+* html .user-menu li,
+* html .visual .pager li,
+* html .navbar li,
+* html .visual .switcher li,
+* html .menu-1 li,
+* html .group-list ul,
+* html .soc-list li,
+* html .user-menu ul li,
+* html .history-list li {z-index: expression( runtimeStyle.zIndex = 1, this == parentNode.firstChild ? (className += " first-child") : 0 );}
+* html .list li {
+	zoom:1;
+	vertical-align:top;
+}
+* +html .list li {
+	zoom:1;
+	vertical-align:top;
+}
+* html .png {
+	position:relative;
+	behavior: expression((this.runtimeStyle.behavior="none")&&(this.pngSet?this.pngSet=true:(this.nodeName == "IMG" && this.src.toLowerCase().indexOf('.png')>-1?(this.runtimeStyle.backgroundImage = "none", this.runtimeStyle.filter = "progid:DXImageTransform.Microsoft.AlphaImageLoader(src='" + this.src + "', sizingMethod='image')", this.src = "images/none.gif"):(this.origBg = this.origBg? this.origBg :this.currentStyle.backgroundImage.toString().replace('url("','').replace('")',''), this.runtimeStyle.filter = "progid:DXImageTransform.Microsoft.AlphaImageLoader(src='" + this.origBg + "', sizingMethod='crop')", this.runtimeStyle.backgroundImage = "none")),this.pngSet=true));
+}
+* html .popup-1 .head {zoom:1;}
+* +html .popup-1 .head {zoom:1;}
+* html .popup-1 .entity {zoom:1;}
+* +html .popup-1 .entity {zoom:1;}
+* html .popup-2 .in {zoom:1;}
+* +html .popup-2 .in {zoom:1;}
+* html .popup-2 .frame {zoom:1;}
+* +html .popup-2 .frame {zoom:1;}
+* html .popup-2 .heading {
+	position:relative;
+	display:block;
+}
+* html .popup-2 .heading h2 {
+	position:absolute;
+	top:50%;
+}
+* html .popup-2 .heading h2 span {
+	position:relative;
+	top:-50%;
+}
+* +html .popup-2 .heading {
+	position:relative;
+	display:block;
+}
+* +html .popup-2 .heading h2 {
+	position:absolute;
+	top:50%;
+}
+* +html .popup-2 .heading h2 span {
+	position:relative;
+	top:-50%;
+}
+* html .list-2 li {
+	vertical-align:top;
+	zoom:1;
+}
+* +html .list-2 li {
+	vertical-align:top;
+	zoom:1;
+}
+* html .detail-block .box-l .frame {position:relative;}
+* html .detail-block .box-l .in {
+	position:absolute;
+	top:50%;
+	width:100%;
+}
+* html .detail-block .box-l .in span {
+	position:relative;
+	top:-50%;
+}
+* +html .detail-block .box-l .frame {position:relative;}
+* +html .detail-block .box-l .in {
+	position:absolute;
+	top:50%;
+	width:100%;
+}
+* +html .detail-block .box-l .in span {
+	position:relative;
+	top:-50%;
+}
+* html .form-2 .row .sel {height:35px;}
+* html .optionsDivVisible ul {zoom:1;}
+* html .optionsDivVisible a {zoom:1;}
+* html .popup-2 label {zoom:1;}
+* +html .popup-2 label {zoom:1;}
+* html .popup-3 .col-4 .box {zoom:1;}
+* +html .popup-3 .col-4 .box {zoom:1;}
+* html header .logo {
+	background:none;
+	filter:progid:dximagetransform.microsoft.alphaimageloader(src='images/logo.png', sizingmethod='crop');
+}
+* html header .box {
+	background:none;
+	filter:progid:dximagetransform.microsoft.alphaimageloader(src='images/bg-box.png', sizingmethod='scale');
+}
+* html .signup .btn-submit {
+	background:none;
+	filter:progid:dximagetransform.microsoft.alphaimageloader(src='images/btn-signup.png', sizingmethod='crop');
+}
+* html .section .holder a {
+	background:none;
+	filter:progid:dximagetransform.microsoft.alphaimageloader(src='images/bg-box-2.png', sizingmethod='crop');
+}
+* html .section .holder .stat span {
+	background:none;
+	filter:progid:dximagetransform.microsoft.alphaimageloader(src='images/bg-stat.png', sizingmethod='crop');
+}
+* html .list-top-photo .stat span {
+	background:none;
+	filter:progid:dximagetransform.microsoft.alphaimageloader(src='images/bg-stat.png', sizingmethod='crop');
+}
+* html .section .link-prev {
+	background:none;
+	filter:progid:dximagetransform.microsoft.alphaimageloader(src='images/btn-prev.png', sizingmethod='crop');
+}
+* html .section .link-next {
+	background:none;
+	filter:progid:dximagetransform.microsoft.alphaimageloader(src='images/btn-next.png', sizingmethod='crop');
+}
+* html .popup-2 .in {
+	background:none;
+	filter:progid:dximagetransform.microsoft.alphaimageloader(src='images/bg-popup.png', sizingmethod='scale');
+}
+* html .popup-2 .btn-close {
+	background:none;
+	filter:progid:dximagetransform.microsoft.alphaimageloader(src='images/btn-close-2.png', sizingmethod='crop');
+}
+* html .comment-box li {
+	zoom:1;
+	vertical-align:top;
+}
+* +html .comment-box li {
+	zoom:1;
+	vertical-align:top;
+}
+* html .comment-box .img {margin-right:7px;}
+* html .comment-box .descr {zoom:1;}
+* html .comment-form {zoom:1;}
+* +html .comment-form {zoom:1;}
+* +html #aside .list-photo li {height:1%;}
+.create-block .steps-list .item1{filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#b33c08', endColorstr='#f16102',GradientType=0 );}
+.create-block .steps-list .item1 .link{background:none;filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#ffd00e', endColorstr='#ffaa09',GradientType=0 );}
+.create-block .steps-list .item2{filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#4c7015', endColorstr='#8ec356',GradientType=0 );}
+.create-block .steps-list .item2 .link{filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#5cb6d8', endColorstr='#3078bb',GradientType=0 );}
+.create-block .steps-list .item3{filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#1b4f8f', endColorstr='#5babdc',GradientType=0 );}
+.create-block .steps-list .item3 .link{filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#cae285', endColorstr='#9fcb57',GradientType=0 );}
+.create-block .article1 .items{filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#e1e0c7', endColorstr='#f4f3de',GradientType=0 );}
+.create-block .article1 .list1 a{filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#feda71', endColorstr='#febc4b',GradientType=0 );}
+.create-block .article-table ul a{filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#fbfbfb', endColorstr='#f0f0f0',GradientType=0 );}
+.create-block .paging .center a,
+.paging-2 .center a {filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#f9f9f9', endColorstr='#eaeaea',GradientType=0 );}
+.create-block .steps-list .unactive{filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#9e9e9e', endColorstr='#c4c4c4',GradientType=0 );}
+.create-block .steps-list .unactive .link{filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#cbcbcb', endColorstr='#bbbbbb',GradientType=0 );}
+.criteria{filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#e1e0c7', endColorstr='#f4f3de',GradientType=0 );}
+.criteria .area .row li em {filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#feda71', endColorstr='#febc4b',GradientType=0 );}
+.criteria .area .btn-create{filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#5e5e5e', endColorstr='#434343',GradientType=0 );}
+* html .criteria .area .row li a {
+	background:none;
+	background-attachment:-9999px -9999px;
+	filter:progid:dximagetransform.microsoft.alphaimageloader(src='images/ico-close.png', sizingmethod='crop');
+}
+* html .article1 .criteria h2{padding-right:5px;}
+* html #tabs-block .tabset{margin-right:-4px;}
+* html #tabs-block .tabarea{height:1%;}
+* html #tabs-block .tabset a{height:1%;}
+.create-block .paging .center a:hover,
+.paging-2 .center a:hover,
+.create-block .article1 .list1 .active a,
+.create-block .article1 .list1 a:hover{filter:none;}
+* html .list-top-photo li {
+	background:none;
+	filter:progid:dximagetransform.microsoft.alphaimageloader(src='images/bg-list-top-photo.png', sizingmethod='crop');
+}
+* html #aside .top-box {
+	height:1%;
+}
+* html #aside .top-box .photo {
+	margin:0 1px 0 0;
+}
+* html .add-nav li {
+	height:1%;
+}
+* html .add-nav {
+	height:1%;
+}
+* html #aside .list-photo li {height:1%;}
+* html #content .text-box {
+	height:1%;
+}
+* html #content .btn-holder {
+	height:1%;
+}
+* html .optionsDivVisible ul {zoom:1;}
+* +html .optionsDivVisible ul {zoom:1;}
+* html .stat-offline {
+	background:none;
+	filter:progid:dximagetransform.microsoft.alphaimageloader(src='images/bg-stat-off.png', sizingmethod='crop');
+}
+* html .list-6 li {vertical-align:top;}
+* +html .list-6 li {vertical-align:top;}
+* html .list-6 a {zoom:1;}
+* +html .list-6 a {zoom:1;}
+* html .sort-form .sel {height:30px;}
+* html .user-list .entity .img {zoom:1;}
+* +html .user-list .entity .img {zoom:1;}
+* html .user-list .tooltip-1 .t {
+	background:none;
+	filter:progid:dximagetransform.microsoft.alphaimageloader(src='images/bg-tooltip-t.png', sizingmethod='crop');
+}
+* html .user-list .tooltip-1 .b {
+	background:none;
+	filter:progid:dximagetransform.microsoft.alphaimageloader(src='images/bg-tooltip-b.png', sizingmethod='crop');
+}
+* html .user-list .tooltip-1 .c {
+	zoom:1;
+	background:none;
+	filter:progid:dximagetransform.microsoft.alphaimageloader(src='images/bg-tooltip-c.png', sizingmethod='scale');
+}
+* +html .user-list .tooltip-1 .c {zoom:1;}
+* html .user-list .tooltip-1 .img {margin-right:12px;}
+* html .user-list .tooltip-1 .descr {zoom:1;}
+* html .group-list .img {margin-right:14px;}
+* html .group-list .descr {zoom:1;}
+* html .soc-users a {zoom:1;}
+* +html .soc-users a {zoom:1;}
+* html .mark-cell {zoom:1;}
+* +html .mark-cell {zoom:1;}
+* html .prod-list li {display:inline;}
+* +html .prod-list li {display:inline;}
+* html .prod-list .box {zoom:1;}
+* +html .prod-list .box {zoom:1;}
+* html .prod-list .box h2 {zoom:1;}
+* +html .prod-list .box h2 {zoom:1;}
+* html .prod-list .box .img {position:relative;}
+* +html .prod-list .box .img {position:relative;}
+* html .prod-list .box .img a {
+	position:absolute;
+	top:50%;
+}
+* +html .prod-list .box .img a {
+	position:absolute;
+	top:50%;
+}
+* html .prod-list .box .img img {
+	position:relative;
+	top:-50%;
+}
+* +html .prod-list .box .img img {
+	position:relative;
+	top:-50%;
+}
+* html .inform-block {zoom:1;}
+* +html .inform-block {zoom:1;}
+* html .detail-block {zoom:1;}
+* +html .detail-block {zoom:1;}
+* html .detail-block .col-02 {padding-right:2px;}
+* html .detail-block .col-02 dd {zoom:1;}
+* +html .detail-block .col-02 dd {zoom:1;}
+* html .tab-area .tabset a {zoom:1;}
+* +html .tab-area .tabset a {zoom:1;}
+* html .payment-form .sel {height:28px;}
+* html .dlist-2 dd {zoom:1;}
+* html .profile-info .col-l .sel {height:35px;}
+* html .article .boxes li {
+	zoom:1;
+	vertical-align:top;
+}
+* html .text-box .title-2 {zoom:1;}
+* +html .text-box .title-2 {zoom:1;}
+.text-box,
+#content .text-box {zoom:1;}
+* html .list-7 {zoom:1;}
+* +html .list-7 {zoom:1;}
+.detail-block {filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#ffffff', endColorstr='#ededed',GradientType=0 );}
+.detail-block .box-r {filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#3f3f3f', endColorstr='#2f2f2f',GradientType=0 );}
+.tab-area .tabset a {filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#ffffff', endColorstr='#f7f7f7',GradientType=0 );}
+.tab-area .tabset li:hover a,
+.tab-area .tabset li.hover a,
+.tab-area .tabset li.ui-state-active a {filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#fefefe', endColorstr='#eeeeee',GradientType=0 );}
+.slide-area .slide-up {filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#feda71', endColorstr='#febc4b',GradientType=0 );}
+.profile-info .cell h3 {filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#fbfdfe', endColorstr='#e1f0f7',GradientType=0 );}
+.profile-block aside li.active,
+.profile-block aside li.hover,
+.profile-block aside li:hover {filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#383838', endColorstr='#696969',GradientType=0 );}
+.data th {filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#484848', endColorstr='#363636',GradientType=0 );}
+.data th .top {filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#484848', endColorstr='#373737',GradientType=0 );}
+.tooltip-5 .in {background:url(../images/none.gif) no-repeat;filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#d9d9d9', endColorstr='#cfcfcf',GradientType=0 );}
+* html .create-block .steps-list li {display:inline;}
+header .box {behavior: url(js/PIE.htc);}
+.visual .btns a {behavior: url(js/PIE.htc);}
+* html .visual .btns a {behavior:none !important;}
+.visual .btns a.btn-dark {behavior: url(js/PIE.htc);}
+* html .visual .btns a.btn-dark {behavior:none !important;}
+.visual .btns a.btn-light {behavior: url(js/PIE.htc);}
+* html .visual .btns a.btn-light {behavior:none !important;}
+.section .holder .descr {behavior: url(js/PIE.htc);}
+.stat-bar {behavior: url(js/PIE.htc);}
+.stat-bar li dt {behavior: url(js/PIE.htc);}
+.user-menu ul {behavior: url(js/PIE.htc);}
+#main {behavior: url(js/PIE.htc);}
+.form-001 {behavior: url(js/PIE.htc);}
+.text-box .box,
+#content .text-box .box {behavior: url(js/PIE.htc);}
+.list-4 li a {behavior: url(js/PIE.htc);}
+.search-cell .text {behavior: url(js/PIE.htc);}
+.search-cell .btn-submit {behavior: url(js/PIE.htc);}
+.prod-list .box {behavior: url(js/PIE.htc);}
+.prod-list .btn {behavior: url(js/PIE.htc);}
+.detail-block {behavior: url(js/PIE.htc);}
+.detail-block .box-r {behavior: url(js/PIE.htc);}
+.tab-area .tabset a {behavior: url(js/PIE.htc);}
+.tab-area .tabset li:hover a,
+.tab-area .tabset li.hover a,
+.tab-area .tabset li.ui-state-active a {behavior: url(js/PIE.htc);}
+.payment-form .text-focus {behavior: url(js/PIE.htc);}
+.payment-form .btn-submit {behavior: url(js/PIE.htc);}
+.msg-box {behavior: url(js/PIE.htc);}
+#aside .top-box {behavior: url(js/PIE.htc);}
+.btn-abone {behavior: url(js/PIE.htc);}
+.create-block {behavior: url(js/PIE.htc);}
+.create-block .steps-list li {behavior: url(js/PIE.htc);}
+.create-block .steps-list .link {behavior: url(js/PIE.htc);}
+.create-block .steps-list .item1 {behavior: url(js/PIE.htc);}
+.create-block .steps-list .item2 {behavior: url(js/PIE.htc);}
+.create-block .steps-list .item3 {behavior: url(js/PIE.htc);}
+.create-block .steps-list .item1 .link {behavior: url(js/PIE.htc);}
+.create-block .steps-list .item2 .link {behavior: url(js/PIE.htc);}
+.create-block .steps-list .item3 .link {behavior: url(js/PIE.htc);}
+.create-block .steps-list .unactive {behavior: url(js/PIE.htc);}
+.create-block .steps-list .unactive .link {behavior: url(js/PIE.htc);}
+.create-block .article1 {behavior: url(js/PIE.htc);}
+.create-block .article1 .items {behavior: url(js/PIE.htc);}
+.create-block .article1 .list1 a {behavior: url(js/PIE.htc);}
+.create-block .article1 .list1 .active a,
+.create-block .article1 .list1 a:hover {behavior: url(js/PIE.htc);}
+.create-block .article1 .options .create {behavior: url(js/PIE.htc);}
+.create-block .article-table ul a {behavior: url(js/PIE.htc);}
+.create-block .paging .center a,
+.paging-2 .center a {behavior: url(js/PIE.htc);}
+.create-block .paging .center ul span,
+.paging-2 .center ul span {behavior: url(js/PIE.htc);}
+.create-block .paging .center a:hover,
+.paging-2 .center a:hover {behavior: url(js/PIE.htc);}
+.criteria {behavior: url(js/PIE.htc);}
+.criteria .area .row {behavior: url(js/PIE.htc);}
+.criteria .area .row li em {behavior: url(js/PIE.htc);}
+.criteria .area .btn-create {behavior: url(js/PIE.htc);}
+.slide-area .slide-up {behavior: url(js/PIE.htc);}
+.profile-block {behavior: url(js/PIE.htc);}
+.invite-form .textarea {behavior: url(js/PIE.htc);}
+.invite-form .text-focus {behavior: url(js/PIE.htc);}
+.invite-form .btn {behavior: url(js/PIE.htc);}
+.invite-form .btn-reset,
+.invite-form .btn-submit {behavior: url(js/PIE.htc);}
+.inform-block .btn {behavior: url(js/PIE.htc);}
+.profile-info .text {behavior: url(js/PIE.htc);}
+.profile-info .text-focus {behavior: url(js/PIE.htc);}
+.profile-info .btn-reset,
+.profile-info .btn-submit {behavior: url(js/PIE.htc);}
+.profile-info .btn-box a {behavior: url(js/PIE.htc);}
+.profile-info .cell {behavior: url(js/PIE.htc);}
+.profile-info .cell h3 {behavior: url(js/PIE.htc);}
+.profile-info .file .file-text {behavior: url(js/PIE.htc);}
+.profile-info .button {behavior: url(js/PIE.htc);}
+.soc-list .btn {behavior: url(js/PIE.htc);}
+.history-list .btn {behavior: url(js/PIE.htc);}
+.profile-block aside li.active,
+.profile-block aside li.hover,
+.profile-block aside li:hover {behavior: url(js/PIE.htc);}
+.data {behavior: url(js/PIE.htc);}
+.data th {behavior: url(js/PIE.htc);}
+.data th .top {behavior: url(js/PIE.htc);}
+.data .btn {behavior: url(js/PIE.htc);}
+.article .boxes .btn {behavior: url(js/PIE.htc);}
+.popup-1 {behavior: url(js/PIE.htc);}
+.popup-1 .entity {behavior: url(js/PIE.htc);}
+.popup-2 .in {behavior: url(js/PIE.htc);}
+.popup-2 .frame {behavior: url(js/PIE.htc);}
+.form-1 .btn-submit {behavior: url(js/PIE.htc);}
+.popup-2 .text {behavior: url(js/PIE.htc);}
+.form-2 .btn-submit,
+.form-3 .btn-submit {behavior: url(js/PIE.htc);}
+.popup-3 .col-4 .box {behavior: url(js/PIE.htc);}
+.popup-3 .col-4 .btn {behavior: url(js/PIE.htc);}
+.mark-cell {behavior: url(js/PIE.htc);}
+.mark-cell .btn {behavior: url(js/PIE.htc);}
+.tooltip-2 {behavior: url(js/PIE.htc);}
+.tooltip-5 {behavior: url(js/PIE.htc);}

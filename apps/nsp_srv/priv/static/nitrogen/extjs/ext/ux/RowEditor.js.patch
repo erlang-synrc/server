@@ -1,0 +1,11 @@
+--- RowEditor.js.orig	2010-11-23 13:55:48.000000000 +0200
++++ RowEditor.js	2010-11-23 13:56:03.000000000 +0200
+@@ -205,7 +205,7 @@
+                 if(!Ext.isEmpty(dindex)){
+                     var oldValue = r.data[dindex],
+                         value = this.postEditValue(fields[i].getValue(), oldValue, r, dindex);
+-                    if(String(oldValue) !== String(value)){
++                    if(oldValue !== value){
+                         changes[dindex] = value;
+                         hasChange = true;
+                     }

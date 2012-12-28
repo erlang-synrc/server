@@ -1,6 +1,6 @@
 {application, nsm_bg, [{description, "Message Bus Consumers"},
                        {vsn, "1"},
                        {registered, []},
-                       {applications, [kernel, gproc, stdlib, nsm_db, nsm_mq]},
+                       {applications, [kernel, gproc, stdlib, riak_kv, nsm_db, nsm_mq]},
                        {mod, { nsm_bg_app, []}},
                        {env, []}]}.

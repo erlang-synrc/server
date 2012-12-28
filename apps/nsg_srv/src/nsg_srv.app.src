@@ -3,7 +3,7 @@
   {description, "Game Server"},
   {vsn, "1"},
   {registered, []},
-  {applications, [kernel,stdlib,sasl,mnesia,gproc,nsm_db,nsm_mq,
+  {applications, [kernel,stdlib,sasl,mnesia,gproc,riak_kv,nsm_db,nsm_mq,
                   nsx_idgen,nsx_utils,nsx_config,nsm_auth,
                   nsg_session,nsg_games,nsm_conn, nsx_mibs]},
   {mod, { nsg_srv_app, []}},

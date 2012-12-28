@@ -1,0 +1,15 @@
+.icon-new {
+   background-image: url('/images/icons/add.png') !important;
+}
+
+.icon-discard {
+   background-image: url('/images/icons/cancel.png') !important;
+}
+
+.icon-confirm {
+   background-image: url('/images/icons/accept.png') !important;
+}
+
+.icon-reload-db {
+   background-image: url('/images/icons/database_refresh.png') !important;
+}

@@ -1,0 +1,43 @@
+
+/* slides */
+ul.slideshow .slide1 {
+    background: url("../images/slides/tr/slide1.png") no-repeat top left !important;
+}
+ul.slideshow .slide2 {
+    background: url("../images/slides/tr/slide2.png") no-repeat top left !important;
+}
+ul.slideshow .slide3 {
+    background: url("../images/slides/tr/slide3.png") no-repeat top left !important;
+}
+ul.slideshow .slide4 {
+    background: url("../images/slides/tr/slide4.png") no-repeat top left !important;
+}
+
+ul.slideshow .slide_t_1 {
+    background: url("../images/slides/tr/slide_t_1.png") no-repeat top left !important;
+}
+ul.slideshow .slide_t_2 {
+    background: url("../images/slides/tr/slide_t_2.png") no-repeat top left !important;
+}
+/* end slides */
+
+.create-block .steps-list .listitem {
+	min-height: 75px;
+}
+.form-2 .btn-submit {
+	width: 90px;
+}
+
+.visual .switcher li {
+	padding:0 13px 0 13px;
+}
+
+.visual .switcher{
+    width:900px;
+}
+
+.visual .pager{
+    right:-8px;
+}
+
+

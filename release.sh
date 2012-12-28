@@ -12,11 +12,17 @@ rm -rf rels/web/node/lib
 rm -rf rels/web/node/log
 rm -rf rels/web/node/data
 rm -rf rels/web/node/releases
+rm -rf rels/public/node/lib
+rm -rf rels/public/node/log
+rm -rf rels/public/node/data
+rm -rf rels/public/node/releases
 
 cd rels/app
 ../../rebar -f generate
 cd ../game
 ../../rebar -f generate
 cd ../web
+../../rebar -f generate
+cd ../public
 ../../rebar -f generate
 cd ../..

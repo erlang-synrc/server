@@ -1,0 +1,11 @@
+--- a/src/mmc/mmcs_ui/priv/www/js/ext/ux/RowEditor.js
++++ b/src/mmc/mmcs_ui/priv/www/js/ext/ux/RowEditor.js
+@@ -16,7 +16,7 @@ Ext.ns('Ext.ux.grid');
+  * @ptype roweditor
+  */
+ Ext.ux.grid.RowEditor = Ext.extend(Ext.Panel, {
+-    floating: true,
++    floating: {zindex: 4000},
+     shadow: false,
+     layout: 'hbox',
+     cls: 'x-small-editor',

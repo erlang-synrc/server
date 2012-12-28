@@ -1,0 +1,57 @@
+header .logo {
+    background: url('../images/en/kakaranet-logo.png');
+}
+
+/* slides */
+ul.slideshow .slide1 {
+    background: url("../images/slides/en/slide1.png") no-repeat top left !important;
+}
+ul.slideshow .slide2 {
+    background: url("../images/slides/en/slide2.png") no-repeat top left !important;
+}
+ul.slideshow .slide3 {
+    background: url("../images/slides/en/slide3.png") no-repeat top left !important;
+}
+ul.slideshow .slide4 {
+    background: url("../images/slides/en/slide4.png") no-repeat top left !important;
+}
+
+/* end slides */
+
+.popup-2 .link:focus,
+.popup-2 .checkbox:focus,
+.popup-2 .button:focus
+{
+	outline: orange dotted 1px;
+}
+
+.create-block .steps-list li span {
+	font-size: 12px;
+}
+
+.create-block .choose-form {
+	width: 120px;
+}
+
+.create-block .article1 .options {
+	width: 100px;
+}
+.fb-inner .create-block .steps-list .ttl {
+	font-size: 15px;
+}
+.fb-inner .create-block .article1 .items .item3 {
+/*	width: 126px;*/
+}
+.fb-inner .create-block .article1 .options {
+	width: 96px;
+}
+.fb-inner .create-block .article1 .items .item {
+	padding: 9px 5px 0 9px;
+}
+
+.criteria .area .row {
+	width: 580px;
+}
+.invite-form .btn {
+	width: 100px;
+}

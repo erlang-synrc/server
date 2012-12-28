@@ -1,0 +1,71 @@
+/*---------------- css modification for dashboard page ------------------*/ 
+.main_container ul.hemen-nav {
+    padding: 0px 0px 5px 0px;
+}
+
+.main_container ul.hemen-nav li {
+    float: left;
+    width: 186px;
+    margin-right: 10px;
+}
+
+.main_container ul.hemen-nav li.last {
+    margin-right: 0px;
+}
+
+.main_container a.batak {
+    background: url("../images/dashboard/batak_a.jpg") no-repeat top left;
+    width: 186px;
+    height: 156px;
+    display: block;
+}
+
+.main_container a.batak:hover {
+    background: url("../images/dashboard/batak_ua.jpg") no-repeat top left;
+    background-position: 0 0px;
+}
+
+.main_container a.king {
+    background: url("../images/dashboard/king_a.jpg") no-repeat top left;
+    width: 186px;
+    height: 156px;
+    display: block;
+}
+
+.main_container a.king:hover {
+    background-position: 0 0px;
+    background: url("../images/dashboard/king_ua.jpg") no-repeat top left;
+}
+
+.main_container a.tavla {
+    background: url("../images/dashboard/tavla_a.jpg") no-repeat top left;
+    width: 186px;
+    height: 156px;
+    display: block;
+}
+
+.main_container a.tavla:hover {
+    background-position: 0 0px;
+    background: url("../images/dashboard/tavla_ua.jpg") no-repeat top left;
+}
+
+.main_container a.okey {
+    background: url("../images/dashboard/okey_a.jpg") no-repeat top left;
+    width: 186px;
+    height: 156px;
+    display: block;
+}
+
+.main_container a.sorbi {
+    background: url("../images/dashboard/sobi_a.jpg") no-repeat top left;
+    width: 186px;
+    height: 156px;
+    display: block;
+}
+
+.main_container a.sorbi:hover {
+    background-position: 0 0px;
+    background: url("../images/dashboard/sobi_ua.jpg") no-repeat top left;
+}
+
+/*----------------------------------*/
