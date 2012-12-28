@@ -8,40 +8,17 @@
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
   <title>[[[page:title()]]]</title>
   <link rel="stylesheet" type="text/css" href="/css/kindex.min.css" media="all" />
-  <!--script src="/js/kindex.min.js" type="text/javascript" charset="utf-8"></script-->
+  <script src="/js/kindex.min.js" type="text/javascript" charset="utf-8"></script-->
   [[[webutils:print_head()]]]
 </head>
 <body class="[[[webutils:page_module()]]]">
   [[[fb_utils:init()]]]
-  [[[webutils:header_box()]]]
+  [[[webutils:header()]]]
   [[[page:body()]]]
   [[[webutils:counters()]]]
   [[[webutils:footer_box()]]]
-
-  <script>
-    window.onload = function(){
-      var script = document.createElement("script");
-      script.type = "text/javascript";
-      if (script.readyState){  //IE
-        script.onreadystatechange = function(){
-          if (script.readyState == "loaded" || script.readyState == "complete"){
-              console.log(changed);
-              script.onreadystatechange = null;
-          }
-        };
-      } else {  //Others
-        script.onload = function(){
-          console.log('loaded');
-          $(document).ready(slideShow("[[[site_utils:detect_language()]]]"));
-          [[[script]]];
-        };
-      }
-      script.src = "/js/kindex.min.js";
-      document.getElementsByTagName("head")[0].appendChild(script);
-    };
-  </script>
-  <!--script type="text/javascript"></script-->
-  <!--script type="text/javascript">$(document).ready(slideShow("[[[site_utils:detect_language()]]]"));</script-->
+  <script type="text/javascript">[[[script]]]</script>
+  <script type="text/javascript">$(document).ready(slideShow("[[[site_utils:detect_language()]]]"));</script>
   <script type="text/javascript">
   var _gaq = _gaq || [];
   _gaq.push(['_setAccount', 'UA-37172808-1']);

@@ -95,6 +95,17 @@ new_tab_js(Url) when is_list(Url)->
                   Url,
                   "');"]).
 
+header()->
+  [#panel{class=header, body=[
+    #panel{class=headerblue, body=[]},
+    #panel{class="block", body=[
+      #span{class="logo vcard", body=logo()},
+      account_menu(),
+      menu_links()
+    ]}
+  ]},
+  lightboxes()].
+
 header_box() -> #template { file=code:priv_dir(nsw_srv)++"/templates/header.html"}.
 
 header_body() -> [account_menu(), menu_links()].
@@ -1115,24 +1126,24 @@ quick_nav() ->
   #list{class="quick-nav", body=[
     begin
       S = case Status of
-        inactive ->[#image{class=hover, image=Img2}, #span{class=soon, text=?_T("Very soon...")}];
+        inactive -> #span{class=soon, text=?_T("Very soon...")};
         _ -> []
       end,
     #listitem{class=Status, body=
       #link{url=Url, postback=Postback, body=[
-        #image{class="game-title", image=Img3},
+        #image{class="game-title", image=Title},
         #image{class=current, image=Img1},
         S,
         #span{class="lets-play", text=?_T("Let's Play!")}
       ]}
     }
     end
-    || {Status, Postback, Url, Img1, Img2, Img3} <-
-     [{active,{game, okey}, ?_U("/matchmaker/okey"), "/images/img-007.jpg", "/images/img-008.jpg", "/images/text-okey.png"},
-      {active, {game, tavla}, ?_U("/matchmaker/tavla"), "/images/img-005.jpg", "/images/img-006.jpg", "/images/text-tavla.png"},
-      {inactive, undefined, "#", "/images/img-003.jpg", "/images/img-004.jpg", "/images/text-king.png"},
-      {inactive,undefined, "#", "/images/img-001.jpg", "/images/img-002.jpg", "/images/text-batak.png"},
-      {inactive, undefined, "#", "/images/img-009.jpg", "/images/img-010.jpg", "/images/text-sorbi.png"}]
+    || {Status, Postback, Url, Img1, Title} <-
+     [{active,{game, okey}, ?_U("/matchmaker/okey"), "/images/img-007.jpg", "/images/text-okey.png"},
+      {active, {game, tavla}, ?_U("/matchmaker/tavla"), "/images/img-005.jpg", "/images/text-tavla.png"},
+      {inactive, undefined, "#", "/images/img-003.jpg", "/images/text-king.png"},
+      {inactive,undefined,  "#", "/images/img-001.jpg", "/images/text-batak.png"},
+      {inactive, undefined, "#", "/images/img-009.jpg", "/images/text-sorbi.png"}]
   ]}.
 
 
