@@ -204,7 +204,7 @@ content() ->
 product_list_paged(Page) ->
     MinPrice = wf:state(slider_min),
     MaxPrice = wf:state(slider_max),
-    AllGiftsData = nsm_gifts_db:get_all_gifts(),
+    AllGiftsData = nsm_db:all(gifts),
     FilteredGiftsData = [Gift || {Gift, _Obj} <- AllGiftsData, Gift#gift.enabled_on_site, (Gift#gift.real_price >= MinPrice * 100) and (Gift#gift.real_price =< MaxPrice * 100)],
     PageGiftsData = lists:sublist( 
         lists:sort(
@@ -280,9 +280,9 @@ get_prizes_total(Prizes) ->
         case Id of
             undefined -> 0;
             _ -> 
-                {Status, Res} = nsm_gifts_db:get_gift(Id),
+                {Status, Res} = nsm_db:get(gifts,Id),
                 case Status of 
-                    ok -> {Gift, _} = Res, Gift#gift.our_price;
+                    ok -> Gift = Res, Gift#gift.our_price;
                     _ -> 0
                 end
         end 
