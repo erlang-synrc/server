@@ -96,18 +96,18 @@ route(Path) ->
             Tokens = string:tokens(Path1, "/"),
             case try_load_module(Tokens) of
                 {Module, PathInfo} ->
-                    UA = RequestBridge:header(user_agent),
-                    OS = case platform(UA) of undefined -> ""; X->X end,
-                    HC = case browser(UA) of undefined -> UA; Y->Y end,
-                    IP = inet_parse:ntoa(RequestBridge:peer_ip()),
-                    {Date,Time} = calendar:local_time(),
-                    case Module of
-                         matchmaker -> skip;
-                         dashboard -> skip;
-                         tournament_lobby -> skip;
-                         buy -> skip;
-                         _ -> nsm_mhits:store(Path,IP,Date), ?INFO("URLPATH: ~s:~s:~s:~s",[IP,Path,OS,HC])
-                    end,
+%                    UA = RequestBridge:header(user_agent),
+%                    OS = case platform(UA) of undefined -> ""; X->X end,
+%                    HC = case browser(UA) of undefined -> UA; Y->Y end,
+%                    IP = inet_parse:ntoa(RequestBridge:peer_ip()),
+%                    {Date,Time} = calendar:local_time(),
+%                    case Module of
+%                         matchmaker -> skip;
+%                         dashboard -> skip;
+%                         tournament_lobby -> skip;
+%                         buy -> skip;
+%                         _ -> nsm_mhits:store(Path,IP,Date), ?INFO("URLPATH: ~s:~s:~s:~s",[IP,Path,OS,HC])
+%                    end,
                     {Module, PathInfo};
                 undefined ->
                     {web_404, Path1}
