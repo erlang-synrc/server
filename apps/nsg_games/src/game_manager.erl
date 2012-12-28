@@ -341,6 +341,7 @@ create_standalone_game(Game, Params, Users) ->
             create_game(game_okey_ng_trn_standalone,
                          [{game, Game},
                           {game_mode, GameMode},
+                          {game_name, TableName},
                           {seats, 4},
                           {registrants, Users},
                           {initial_points, 0},

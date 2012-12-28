@@ -42,6 +42,7 @@
          trn_id            :: term(),
          game              :: atom(),
          game_mode         :: atom(),
+         game_name         :: string(),
          seats_per_table   :: integer(),
          params            :: proplists:proplist(),
          table_module      :: atom(),
@@ -159,6 +160,7 @@ init([GameId, Params, _Manager]) ->
     SeatsPerTable = get_param(seats, Params),
     Game =          get_param(game, Params),
     GameMode =      get_param(game_mode, Params),
+    GameName =      get_param(game_name, Params),
     QuotaPerRound = get_param(quota_per_round, Params),
     KakushForWinners = get_param(kakush_for_winners, Params),
     KakushForLoser = get_param(kakush_for_loser, Params),
@@ -177,6 +179,7 @@ init([GameId, Params, _Manager]) ->
     {ok, ?STATE_INIT, #state{game_id = GameId,
                              game = Game,
                              game_mode = GameMode,
+                             game_name = GameName,
                              seats_per_table = SeatsPerTable,
                              params = TableParams,
                              table_module = TableModule,
@@ -276,7 +279,7 @@ handle_info({rest_timeout, TableId}, ?STATE_SET_PROCESSING = StateName,
 
 handle_info({rest_timeout, TableId}, ?STATE_SET_FINISHED,
             #state{game_id = GameId, game = GameType, game_mode = GameMode,
-                   tables_results = TablesResults, tables = Tables,
+                   game_name = GameName, tables_results = TablesResults, tables = Tables,
                    players = Players, cur_table = TableId, table_module = TableMod,
                    kakush_for_winners = KakushForWinners, kakush_for_loser = KakushForLoser,
                    win_game_points = WinGamePoints, mul_factor = MulFactor} = StateData) ->
@@ -286,11 +289,12 @@ handle_info({rest_timeout, TableId}, ?STATE_SET_FINISHED,
     SeriesResult = series_result(TableScore),
     ?INFO("OKEY_NG_TRN_STANDALONE <~p> Set result: ~p", [GameId, SeriesResult]),
     send_to_table(TableMod, TablePid, {show_series_result, SeriesResult}),
-    SeriesResult1 = [{PlayerId, Status} || {PlayerId, _Pos, _Points, Status} <- SeriesResult],
-    Points = calc_players_points(SeriesResult1, KakushForWinners, KakushForLoser, WinGamePoints, MulFactor, Players),
-    PointsWithUserId = [{user_id_to_string(get_user_id(PlayerId, Players)), K, G} || {PlayerId, K, G} <- Points],
-    ?INFO("OKEY_NG_TRN_STANDALONE <~p> Prizes: ~p", [GameId, PointsWithUserId]),
-    add_points_to_accounts(PointsWithUserId, GameId, GameType, GameMode, MulFactor),
+    Points = calc_players_prize_points(SeriesResult, KakushForWinners, KakushForLoser, WinGamePoints, MulFactor, Players),
+    UsersPrizePoints = prepare_users_prize_points(Points, Players),
+    ?INFO("OKEY_NG_TRN_STANDALONE <~p> Prizes: ~p", [GameId, UsersPrizePoints]),
+    add_points_to_accounts(UsersPrizePoints, GameId, GameType, GameMode, MulFactor),
+    EndsNotePoints = prepare_ends_note_points(SeriesResult, Points, Players),
+    send_ends_note(GameName, GameType, EndsNotePoints),
     {TRef, Magic} = start_timer(?SHOW_SET_RESULT_TIMEOUT),
     {next_state, ?STATE_SHOW_SET_RESULT, StateData#state{timer = TRef,
                                                          timer_magic = Magic}};
@@ -833,9 +837,6 @@ players_init() -> midict:new().
 store_player(#player{id =Id, user_id = UserId} = Player, Players) ->
     midict:store(Id, Player, [{user_id, UserId}], Players).
 
-get_players_ids(Players) ->
-    [P#player.id || P <- players_to_list(Players)].
-
 get_player_by_user_id(UserId, Players) ->
     case midict:geti(UserId, user_id, Players) of
         [Player] -> {ok, Player};
@@ -848,6 +849,9 @@ players_to_list(Players) -> midict:all_values(Players).
 get_user_info(PlayerId, Players) ->
     #player{user_info = UserInfo} = midict:fetch(PlayerId, Players),
     UserInfo.
+
+fetch_player(PlayerId, Players) ->
+    midict:fetch(PlayerId, Players).
 
 get_user_id(PlayerId, Players) ->
     #player{user_id = UserId} = midict:fetch(PlayerId, Players),
@@ -933,19 +937,19 @@ store_seat(#seat{table = TabId, seat_num = SeatNum, player_id = PlayerId,
     midict:store({TabId, SeatNum}, Seat, Indices, Seats).
 
 
-%% calc_players_points(SeriesResult, KakushForWinner, KakushForLoser,
-%%                     WinGamePoints, MulFactor, Players) -> Points
+%% calc_players_prize_points(SeriesResult, KakushForWinner, KakushForLoser,
+%%                           WinGamePoints, MulFactor, Players) -> Points
 %% Types:
-%%     SeriesResult = [{PlayerId, Status}]
+%%     SeriesResult = [{PlayerId, _Pos, _Points, Status}]
 %%          Status = winner | looser
 %%     Points = [{PlayerId, KakushPoints, GamePoints}]
-calc_players_points(SeriesResult, KakushForWinners, KakushForLoser, WinGamePoints, MulFactor, Players) ->
+calc_players_prize_points(SeriesResult, KakushForWinners, KakushForLoser, WinGamePoints, MulFactor, Players) ->
     SeriesResult1 = [begin
                          #'PlayerInfo'{id = UserId, robot = Robot} = get_user_info(PlayerId, Players),
                          Paid = is_paid(user_id_to_string(UserId)),
                          Winner = Status == winner,
                          {PlayerId, Winner, Robot, Paid}
-                     end || {PlayerId, Status} <- SeriesResult],
+                     end || {PlayerId, _Pos, _Points, Status} <- SeriesResult],
     Paids   = [PlayerId || {PlayerId, _Winner, _Robot, _Paid = true} <- SeriesResult1],
     Winners = [PlayerId || {PlayerId, _Winner = true, _Robot, _Paid} <- SeriesResult1],
     TotalNum = length(SeriesResult),
@@ -967,6 +971,22 @@ calc_points(KakushPerWinner, KakushPerLoser, WinGamePoints, Paid, Robot, Winner)
        Paid andalso Winner -> {KakushPerWinner, WinGamePoints};
        Paid -> {KakushPerLoser, 0}
     end.
+
+%% prepare_ends_note_points(SeriesResult, Points, Players) -> EndsNotePoints
+%% Types: EndsNotePoints = [{UserIdStr, Robot, Pos, KakushPoints, GamePoints}]
+prepare_ends_note_points(SeriesResult, Points, Players) ->
+    [begin
+         #player{user_id = UserId, is_bot = Robot} = fetch_player(PlayerId, Players),
+         {_, KPoints, GPoints} = lists:keyfind(PlayerId, 1, Points),
+         {user_id_to_string(UserId), Robot, Pos, KPoints, GPoints}
+     end || {PlayerId, Pos, _Points, _Status} <- SeriesResult].
+
+%% prepare_users_prize_points(Points, Players) -> UsersPrizePoints
+%% Types:
+%%     Points = [{PlayerId, KakushPoints, GamePoints}]
+%%     UserPrizePoints = [{UserIdStr, KakushPoints, GamePoints}]
+prepare_users_prize_points(Points, Players) ->
+    [{user_id_to_string(get_user_id(PlayerId, Players)), K, G} || {PlayerId, K, G} <- Points].
 
 is_paid(UserId) -> nsm_accounts:user_paid(UserId).
 
@@ -999,7 +1019,8 @@ add_points_to_accounts(Points, GameId, GameType, GameMode, MulFactor) ->
      end || {UserId, KakushPoints, GamePoints} <- Points],
     ok.
 
-
+send_ends_note(GameName, GameType, EndsNotePoints) ->
+    nsx_msg:notify(["system", "game_ends_note"], {{GameName, GameType}, EndsNotePoints}).
 
 shuffle(List) -> deck:to_list(deck:shuffle(deck:from_list(List))).
 
