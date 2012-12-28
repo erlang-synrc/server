@@ -72,7 +72,7 @@ done
 
 echo "Web Server $SERVERHOST ($HIPS:$WEBPORT) will use $FBAPPID FB id"
 
-cat vm.args.template | sed "s#WEBSERVER_NODE#pub@$H#g" > vm.args
+cat vm.args.template | sed "s#WEBSERVER_NODE#public@$H#g" > vm.args
 
 ./config -file app.config nsm_db app_srv_node -atom $APPSERVER
 ./config -file app.config nsm_db game_srv_node -atom $GAMESERVER@$H
