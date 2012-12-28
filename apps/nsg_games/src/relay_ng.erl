@@ -18,6 +18,9 @@
 -export([start/1, table_message/2, table_request/2]).
 -export([stop/1, subscribe/4, unsubscribe/2, publish/2]).
 
+%% Compatebility API. Should be removed after tavla game redesign (because it uses relay.erl)
+-export([do_rematch/2]).
+
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 
@@ -31,7 +34,8 @@
         {pid          :: pid(),
          user_id,
          player_id    :: integer(),
-         mon_ref      :: reference()
+         mon_ref      :: reference(),
+         broadcast_allowed :: boolean()
         }).
 
 -record(player,
@@ -78,6 +82,8 @@ client_request(Relay, Request) ->
 client_request(Relay, Request, Timeout) ->
     gen_server:call(Relay, {client_request, Request}, Timeout).
 
+do_rematch(_,_) -> ok. %% Only for compatebility. Should be removed.
+
 %% ====================================================================
 %% Server functions
 %% ====================================================================
@@ -106,9 +112,11 @@ handle_call(_Request, _From, State) ->
 
 %% --------------------------------------------------------------------
 handle_cast({client_message, Msg}, State) ->
+    ?INFO("RELAY_NG Received client message: ~p", [Msg]),
     handle_client_message(Msg, State);
 
 handle_cast({table_message, Msg}, State) ->
+    ?INFO("RELAY_NG Received table message: ~p", [Msg]),
     handle_table_message(Msg, State);
 
 handle_cast(_Msg, State) ->
@@ -156,7 +164,7 @@ handle_client_request({subscribe, Pid, #'PlayerInfo'{id = UserId}, observer}, _F
                              subscribers = Subscribers} = State) ->
     if ObserversAllowed ->
            MonRef = erlang:monitor(process, Pid),
-           NewSubscribers = store_subscriber(Pid, UserId, undefined, MonRef, Subscribers),
+           NewSubscribers = store_subscriber(Pid, UserId, undefined, MonRef, true, Subscribers),
            {reply, ok, State#state{subscribers = NewSubscribers}};
        true ->
            {reply, {error, observers_not_allowed}, State}
@@ -171,7 +179,7 @@ handle_client_request({subscribe, Pid, #'PlayerInfo'{id = UserId}, PlayerId}, _F
         {ok, #player{user_id = UserId}} ->
             NewPlayers = update_player_status(PlayerId, online, Players),
             MonRef = erlang:monitor(process, Pid),
-            NewSubscribers = store_subscriber(Pid, UserId, PlayerId, MonRef, Subscribers),
+            NewSubscribers = store_subscriber(Pid, UserId, PlayerId, MonRef, false, Subscribers),
             TableMod:relay_message(TablePid, {player_connected, PlayerId}),
             {reply, ok, State#state{players = NewPlayers, subscribers = NewSubscribers}};
         {ok, #player{}=P} ->
@@ -245,7 +253,7 @@ handle_table_request(_Request, _From, State) ->
 %% TODO: Player id should be passed with a published message. After the legacy code removing.
 handle_client_message({publish, Msg}, #state{subscribers = Subscribers} = State) ->
     Receipients = subscribers_to_list(Subscribers),
-    [gen_server:cast(Pid, Msg) || #subscriber{pid = Pid} <- Receipients], %% XXX
+    [gen_server:cast(Pid, Msg) || #subscriber{pid = Pid, broadcast_allowed = true} <- Receipients], %% XXX
     {noreply, State};
 
 handle_client_message(_Msg, State) ->
@@ -256,13 +264,24 @@ handle_client_message(_Msg, State) ->
 handle_table_message({publish, Msg}, #state{subscribers = Subscribers} = State) ->
     ?INFO("RELAY_NG The table publish message: ~p", [Msg]),
     Receipients = subscribers_to_list(Subscribers),
-    [gen_server:cast(Pid, Msg) || #subscriber{pid = Pid} <- Receipients], %% XXX
+    [gen_server:cast(Pid, Msg) || #subscriber{pid = Pid, broadcast_allowed = true} <- Receipients], %% XXX
     {noreply, State};
 
 handle_table_message({to_client, PlayerId, Msg}, #state{subscribers = Subscribers} = State) ->
-    Receipients = find_subscribers_by_player_id(PlayerId, Subscribers),
-    [Pid ! Msg || #subscriber{pid = Pid} <- Receipients], %% XXX
+    Recepients = find_subscribers_by_player_id(PlayerId, Subscribers),
+    ?INFO("relay_info Send table message to player's (~p) sessions: ~p. Message: ~p", [PlayerId, Recepients, Msg]),
+    [Pid ! Msg || #subscriber{pid = Pid} <- Recepients], %% XXX
     {noreply, State};
+
+handle_table_message({allow_broadcast_for_player, PlayerId}, #state{subscribers = Subscribers} = State) ->
+    ?INFO("RELAY_NG Received directive to allow receiving published messages for player <~p>", [PlayerId]),
+    PlSubscribers = find_subscribers_by_player_id(PlayerId, Subscribers),
+    F = fun(Subscriber, Acc) ->
+                store_subscriber_rec(Subscriber#subscriber{broadcast_allowed = true}, Acc)
+        end,
+    NewSubscribers = lists:foldl(F, Subscribers, PlSubscribers),
+    {noreply, State#state{subscribers = NewSubscribers}};
+
 
 handle_table_message(stop, State) ->
     {stop, normal, State};
@@ -311,9 +330,9 @@ update_player_status(PlayerId, Status, Players) ->
 
 subscribers_init() -> midict:new().
 
-store_subscriber(Pid, UserId, PlayerId, MonRef, Subscribers) ->
-    store_subscriber_rec(#subscriber{pid = Pid, user_id = UserId,
-                                     player_id = PlayerId, mon_ref = MonRef}, Subscribers).
+store_subscriber(Pid, UserId, PlayerId, MonRef, BroadcastAllowed, Subscribers) ->
+    store_subscriber_rec(#subscriber{pid = Pid, user_id = UserId, player_id = PlayerId,
+                                     mon_ref = MonRef, broadcast_allowed = BroadcastAllowed}, Subscribers).
 
 store_subscriber_rec(#subscriber{pid = Pid, user_id = _UserId, player_id = PlayerId} = Rec, Subscribers) ->
     midict:store(Pid, Rec, [{player_id, PlayerId}], Subscribers).

@@ -9,6 +9,7 @@
 -include_lib("nsm_db/include/tournaments.hrl").
 -include_lib("nsx_config/include/log.hrl").
 -include_lib("stdlib/include/qlc.hrl").
+-include_lib("nsm_db/include/accounts.hrl").
 -compile(export_all). 
 -record(state, { game_tavla = 0, game_okey = 0 }).
 
@@ -301,6 +302,11 @@ create_standalone_game(Game, Params, Users) ->
     ?INFO("create_standalone_game/3 Params:~p", [Params]),
     case Game of
         game_okey ->
+            #pointing_rule{quota = Quota,
+                           kakush_winner = KakushForWinners,
+                           kakush_other = KakushForLoser,
+                           game_points = WinGamePoints
+                          } = proplists:get_value(pointing_rules, Params),
             TableName = proplists:get_value(table_name, Params),
             MulFactor = proplists:get_value(double_points, Params, 1),
             SlangAllowed = proplists:get_value(slang, Params, false),
@@ -319,11 +325,14 @@ create_standalone_game(Game, Params, Users) ->
                            {observers_allowed, ObserversAllowed},
                            {tournament_type, standalone},
                            {round_timeout, infinity},
+%%                           {round_timeout, 30 * 1000},
+                           {set_timeout, infinity},
+%%                           {set_timeout, 10 * 60 *1000},
                            {speed, Speed},
                            {game_type, GameMode},
                            {rounds, Rounds},
                            {reveal_confirmation, true},
-                           {next_series_confirmation, true},
+                           {next_series_confirmation, false},
                            {pause_mode, normal},
                            {social_actions_enabled, true},
                            {gosterge_finish_allowed, GostergeFinishAllowed}
@@ -332,11 +341,14 @@ create_standalone_game(Game, Params, Users) ->
             create_game(game_okey_ng_trn_standalone,
                          [{game, Game},
                           {game_mode, GameMode},
+                          {game_name, TableName},
                           {seats, 4},
                           {registrants, Users},
                           {initial_points, 0},
-%%                          {quota_per_round, Quota},
-                          {quota_per_round, 1},  %%FIXME See pointing_rules
+                          {quota_per_round, Quota},
+                          {kakush_for_winners, KakushForWinners},
+                          {kakush_for_loser, KakushForLoser},
+                          {win_game_points, WinGamePoints},
                           {mul_factor, MulFactor},
                           {table_module, game_okey_ng_table_trn},
                           {bot_module, game_okey_bot},

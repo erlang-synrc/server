@@ -42,12 +42,16 @@
          trn_id            :: term(),
          game              :: atom(),
          game_mode         :: atom(),
-         mul_factor        :: integer(),
+         game_name         :: string(),
          seats_per_table   :: integer(),
          params            :: proplists:proplist(),
          table_module      :: atom(),
          bot_module        :: atom(),
          quota_per_round   :: integer(),
+         kakush_for_winners :: integer(),
+         kakush_for_loser  :: integer(),
+         win_game_points   :: integer(),
+         mul_factor        :: integer(),
          registrants       :: [robot | binary()],
          initial_points    :: integer(),
          common_params     :: proplists:proplist(),
@@ -94,28 +98,30 @@
          seat_num        :: integer(),
          player_id       :: undefined | pos_integer(),
          registered_by_table :: undefined | boolean(),
-         connected       :: undefined | boolean()
+         connected       :: undefined | boolean(),
+         free            :: boolean()
         }).
 
 
 -define(STATE_INIT, state_init).
 -define(STATE_WAITING_FOR_TABLES, state_waiting_for_tables).
+-define(STATE_EMPTY_SEATS_FILLING, state_empty_seats_filling).
 -define(STATE_WAITING_FOR_PLAYERS, state_waiting_for_players).
--define(STATE_TURN_PROCESSING, state_turn_processing).
--define(STATE_SHOW_TURN_RESULT, state_show_turn_result).
+-define(STATE_SET_PROCESSING, state_set_processing).
+-define(STATE_SET_FINISHED, state_set_finished).
+-define(STATE_SHOW_SET_RESULT, state_show_set_result).
 -define(STATE_FINISHED, state_finished).
 
 -define(TOURNAMENT_TYPE, standalone).
-%%-define(TAB_MOD, game_okey_ng_table_trn).
 
 -define(TABLE_STATE_INITIALIZING, initializing).
 -define(TABLE_STATE_READY, ready).
 -define(TABLE_STATE_IN_PROGRESS, in_progress).
 -define(TABLE_STATE_FINISHED, finished).
 
--define(WAITING_PLAYERS_TIMEOUT, 3000) . %% Time between all table was created and starting a turn
+-define(WAITING_PLAYERS_TIMEOUT, 3000) . %% Time between a table was created and start of first round
 -define(REST_TIMEOUT, 5000).             %% Time between a round finish and start of a new one
--define(SHOW_TURN_RESULT_TIMEOUT, 15000).%% Time between a turn finish and start of a new one
+-define(SHOW_SET_RESULT_TIMEOUT, 15000). %% Time between a set finish and start of a new one
 -define(SHOW_TOURNAMENT_RESULT_TIMEOUT, 15000). %% Time between last tour result showing and the tournament finish
 
 %% ====================================================================
@@ -152,9 +158,13 @@ init([GameId, Params, _Manager]) ->
     ?INFO("OKEY_NG_TRN_STANDALONE <~p> Init started",[GameId]),
     Registrants =   get_param(registrants, Params),
     SeatsPerTable = get_param(seats, Params),
-    QuotaPerRound = get_param(quota_per_round, Params),
     Game =          get_param(game, Params),
     GameMode =      get_param(game_mode, Params),
+    GameName =      get_param(game_name, Params),
+    QuotaPerRound = get_param(quota_per_round, Params),
+    KakushForWinners = get_param(kakush_for_winners, Params),
+    KakushForLoser = get_param(kakush_for_loser, Params),
+    WinGamePoints = get_param(win_game_points, Params),
     MulFactor =     get_param(mul_factor, Params),
     TableParams =   get_param(table_params, Params),
     TableModule =   get_param(table_module, Params),
@@ -169,12 +179,16 @@ init([GameId, Params, _Manager]) ->
     {ok, ?STATE_INIT, #state{game_id = GameId,
                              game = Game,
                              game_mode = GameMode,
-                             mul_factor = MulFactor,
+                             game_name = GameName,
                              seats_per_table = SeatsPerTable,
                              params = TableParams,
                              table_module = TableModule,
                              bot_module = BotModule,
                              quota_per_round = QuotaPerRound,
+                             kakush_for_winners = KakushForWinners,
+                             kakush_for_loser = KakushForLoser,
+                             win_game_points = WinGamePoints,
+                             mul_factor = MulFactor,
                              registrants = Registrants,
                              initial_points = InitialPoints,
                              table_id_counter = 1,
@@ -186,11 +200,12 @@ handle_event(go, ?STATE_INIT, #state{game_id = GameId,
                                      registrants = Registrants, bot_module = BotModule,
                                      common_params = CommonParams} = StateData) ->
     ?INFO("OKEY_NG_TRN_STANDALONE <~p> Received a directive to starting the tournament.", [GameId]),
-    {Players, PlayerIdCounter} = setup_players(Registrants, GameId, BotModule),
-    DeclRec = create_decl_rec(CommonParams, GameId, Players),
+    DeclRec = create_decl_rec(CommonParams, GameId, Registrants),
     gproc:reg({p,l,self()}, DeclRec),
-    init_tour(1, StateData#state{players = Players,
-                                 player_id_counter = PlayerIdCounter});
+    {Players, PlayerIdCounter} = setup_players(Registrants, GameId, BotModule),
+    NewStateData = StateData#state{players = Players,
+                                   player_id_counter = PlayerIdCounter},
+    init_tour(1, NewStateData);
 
 handle_event({client_message, Message}, StateName, #state{game_id = GameId} = StateData) ->
     ?INFO("OKEY_NG_TRN_STANDALONE <~p> Received the message from a client: ~p.", [GameId, Message]),
@@ -228,7 +243,7 @@ handle_info({'DOWN', MonRef, process, _Pid, _}, StateName,
     end;
 
 
-handle_info({rest_timeout, TableId}, StateName,
+handle_info({rest_timeout, TableId}, ?STATE_SET_PROCESSING = StateName,
             #state{game_id = GameId, game = Game, game_mode = GameMode,
                    quota_per_round = Amount, mul_factor = MulFactor, tables = Tables,
                    players = Players, seats = Seats, cur_table = TableId, bot_module = BotModule,
@@ -254,20 +269,44 @@ handle_info({rest_timeout, TableId}, StateName,
             deduct_quota(GameId, Game, GameMode, Amount, MulFactor, RealUsersIds),
             NewRequests = table_req_replace_players(TableMod, TablePid, TableId, Replacements, Requests),
             send_to_table(TableMod, TablePid, start_round),
-            DeclRec = create_decl_rec(CommonParams, GameId, NewPlayers),
+            Users = [if Bot -> robot; true -> UserId end || #player{user_id = UserId, is_bot = Bot} <- players_to_list(NewPlayers)],
+            DeclRec = create_decl_rec(CommonParams, GameId, Users),
             gproc:set_value({p,l,self()}, DeclRec),
             {next_state, StateName, StateData#state{tables = NewTables, players = NewPlayers, seats = NewSeats,
                                                     tab_requests = NewRequests, player_id_counter = NewPlayerIdCounter}}
     end;
 
 
+handle_info({rest_timeout, TableId}, ?STATE_SET_FINISHED,
+            #state{game_id = GameId, game = GameType, game_mode = GameMode,
+                   game_name = GameName, tables_results = TablesResults, tables = Tables,
+                   players = Players, cur_table = TableId, table_module = TableMod,
+                   kakush_for_winners = KakushForWinners, kakush_for_loser = KakushForLoser,
+                   win_game_points = WinGamePoints, mul_factor = MulFactor} = StateData) ->
+    ?INFO("OKEY_NG_TRN_STANDALONE <~p> Time to determinate set results (table: <~p>).", [GameId, TableId]),
+    #table{pid = TablePid} = fetch_table(TableId, Tables),
+    {_, TableScore} = lists:keyfind(TableId, 1, TablesResults),
+    SeriesResult = series_result(TableScore),
+    ?INFO("OKEY_NG_TRN_STANDALONE <~p> Set result: ~p", [GameId, SeriesResult]),
+    send_to_table(TableMod, TablePid, {show_series_result, SeriesResult}),
+    Points = calc_players_prize_points(SeriesResult, KakushForWinners, KakushForLoser, WinGamePoints, MulFactor, Players),
+    UsersPrizePoints = prepare_users_prize_points(Points, Players),
+    ?INFO("OKEY_NG_TRN_STANDALONE <~p> Prizes: ~p", [GameId, UsersPrizePoints]),
+    add_points_to_accounts(UsersPrizePoints, GameId, GameType, GameMode, MulFactor),
+    EndsNotePoints = prepare_ends_note_points(SeriesResult, Points, Players),
+    send_ends_note(GameName, GameType, EndsNotePoints),
+    {TRef, Magic} = start_timer(?SHOW_SET_RESULT_TIMEOUT),
+    {next_state, ?STATE_SHOW_SET_RESULT, StateData#state{timer = TRef,
+                                                         timer_magic = Magic}};
+
+
 handle_info({timeout, Magic}, ?STATE_WAITING_FOR_PLAYERS,
             #state{timer_magic = Magic, game_id = GameId} = StateData) ->
-    ?INFO("OKEY_NG_TRN_STANDALONE <~p> Time to start new turn.", [GameId]),
-    start_turn(StateData);
+    ?INFO("OKEY_NG_TRN_STANDALONE <~p> Time to start new set.", [GameId]),
+    start_set(StateData);
 
 
-handle_info({timeout, Magic}, ?STATE_SHOW_TURN_RESULT,
+handle_info({timeout, Magic}, ?STATE_SHOW_SET_RESULT,
             #state{timer_magic = Magic, game_id = GameId} = StateData) ->
     ?INFO("OKEY_NG_TRN_STANDALONE <~p> Time to finalize the tournament.", [GameId]),
     finalize_tournament(StateData);
@@ -336,8 +375,8 @@ handle_table_message(TableId, {player_disconnected, PlayerId},
 handle_table_message(TableId, {table_created, Relay},
                      ?STATE_WAITING_FOR_TABLES,
                      #state{tables = Tables, seats = Seats, table_module = TableMod,
-                            cr_tab_requests = TCrRequests, reg_requests = RegRequests
-                           } = StateData) ->
+                            cr_tab_requests = TCrRequests, reg_requests = RegRequests,
+                            seats_per_table = SeatsPerTable} = StateData) ->
     TabInitPlayers = dict:fetch(TableId, TCrRequests),
     NewTCrRequests = dict:erase(TableId, TCrRequests),
     %% Update status of players
@@ -350,7 +389,7 @@ handle_table_message(TableId, {table_created, Relay},
         end,
     NewSeats = lists:foldl(F, Seats, TabSeats),
 
-    %% Process delayed registration requests
+    %% Process delayed join/registration requests
     TablePid = get_table_pid(TableId, Tables),
     F2 = fun(PlayerId, Acc) ->
                  case dict:find(PlayerId, Acc) of
@@ -362,44 +401,48 @@ handle_table_message(TableId, {table_created, Relay},
          end,
     NewRegRequests = lists:foldl(F2, RegRequests, TabInitPlayers),
     NewTables = update_created_table(TableId, Relay, Tables),
-    case dict:size(NewTCrRequests) of
-        0 -> 
+
+    case is_table_full_enought(TableId, NewSeats, SeatsPerTable) of
+        true ->
             {TRef, Magic} = start_timer(?WAITING_PLAYERS_TIMEOUT),
             {next_state, ?STATE_WAITING_FOR_PLAYERS,
-              StateData#state{tables = NewTables, seats = NewSeats, cr_tab_requests = NewTCrRequests,
-                              reg_requests = NewRegRequests, timer = TRef, timer_magic = Magic}};
-        _ -> {next_state, ?STATE_WAITING_FOR_TABLES,
-              StateData#state{tables = NewTables, seats = NewSeats,
-                              cr_tab_requests = NewTCrRequests, reg_requests = NewRegRequests}}
+             StateData#state{tables = NewTables, seats = NewSeats, cr_tab_requests = NewTCrRequests,
+                             reg_requests = NewRegRequests, timer = TRef, timer_magic = Magic}};
+        false ->
+            {next_state, ?STATE_EMPTY_SEATS_FILLING,
+             StateData#state{tables = NewTables, seats = NewSeats, cr_tab_requests = NewTCrRequests,
+                             reg_requests = NewRegRequests}}
     end;
 
 
-handle_table_message(TableId, {round_finished, NewScoringState, _RoundScore, _TotalScore},
-                     ?STATE_TURN_PROCESSING,
-                     #state{tables = Tables, table_module = TableMod} = StateData) ->
+handle_table_message(TableId, {round_finished, TableContext, _RoundScore, _TotalScore},
+                     ?STATE_SET_PROCESSING,
+                     #state{game_id = GameId, tables = Tables, table_module = TableMod} = StateData) ->
+    ?INFO("OKEY_NG_TRN_STANDALONE <~p> Round is finished (table: <~p>).", [GameId, TableId]),
     #table{pid = TablePid} = Table = fetch_table(TableId, Tables),
     TRef = erlang:send_after(?REST_TIMEOUT, self(), {rest_timeout, TableId}),
-    NewTable = Table#table{context = NewScoringState, state = ?TABLE_STATE_FINISHED, timer = TRef},
+    NewTable = Table#table{context = TableContext, state = ?TABLE_STATE_FINISHED, timer = TRef},
     NewTables = store_table(NewTable, Tables),
     send_to_table(TableMod, TablePid, show_round_result),
-    {next_state, ?STATE_TURN_PROCESSING, StateData#state{tables = NewTables}};
+    ?INFO("OKEY_NG_TRN_STANDALONE <~p> Waiting some time (~p secs) before start of next round.",
+          [GameId, ?REST_TIMEOUT div 1000]),
+    {next_state, ?STATE_SET_PROCESSING, StateData#state{tables = NewTables}};
 
 
 handle_table_message(TableId, {game_finished, TableContext, _RoundScore, TableScore},
-                     ?STATE_TURN_PROCESSING,
-                     #state{tables = Tables, tables_results = TablesResults,
-                            table_module = TableMod} = StateData) ->
-    NewTablesResults = [{TableId, TableScore} | TablesResults],
+                     ?STATE_SET_PROCESSING,
+                     #state{game_id = GameId, tables = Tables, table_module = TableMod} = StateData) ->
+    ?INFO("OKEY_NG_TRN_STANDALONE <~p> Last round of the set is finished (table: <~p>).", [GameId, TableId]),
+    TablesResults = [{TableId, TableScore}],
     #table{pid = TablePid} = Table = fetch_table(TableId, Tables),
-    NewTable = Table#table{context = TableContext, state = ?TABLE_STATE_FINISHED},
+    TRef = erlang:send_after(?REST_TIMEOUT, self(), {rest_timeout, TableId}),
+    NewTable = Table#table{context = TableContext, state = ?TABLE_STATE_FINISHED, timer = TRef},
     NewTables = store_table(NewTable, Tables),
-    send_to_table(TableMod, TablePid, {show_series_result, series_result(TableScore)}),
-%%    send_to_table(TablePid, show_round_result),
-    {TRef, Magic} = start_timer(?SHOW_TURN_RESULT_TIMEOUT),
-    {next_state, ?STATE_SHOW_TURN_RESULT, StateData#state{tables = NewTables,
-                                                          tables_results = NewTablesResults,
-                                                          timer = TRef,
-                                                          timer_magic = Magic}};
+    send_to_table(TableMod, TablePid, show_round_result),
+    ?INFO("OKEY_NG_TRN_STANDALONE <~p> Waiting some time (~p secs) before the set results calculation.",
+          [GameId, ?REST_TIMEOUT div 1000]),
+    {next_state, ?STATE_SET_FINISHED, StateData#state{tables = NewTables,
+                                                      tables_results = TablesResults}};
 
 
 handle_table_message(TableId, {response, RequestId, Response},
@@ -471,11 +514,13 @@ handle_table_response(TableId, RequestContext, Response, StateName,
 
 %%===================================================================
 
-handle_client_request({join, User}, From, StateName,
+handle_client_request({join, UserInfo}, From, StateName,
                       #state{game_id = GameId, reg_requests = RegRequests,
                              seats = Seats, players=Players, tables = Tables,
-                             table_module = TableMod} = StateData) ->
-    #'PlayerInfo'{id = UserId, robot = _IsBot} = User,
+                             table_module = TableMod, cur_table = TableId,
+                             player_id_counter = PlayerIdCounter, tab_requests = TabRequests,
+                             seats_per_table = SeatsPerTable, common_params = CommonParams} = StateData) ->
+    #'PlayerInfo'{id = UserId, robot = _IsBot} = UserInfo,
     ?INFO("OKEY_NG_TRN_STANDALONE <~p> The 'Join' request received from user: ~p.", [GameId, UserId]),
     if StateName == ?STATE_FINISHED ->
            ?INFO("OKEY_NG_TRN_STANDALONE <~p> The tournament is finished. "
@@ -494,15 +539,51 @@ handle_client_request({join, User}, From, StateName,
                            NewRegRequests = dict:store(PlayerId, From, RegRequests),
                            {next_state, StateName, StateData#state{reg_requests = NewRegRequests}};
                        _ ->
-                           ?INFO("OKEY_NG_TRN_STANDALONE <~p> Return join response for player ~p immediately.",
+                           ?INFO("OKEY_NG_TRN_STANDALONE <~p> Return the join response for player ~p immediately.",
                                  [GameId, UserId]),
                            #table{relay = Relay, pid = TPid} = fetch_table(TableId, Tables),
                            {reply, {ok, {PlayerId, Relay, {TableMod, TPid}}}, StateName, StateData}
                    end;
-               error -> %% Not a member
-                   ?INFO("OKEY_NG_TRN_STANDALONE <~p> User ~p is not a member of the tournament. "
-                         "Reject to join.", [GameId, UserId]),
-                   {reply, {error, not_allowed}, StateName, StateData}
+               error -> %% Not a member yet
+                   ?INFO("OKEY_NG_TRN_STANDALONE <~p> User ~p is not a member of the tournament.", [GameId, UserId]),
+                   case find_free_seats(TableId, Seats) of
+                       [] ->
+                           ?INFO("OKEY_NG_TRN_STANDALONE <~p> No free seats for user ~p. "
+                                 "Reject to join.", [GameId, UserId]),
+                           {reply, {error, not_allowed}, StateName, StateData};
+                       [_ | _] ->
+                           ?INFO("OKEY_NG_TRN_STANDALONE <~p> There is a free seat for user ~p. "
+                                 "Registering.", [GameId, UserId]),
+                           {SeatNum, NewPlayers, NewSeats} =
+                               register_new_player(UserInfo, TableId, Players, Seats, PlayerIdCounter),
+                           TablePid = get_table_pid(TableId, Tables),
+                           NewTabRequests = table_req_replace_player(TableMod, TablePid, PlayerIdCounter, UserInfo,
+                                                                     TableId, SeatNum, TabRequests),
+                           NewRegRequests = dict:store(PlayerIdCounter, From, RegRequests),
+
+                           Users = [if Bot -> robot; true -> UId end || #player{user_id = UId, is_bot = Bot}
+                                                                                   <- players_to_list(NewPlayers)],
+                           DeclRec = create_decl_rec(CommonParams, GameId, Users),
+                           gproc:set_value({p,l,self()}, DeclRec),
+
+                           TableIsFull = is_table_full_enought(TableId, NewSeats, SeatsPerTable),
+                           if StateName == ?STATE_EMPTY_SEATS_FILLING andalso TableIsFull ->
+                                  ?INFO("OKEY_NG_TRN_STANDALONE <~p> It's enought players registered to start the game. "
+                                            "Initiating the procedure.", [GameId]),
+                                  {TRef, Magic} = start_timer(?WAITING_PLAYERS_TIMEOUT),
+                                  {next_state, ?STATE_WAITING_FOR_PLAYERS,
+                                   StateData#state{reg_requests = NewRegRequests, tab_requests = NewTabRequests,
+                                                   players = NewPlayers, seats = NewSeats, timer = TRef,
+                                                   timer_magic = Magic, player_id_counter = PlayerIdCounter+1}};
+                              true ->
+                                  ?INFO("OKEY_NG_TRN_STANDALONE <~p> Not enought players registered to start the game. "
+                                            "Waiting for more registrations.", [GameId]),
+                                  {next_state, StateName,
+                                   StateData#state{reg_requests = NewRegRequests, tab_requests = NewTabRequests,
+                                                   players = NewPlayers, seats = NewSeats,
+                                                   player_id_counter = PlayerIdCounter+1}}
+                           end
+                   end
            end
     end;
 
@@ -538,9 +619,9 @@ init_tour(Tour, #state{game_id = GameId, seats_per_table = SeatsPerTable,
                                                             tables_results = []
                                                            }}.
 
-start_turn(#state{game_id = GameId, game = Game, game_mode = GameMode, mul_factor = MulFactor,
-                  quota_per_round = Amount, tour = Tour, tables = Tables, players = Players,
-                  table_module = TableMod} = StateData) ->
+start_set(#state{game_id = GameId, game = Game, game_mode = GameMode, mul_factor = MulFactor,
+                 quota_per_round = Amount, tour = Tour, tables = Tables, players = Players,
+                 table_module = TableMod} = StateData) ->
     ?INFO("OKEY_NG_TRN_STANDALONE <~p> Starting tour <~p>...", [GameId, Tour]),
     UsersIds = [UserId || #player{user_id = UserId, is_bot = false} <- players_to_list(Players)],
     deduct_quota(GameId, Game, GameMode, Amount, MulFactor, UsersIds),
@@ -553,8 +634,8 @@ start_turn(#state{game_id = GameId, game = Game, game_mode = GameMode, mul_facto
     WL = [T#table.id || T <- TablesList],
     ?INFO("OKEY_NG_TRN_STANDALONE <~p> Tour <~p> is started. Processing...",
           [GameId, Tour]),
-    {next_state, ?STATE_TURN_PROCESSING, StateData#state{tables = NewTables,
-                                                         tables_wl = WL}}.
+    {next_state, ?STATE_SET_PROCESSING, StateData#state{tables = NewTables,
+                                                        tables_wl = WL}}.
 
 
 finalize_tournament(#state{game_id = GameId} = StateData) ->
@@ -565,20 +646,6 @@ finalize_tournament(#state{game_id = GameId} = StateData) ->
           "Waiting some time (~p secs) before continue...",
           [GameId, ?SHOW_TOURNAMENT_RESULT_TIMEOUT div 1000]),
     {next_state, ?STATE_FINISHED, StateData#state{timer = TRef, timer_magic = Magic}}.
-
-deduct_quota(GameId, Game, GameMode, Amount, MulFactor, UsersIds) ->
-    RealAmount = Amount*MulFactor,
-    [begin
-         TI = #ti_game_event{id = GameId,
-                             type = start_round,
-                             tournament_type = ?TOURNAMENT_TYPE,
-                             game_name = Game,
-                             game_mode = GameMode,
-                             double_points = MulFactor},
-         nsm_accounts:transaction(binary_to_list(UserId), ?CURRENCY_QUOTA, -RealAmount, TI)
-     end
-     || UserId <- UsersIds].
-
 
 %% series_result(TableResult) -> WithPlaceAndStatus
 %% Types: TableResult = [{PlayerId, Points}] 
@@ -601,7 +668,9 @@ series_result(TableResult) ->
     WithPlaceAndStatus.
 
 
-
+is_table_full_enought(TableId, Seats, EnoughtNumber) ->
+    NonEmptySeats = find_non_free_seats(TableId, Seats),
+    length(NonEmptySeats) >= EnoughtNumber.
 
 %% replace_player_by_bot(PlayerId, TableId, SeatNum,
 %%                       #state{players = Players, seats = Seats,
@@ -639,28 +708,42 @@ prepare_players_for_new_tour(InitialPoints, Players) ->
 %%                              {Tables, Seats, NewTableIdCounter, CrRequests}
 %% Types: Players = {PlayerId, UserInfo, Points}
 %%        TTable = [{Tour, [{UserId, CommonPos, Score, Status}]}]
-setup_tables(TableMod, Players, SeatsPerTable, TTable, Tour, Tours, TableIdCounter, GameId, TableParams) ->
-    SPlayers = shuffle(Players),
-    Groups = split_by_num(SeatsPerTable, SPlayers),
-    F = fun(Group, {TAcc, SAcc, TableId, TCrRequestsAcc}) ->
-                {TPlayers, _} = lists:mapfoldl(fun({PlayerId, UserInfo, Points}, SeatNum) ->
-                                                       {{PlayerId, UserInfo, SeatNum, Points}, SeatNum+1}
-                                               end, 1, Group),
-                TableParams2 = [{players, TPlayers}, {ttable, TTable}, {tour, Tour},
-                                {tours, Tours}, {parent, {?MODULE, self()}} | TableParams],
-                {ok, TabPid} = spawn_table(TableMod, GameId, TableId, TableParams2),
-                MonRef = erlang:monitor(process, TabPid),
-                NewTAcc = reg_table(TableId, TabPid, MonRef, _GlTableId = 0, _Context = undefined, TAcc),
-                F2 = fun({PlId, _, SNum, _}, Acc) ->
-                             assign_seat(TableId, SNum, PlId, _Reg = false, _Conn = false, Acc)
-                     end,
-                NewSAcc = lists:foldl(F2, SAcc, TPlayers),
-                PlayersIds = [PlayerId || {PlayerId, _, _} <- Group],
-                NewTCrRequestsAcc = dict:store(TableId, PlayersIds, TCrRequestsAcc),
-                {NewTAcc, NewSAcc, TableId + 1, NewTCrRequestsAcc}
-        end,
-    lists:foldl(F, {tables_init(), seats_init(), TableIdCounter, dict:new()}, Groups).
+setup_tables(TableMod, Players, SeatsPerTable, TTable, Tour, Tours, TableId, GameId, TableParams) ->
+    EmptySeatsNum = SeatsPerTable - length(Players),
+    Players2 = lists:duplicate(EmptySeatsNum, empty) ++ Players,
+    SPlayers = shuffle(Players2),
+    {TPlayers, _} = lists:mapfoldl(fun({PlayerId, UserInfo, Points}, SeatNum) ->
+                                           {{PlayerId, UserInfo, SeatNum, Points}, SeatNum+1};
+                                      (empty, SeatNum) ->
+                                           {{_PlayerId = {empty, SeatNum+1}, empty_seat_userinfo(SeatNum+1), SeatNum, _Points=0}, SeatNum+1}
+                                   end, 1, SPlayers),
+    ?INFO("EmptySeatsNum:~p SPlayers: ~p TPlayers:~p", [EmptySeatsNum, SPlayers, TPlayers]),
+    TableParams2 = [{players, TPlayers}, {ttable, TTable}, {tour, Tour},
+                    {tours, Tours}, {parent, {?MODULE, self()}} | TableParams],
+    {ok, TabPid} = spawn_table(TableMod, GameId, TableId, TableParams2),
+    MonRef = erlang:monitor(process, TabPid),
+    Tables = reg_table(TableId, TabPid, MonRef, _GlTableId = 0, _Context = undefined, tables_init()),
+    F2 = fun({PlId, _UInfo, SNum, _Points}, Acc) ->
+                 case PlId of
+                     {empty,_} -> assign_seat(TableId, SNum, _PlId = undefined, _Reg = false, _Conn = false, _Free = true, Acc);
+                     _ -> assign_seat(TableId, SNum, PlId, _Reg = false, _Conn = false, _Free = false, Acc)
+                 end
+         end,
+    Seats = lists:foldl(F2, seats_init(), TPlayers),
+    PlayersIds = [PlayerId || {PlayerId, _, _} <- SPlayers],
+    TCrRequests = dict:store(TableId, PlayersIds, dict:new()),
+    {Tables, Seats, TableId + 1, TCrRequests}.
 
+empty_seat_userinfo(Num) ->
+    #'PlayerInfo'{id         = list_to_binary(["empty_", integer_to_list(Num)]),
+                  login      = <<"">>,
+                  name       = <<"empty">>,
+                  surname    = <<" ">>,
+                  age        = 0,
+                  skill      = 0,
+                  score      = 0,
+                  avatar_url = null,
+                  robot      = true }.
 
 %% setup_players(Registrants, GameId, BotModule) -> {Players, PlayerIdCounter}
 setup_players(Registrants, GameId, BotModule) ->
@@ -677,6 +760,18 @@ setup_players(Registrants, GameId, BotModule) ->
         end,
     lists:foldl(F, {players_init(), 1}, Registrants).
 
+
+
+%% register_new_player(UserInfo, TableId, Players, Seats, PlayerId) -> {SeatNum, NewPlayers, NewSeats}
+
+register_new_player(UserInfo, TableId, Players, Seats, PlayerId) ->
+    #'PlayerInfo'{id = UserId, robot = Bot} = UserInfo,
+    [#seat{seat_num = SeatNum} = Seat|_] = find_free_seats(TableId, Seats),
+    NewSeats = store_seat(Seat#seat{table = TableId, player_id = PlayerId,
+                                    registered_by_table = false, connected = false, free = false}, Seats),
+    NewPlayers = store_player(#player{id = PlayerId, user_id = UserId,
+                                      user_info = UserInfo, is_bot = Bot}, Players),
+    {SeatNum, NewPlayers, NewSeats}.
 
 %% replace_by_bots(Disconnected, GameId, BotModule, TableId, Players, Seats, PlayerIdCounter) ->
 %%                                       {Replacements, NewPlayers, NewSeats, NewPlayerIdCounter}
@@ -742,9 +837,6 @@ players_init() -> midict:new().
 store_player(#player{id =Id, user_id = UserId} = Player, Players) ->
     midict:store(Id, Player, [{user_id, UserId}], Players).
 
-get_players_ids(Players) ->
-    [P#player.id || P <- players_to_list(Players)].
-
 get_player_by_user_id(UserId, Players) ->
     case midict:geti(UserId, user_id, Players) of
         [Player] -> {ok, Player};
@@ -757,6 +849,9 @@ players_to_list(Players) -> midict:all_values(Players).
 get_user_info(PlayerId, Players) ->
     #player{user_info = UserInfo} = midict:fetch(PlayerId, Players),
     UserInfo.
+
+fetch_player(PlayerId, Players) ->
+    midict:fetch(PlayerId, Players).
 
 get_user_id(PlayerId, Players) ->
     #player{user_id = UserId} = midict:fetch(PlayerId, Players),
@@ -807,14 +902,21 @@ find_seats_by_table_id(TabId, Seats) ->
 find_disconnected_seats(TableId, Seats) ->
     midict:geti(false, {connected, TableId}, Seats).
 
+find_non_free_seats(TableId, Seats) ->
+    midict:geti(false, {free_at_tab, TableId}, Seats).
+
+find_free_seats(TableId, Seats) ->
+    midict:geti(true, {free_at_tab, TableId}, Seats).
+
+
 fetch_seat(TableId, SeatNum, Seats) -> midict:fetch({TableId, SeatNum}, Seats).
 
-%% assign_seat(TabId, SeatNum, PlayerId, RegByTable, Connected, Seats) -> NewSeats
+%% assign_seat(TabId, SeatNum, PlayerId, RegByTable, Connected, Free, Seats) -> NewSeats
 %% PlayerId = integer()
 %% RegByTable = Connected = undefined | boolean()
-assign_seat(TabId, SeatNum, PlayerId, RegByTable, Connected, Seats) ->
+assign_seat(TabId, SeatNum, PlayerId, RegByTable, Connected, Free, Seats) ->
     Seat = #seat{table = TabId, seat_num = SeatNum, player_id = PlayerId,
-                 registered_by_table = RegByTable, connected = Connected},
+                 registered_by_table = RegByTable, connected = Connected, free = Free},
     store_seat(Seat, Seats).
 
 update_seat_connect_status(TableId, SeatNum, ConnStatus, Seats) ->
@@ -824,31 +926,106 @@ update_seat_connect_status(TableId, SeatNum, ConnStatus, Seats) ->
 
 store_seat(#seat{table = TabId, seat_num = SeatNum, player_id = PlayerId,
                  registered_by_table = _RegByTable,
-                 connected = Connected} = Seat, Seats) ->
-    Indices = if PlayerId == undefined ->
-                     [{table_id, TabId}, {free, true}, {free_at_tab, TabId}];
+                 connected = Connected, free = Free} = Seat, Seats) ->
+    Indices = if Free == true ->
+                     [{table_id, TabId}, {free, true}, {{free_at_tab, TabId}, true}];
                  true ->
-                     [{table_id, TabId}, {free, false}, {player_at_table, {PlayerId, TabId}},
-                      {player_id, PlayerId}, {{connected, TabId}, Connected}]
+                     [{table_id, TabId}, {free, false}, {{free_at_tab, TabId}, false},
+                      {player_at_table, {PlayerId, TabId}}, {player_id, PlayerId},
+                      {{connected, TabId}, Connected}]
               end,
     midict:store({TabId, SeatNum}, Seat, Indices, Seats).
 
 
+%% calc_players_prize_points(SeriesResult, KakushForWinner, KakushForLoser,
+%%                           WinGamePoints, MulFactor, Players) -> Points
+%% Types:
+%%     SeriesResult = [{PlayerId, _Pos, _Points, Status}]
+%%          Status = winner | looser
+%%     Points = [{PlayerId, KakushPoints, GamePoints}]
+calc_players_prize_points(SeriesResult, KakushForWinners, KakushForLoser, WinGamePoints, MulFactor, Players) ->
+    SeriesResult1 = [begin
+                         #'PlayerInfo'{id = UserId, robot = Robot} = get_user_info(PlayerId, Players),
+                         Paid = is_paid(user_id_to_string(UserId)),
+                         Winner = Status == winner,
+                         {PlayerId, Winner, Robot, Paid}
+                     end || {PlayerId, _Pos, _Points, Status} <- SeriesResult],
+    Paids   = [PlayerId || {PlayerId, _Winner, _Robot, _Paid = true} <- SeriesResult1],
+    Winners = [PlayerId || {PlayerId, _Winner = true, _Robot, _Paid} <- SeriesResult1],
+    TotalNum = length(SeriesResult),
+    PaidsNum = length(Paids),
+    WinnersNum = length(Winners),
+    KakushPerWinner = round(((KakushForWinners * MulFactor) * PaidsNum div TotalNum) / WinnersNum),
+    KakushPerLoser = (KakushForLoser * MulFactor) * PaidsNum div TotalNum,
+    WinGamePoints1 = WinGamePoints * MulFactor,
+    [begin
+         {KakushPoints, GamePoints} = calc_points(KakushPerWinner, KakushPerLoser, WinGamePoints1, Paid, Robot, Winner),
+         {PlayerId, KakushPoints, GamePoints}
+     end || {PlayerId, Winner, Robot, Paid} <- SeriesResult1].
+
+
+calc_points(KakushPerWinner, KakushPerLoser, WinGamePoints, Paid, Robot, Winner) ->
+    if Robot -> {0, 0};
+       not Paid andalso Winner -> {0, WinGamePoints};
+       not Paid -> {0, 0};
+       Paid andalso Winner -> {KakushPerWinner, WinGamePoints};
+       Paid -> {KakushPerLoser, 0}
+    end.
+
+%% prepare_ends_note_points(SeriesResult, Points, Players) -> EndsNotePoints
+%% Types: EndsNotePoints = [{UserIdStr, Robot, Pos, KakushPoints, GamePoints}]
+prepare_ends_note_points(SeriesResult, Points, Players) ->
+    [begin
+         #player{user_id = UserId, is_bot = Robot} = fetch_player(PlayerId, Players),
+         {_, KPoints, GPoints} = lists:keyfind(PlayerId, 1, Points),
+         {user_id_to_string(UserId), Robot, Pos, KPoints, GPoints}
+     end || {PlayerId, Pos, _Points, _Status} <- SeriesResult].
+
+%% prepare_users_prize_points(Points, Players) -> UsersPrizePoints
+%% Types:
+%%     Points = [{PlayerId, KakushPoints, GamePoints}]
+%%     UserPrizePoints = [{UserIdStr, KakushPoints, GamePoints}]
+prepare_users_prize_points(Points, Players) ->
+    [{user_id_to_string(get_user_id(PlayerId, Players)), K, G} || {PlayerId, K, G} <- Points].
+
+is_paid(UserId) -> nsm_accounts:user_paid(UserId).
+
+deduct_quota(GameId, GameType, GameMode, Amount, MulFactor, UsersIds) ->
+    RealAmount = Amount * MulFactor,
+    [begin
+         TI = #ti_game_event{game_name = GameType, game_mode = GameMode,
+                             id = GameId, double_points = MulFactor,
+                             type = start_round, tournament_type = ?TOURNAMENT_TYPE},
+         nsm_accounts:transaction(binary_to_list(UserId), ?CURRENCY_QUOTA, -RealAmount, TI)
+     end || UserId <- UsersIds],
+    ok.
+
+
+%% add_points_to_accounts(Points, GameId, GameType, GameMode, MulFactor) -> ok
+%% Types: Points = [{UserId, KakushPoints, GamePoints}]
+add_points_to_accounts(Points, GameId, GameType, GameMode, MulFactor) ->
+    TI = #ti_game_event{game_name = GameType, game_mode = GameMode,
+                        id = GameId, double_points = MulFactor,
+                        type = game_end, tournament_type = ?TOURNAMENT_TYPE},
+    [begin
+         if KakushPoints =/= 0 ->
+                ok = nsm_accounts:transaction(UserId, ?CURRENCY_KAKUSH, KakushPoints, TI);
+            true -> do_nothing
+         end,
+         if GamePoints =/= 0 ->
+                ok = nsm_accounts:transaction(UserId, ?CURRENCY_GAME_POINTS, GamePoints, TI);
+            true -> do_nothing
+         end
+     end || {UserId, KakushPoints, GamePoints} <- Points],
+    ok.
+
+send_ends_note(GameName, GameType, EndsNotePoints) ->
+    nsx_msg:notify(["system", "game_ends_note"], {{GameName, GameType}, EndsNotePoints}).
 
 shuffle(List) -> deck:to_list(deck:shuffle(deck:from_list(List))).
 
-split_by_num(Num, List) -> split_by_num(Num, List, []).
 
-split_by_num(_, [], Acc) -> lists:reverse(Acc);
-split_by_num(Num, List, Acc) ->
-    {Group, Rest} = lists:split(Num, List),
-    split_by_num(Num, Rest, [Group | Acc]).
-
-
-create_decl_rec(CParams, GameId, Players) ->
-    Users = [if IsBot -> robot;
-                true -> user_id_to_string(UserId)
-             end || #player{is_bot = IsBot, user_id = UserId} <- players_to_list(Players)],
+create_decl_rec(CParams, GameId, Users) ->
     #game_table{id              = GameId,
                 name            = proplists:get_value(table_name, CParams),
 %                gameid,
@@ -878,7 +1055,7 @@ create_decl_rec(CParams, GameId, Players) ->
                 deny_observers  = proplists:get_value(deny_observers, CParams),
                 gosterge_finish = proplists:get_value(gosterge_finish, CParams),
                 double_points   = proplists:get_value(double_points, CParams),
-%                game_state,
+                game_state      = started,
                 game_process    = self(),
                 game_module     = ?MODULE,
                 pointing_rules  = proplists:get_value(pointing_rules, CParams),

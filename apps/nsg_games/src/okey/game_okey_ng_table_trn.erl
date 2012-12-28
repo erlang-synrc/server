@@ -97,7 +97,8 @@
          seat_num        :: integer(),
          user_id         :: binary(),
          is_bot          :: boolean(),
-         info            :: #'PlayerInfo'{}
+         info            :: #'PlayerInfo'{},
+         connected       :: boolean()
         }).
 
 -define(STATE_WAITING_FOR_START, state_waiting_for_start).
@@ -200,7 +201,7 @@ init([GameId, TableId, Params]) ->
                                           gosterge_finish_allowed = GostergeFinishAllowed,
                                           social_actions_enabled = SocialActionsEnabled,
                                           players = Players,
-                                          start_seat = 1,
+                                          start_seat = crypto:rand_uniform(1, ?SEATS_NUM + 1),
                                           cur_round = CurRound,
                                           scoring_state = ScoringState,
                                           tournament_table = TTable
@@ -273,7 +274,7 @@ handle_parent_message({register_player, RequestId, UserInfo, PlayerId, SeatNum},
                       #state{table_id = TableId, players = Players,
                              parent = Parent, relay = Relay} = StateData) ->
     #'PlayerInfo'{id = UserId, robot = IsBot} = UserInfo,
-    NewPlayers = reg_player(PlayerId, SeatNum, UserId, IsBot, UserInfo, Players),
+    NewPlayers = reg_player(PlayerId, SeatNum, UserId, IsBot, UserInfo, _Connected = false, Players),
     relay_register_player(Relay, UserId, PlayerId),
     %% TODO: Send notificitations to gamesessions (we have no such notification)
     parent_confirm_registration(Parent, TableId, RequestId),
@@ -285,7 +286,7 @@ handle_parent_message({replace_player, RequestId, UserInfo, PlayerId, SeatNum}, 
     #'PlayerInfo'{id = UserId, robot = IsBot} = UserInfo,
     #player{id = OldPlayerId} = get_player_by_seat_num(SeatNum, Players),
     NewPlayers = del_player(OldPlayerId, Players),
-    NewPlayers2 = reg_player(PlayerId, SeatNum, UserId, IsBot, UserInfo, NewPlayers),
+    NewPlayers2 = reg_player(PlayerId, SeatNum, UserId, IsBot, UserInfo, _Connected = false, NewPlayers),
     relay_kick_player(Relay, OldPlayerId),
     relay_register_player(Relay, UserId, PlayerId),
     ReplaceMsg = create_player_left(SeatNum, UserInfo, Players),
@@ -296,13 +297,14 @@ handle_parent_message({replace_player, RequestId, UserInfo, PlayerId, SeatNum}, 
 handle_parent_message(start_round, StateName,
                       #state{game_type = GameMode, cur_round = CurRound,
                              gosterge_finish_allowed = GostergeFinishAllowed,
-                             start_seat = StartSeat, players = Players,
+                             start_seat = LastStartSeat, players = Players,
                              relay = Relay, turn_timeout = TurnTimeout,
                              round_timeout = RoundTimeout, set_timeout = SetTimeout,
                              set_timer = SetTRef, scoring_state = ScoringState} = StateData)
   when StateName == ?STATE_WAITING_FOR_START;
        StateName == ?STATE_FINISHED ->
     NewCurRound = CurRound + 1,
+    StartSeat = next_seat_num(LastStartSeat),
     Deck = deck:shuffle(deck:init_deck(okey)),
     {Gosterge, Deck1} = choose_gosterge(Deck),
     F = fun(SeatNum, AccDeck) ->
@@ -337,6 +339,7 @@ handle_parent_message(start_round, StateName,
                     true -> SetTRef
                  end,
     NewStateData = StateData#state{cur_round = NewCurRound,
+                                   start_seat = StartSeat,
                                    desk_rule_pid = Desk,
                                    desk_state = DeskState,
                                    timeout_timer = TRef,
@@ -344,11 +347,15 @@ handle_parent_message(start_round, StateName,
                                    round_timer = RoundTRef,
                                    set_timer = NewSetTRef},
     %% Send notifications to clients
+%%     [begin
+%%          GameStartedMsg = create_okey_game_started(N, DeskState, NewCurRound, NewStateData),
+%%          PlayerId = get_player_id_by_seat_num(N, Players),
+%%          send_to_client_ge(Relay, PlayerId, GameStartedMsg)
+%%      end || N <- lists:seq(1, ?SEATS_NUM)],
     [begin
-         GameStartedMsg = create_okey_game_started(N, DeskState, NewCurRound, NewStateData),
-         PlayerId = get_player_id_by_seat_num(N, Players),
+         GameStartedMsg = create_okey_game_started(SeatNum, DeskState, NewCurRound, NewStateData),
          send_to_client_ge(Relay, PlayerId, GameStartedMsg)
-     end || N <- lists:seq(1, ?SEATS_NUM)],
+     end || #player{id = PlayerId, seat_num = SeatNum} <- find_connected_players(Players)],
     CurSeatNum = DeskState#desk_state.cur_seat,
     relay_publish_ge(Relay, create_okey_next_turn(CurSeatNum, Players)),
     {next_state, ?STATE_PLAYING, NewStateData};
@@ -436,30 +443,46 @@ handle_parent_message(Message, StateName,
 
 %% handle_relay_message(Msg, StateName, StateData)
 
-handle_relay_message({player_connected, PlayerId}, StateName,
-                     #state{relay = Relay, parent = Parent,
-                            table_id = TableId, tournament_table = TTable
-                           } = StateData) ->
-    GI = create_okey_game_info(StateData),
-    PlState = create_okey_game_player_state(PlayerId, StateName, StateData),
-    send_to_client_ge(Relay, PlayerId, GI),
-    send_to_client_ge(Relay, PlayerId, PlState),
-    if TTable =/= undefined ->
-           [send_to_client_ge(Relay, PlayerId, create_okey_tour_result(TurnNum, Results))
-              || {TurnNum, Results} <- lists:sort(TTable)];
-       true -> do_nothing
-    end,
-    parent_send_player_connected(Parent, TableId, PlayerId),
-    {next_state, StateName, StateData};
+handle_relay_message({player_connected, PlayerId} = Msg, StateName,
+                     #state{relay = Relay, parent = Parent, game_id = GameId,
+                            table_id = TableId, tournament_table = TTable,
+                            players = Players} = StateData) ->
+    ?INFO("OKEY_NG_TABLE_TRN <~p,~p> Received nofitication from the relay: ~p", [GameId, TableId, Msg]),
+    case get_player(PlayerId, Players) of
+        {ok, Player} ->
+            NewPlayers = store_player_rec(Player#player{connected = true}, Players),
+            GI = create_okey_game_info(StateData),
+            PlState = create_okey_game_player_state(PlayerId, StateName, StateData),
+            send_to_client_ge(Relay, PlayerId, GI),
+            send_to_client_ge(Relay, PlayerId, PlState),
+            relay_allow_broadcast_for_player(Relay, PlayerId),
+            if TTable =/= undefined ->
+                   [send_to_client_ge(Relay, PlayerId, create_okey_tour_result(TurnNum, Results))
+                      || {TurnNum, Results} <- lists:sort(TTable)];
+               true -> do_nothing
+            end,
+            parent_send_player_connected(Parent, TableId, PlayerId),
+            {next_state, StateName, StateData#state{players = NewPlayers}};
+        error ->
+            {next_state, StateName, StateData}
+    end;
 
 
 handle_relay_message({player_disconnected, PlayerId}, StateName,
-                     #state{parent = Parent, table_id = TableId} = StateData) ->
-    parent_send_player_disconnected(Parent, TableId, PlayerId),
-    {next_state, StateName, StateData};
+                     #state{parent = Parent, table_id = TableId, players = Players} = StateData) ->
+    case get_player(PlayerId, Players) of
+        {ok, Player} ->
+            NewPlayers = store_player_rec(Player#player{connected = false}, Players),
+            parent_send_player_disconnected(Parent, TableId, PlayerId),
+            {next_state, StateName, StateData#state{players = NewPlayers}};
+        error ->
+            {next_state, StateName, StateData}
+    end;
 
 
-handle_relay_message(_Message, StateName, StateData) ->
+handle_relay_message(Message, StateName, #state{game_id = GameId, table_id = TableId} = StateData) ->
+    ?ERROR("OKEY_NG_TABLE_TRN <~p,~p> Unknown relay message received in state <~p>: ~p. State: ~p. Stopping.",
+           [GameId, TableId, StateName, Message]),
     {next_state, StateName, StateData}.
 
 %%===================================================================
@@ -884,14 +907,14 @@ players_init() ->
     midict:new().
 
 %% reg_player(PlayerId, SeatNum, UserId, IsBot, Players) -> NewPlayers
-reg_player(PlayerId, SeatNum, UserId, IsBot, UserInfo, Players) ->
+reg_player(PlayerId, SeatNum, UserId, IsBot, UserInfo, Connected, Players) ->
     store_player_rec(#player{id =PlayerId, seat_num = SeatNum, user_id = UserId,
-                             is_bot = IsBot, info = UserInfo}, Players).
+                             is_bot = IsBot, info = UserInfo, connected = Connected}, Players).
 
 %% reg_player(#player{}, Players) -> NewPlayers
 store_player_rec(#player{id =Id, seat_num = SeatNum, user_id = UserId,
-                         is_bot = IsBot} = Player, Players) ->
-    Indices = [{seat_num, SeatNum}, {user_id, UserId}, {is_bot, IsBot}],
+                         is_bot = IsBot, connected = Connected} = Player, Players) ->
+    Indices = [{seat_num, SeatNum}, {user_id, UserId}, {is_bot, IsBot}, {connected, Connected}],
     midict:store(Id, Player, Indices, Players).
 
 %% get_player_id_by_seat_num(SeatNum, Players) -> PlayerId
@@ -912,9 +935,13 @@ get_player_by_seat_num(SeatNum, Players) ->
     [Player] = midict:geti(SeatNum, seat_num, Players),
     Player.
 
-%% find_players_by_seat_num(SeatNum, Players) -> Player
+%% find_players_by_seat_num(SeatNum, Players) -> [Player]
 find_players_by_seat_num(SeatNum, Players) ->
     midict:geti(SeatNum, seat_num, Players).
+
+%% find_connected_players(Players) -> [Player]
+find_connected_players(Players) ->
+    midict:geti(true, connected, Players).
 
 %% del_player(PlayerId, Players) -> NewPlayers
 del_player(PlayerId, Players) ->
@@ -936,7 +963,7 @@ init_players([], Players) ->
 
 init_players([{PlayerId, UserInfo, SeatNum, _StartPoints} | PlayersInfo], Players) ->
     #'PlayerInfo'{id = UserId, robot = IsBot} = UserInfo,
-    NewPlayers = reg_player(PlayerId, SeatNum, UserId, IsBot, UserInfo, Players),
+    NewPlayers = reg_player(PlayerId, SeatNum, UserId, IsBot, UserInfo, _Connected = false, Players),
     init_players(PlayersInfo, NewPlayers).
 
 %%===================================================================
@@ -951,6 +978,9 @@ relay_publish_ge(Relay, Msg) ->
 
 relay_publish(Relay, Msg) ->
     ?RELAY:table_message(Relay, {publish, Msg}).
+
+relay_allow_broadcast_for_player(Relay, PlayerId) ->
+    ?RELAY:table_message(Relay, {allow_broadcast_for_player, PlayerId}).
 
 relay_register_player(Relay, UserId, PlayerId) ->
     ?RELAY:table_request(Relay, {register_player, UserId, PlayerId}).

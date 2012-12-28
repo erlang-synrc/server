@@ -47,10 +47,9 @@ init([Owner, PlayerInfo, GameId]) ->
     ?INFO("BOTMODULE ~p started with game_session pid ~p", [UId,SPid]),
     {ok, #state{user = PlayerInfo, uid = UId, owner = Owner, gid = GameId, session = SPid}}.
 
-handle_call({send_message, Msg0}, _From, State) ->
-    BPid = State#state.bot,
+handle_call({send_message, Msg0}, _From, #state{uid = UId, bot = BPid} = State) ->
     Msg = flashify(Msg0),
-    ?INFO("OKEY BOT: ~p",[Msg0]),
+    ?INFO("OKEY BOT ~p: Resend message to bot process (~p): ~p",[UId, BPid, Msg0]),
     BPid ! Msg,
     {reply, ok, State};
 
@@ -162,8 +161,8 @@ okey_client_loop(State) ->
     Hand0 = State#state.hand,
     Id = State#state.uid,
     receive
-        #game_event{event = <<"okey_next_turn">>, args = Args} ->
-            ?INFO("OKEY NEXT TURN ~p",[{proplists:get_value(player, Args), proplists:get_value(can_challenge, Args)}]),
+        #game_event{event = <<"okey_next_turn">>, args = Args} = Msg ->
+            ?INFO("OKEY_BOT <~p> : Received message: ~p", [Id, Msg]),
             Hand1 = case {proplists:get_value(player, Args), proplists:get_value(can_challenge, Args)} of
                         {Id, false} ->
                             ?INFO("OKEY NEXT TURN"),
@@ -172,19 +171,22 @@ okey_client_loop(State) ->
                             Hand0
                     end,
             okey_client_loop(State#state{hand = Hand1});
-        #game_event{event = <<"okey_revealed">>} ->
+        #game_event{event = <<"okey_revealed">>} = Msg ->
+            ?INFO("OKEY_BOT <~p> : Received message: ~p", [Id, Msg]),
             do_challenge(State),
             okey_client_loop(State);
-        #game_event{event = <<"okey_series_ended">>} ->
+        #game_event{event = <<"okey_series_ended">>} = Msg ->
+            ?INFO("OKEY_BOT <~p> : Received message: ~p", [Id, Msg]),
 %%            S = State#state.conn,
 %%            call_rpc(S, #logout{});
             okey_client_loop(State);
-        #game_event{event = <<"okey_round_ended">>, args = Args} ->
+        #game_event{event = <<"okey_round_ended">>, args = Args} = Msg ->
+            ?INFO("OKEY_BOT <~p> : Received message: ~p", [Id, Msg]),
             NextAction = proplists:get_value(next_action, Args),
             ?INFO("ID: ~p round ended", [Id]),
             okey_client_round(NextAction, State);
-        #game_event{event = <<"okey_game_info">>, args = Args} ->
-            ?INFO("OKEY BOT OKEY GAME INFO: ~p ", [Args]),
+        #game_event{event = <<"okey_game_info">>, args = Args} = Msg ->
+            ?INFO("OKEY_BOT <~p> : Received message: ~p", [Id, Msg]),
             Mode = proplists:get_value(game_type, Args),
             SM = proplists:get_value(sets, Args),
             SC = proplists:get_value(set_no, Args),
@@ -195,9 +197,11 @@ okey_client_loop(State) ->
             Delay = game_okey:get_timeout(robot, fast),
             ST = #'OkeySetState'{round_cur = 1, round_max = RM, set_cur = SC, set_max = SM},
             okey_client_loop(State#state{set_state = ST, delay = Delay, mode = Mode});
-        #game_event{event = <<"okey_disable_okey">>, args = Args} ->
+        #game_event{event = <<"okey_disable_okey">>, args = Args} = Msg ->
+            ?INFO("OKEY_BOT <~p> : Received message: ~p", [Id, Msg]),
             okey_client_loop(State#state{okey_disable = true});
-        #game_event{event = <<"okey_game_started">>, args = Args} ->
+        #game_event{event = <<"okey_game_started">>, args = Args} = Msg ->
+            ?INFO("OKEY_BOT <~p> : Received message: ~p", [Id, Msg]),
             MH = proplists:get_value(tiles, Args),
             G = proplists:get_value(gosterge, Args),
             RC = proplists:get_value(current_round, Args),
@@ -206,8 +210,8 @@ okey_client_loop(State) ->
 %            State#state{hand = MH, gosterge = G, set_state = ST1},
             ?INFO("OKEY BOT GAME STARTED : ~p",[length(MH)]),
             okey_client_loop(State#state{hand = MH, gosterge = G, set_state = ST1});
-        #game_event{event = <<"okey_game_player_state">>, args = Args} ->
-            ?INFO("OKEY BOT OKEY GAME PLAYER STATE: ~p ROBOT NAME ~p", [Args,Id]),
+        #game_event{event = <<"okey_game_player_state">>, args = Args} = Msg ->
+            ?INFO("OKEY_BOT <~p> : Received message: ~p", [Id, Msg]),
             SS = #'OkeySetState'{round_cur = 1, round_max = 3,
                             set_cur = 1,set_max = 1},
 
@@ -250,8 +254,8 @@ okey_client_loop(State) ->
                     okey_client_loop(State#state{hand = Hand0, gosterge = Gosterge})
             end;
 
-        _Other ->
-            ?INFO("OKEY BOT OTHER: ~p ", [_Other]),
+        _Other = Msg ->
+            ?INFO("OKEY_BOT <~p> : Received unhandled message: ~p", [Id, Msg]),
             okey_client_loop(State)
     end.
 
