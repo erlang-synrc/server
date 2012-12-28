@@ -1,19 +1,67 @@
 -module(user_counter).
 -author('Maxim Sokhatsky <maxim@synrc.com>').
 -behaviour(gen_server).
+-include("uri_translator.hrl").
 -include_lib("nsm_db/include/user.hrl").
 -include_lib("nsm_db/include/tournaments.hrl").
--export([start_link/0, user_count/0, joined_users/1, write_cache/2]).
+-export([start_link/0, user_count/0, joined_users/1, write_cache/2, get_word/1, get_translation/1]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 -define(SERVER, ?MODULE).
--record(state, {user_count=0,last_check=undefined,tour_cache}).
+-record(state, {user_count=0,last_check=undefined,tour_cache,translations,words}).
 
 user_count() -> gen_server:call(?SERVER, user_count).
 joined_users(TID) -> gen_server:call(?SERVER, {joined_users,TID}).
 write_cache(TID,PlayRecord) -> gen_server:call(?SERVER, {write_cache,TID,PlayRecord}).
 start_link() -> gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
+get_word(Word) -> gen_server:call(?SERVER, {get_word,Word}).
+get_translation({Lang,Translation}) -> gen_server:call(?SERVER, {get_translation,{Lang,Translation}}).
 
-init([]) -> {ok, #state{tour_cache=dict:new()}}.
+init([]) -> 
+    State = #state{tour_cache=dict:new(),translations=dict:new(),words=dict:new()},
+    NewState = lists:foldl(fun({English, Lang, Word},ST) ->
+
+                      Words0 = dict:store(English,
+             #ut_word{english = English, lang = "en", word = English},
+                       ST#state.words),
+
+                      Words = dict:store(Word,
+             #ut_word{english = Word, lang = Lang, word = Word},
+                       Words0),
+
+                      Translations0 = dict:store(Lang ++ "_" ++ Word,
+             #ut_translation{source = {Lang, Word}, word = English},
+                       ST#state.translations),
+
+                      Translations1 = dict:store("en_" ++ English,
+             #ut_translation{source = {"en", English}, word = English},
+                       Translations0),
+
+                      Translations = dict:store(Lang ++ "_" ++ English,
+             #ut_translation{source = {Lang, English}, word = Word},
+                       Translations1),
+
+                      ST#state{words = Words, translations = Translations}
+
+%                          ok = nsm_db:put(#ut_word{english = English, lang = "en",  word = English}),
+%                          ok = nsm_db:put(#ut_word{english = Word,    lang = Lang,  word = Word}),
+%                          ok = nsm_db:put(#ut_translation{source = {Lang, Word},    word = English}),
+%                          ok = nsm_db:put(#ut_translation{source = {"en", English}, word = English}),
+%                          ok = nsm_db:put(#ut_translation{source = {Lang, English}, word = Word}),
+
+    end, State, ?URI_DICTIONARY),
+   {ok, NewState}.
+
+handle_call({get_word,Word}, _From, State)->
+  Return = case dict:find(Word,State#state.words) of 
+       error -> {error,notfound}; 
+       R -> R end,
+  {reply, Return, State};
+
+handle_call({get_translation,{Lang,Translation}}, _From, State)->
+  Return = case dict:find(Lang ++ "_" ++ Translation,State#state.translations) of 
+       error -> {error,notfound}; 
+       R -> R end,
+  {reply, Return, State};
 
 handle_call(user_count, _From, State)->
   {L,T} = case State#state.last_check == undefined orelse 

@@ -12,21 +12,22 @@
 %% API
 %%====================================================================
 -spec languages() -> [string()].
-languages() ->
-    case get(cache__languages) of
-        undefined ->
-            L = languages0(),
-            put(cache__languages, L),
-            L;
-        L -> L
-    end.
+languages() -> ["tr", "en"].
+%    case get(cache__languages) of
+%        undefined ->
+%            L = languages0(),
+%            put(cache__languages, L),
+%            L;
+%        L -> L
+%    end.
 
 % Get all supported languages
-languages0() ->
-    sets:to_list(
-      sets:from_list( %% TODO: may be it's too bad for speed? Returning ["tr", "en"] can be just fine
-        [ L || #ut_word{lang = L} <- nsm_db:all(ut_word)]
-        )).
+languages0() -> ["tr","en"].
+
+%    sets:to_list(
+%      sets:from_list( %% TODO: may be it's too bad for speed? Returning ["tr", "en"] can be just fine
+%        [ L || #ut_word{lang = L} <- nsm_db:all(ut_word)]
+%        )).
 
 -spec language(string()) -> undefined | string().
 language("/") ->
@@ -43,7 +44,7 @@ language2([Word|Tail]) ->
 	".."-> language2(Tail);
 	"/" -> language2(Tail);
 	""  -> language2(Tail);
-	_   -> case nsm_db:get_word(Word) of
+	_   -> case user_counter:get_word(Word) of
 		   {ok, #ut_word{lang = Lang}} -> Lang;
 		   {error, duplicated} -> "en";
 		   {error, _} ->
@@ -95,14 +96,14 @@ translate2(Uri, Lang, Direction) ->
     lists:flatten([TranslatedPath,Query]).
 
 translate_word(to_en, ForeignWord, SrcLang) ->
-    case nsm_db:get_translation({SrcLang,ForeignWord}) of
+    case user_counter:get_translation({SrcLang,ForeignWord}) of
 	{ok, #ut_translation{word = EnglishWord}} -> EnglishWord;
 	{error, _} ->
 %	    ?ERROR("unknown translation: ~p", [{ForeignWord, SrcLang}]),
 	    ForeignWord
     end;
 translate_word(from_en, EnglishWord, DstLang) ->
-    case nsm_db:get_translation({DstLang, EnglishWord}) of
+    case user_counter:get_translation({DstLang, EnglishWord}) of
 	{ok, #ut_translation{word = ForeignWord}} -> ForeignWord;
 	{error, _} ->
 %	    ?ERROR("unknown translation: ~p", [{EnglishWord, DstLang}]),
