@@ -76,7 +76,7 @@ cat vm.args.template | sed "s#WEBSERVER_NODE#public@$H#g" > vm.args
 
 ./config -file app.config nsm_db app_srv_node -atom $APPSERVER
 ./config -file app.config nsm_db game_srv_node -atom $GAMESERVER@$H
-./config -file app.config nsm_db web_srv_node -atom $WEBSERVER@$H
+./config -file app.config nsm_db web_srv_node -atom public@$H
 ./config -file app.config nsm_db riak_srv_node -atom $WEBSERVER@$H
 ./config -file app.config nsp_srv game_srv_port -integer $SERVERPORT
 # ./config -file app.config nsp_srv game_srv_host -list "\"$GAMESERVERHOST\""
