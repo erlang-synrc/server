@@ -52,6 +52,7 @@ main() ->
                  #template { file=code:priv_dir(nsp_srv)++"/templates/bare.html" }
     end.
 
+
 body() ->
     X = rpc:call(?GAMESRVR_NODE,game_manager,get_lucky_table,[list_to_atom("game_"++wf:q(game_name))]),
     wf:state(lucky,X),
@@ -389,14 +390,22 @@ retrieve_tables(Setting, UId, GameType,Convert) ->
 process_tables(Setting, UId,GameType,Convert) ->
     receive
         {From, get} -> 
-            Tables = lists:flatten([
+            
+            Tables0 = [ begin
+                         A =
                          nsm_queries:map_reduce(nsm_queries,
                                                 get_single_tables,
-                                                [Setting,UId,GameType,Convert,X]) ||
-                      X <- [one_own,one_other,two_own,two_other,three_own,three_other,
-                            more_own,more_other,nomore_own,nomore_other]]),
+                                                [Setting,UId,GameType,Convert,X]),
+                         A end ||
+                      X <- [more_other,nomore_other,three_other,two_other,one_other,
+                            more_own,  nomore_own,  three_own,  two_own,  one_own]],
+
+              Tables = lists:flatten(Tables0),
+
 
     Filtered = filter_tables(Tables,UId,GameType,Setting,Convert),
+
+
     From ! {self(), Filtered},stop end.
 
 get_tables() -> get_tables(convert).
@@ -407,6 +416,7 @@ get_tables(Convert) ->
     retrieve_tables(Setting, UId, wf:q(game_name), Convert).
 
 filter_tables(QLC,UId,GameFSM,Setting,Convert) ->
+
 
     GetPropList = fun(Key,Setngs) -> 
                    case Setngs of
@@ -420,20 +430,22 @@ filter_tables(QLC,UId,GameFSM,Setting,Convert) ->
         SingleUser -> [SingleUser]
     end,
 
+
     FilterAnyUser = case GetPropList(group, Setting) of
         undefined -> [];
         GroupId -> 
             [GUId || GUId <- nsm_groups:list_group_members(GroupId)]
     end,
 
+
     FilteredQLC1 = lists:filter(
         fun(OneTable) ->
-            TableUsers = OneTable#game_table.users,
-            AllFilterOk = (FilterAllUsers==[]) or 
+             TableUsers = OneTable#game_table.users,
+            AllFilterOk = (FilterAllUsers==[]) orelse
                 (lists:usort( [lists:member(OFU, TableUsers) || OFU <- FilterAllUsers] ) == [true]),
-            AnyFilterOk = (FilterAnyUser==[]) or 
+            AnyFilterOk = (FilterAnyUser==[]) orelse
                 (lists:usort( [lists:member(OTU, FilterAnyUser) || OTU <- TableUsers] ) =/= [false]),
-            AllFilterOk and AnyFilterOk
+            AllFilterOk andalso AnyFilterOk
         end, QLC),
 
     FilteredQLC2 = [GT || GT = #game_table{users = Users} <- FilteredQLC1, Users /= []],
@@ -444,7 +456,8 @@ filter_tables(QLC,UId,GameFSM,Setting,Convert) ->
                 end
         end,
     {FilteredQLC3, _} = lists:foldl(F, {[], []}, FilteredQLC2),
-    FilteredQLC4= lists:reverse(FilteredQLC3),
+%    FilteredQLC4= lists:reverse(FilteredQLC3),
+    FilteredQLC4= FilteredQLC3,
     case Convert of convert -> convert_to_map(FilteredQLC4, Setting,UId,GameFSM); _ -> FilteredQLC4 end.
 
 convert_to_map(Data,_Setting,UId,GameFSM) ->
@@ -494,7 +507,7 @@ show_table(Tables) ->
                 begin
                     {info, {_, TId}} = InfoPostback,
                     Zone = TId div 1000000,
-                    WebSrv = "web@srv" ++ integer_to_list(Zone) ++ ".kakaranet.com",
+                    WebSrv = "public@srv" ++ integer_to_list(Zone) ++ ".kakaranet.com",
                     NodeAtom = case Zone of
                                     4 -> nsx_opt:get_env(nsm_db,web_srv_node,'web@doxtop.cc');
                                     _ -> list_to_atom(WebSrv)
@@ -831,30 +844,30 @@ is_option_present(Key, Value) ->
     Settings = wf:session({wf:q(game_name), wf:user()}),
     proplists:is_defined(Key, Settings) andalso Value == proplists:get_value(Key, Settings).
 
-%comet_update() -> comet_update(empty).
-%comet_update(State) ->
-%  case wf:user() of
-%       undefined -> wf:redirect_to_login(?_U("/login"));
-%       _UId -> timer:sleep(?TABLE_UPDATE_QUANTUM),
-%            X = rpc:call(?GAMESRVR_NODE,game_manager,get_lucky_table,[list_to_atom("game_"++?_U(wf:q(game_name)))]),
-%            wf:state(lucky,X),
-%            garbage_collect(self()),
-%            Tables = get_tables(),
-%            wf:update(tables, show_table(Tables)),
-%            ui_paginate(),
-%            wf:flush(),
-%            comet_update(State)
-% end.
+comet_update() -> comet_update(empty).
+comet_update(State) ->
+  case wf:user() of
+       undefined -> wf:redirect_to_login(?_U("/login"));
+       _UId -> timer:sleep(?TABLE_UPDATE_QUANTUM),
+            X = rpc:call(?GAMESRVR_NODE,game_manager,get_lucky_table,[list_to_atom("game_"++?_U(wf:q(game_name)))]),
+            wf:state(lucky,X),
+            garbage_collect(self()),
+            Tables = get_tables(),
+            wf:update(tables, show_table(Tables)),
+            ui_paginate(),
+            wf:flush(),
+            comet_update(State)
+ end.
 
-comet_update() ->
-    wf:state(comet_pid,self()),
-    receive 
-        Z -> Tables = get_tables(),
-             wf:update(tables, show_table(Tables)),
-             ui_paginate(),
-             wf:flush()
-    end,
-    comet_update().
+%comet_update() ->
+%    wf:state(comet_pid,self()),
+%    receive 
+%        Z -> Tables = get_tables(),
+%             wf:update(tables, show_table(Tables)),
+%             ui_paginate(),
+%             wf:flush()
+%    end,
+%    comet_update().
 
 can_be_multiple(age)   -> false;
 can_be_multiple(users) -> true;
@@ -934,7 +947,7 @@ u_event({info, {Target, TId}}) ->
     {ok, TableSettings} = case Target of
         table ->
             Zone = TId div 1000000,
-            WebSrv = "web@srv" ++ integer_to_list(Zone) ++ ".kakaranet.com",
+            WebSrv = "public@srv" ++ integer_to_list(Zone) ++ ".kakaranet.com",
             NodeAtom = case Zone of
                             4 -> nsx_opt:get_env(nsm_db, web_srv_node, 'web@doxtop.cc');
                             _ -> list_to_atom(WebSrv)
@@ -950,7 +963,11 @@ u_event({info, {Target, TId}}) ->
 u_event({delete_table, TId, ProcId}) ->
     Zone = TId div 1000000,
     GameNode = list_to_atom("game@srv"++integer_to_list(Zone)++".kakaranet.com"),
-    A = rpc:call(GameNode,game_manager,destroy_game,[case ?_U(wf:q(game_name)) of "tavla" -> tavla_sup; _ -> okey_sup end, TId]),
+    NodeAtom = case Zone of
+                    4 -> nsx_opt:get_env(nsm_db, web_srv_node, 'web@doxtop.cc');
+                    _ -> GameNode
+               end,
+    A = rpc:call(NodeAtom,game_manager,destroy_game,[case ?_U(wf:q(game_name)) of "tavla" -> tavla_sup; _ -> okey_sup end, TId]),
     ?INFO("Table Deleted ~p",[A]);
 
 u_event(clear_selection) ->

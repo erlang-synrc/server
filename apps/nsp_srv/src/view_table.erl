@@ -379,7 +379,10 @@ start_pre_comet_process(Id, Skip) ->
 
 			    receive
 				{WebPid, really_start_comet} ->
-                                    Tables = get_tables(Id),
+%                                    Tables = get_tables(Id),
+                                    Tables = get_instances_of_table(Id),
+
+                                    ?INFO("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA: ~p",[Tables]),
 
                                     [ begin 
                                             {ok,User1} = nsm_users:get_user(wf:user()),
@@ -489,6 +492,9 @@ show_row(Label, Info) ->
 get_tables(Id) ->
   nsm_queries:map_reduce(game_manager,get_tables,[Id]).
 
+get_instances_of_table(Id) -> 
+  nsm_queries:map_reduce(view_table,qlc_id,[Id]).
+
 qlc_id(Id) ->
     qlc:e(qlc:q([Val || {{_,_,_Key},_,Val=#game_table{gameid = _GameId, id = _Id, 
                             owner = _Owner, creator = _Creator}} <- 
@@ -536,7 +542,7 @@ leaving(User, Table) ->
 
 leave_table(User, Id) ->
     wf:session({wf:to_integer(wf:q(id)),User},undefined), 
-    Tables = get_tables(Id),
+    Tables = get_instances_of_table(Id),
     ?INFO("leave table ~p ~p",[User,Tables]),
     [ begin 
     case T#game_table.owner == User of
@@ -699,7 +705,7 @@ start_game() ->
                         {ok, GaId, _GamePid} when is_integer(GaId) ->
                             chat_info(?_T("starting game...")),
                             wf:state(table, Table#game_table{gameid = GaId, game_state = started}),
-                            Tables = get_tables(wf:state(table_id)),
+                            Tables = get_instances_of_table(wf:state(table_id)),
                             ?INFO("Launch Flex: ~p",[Tables]),
                             [ Table2#game_table.game_process ! {launch_client, GaId, wf:q(game_name)}
                                       || Table2 <- Tables];
@@ -819,7 +825,7 @@ event(chat) ->
                 true ->
                     chat_info(#span{class=error, text= ?_T("Message too long.")});
                 false ->
-                    Tables = get_tables(wf:state(table_id)),
+                    Tables = get_instances_of_table(wf:state(table_id)),
                     [ begin ?INFO("Sent to ~p",[User#user.username]),
                             T#game_table.game_process ! {chat, User, Message}
                       end || T <- Tables],
@@ -829,19 +835,21 @@ event(chat) ->
     wf:wire("obj('message_text_box').focus();");
 
 event(add_robot) ->
-    Tables = get_tables(wf:state(table_id)),
+    ?INFO("ADD ROBOT PRESS"),
+    Tables = get_instances_of_table(wf:state(table_id)),
+    
     [ T#game_table.game_process ! {add_robot} || T <- Tables];
 
 event(start_game) ->
-    Tables = get_tables(wf:state(table_id)),
+    Tables = get_instances_of_table(wf:state(table_id)),
     [ T#game_table.game_process ! {start_game} || T <- Tables ];
 
 event({kick, User}) -> 
-    Tables = get_tables(wf:state(table_id)),
+    Tables = get_instances_of_table(wf:state(table_id)),
     [ T#game_table.game_process ! {kick, User} || T <- Tables ];
 
 event({leave_table, User, Id}) ->
-    Tables = get_tables(Id),
+    Tables = get_instances_of_table(Id),
     ?INFO("LEAVE button"),
     [ case T#game_table.owner == User of 
            true ->  T#game_table.game_process ! {leave, User, T},
