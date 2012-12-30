@@ -1,11 +1,20 @@
 -module(nsm_db_sup).
 -behaviour(supervisor).
--export([start_link/0]).
+-export([start_link/0, stop_riak/0]).
 -export([init/1]).
 -define(CHILD(I, Type), {I, {I, start_link, []}, permanent, 5000, Type, [I]}).
 
 start_link() ->
     supervisor:start_link({local, ?MODULE}, ?MODULE, []).
+
+stop_riak() ->
+    application:stop(riak_kv), 
+    application:stop(riak_pipe),
+    application:stop(eleveldb),
+    application:stop(erlang_js),
+    application:stop(webmachine),
+    application:stop(mochiweb),
+    application:stop(bitcask).
 
 init([]) ->
 
@@ -42,13 +51,7 @@ init([]) ->
          false -> nsm_db:init_db();
          true -> pass
     end;
-    _ -> application:stop(riak_kv), 
-         application:stop(riak_pipe),
-         application:stop(eleveldb),
-         application:stop(erlang_js),
-         application:stop(webmachine),
-         application:stop(mochiweb),
-         application:stop(bitcask)
+    _ -> skip
           end,
 
     % you can put zealot_auth here if it is not working with start_link

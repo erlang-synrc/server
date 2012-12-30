@@ -15,6 +15,7 @@ init([]) ->
 %    net_kernel:connect(?GAMESRVR_NODE),
 %    rpc:call(?APPSERVER_NODE,nsm_srv_app,start_gproc,[]),
     application:start(gproc),
+    nsm_db_sup:stop_riak(),
     Restart = permanent,
     Shutdown = 2000,
     Type = worker,
