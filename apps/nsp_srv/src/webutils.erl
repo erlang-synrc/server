@@ -106,7 +106,7 @@ header()->
   ]},
   lightboxes()].
 
-header_box() -> #template { file=code:priv_dir(nsw_srv)++"/templates/header.html"}.
+header_box() -> #template { file=code:priv_dir(nsp_srv)++"/templates/header.html"}.
 
 header_body() -> [account_menu(), menu_links()].
 

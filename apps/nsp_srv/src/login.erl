@@ -11,7 +11,7 @@
 
 main() ->
 %    webutils:redirect_to_ssl("login"),
-    #template { file = code:priv_dir(nsw_srv)++"/templates/bare.html" }.
+    #template { file = code:priv_dir(nsp_srv)++"/templates/bare.html" }.
 
 body()->
     Request = wf_context:request_bridge(),
