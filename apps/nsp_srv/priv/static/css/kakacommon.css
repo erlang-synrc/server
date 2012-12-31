@@ -213,14 +213,9 @@ nav a:hover {
 	padding:0 15px 0 0;
 	cursor:pointer;
 }
-.user-menu li.active a,
-.user-menu li.hover a,
-.user-menu li:hover a,
-.user-menu span li.active a,
-.user-menu span li.hover a,
-.user-menu span li:hover a {
-	text-decoration:none;
-	color:#ffcf63;
+.user-menu a {
+text-decoration:none;
+color:#ffcf63;
 }
 .user-menu li, .user-menu span li {
 	position:relative;

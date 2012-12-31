@@ -174,7 +174,7 @@ section_body(gifts) ->
                             #link{class=btn, postback={deliver, GiftId, BoughtTime, SName, SKakush},  text=?_T("Deliver")}
                         ]};
                     error ->    % some junk got into user_bought_gifts
-                        ?ERROR("No such gift with id: ~p", [GiftId])
+                        ?ERROR("No such gift with id: ~p", [GiftId]), []
                 end
             end
 
