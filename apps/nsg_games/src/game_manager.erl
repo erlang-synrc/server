@@ -72,15 +72,19 @@ code_change(_OldVsn, State, _Extra) -> {ok, State}.
 
 game_monitor_module(GameFSM, GameMode) -> case {GameFSM, GameMode} of {game_tavla, paired} -> paired_tavla; _ -> relay end.
 get_requirements(GameFSM,M) -> (game_monitor_module(GameFSM, M)):get_requirements(GameFSM,M).
-game_sup_domain(Module) ->
+game_sup_domain(Module, Params) ->
     case Module of
-         game_okey_ng_trn_elim -> okey_sup;
-         game_okey -> okey_sup;
-         game_tavla -> tavla_sup;
-         fl_lucky -> lucky_sup;
-         game_okey_ng_trn_lucky -> lucky_sup;
-         game_okey_ng_trn_standalone -> okey_sup;
-         _ -> game_sup
+        game_okey_ng_trn_elim -> okey_sup;
+        game_tavla -> tavla_sup;
+        fl_lucky -> lucky_sup;
+        game_okey_ng_trn_lucky -> lucky_sup;
+        nsg_trn_standalone ->
+            case proplists:get_value(game, Params) of
+                game_okey -> okey_sup;
+                game_tavla -> tavla_sup;
+                _ -> game_sup
+            end;
+        _ -> game_sup
     end.
 
 -spec create_game_monitor(string(), pid(), [any()], [pid()], #state{}) -> {{'ok', pid()} | {'error', any()}, #state{}}.
@@ -88,7 +92,7 @@ create_game_monitor(Topic, {lobby,GameFSM}, Params, Players, State) ->
     GameMode = proplists:get_value(game_mode, Params, standard),
     ?INFO("Create Root Game Process (Game Monitor): ~p Mode: ~p Params: ~p",[GameFSM, GameMode,Params]),
     GameModule = game_monitor_module(GameFSM,GameMode),
-    Sup = game_sup_domain(GameFSM),
+    Sup = game_sup_domain(GameFSM, Params),
     RelayInit = Sup:start_game(GameModule,[Topic, {lobby,GameFSM}, Params, Players, self()], Topic),
     ?INFO("RelayInit ~p",[RelayInit]),
     case RelayInit of 
@@ -100,7 +104,7 @@ create_game_monitor(Topic, {lobby,GameFSM}, Params, Players, State) ->
     end.
 
 create_game_monitor2(Topic, GameFSM, Params, State) ->
-    Sup = game_sup_domain(GameFSM),
+    Sup = game_sup_domain(GameFSM, Params),
     ?INFO("Create Root Game Process (Game Monitor2): ~p Params: ~p Sup: ~p",[GameFSM, Params,Sup]),
     RelayInit = Sup:start_game(GameFSM,[Topic,Params],Topic),
     ?INFO("RelayInit ~p",[RelayInit]),
@@ -338,7 +342,7 @@ create_standalone_game(Game, Params, Users) ->
                            {gosterge_finish_allowed, GostergeFinishAllowed}
                          ],
 
-            create_game(game_okey_ng_trn_standalone,
+            create_game(nsg_trn_standalone,
                          [{game, Game},
                           {game_mode, GameMode},
                           {game_name, TableName},
