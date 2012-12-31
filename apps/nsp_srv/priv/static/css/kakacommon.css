@@ -11,6 +11,7 @@ body {
   background: -o-linear-gradient(top, #cbf5f6 0%, #ffffff 100%);
   background: -ms-linear-gradient(top, #cbf5f6 0%, #ffffff 100%);
   background: linear-gradient(top, #cbf5f6 0%, #ffffff 100%);
+  background-repeat: no-repeat;
 
 }
 a {text-decoration:none;color:#4ec3f1;}
