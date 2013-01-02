@@ -22,7 +22,6 @@ title() -> ?_T("Matchmaker").
 
 main() ->
     wf:state(buttons, green),
-    ?INFO("Matchmaker User: ~p game: ~p",[wf:user(),?_U(wf:q(game_name))]),
 
     case wf:q(game_name) of
          "okey" -> ok;
@@ -43,7 +42,8 @@ main() ->
                  SavedSettings = case wf:session({wf:q(game_name), wf:user()}) of
                      undefined -> case wf:q(game_name) of
                                         "tavla" -> [{game, game_tavla}];
-                                        "okey" -> [{game, game_okey}]
+                                        "okey" -> [{game, game_okey}];
+                                        _ -> [{game, game_okey}]
                                    end ++ [{table_name, table_name(default)}];
                      Settings -> Settings
                  end,
@@ -52,9 +52,22 @@ main() ->
                  #template { file=code:priv_dir(nsp_srv)++"/templates/bare.html" }
     end.
 
-
 body() ->
-    X = rpc:call(?GAMESRVR_NODE,game_manager,get_lucky_table,[list_to_atom("game_"++wf:q(game_name))]),
+
+    wf:state(buttons, green),
+    ?INFO("Matchmaker User: ~p game: ~p",[wf:user(),?_U(wf:q(game_name))]),
+
+%    case wf:q(game_name) of
+%         "okey" -> ok;
+%         "tavla" -> ok;
+%          _ -> wf:redirect(?_U("/dashboard"))
+%    end,
+
+    GameName = case wf:q(game_name) of
+                     undefined -> "okey";
+                     Name -> Name end,
+
+    X = rpc:call(?GAMESRVR_NODE,game_manager,get_lucky_table,[list_to_atom("game_"++GameName)]),
     wf:state(lucky,X),
 
     ui_update_buttons(),
@@ -235,7 +248,13 @@ ui_game_type() ->
             "tavla" ->
                 [{?_T("Standard"),  standard} %,
 %                 {?_T("Pair"),      paired}
-                ]
+                ];
+            _ ->
+                [{?_T("Standard"), standard},
+                 {?_T("Even/Odd"), evenodd},
+                 {?_T("Color"), color},
+                 {?_T("Countdown from 10"), countdown}]
+
         end,
     [
         "<span id='guidersitem2'>",
@@ -270,7 +289,8 @@ ui_rounds() ->
     Rounds =
 	case wf:q(game_name) of
 	    "okey"  -> [10,20,40,60,80];
-	    "tavla" -> [3,5,7]
+	    "tavla" -> [3,5,7];
+	    _  -> [10,20,40,60,80]
 	end,
     [
         "<span id='guidersitem3'>",
@@ -290,8 +310,10 @@ ui_checkboxes() ->
     ui_checkboxes(tabs).
 
 ui_checkboxes(Section) ->
+    GameName = case wf:q(game_name) of undefined -> "okey"; X -> X end,
 
-    Settings = wf:session({wf:q(game_name), wf:user()}),
+
+    Settings = wf:session({GameName, wf:user()}),
     _Countdown = proplists:get_value(game_mode, Settings, undefined),
     Checkboxes = [
         "<span id='guidersitem4'>",
@@ -337,6 +359,7 @@ ui_add_checkboxes() ->
     ]}.
 
 matchmaker_show_tables() ->
+    GameName = case wf:q(game_name) of undefined -> "okey"; X -> X end,
     TableFilter = [
         #panel{class="item item1", body=ui_game_speed() },
         #panel{class="item item2", body=ui_game_type() },
@@ -349,16 +372,18 @@ matchmaker_show_tables() ->
                  "</span>"]}],
     [
         #singlerow { cells=[
-            #tablecell{body=#h2{text=wf:q(game_name) ++ " " ++ ?_T("Selected Option")}},
+            #tablecell{body=#h2{text=GameName ++ " " ++ ?_T("Selected Option")}},
             #tablecell{body=#link{text=?_T("Game Rules"), class="matchmaker_game_rules", postback=show_game_rules}}]},
         #panel{class="items", body=TableFilter}
     ].
 
 
 el_create_game_button() ->
+    GameName = case wf:q(game_name) of undefined -> "okey"; X -> X end,
+
     wf:state(session_id, rpc:call(?GAMESRVR_NODE,id_generator,get_id,[])),
-    Url = lists:concat([?_U("/view-table/"), ?_U(wf:q(game_name)),"/id/",wf:state(session_id)]),
-    Settings = wf:session({wf:q(game_name), wf:user()}),
+    Url = lists:concat([?_U("/view-table/"), ?_U(GameName),"/id/",wf:state(session_id)]),
+    Settings = wf:session({GameName, wf:user()}),
     wf:session(wf:state(session_id), Settings),
     JSPostback = site_utils:postback_to_js_string(?MODULE, create_game),
     CreateAction = #event{type=click, actions="if (!objs('create_button').hasClass('disable')) {"++webutils:new_window_js(Url)++";"++JSPostback++";};"},
@@ -411,9 +436,11 @@ process_tables(Setting, UId,GameType,Convert) ->
 get_tables() -> get_tables(convert).
 
 get_tables(Convert) -> 
-    Setting = wf:session({wf:q(game_name),wf:user()}),
+    GameName = case wf:q(game_name) of undefined -> "okey"; X -> X end,
+
+    Setting = wf:session({GameName,wf:user()}),
     UId = wf:user(),
-    retrieve_tables(Setting, UId, wf:q(game_name), Convert).
+    retrieve_tables(Setting, UId, GameName, Convert).
 
 filter_tables(QLC,UId,GameFSM,Setting,Convert) ->
 
@@ -498,6 +525,8 @@ list_users_links(Users, Owner) ->
     ling:join(Usrs,",").
 
 show_table(Tables) ->
+    GameName = case wf:q(game_name) of undefined -> "okey"; Xx -> Xx end,
+
     wf:update(play_button_panel, el_inside_play()),
     case Tables of
         [] ->
@@ -518,7 +547,7 @@ show_table(Tables) ->
                     case Res of
                           {ok,WholeTable} ->
 
-                    MaxUsers = case wf:q(game_name) of 
+                    MaxUsers = case GameName of 
                         "tavla" -> case WholeTable#game_table.tournament_type of
                             paired -> 10;
                             paired_lobby -> 10;
@@ -526,7 +555,7 @@ show_table(Tables) ->
                         end;
                         "okey" -> 4 
                     end,
-                    RealUsers = case wf:q(game_name) of 
+                    RealUsers = case GameName of 
                         "tavla" -> case WholeTable#game_table.tournament_type of
                             paired -> WholeTable#game_table.users;
                             _ -> Users
@@ -780,7 +809,9 @@ js_options_filter(OptionsPanelId) when is_list(OptionsPanelId) ->
 js_options_filter(OptionsPanelId) -> js_options_filter(wf:to_list(OptionsPanelId)).
 
 ui_update_buttons() ->
-    Settings = wf:session({wf:q(game_name),wf:user()}),
+    GameName = case wf:q(game_name) of undefined -> "okey"; X -> X end,
+
+    Settings = wf:session({GameName,wf:user()}),
     ui_update_buttons(Settings).
 
 ui_update_buttons(Settings) ->
@@ -842,7 +873,9 @@ is_checkbox(Key) ->
     end.
 
 is_option_present(Key, Value) ->
-    Settings = wf:session({wf:q(game_name), wf:user()}),
+    GameName = case wf:q(game_name) of undefined -> "okey"; X -> X end,
+
+    Settings = wf:session({GameName, wf:user()}),
     proplists:is_defined(Key, Settings) andalso Value == proplists:get_value(Key, Settings).
 
 comet_update() -> comet_update(empty).
@@ -850,8 +883,8 @@ comet_update(State) ->
   case wf:user() of
        undefined -> wf:redirect_to_login(?_U("/login"));
        _UId -> timer:sleep(?TABLE_UPDATE_QUANTUM),
-            X = rpc:call(?GAMESRVR_NODE,game_manager,get_lucky_table,[list_to_atom("game_"++?_U(wf:q(game_name)))]),
-            wf:state(lucky,X),
+%            X = rpc:call(?GAMESRVR_NODE,game_manager,get_lucky_table,[list_to_atom("game_"++?_U(wf:q(game_name)))]),
+%            wf:state(lucky,X),
             garbage_collect(self()),
             Tables = get_tables(),
             wf:update(tables, show_table(Tables)),
@@ -929,17 +962,19 @@ u_event({tag, {table_name, textbox}}) ->
     process_setting({table_name, TableName});
 
 u_event(create_game) ->
+    GameName = case wf:q(game_name) of undefined -> "okey"; X -> X end,
+
     UId = wf:user(),
-    Settings = wf:session({wf:q(game_name), wf:user()}),
-    wf:session({wf:q(game_name), UId},Settings),
-    URL = ?_U(lists:concat(["/matchmaker/", wf:q(game_name)])),
+    Settings = wf:session({GameName, wf:user()}),
+    wf:session({GameName, UId},Settings),
+    URL = ?_U(lists:concat(["/matchmaker/", GameName])),
     wf:redirect(URL),
 
     SRound = case proplists:get_value(rounds,Settings) of
         undefined -> "no";
         I -> integer_to_list(I)
     end,
-    Desc = lists:flatten( URL ++ "|" ++ UId ++ "|" ++ proplists:get_value(table_name,Settings) ++ "|" ++ wf:q(game_name) ++ "|" ++
+    Desc = lists:flatten( URL ++ "|" ++ UId ++ "|" ++ proplists:get_value(table_name,Settings) ++ "|" ++ GameName ++ "|" ++
         SRound ++ "|" ++ atom_to_list(proplists:get_value(speed,Settings)) ++ "|" ++
         atom_to_list(proplists:get_value(game_mode,Settings))),
     webutils:post_user_system_message(Desc);
@@ -962,24 +997,30 @@ u_event({info, {Target, TId}}) ->
     wf:update(info_table, #dialog{body=Info});
 
 u_event({delete_table, TId, ProcId}) ->
+    GameName = case wf:q(game_name) of undefined -> "okey"; X -> X end,
+
     Zone = TId div 1000000,
     GameNode = list_to_atom("game@srv"++integer_to_list(Zone)++".kakaranet.com"),
     NodeAtom = case Zone of
                     4 -> nsx_opt:get_env(nsm_db, web_srv_node, 'web@doxtop.cc');
                     _ -> GameNode
                end,
-    A = rpc:call(NodeAtom,game_manager,destroy_game,[case ?_U(wf:q(game_name)) of "tavla" -> tavla_sup; _ -> okey_sup end, TId]),
+    A = rpc:call(NodeAtom,game_manager,destroy_game,[case GameName of "tavla" -> tavla_sup; _ -> okey_sup end, TId]),
     ?INFO("Table Deleted ~p",[A]);
 
 u_event(clear_selection) ->
-    OldSettings = wf:session({wf:q(game_name), wf:user()}),
+    GameName = case wf:q(game_name) of undefined -> "okey"; X -> X end,
+
+    OldSettings = wf:session({GameName, wf:user()}),
     [
         u_event({tag, lists:nth(N, OldSettings)})
         || N <- lists:seq(3, length(OldSettings))
     ];
 
 u_event(show_game_rules) ->
-    case wf:q(game_name) of
+    GameName = case wf:q(game_name) of undefined -> "okey"; X -> X end,
+
+    case GameName of
         "okey" ->
             wf:update(rules_container, [
                 #link{text=?_T("Hide"), class="matchmaker_game_rules", style="float:right;", postback=hide_rules},
@@ -1017,7 +1058,9 @@ u_event(Other) -> webutils:event(Other).
 
 process_setting({Key, Value} = Setting) ->
 
-    OldSettings = wf:session({wf:q(game_name), wf:user()}),
+    GameName = case wf:q(game_name) of undefined -> "okey"; X -> X end,
+
+    OldSettings = wf:session({GameName, wf:user()}),
 
     OldValues = case proplists:get_value(Key, OldSettings) of
                      undefined -> [];
@@ -1038,7 +1081,7 @@ process_setting({Key, Value} = Setting) ->
                                                _ -> {multiple, List} end,
                                lists:keystore(Key, 1, OldSettings, {Key, NewValue}) end,
 
-    wf:session({wf:q(game_name), wf:user()}, NewSettings),
+    wf:session({GameName, wf:user()}, NewSettings),
     check_required(NewSettings),
     ?INFO("Settings: ~p",[NewSettings]),
     ok.
