@@ -512,10 +512,11 @@ show_table(Tables) ->
                                     4 -> nsx_opt:get_env(nsm_db,web_srv_node,'web@doxtop.cc');
                                     _ -> list_to_atom(WebSrv)
                                end,
-                    {ok, WholeTable} = rpc:call(NodeAtom,view_table,get_table,[TId,wf:state(table)]),
+                    %{ok, WholeTable}
+                     Res = rpc:call(NodeAtom,view_table,get_table,[TId,wf:state(table)]),
 
-                    case WholeTable of
-                          #game_table{} ->
+                    case Res of
+                          {ok,WholeTable} ->
 
                     MaxUsers = case wf:q(game_name) of 
                         "tavla" -> case WholeTable#game_table.tournament_type of
