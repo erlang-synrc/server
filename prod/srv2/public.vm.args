@@ -1,4 +1,4 @@
--name game@srv2.kakaranet.com
+-name public@srv2.kakaranet.com
 -setcookie nitrogen
 +K true
 +A 10
