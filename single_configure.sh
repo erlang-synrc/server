@@ -2,7 +2,7 @@
 
 LOCAL_IP=${1:-"`hostname -i`"}
 
-if [ "`hostname -a`" == "srv5" ]; then
+if [ "`hostname -f`" == "srv5.kakaranet.com" ]; then
     POOL=5000000
 else
     POOL=4000000
