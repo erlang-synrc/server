@@ -97,6 +97,7 @@ cat vm.args.template | sed "s#WEBSERVER_NODE#public@$H#g" > vm.args
 ./config -file app.config nsm_db sync_nodes -atom $SYNC
 ./config -file app.config nsx_idgen game_pool -integer $POOL
 ./config -file app.config nsm_db nodes -list [app@$H,game@$H,web@$H,public@$H]
+./config -file app.config nsp_srv static_address -list "\"http://$H:$WEBPORT\""
 ./config -file app.config nsp_srv http_address -list "\"http://$H:$WEBPORT\""
 ./config -file app.config nsp_srv https_address -list "\"http://$H:$WEBPORT\""
 

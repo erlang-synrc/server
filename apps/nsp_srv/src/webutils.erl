@@ -1131,8 +1131,8 @@ quick_nav() ->
       end,
     #listitem{class=Status, body=
       #link{url=Url, postback=Postback, body=[
-        #image{class="game-title", image=Title},
-        #image{class=current, image=Img1},
+        #image{class="game-title", image=Title, width="77", height="77"},
+        #image{class=current, image=Img1, width="160", height="88"},
         S,
         #span{class="lets-play", text=?_T("Let's Play!")}
       ]}

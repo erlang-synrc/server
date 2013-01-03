@@ -7,6 +7,7 @@
 -define(SERVER_HOST, nsx_opt:get_env(nsp_srv, game_srv_host, "kakaranet.com")).
 -define(HTTP_ADDRESS, nsx_opt:get_env(nsp_srv,http_address, "http://kakaranet.com")).
 -define(HTTPS_ADDRESS, nsx_opt:get_env(nsp_srv,https_address, "https://kakaranet.com")).
+-define(STATIC_ADDRESS, nsx_opt:get_env(nsp_srv,static_address, "http://static1.kakaranet.com")).
 -define(FEED_PAGEAMOUNT, 20).
 
 -define(FB_APP_ID, nsx_opt:get_env(nsp_srv, fb_id, "154227314626053")).
