@@ -12,5 +12,5 @@ function release_node {
 
 release_node app
 release_node game
-release_node public
 #release_node web
+release_node public

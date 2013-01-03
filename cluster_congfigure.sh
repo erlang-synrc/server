@@ -12,7 +12,7 @@ function setup_node {
 
 setup_node app
 setup_node game
-setup_node web
+#setup_node web
 setup_node public
 
 cp prod/$NODE/webmachine.config rels/public/node/etc/webmachine.config

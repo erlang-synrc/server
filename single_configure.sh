@@ -13,5 +13,7 @@ cd rels/app/node/etc
 cd ../../../game/node/etc
 ./configure -game-host $LOCAL_IP -sync true -pool $POOL
 cd ../../../public/node/etc
+#./configure -ip $LOCAL_IP -sync false -pool $POOL
+#cd ../../../web/node/etc
 ./configure -ip $LOCAL_IP -sync false -pool $POOL
 cd ../../../..
