@@ -456,9 +456,10 @@ handle_client_request({reg, User}, From, ?STATE_PROCESSING,
             end
     end;
 
-handle_client_request(_Request, _From, StateName, StateData) ->
-   Reply = {error, unexpected_request},
-   {reply, Reply, StateName, StateData}.
+handle_client_request(Request, From, StateName, #state{game_id = GameId} = StateData) ->
+    ?INFO("TRN_LUCKY <~p> Unhandled client request received from ~p in "
+          "state <~p>: ~p.", [GameId, From, StateName, Request]),
+    {reply, {error, unexpected_request}, StateName, StateData}.
 
 %%===================================================================
 
@@ -499,7 +500,7 @@ reg_player_at_new_table(User, From,
     {RobotsRegData, {PlayerId, SeatNum}} = lists:mapfoldl(F, {PlayerIdCounter, 1}, RobotsInfo),
 
     TPlayers = [{PlayerId, User, SeatNum, 0} | RobotsRegData],
-    TableParams2 = [{players, TPlayers}, {table_name, "I'am Filling Lucky #" ++ integer_to_list(TableId)} | TableParams],
+    TableParams2 = [{players, TPlayers}, {table_name, "I'm filling lucky"} | TableParams],
     {ok, TabPid} = spawn_table(TableModule, GameId, TableId, TableParams2),
 
     MonRef = erlang:monitor(process, TabPid),
