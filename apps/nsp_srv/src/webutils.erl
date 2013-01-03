@@ -1139,11 +1139,11 @@ quick_nav() ->
     }
     end
     || {Status, Postback, Url, Img1, Title} <-
-     [{active,{game, okey}, ?_U("/matchmaker/okey"), "/images/img-007.jpg", "/images/text-okey.png"},
-      {active, {game, tavla}, ?_U("/matchmaker/tavla"), "/images/img-005.jpg", "/images/text-tavla.png"},
-      {inactive, undefined, "#", "/images/img-003.jpg", "/images/text-king.png"},
-      {inactive,undefined,  "#", "/images/img-001.jpg", "/images/text-batak.png"},
-      {inactive, undefined, "#", "/images/img-009.jpg", "/images/text-sorbi.png"}]
+     [{active,{game, okey}, ?_U("/matchmaker/okey"), ?STATIC_ADDRESS++"/images/img-007.jpg", ?STATIC_ADDRESS++"/images/text-okey.png"},
+      {active, {game, tavla}, ?_U("/matchmaker/tavla"), ?STATIC_ADDRESS++"/images/img-005.jpg", ?STATIC_ADDRESS++"/images/text-tavla.png"},
+      {inactive, undefined, "#", ?STATIC_ADDRESS++"/images/img-003.jpg", ?STATIC_ADDRESS++"/images/text-king.png"},
+      {inactive,undefined,  "#", ?STATIC_ADDRESS++"/images/img-001.jpg", ?STATIC_ADDRESS++"/images/text-batak.png"},
+      {inactive, undefined, "#", ?STATIC_ADDRESS++"/images/img-009.jpg", ?STATIC_ADDRESS++"/images/text-sorbi.png"}]
   ]}.
 
 
