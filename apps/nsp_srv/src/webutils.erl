@@ -31,21 +31,22 @@ redirect_to_ssl(Page) ->
     end.
 
 redirect_to_tcp(Page) ->
-    Req = wf_context:request_bridge(),
-    Port = Req:peer_port(),
-    Host = hd(ling:split(proplists:get_value(host, wf_context:headers()), ":")),
-    ?INFO("Req ~p Port ~p Host ~p",[Req,Port,Host]),
-    case Port of
-        80 -> no_redirect;
-        8000 -> no_redirect;
-        _ ->
+%    Req = wf_context:request_bridge(),
+%    Port = Req:peer_port(),
+%    Host = hd(ling:split(proplists:get_value(host, wf_context:headers()), ":")),
+%    ?INFO("Req ~p Port ~p Host ~p",[Req,Port,Host]),
+%    case Port of
+%        80 -> no_redirect;
+%        8000 -> no_redirect;
+%        _ ->
 %            case Host == "kakaranet.com" orelse "srv2.kakaranet.com" == Host 
 %                orelse "srv1.kakaranet.com" == Host of
 %                 false ->  wf:redirect_from_login(?HTTP_ADDRESS ++ "/" ++ Page);
 %                 true ->  
-                      wf:redirect_from_login(?HTTP_ADDRESS ++ "/" ++Page)
+                      wf:redirect_from_login("/" ++Page)
 %            end 
-    end.
+  %  end
+   .
 
 main() -> [].
 
@@ -94,6 +95,17 @@ new_tab_js(Url) when is_list(Url)->
                   Url,
                   "');"]).
 
+header()->
+  [#panel{class=header, body=[
+    #panel{class=headerblue, body=[]},
+    #panel{class="block", body=[
+      #span{class="logo vcard", body=logo()},
+      account_menu(),
+      menu_links()
+    ]}
+  ]},
+  lightboxes()].
+
 header_box() -> #template { file=code:priv_dir(nsp_srv)++"/templates/header.html"}.
 
 header_body() -> [account_menu(), menu_links()].
@@ -138,7 +150,7 @@ account_menu() ->
     _UserLoggedIn ->
         [#list{class="user-menu", body=[
           #listitem{body=fb_utils:login_btn()},
-          #listitem{body=#link{class=login, text=?_T("Login"), url=[?HTTPS_ADDRESS,?_U("/login")]}},
+          #listitem{body=#link{class=login, text=?_T("Login"), url=?_U("/login")}},
           #listitem{body=#link{class=signup, text=?_T("Signup"), postback=register}}
         ]}]
   end,
@@ -159,19 +171,19 @@ menu_links() ->
 		#listitem{body=#link{text=?_T("Groups"), url=?_U("/groups"),
                                      title=?_T("You can manage your groups settings here"), id="mainmenugroups"}}
 	 ]},
-	 "</nav>
-      <script>
-      (function(){
-          var C = {text:false};
-          var P = {my:'top right', at:'bottom left'};
-          var S = {delay: "++?TOOLTIP_TIMEOUT++"};
-          objs('mainmenumainpage').qtip({content: C, position: P, show: S} );
-          objs('mainmenumypage').qtip({content: C, position: P, show: S});
-          objs('mainmenugifts').qtip({content: C, position: P, show: S});
-          objs('mainmenutournaments').qtip({content: C, position: P, show: S});
-          objs('mainmenugroups').qtip({content: C, position: P, show: S});
-      })();
-      </script>"
+	 "</nav>"
+%      "<script>
+%      (function(){
+%          var C = {text:false};
+%          var P = {my:'top right', at:'bottom left'};
+%          var S = {delay: "++?TOOLTIP_TIMEOUT++"};
+%          objs('mainmenumainpage').qtip({content: C, position: P, show: S} );
+%          objs('mainmenumypage').qtip({content: C, position: P, show: S});
+%          objs('mainmenugifts').qtip({content: C, position: P, show: S});
+%          objs('mainmenutournaments').qtip({content: C, position: P, show: S});
+%          objs('mainmenugroups').qtip({content: C, position: P, show: S});
+%      })();
+%      </script>"
 	 ].
 
 language() ->
@@ -235,7 +247,7 @@ event(login) ->
     login(login,password,login_hintbox);
 event(register)->
     wf:session(fb_registration, undefined),
-    wf:redirect([?HTTPS_ADDRESS,?_T("/login/register")]);
+    wf:redirect(?_T("/login/register"));
 event(logout) ->
   wf:session(fb_registration, undefined),
   wf:session(logged_with_fb, undefined),
@@ -1109,6 +1121,31 @@ get_hemen_nav(Page) ->
 	{undefined, "#", "", "/images/img-009.jpg", "/images/img-010.jpg", "/images/text-sorbi.png"}
 	]
     ]}.
+
+quick_nav() ->
+  #list{class="quick-nav", body=[
+    begin
+      S = case Status of
+        inactive -> #span{class=soon, text=?_T("Very soon...")};
+        _ -> []
+      end,
+    #listitem{class=Status, body=
+      #link{url=Url, postback=Postback, body=[
+        #image{class="game-title", image=Title},
+        #image{class=current, image=Img1},
+        S,
+        #span{class="lets-play", text=?_T("Let's Play!")}
+      ]}
+    }
+    end
+    || {Status, Postback, Url, Img1, Title} <-
+     [{active,{game, okey}, ?_U("/matchmaker/okey"), "/images/img-007.jpg", "/images/text-okey.png"},
+      {active, {game, tavla}, ?_U("/matchmaker/tavla"), "/images/img-005.jpg", "/images/text-tavla.png"},
+      {inactive, undefined, "#", "/images/img-003.jpg", "/images/text-king.png"},
+      {inactive,undefined,  "#", "/images/img-001.jpg", "/images/text-batak.png"},
+      {inactive, undefined, "#", "/images/img-009.jpg", "/images/text-sorbi.png"}]
+  ]}.
+
 
 page_module() ->
     wf:to_list(wf_context:page_module()).

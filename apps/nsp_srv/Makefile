@@ -1,5 +1,5 @@
-JS_FILES=priv/static/js/kakara.js
-CSS_FILES=priv/static/css/kakara.css
+JS_FILES=priv/static/js/kakara.js priv/static/js/kindex.js
+CSS_FILES=priv/static/css/kakara.css priv/static/css/kindex.css
 ROOT_PATH=priv/static/
 #########################################################################
 MINIFIED_JS_FILES=$(JS_FILES:.js=.min.js)
@@ -53,8 +53,8 @@ include $(CSS_FILES:.css=.deps)
 	    juicer merge ${JS_JUICER} -m none -i --force $< -o $@
 
 %.min.css : %.css
-	    juicer merge -b -d ${ROOT_PATH} ${CSS_JUICER} -i --force $<
+	    juicer merge -b -d ${ROOT_PATH} -c none ${CSS_JUICER} -i --force $<
 
 %.full.css : %.css
-	    juicer merge -b -d ${ROOT_PATH} ${CSS_JUICER} -m none -i --force $< -o $@
+	    juicer merge -b -d ${ROOT_PATH} -c none ${CSS_JUICER} -m none -i --force $< -o $@
 

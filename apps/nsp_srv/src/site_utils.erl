@@ -373,7 +373,7 @@ js_close_on_click(ID) ->
     #event{type=click, actions="objs('"++ID++"').hide();"}.
 
 create_url_invite(Code) ->
-    lists:concat([?HTTP_ADDRESS, ?_U("/invite"), "/", Code]).
+    lists:concat([?_U("/invite"), "/", Code]).
 
 base64_encode_to_url(String) ->
     Utf8 = unicode:characters_to_binary(String),

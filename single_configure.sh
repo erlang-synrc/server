@@ -17,3 +17,4 @@ cd ../../../public/node/etc
 #cd ../../../web/node/etc
 ./configure -ip $LOCAL_IP -sync false -pool $POOL
 cd ../../../..
+chmod -R o+rX apps
