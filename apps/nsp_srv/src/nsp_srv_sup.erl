@@ -15,10 +15,13 @@ init([]) ->
 %    net_kernel:connect(?GAMESRVR_NODE),
 %    rpc:call(?APPSERVER_NODE,nsm_srv_app,start_gproc,[]),
     application:start(gproc),
+    case nsx_opt:get_env(nsp_srv,stop_riak,false) of
+         true ->
     nsm_db_sup:stop_riak(),
     application:stop(luke),
     application:stop(riak_core),
-    application:stop(riak_sysmon),
+    application:stop(riak_sysmon);
+         _ -> skip end,
     Restart = permanent,
     Shutdown = 2000,
     Type = worker,

@@ -4,7 +4,7 @@ H=`hostname -f`
 GAMEPORT=7999
 GAMEHOST=$H
 WEBSERVER=web
-APPSERVER=app@$H
+APPSERVER=app
 GAMESERVER=game
 MNESIAINIT=""
 SYNC=false
@@ -13,6 +13,7 @@ MQ_PORT=5672
 MQ_USER=kakauser
 MQ_PASS=paynet123
 MQ_VHOST=/
+POOL=5000000
 
 while [ $# -gt 0 ]
 do
@@ -27,6 +28,8 @@ do
 	    GAMEHOST=$2;shift 2;;
 	-web)
 	    WEBSERVER=$2;shift 2;;
+	-pool)
+	    POOL=$2;shift 2;;
 	-mnesia-init)
 	    MNESIAINIT="true";shift;;
 	-mq-host)
@@ -45,25 +48,20 @@ do
     esac
 done
 
-if [ "$MNESIAINIT" == "" ]; then
-    ./config -file app.config nsg_srv mnesia_init -atom local
-else
-    ./config -file app.config nsg_srv mnesia_init -atom default
-fi
-
-./config -file app.config nsm_db riak_srv_node -atom $GAMESERVER@$H
-./config -file app.config nsm_db app_srv_node -atom $APPSERVER
-./config -file app.config nsm_db game_srv_node -atom $GAMESERVER@$H
-./config -file app.config nsm_db web_srv_node -atom $WEBSERVER@$H
-./config -file app.config nsg_srv game_srv_port -integer $GAMEPORT
+./config -file app.config nsm_db riak_srv_node -atom game@$H
+./config -file app.config nsm_db app_srv_node -atom app@$H
+./config -file app.config nsm_db game_srv_node -atom game@$H
+./config -file app.config nsm_db web_srv_node -atom public@$H
+#./config -file app.config nsg_srv game_srv_port -integer $GAMEPORT
 ./config -file app.config nsm_conn ip -list "\"$GAMEHOST\""
 ./config -file app.config nsm_db nodes -list [app@$H,game@$H,web@$H]
-./config -file app.config nsm_mq amqp_host -list "\"$MQ_HOST\""
-./config -file app.config nsm_mq amqp_port -integer $MQ_PORT
-./config -file app.config nsm_mq amqp_user -list "\"$MQ_USER\""
-./config -file app.config nsm_mq amqp_pass -list "\"$MQ_PASS\""
-./config -file app.config nsm_mq amqp_vhost -list "\"$MQ_VHOST\""
-./config -file app.config nsx_utils app_srv_node -atom $APPSERVER
+#./config -file app.config nsm_mq amqp_host -list "\"$MQ_HOST\""
+#./config -file app.config nsm_mq amqp_port -integer $MQ_PORT
+#./config -file app.config nsm_mq amqp_user -list "\"$MQ_USER\""
+#./config -file app.config nsm_mq amqp_pass -list "\"$MQ_PASS\""
+#./config -file app.config nsm_mq amqp_vhost -list "\"$MQ_VHOST\""
+./config -file app.config nsx_utils app_srv_node -atom app@$H
 ./config -file app.config nsm_db sync_nodes -atom $SYNC
+./config -file app.config nsx_idgen game_pool -integer $POOL
 
 cat vm.args.template | sed "s#GAMESERVER_NODE#$GAMESERVER@$H#g" > vm.args

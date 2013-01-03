@@ -1,14 +1,17 @@
 #!/bin/bash
 
 LOCAL_IP=${1:-"`hostname -i`"}
-APP=${2:-"app@`hostname -f`"}
+
+if [ "`hostname -a`" == "srv5" ]; then
+    POOL=5000000
+else
+    POOL=4000000
+fi
 
 cd rels/app/node/etc
-./configure -dba nsm_riak -app $APP -game game -web web -mq-user guest -mq-pass guest
+./configure -pool $POOL
 cd ../../../game/node/etc
-./configure -app $APP -game game -game-port 9000 -game-host $LOCAL_IP -web web -mnesia-init -mq-user guest -mq-pass guest -sync true
-cd ../../../web/node/etc
-./configure -ip $LOCAL_IP -app $APP -web web -web-port 8000 -game game -srv $LOCAL_IP -srv-host $LOCAL_IP -srv-port 9000 -mq-user guest -mq-pass guest -fb-app-id 154227314626053 -fb-app-secret cf9d49958ee536dd75f15bf8ca541965 -tw-consumer-key JWGMwKCc33KDRDulOljnPQ -tw-consumer-secret e7B7G2kVdj6pLd4otaGkIye4yCMI3nUJ31NBATzYM -jspack full -csspack full -sync true
+./configure -game-host $LOCAL_IP -sync true -pool $POOL
 cd ../../../public/node/etc
-./configure -ip $LOCAL_IP -app $APP -web web -web-port 8000 -game game -srv $LOCAL_IP -srv-host $LOCAL_IP -srv-port 9000 -mq-user guest -mq-pass guest -fb-app-id 154227314626053 -fb-app-secret cf9d49958ee536dd75f15bf8ca541965 -tw-consumer-key JWGMwKCc33KDRDulOljnPQ -tw-consumer-secret e7B7G2kVdj6pLd4otaGkIye4yCMI3nUJ31NBATzYM -jspack full -csspack full -sync false
+./configure -ip $LOCAL_IP -sync false -pool $POOL
 cd ../../../..
