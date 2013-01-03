@@ -44,8 +44,8 @@ init([]) ->
                   {bot_module, game_okey_bot},
                   {table_params, OkeyTableParams}
                  ],
-    OkeySpec = {okey_lucky, {game_okey_ng_trn_lucky, start_link, [OkeyGameId, OkeyParams]},
-                  Restart, Shutdown, worker, [game_okey_ng_trn_lucky]},
+    OkeySpec = {okey_lucky, {nsg_trn_lucky, start_link, [OkeyGameId, OkeyParams]},
+                  Restart, Shutdown, worker, [nsg_trn_lucky]},
 
     TavlaGameId = id_generator:get_id(),
     TavlaSpec = {tavla_lucky, {fl_lucky, start_link, [TavlaGameId,[{game_type, game_tavla}, {mode, normal}]]}, 

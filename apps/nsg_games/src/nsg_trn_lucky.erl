@@ -15,7 +15,7 @@
 %%%          to refer to a table directly - without pointing to a tournament.
 %%%          Type: integer()
 
--module(game_okey_ng_trn_lucky).
+-module(nsg_trn_lucky).
 
 -behaviour(gen_fsm).
 %% --------------------------------------------------------------------
