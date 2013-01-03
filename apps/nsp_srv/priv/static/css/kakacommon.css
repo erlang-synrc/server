@@ -213,9 +213,9 @@ nav a:hover {
 	padding:0 15px 0 0;
 	cursor:pointer;
 }
-.user-menu a {
+.user-menu a:hover {
 text-decoration:none;
-color:#ffcf63;
+  color:#ffcf63;
 }
 .user-menu li, .user-menu span li {
 	position:relative;
@@ -258,14 +258,14 @@ color:#ffcf63;
 	padding-top:15px;
 	padding-left:14px;
 }
-.wrapper .user-menu ul a {
-	float:none;
-	color:#ffcf63;
+.user-menu ul a {
+  float:none;
+  color:#ffcf63;
 }
-.wrapper .user-menu ul a:hover {color:#fff;}
+.user-menu ul a:hover {color:#fff;}
 .user-menu {
-	z-index:50;
-	margin:0 0 -7px -7px;
+  z-index:50;
+  margin:0 0 -7px -7px;
 }
 /* main */
 #main {
