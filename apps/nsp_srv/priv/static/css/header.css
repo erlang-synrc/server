@@ -24,7 +24,7 @@
 }
 
 .header .block {
-  background:url(/images/bg-header3.jpg) no-repeat 0 0;
+  background:url(/images/bg-header3.png) no-repeat 0 0;
   width:960px;
   height:82px;
   margin:0 auto;
@@ -35,7 +35,7 @@
   float:left;
   text-indent:-9999px;
   overflow:hidden;
-  background:url(/images/logo-beta.png) no-repeat;
+  background:url(http://static1.kakaranet.com/images/logo-beta.png) no-repeat;
   width:299px;
   height:60px;
   margin:11px 15px 0 0;
@@ -55,7 +55,7 @@
 }
 
 .header .box {
-  background:url(/images/bg-box.png);
+  background:url(http://static1.kakaranet.com/images/bg-box.png);
   -moz-border-radius-bottomright:5px;
   -moz-border-radius-bottomleft:5px;
   -webkit-border-bottom-right-radius:5px;
