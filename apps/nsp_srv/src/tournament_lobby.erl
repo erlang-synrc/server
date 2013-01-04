@@ -76,6 +76,21 @@ body() ->
     TID = T#tournament.id,
     CurrentUser = wf:user(),
 
+    Zone = TID div 1000000,
+    GameSrv = "game@srv" ++ integer_to_list(Zone) ++ ".kakaranet.com",
+    NodeAtom = case Zone of
+                    4 -> nsx_opt:get_env(nsm_db, game_srv_node, 'game@doxtop.cc');
+                    _ -> list_to_atom(GameSrv)
+               end,
+
+    case T#tournament.status of
+         activated -> TourGameSrv = case rpc:call(NodeAtom, game_manager,get_tournament,[TID]) of
+                         TournamentString when is_list(TournamentString) ->  wf:state(tour_long_id, TournamentString),
+                                             wf:state(tournament_started, true);
+                         _ -> undefined
+                      end;
+         _ -> skip end,
+
     Title = T#tournament.name,
     Tours = T#tournament.tours,
     Game = case T#tournament.game_type of
