@@ -336,21 +336,24 @@ ui_checkboxes(Section) ->
 
 ui_add_checkboxes() ->
     Checkboxes = [
-		  construct_id(#checkbox{class="chk", postback={tag,{deny_robots,true}},
-					 value=?_T("Deny Robots"),
-					 text=?_T("Table can contain only players, not robots")}),
-		  construct_id(#checkbox{class="chk", postback={tag,{private,true}}, % TODO: friends_only?
-					 value=?_T("Private"), text=?_T("Private table, only friends")}),
-		  construct_id(#checkbox{class="chk", postback={tag,{slang,true}},
-					 value=?_T("Slang"), text=?_T("Slang is accepted")}),
-		  case wf:state(user_paid) of
-                true ->
-                    construct_id(#checkbox{class="chk", postback={tag,{paid_only,true}},
-				        	 value=?_T("Paid"), text=?_T("Only paid members")});
-                _ ->
-                    []
-          end
-		 ],
+                  construct_id(#checkbox{class="chk", postback={tag,{deny_robots,true}},
+                                         value=?_T("Deny Robots"),
+                                         text=?_T("Table can contain only players, not robots")}),
+                  construct_id(#checkbox{class="chk", postback={tag,{private,true}}, % TODO: friends_only?
+                                         value=?_T("Private"), text=?_T("Private table, only friends")}),
+                  construct_id(#checkbox{class="chk", postback={tag,{slang,true}},
+                                         value=?_T("Slang"), text=?_T("Slang is accepted")}),
+                  construct_id(#checkbox{class="chk", postback={tag,{robots_replacement_disallowed,true}},
+                                         value=?_T("Disallow Replace Robots"),
+                                         text=?_T("Players can't replace robots if no free seats")}),
+                  case wf:state(user_paid) of
+                      true ->
+                          construct_id(#checkbox{class="chk", postback={tag,{paid_only,true}},
+                                                 value=?_T("Paid"), text=?_T("Only paid members")});
+                      _ ->
+                          []
+                  end
+                 ],
     #panel{class="form1", body=[ 
         "<span id='guiderstab1additional'>",
         "</span>",
@@ -499,7 +502,8 @@ convert_to_map(Data,_Setting,UId,GameFSM) ->
               UserOwner,
               Users,
               {delete_table, TId, ProcId},
-              GameState ]
+              GameState,
+              RobotsReplacementAllowed ]
       end || #game_table{ name = Name,
                           id = TId,
                           rounds = _Rounds,
@@ -507,8 +511,9 @@ convert_to_map(Data,_Setting,UId,GameFSM) ->
                           game_process = ProcId,
                           owner = _Owner,
                           creator = Owner,
-                          game_state = GameState
-                          } = _Tab <- Data ].
+                          game_state = GameState,
+                          robots_replacement_allowed = RobotsReplacementAllowed
+                         } = _Tab <- Data ].
 
 
 
@@ -560,8 +565,15 @@ show_table(Tables) ->
                             paired -> WholeTable#game_table.users;
                             _ -> Users
                         end;
-                        "okey" -> Users 
+                        "okey" -> Users
                     end,
+                    GameType = WholeTable#game_table.game_type,
+                    FreeSeatsNum = if GameType == game_okey,
+                                      GameState == started,
+                                      RobotsReplacementAllowed ->
+                                          MaxUsers - length([U || U <- RealUsers, U=/=robot]);
+                                      true -> MaxUsers - length(RealUsers)
+                                   end,
                     TMode = matchmaker:game_mode_to_text(WholeTable#game_table.game_mode) 
                              ++ " {"++atom_to_list(WholeTable#game_table.tournament_type)++"} " 
                              ++ integer_to_list(TId),
@@ -588,12 +600,10 @@ show_table(Tables) ->
                     JoinOrCrate = case Action of
                         {join, Act} ->
                             IsMember = lists:member(list_to_binary(wf:user()), Users),
-                            GameType = WholeTable#game_table.game_type,
 %%                            ?INFO("User: ~p, GameState: ~p, IsMember: ~p, Real users num: ~p, MaxUsers: ~p",
 %%                                  [wf:user(), GameState, IsMember, length(RealUsers), MaxUsers]),
                             if GameState == started andalso IsMember;
-                               GameType == game_okey andalso GameState == started andalso length(RealUsers) < MaxUsers;
-                               GameState =/= started andalso length(RealUsers) < MaxUsers ->
+                               FreeSeatsNum > 0 ->
                                    #link{id=joinTable,
                                          actions=Act,
                                          text=?_T("Join"),
@@ -616,8 +626,8 @@ show_table(Tables) ->
                     },
 
                     Buttons = #list{style="float:right;", body=[
-                        #listitem{body=X} || X <- 
-                            [#image{image="/images/free.png"} || _N <- lists:seq(1,MaxUsers-length(RealUsers))] ++ 
+                        #listitem{body=X} || X <-
+                            lists:duplicate(FreeSeatsNum, #image{image="/images/free.png"}) ++
                             [Info, JoinOrCrate, DeleteTable]
                     ]},
 
@@ -648,7 +658,8 @@ show_table(Tables) ->
                     UserOwner,
                     Users,
                     DeleteAction,
-                    GameState] <- Tables
+                    GameState,
+                    RobotsReplacementAllowed] <- Tables
             ]}
     end.
 
@@ -868,8 +879,8 @@ ui_button_deselect({Key, Value}) ->
 
 is_checkbox(Key) ->
     case wf:state(user_paid) of
-        true ->  lists:member(Key, [paired_game, deny_robots, private, slang, deny_observers, paid]);
-        false -> lists:member(Key, [paired_game, deny_robots, private, slang, deny_observers])
+        true ->  lists:member(Key, [paired_game, deny_robots, private, slang, deny_observers, paid, robots_replacement_disallowed]);
+        false -> lists:member(Key, [paired_game, deny_robots, private, slang, deny_observers, robots_replacement_disallowed])
     end.
 
 is_option_present(Key, Value) ->

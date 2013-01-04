@@ -214,7 +214,8 @@ handle_call({create_table, User, S}, _From, State) ->
                                 slang            = get_setting(slang, S),
                                 deny_observers   = get_setting(deny_observers, S),
                                 pointing_rules   = PR,
-                                pointing_rules_ex = PREx
+                                pointing_rules_ex = PREx,
+                                robots_replacement_allowed = not get_setting(robots_replacement_disallowed, S, false)
                                },
 
             {reply, {ok, Table}, State}
@@ -612,13 +613,7 @@ get_setting(Key, Setting) ->
     get_setting(Key, Setting, undefined).
 
 get_setting(Key, Setting, Default) ->
-    Req = [ V || {K, V} <- Setting, K == Key],
-    case Req of
-        [] ->
-            Default;
-        [OneElements] ->
-            OneElements
-    end.
+    proplists:get_value(Key, Setting, Default).
 
 get_list_setting(Key, Setting) ->
     [ V || {K, V} <- Setting, K == Key].
@@ -649,7 +644,8 @@ game_table_to_settings(#game_table{name           = Name,
                                   deny_observers = DenyObservers,
                                   double_points  = DoublePoints,
                                   pointing_rules = GeneralPointingRule,
-                                  pointing_rules_ex = AdditionalPointingRules
+                                  pointing_rules_ex = AdditionalPointingRules,
+                                  robots_replacement_allowed = RobotsReplacementAllowed
                                                     }) ->
     AllowReplacement = case GameType of
                            game_okey -> true;
@@ -681,7 +677,8 @@ game_table_to_settings(#game_table{name           = Name,
          {pointing_rules, GeneralPointingRule},
          {pointing_rules_ex, AdditionalPointingRules},
          {paid_only, Paid},
-         {allow_replacement, AllowReplacement}],
+         {allow_replacement, AllowReplacement},
+         {robots_replacement_allowed, RobotsReplacementAllowed}],
     lists:flatten(Setting).
 
 -spec save_game_table_to_settings(record(save_game_table)) -> proplist().

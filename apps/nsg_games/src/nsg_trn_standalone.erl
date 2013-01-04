@@ -54,6 +54,7 @@
          mul_factor        :: integer(),
          registrants       :: [robot | binary()],
          initial_points    :: integer(),
+         bots_replacement_mode :: enabled | disabled,
          common_params     :: proplists:proplist(),
          %% Dinamic values
          players,          %% The register of tournament players
@@ -97,6 +98,7 @@
          table           :: pos_integer(),
          seat_num        :: integer(),
          player_id       :: undefined | pos_integer(),
+         is_bot          :: undefined | boolean(),
          registered_by_table :: undefined | boolean(),
          connected       :: undefined | boolean(),
          free            :: boolean()
@@ -170,6 +172,7 @@ init([GameId, Params, _Manager]) ->
     TableModule =   get_param(table_module, Params),
     BotModule =     get_param(bot_module, Params),
     InitialPoints = get_param(initial_points, Params),
+    BotsReplacementMode = get_param(bots_replacement_mode, Params),
     CommonParams  = get_param(common_params, Params),
 
     ?INFO("TRN_STANDALONE <~p> All parameteres are read. Send the directive to start the game.", [GameId]),
@@ -187,6 +190,7 @@ init([GameId, Params, _Manager]) ->
                              kakush_for_loser = KakushForLoser,
                              win_game_points = WinGamePoints,
                              mul_factor = MulFactor,
+                             bots_replacement_mode = BotsReplacementMode,
                              registrants = Registrants,
                              initial_points = InitialPoints,
                              table_id_counter = 1,
@@ -341,8 +345,8 @@ code_change(_OldVsn, StateName, StateData, _Extra) ->
 
 
 handle_client_message(Message, StateName, #state{game_id = GameId} = StateData) ->
-    ?INFO("TRN_STANDALONE <~p> Unhandled client message received in "
-          "state <~p>: ~p.", [GameId, StateName, Message]),
+    ?ERROR("TRN_STANDALONE <~p> Unhandled client message received in "
+           "state <~p>: ~p.", [GameId, StateName, Message]),
     {next_state, StateName, StateData}.
 
 %%===================================================================
@@ -462,8 +466,8 @@ handle_table_message(TableId, {response, RequestId, Response},
 
 
 handle_table_message(TableId, Message, StateName, #state{game_id = GameId} = StateData) ->
-    ?INFO("TRN_STANDALONE <~p> Unhandled table message received from table <~p> in "
-          "state <~p>: ~p.", [GameId, TableId, StateName, Message]),
+    ?ERROR("TRN_STANDALONE <~p> Unhandled table message received from table <~p> in "
+           "state <~p>: ~p.", [GameId, TableId, StateName, Message]),
     {next_state, StateName, StateData}.
 
 %%===================================================================
@@ -505,9 +509,9 @@ handle_table_response(_TableId, {replace_player, PlayerId, TableId, SeatNum}, ok
 
 handle_table_response(TableId, RequestContext, Response, StateName,
                       #state{game_id = GameId} = StateData) ->
-    ?INFO("TRN_STANDALONE <~p> Unhandled 'table response' received from table <~p> "
-          "in state <~p>. Request context: ~p. Response: ~p.",
-          [GameId, TableId, StateName, RequestContext, Response]),
+    ?ERROR("TRN_STANDALONE <~p> Unhandled 'table response' received from table <~p> "
+           "in state <~p>. Request context: ~p. Response: ~p.",
+           [GameId, TableId, StateName, RequestContext, Response]),
     {next_state, StateName, StateData}.
 
 %%===================================================================
@@ -516,27 +520,26 @@ handle_client_request({join, UserInfo}, From, StateName,
                       #state{game_id = GameId, reg_requests = RegRequests,
                              seats = Seats, players=Players, tables = Tables,
                              table_module = TableMod, cur_table = TableId,
-                             player_id_counter = PlayerIdCounter, tab_requests = TabRequests,
-                             seats_per_table = SeatsPerTable, common_params = CommonParams} = StateData) ->
+                             bots_replacement_mode = BotsReplacementMode} = StateData) ->
     #'PlayerInfo'{id = UserId, robot = _IsBot} = UserInfo,
     ?INFO("TRN_STANDALONE <~p> The 'Join' request received from user: ~p.", [GameId, UserId]),
     if StateName == ?STATE_FINISHED ->
            ?INFO("TRN_STANDALONE <~p> The game is finished. "
                  "Reject to join user ~p.", [GameId, UserId]),
            {reply, {error, finished}, StateName, StateData};
-       true ->
+       true -> %% Game in progress. Find a seat for the user
            case get_player_by_user_id(UserId, Players) of
-               {ok, #player{id = PlayerId}} -> %% The user is a registered member of the game.
+               {ok, #player{id = PlayerId}} -> %% The user is a registered member of the game (player)
                    ?INFO("TRN_STANDALONE <~p> User ~p is a registered member of the game. "
                          "Allow to join.", [GameId, UserId]),
                    [#seat{table = TableId, registered_by_table = RegByTable}] = find_seats_by_player_id(PlayerId, Seats),
                    case RegByTable of
-                       false -> %% Store this request to the waiting pool
+                       false -> %% The player is not registered by the table yet
                            ?INFO("TRN_STANDALONE <~p> User ~p not yet regirested by the table. "
                                  "Add the request to the waiting pool.", [GameId, UserId]),
                            NewRegRequests = dict:store(PlayerId, From, RegRequests),
                            {next_state, StateName, StateData#state{reg_requests = NewRegRequests}};
-                       _ ->
+                       _ -> %% The player is registered by the table. Return the table requisites
                            ?INFO("TRN_STANDALONE <~p> Return the join response for player ~p immediately.",
                                  [GameId, UserId]),
                            #table{relay = Relay, pid = TPid} = fetch_table(TableId, Tables),
@@ -545,50 +548,35 @@ handle_client_request({join, UserInfo}, From, StateName,
                error -> %% Not a member yet
                    ?INFO("TRN_STANDALONE <~p> User ~p is not a member of the game.", [GameId, UserId]),
                    case find_free_seats(TableId, Seats) of
-                       [] ->
-                           ?INFO("TRN_STANDALONE <~p> No free seats for user ~p. "
+                       [] when BotsReplacementMode == disabled ->
+                           ?INFO("TRN_STANDALONE <~p> No free seats for user ~p. Robots replacement is disabled. "
                                  "Reject to join.", [GameId, UserId]),
                            {reply, {error, not_allowed}, StateName, StateData};
-                       [_ | _] ->
+                       [] when BotsReplacementMode == enabled ->
+                           ?INFO("TRN_STANDALONE <~p> No free seats for user ~p. Robots replacement is enabled. "
+                                 "Tring to find a robot for replace.", [GameId, UserId]),
+                           case find_registered_robot_seats(TableId, Seats) of
+                               [] ->
+                                   ?INFO("TRN_STANDALONE <~p> No robots for replacement by user ~p. "
+                                         "Reject to join.", [GameId, UserId]),
+                                   {reply, {error, not_allowed}, StateName, StateData};
+                               [#seat{seat_num = SeatNum, player_id = OldPlayerId} | _] ->
+                                   ?INFO("TRN_STANDALONE <~p> There is a robot for replacement by user ~p. "
+                                         "Registering.", [GameId, UserId]),
+                                   reg_player_with_replace(UserInfo, TableId, SeatNum, OldPlayerId, From, StateName, StateData)
+                           end;
+                       [#seat{seat_num = SeatNum} | _] ->
                            ?INFO("TRN_STANDALONE <~p> There is a free seat for user ~p. "
                                  "Registering.", [GameId, UserId]),
-                           {SeatNum, NewPlayers, NewSeats} =
-                               register_new_player(UserInfo, TableId, Players, Seats, PlayerIdCounter),
-                           TablePid = get_table_pid(TableId, Tables),
-                           NewTabRequests = table_req_replace_player(TableMod, TablePid, PlayerIdCounter, UserInfo,
-                                                                     TableId, SeatNum, TabRequests),
-                           NewRegRequests = dict:store(PlayerIdCounter, From, RegRequests),
-
-                           Users = [if Bot -> robot; true -> UId end || #player{user_id = UId, is_bot = Bot}
-                                                                                   <- players_to_list(NewPlayers)],
-                           DeclRec = create_decl_rec(CommonParams, GameId, Users),
-                           gproc:set_value({p,l,self()}, DeclRec),
-
-                           TableIsFull = is_table_full_enought(TableId, NewSeats, SeatsPerTable),
-                           if StateName == ?STATE_EMPTY_SEATS_FILLING andalso TableIsFull ->
-                                  ?INFO("TRN_STANDALONE <~p> It's enought players registered to start the game. "
-                                            "Initiating the procedure.", [GameId]),
-                                  {TRef, Magic} = start_timer(?WAITING_PLAYERS_TIMEOUT),
-                                  {next_state, ?STATE_WAITING_FOR_PLAYERS,
-                                   StateData#state{reg_requests = NewRegRequests, tab_requests = NewTabRequests,
-                                                   players = NewPlayers, seats = NewSeats, timer = TRef,
-                                                   timer_magic = Magic, player_id_counter = PlayerIdCounter+1}};
-                              true ->
-                                  ?INFO("TRN_STANDALONE <~p> Not enought players registered to start the game. "
-                                            "Waiting for more registrations.", [GameId]),
-                                  {next_state, StateName,
-                                   StateData#state{reg_requests = NewRegRequests, tab_requests = NewTabRequests,
-                                                   players = NewPlayers, seats = NewSeats,
-                                                   player_id_counter = PlayerIdCounter+1}}
-                           end
+                           reg_new_player(UserInfo, TableId, SeatNum, From, StateName, StateData)
                    end
            end
     end;
 
 handle_client_request(Request, From, StateName, #state{game_id = GameId} = StateData) ->
-    ?INFO("TRN_STANDALONE <~p> Unhandled client request received from ~p in "
-          "state <~p>: ~p.", [GameId, From, StateName, Request]),
-   {reply, {error, unexpected_request}, StateName, StateData}.
+    ?ERROR("TRN_STANDALONE <~p> Unhandled client request received from ~p in "
+           "state <~p>: ~p.", [GameId, From, StateName, Request]),
+    {reply, {error, unexpected_request}, StateName, StateData}.
 
 %%===================================================================
 init_tour(Tour, #state{game_id = GameId, seats_per_table = SeatsPerTable,
@@ -616,6 +604,7 @@ init_tour(Tour, #state{game_id = GameId, seats_per_table = SeatsPerTable,
                                                             tab_requests = dict:new(),
                                                             tables_results = []
                                                            }}.
+
 
 start_set(#state{game_id = GameId, game = Game, game_mode = GameMode, mul_factor = MulFactor,
                  quota_per_round = Amount, tour = Tour, tables = Tables, players = Players,
@@ -645,11 +634,75 @@ finalize_tournament(#state{game_id = GameId} = StateData) ->
           [GameId, ?SHOW_TOURNAMENT_RESULT_TIMEOUT div 1000]),
     {next_state, ?STATE_FINISHED, StateData#state{timer = TRef, timer_magic = Magic}}.
 
+
+reg_player_with_replace(UserInfo, TableId, SeatNum, OldPlayerId, From, StateName,
+                        #state{game_id = GameId, players = Players, tables = Tables,
+                               seats = Seats, player_id_counter = PlayerId,
+                               tab_requests = TabRequests, reg_requests = RegRequests,
+                               table_module = TableModule, common_params = CommonParams} = StateData) ->
+    #'PlayerInfo'{id = UserId, robot = IsBot} = UserInfo,
+    NewPlayers = del_player(OldPlayerId, Players),
+    NewPlayers2 = store_player(#player{id = PlayerId, user_id = UserId,
+                                       user_info = UserInfo, is_bot = IsBot}, NewPlayers),
+    ?INFO("TRN_STANDALONE <~p> User ~p registered as player <~p>.", [GameId, UserId, PlayerId]),
+    NewSeats = set_seat(TableId, SeatNum, PlayerId, _Bot = false, _RegByTable = false,
+                        _Connected = false, _Free = false, Seats),
+    ?INFO("TRN_STANDALONE <~p> User ~p assigned to seat <~p> of table <~p>.", [GameId, UserId, SeatNum, TableId]),
+    NewRegRequests = dict:store(PlayerId, From, RegRequests),
+    TablePid = get_table_pid(TableId, Tables),
+    NewTabRequests = table_req_replace_player(TableModule, TablePid, PlayerId, UserInfo, TableId, SeatNum, TabRequests),
+    Users = [if Bot -> robot; true -> UId end || #player{user_id = UId, is_bot = Bot}
+                                                            <- players_to_list(NewPlayers2)],
+    DeclRec = create_decl_rec(CommonParams, GameId, Users),
+    gproc:set_value({p,l,self()}, DeclRec),
+    {next_state, StateName, StateData#state{players = NewPlayers2,
+                                            seats = NewSeats,
+                                            player_id_counter = PlayerId + 1,
+                                            tab_requests = NewTabRequests,
+                                            reg_requests = NewRegRequests}}.
+
+
+reg_new_player(UserInfo, TableId, SeatNum, From, StateName,
+               #state{game_id = GameId, players = Players, tables = Tables,
+                      seats = Seats, player_id_counter = PlayerId,
+                      tab_requests = TabRequests, reg_requests = RegRequests,
+                      table_module = TableModule, common_params = CommonParams,
+                      seats_per_table = SeatsPerTable} = StateData) ->
+    {SeatNum, NewPlayers, NewSeats} =
+        register_new_player(UserInfo, TableId, Players, Seats, PlayerId),
+    TablePid = get_table_pid(TableId, Tables),
+    NewTabRequests = table_req_replace_player(TableModule, TablePid, PlayerId, UserInfo,
+                                              TableId, SeatNum, TabRequests),
+    NewRegRequests = dict:store(PlayerId, From, RegRequests),
+
+    Users = [if Bot -> robot; true -> UId end || #player{user_id = UId, is_bot = Bot}
+                                                            <- players_to_list(NewPlayers)],
+    DeclRec = create_decl_rec(CommonParams, GameId, Users),
+    gproc:set_value({p,l,self()}, DeclRec),
+
+    TableIsFull = is_table_full_enought(TableId, NewSeats, SeatsPerTable),
+    if StateName == ?STATE_EMPTY_SEATS_FILLING andalso TableIsFull ->
+           ?INFO("TRN_STANDALONE <~p> It's enought players registered to start the game. "
+                     "Initiating the procedure.", [GameId]),
+           {TRef, Magic} = start_timer(?WAITING_PLAYERS_TIMEOUT),
+           {next_state, ?STATE_WAITING_FOR_PLAYERS,
+            StateData#state{reg_requests = NewRegRequests, tab_requests = NewTabRequests,
+                            players = NewPlayers, seats = NewSeats, timer = TRef,
+                            timer_magic = Magic, player_id_counter = PlayerId+1}};
+       true ->
+           ?INFO("TRN_STANDALONE <~p> Not enought players registered to start the game. "
+                     "Waiting for more registrations.", [GameId]),
+           {next_state, StateName,
+            StateData#state{reg_requests = NewRegRequests, tab_requests = NewTabRequests,
+                            players = NewPlayers, seats = NewSeats,
+                            player_id_counter = PlayerId+1}}
+    end.
+
+
 %% series_result(TableResult) -> WithPlaceAndStatus
 %% Types: TableResult = [{PlayerId, Points}] 
 %%        WithPlaceAndStatus = [{PlayerId, Place, Points, Status}]
 %%          Status = winner | looser
-
 series_result(TableResult) ->
     {_, PointsList} = lists:unzip(TableResult),
     Max = lists:max(PointsList),
@@ -670,36 +723,11 @@ is_table_full_enought(TableId, Seats, EnoughtNumber) ->
     NonEmptySeats = find_non_free_seats(TableId, Seats),
     length(NonEmptySeats) >= EnoughtNumber.
 
-%% replace_player_by_bot(PlayerId, TableId, SeatNum,
-%%                       #state{players = Players, seats = Seats,
-%%                              game_id = GameId, bots_params = BotsParams,
-%%                              player_id_counter = NewPlayerId, tables = Tables,
-%%                              tab_requests = Requests} = StateData) ->
-%%     NewPlayers = del_player(PlayerId, Players),
-%%     [#'PlayerInfo'{id = UserId} = UserInfo] = spawn_bots(GameId, BotsParams, 1),
-%%     NewPlayers2 = reg_player(#player{id = NewPlayerId, user_id = UserId, is_bot = true}, NewPlayers),
-%%     NewSeats = assign_seat(TableId, SeatNum, NewPlayerId, true, false, false, Seats),
-%%     TablePid = get_table_pid(TableId, Tables),
-%%     NewRequests = table_req_replace_player(TablePid, NewPlayerId, UserInfo, TableId, SeatNum, Requests),
-%%     {next_state, ?STATE_PROCESSING, StateData#state{players = NewPlayers2,
-%%                                                     seats = NewSeats,
-%%                                                     player_id_counter = NewPlayerId + 1,
-%%                                                     tab_requests = NewRequests}}.
-%% 
-
-%% table_req_replace_player(TablePid, PlayerId, UserInfo, TableId, SeatNum, TabRequests) ->
-%%     RequestId = make_ref(),
-%%     NewRequests = dict:store(RequestId, {replace_player, PlayerId, TableId, SeatNum}, TabRequests),
-%%     send_to_table(TablePid, {replace_player, RequestId, UserInfo, PlayerId, SeatNum}),
-%%     NewRequests.
-
-
 
 %% prepare_players_for_new_tour(InitialPoints, Players) -> [{PlayerId, UserInfo, Points}]
 prepare_players_for_new_tour(InitialPoints, Players) ->
     [{PlayerId, UserInfo, InitialPoints}
      || #player{id = PlayerId, user_info = UserInfo} <- players_to_list(Players)].
-
 
 
 %% setup_tables(TableMod, Players, SeatsPerTable, TTable, TableIdCounter, GameId, TableParams) ->
@@ -721,16 +749,17 @@ setup_tables(TableMod, Players, SeatsPerTable, TTable, Tour, Tours, TableId, Gam
     {ok, TabPid} = spawn_table(TableMod, GameId, TableId, TableParams2),
     MonRef = erlang:monitor(process, TabPid),
     Tables = reg_table(TableId, TabPid, MonRef, _GlTableId = 0, _Context = undefined, tables_init()),
-    F2 = fun({PlId, _UInfo, SNum, _Points}, Acc) ->
+    F2 = fun({PlId, #'PlayerInfo'{robot = Bot}, SNum, _Points}, Acc) ->
                  case PlId of
-                     {empty,_} -> assign_seat(TableId, SNum, _PlId = undefined, _Reg = false, _Conn = false, _Free = true, Acc);
-                     _ -> assign_seat(TableId, SNum, PlId, _Reg = false, _Conn = false, _Free = false, Acc)
+                     {empty,_} -> set_seat(TableId, SNum, _PlId = undefined, _Bot = undefined, _Reg = false, _Conn = false, _Free = true, Acc);
+                     _ -> set_seat(TableId, SNum, PlId, Bot, _Reg = false, _Conn = false, _Free = false, Acc)
                  end
          end,
     Seats = lists:foldl(F2, seats_init(), TPlayers),
     PlayersIds = [PlayerId || {PlayerId, _, _} <- SPlayers],
     TCrRequests = dict:store(TableId, PlayersIds, dict:new()),
     {Tables, Seats, TableId + 1, TCrRequests}.
+
 
 empty_seat_userinfo(Num) ->
     #'PlayerInfo'{id         = list_to_binary(["empty_", integer_to_list(Num)]),
@@ -742,6 +771,7 @@ empty_seat_userinfo(Num) ->
                   score      = 0,
                   avatar_url = null,
                   robot      = true }.
+
 
 %% setup_players(Registrants, GameId, BotModule) -> {Players, PlayerIdCounter}
 setup_players(Registrants, GameId, BotModule) ->
@@ -759,17 +789,16 @@ setup_players(Registrants, GameId, BotModule) ->
     lists:foldl(F, {players_init(), 1}, Registrants).
 
 
-
 %% register_new_player(UserInfo, TableId, Players, Seats, PlayerId) -> {SeatNum, NewPlayers, NewSeats}
-
 register_new_player(UserInfo, TableId, Players, Seats, PlayerId) ->
     #'PlayerInfo'{id = UserId, robot = Bot} = UserInfo,
-    [#seat{seat_num = SeatNum} = Seat|_] = find_free_seats(TableId, Seats),
-    NewSeats = store_seat(Seat#seat{table = TableId, player_id = PlayerId,
-                                    registered_by_table = false, connected = false, free = false}, Seats),
+    [#seat{seat_num = SeatNum} |_] = find_free_seats(TableId, Seats),
+    NewSeats = set_seat(TableId, SeatNum, PlayerId, Bot, _RegByTable = false,
+                        _Connected = false, _Free = false, Seats),
     NewPlayers = store_player(#player{id = PlayerId, user_id = UserId,
                                       user_info = UserInfo, is_bot = Bot}, Players),
     {SeatNum, NewPlayers, NewSeats}.
+
 
 %% replace_by_bots(Disconnected, GameId, BotModule, TableId, Players, Seats, PlayerIdCounter) ->
 %%                                       {Replacements, NewPlayers, NewSeats, NewPlayerIdCounter}
@@ -777,12 +806,13 @@ register_new_player(UserInfo, TableId, Players, Seats, PlayerId) ->
 %%        Replacements = [{PlayerId, UserInfo, SeatNum}]
 replace_by_bots(Disconnected, GameId, BotModule, TableId, Players, Seats, PlayerIdCounter) ->
     F = fun(PlayerId, {RAcc, PAcc, SAcc, Counter}) ->
+                NewPAcc1 = del_player(PlayerId, PAcc),
                 [#seat{seat_num = SeatNum}] = find_seats_by_player_id(PlayerId, TableId, SAcc),
-                NewSAcc = store_seat(#seat{table = TableId, seat_num = SeatNum, player_id = Counter,
-                                           registered_by_table = false, connected = false}, SAcc),
+                NewSAcc = set_seat(TableId, SeatNum, _PlayerId = Counter, _Bot = true,
+                                   _RegByTable = false, _Connected = false, _Free = false, SAcc),
                 #'PlayerInfo'{id = UserId} = UserInfo = spawn_bot(GameId, BotModule),
                 NewPAcc = store_player(#player{id = Counter, user_id = UserId,
-                                               user_info = UserInfo, is_bot = true}, PAcc),
+                                               user_info = UserInfo, is_bot = true}, NewPAcc1),
                 NewRAcc = [{Counter, UserInfo, SeatNum} | RAcc],
                 {NewRAcc, NewPAcc, NewSAcc, Counter + 1}
         end,
@@ -855,6 +885,10 @@ get_user_id(PlayerId, Players) ->
     #player{user_id = UserId} = midict:fetch(PlayerId, Players),
     UserId.
 
+%% del_player(PlayerId, Players) -> NewPlayers
+del_player(PlayerId, Players) ->
+    midict:erase(PlayerId, Players).
+
 tables_init() -> midict:new().
 
 reg_table(TableId, Pid, MonRef, GlobalId, TableContext, Tables) ->
@@ -906,14 +940,16 @@ find_non_free_seats(TableId, Seats) ->
 find_free_seats(TableId, Seats) ->
     midict:geti(true, {free_at_tab, TableId}, Seats).
 
+find_registered_robot_seats(TableId, Seats) ->
+    [S || S = #seat{registered_by_table = true, is_bot = true} <- midict:geti(TableId, table_id, Seats)].
 
 fetch_seat(TableId, SeatNum, Seats) -> midict:fetch({TableId, SeatNum}, Seats).
 
-%% assign_seat(TabId, SeatNum, PlayerId, RegByTable, Connected, Free, Seats) -> NewSeats
+%% set_seat(TabId, SeatNum, PlayerId, IsBot, RegByTable, Connected, Free, Seats) -> NewSeats
 %% PlayerId = integer()
-%% RegByTable = Connected = undefined | boolean()
-assign_seat(TabId, SeatNum, PlayerId, RegByTable, Connected, Free, Seats) ->
-    Seat = #seat{table = TabId, seat_num = SeatNum, player_id = PlayerId,
+%% IsBot = RegByTable = Connected = undefined | boolean()
+set_seat(TabId, SeatNum, PlayerId, IsBot, RegByTable, Connected, Free, Seats) ->
+    Seat = #seat{table = TabId, seat_num = SeatNum, player_id = PlayerId, is_bot = IsBot,
                  registered_by_table = RegByTable, connected = Connected, free = Free},
     store_seat(Seat, Seats).
 
@@ -923,7 +959,7 @@ update_seat_connect_status(TableId, SeatNum, ConnStatus, Seats) ->
     store_seat(NewSeat, Seats).
 
 store_seat(#seat{table = TabId, seat_num = SeatNum, player_id = PlayerId,
-                 registered_by_table = _RegByTable,
+                 is_bot = _IsBot, registered_by_table = _RegByTable,
                  connected = Connected, free = Free} = Seat, Seats) ->
     Indices = if Free == true ->
                      [{table_id, TabId}, {free, true}, {{free_at_tab, TabId}, true}];
@@ -1057,9 +1093,10 @@ create_decl_rec(CParams, GameId, Users) ->
                 game_process    = self(),
                 game_module     = ?MODULE,
                 pointing_rules  = proplists:get_value(pointing_rules, CParams),
-                pointing_rules_ex = proplists:get_value(pointing_rules, CParams)
+                pointing_rules_ex = proplists:get_value(pointing_rules, CParams),
 %                game_process_monitor =
 %                tournament_type = 
+                robots_replacement_allowed = proplists:get_value(robots_replacement_allowed, CParams)
                }.
 
 user_id_to_string(UserId) -> binary_to_list(UserId).
