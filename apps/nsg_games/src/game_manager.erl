@@ -322,6 +322,10 @@ create_standalone_game(Game, Params, Users) ->
                          _ -> proplists:get_value(rounds, Params, undefined)
                      end,
             GostergeFinishAllowed = proplists:get_value(gosterge_finish, Params, false),
+            BotsReplacementMode = case proplists:get_value(robots_replacement_allowed, Params, true) of
+                                      true -> enabled;
+                                      false -> disabled
+                                  end,
             TableParams = [
                            {table_name, TableName},
                            {mult_factor, MulFactor},
@@ -356,6 +360,7 @@ create_standalone_game(Game, Params, Users) ->
                           {mul_factor, MulFactor},
                           {table_module, game_okey_ng_table_trn},
                           {bot_module, game_okey_bot},
+                          {bots_replacement_mode, BotsReplacementMode},
                           {table_params, TableParams},
                           {common_params, Params}
                          ]);
