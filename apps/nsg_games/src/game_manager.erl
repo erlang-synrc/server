@@ -371,7 +371,7 @@ start_tournament(TourId,NumberOfTournaments,NumberOfPlayers,Quota,Tours,Speed,Gi
     RealPlayersUnsorted = nsm_tournaments:joined_users(TourId),
     RealPlayersPR = lists:sort(fun(#play_record{other=AX},#play_record{other=BX}) -> AX < BX end,RealPlayersUnsorted),
     ?INFO("Head: ~p",[hd(RealPlayersPR)]),
-    RealPlayers = [list_to_binary(Who)||#play_record{who=Who}<-RealPlayersPR],
+    RealPlayers = [list_to_binary(Who)||#play_record{who=Who}<-RealPlayersPR, Who /= undefined],
 
     Registrants = case NumberOfPlayers > length(RealPlayers) of
                        true -> nsm_db:put(Tournament#tournament{status=canceled}), RealPlayers;

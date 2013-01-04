@@ -576,6 +576,7 @@ event({start_tour, Id, NPlayers,Q,T,S,P}) ->
                     _ -> list_to_atom(GameSrv)
                end,
     TourId = rpc:call(NodeAtom, game_manager,start_tournament,[Id, 1, NPlayers,Q,T,S,P]),
+    ?INFO("Tournament Started: ~p",[TourId]),
     wf:replace(attach_button, #link{id=attach_button, class="tourlobby_yellow_button", text=?_T("TAKE MY SEAT"), postback=attach}),
     wf:replace(start_button, ""),
     wf:state(tour_long_id,TourId);
