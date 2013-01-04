@@ -63,7 +63,8 @@
 }
 .slideshow-control li {
   float:left;
-  background:url(/images/sep-02.gif) no-repeat 100% 8px;
+  background-image: url(/images/indexbg.png);
+  background-position: -10px -378px;//sep-02
   margin:0;
   padding:0 12px;
   height:45px;
@@ -81,9 +82,7 @@
   z-index:11;
 }
 
-.switcher li:first-child, .switcher li.first-child {padding-left:0;}
-.switcher li:last-child, .switcher li.last-child {background:none;}
-
+.switcher li:first-child, .switcher li.first-child {padding-left:0;background:none;}
 .switcher .activeSlide a, .switcher a:hover {
   text-decoration:none;
   color:#000;
@@ -94,7 +93,7 @@
 
 .pager {list-style:none;margin:0;padding:0;float:right;}
 .pager li {padding:0 11px;}
-.pager li:last-child, .pager li.last-child {background:none;}
+.pager li:first-child, .pager li.first-child {background:none;}
 
 .pager a {
   display:block;
@@ -102,6 +101,14 @@
   overflow:hidden;
   width:12px;
   height:18px;
-  background:url(/images/btn-pager.gif) 0 50% no-repeat;
 }
-.pager .next {background:url(/images/btn-pager.gif) 100% 50% no-repeat;}
+
+.pager .prev{
+  background-image: url(/images/indexbg.png);
+  background-position: -10px -182px;
+}
+
+.pager .next {
+  background-image: url(/images/indexbg.png);
+  background-position: -22px -182px;
+}
