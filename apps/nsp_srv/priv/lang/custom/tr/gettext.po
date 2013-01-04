@@ -4325,7 +4325,7 @@ msgid "At the tip of your finger."
 msgstr "At the tip of your finger."
 #
 msgid "BE SOCIAL!"
-msgstr "BE SOCIAL!"
+msgstr "SOSYALLEŞİN!"
 #
 msgid "BY GIFTS"
 msgstr "HEDİYEYE GÖRE"
