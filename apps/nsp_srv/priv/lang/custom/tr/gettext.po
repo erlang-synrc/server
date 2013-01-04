@@ -1227,6 +1227,9 @@ msgstr "Erkek"
 msgid "Matchmaker"
 msgstr "Oyunbulan"
 #
+msgid "MatchMaker"
+msgstr "Nasıl İstİyorsanız Öyle"
+#
 msgid "Max num of players"
 msgstr "Max. oyuncu sayısı"
 #
@@ -4326,6 +4329,9 @@ msgstr "At the tip of your finger."
 #
 msgid "BE SOCIAL!"
 msgstr "SOSYALLEŞİN!"
+#
+msgid "Be Social!"
+msgstr "Sosyalleşİn!"
 #
 msgid "BY GIFTS"
 msgstr "HEDİYEYE GÖRE"

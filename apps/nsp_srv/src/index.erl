@@ -39,7 +39,7 @@ body() ->
   ]},
   #panel{class="slideshow-control", body=[
     #panel{class="page-content", body=[
-    #list{class=switcher, body=[#listitem{body=#link{text=?_T(L)}} || L <- ["Gifts", "Tournaments", "Be Social!", "Matchmaker"]  ]},
+    #list{class=switcher, body=[#listitem{body=#link{text=?_T(L)}} || L <- ["Gifts", "Tournaments", "Be Social!", "MatchMaker"]  ]},
     #list{class=pager, body=[
       #listitem{body=#link{class=prev, text="prev"}},
       #listitem{body=#link{class=next, text="next"}}
