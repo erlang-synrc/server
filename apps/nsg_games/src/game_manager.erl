@@ -185,44 +185,34 @@ tavla_create_tables(Num) ->
 
 
 okey_create_tables(Num) ->
-
-    Users = nsm_auth:imagionary_users2(),
-    L = length(Users),
+    PR = #pointing_rule{quota = 1,
+                        kakush_winner = 1,
+                        kakush_other = 1,
+                        game_points = 1
+                       },
+    Params = [{speed,fast},
+              {rounds,3},
+              {double_points, 1},
+              {pointing_rules, PR},
+              {game_mode,color},
+              {speed, normal},
+              {slang, false},
+              {observers, false},
+              {owner,"maxim"}],
 
     OkeyBots = [begin
-
-    T2U1 = nsm_auth:ima_gio2(crypto:rand_uniform(0,L),Users),
-    T2U2 = nsm_auth:ima_gio2(crypto:rand_uniform(0,L),Users),
-
-    game_manager:create_table(game_okey,[{table_name,"okey one player"},
-                          {speed,fast},
-                          {rounds,3},
-                          {sets,1},
-                          {default_pr,yes},
-                          {game_mode,color},
-                          {owner,"maxim"}],[list_to_binary(T2U1),robot,robot,robot]) end||X<-lists:seq(2,Num)],
+    game_manager:create_standalone_game(game_okey,[{table_name,"okey one player"} | Params],
+                                        [robot,robot,robot]) end || _ <-lists:seq(2,Num)],
     [{ok,OB1,_}|_] = OkeyBots,
     [{ok,OB2,_}|_] = lists:reverse(OkeyBots),
     ?INFO("Okey bot rooms: ~p~n",[{OB1,OB2}]),
 
     OkeyPlayers = [begin
-
-    T2U1 = nsm_auth:ima_gio2(crypto:rand_uniform(0,L),Users),
-    T2U2 = nsm_auth:ima_gio2(crypto:rand_uniform(0,L),Users),
-    T2U3 = nsm_auth:ima_gio2(crypto:rand_uniform(0,L),Users),
-    T2U4 = nsm_auth:ima_gio2(crypto:rand_uniform(0,L),Users),
-
-    game_manager:create_table(game_okey,[{table_name,"okey four players"},
-                          {speed,normal},
-                          {rounds,3},
-                          {default_pr,yes},
-                          {sets,1},
-                          {game_mode,standard},
-                          {owner,"kate"}],[list_to_binary(T2U1),list_to_binary(T2U2),
-                                           list_to_binary(T2U3),list_to_binary(T2U4)]) end ||X<-lists:seq(2,Num)],
+    game_manager:create_standalone_game(game_okey,[{table_name,"okey four players"} | Params],
+                                        []) end || _ <-lists:seq(2,Num)],
     [{ok,OP1,_}|_] = OkeyPlayers,
     [{ok,OP2,_}|_] = lists:reverse(OkeyPlayers),
-    ?INFO("Okey two players bot rooms: ~p~n",[{OP1,OP2}]).
+    ?INFO("Okey four players bot rooms: ~p~n",[{OP1,OP2}]).
 
 create_paired(Num) ->
 
