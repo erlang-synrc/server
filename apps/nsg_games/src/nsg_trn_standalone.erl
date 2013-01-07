@@ -198,11 +198,11 @@ init([GameId, Params, _Manager]) ->
                             }}.
 
 %%===================================================================
-handle_event(go, ?STATE_INIT, #state{game_id = GameId,
+handle_event(go, ?STATE_INIT, #state{game_id = GameId, game = GameType,
                                      registrants = Registrants, bot_module = BotModule,
                                      common_params = CommonParams} = StateData) ->
     ?INFO("TRN_STANDALONE <~p> Received the directive to start the game.", [GameId]),
-    DeclRec = create_decl_rec(CommonParams, GameId, Registrants),
+    DeclRec = create_decl_rec(GameType, CommonParams, GameId, Registrants),
     gproc:reg({p,l,self()}, DeclRec),
     {Players, PlayerIdCounter} = setup_players(Registrants, GameId, BotModule),
     NewStateData = StateData#state{players = Players,
@@ -246,7 +246,7 @@ handle_info({'DOWN', MonRef, process, _Pid, _}, StateName,
 
 
 handle_info({rest_timeout, TableId}, ?STATE_SET_PROCESSING = StateName,
-            #state{game_id = GameId, game = Game, game_mode = GameMode,
+            #state{game_id = GameId, game = GameType, game_mode = GameMode,
                    quota_per_round = Amount, mul_factor = MulFactor, tables = Tables,
                    players = Players, seats = Seats, cur_table = TableId, bot_module = BotModule,
                    player_id_counter = PlayerIdCounter, tab_requests = Requests,
@@ -268,11 +268,11 @@ handle_info({rest_timeout, TableId}, ?STATE_SET_PROCESSING = StateName,
             #table{pid = TablePid} = Table = fetch_table(TableId, Tables),
             NewTables = store_table(Table#table{state = ?TABLE_STATE_IN_PROGRESS}, Tables),
             RealUsersIds = [UserId || #player{user_id = UserId, is_bot = false} <- players_to_list(NewPlayers)],
-            deduct_quota(GameId, Game, GameMode, Amount, MulFactor, RealUsersIds),
+            deduct_quota(GameId, GameType, GameMode, Amount, MulFactor, RealUsersIds),
             NewRequests = table_req_replace_players(TableMod, TablePid, TableId, Replacements, Requests),
             send_to_table(TableMod, TablePid, start_round),
             Users = [if Bot -> robot; true -> UserId end || #player{user_id = UserId, is_bot = Bot} <- players_to_list(NewPlayers)],
-            DeclRec = create_decl_rec(CommonParams, GameId, Users),
+            DeclRec = create_decl_rec(GameType, CommonParams, GameId, Users),
             gproc:set_value({p,l,self()}, DeclRec),
             {next_state, StateName, StateData#state{tables = NewTables, players = NewPlayers, seats = NewSeats,
                                                     tab_requests = NewRequests, player_id_counter = NewPlayerIdCounter}}
@@ -637,7 +637,7 @@ finalize_tournament(#state{game_id = GameId} = StateData) ->
 
 reg_player_with_replace(UserInfo, TableId, SeatNum, OldPlayerId, From, StateName,
                         #state{game_id = GameId, players = Players, tables = Tables,
-                               seats = Seats, player_id_counter = PlayerId,
+                               game = GameType, seats = Seats, player_id_counter = PlayerId,
                                tab_requests = TabRequests, reg_requests = RegRequests,
                                table_module = TableModule, common_params = CommonParams} = StateData) ->
     #'PlayerInfo'{id = UserId, robot = IsBot} = UserInfo,
@@ -653,7 +653,7 @@ reg_player_with_replace(UserInfo, TableId, SeatNum, OldPlayerId, From, StateName
     NewTabRequests = table_req_replace_player(TableModule, TablePid, PlayerId, UserInfo, TableId, SeatNum, TabRequests),
     Users = [if Bot -> robot; true -> UId end || #player{user_id = UId, is_bot = Bot}
                                                             <- players_to_list(NewPlayers2)],
-    DeclRec = create_decl_rec(CommonParams, GameId, Users),
+    DeclRec = create_decl_rec(GameType,CommonParams, GameId, Users),
     gproc:set_value({p,l,self()}, DeclRec),
     {next_state, StateName, StateData#state{players = NewPlayers2,
                                             seats = NewSeats,
@@ -664,7 +664,7 @@ reg_player_with_replace(UserInfo, TableId, SeatNum, OldPlayerId, From, StateName
 
 reg_new_player(UserInfo, TableId, SeatNum, From, StateName,
                #state{game_id = GameId, players = Players, tables = Tables,
-                      seats = Seats, player_id_counter = PlayerId,
+                      game = GameType, seats = Seats, player_id_counter = PlayerId,
                       tab_requests = TabRequests, reg_requests = RegRequests,
                       table_module = TableModule, common_params = CommonParams,
                       seats_per_table = SeatsPerTable} = StateData) ->
@@ -677,7 +677,7 @@ reg_new_player(UserInfo, TableId, SeatNum, From, StateName,
 
     Users = [if Bot -> robot; true -> UId end || #player{user_id = UId, is_bot = Bot}
                                                             <- players_to_list(NewPlayers)],
-    DeclRec = create_decl_rec(CommonParams, GameId, Users),
+    DeclRec = create_decl_rec(GameType, CommonParams, GameId, Users),
     gproc:set_value({p,l,self()}, DeclRec),
 
     TableIsFull = is_table_full_enought(TableId, NewSeats, SeatsPerTable),
@@ -1059,12 +1059,12 @@ send_ends_note(GameName, GameType, EndsNotePoints) ->
 shuffle(List) -> deck:to_list(deck:shuffle(deck:from_list(List))).
 
 
-create_decl_rec(CParams, GameId, Users) ->
+create_decl_rec(GameType, CParams, GameId, Users) ->
     #game_table{id              = GameId,
                 name            = proplists:get_value(table_name, CParams),
 %                gameid,
 %                trn_id,
-                game_type       = proplists:get_value(game, CParams),
+                game_type       = GameType,
                 rounds          = proplists:get_value(rounds, CParams),
                 sets            = proplists:get_value(sets, CParams),
                 owner           = proplists:get_value(owner, CParams),
