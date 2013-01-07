@@ -76,6 +76,21 @@ body() ->
     TID = T#tournament.id,
     CurrentUser = wf:user(),
 
+    Zone = TID div 1000000,
+    GameSrv = "game@srv" ++ integer_to_list(Zone) ++ ".kakaranet.com",
+    NodeAtom = case Zone of
+                    4 -> nsx_opt:get_env(nsm_db, game_srv_node, 'game@doxtop.cc');
+                    _ -> list_to_atom(GameSrv)
+               end,
+
+    case T#tournament.status of
+         activated -> TourGameSrv = case rpc:call(NodeAtom, game_manager,get_tournament,[TID]) of
+                         TournamentString when is_list(TournamentString) ->  wf:state(tour_long_id, TournamentString),
+                                             wf:state(tournament_started, true);
+                         _ -> undefined
+                      end;
+         _ -> skip end,
+
     Title = T#tournament.name,
     Tours = T#tournament.tours,
     Game = case T#tournament.game_type of
@@ -116,17 +131,17 @@ body() ->
     Speed = T#tournament.speed,
     Prizes = case is_list(T#tournament.awards) of
         true ->
-            GOs = [nsm_db:get(gift,A) || A <- T#tournament.awards],
+            GOs =  [ nsm_db:get(gifts,lists:nth(X,T#tournament.awards))end || X <- [1,2,3]],
             [case GO of
-                {error, notfound} -> {"", "/images/tournament/nothing.png"};
-                {ok, Gift} -> {site_utils:decode_letters(Gift#gift.gift_name), Gift#gift.image_small_url}
+                {ok, Gift} -> {site_utils:decode_letters(Gift#gift.gift_name), Gift#gift.image_small_url};
+                _ -> {"", "/images/tournament/nothing.png"}
             end || GO <- GOs];
         false ->
             [{"?", "/images/tournament/new_tournament/question.png"},{"?", "/images/tournament/new_tournament/question.png"},{"?", "/images/tournament/new_tournament/question.png"}]
     end,
-    {PN1, PI1} = hd(Prizes),
-    {PN2, PI2} = hd(tl(Prizes)),
-    {PN3, PI3} = hd(tl(tl(Prizes))),
+    {PN1, PI1} = lists:nth(1,Prizes),
+    {PN2, PI2} = lists:nth(2,Prizes),
+    {PN3, PI3} = lists:nth(3,Prizes),
 
     {UserJoined,AddMe} = case lists:keyfind(CurrentUser,#play_record.who, JoinedUsers0) of
                       false -> {false, [#play_record{who = CurrentUser, game_points = GamePoints,
@@ -576,6 +591,7 @@ event({start_tour, Id, NPlayers,Q,T,S,P}) ->
                     _ -> list_to_atom(GameSrv)
                end,
     TourId = rpc:call(NodeAtom, game_manager,start_tournament,[Id, 1, NPlayers,Q,T,S,P]),
+    ?INFO("Tournament Started: ~p",[TourId]),
     wf:replace(attach_button, #link{id=attach_button, class="tourlobby_yellow_button", text=?_T("TAKE MY SEAT"), postback=attach}),
     wf:replace(start_button, ""),
     wf:state(tour_long_id,TourId);

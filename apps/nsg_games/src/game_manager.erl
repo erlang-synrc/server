@@ -143,7 +143,7 @@ get_tournament(TrnId) ->
                    [T] -> X = T#game_table.id, integer_to_list(X);
                      _ -> []
             end,
-    ?INFO("~w:get_tournament Table = ~p", [?MODULE, Table]),
+%    ?INFO("~w:get_tournament Table = ~p", [?MODULE, Table]),
     Table.
 
 tavla_create_tables(Num) ->
@@ -322,6 +322,10 @@ create_standalone_game(Game, Params, Users) ->
                          _ -> proplists:get_value(rounds, Params, undefined)
                      end,
             GostergeFinishAllowed = proplists:get_value(gosterge_finish, Params, false),
+            BotsReplacementMode = case proplists:get_value(robots_replacement_allowed, Params, true) of
+                                      true -> enabled;
+                                      false -> disabled
+                                  end,
             TableParams = [
                            {table_name, TableName},
                            {mult_factor, MulFactor},
@@ -356,6 +360,7 @@ create_standalone_game(Game, Params, Users) ->
                           {mul_factor, MulFactor},
                           {table_module, game_okey_ng_table_trn},
                           {bot_module, game_okey_bot},
+                          {bots_replacement_mode, BotsReplacementMode},
                           {table_params, TableParams},
                           {common_params, Params}
                          ]);
@@ -369,9 +374,9 @@ start_tournament(TourId,NumberOfTournaments,NumberOfPlayers,Quota,Tours,Speed,Gi
     {ok,Tournament} = nsm_db:get(tournament,TourId),
     ImagioUsers = nsm_auth:imagionary_users2(),
     RealPlayersUnsorted = nsm_tournaments:joined_users(TourId),
-    RealPlayersPR = lists:sort(fun(#play_record{other=AX},#play_record{other=BX}) -> AX < BX end,RealPlayersUnsorted),
+    RealPlayersPR = lists:sort(fun(#play_record{other=AX},#play_record{other=BX}) -> AX > BX end,RealPlayersUnsorted),
     ?INFO("Head: ~p",[hd(RealPlayersPR)]),
-    RealPlayers = [list_to_binary(Who)||#play_record{who=Who}<-RealPlayersPR],
+    RealPlayers = [list_to_binary(Who)||#play_record{who=Who}<-RealPlayersPR, Who /= undefined],
 
     Registrants = case NumberOfPlayers > length(RealPlayers) of
                        true -> nsm_db:put(Tournament#tournament{status=canceled}), RealPlayers;

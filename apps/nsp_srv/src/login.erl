@@ -406,9 +406,9 @@ login_user(UserName, Registration) ->
       wf:config_default(session_timeout, 120),    % setting nitrogen session to 2 hours
       LoginRedirect = nsm_db:get(config,"login_redirect"),
 %      wf:redirect_from_login(?_U("/dashboard"));
-      wf:redirect_from_login(?_U(case Registration of regular -> "/dashboard"; 
+      wf:redirect_from_login(?_U(case Registration of regular -> "/tournaments"; 
                                                       _ -> Redirect = case LoginRedirect of
-                                                                      {error,_} -> "/dashboard";
+                                                                      {error,_} -> "/tournaments";
                                                                      {ok,{config,Key,Value}} -> Value end end));
     {error, notfound}-> 
       wf:redirect(?_U("/?message=") ++ site_utils:base64_encode_to_url(?_T("failed")))
