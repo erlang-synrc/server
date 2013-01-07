@@ -131,17 +131,17 @@ body() ->
     Speed = T#tournament.speed,
     Prizes = case is_list(T#tournament.awards) of
         true ->
-            GOs = [nsm_db:get(gift,A) || A <- T#tournament.awards],
+            GOs =  [ nsm_db:get(gifts,lists:nth(X,T#tournament.awards))end || X <- [1,2,3]],
             [case GO of
-                {error, notfound} -> {"", "/images/tournament/nothing.png"};
-                {ok, Gift} -> {site_utils:decode_letters(Gift#gift.gift_name), Gift#gift.image_small_url}
+                {ok, Gift} -> {site_utils:decode_letters(Gift#gift.gift_name), Gift#gift.image_small_url};
+                _ -> {"", "/images/tournament/nothing.png"}
             end || GO <- GOs];
         false ->
             [{"?", "/images/tournament/new_tournament/question.png"},{"?", "/images/tournament/new_tournament/question.png"},{"?", "/images/tournament/new_tournament/question.png"}]
     end,
-    {PN1, PI1} = hd(Prizes),
-    {PN2, PI2} = hd(tl(Prizes)),
-    {PN3, PI3} = hd(tl(tl(Prizes))),
+    {PN1, PI1} = lists:nth(1,Prizes),
+    {PN2, PI2} = lists:nth(2,Prizes),
+    {PN3, PI3} = lists:nth(3,Prizes),
 
     {UserJoined,AddMe} = case lists:keyfind(CurrentUser,#play_record.who, JoinedUsers0) of
                       false -> {false, [#play_record{who = CurrentUser, game_points = GamePoints,
