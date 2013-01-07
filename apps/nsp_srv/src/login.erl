@@ -206,6 +206,7 @@ login_form() ->
     "<label>",
     #link{class = "ar", text = ?_T("I forgot my password!"), postback = show_forget},
     "</label>",
+    #panel{style="text-align:center;", body=fb_utils:login_btn(?_T("Login with Facebook"))},
     #panel{class = "row chk-row", body = [#button{id = postlogin, class = "btn-submit", text = ?_T("Login"), postback = login},
     #checkbox{class = "chk", text = ?_T("Keep me logged in"), checked = true}]}].
 

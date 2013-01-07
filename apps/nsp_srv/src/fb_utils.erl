@@ -8,6 +8,17 @@
 -compile(export_all).
 
 init()->
+  case wf:page_module() of
+    login -> init_sdk();
+    price_table -> init_sdk();
+    _ ->
+      case wf:q("__submodule__") of
+        "fb" -> init_sdk();
+        _-> []
+      end
+  end.
+
+init_sdk()->
   wf:wire(#api{name=setFbIframe, tag=fb}),
   wf:wire(#api{name=fbAutoLogin, tag=fb}),
   wf:wire(#api{name=fbLogin, tag=fb}),
