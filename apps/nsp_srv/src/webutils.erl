@@ -149,7 +149,7 @@ account_menu() ->
       end;
     _UserLoggedIn ->
         [#list{class="user-menu", body=[
-          #listitem{body=fb_utils:login_btn()},
+          %#listitem{body=fb_utils:login_btn()},
           #listitem{body=#link{class=login, text=?_T("Login"), url=?_U("/login")}},
           #listitem{body=#link{class=signup, text=?_T("Signup"), postback=register}}
         ]}]
