@@ -447,7 +447,6 @@ get_tables(Convert) ->
 
 filter_tables(QLC,UId,GameFSM,Setting,Convert) ->
 
-
     GetPropList = fun(Key,Setngs) -> 
                    case Setngs of
                         undefined -> undefined;
@@ -478,14 +477,14 @@ filter_tables(QLC,UId,GameFSM,Setting,Convert) ->
             AllFilterOk andalso AnyFilterOk
         end, QLC),
 
-    FilteredQLC2 = [GT || GT = #game_table{users = Users} <- FilteredQLC1, Users /= []],
+%    FilteredQLC2 = [GT || GT = #game_table{users = Users} <- FilteredQLC1, Users /= []],
     F = fun(T = #game_table{id = TId}, {TAcc, IdAcc}) ->
                 case lists:member(TId, IdAcc) of
                     true -> {TAcc, IdAcc};
                     false -> {[T | TAcc], [TId | IdAcc]}
                 end
         end,
-    {FilteredQLC3, _} = lists:foldl(F, {[], []}, FilteredQLC2),
+    {FilteredQLC3, _} = lists:foldl(F, {[], []}, FilteredQLC1),
 %    FilteredQLC4= lists:reverse(FilteredQLC3),
     FilteredQLC4= FilteredQLC3,
     case Convert of convert -> convert_to_map(FilteredQLC4, Setting,UId,GameFSM); _ -> FilteredQLC4 end.
