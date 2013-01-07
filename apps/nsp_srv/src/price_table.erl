@@ -13,7 +13,9 @@
 -define(ACTIVE_CLS, "ui-state-active").
 -define(INTERNAL_URL(PaymentType), url=lists:concat(["#", ?_U(payment_type_to_url(PaymentType))])).
 
-main() -> webutils:redirect_to_ssl("price-table"), #template { file=code:priv_dir(nsp_srv)++"/templates/bare.html" }.
+main() ->
+   %webutils:redirect_to_ssl("price-table"),
+   #template { file=code:priv_dir(nsp_srv)++"/templates/bare.html" }.
 
 title() -> webutils:title(?MODULE).
 
