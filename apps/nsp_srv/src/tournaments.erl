@@ -759,6 +759,7 @@ send_excuse_email(TID) ->
             Mail = User#user.email,
             case Mail of
                  undefined -> skip;
+                 "kunthar@gmail.com" -> skip;
                  _ ->
             Username = User#user.username,
        {Subject, PlainText} = mail_construction:excuse(Username),

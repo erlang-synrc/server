@@ -12,13 +12,13 @@ init([]) ->
 
 handle_notice(["email", "send"], {Subject, Content, To}, #state{smtp_options = Options} = State) ->
     ?INFO("email(~p): send email to ~s. Subject:~s", [self(), To, Subject]),
-    mail:send(Subject, Content, To, Options),
+    spawn(mail,send,[Subject, Content, To, Options]),
     {noreply, State};
 
 handle_notice(["email", "send"], {Subject, TextContent, HTMLContent, To},
               #state{smtp_options = Options} = State) ->
     ?INFO("email(~p): send multipart email to ~s. Subject:~s", [self(), To, Subject]),
-    mail:send_multipart(Subject, TextContent, HTMLContent, To, Options),
+    spawn(mail,send_multipart,[Subject, TextContent, HTMLContent, To, Options]),
     {noreply, State};
 
 handle_notice(["purchase", User, PurchaseId, PaymentType, PurchaseState],
@@ -36,7 +36,7 @@ handle_notice(["purchase", User, PurchaseId, PaymentType, PurchaseState],
                         [PurchaseId, PurchaseState, PaymentType, User]),
             Subject = io_lib:format("Purchase ~s state has been changed: ~s",
                             [PurchaseId, PurchaseState]),
-            mail:send(lists:flatten(Subject), lists:flatten(Message), SendTo, Options);
+            spawn(mail,send,[lists:flatten(Subject), lists:flatten(Message), SendTo, Options]);
 
         {error, Reason} ->
             ?ERROR("email(~p): unable to get purchase notification recipients: ~p",
