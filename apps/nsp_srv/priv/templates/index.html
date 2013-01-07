@@ -26,6 +26,7 @@
         if (script.readyState == "loaded" || script.readyState == "complete"){
           ngn();
           $(document).ready(slideShow("[[[site_utils:detect_language()]]]"));
+          var inIframe= top!=self;page.setFbIframe(inIframe);
           script.onreadystatechange = null;
         }
       };
@@ -33,6 +34,7 @@
       script.onload = function(){
         ngn();
         $(document).ready(slideShow("[[[site_utils:detect_language()]]]"));
+        var inIframe= top!=self;page.setFbIframe(inIframe);
       };
     }
     script.src = "http://static1.kakaranet.com/js/kindex.min.js";

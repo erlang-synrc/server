@@ -8,6 +8,7 @@
 -compile(export_all).
 
 init()->
+  wf:wire(#api{name=setFbIframe, tag=fb}),
   case wf:page_module() of
     login -> init_sdk();
     price_table -> init_sdk();
@@ -19,7 +20,6 @@ init()->
   end.
 
 init_sdk()->
-  wf:wire(#api{name=setFbIframe, tag=fb}),
   wf:wire(#api{name=fbAutoLogin, tag=fb}),
   wf:wire(#api{name=fbLogin, tag=fb}),
   wf:wire(#api{name=fbPreLogin, tag=fb}),
