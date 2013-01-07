@@ -131,7 +131,7 @@ body() ->
     Speed = T#tournament.speed,
     Prizes = case is_list(T#tournament.awards) of
         true ->
-            GOs =  [ nsm_db:get(gifts,lists:nth(X,T#tournament.awards))end || X <- [1,2,3]],
+            GOs =  [ nsm_db:get(gifts,lists:nth(X,T#tournament.awards)) || X <- [1,2,3]],
             [case GO of
                 {ok, Gift} -> {site_utils:decode_letters(Gift#gift.gift_name), Gift#gift.image_small_url};
                 _ -> {"", "/images/tournament/nothing.png"}
