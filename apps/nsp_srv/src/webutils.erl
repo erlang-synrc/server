@@ -546,6 +546,14 @@ show_if(remove_entry, Entry) ->
   end;
 show_if(_, _Entry) -> false.
 
+node_users() ->
+  {Users,B} = lists:partition(fun({_,_,A}) -> is_list(A) end, qlc:e(gproc:table())),
+  Users.
+
+online_users() ->
+  OnlineUsers = nsm_queries:map_reduce(webutils,node_users,[]),
+  sets:to_list(sets:from_list([User||{_,_,User} <- OnlineUsers])).
+
 counters()->
   case wf:user() of
        undefined -> skip;
