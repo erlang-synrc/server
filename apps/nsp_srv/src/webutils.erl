@@ -547,12 +547,13 @@ show_if(remove_entry, Entry) ->
 show_if(_, _Entry) -> false.
 
 counters()->
-  ?INFO("Counters: ~p",[wf:user()]),
-  wf:comet(fun() -> 
-       CometPid = self(), 
-       gproc:reg({p,l,CometPid},case wf:user() of undefined -> "undefined"; X -> X end),
-       comet_update()
-  end),
+  case wf:user() of
+       undefined -> skip;
+       LoggedUser -> wf:comet(fun() -> 
+                   CometPid = self(), 
+                   gproc:reg({p,l,CometPid},LoggedUser),
+                   comet_update() end)
+  end,
   WebSrvCounters = nsm_queries:map_reduce(user_counter,user_count,[]),
   OnlineCount = integer_to_list(lists:foldl(fun(X, Sum) -> X + Sum end, 0, WebSrvCounters)),
   Games = [okey, tavla, king, batak, sorbi],
