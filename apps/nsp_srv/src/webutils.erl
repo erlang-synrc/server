@@ -106,7 +106,8 @@ header()->
   ]},
   lightboxes()].
 
-header_box() -> #template { file=code:priv_dir(nsp_srv)++"/templates/header.html"}.
+header_box() -> 
+   #template { file=code:priv_dir(nsp_srv)++"/templates/header.html"}.
 
 header_body() -> [account_menu(), menu_links()].
 
@@ -546,7 +547,12 @@ show_if(remove_entry, Entry) ->
 show_if(_, _Entry) -> false.
 
 counters()->
-  catch(gproc:reg({p,l,self()},case wf:user() of undefined -> "undefined"; X -> X end)),
+  ?INFO("Counters: ~p",[wf:user()]),
+  wf:comet(fun() -> 
+       CometPid = self(), 
+       gproc:reg({p,l,CometPid},case wf:user() of undefined -> "undefined"; X -> X end),
+       comet_update()
+  end),
   WebSrvCounters = nsm_queries:map_reduce(user_counter,user_count,[]),
   OnlineCount = integer_to_list(lists:foldl(fun(X, Sum) -> X + Sum end, 0, WebSrvCounters)),
   Games = [okey, tavla, king, batak, sorbi],
@@ -557,6 +563,11 @@ counters()->
     "</dl>",
     #list{body=[counter_item(G) || G <- Games]}
   ]}.
+
+comet_update() ->
+   receive
+     X -> skip
+   end, comet_update().
 
 counter_item(Game)->
   [H|Name] = atom_to_list(Game),
