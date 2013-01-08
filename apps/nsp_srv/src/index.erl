@@ -32,7 +32,7 @@ body() ->
   % gproc:reg({p,g,self()},case wf:user() of undefined -> "undefined"; X -> X end),
   [
   #panel{class="page-content", body=[
-    #panel{class=slideshow, body="<img width=\"960\" height=\"352\" src=\""++?STATIC_ADDRESS++ "/images/slides/"++site_utils:detect_language()++"/slide1.png\">"},
+    #panel{class=slideshow, body="<img width=\"960\" height=\"352\" src=\"/images/slides/"++site_utils:detect_language()++"/slide1.png\">"},
     #panel{class=btns, body=[
       #link{text=?_T("More Info"), class="btn-dark", url=?_U("/info-gifts")}, %Detaylı Bilgi
       #link{text=?_T("LET'S PLAY!"), class="btn-yellow", url=?_U("/login/register")} %ÜYE OL!
