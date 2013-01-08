@@ -628,8 +628,8 @@ get_timer_for_now() ->
     case T#tournament.status of
         canceled -> ?_T("CANCELED");
         _ ->
-            TourTime = wf:state(tour_start_time),
-            TourDate = wf:state(tour_start_date),
+            TourTime = T#tournament.start_time, %wf:state(tour_start_time),
+            TourDate = T#tournament.start_date, %wf:state(tour_start_date),
             DDays = calendar:date_to_gregorian_days(T#tournament.start_date) - calendar:date_to_gregorian_days(date()),
             case DDays of
                 1 -> "1 " ++ ?_T("day");
@@ -638,11 +638,11 @@ get_timer_for_now() ->
                         true -> integer_to_list(N) ++ " " ++ ?_T("days");
                         false -> 
                             DTime = case date() == TourDate of
-                                true -> 
-                                    case wf:state(tour_long_id) of 
-                                        [] -> calendar:time_to_seconds(TourTime) - calendar:time_to_seconds(time());
-                                        _ -> 0  % started tournament is always either NOW or FINISHED
-                                    end;
+                                true -> calendar:time_to_seconds(TourTime) - calendar:time_to_seconds(time());
+%%                                    case wf:state(tour_long_id) of 
+  %                                      [] -> calendar:time_to_seconds(TourTime) - calendar:time_to_seconds(time());
+  %                                      _ -> 0  % started tournament is always either NOW or FINISHED
+  %                                  end;
                                 false ->
                                     0
                             end,
@@ -655,7 +655,11 @@ get_timer_for_now() ->
                                                _ -> list_to_atom(GameSrv)
                                     end,
                                     case rpc:call(NodeAtom, game_manager,get_tournament,[Id]) of
-                                        [] -> ?_T("FINISHED");
+                                        [] -> case T#tournament.status of
+                                                    created -> ?_T("CREATED");
+                                                    activated -> ?_T("NOW");
+                                                    finished -> ?_T("FINISHED");
+                                                    canceled -> ?_T("CANCELED") end;
                                         _ -> ?_T("NOW")
                                     end;
                                 false ->
