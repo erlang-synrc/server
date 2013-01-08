@@ -1,6 +1,5 @@
 %% -*- mode: nitrogen -*-
 -module(webutils).
-
 -compile(export_all).
 
 
@@ -233,6 +232,7 @@ footer_box() ->
         #listitem{body=[#checkbox { id=replay_guiders, text=?_T("Replay Guiders"), postback=replay_guiders_changed,
                                     checked=(wf:cookie("replayguiders")=="yes") }]}
       ],
+
 
       ["<footer>",
         #list{class="navbar", body = LinkList},
@@ -565,13 +565,31 @@ counters()->
   WebSrvCounters = nsm_queries:map_reduce(user_counter,user_count,[]),
   OnlineCount = integer_to_list(lists:foldl(fun(X, Sum) -> X + Sum end, 0, WebSrvCounters)),
   Games = [okey, tavla, king, batak, sorbi],
+
+  [
+
   #panel{class="stat-bar", body=[
     "<dl class=\"dlist\">",
       "<dt>", ?_T("Online Gamers"),":", "</dt>",
       "<dd>",OnlineCount,"</dd>"
     "</dl>",
     #list{body=[counter_item(G) || G <- Games]}
-  ]}.
+  ]},
+
+   #panel{class="list-top-photo-h page-content", body = [
+          #span{style="font-size:14px; line-height:24px;font-weight:bold;", body=[?_T("Players"), ": ",
+                    [ 
+                        case site_utils:user_link(Who) of
+                          undefined -> "";
+                          "" -> "";
+                          URL ->
+                            #span{body=#link{url=URL, text=Who ++ " ", style = "font-weight:bold;"}}
+                        end
+                     || Who <- online_users() ]
+                ]}]}
+
+
+  ].
 
 comet_update() ->
    receive
