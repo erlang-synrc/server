@@ -93,15 +93,24 @@ facebook()->
 	    wf:redirect( ?_U("/index/message/") ++ site_utils:base64_encode_to_url(ErrorMsg));
 	RegArgs ->
 	    wf:info("Registration Element with fb ~p~n", [RegArgs]),
-	    UserName = proplists:get_value(username, RegArgs),
 	    [M,D,Y] = string:tokens(proplists:get_value(birthday, RegArgs, "1/1/1970"), "/"),
-	    wf:set(reg_email, proplists:get_value(email, RegArgs)),
-	    wf:set(reg_username, ling:replace(UserName,".","_")),
+        case proplists:get_value(email, RegArgs) of
+          undefined-> ok;
+          Email ->  wf:set(reg_email, Email)
+        end,
+        UserName = proplists:get_value(username, RegArgs),
+        case UserName of
+          undefined -> 
+            AvatarUrl = "http://b.static.ak.fbcdn.net/rsrc.php/v1/yo/r/UlIqmHJn-SK.gif";
+          N ->
+            wf:set(reg_username, ling:replace(N,".","_")), 
+            AvatarUrl = "https://graph.facebook.com/" ++ UserName ++ "/picture"
+        end,
 	    wf:set(reg_month, string:tokens(M,"0")),
 	    wf:set(reg_day, D),
 	    wf:set(reg_year, Y),
 	    #panel{id=fb_info, class="fb-info-block", body=[
-		#image{image="https://graph.facebook.com/" ++ UserName ++ "/picture"},
+		#image{image=AvatarUrl},
 		proplists:get_value(username, RegArgs)]}
     end.
 
