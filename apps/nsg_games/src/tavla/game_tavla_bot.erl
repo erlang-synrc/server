@@ -264,7 +264,8 @@ tavla_client_loop(State) -> % incapsulate tavla protocol
             tavla_client_loop(State2);
             _ -> tavla_client_loop(State) end;
         #game_rematched{game = GI} when GameId == GI ->
-            ?INFO("tavla rematched: ~p", [{GameId}]);
+            ?INFO("tavla rematched: ~p", [{GameId}]),
+            tavla_client_loop(State);
         #game_event{event = <<"player_left">>, args = Params} ->
             TableId = proplists:get_value(table_id, Params, 0),
             case TableId == State#state.table_id of true ->
