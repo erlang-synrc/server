@@ -367,7 +367,7 @@ user_table(Users,CurrentUser,CurrentJoined) ->
 
 user_table_row(UId, P11, P22, Color, N, RealName) ->
     P1 = case P11 of undefined -> 0; XX -> XX end,
-    P2 = case P22 of undefined -> 0; XX -> XX end,
+    P2 = case P22 of undefined -> 0; XY -> XY end,
     Avatar = avatar:get_avatar_by_username(UId, tiny),
     case site_utils:user_link(UId) of
       "" -> "";
