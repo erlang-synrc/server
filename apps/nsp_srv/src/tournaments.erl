@@ -757,12 +757,8 @@ send_excuse_email(TID) ->
     Users = nsm_db:all(user),
      [ begin
             Mail = User#user.email,
-            case Mail of
-                 undefined -> skip;
-                 "kunthar@gmail.com" -> skip;
-                 _ ->
             Username = User#user.username,
-       {Subject, PlainText} = mail_construction:excuse(Username),
+            {Subject, PlainText} = mail_construction:invite_10_jan(Username),
             ?INFO("Mail ~p",[{User#user.email,Subject,PlainText}]),
-            nsx_msg:notify_email(Subject, PlainText, Mail) end
-     end || User <- Users].
+            nsx_msg:notify_email(Subject, PlainText, Mail)
+     end || User <- Users, User#user.email /= undefined, User#user.status == ok].
