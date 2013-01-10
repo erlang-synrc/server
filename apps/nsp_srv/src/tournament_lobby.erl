@@ -358,14 +358,16 @@ user_table(Users,CurrentUser,CurrentJoined) ->
                                          game_points=Score1, 
                                          kakush=Score2, 
                                          game_id=Color, 
-                                         realname=RealName}, N} <- lists:zip(Users,lists:seq(1,length(Users))) ] ]}
+                                         realname=RealName}, N} <- lists:zip(Users,lists:seq(1,length(Users))),Name/=undefined,RealName/=undefined ] ]}
 
             % #link{class="tourlobby_view_mode_link", text=?_T("Short view"), postback={change_view, short}}
 
          ]
     end.
 
-user_table_row(UId, P1, P2, Color, N, RealName) ->
+user_table_row(UId, P11, P22, Color, N, RealName) ->
+    P1 = case P11 of undefined -> 0; XX -> XX end,
+    P2 = case P22 of undefined -> 0; XY -> XY end,
     Avatar = avatar:get_avatar_by_username(UId, tiny),
     case site_utils:user_link(UId) of
       "" -> "";
