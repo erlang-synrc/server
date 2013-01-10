@@ -358,7 +358,7 @@ user_table(Users,CurrentUser,CurrentJoined) ->
                                          game_points=Score1, 
                                          kakush=Score2, 
                                          game_id=Color, 
-                                         realname=RealName}, N} <- lists:zip(Users,lists:seq(1,length(Users))) ] ]}
+                                         realname=RealName}, N} <- lists:zip(Users,lists:seq(1,length(Users))),Name/=undefined ] ]}
 
             % #link{class="tourlobby_view_mode_link", text=?_T("Short view"), postback={change_view, short}}
 
