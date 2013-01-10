@@ -67,7 +67,7 @@
          game_mode            :: standard | color | evenodd | countdown,
          rounds               :: undefined | integer(), %% Not defined for countdown game type
          reveal_confirmation  :: boolean(),
-         next_series_confirmation :: boolean(),
+         next_series_confirmation :: yes_exit | no_exit | no,
          pause_mode           :: disabled | normal,
          gosterge_finish_allowed :: undefined | boolean(), %% Only defined for countdown game type
          social_actions_enabled :: boolean(),
@@ -1025,7 +1025,8 @@ create_okey_game_info(#state{table_name = TName, mult_factor = MulFactor,
                              rounds = Rounds1, players = Players, tour = Tour,
                              tours = Tours, gosterge_finish_allowed = GostergeFinish,
                              tournament_type = TournamentType, pause_mode = PauseMode,
-                             social_actions_enabled = SocialActionsEnabled}) ->
+                             social_actions_enabled = SocialActionsEnabled,
+                             next_series_confirmation = ConfirmMode}) ->
     PInfos = [case find_players_by_seat_num(SeatNum, Players) of
                   [#player{info = UserInfo}] -> UserInfo;
                   [] -> null
@@ -1051,7 +1052,8 @@ create_okey_game_info(#state{table_name = TName, mult_factor = MulFactor,
                     observer_flag = ObserverFlag,
                     pause_enabled = PauseMode == normal,
                     social_actions_enabled = SocialActionsEnabled,
-                    tournament_type = TournamentType
+                    tournament_type = TournamentType,
+                    series_confirmation_mode = list_to_binary(atom_to_list(ConfirmMode))
                    }.
 
 

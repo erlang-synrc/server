@@ -27,7 +27,7 @@ init([]) ->
                        {game_type, standard},
                        {rounds, undefined},
                        {reveal_confirmation, true},
-                       {next_series_confirmation, false},
+                       {next_series_confirmation, no},
                        {pause_mode, normal},
                        {social_actions_enabled, true},
                        {gosterge_finish_allowed, undefined}

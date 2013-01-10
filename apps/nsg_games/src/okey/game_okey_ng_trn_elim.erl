@@ -1006,7 +1006,7 @@ table_parameters(ParentMod, ParentPid, Speed, GameType, Tours) ->
      {game_type, GameType},
      {rounds, ?ROUNDS_PER_TOUR},
      {reveal_confirmation, true},
-     {next_series_confirmation, false},
+     {next_series_confirmation, no},
      {pause_mode, disabled},
      {social_actions_enabled, false}
     ].

@@ -110,7 +110,8 @@
           observer_flag :: boolean(),
           pause_enabled = true :: boolean(),
           social_actions_enabled = true :: boolean(),
-          tournament_type = standalone :: tournament()
+          tournament_type = standalone :: tournament(),
+          series_confirmation_mode = yes_exit :: yes_exit | no_exit | no
          }).
 -record(okey_player_ready, {
           player :: 'PlayerId'()
