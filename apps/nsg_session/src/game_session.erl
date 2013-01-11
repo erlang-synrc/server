@@ -288,20 +288,24 @@ handle_call(#join_game{game = GameId}, _From, #state{user = User, rpc = RPC} = S
                             {reply, Res, State#state{games = [Part | State#state.games]}};
                         {error, finished} ->
                             ?INFO("The game is finished: ~p.",[GameId]),
-                            maybe_send_message(RPC, #disconnect{reason = <<"The game is finished">>}, State),
+                            maybe_send_message(RPC, #disconnect{reason_id = <<"gameFinished">>,
+                                                                reason = <<"The game is finished">>}, State),
                             {reply, {error, finished}, State};
                         {error, out} ->
                             ?INFO("Out of the game: ~p.",[GameId]),
-                            maybe_send_message(RPC, #disconnect{reason = <<"You was disconnected from the game">>}, State),
+                            maybe_send_message(RPC, #disconnect{reason_id = <<"disconnected">>,
+                                                                reason = <<"You was disconnected from the game">>}, State),
                             {reply, {error, out}, State};
                         {error, not_allowed} ->
                             ?ERROR("Not allowed to connect: ~p.",[GameId]),
-                            maybe_send_message(RPC, #disconnect{reason = <<"You are not allowed to connect to this game">>}, State),
+                            maybe_send_message(RPC, #disconnect{reason_id = <<"notAllowed">>,
+                                                                reason = <<"You are not allowed to connect to this game">>}, State),
                             {reply, {error, not_allowed}, State}
                     end;
                 undefined ->
                     ?ERROR("Game not found: ~p.",[GameId]),
-                    maybe_send_message(RPC, #disconnect{reason = <<"The game you are trying to connect doesn't exist">>}, State),
+                    maybe_send_message(RPC, #disconnect{reason_id = <<"notExists">>,
+                                                        reason = <<"The game you are trying to connect doesn't exist">>}, State),
                     {reply, {error, not_exists}, State}
             end
     end;
@@ -378,31 +382,37 @@ handle_cast({rejoin, GameId} = Message, State = #state{user = User, games = Game
                     {noreply, State#state{games = NewGames}};
                 {error, finished} ->
                     ?INFO("The game is finished: ~p.",[GameId]),
-                    maybe_send_message(RPC, #disconnect{reason = <<"The game is finished">>}, State),
+                    maybe_send_message(RPC, #disconnect{reason_id = <<"gameFinished">>,
+                                                        reason = <<"The game is finished">>}, State), %%% TODO remove reason values
                     {stop, normal, State};
                 {error, out} ->
                     ?INFO("Out of the game: ~p.",[GameId]),
-                    maybe_send_message(RPC, #disconnect{reason = <<"You are kicked from the game">>}, State),
+                    maybe_send_message(RPC, #disconnect{reason_id = <<"kicked">>,
+                                                        reason = <<"You are kicked from the game">>}, State),
                     {stop, normal, State};
                 {error, not_allowed} ->
                     ?ERROR("Not allowed to connect: ~p.",[GameId]),
-                    maybe_send_message(RPC, #disconnect{reason = <<"You are not allowed to connect to this game">>}, State),
+                    maybe_send_message(RPC, #disconnect{reason_id = <<"notAllowed">>,
+                                                        reason = <<"You are not allowed to connect to this game">>}, State),
                     {stop, {error, not_allowed_to_join}, State}
             end;
         undefined ->
             ?ERROR("Game not found: ~p.",[GameId]),
-            maybe_send_message(RPC, #disconnect{reason = <<"The game you are trying to connect doesn't exist">>}, State),
+            maybe_send_message(RPC, #disconnect{reason_id = <<"notExists">>,
+                                                reason = <<"The game you are trying to connect doesn't exist">>}, State),
             {stop, {error, game_not_found}, State}
     end;
 
 handle_cast({disconnect, table_closed} = Message, State = #state{rpc = RPC}) ->
     ?INFO("Recived a notification from the table: ~p", [Message]),
-    maybe_send_message(RPC, #disconnect{reason = <<"The table you are sitting on has been just closed">>}, State),
+    maybe_send_message(RPC, #disconnect{reason_id = <<"tableClosed">>,
+                                        reason = <<"The table you are sitting on has been just closed">>}, State),
     {stop, normal, State};
 
 handle_cast({disconnect, opponent_out} = Message, State = #state{rpc = RPC}) ->
     ?INFO("Recived a notification from the table: ~p", [Message]),
-    maybe_send_message(RPC, #disconnect{reason = <<"The table you are sitting on has been just closed because you opponent out">>}, State),
+    maybe_send_message(RPC, #disconnect{reason_id = <<"opponentsOut">>,
+                                        reason = <<"The table you are sitting on has been just closed because your opponent out">>}, State),
     {stop, normal, State};
 
 

@@ -132,7 +132,8 @@
          }).
 
 -record(disconnect, {
-          reason :: string()
+          reason_id = null :: null | string(),
+          reason = null :: null | string()
          }).
 
 %% packet as game_event:
