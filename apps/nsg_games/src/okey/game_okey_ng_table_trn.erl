@@ -1074,8 +1074,8 @@ create_okey_game_player_state(_PlayerId, ?STATE_WAITING_FOR_START,
                             next_turn_in = 0,
                             paused = false,
                             chanak_points = Chanak,
-%%                            round_timeout = null,
-                            round_timeout = SetTimeout};
+                            round_timeout = null,
+                            set_timeout = SetTimeout};
 
 create_okey_game_player_state(PlayerId, ?STATE_PLAYING,
                               #state{timeout_timer = TRef, cur_round = CurRound,
@@ -1120,8 +1120,8 @@ create_okey_game_player_state(PlayerId, ?STATE_PLAYING,
                             next_turn_in = Timeout,
                             paused = false,
                             chanak_points = Chanak,
-%%                            round_timeout = RoundTimeout};
-                            round_timeout = SetTimeout};
+                            round_timeout = RoundTimeout,
+                            set_timeout = SetTimeout};
 
 create_okey_game_player_state(PlayerId, ?STATE_REVEAL_CONFIRMATION,
                               #state{timeout_timer = TRef, cur_round = CurRound,
@@ -1160,8 +1160,8 @@ create_okey_game_player_state(PlayerId, ?STATE_REVEAL_CONFIRMATION,
                             next_turn_in = Timeout,
                             paused = false,
                             chanak_points = Chanak,
-%%                            round_timeout = null,
-                            round_timeout = SetTimeout};
+                            round_timeout = null,
+                            set_timeout = SetTimeout};
 
 create_okey_game_player_state(_PlayerId, ?STATE_FINISHED,
                               #state{cur_round = CurRound, scoring_state = ScoringState,
@@ -1180,8 +1180,8 @@ create_okey_game_player_state(_PlayerId, ?STATE_FINISHED,
                             next_turn_in = 0,
                             paused = false,
                             chanak_points = Chanak,
-%%                            round_timeout = null,
-                            round_timeout = SetTimeout};
+                            round_timeout = null,
+                            set_timeout = SetTimeout};
 
 create_okey_game_player_state(PlayerId, ?STATE_PAUSE,
                               #state{paused_statename = PausedStateName,
@@ -1213,8 +1213,8 @@ create_okey_game_started(SeatNum, DeskState, CurRound,
                        current_round = CurRound,
                        current_set = 1,        %% XXX Concept of sets is deprecated
                        chanak_points = Chanak,
-%%                       round_timeout = RoundTimeout,
-                       round_timeout = SetTimeout}.
+                       round_timeout = RoundTimeout,
+                       set_timeout = SetTimeout}.
 
 
 create_okey_next_turn(CurSeat, Players) ->

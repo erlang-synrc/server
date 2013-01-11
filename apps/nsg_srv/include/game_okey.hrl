@@ -129,7 +129,8 @@
           game_speed    = null :: atom(), %% FIXME Deprecated
           game_submode  = null :: atom(), %% FIXME Deprecated
           chanak_points :: integer(),
-          round_timeout = null :: null | integer()
+          round_timeout = null :: null | integer(),
+          set_timeout = null :: null | integer()
          }).
 
 -record(okey_game_player_state, {
@@ -148,7 +149,8 @@
           %% number of milliseconds until next turn or 'infinity'
           paused = false :: boolean(),
           chanak_points  = 0 :: integer(),
-          round_timeout = null :: null | integer()
+          round_timeout = null :: null | integer(),
+          set_timeout = null :: null | integer()
          }).
 
 -record(okey_next_turn, {
