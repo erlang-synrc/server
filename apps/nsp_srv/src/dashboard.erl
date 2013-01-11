@@ -530,13 +530,14 @@ autocomplete_enter_event(SearchTerm, _Tag) ->
     DataG = case nsm_groups:list_groups_per_user(wf:user()) of
         [] -> [];
         Gs ->
-            [begin
-                {ok, Group} = nsm_groups:get_group(GId),
+            [case nsm_groups:get_group(GId) of
+              {ok, Group} ->
                 GName = Group#group.name,
                 Value = encode_term({GId, group}),
-                {struct, [{id, list_to_binary(GName)}, {label, list_to_binary(GName)} , {value,  Value}]}
-            end || GId <- Gs,
-                lists:member(list_to_binary(GId), AlreadySelected)=:=false ]
+                {struct, [{id, list_to_binary(GName)}, {label, list_to_binary(GName)} , {value,  Value}]};
+              {error, notfound}-> []
+            end
+            || GId <- Gs, lists:member(list_to_binary(GId), AlreadySelected)=:=false ]
     end,
     Data = DataU ++ DataG,
     List = [
