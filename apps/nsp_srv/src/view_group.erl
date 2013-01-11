@@ -177,65 +177,67 @@ incoming_requests() ->
     end.
 
 group_info() ->
-    UId = wf:user(),
-    GId = wf:q(id),
-    {_, Group} = nsm_groups:get_group(GId),
-    case Group of
-        notfound -> [];
-        _ ->
-            CTime = Group#group.created,
-            {D,_H} = calendar:now_to_local_time(CTime),
-            Date = io_lib:fwrite("~b/~b/~b", tuple_to_list(D)),
+  UId = wf:user(),
+  GId = wf:q(id),
+  case nsm_groups:get_group(GId) of
+    {error, notfound} -> [];
+    {ok, Group} ->
+      CTime = Group#group.created,
+      {D,_H} = calendar:now_to_local_time(CTime),
+      Date = io_lib:fwrite("~b/~b/~b", tuple_to_list(D)),
 
-            Ava = webutils:get_group_avatar(Group#group.username, "big"),
+      Ava = webutils:get_group_avatar(Group#group.username, "big"),
 
-            Description = case nsm_groups:user_has_access(UId, GId) of
-                true -> #span{id=group_info_description, style="font-size:11pt;", text=Group#group.description};
-                false -> []
-            end,
-            MemberCount = Group#group.users_count,
-            Membership = case nsm_groups:user_in_group(UId, GId) of
-                true -> 
-                    case Group#group.username of
-                        "kakaranet" ->
-                            ""; %PUBLIC BETA One can not unsubscribe from kakaranet for now. 
-                        _ ->
-                            case MemberCount of
-                                1 -> "";
-                                _ ->
-                                    #link{text=?_T("Leave group"), postback={leave_group, Group}, id="leavegrouplink", 
-                                        style="padding-left:17px; font-weight:bold; font-size:1.1em;",
-                                        title=?_T("You may unsubscribe from group messages this way. 
-                                            You can also subscribe back later if you wish")}
-                            end
-                    end;
-                false ->
-                    ""
-            end,
+      Description = case nsm_groups:user_has_access(UId, GId) of
+        true -> #span{id=group_info_description, style="font-size:11pt;", text=Group#group.description};
+        false -> []
+      end,
+      MemberCount = Group#group.users_count,
+      Membership = case nsm_groups:user_in_group(UId, GId) of
+        true ->
+          case Group#group.username of
+            "kakaranet" -> ""; %PUBLIC BETA One can not unsubscribe from kakaranet for now. 
+            _ ->
+              case MemberCount of
+                1 -> "";
+                _ ->
+                  #link{text=?_T("Leave group"), postback={leave_group, Group}, id="leavegrouplink",
+                    style="padding-left:17px; font-weight:bold; font-size:1.1em;",
+                    title=?_T("You may unsubscribe from group messages this way.
+                              You can also subscribe back later if you wish")}
+              end
+          end;
+        false -> ""
+      end,
+      GroupTitle = case Group#group.name of
+        []-> Group#group.username;
+        Name -> Name
+      end,
 
-            #panel{class="box user-info", body=[
-                #h3{id=group_info_name, text=Group#group.name},
-                Description,
-                #br{},
-                #br{},
-                #panel{class=img, body=#image{image=Ava}},
-            #list{class=user_info, body=[
-                    #listitem{body=[?_T("Publicity")++": ",#span{id=group_info_publicity, text=
-                        case Group#group.publicity of
-                            public -> ?_T("Public group");
-                            private -> ?_T("Private group")
-                        end
-                    }]},
-                    #listitem{body=[?_T("Created")++": ",#span{text=Date}]},
-                    #listitem{body=[?_T("Owner")++": ",#span{id=group_info_owner, text=Group#group.owner}]},
-                    #listitem{body=[?_T("Members")++": ",#span{text=integer_to_list(MemberCount)}]}
-                ]},
-                Membership,
-                group_edit_form(Group),
-                #br{},
-                #br{}
-           ]}
-    end.
+      #panel{class="box user-info", body=[
+        #h3{id=group_info_name, text=GroupTitle},
+        Description,
+        #br{},
+        #br{},
+        #panel{class=img, body=#image{image=Ava}},
+        #list{class=user_info, body=[
+          #listitem{body=[?_T("Publicity")++": ",
+            #span{id=group_info_publicity, text=
+              case Group#group.publicity of
+                public -> ?_T("Public group");
+                private -> ?_T("Private group")
+              end
+            }]},
+          #listitem{body=[?_T("Created")++": ",#span{text=Date}]},
+          #listitem{body=[?_T("Owner")++": ",#span{id=group_info_owner, text=Group#group.owner}]},
+          #listitem{body=[?_T("Members")++": ",#span{text=integer_to_list(MemberCount)}]}
+        ]},
+        Membership,
+        group_edit_form(Group),
+        #br{},
+        #br{}
+      ]}
+  end.
 
 user_in_group() ->
     GId = wf:q(id),

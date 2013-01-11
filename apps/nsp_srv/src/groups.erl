@@ -240,7 +240,11 @@ group_row(GL) when is_list(GL)->
 group_row(GL) ->
     #list{class="group-list-mkh", body=show_group_ul(GL)}.
 
-show_group_ul(#group{username=GName, description=GDesc, name=GFullName, users_count=GroupMembersCount}) ->
+show_group_ul(#group{username=GName, description=GDesc, name=GFineName, users_count=GroupMembersCount}) ->
+    GFullName = case GFineName of
+      [] -> GName;
+      Name -> Name
+    end,
     show_group_ul_view(GName, GFullName, GDesc, GroupMembersCount);
 show_group_ul(GId) ->
     {ok, Group} = nsm_groups:get_group(GId),
