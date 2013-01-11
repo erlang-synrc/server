@@ -460,7 +460,6 @@ a {text-decoration:none;color:#4ec3f1;}
 	overflow:hidden;
 	background:#fff url(/images/bg-search-cell.gif) repeat-x;
 	border:1px solid #d9d9d9;
-	-moz-box-shadow:0 1px 1px #f7f7f7;
 	-webkit-box-shadow:0 1px 1px #f7f7f7;
 	box-shadow:0 1px 1px #f7f7f7;
 }
@@ -1238,7 +1237,7 @@ footer .lang img {
 	line-height:30px;
 	font-weight:bold;
 	text-transform:uppercase;
-	text-shadow:0 1px 1px #b6e6f9
+	text-shadow:0 1px 1px #b6e6f9;
 	-moz-box-shadow:0 1px 2px 2px #d3d3d3;
 	-webkit-box-shadow:0 1px 2px 2px #d3d3d3;
 	box-shadow:0 1px 1px 1px #d3d3d3;
@@ -2010,7 +2009,7 @@ body.extra-small-screen .LV_invalid {
 .slideshow-control li {
   float:left;
   background-image: url(/images/indexbg.png);
-  background-position: -10px -378px;//sep-02
+  background-position: -10px -378px;
   margin:0;
   padding:0 12px;
   height:45px;
