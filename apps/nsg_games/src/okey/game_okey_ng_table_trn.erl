@@ -173,7 +173,8 @@ init([GameId, TableId, Params]) ->
                    {observers_allowed, false},
                    {table, {?MODULE, self()}}],
     {ok, Relay} = ?RELAY:start(RelayParams),
-    ?INFO("OKEY_NG_TABLE_TRN <~p,~p> PlayersInfo: ~p.", [GameId, TableId, PlayersInfo]),
+    ?INFO("OKEY_NG_TABLE_TRN_DBG <~p,~p> Set timeout: ~p, round timeout: ~p.", [GameId, TableId, SetTimeout, RoundTimeout]),
+    ?INFO("OKEY_NG_TABLE_TRN_DBG <~p,~p> PlayersInfo: ~p.", [GameId, TableId, PlayersInfo]),
     ?INFO("OKEY_NG_TABLE_TRN <~p,~p> Started.", [GameId, TableId]),
     parent_notify_table_created(Parent, TableId, Relay),
     {ok, ?STATE_WAITING_FOR_START, #state{game_id = GameId,
@@ -236,28 +237,44 @@ handle_sync_event(_Event, _From, StateName, StateData) ->
     {reply, Reply, StateName, StateData}.
 
 handle_info({timeout, Magic}, ?STATE_PLAYING,
-            #state{timeout_magic = Magic} = StateData) ->
+            #state{timeout_magic = Magic, game_id = GameId, table_id = TableId} = StateData) ->
+    ?INFO("OKEY_NG_TABLE_TRN <~p,~p> Move timeout. Do an automatic move(s).", [GameId, TableId]),
     do_timeout_moves(StateData);
 
 handle_info({round_timeout, Round}, ?STATE_PLAYING,
-            #state{cur_round = Round, desk_state = DeskState} = StateData) ->
-     finalize_round(StateData#state{desk_state = DeskState#desk_state{finish_reason = timeout}});
+            #state{cur_round = Round, desk_state = DeskState, game_id = GameId,
+                   table_id = TableId, timeout_timer = TRef} = StateData) ->
+    ?INFO("OKEY_NG_TABLE_TRN <~p,~p> Time to finish round ~p because the round timeout.", [GameId, TableId, Round]),
+    if TRef =/= undefined -> erlang:cancel_timer(TRef);
+       true -> do_nothing
+    end,
+    finalize_round(StateData#state{desk_state = DeskState#desk_state{finish_reason = timeout}});
 
 handle_info(set_timeout, StateName,
-            #state{desk_state = DeskState} = StateData) when
+            #state{cur_round = Round, desk_state = DeskState, game_id = GameId,
+                   table_id = TableId, timeout_timer = TRef} = StateData) when
   StateName =/= ?STATE_SET_FINISHED ->
-     finalize_round(StateData#state{desk_state = DeskState#desk_state{finish_reason = set_timeout}});
+    ?INFO("OKEY_NG_TABLE_TRN <~p,~p> Time to finish round ~p and the set because the set timeout.", [GameId, TableId, Round]),
+    if TRef =/= undefined -> erlang:cancel_timer(TRef);
+       true -> do_nothing
+    end,
+    finalize_round(StateData#state{desk_state = DeskState#desk_state{finish_reason = set_timeout}});
 
 handle_info({timeout, Magic}, ?STATE_REVEAL_CONFIRMATION,
-            #state{timeout_magic = Magic, wait_list = WL,
+            #state{timeout_magic = Magic, wait_list = WL, game_id = GameId, table_id = TableId,
                    reveal_confirmation_list = CList} = StateData) ->
+    ?INFO("OKEY_NG_TABLE_TRN <~p,~p> Time to check reveal confirmation responses.", [GameId, TableId]),
     NewCList = lists:foldl(fun(SeatNum, Acc) -> [{SeatNum, false} | Acc] end, CList, WL),
     finalize_round(StateData#state{reveal_confirmation_list = NewCList});
 
-handle_info(_Info, StateName, StateData) ->
+handle_info(Info, StateName, #state{game_id = GameId, table_id = TableId} = StateData) ->
+    ?INFO("OKEY_NG_TABLE_TRN <~p,~p> Unexpected message(info) received at state <~p>: ~p.",
+          [GameId, TableId, StateName, Info]),
     {next_state, StateName, StateData}.
 
-terminate(_Reason, _StateName, #state{relay = Relay}) ->
+terminate(Reason, StateName, #state{game_id = GameId, table_id = TableId, relay = Relay}) ->
+    ?INFO("OKEY_NG_TABLE_TRN <~p,~p> Shutting down at state: <~p>. Reason: ~p",
+          [GameId, TableId, StateName, Reason]),
     ?RELAY:stop(Relay),
     ok.
 
@@ -434,9 +451,9 @@ handle_parent_message(stop, _StateName,
 
 handle_parent_message(Message, StateName,
                       #state{game_id = GameId, table_id = TableId} = StateData) ->
-    ?ERROR("OKEY_NG_TABLE_TRN <~p,~p> Unknown parent message received in state <~p>: ~p. State: ~p. Stopping.",
-           [GameId, TableId, StateName, Message]),
-    {stop, unknown_parent_message, StateData}.
+    ?ERROR("OKEY_NG_TABLE_TRN <~p,~p> Unexpected parent message received in state <~p>: ~p. State: ~p. Stopping.",
+           [GameId, TableId, StateName, Message, StateName]),
+    {stop, unexpected_parent_message, StateData}.
 
 
 %%===================================================================
@@ -489,14 +506,14 @@ handle_relay_message(Message, StateName, #state{game_id = GameId, table_id = Tab
 
 %% handle_player_action(Player, Msg, StateName, StateData)
 
-handle_player_action(#player{id = PlayerId, seat_num = SeatNum},
+handle_player_action(#player{id = PlayerId, seat_num = SeatNum, user_id = UserId},
                      {submit, #game_action{action = Action, args = Args} = GA}, From,
                      StateName,
                      #state{game_id = GameId, table_id = TableId} = StateData) ->
     try api_utils:to_known_record(Action, Args) of
         ExtAction ->
-            ?INFO("OKEY_NG_TABLE_TRN <~p,~p> Player <~p> submit the game action: ~p.",
-                  [GameId, TableId, PlayerId, ExtAction]),
+            ?INFO("OKEY_NG_TABLE_TRN <~p,~p> Player <~p> (~p) submit the game action: ~p.",
+                  [GameId, TableId, PlayerId, UserId, ExtAction]),
             do_action(SeatNum, ExtAction, From, StateName, StateData)
     catch
         _Class:_Exception ->
@@ -632,7 +649,8 @@ do_action(SeatNum, #okey_challenge{challenge = Challenge}, From,
                                                          timeout_timer = TRef} = StateData) ->
     case lists:member(SeatNum, WL) of
         true ->
-            NewCList = [{SeatNum, Challenge} | CList],
+            Confirmed = not Challenge,
+            NewCList = [{SeatNum, Confirmed} | CList],
             NewWL = lists:delete(SeatNum, WL),
             if NewWL == [] ->
                    gen_fsm:reply(From, ok),
@@ -775,7 +793,9 @@ finalize_round(#state{desk_state = #desk_state{finish_reason = FinishReason,
                       reveal_confirmation = RevealConfirmation,
                       reveal_confirmation_list = CList,
                       parent = Parent, players = Players,
-                      table_id = TableId} = StateData) ->
+                      game_id = GameId, table_id = TableId} = StateData) ->
+    ?INFO("OKEY_NG_TABLE_TRN <~p,~p> Finalizing the round. Finish reason: ~p. Finish info: ~p.",
+          [GameId, TableId, FinishReason, FinishInfo]),
     FR = case FinishReason of
              tashes_out -> tashes_out;
              timeout -> timeout;
@@ -783,6 +803,9 @@ finalize_round(#state{desk_state = #desk_state{finish_reason = FinishReason,
              reveal ->
                  {Revealer, Tashes, Discarded} = FinishInfo,
                  ConfirmationList = if RevealConfirmation -> CList; true -> [] end,
+                 CListUId = [{SeatNum, get_user_id_by_seat_num(SeatNum, Players), Response}
+                             || {SeatNum, Response} <- ConfirmationList],
+                 ?INFO("OKEY_NG_TABLE_TRN <~p,~p> Confirmation list: ~p.", [GameId, TableId, CListUId]),
                  {reveal, Revealer, Tashes, Discarded, ConfirmationList};
              gosterge_finish ->
                  Winner = FinishInfo,
@@ -794,9 +817,11 @@ finalize_round(#state{desk_state = #desk_state{finish_reason = FinishReason,
     RoundScorePl = [{get_player_id_by_seat_num(SeatNum, Players), Points} || {SeatNum, Points} <- RoundScore],
     TotalScorePl = [{get_player_id_by_seat_num(SeatNum, Players), Points} || {SeatNum, Points} <- TotalScore],
     if GameOver ->
+           ?INFO("OKEY_NG_TABLE_TRN <~p,~p> Set is over.", [GameId, TableId]),
            parent_send_game_res(Parent, TableId, NewScoringState, RoundScorePl, TotalScorePl),
            {next_state, ?STATE_SET_FINISHED, StateData#state{scoring_state = NewScoringState}};
        true ->
+           ?INFO("OKEY_NG_TABLE_TRN <~p,~p> Round is over.", [GameId, TableId]),
            parent_send_round_res(Parent, TableId, NewScoringState, RoundScorePl, TotalScorePl),
            {next_state, ?STATE_FINISHED, StateData#state{scoring_state = NewScoringState}}
     end.
@@ -921,6 +946,11 @@ store_player_rec(#player{id =Id, seat_num = SeatNum, user_id = UserId,
 get_player_id_by_seat_num(SeatNum, Players) ->
     [#player{id = PlayerId}] = midict:geti(SeatNum, seat_num, Players),
     PlayerId.
+
+%% get_user_id_by_seat_num(SeatNum, Players) -> PlayerId
+get_user_id_by_seat_num(SeatNum, Players) ->
+    [#player{user_id = UserId}] = midict:geti(SeatNum, seat_num, Players),
+    UserId.
 
 %% fetch_player(PlayerId, Players) -> Player
 fetch_player(PlayerId, Players) ->
