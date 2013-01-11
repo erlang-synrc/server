@@ -64,7 +64,7 @@
 .slideshow-control li {
   float:left;
   background-image: url(/images/indexbg.png);
-  background-position: -10px -378px;//sep-02
+  background-position: -10px -378px;
   margin:0;
   padding:0 12px;
   height:45px;
