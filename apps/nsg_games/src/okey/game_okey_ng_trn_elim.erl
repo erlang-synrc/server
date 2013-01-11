@@ -107,6 +107,7 @@
 -define(TABLE_STATE_INITIALIZING, initializing).
 -define(TABLE_STATE_READY, ready).
 -define(TABLE_STATE_IN_PROGRESS, in_progress).
+-define(TABLE_STATE_WAITING_NEW_ROUND, waiting_new_round).
 -define(TABLE_STATE_FINISHED, finished).
 
 -define(WAITING_PLAYERS_TIMEOUT, 3000) . %% Time between all table was created and starting a turn
@@ -247,11 +248,17 @@ handle_info({'DOWN', MonRef, process, _Pid, _}, StateName,
 handle_info({rest_timeout, TableId}, StateName,
             #state{game_id = GameId, tables = Tables} = StateData) ->
     ?INFO("OKEY_NG_TRN_ELIM <~p> Time to start new round for table <~p>.", [GameId, TableId]),
-    #table{pid = TablePid} = Table = fetch_table(TableId, Tables),
-    NewTable = Table#table{state = ?TABLE_STATE_IN_PROGRESS},
-    NewTables = store_table(NewTable, Tables),
-    send_to_table(TablePid, start_round),
-    {next_state, StateName, StateData#state{tables = NewTables}};
+    #table{pid = TablePid, state = TableState} = Table = fetch_table(TableId, Tables),
+    if TableState == ?TABLE_STATE_WAITING_NEW_ROUND ->
+           NewTable = Table#table{state = ?TABLE_STATE_IN_PROGRESS},
+           NewTables = store_table(NewTable, Tables),
+           send_to_table(TablePid, start_round),
+           {next_state, StateName, StateData#state{tables = NewTables}};
+       true ->
+           ?INFO("OKEY_NG_TRN_ELIM <~p> Don't start new round at table <~p> because it is not waiting for start.",
+                 [GameId, TableId]),
+           {next_state, StateName, StateData}
+    end;
 
 
 handle_info({timeout, Magic}, ?STATE_WAITING_FOR_PLAYERS,
@@ -378,7 +385,7 @@ handle_table_message(TableId, {round_finished, NewScoringState, _RoundScore, _To
                      #state{tables = Tables} = StateData) ->
     #table{pid = TablePid} = Table = fetch_table(TableId, Tables),
     TRef = erlang:send_after(?REST_TIMEOUT, self(), {rest_timeout, TableId}),
-    NewTable = Table#table{context = NewScoringState, state = ?TABLE_STATE_FINISHED, timer = TRef},
+    NewTable = Table#table{context = NewScoringState, state = ?TABLE_STATE_WAITING_NEW_ROUND, timer = TRef},
     NewTables = store_table(NewTable, Tables),
     send_to_table(TablePid, show_round_result),
     {next_state, ?STATE_TURN_PROCESSING, StateData#state{tables = NewTables}};
@@ -392,8 +399,11 @@ handle_table_message(TableId, {game_finished, TableContext, _RoundScore, TotalSc
                     true -> TotalScore
                  end,
     NewTablesResults = [{TableId, TableScore} | TablesResults],
-    #table{pid = TablePid} = Table = fetch_table(TableId, Tables),
-    NewTable = Table#table{context = TableContext, state = ?TABLE_STATE_FINISHED},
+    #table{pid = TablePid, state = TableState, timer = TRef} = Table = fetch_table(TableId, Tables),
+    if TableState == ?TABLE_STATE_WAITING_NEW_ROUND -> erlang:cancel_timer(TRef);
+       true -> do_nothing
+    end,
+    NewTable = Table#table{context = TableContext, state = ?TABLE_STATE_FINISHED, timer = undefined},
     NewTables = store_table(NewTable, Tables),
     send_to_table(TablePid, show_round_result),
     NewWL = lists:delete(TableId, WL),
