@@ -21,86 +21,86 @@ route() -> ["game_name"].
 title() -> ?_T("Matchmaker").
 
 main() ->
-    wf:state(buttons, green),
+  wf:state(buttons, green),
 
-    case wf:q(game_name) of
-         "okey" -> ok;
-         "tavla" -> ok;
-          _ -> wf:redirect(?_U("/dashboard"))
-    end,
+  case wf:q(game_name) of
+    "okey" -> ok;
+    "tavla" -> ok;
+    _ -> wf:redirect(?_U("/dashboard"))
+  end,
 
-    case wf:user() of
-         undefined -> wf:redirect_to_login(?_U("/login"));
-         User -> webutils:add_script("/nitrogen/jquery.paginatetable.js"),
-                 webutils:add_raw("<link href='/nitrogen/guiders-js/guiders-1.2.8.css' rel='stylesheet'>
-                                   <script src='/nitrogen/guiders-js/guiders-1.2.8.js'></script>"),
-                 case webutils:guiders_ok("matchmaker_guiders_shown") of
-                      true -> guiders_script();
-                      false -> []
-                 end,
-                 add_game_settings_guiders(),
-                 SavedSettings = case wf:session({wf:q(game_name), wf:user()}) of
-                     undefined -> case wf:q(game_name) of
-                                        "tavla" -> [{game, game_tavla}];
-                                        "okey" -> [{game, game_okey}];
-                                        _ -> [{game, game_okey}]
-                                   end ++ [{table_name, table_name(default)}];
-                     Settings -> Settings
-                 end,
-                 wf:session({wf:q(game_name), wf:user()}, SavedSettings),
-                 wf:state(user_paid, nsm_accounts:user_paid(User)),
-                 #template { file=code:priv_dir(nsp_srv)++"/templates/bare.html" }
-    end.
+  case wf:user() of
+    undefined -> [];
+    User ->
+      webutils:add_script("/nitrogen/jquery.paginatetable.js"),
+      webutils:add_raw("<link href='/nitrogen/guiders-js/guiders-1.2.8.css' rel='stylesheet'>
+        <script src='/nitrogen/guiders-js/guiders-1.2.8.js'></script>"),
+      case webutils:guiders_ok("matchmaker_guiders_shown") of
+        true -> guiders_script();
+        false -> []
+      end,
+      add_game_settings_guiders(),
+      SavedSettings = case wf:session({wf:q(game_name), wf:user()}) of
+        undefined ->
+          case wf:q(game_name) of
+            "tavla" -> [{game, game_tavla}];
+            "okey" -> [{game, game_okey}];
+            _ -> [{game, game_okey}]
+          end ++ [{table_name, table_name(default)}];
+        Settings -> Settings
+      end,
+      wf:session({wf:q(game_name), wf:user()}, SavedSettings),
+      wf:state(user_paid, nsm_accounts:user_paid(User))
+  end,
+  #template { file=code:priv_dir(nsp_srv)++"/templates/bare.html" }.
+
 
 body() ->
+  wf:state(buttons, green),
+  ?INFO("Matchmaker User: ~p game: ~p",[wf:user(),?_U(wf:q(game_name))]),
+  GameName = case wf:q(game_name) of 
+    undefined -> "okey";
+    Name -> Name 
+  end,
+  case wf:user() of
+    undefined -> [];
+    User ->
+      X = rpc:call(?GAMESRVR_NODE,game_manager,get_lucky_table,[list_to_atom("game_"++GameName)]),
+      wf:state(lucky,X),
 
-    wf:state(buttons, green),
-    ?INFO("Matchmaker User: ~p game: ~p",[wf:user(),?_U(wf:q(game_name))]),
+      ui_update_buttons(),
+      UId = webutils:user_info(username),
+      wf:state(user_in_groups, nsm_groups:list_groups_per_user(UId)),
+      wf:state(users_subscribe, nsm_users:list_subscr(UId)),
+      ui_paginate(),
 
-%    case wf:q(game_name) of
-%         "okey" -> ok;
-%         "tavla" -> ok;
-%          _ -> wf:redirect(?_U("/dashboard"))
-%    end,
+      PagePid = self(),
+      wf:comet(fun() -> PagePid ! {comet_started,self()}, comet_update() end),
+      receive {comet_started,Pid} -> wf:state(comet_pid,Pid) end
+  end,
 
-    GameName = case wf:q(game_name) of
-                     undefined -> "okey";
-                     Name -> Name end,
-
-    X = rpc:call(?GAMESRVR_NODE,game_manager,get_lucky_table,[list_to_atom("game_"++GameName)]),
-    wf:state(lucky,X),
-
-    ui_update_buttons(),
-    UId = webutils:user_info(username),
-    wf:state(user_in_groups, nsm_groups:list_groups_per_user(UId)),
-    wf:state(users_subscribe, nsm_users:list_subscr(UId)),
-    ui_paginate(),
-
-    PagePid = self(),
-    wf:comet(fun() -> PagePid ! {comet_started,self()}, comet_update() end),
-    receive {comet_started,Pid} -> wf:state(comet_pid,Pid) end,
-
-  ["<div class=\"list-top-photo-h\" style=\"margin-bottom: -30px;\">"] ++ 
-  [webutils:get_hemen_nav(matchmaker)] ++ 
-  ["</div>"] ++
-
-  [#section{class="create-area", body=#section{class="create-block", body=[
-    matchmaker_submenu(),
-    #panel{id=rules_container, body=[]},
-    #article{class="article1", body=[
-      #panel{id=matchmaker_main_container, class="head", body=matchmaker_show_tables()},
-      #panel{id=matchmaker_slide_area, class="slide-area"},
-      #panel{id=tables, body=ui_get_tables()}
-    ]},
-    #panel{class="matchmaker-table-pager paging", body=[
-      #panel{class="center", body=[
-        #list{body=[#listitem{body=[#link{class="prevPage", text="<"}]}]},
-        "<ul class='pageNumbers'></ul>",
-        #list{body=[#listitem{body=[#link{class="nextPage", text=">"}]}]}
-      ]}
-    ]},
-    #panel{id=info_table}
-  ]}}].
+  [
+    "<div class=\"list-top-photo-h\" style=\"margin-bottom: -30px;\">",
+      webutils:get_hemen_nav(matchmaker),
+    "</div>",
+    #section{class="create-area", body=#section{class="create-block", body=[
+      matchmaker_submenu(),
+      #panel{id=rules_container, body=[]},
+      #article{class="article1", body=[
+        #panel{id=matchmaker_main_container, class="head", body=matchmaker_show_tables()},
+        #panel{id=matchmaker_slide_area, class="slide-area"},
+        #panel{id=tables, body=ui_get_tables()}
+      ]},
+      #panel{class="matchmaker-table-pager paging", body=[
+        #panel{class="center", body=[
+          #list{body=[#listitem{body=[#link{class="prevPage", text="<"}]}]},
+          "<ul class='pageNumbers'></ul>",
+          #list{body=[#listitem{body=[#link{class="nextPage", text=">"}]}]}
+        ]}
+      ]},
+      #panel{id=info_table}
+    ]}}
+  ].
 
 table_name(default) ->
     UId = wf:user(),
@@ -110,32 +110,25 @@ table_name(default) ->
     lists:flatten(TableName).
 
 matchmaker_submenu() ->
-
-
-    B = #span{style="font-weight:bold"},
-    [
-        #list{class="steps-list", body=[
-            #listitem{class="submenu item1", body=[
-                "<span id='guiderscreateblock'>",
-                #link{postback={show,create_game}, text=?_T("CREATE"),
-                    actions=ac_hide_main_container()},
-                B#span{class="ttl", text=?_T("Create Your Game")},
-                B#span{text=?_T("You can create your own table and start to earn gift points.")},
-                "</span>"
-            ]},
-            #listitem{class="submenu item2", body=[
-                "<span id='guidersjoinblock'>",
-                #link{postback={show,join_game}, text=?_T("JOIN"),
-				    actions=ac_hide_main_container()},
-                B#span{class="ttl", text=?_T("Join An Existing Game")},
-                B#span{text=?_T("Start to gain gift points right now. Join to an existing follow's game.")},
-                "</span>"
-            ]},
-            #listitem{class="submenu item3",id=play_button_panel, body=[
-                el_inside_play()
-            ]}
-	    ]}
-    ].
+  B = #span{style="font-weight:bold"},
+  [
+  #list{class="steps-list", body=[
+    #listitem{class="submenu item1", body=[
+      "<span id='guiderscreateblock'>",
+        #link{postback={show,create_game}, text=?_T("CREATE"),
+          actions=ac_hide_main_container()},
+          B#span{class="ttl", text=?_T("Create Your Game")},
+          B#span{text=?_T("You can create your own table and start to earn gift points.")},
+      "</span>"]},
+    #listitem{class="submenu item2", body=[
+      "<span id='guidersjoinblock'>",
+        #link{postback={show,join_game}, text=?_T("JOIN"),
+          actions=ac_hide_main_container()},
+          B#span{class="ttl", text=?_T("Join An Existing Game")},
+          B#span{text=?_T("Start to gain gift points right now. Join to an existing follow's game.")},
+      "</span>"]},
+    #listitem{class="submenu item3",id=play_button_panel, body=[el_inside_play()]}]}
+  ].
 
 el_inside_play() ->
      LuckyAction =
@@ -314,7 +307,7 @@ ui_checkboxes(Section) ->
 
 
     Settings = wf:session({GameName, wf:user()}),
-    _Countdown = proplists:get_value(game_mode, Settings, undefined),
+    %_Countdown = proplists:get_value(game_mode, Settings, undefined),
     Checkboxes = [
         "<span id='guidersitem4'>",
         "<span id='guiderstab1paired'>",
@@ -368,7 +361,11 @@ matchmaker_show_tables() ->
         #panel{class="item item2", body=ui_game_type() },
         #panel{id = ui_rounds, class="item item3", body=ui_rounds() },
         #panel{class="options", style="height:61px;", body=[
-            #panel{style="margin-top:-32px; margin-bottom:-6px;", body=ui_checkboxes(join) },
+            #panel{style="margin-top:-32px; margin-bottom:-6px;", body=
+              case wf:user() of
+                undefined-> [];
+                _U -> ui_checkboxes(join)
+              end},
                 "<span id='guidersdetailedsettings'>",
                     #link{body=?_T("Detailed Settings"), postback={show, join_game_detailed},
                        actions=ac_hide_main_container(), class="cancel", style=""},
@@ -598,7 +595,10 @@ show_table(Tables) ->
                     end,
                     JoinOrCrate = case Action of
                         {join, Act} ->
-                            IsMember = lists:member(list_to_binary(wf:user()), Users),
+                            IsMember = case wf:user() of
+                              undefined -> false;
+                              User -> lists:member(list_to_binary(User), Users)
+                            end,
 %%                            ?INFO("User: ~p, GameState: ~p, IsMember: ~p, Real users num: ~p, MaxUsers: ~p",
 %%                                  [wf:user(), GameState, IsMember, length(RealUsers), MaxUsers]),
                             if GameState == started andalso IsMember;
@@ -733,48 +733,41 @@ tab_game_setting()->
   ]}.
 
 tab_group_setting() ->
-    ThisClass = case wf:state(buttons) of
-        green -> "list1_green";
-        _ -> "list1"
-    end,
-    Groups = wf:state(user_in_groups),
-    View = [
-            case nsm_groups:get_group(GId) of
-                {ok, Group} ->
-                    Name = Group#group.name,
-                    #listitem{body=construct_id(#link{text=Name, postback={tag,{group, Name}}})};
-                _ -> []
-            end
-	     || GId <- Groups ],
-    #panel{class="create-game-groups-box",       
-	   body=[
-         "<span id='guidersgroupfiltername'>",
-         #textbox{id=groups_filter_name,
-			  actions=js_options_filter(groups_list),
-			  class="create-game-groups-filter-textbox"},
-		 #panel{class="create-game-groups-list",
-			id=groups_list,
-			body=#list{class=ThisClass, body=View}},
-         "</span>"
-         ]
-	  }.
+  ThisClass = case wf:state(buttons) of
+    green -> "list1_green";
+    _ -> "list1"
+  end,
+  Groups = case wf:state(user_in_groups) of
+    undefined-> [];
+    Grps -> Grps
+  end,
+  View = [
+    case nsm_groups:get_group(GId) of
+      {ok, Group} -> #listitem{body=construct_id(#link{text=Group#group.name, postback={tag,{group, Group#group.name}}})};
+      _ -> []
+    end || GId <- Groups ],
+  #panel{class="create-game-groups-box", body=[
+    "<span id='guidersgroupfiltername'>",
+    #textbox{id=groups_filter_name, actions=js_options_filter(groups_list), class="create-game-groups-filter-textbox"},
+    #panel{class="create-game-groups-list", id=groups_list, body=#list{class=ThisClass, body=View}},
+    "</span>"
+  ]}.
 
 tab_friend_setting() ->
-    ThisClass = case wf:state(buttons) of
-        green -> "list1_green";
-        _ -> "list1"
-    end,
-    Users = wf:state(users_subscribe),
-    View = [ #listitem{body=construct_id(#link{text=Name, postback={tag,{users, Name}}})}
-	     || #subs{whom = Name} <- Users ],
-    #panel{class="create-game-friends-box",
-	   body=[#textbox{id=friends_filter_name,
-			  actions=js_options_filter(friends_list),
-			  class="create-game-friends-filter-textbox"},
-		 #panel{class="create-game-friends-list",
-			id=friends_list,
-			body=#list{class=ThisClass, body=View}}]
-	  }.
+  ThisClass = case wf:state(buttons) of
+    green -> "list1_green";
+    _ -> "list1"
+  end,
+  Users = case wf:state(users_subscribe) of
+    undefined -> [];
+    Us -> Us
+  end,
+
+  View = [ #listitem{body=construct_id(#link{text=Name, postback={tag,{users, Name}}})} || #subs{whom = Name} <- Users ],
+  #panel{class="create-game-friends-box", body=[
+    #textbox{id=friends_filter_name, actions=js_options_filter(friends_list), class="create-game-friends-filter-textbox"},
+    #panel{class="create-game-friends-list", id=friends_list, body=#list{class=ThisClass, body=View}}
+  ]}.
 
 slider_text_format(sets) ->
     ?_TS("Set: $setsize$", [{setsize,"~s"}]); %%"
@@ -824,6 +817,8 @@ ui_update_buttons() ->
     Settings = wf:session({GameName,wf:user()}),
     ui_update_buttons(Settings).
 
+ui_update_buttons(undefined)->
+  ok;
 ui_update_buttons(Settings) ->
     wf:update(criteria_field, ""),
     [begin
@@ -921,7 +916,7 @@ api_event(Name, Tag, Args) -> webutils:api_event(Name, Tag, Args).
 
 event(Event) ->
     case wf:user() of
-    undefined -> wf:redirect_to_login(?_U("/login"));
+    undefined -> u_event(Event);%wf:redirect_to_login(?_U("/login"));
     _User -> u_event(Event),
              X = wf:state(comet_pid),
              X ! ping_comet_to_refresh_table
@@ -972,22 +967,25 @@ u_event({tag, {table_name, textbox}}) ->
     process_setting({table_name, TableName});
 
 u_event(create_game) ->
-    GameName = case wf:q(game_name) of undefined -> "okey"; X -> X end,
+  case wf:user() of
+    undefined -> ok;
+    UId ->
+      GameName = case wf:q(game_name) of undefined -> "okey"; X -> X end,
 
-    UId = wf:user(),
-    Settings = wf:session({GameName, wf:user()}),
-    wf:session({GameName, UId},Settings),
-    URL = ?_U(lists:concat(["/matchmaker/", GameName])),
-    wf:redirect(URL),
+      Settings = wf:session({GameName, wf:user()}),
+      wf:session({GameName, UId},Settings),
+      URL = ?_U(lists:concat(["/matchmaker/", GameName])),
+      wf:redirect(URL),
 
-    SRound = case proplists:get_value(rounds,Settings) of
+      SRound = case proplists:get_value(rounds,Settings) of
         undefined -> "no";
         I -> integer_to_list(I)
-    end,
-    Desc = lists:flatten( URL ++ "|" ++ UId ++ "|" ++ proplists:get_value(table_name,Settings) ++ "|" ++ GameName ++ "|" ++
+      end,
+      Desc = lists:flatten( URL ++ "|" ++ UId ++ "|" ++ proplists:get_value(table_name,Settings) ++ "|" ++ GameName ++ "|" ++
         SRound ++ "|" ++ atom_to_list(proplists:get_value(speed,Settings)) ++ "|" ++
         atom_to_list(proplists:get_value(game_mode,Settings))),
-    webutils:post_user_system_message(Desc);
+      webutils:post_user_system_message(Desc)
+  end;
 
 u_event({info, {Target, TId}}) ->
     {ok, TableSettings} = case Target of
@@ -1021,11 +1019,14 @@ u_event({delete_table, TId, ProcId}) ->
 u_event(clear_selection) ->
     GameName = case wf:q(game_name) of undefined -> "okey"; X -> X end,
 
-    OldSettings = wf:session({GameName, wf:user()}),
+    case wf:session({GameName, wf:user()}) of
+      undefined -> ok;
+      OldSettings -> 
     [
         u_event({tag, lists:nth(N, OldSettings)})
         || N <- lists:seq(3, length(OldSettings))
-    ];
+    ]
+    end;
 
 u_event(show_game_rules) ->
     GameName = case wf:q(game_name) of undefined -> "okey"; X -> X end,
@@ -1067,34 +1068,37 @@ u_event(hide_rules) -> wf:update(rules_container, []);
 u_event(Other) -> webutils:event(Other).
 
 process_setting({Key, Value} = Setting) ->
+  case wf:user() of 
+    undefined -> ok;
+    User ->
+      GameName = case wf:q(game_name) of undefined -> "okey"; X -> X end,
 
-    GameName = case wf:q(game_name) of undefined -> "okey"; X -> X end,
+      OldSettings = wf:session({GameName, User}),
 
-    OldSettings = wf:session({GameName, wf:user()}),
-
-    OldValues = case proplists:get_value(Key, OldSettings) of
+      OldValues = case proplists:get_value(Key, OldSettings) of
                      undefined -> [];
                      {multiple, ValueList} -> ValueList;
                      OldValue -> [OldValue] end,
 
-    NewValues = case lists:member(Value, OldValues) of
+      NewValues = case lists:member(Value, OldValues) of
                      false -> ui_button_select(Setting),
                               case can_be_multiple(Key) of
                                    true -> [Value | OldValues];
                                    false -> [ ui_button_deselect({Key, V}) || V <- OldValues ], [Value] end;
                      true -> ui_button_deselect(Setting), lists:delete(Value, OldValues) end,
 
-    NewSettings = case NewValues of
+      NewSettings = case NewValues of
                        [] -> proplists:delete(Key, OldSettings);
                        List -> NewValue = case List of
                                                [Elem] -> Elem;
                                                _ -> {multiple, List} end,
                                lists:keystore(Key, 1, OldSettings, {Key, NewValue}) end,
 
-    wf:session({GameName, wf:user()}, NewSettings),
-    check_required(NewSettings),
-    ?INFO("Settings: ~p",[NewSettings]),
-    ok.
+      wf:session({GameName, User}, NewSettings),
+      check_required(NewSettings),
+      ?INFO("Settings: ~p",[NewSettings]),
+      ok
+  end.
 
 game_mode_to_text(Type) when is_atom(Type) -> game_mode_to_text(atom_to_list(Type));
 game_mode_to_text(Type) ->
@@ -1159,25 +1163,23 @@ guiders_script() ->
     wf:wire(Guiders).
 
 add_game_settings_guiders() ->
-    StdButtons = [{s_T("<< Back"), prev}, {s_T("Continue"), next}],
-    FinButtons = [{s_T("<< Back"), prev}, {s_T("Ok"), hide}],
-    case webutils:guiders_ok("matchmaker_tab_1_guiders_shown") of
-        false ->
-            "";
-        true ->
-            [   
-                "<script>guiders.hideAll();",
-                make_guider(show, s_T("Criteria"), s_T("Criteria description"), [{s_T("Continue"),next}], guider_110, guider_150, false, true, guiderscriteria, 12),
-                make_guider(hide, s_T("Detailed game speed"), s_T("Detailed game speed description"), StdButtons, guider_150, guider_160, false, true, guiderstab1gamespeed, 11),
-                make_guider(hide, s_T("Detailed game type"), s_T("Detailed game type description"), StdButtons, guider_160, guider_170, false, true, guiderstab1gametype, 11),
-                make_guider(hide, s_T("Detailed paired"), s_T("Detailed paired description"), StdButtons, guider_170, guider_180, false, true, guiderstab1paired, 12),
-                make_guider(hide, s_T("Detailed rounds"), s_T("Detailed rounds description"), StdButtons, guider_180, guider_185, false, true, guiderstab1rounds, 11),
-                make_guider(hide, s_T("Double quota"), s_T("Double quota description"), StdButtons, guider_185, guider_190, false, true, guiderstab1double, 11),
-                make_guider(hide, s_T("Additional options"), s_T("Additional options description"), StdButtons, guider_190, guider_195, false, true, guiderstab1additional, 11),
-                make_guider(hide, s_T("Hide"), s_T("Hide button description"), FinButtons, guider_195, guider_199, false, true, guiderstab1hide, 1),
-                "</script>"
-            ]
-    end.
+  StdButtons = [{s_T("<< Back"), prev}, {s_T("Continue"), next}],
+  FinButtons = [{s_T("<< Back"), prev}, {s_T("Ok"), hide}],
+  case webutils:guiders_ok("matchmaker_tab_1_guiders_shown") of
+    false -> "";
+    true -> [
+      "<script>guiders.hideAll();",
+      make_guider(show, s_T("Criteria"), s_T("Criteria description"), [{s_T("Continue"),next}], guider_110, guider_150, false, true, guiderscriteria, 12),
+      make_guider(hide, s_T("Detailed game speed"), s_T("Detailed game speed description"), StdButtons, guider_150, guider_160, false, true, guiderstab1gamespeed, 11),
+      make_guider(hide, s_T("Detailed game type"), s_T("Detailed game type description"), StdButtons, guider_160, guider_170, false, true, guiderstab1gametype, 11),
+      make_guider(hide, s_T("Detailed paired"), s_T("Detailed paired description"), StdButtons, guider_170, guider_180, false, true, guiderstab1paired, 12),
+      make_guider(hide, s_T("Detailed rounds"), s_T("Detailed rounds description"), StdButtons, guider_180, guider_185, false, true, guiderstab1rounds, 11),
+      make_guider(hide, s_T("Double quota"), s_T("Double quota description"), StdButtons, guider_185, guider_190, false, true, guiderstab1double, 11),
+      make_guider(hide, s_T("Additional options"), s_T("Additional options description"), StdButtons, guider_190, guider_195, false, true, guiderstab1additional, 11),
+      make_guider(hide, s_T("Hide"), s_T("Hide button description"), FinButtons, guider_195, guider_199, false, true, guiderstab1hide, 1),
+      "</script>"
+    ]
+  end.
 
 
 

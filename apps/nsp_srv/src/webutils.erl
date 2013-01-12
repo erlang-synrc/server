@@ -1237,24 +1237,25 @@ post_user_system_message(Description) ->    % this should be rewised completely
     ID.
 
 guiders_ok(Cookie) ->
-%    true.
   case wf:cookie("replayguiders") of
     "yes" -> true;
-    _ -> 
-      {_, NowSecs, _} = erlang:now(),
-      UserSecsOrUndefined = (webutils:user_info())#user.register_date,
-      case UserSecsOrUndefined of
-        {_, Number ,_} -> UserSecs = Number;
-        _ -> UserSecs = NowSecs
-      end,
-      case NowSecs-UserSecs<86400 of % first 24 hours only (for these, who disable or loose cookies)
-        false -> false;
-        true -> 
-          case wf:cookie(Cookie ++ wf:user()) of
-            "yes" -> false;
-            _ ->
-              wf:cookie(Cookie ++ wf:user(), "yes", "/", 24*60),
-              true
+    _ ->
+      case wf:user() of 
+        undefined -> false;
+        User ->
+          {_, NowSecs, _} = erlang:now(),
+          UserSecsOrUndefined = (webutils:user_info())#user.register_date,
+          UserSecs = case UserSecsOrUndefined of
+            {_, Number ,_} -> Number;
+            _ -> NowSecs
+          end,
+          case NowSecs-UserSecs<86400 of % first 24 hours only (for those, who disable or lost cookies)
+            false -> false;
+            true ->
+              case wf:cookie(Cookie ++ User) of
+                "yes" -> false;
+                _ -> wf:cookie(Cookie ++ User, "yes", "/", 24*60), true
+              end
           end
       end
   end.
