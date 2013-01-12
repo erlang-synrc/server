@@ -1,7 +1,7 @@
 #!/bin/bash
 
 host=`hostname -s`
-static="url("
+static="url(\/"
 
 if [ ${host}  == "srv1" ]
 then
@@ -23,7 +23,7 @@ declare -A replacements=(
 [")}"]=");}"
 ["hidden}"]="hidden;}"
 )
-replacements+=(["url(/"]="${static}")
+replacements+=(["url(\/"]="${static}")
 
 
 conditions=$(for key in "${!replacements[@]}"; do echo -n "s/${key}/${replacements[${key}]}/g;"; done)
