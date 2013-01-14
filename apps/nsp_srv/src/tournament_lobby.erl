@@ -20,12 +20,6 @@
 -define(JOINEDPERPAGE, 32). 
 
 main() ->
-    case wf:user() /= undefined of
-        true  -> main_authorized();
-        false -> wf:redirect_to_login(?_U("/login"))
-    end.
-
-main_authorized() ->
     wf:session(this_must_be_unique_joined_page, 1),
     TID = wf:q(id),
     wf:state(tournament_id, TID),
