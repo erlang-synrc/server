@@ -520,140 +520,122 @@ list_users_links(Users, Owner) ->
     ling:join(Usrs,",").
 
 show_table(Tables) ->
-    GameName = case wf:q(game_name) of undefined -> "okey"; Xx -> Xx end,
+  GameName = case wf:q(game_name) of undefined -> "okey"; Xx -> Xx end,
 
-    wf:update(play_button_panel, el_inside_play()),
-    case Tables of
-        [] ->
-            #panel{style="text-align: center", body=#h4{text=?_T("You can create a game or join a game")} };
-        _ ->
-            #table{class="view_table_table article-table", style="width:100%", rows=[
-                begin
-                    {info, {_, TId}} = InfoPostback,
-                    Zone = TId div 1000000,
-                    WebSrv = "public@srv" ++ integer_to_list(Zone) ++ ".kakaranet.com",
-                    NodeAtom = case Zone of
-                                    4 -> nsx_opt:get_env(nsm_db,web_srv_node,'web@doxtop.cc');
-                                    _ -> list_to_atom(WebSrv)
-                               end,
-                    %{ok, WholeTable}
-                     Res = rpc:call(NodeAtom,view_table,get_table,[TId,wf:state(table)]),
+  wf:update(play_button_panel, el_inside_play()),
+  case Tables of
+    [] ->
+      #panel{style="text-align: center", body=#h4{text=?_T("You can create a game or join a game")} };
+    _ ->
+      #table{class="view_table_table article-table", style="width:100%", rows=[
+        begin
+          {info, {_, TId}} = InfoPostback,
+          Zone = TId div 1000000,
+          WebSrv = "public@srv" ++ integer_to_list(Zone) ++ ".kakaranet.com",
+          NodeAtom = case Zone of
+            4 -> nsx_opt:get_env(nsm_db,web_srv_node,'web@doxtop.cc');
+            _ -> list_to_atom(WebSrv)
+          end,
+          %{ok, WholeTable}
+          Res = rpc:call(NodeAtom,view_table,get_table,[TId,wf:state(table)]),
 
-                    case Res of
-                          {ok,WholeTable} ->
-
-                    MaxUsers = case GameName of 
-                        "tavla" -> case WholeTable#game_table.tournament_type of
-                            paired -> 10;
-                            paired_lobby -> 10;
-                            _ -> 2
-                        end;
-                        "okey" -> 4 
-                    end,
-                    RealUsers = case GameName of 
-                        "tavla" -> case WholeTable#game_table.tournament_type of
-                            paired -> WholeTable#game_table.users;
-                            _ -> Users
-                        end;
-                        "okey" -> Users
-                    end,
-                    GameType = WholeTable#game_table.game_type,
-                    FreeSeatsNum = if GameType == game_okey,
-                                      GameState == started,
-                                      RobotsReplacementAllowed ->
-                                          MaxUsers - length([U || U <- RealUsers, U=/=robot]);
-                                      true -> MaxUsers - length(RealUsers)
-                                   end,
-                    TMode = matchmaker:game_mode_to_text(WholeTable#game_table.game_mode) 
-                             ++ " {"++atom_to_list(WholeTable#game_table.tournament_type)++"} " 
-                             ++ integer_to_list(TId),
-                    TSpeed = matchmaker:game_speed_to_text(WholeTable#game_table.game_speed),
-                    TRoundsOrNot = case WholeTable#game_table.rounds of
-                        undefined -> "";
-                        1 -> "";
-                        M -> ", "++integer_to_list(M) ++ " " ++ ?_T("rounds")
-                    end,
-                    TDoubleOrNot = case WholeTable#game_table.double_points of
-                        1 -> "";
-                        N -> ", x"++integer_to_list(N)
-                    end,
-                    RowId = wf:temp_id(),
-                    RemoveActions = #event{type=click, actions=#hide{target=RowId}},
-                    Info = case InfoPostback of
-                        {info, _} ->
-                            #link{id=showInfo,
-                                postback=InfoPostback,
-                                text=?_T("Info")
-                            };
-                        _ -> []
-                    end,
-                    JoinOrCrate = case Action of
-                        {join, Act} ->
-                            IsMember = case wf:user() of
-                              undefined -> false;
-                              User -> lists:member(list_to_binary(User), Users)
-                            end,
+          case Res of
+            {ok,WholeTable} ->
+              MaxUsers = case GameName of 
+                "tavla" ->
+                  case WholeTable#game_table.tournament_type of
+                    paired -> 10;
+                    paired_lobby -> 10;
+                    _ -> 2
+                  end;
+                "okey" -> 4 
+              end,
+              RealUsers = case GameName of
+                "tavla" ->
+                  case WholeTable#game_table.tournament_type of
+                    paired -> WholeTable#game_table.users;
+                    _ -> Users
+                  end;
+                "okey" -> Users
+              end,
+              GameType = WholeTable#game_table.game_type,
+              FreeSeatsNum = if GameType == game_okey,
+                                GameState == started,
+                                RobotsReplacementAllowed -> MaxUsers - length([U || U <- RealUsers, U=/=robot]);
+                              true -> MaxUsers - length(RealUsers)
+              end,
+              TMode = matchmaker:game_mode_to_text(WholeTable#game_table.game_mode) 
+                ++ " {"++atom_to_list(WholeTable#game_table.tournament_type)++"} " 
+                ++ integer_to_list(TId),
+              TSpeed = matchmaker:game_speed_to_text(WholeTable#game_table.game_speed),
+              TRoundsOrNot = case WholeTable#game_table.rounds of
+                undefined -> "";
+                1 -> "";
+                M -> ", "++integer_to_list(M) ++ " " ++ ?_T("rounds")
+              end,
+              TDoubleOrNot = case WholeTable#game_table.double_points of
+                1 -> "";
+                N -> ", x"++integer_to_list(N)
+              end,
+              RowId = wf:temp_id(),
+              RemoveActions = #event{type=click, actions=#hide{target=RowId}},
+              Info = case InfoPostback of
+                {info, _} -> #link{id=showInfo, postback=InfoPostback, text=?_T("Info")};
+                _ -> []
+              end,
+              JoinOrCrate = case Action of
+                {join, Act} ->
+                  IsMember = case wf:user() of
+                    undefined -> false;
+                    User -> lists:member(list_to_binary(User), Users)
+                  end,
 %%                            ?INFO("User: ~p, GameState: ~p, IsMember: ~p, Real users num: ~p, MaxUsers: ~p",
 %%                                  [wf:user(), GameState, IsMember, length(RealUsers), MaxUsers]),
-                            if GameState == started andalso IsMember;
-                               FreeSeatsNum > 0 ->
-                                   #link{id=joinTable,
-                                         actions=Act,
-                                         text=?_T("Join"),
-                                         class="join-button"
-                                        };
-                               true -> ""
-                            end;
-                        {create, Act} ->
-                            #link{id=joinTable,
-                                actions=Act,
-                                text=?_T("Create")
-                            };
-                        _ -> []
-                    end,
-                    DeleteTable = #link{id=deleteTable,
-                        postback=DeleteAction,
-                        show_if=UserOwner,
-                        actions=RemoveActions,
-                        text=?_T("Remove")
-                    },
+                  if GameState == started andalso IsMember;
+                     FreeSeatsNum > 0 ->
+                     #link{id=joinTable, actions=Act, show_if=wf:user()=/=undefined, text=?_T("Join"), class="join-button"};
+                    true -> ""
+                  end;
+                {create, Act} ->
+                  #link{id=joinTable, actions=Act, text=?_T("Create")};
+                _ -> []
+              end,
+              DeleteTable = #link{id=deleteTable,
+                postback=DeleteAction,
+                show_if=UserOwner andalso wf:user()=/=undefined,
+                actions=RemoveActions,
+                text=?_T("Remove")
+              },
 
-                    Buttons = #list{style="float:right;", body=[
-                        #listitem{body=X} || X <-
-                            lists:duplicate(FreeSeatsNum, #image{image="/images/free.png"}) ++
-                            [Info, JoinOrCrate, DeleteTable]
-                    ]},
+              Buttons = #list{style="float:right;", body=[
+                #listitem{body=X} || X <-
+                  lists:duplicate(FreeSeatsNum, #image{image="/images/free.png"}) ++ [Info, JoinOrCrate, DeleteTable]
+              ]},
 
 
-                    #tablerow{id=RowId, cells=[
-                        #tablecell{ class=cell1,
-                            body=[
-                                TMode ++ ", " ++ TSpeed ++ TRoundsOrNot ++ TDoubleOrNot ++ 
-                                "<br>" ++ ?_T("Players:") ++ " " ++ list_users_links(RealUsers, OwnerLabel) ++ " "
-                            ],
-                            id=tableNameLabel
-                        },
-                        #tablecell{ class=cell3,
-                            body = [
-                                "<nobr>", Buttons, "</nobr>"
-                            ]
-                        }
-                    ]};
+              #tablerow{id=RowId, cells=[
+                #tablecell{ class=cell1, body=[
+                    TMode ++ ", " ++ TSpeed ++ TRoundsOrNot ++ TDoubleOrNot ++ 
+                    "<br>" ++ ?_T("Players:") ++ " " ++ list_users_links(RealUsers, OwnerLabel) ++ " "
+                  ],
+                  id=tableNameLabel},
+                #tablecell{ class=cell3, body = ["<nobr>", Buttons, "</nobr>"]}
+              ]};
 
-                      X ->% ?INFO("Matchmaker #game_table rpc:call failed: ~p",[X]), 
-                           "" 
-                     end
-                end
-                || [_TableNameLabel,
-                    OwnerLabel,
-                    InfoPostback,
-                    Action,
-                    UserOwner,
-                    Users,
-                    DeleteAction,
-                    GameState,
-                    RobotsReplacementAllowed] <- Tables
-            ]}
+              X ->% ?INFO("Matchmaker #game_table rpc:call failed: ~p",[X]),
+                ""
+          end
+        end
+        || [_TableNameLabel,
+            OwnerLabel,
+            InfoPostback,
+            Action,
+            UserOwner,
+            Users,
+            DeleteAction,
+            GameState,
+            RobotsReplacementAllowed] <- Tables
+      ]}
     end.
 
 check_required(Setting) ->
@@ -691,6 +673,9 @@ check_depended(_) -> ok.
 
 settings_box() -> settings_box(create).
 settings_box(_Tag) ->
+  case wf:user() of
+    undefined -> [];
+    _User ->
     ThisClass = case wf:state(buttons) of
         green -> "slide-up_green";
         _ -> "slide-up"
@@ -707,7 +692,8 @@ settings_box(_Tag) ->
         green -> #link{class=ThisClass, postback={show,join_game}, text=?_T("Hide"), actions=ac_hide_main_container()};
         _ -> ""
      end
-    ].
+    ]
+  end.
 
 tab_game_setting()->
   #panel{body=[
