@@ -5484,3 +5484,6 @@ msgstr "ÜYE OL!"
 #
 msgid "More Info"
 msgstr "Detaylı Bilgi"
+#
+msgid "Set your game criteria and face your opponent"
+msgstr "Kriterlerinizi belirleyin rakibinizi siz seçin"
