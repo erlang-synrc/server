@@ -157,21 +157,23 @@ account_menu() ->
   #panel{class="top", body= #panel{class="ar", body=[#panel{class="box", body=Element}]}}.
 
 menu_links() ->
-	["<nav>",
-	 #list{body=[
-		#listitem{body=#link{text=?_T("Home"), url=?_U("/"), id="mainmenumainpage"}},
-		#listitem{body=#link{text=?_T("My Page"), url=?_U("/dashboard"),
-                                     title=?_T("You can share information with others"), id="mainmenumypage"}},
-		#listitem{body=#link{text=?_T("Rules"), url=?_U("/rules-okey"),
-                                     title=?_T("Read the rules of our games"), id="mainmenurules"}},
-		#listitem{body=#link{text=?_T("Gifts"), url=?_U("/gifts"),
-                                     title=?_T("You can see all the prizes here"), id="mainmenugifts"}},
-		#listitem{body=#link{text=?_T("Tournaments"), url=?_U("/tournaments"),
-                                     title=?_T("You can join tournaments and show them all"), id="mainmenutournaments"}},
-		#listitem{body=#link{text=?_T("Groups"), url=?_U("/groups"),
-                                     title=?_T("You can manage your groups settings here"), id="mainmenugroups"}}
-	 ]},
-	 "</nav>"
+  ["<nav>",
+  #list{body=[
+    #listitem{body=#link{text=?_T("Home"), url=?_U("/"), id="mainmenumainpage"}},
+    %#listitem{body=#link{text=?_T("My Page"), url=?_U("/dashboard"),
+    %  title=?_T("You can share information with others"), id="mainmenumypage"}},
+    #listitem{body=#link{text=?_T("Matchmaker"), url=?_U("/matchmaker"),
+      title=?_T("Set your game criteria and face your opponent"), id="mainmenumatchmaker"}},
+    #listitem{body=#link{text=?_T("Rules"), url=?_U("/rules-okey"),
+      title=?_T("Read the rules of our games"), id="mainmenurules"}},
+    %#listitem{body=#link{text=?_T("Gifts"), url=?_U("/gifts"),
+    %  title=?_T("You can see all the prizes here"), id="mainmenugifts"}},
+    #listitem{body=#link{text=?_T("Tournaments"), url=?_U("/tournaments"),
+      title=?_T("You can join tournaments and show them all"), id="mainmenutournaments"}}
+    %#listitem{body=#link{text=?_T("Groups"), url=?_U("/groups"),
+    %  title=?_T("You can manage your groups settings here"), id="mainmenugroups"}}
+  ]},
+  "</nav>"
 %      "<script>
 %      (function(){
 %          var C = {text:false};

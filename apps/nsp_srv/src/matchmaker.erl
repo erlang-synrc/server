@@ -23,12 +23,6 @@ title() -> ?_T("Matchmaker").
 main() ->
   wf:state(buttons, green),
 
-  case wf:q(game_name) of
-    "okey" -> ok;
-    "tavla" -> ok;
-    _ -> wf:redirect(?_U("/dashboard"))
-  end,
-
   case wf:user() of
     undefined -> [];
     User ->
@@ -57,7 +51,7 @@ main() ->
 
 body() ->
   wf:state(buttons, green),
-  ?INFO("Matchmaker User: ~p game: ~p",[wf:user(),?_U(wf:q(game_name))]),
+  %?INFO("Matchmaker User: ~p game: ~p",[wf:user(),?_U(wf:q(game_name))]),
   GameName = case wf:q(game_name) of 
     undefined -> "okey";
     Name -> Name 
