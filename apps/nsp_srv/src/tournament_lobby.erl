@@ -57,8 +57,7 @@ node_by_id(Id, Type) ->
     end.
 
 body() ->
-
-      TimeStampMeasure1 = now(),
+  TimeStampMeasure1 = now(),
 
   T = wf:state(tournament),
   case T#tournament.id of
@@ -272,18 +271,18 @@ body() ->
 
 
         %chat
-        #panel{class="tourlobby_chat", body=[
-                #panel{class="tourlobby_chat_panel", body=[
-                        #label{class="tourlobby_chat_title", body=?_T("CHAT")}
-                    ]
-                },
+        #panel{class="tourlobby_chat", body=
+          case CurrentUser of
+            undefined -> [];
+            _ ->
+              [
+                #panel{class="tourlobby_chat_panel", body=#label{class="tourlobby_chat_title", body=?_T("CHAT")}},
                 %chat window
-                #panel{id=chat_history, class="tourlobby_chat_window", body=[
-                    ]
-                },
+                #panel{id=chat_history, class="tourlobby_chat_window", body=[]},
                 #textbox{id=message_text_box, class="tourlobby_chat_textarea", postback=chat},
                 #link{id=chat_send_button, class="tourlobby_chat_button", text=?_T("Post"), postback=chat}
-            ]
+              ]
+          end
 
         },
 
@@ -292,7 +291,6 @@ body() ->
             user_table(JoinedUsers,CurrentUser,UserJoined) %TourUserList)
         ]},
         "</section>"]
-   
   end.
 
 user_table(Users,CurrentUser,CurrentJoined) ->
@@ -417,7 +415,10 @@ active_users_raw(TID,PID) ->
            Check(TourId, TID)])),
     Tables = qlc:next_answers(Cursor).
 
-start_comet(TourUsers,TID,User,MeJoined) ->
+start_comet(TourUsers,TID,CurrentUser,MeJoined) ->
+  case CurrentUser of
+    undefined -> ok;
+    User ->
     PagePid = self(),
     MyColor = case MeJoined of false -> yellow; _ -> green end,
     {ok, CometPid} = wf:comet(fun()-> 
@@ -431,7 +432,8 @@ start_comet(TourUsers,TID,User,MeJoined) ->
         Pid ! {make_active, MyColor, User, noreply},
         CometPid ! {make_active, Color, Joined, noreply}
     end || {Pid,_,TID,Joined,Color} <- ActiveUsers, Joined =/= User],
-    wf:state(comet_pid, CometPid).
+    wf:state(comet_pid, CometPid)
+  end.
 
 make_active(User, Color, TournamentId,PageProc,TourUsers0,Joined) ->
     Z = lists:keyfind(Joined,#play_record.who,TourUsers0),
