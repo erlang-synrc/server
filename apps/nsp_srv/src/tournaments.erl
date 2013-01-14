@@ -23,35 +23,9 @@ game_type_image(T,Prefix) ->
    end.
 
 main() ->
-    case wf:user() /= undefined of
-        true  -> main_authorized();
-        false -> wf:redirect_to_login(?_U("/login"))
-    end.
-
-main_authorized() ->
-  webutils:add_to_head({raw,              % this goes to styles.css. Still here for convenience of editing
-  "<link rel='stylesheet' href='/nitrogen/datepicker/css/datepicker.css' type='text/css' />
-  <script type='text/javascript' src='/nitrogen/datepicker/js/datepicker_tr.js'></script>
-  <script>"++
-%  "/* .wfid_tour_date1 for new picker */
-%    window.onload = function(){
-%      $('.wfid_tour_date').DatePicker({
-%        format:'d.m.Y',
-%        date: $('.wfid_tour_date').val(),
-%        current: $('.wfid_tour_date').val(),
-%        starts: 1,
-%        position: 'bottom',
-%        onBeforeShow: function(){
-%          $('.wfid_tour_date').DatePickerSetDate($('.wfid_tour_date').val(), true);
-%        },
-%        onChange: function(formated, dates){
-%          $('.wfid_tour_date').val(forated);
-%          $('.wfid_tour_date').DatePickerHide();
-%          $('.wfid_tour_date_check').prop('checked', true);
-%        }
-%      });
-%    };"++
-  "new Image('/images/tournament/tournaments_page/bar_1_pressed.png');
+  webutils:add_to_head({raw,
+  "<script>
+   new Image('/images/tournament/tournaments_page/bar_1_pressed.png');
    new Image('/images/tournament/tournaments_page/bar_1_hover.png');
    new Image('/images/tournament/tournaments_page/btn_blue_1_pressed.png');
    new Image('/images/tournament/tournaments_page/btn_blue_1_hover.png');
@@ -68,8 +42,7 @@ main_authorized() ->
    new Image('/images/tournament/tournaments_page/btn_gray_pressed.png');
    new Image('/images/tournament/tournaments_page/btn_gray_hover.png');
   </script>"}),
-
-    #template { file=code:priv_dir(nsp_srv)++"/templates/bare.html" }.
+  #template { file=code:priv_dir(nsp_srv)++"/templates/bare.html" }.
 
 title() -> webutils:title(?MODULE).
 
