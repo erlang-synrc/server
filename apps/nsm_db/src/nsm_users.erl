@@ -192,6 +192,7 @@ unsubscr_user(Who, Whom) ->
             do_nothing
     end.
 
+list_subscr(undefined)-> [];
 list_subscr(#user{username = UId}) ->
     list_subscr(UId);
 list_subscr(UId) when is_list(UId) ->
