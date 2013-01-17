@@ -907,7 +907,7 @@ u_event({show,create_game}) ->
   case wf:user() of
     undefined ->
       wf:state(buttons, green),
-      wf:update(matchmaker_main_container, matchmaker_show_tables())
+      wf:update(matchmaker_main_container, matchmaker_show_tables());
     _User ->
       wf:state(buttons, yellow),
       wf:update(matchmaker_main_container, matchmaker_show_create(create)),
