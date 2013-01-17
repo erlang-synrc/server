@@ -22,56 +22,56 @@ title() -> ?_T("Matchmaker").
 
 main() ->
   wf:state(buttons, green),
+  webutils:add_script("/nitrogen/jquery.paginatetable.js"),
 
   case wf:user() of
     undefined -> [];
-    User ->
-      webutils:add_script("/nitrogen/jquery.paginatetable.js"),
+    _User ->
       webutils:add_raw("<link href='/nitrogen/guiders-js/guiders-1.2.8.css' rel='stylesheet'>
         <script src='/nitrogen/guiders-js/guiders-1.2.8.js'></script>"),
       case webutils:guiders_ok("matchmaker_guiders_shown") of
         true -> guiders_script();
         false -> []
       end,
-      add_game_settings_guiders(),
-      SavedSettings = case wf:session({wf:q(game_name), wf:user()}) of
-        undefined ->
-          case wf:q(game_name) of
-            "tavla" -> [{game, game_tavla}];
-            "okey" -> [{game, game_okey}];
-            _ -> [{game, game_okey}]
-          end ++ [{table_name, table_name(default)}];
-        Settings -> Settings
-      end,
-      wf:session({wf:q(game_name), wf:user()}, SavedSettings),
-      wf:state(user_paid, nsm_accounts:user_paid(User))
+      add_game_settings_guiders()
   end,
-  #template { file=code:priv_dir(nsp_srv)++"/templates/bare.html" }.
+  SavedSettings = case wf:session({wf:q(game_name), wf:user()}) of
+    undefined ->
+      case wf:q(game_name) of
+        "tavla" -> [{game, game_tavla}];
+        "okey" -> [{game, game_okey}];
+        _ -> [{game, game_okey}]
+      end ++ [{table_name, table_name(default)}];
+    Settings -> Settings
+  end,
+  wf:session({wf:q(game_name), wf:user()}, SavedSettings),
+  wf:state(user_paid, nsm_accounts:user_paid(wf:user())),
+
+  #template { file=code:priv_dir(nsp_srv)++"/templates/matchmaker.html" }.
 
 
 body() ->
   wf:state(buttons, green),
-  %?INFO("Matchmaker User: ~p game: ~p",[wf:user(),?_U(wf:q(game_name))]),
   GameName = case wf:q(game_name) of 
     undefined -> "okey";
     Name -> Name 
   end,
   case wf:user() of
     undefined -> [];
-    User ->
+    _User ->
       X = rpc:call(?GAMESRVR_NODE,game_manager,get_lucky_table,[list_to_atom("game_"++GameName)]),
       wf:state(lucky,X),
 
-      ui_update_buttons(),
       UId = webutils:user_info(username),
       wf:state(user_in_groups, nsm_groups:list_groups_per_user(UId)),
-      wf:state(users_subscribe, nsm_users:list_subscr(UId)),
-      ui_paginate(),
-
-      PagePid = self(),
-      wf:comet(fun() -> PagePid ! {comet_started,self()}, comet_update() end),
-      receive {comet_started,Pid} -> wf:state(comet_pid,Pid) end
+      wf:state(users_subscribe, nsm_users:list_subscr(UId))
   end,
+
+  ui_update_buttons(),
+  ui_paginate(),
+  PagePid = self(),
+  wf:comet(fun() -> PagePid ! {comet_started,self()}, comet_update() end),
+  receive {comet_started,Pid} -> wf:state(comet_pid,Pid) end,
 
   [
     "<div class=\"list-top-photo-h\" style=\"margin-bottom: -30px;\">",
@@ -858,25 +858,24 @@ is_checkbox(Key) ->
     end.
 
 is_option_present(Key, Value) ->
-    GameName = case wf:q(game_name) of undefined -> "okey"; X -> X end,
+  GameName = case wf:q(game_name) of undefined -> "okey"; X -> X end,
 
-    Settings = wf:session({GameName, wf:user()}),
-    proplists:is_defined(Key, Settings) andalso Value == proplists:get_value(Key, Settings).
+  case wf:session({GameName, wf:user()}) of
+    undefined -> false;
+    Settings -> proplists:is_defined(Key, Settings) andalso Value == proplists:get_value(Key, Settings)
+  end.
 
 comet_update() -> comet_update(empty).
 comet_update(State) ->
-  case wf:user() of
-       undefined -> wf:redirect_to_login(?_U("/login"));
-       _UId -> timer:sleep(?TABLE_UPDATE_QUANTUM),
+  timer:sleep(?TABLE_UPDATE_QUANTUM),
 %            X = rpc:call(?GAMESRVR_NODE,game_manager,get_lucky_table,[list_to_atom("game_"++?_U(wf:q(game_name)))]),
 %            wf:state(lucky,X),
-            garbage_collect(self()),
-            Tables = get_tables(),
-            wf:update(tables, show_table(Tables)),
-            ui_paginate(),
-            wf:flush(),
-            comet_update(State)
- end.
+  garbage_collect(self()),
+  Tables = get_tables(),
+  wf:update(tables, show_table(Tables)),
+  ui_paginate(),
+  wf:flush(),
+  comet_update(State).
 
 %comet_update() ->
 %    wf:state(comet_pid,self()),
@@ -895,25 +894,28 @@ can_be_multiple(_Key)  -> false.
 api_event(Name, Tag, Args) -> webutils:api_event(Name, Tag, Args).
 
 event(Event) ->
-    case wf:user() of
-    undefined -> u_event(Event);%wf:redirect_to_login(?_U("/login"));
-    _User -> u_event(Event),
-             X = wf:state(comet_pid),
-             X ! ping_comet_to_refresh_table
-    end.
+  u_event(Event),
+  X = wf:state(comet_pid),
+  X ! ping_comet_to_refresh_table.
 
 ac_hide_main_container() -> #event{type=click, actions="objs('matchmaker_main_container').hide();"}.
 ac_show_main_container() -> wf:wire("objs('matchmaker_main_container').show();"),
                             wf:wire("objs('matchmaker_slide_area').show();").
 
 u_event({show,create_game}) ->
-    u_event(clear_selection),
-    wf:state(buttons, yellow),
-    wf:update(matchmaker_main_container, matchmaker_show_create(create)),
-    wf:update(matchmaker_slide_area, settings_box()),
-    wf:wire("objs('tabs').tabs()"),
-    ac_show_main_container(),
-    ui_update_buttons();
+  u_event(clear_selection),
+  case wf:user() of
+    undefined ->
+      wf:state(buttons, green),
+      wf:update(matchmaker_main_container, matchmaker_show_tables())
+    _User ->
+      wf:state(buttons, yellow),
+      wf:update(matchmaker_main_container, matchmaker_show_create(create)),
+      wf:update(matchmaker_slide_area, settings_box()),
+      wf:wire("objs('tabs').tabs()")
+  end,
+  ac_show_main_container(),
+  ui_update_buttons();
 
 u_event({show,join_game}) ->
     u_event(clear_selection),
@@ -921,7 +923,7 @@ u_event({show,join_game}) ->
     wf:update(matchmaker_main_container, matchmaker_show_tables()),
     wf:update(matchmaker_slide_area, ""),
     ac_show_main_container(),
-    ui_update_buttons(); 
+    ui_update_buttons();
 
 u_event({show,join_game_detailed}) ->
     wf:update(matchmaker_main_container, matchmaker_show_create(none)),
@@ -1048,37 +1050,40 @@ u_event(hide_rules) -> wf:update(rules_container, []);
 u_event(Other) -> webutils:event(Other).
 
 process_setting({Key, Value} = Setting) ->
-  case wf:user() of 
-    undefined -> ok;
-    User ->
-      GameName = case wf:q(game_name) of undefined -> "okey"; X -> X end,
+  User = wf:user(),
+  GameName = case wf:q(game_name) of undefined -> "okey"; X -> X end,
 
-      OldSettings = wf:session({GameName, User}),
+  OldSettings = wf:session({GameName, User}),
 
-      OldValues = case proplists:get_value(Key, OldSettings) of
-                     undefined -> [];
-                     {multiple, ValueList} -> ValueList;
-                     OldValue -> [OldValue] end,
+  OldValues = case proplists:get_value(Key, OldSettings) of
+    undefined -> [];
+    {multiple, ValueList} -> ValueList;
+    OldValue -> [OldValue]
+  end,
 
-      NewValues = case lists:member(Value, OldValues) of
-                     false -> ui_button_select(Setting),
-                              case can_be_multiple(Key) of
-                                   true -> [Value | OldValues];
-                                   false -> [ ui_button_deselect({Key, V}) || V <- OldValues ], [Value] end;
-                     true -> ui_button_deselect(Setting), lists:delete(Value, OldValues) end,
+  NewValues = case lists:member(Value, OldValues) of
+    false ->
+      ui_button_select(Setting),
+      case can_be_multiple(Key) of
+        true -> [Value | OldValues];
+        false -> [ ui_button_deselect({Key, V}) || V <- OldValues ], [Value]
+      end;
+    true -> ui_button_deselect(Setting), lists:delete(Value, OldValues)
+  end,
 
-      NewSettings = case NewValues of
-                       [] -> proplists:delete(Key, OldSettings);
-                       List -> NewValue = case List of
-                                               [Elem] -> Elem;
-                                               _ -> {multiple, List} end,
-                               lists:keystore(Key, 1, OldSettings, {Key, NewValue}) end,
+  NewSettings = case NewValues of
+    [] -> proplists:delete(Key, OldSettings);
+    List ->
+      NewValue = case List of
+        [Elem] -> Elem;
+        _ -> {multiple, List}
+      end,
+      lists:keystore(Key, 1, OldSettings, {Key, NewValue})
+  end,
 
-      wf:session({GameName, User}, NewSettings),
-      check_required(NewSettings),
-      ?INFO("Settings: ~p",[NewSettings]),
-      ok
-  end.
+  wf:session({GameName, User}, NewSettings),
+  check_required(NewSettings),
+  ok.
 
 game_mode_to_text(Type) when is_atom(Type) -> game_mode_to_text(atom_to_list(Type));
 game_mode_to_text(Type) ->
