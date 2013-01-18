@@ -364,7 +364,7 @@ start_tournament(TourId,NumberOfTournaments,NumberOfPlayers,Quota,Tours,Speed,Gi
     {ok,Tournament} = nsm_db:get(tournament,TourId),
     ImagioUsers = nsm_auth:imagionary_users2(),
     RealPlayersUnsorted = nsm_tournaments:joined_users(TourId),
-    RealPlayersPR = lists:sort(fun(#play_record{other=AX},#play_record{other=BX}) -> AX > BX end,RealPlayersUnsorted),
+    RealPlayersPR = lists:keysort(#play_record.other, RealPlayersUnsorted),
     ?INFO("Head: ~p",[hd(RealPlayersPR)]),
     RealPlayers = [list_to_binary(Who)||#play_record{who=Who}<-RealPlayersPR, Who /= undefined],
 
