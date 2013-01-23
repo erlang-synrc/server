@@ -2,7 +2,7 @@
   list-style:none;
   margin:20px 0;
   padding:0;
-  float:left;
+  //float:left;
   width:100%;
   position:relative;
   z-index: 1;
@@ -111,6 +111,9 @@ li.inactive:hover .lets-play{
   position:relative;
   z-index:1;
 }
+
+.fullsize_false{margin-top:-30px;}
+.fullsize_true{}
 
 .quick-nav a img {border:0;}
 .quick-nav li.inactive .soon{display:none;}

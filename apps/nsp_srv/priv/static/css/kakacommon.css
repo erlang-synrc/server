@@ -14,6 +14,23 @@ body {
   background-repeat: no-repeat;
 
 }
+
+.page-content {margin: 0 auto;padding:0; width: 960px;clear:both;display:block;}
+.page-canvas {
+  width:910px;
+  margin-bottom:25px;
+  padding:20px 25px;
+  background:#fff;
+  -webkit-box-shadow:0 0 5px #fafafa;
+  -moz-box-shadow:0 0 5px #fafafa;
+  box-shadow:0 0 5px #fafafa;
+  -webkit-border-radius:3px;
+  -moz-border-radius:3px;
+  border-radius:3px;
+  border:1px solid #ccc;
+  display:block;
+}
+
 a {text-decoration:none;color:#4ec3f1;}
 @font-face {
   font-family: 'HelveticaNeueBold';

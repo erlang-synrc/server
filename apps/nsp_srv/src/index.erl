@@ -46,7 +46,7 @@ body() ->
       #listitem{body=#link{class=next, text="next"}}
     ]}]}
   ]},
-  #panel{class="page-content", body=webutils:quick_nav()}
+  #panel{class="page-content", body=webutils:quick_nav(true)}
   ].
 
 %event(show_register) ->

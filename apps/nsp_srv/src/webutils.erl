@@ -1162,11 +1162,13 @@ get_hemen_nav(Page) ->
 	]
     ]}.
 
-quick_nav() ->
+quick_nav() -> quick_nav(false).
+
+quick_nav(FullSize) ->
   #list{class="quick-nav", body=[
     begin
       S = case Status of
-        inactive -> #span{class=soon, text=?_T("Very soon...")};
+        inactive -> #span{class="soon fullsize_"++atom_to_list(FullSize), text=?_T("Very soon...")};
         _ -> []
       end,
     #listitem{class=Status, body=
@@ -1174,7 +1176,7 @@ quick_nav() ->
         #image{class="game-title", image=Title, width="77", height="77"},
         #image{class=current, image=Img1, width="160", height="88"},
         S,
-        #span{class="lets-play", text=?_T("Let's Play!")}
+        #span{class="lets-play", text=?_T("Let's Play!"), show_if=FullSize}
       ]}
     }
     end
