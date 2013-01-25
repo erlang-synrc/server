@@ -57,7 +57,7 @@
           slang_flag            :: boolean(),
           observer_flag         :: boolean(),
 
-          set_state		:: #'TavlaSetState'{},
+%%          set_state		:: #'TavlaSetState'{},
           settings              :: proplist(),
           results               :: #'TavlaGameResults'{},
           game_info = []            :: [{atom(), any()}],

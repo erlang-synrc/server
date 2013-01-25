@@ -8,11 +8,19 @@
 %%%%     EVENTS      %%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%
 -record('TavlaPlayerScore', {
-           player_id :: 'PlayerId'(),
-           reason :: atom(),
-           winner = <<"none">>  :: binary(), %% similar to skill_delta
-           score :: integer()
+           player_id      :: 'PlayerId'(),
+%%           reason         :: atom(),
+           winner = <<"none">> :: binary(),
+           score_delta    :: integer(),
+           score          :: integer()
                          }).
+
+-record('TavlaSeriesResult', {
+          player_id :: 'PlayerId'(),
+          place :: integer(),
+          winner = <<"none">> :: binary(),
+          score :: integer()
+                             }).
 
 -record('TavlaGameResults', {
            table_id  :: integer(),
@@ -35,6 +43,7 @@
           averagePlayDuration %% : Number;
           }).
 
+%% TODO: Remove this record after the game_tavla.erl
 -record('TavlaPlayer', {
           pid                      :: pid(),
           player_id                :: any(),
@@ -45,26 +54,28 @@
          }).
 
 -record(tavla_game_info, {
-          game_type :: atom(),
-          table_name :: binary(),
+          game_type         :: atom(), %% TODO: Remove
+          table_name        :: binary(),
           game_mode = undefined :: atom(),
-          set_no :: integer, %% number of current set
-          table_id  :: integer(),
-          tables_num :: integer(),
-          current_round :: integer(),
-          rounds :: integer(),
-          players :: list(#'PlayerInfo'{}),
+          sets              :: null | integer(), %% total number of sets
+          set_no            :: null | integer(), %% number of current set
+          table_id          :: integer(),
+          tables_num        :: integer(),
+          current_round     :: integer(), %% TODO: Remove
+          rounds            :: integer(),
+          players           :: list(#'PlayerInfo'{}),
           speed             :: atom(),      %% [slow, normal, fast, blitz]
           turn_timeout      :: integer(),   %% timeout value for player turn
           challenge_timeout :: integer(),   %% timeout value for challenge
           ready_timeout     :: integer(),   %% timeout value for ready msg
-          timeout :: integer(),   %% timeout value for player turn
+          timeout           :: integer(),   %% TODO: Remove
           mul_factor        :: pos_integer(),
           slang_flag        :: boolean(),
           observer_flag     :: boolean(),
           pause_enabled = true :: boolean(),
           social_actions_enabled = true :: boolean(),
-          tournament_type = standalone :: atom() %% standalone | elimination | pointing | lucky
+          tournament_type = standalone :: atom(), %% standalone | elimination | pointing | lucky
+          series_confirmation_mode = yes_exit :: yes_exit | no_exit | no
                          }).
 
 -record(tavla_color_info, {
@@ -73,12 +84,12 @@
           color :: integer()
                      }).
 
--record(tavla_board, {
-          id :: integer(),
-          name :: any(),
-          players :: list(#'PlayerInfo'{}),
-          main = false :: boolean()
-                     }).
+%% -record(tavla_board, {
+%%           id :: integer(),
+%%           name :: any(),
+%%           players :: list(#'PlayerInfo'{}),
+%%           main = false :: boolean()
+%%                      }).
 
 -record(tavla_player_ready, {
           table_id  :: integer(),
@@ -86,55 +97,107 @@
                      }).
 
 -record(tavla_game_started, {
-          table_id  :: integer(),
-          board :: list(tuple(integer(), integer()) | null),
-          another_boards :: list(#tavla_board{}),
-          players :: list(#tavla_color_info{})
+          table_id       :: integer(),
+          board          :: list(tuple(integer(), integer()) | null),
+%%          another_boards :: list(#tavla_board{}),
+          players        :: list(#tavla_color_info{}), %% TODO: Rename to players_colors
+          current_round  :: integer(),
+          round_timeout  :: null | integer(),
+          set_timeout    :: null | integer(),
+          do_first_move_competition_roll :: boolean()
           }).
+
+-record(tavla_game_player_state, {
+          table_id             :: integer(),
+          board                :: null | list(tuple(integer(), integer()) | null),
+          dice                 :: {null | integer(), null | integer()},
+          players_colors       :: list(#tavla_color_info{}),
+          whos_move            :: list(integer()), %% Color
+          game_state           :: initializing | first_move_competition | waiting_for_roll | waiting_for_move | finished,
+          current_round        :: integer(),
+          next_turn_in         :: integer() | infinity, %% milliseconds
+          paused = false       :: boolean(),
+          round_timeout = null :: null | integer(),
+          set_timeout = null   :: null | integer()
+         }).
+
+-record(tavla_won_first_move, {
+          table_id  :: integer(),
+          color     :: integer(),
+          player    :: 'PlayerId'()
+                     }).
 
 -record(tavla_next_turn, {
           table_id  :: integer(),
-          player :: #'PlayerInfo'{}
+          color     :: integer(),
+          player    :: 'PlayerId'()
                      }).
 
 -record(tavla_rolls, {
           table_id  :: integer(),
-          player  :: 'PlayerId'(),
-          color :: integer(),
-          dices   :: list(integer())
+          color     :: integer(),
+          player    :: 'PlayerId'(),
+          dices     :: list(integer())
                      }).
 
 -record(tavla_moves, {
-          table_id  :: integer(),
+          table_id     :: integer(),
+          color        :: integer(),
           player       :: 'PlayerId'(),
           from         :: 'Position'(),
           to           :: 'Position'(),
           hits = false :: boolean()
                           }).
 
--record(tavla_vidoes, {
-          table_id  :: integer(),
-          player   :: 'PlayerId'()
-                      }).
+-record(tavla_turn_timeout, {
+          table_id     :: integer(),
+          color        :: integer(),
+          player       :: 'PlayerId'(),
+          dice         :: null | {integer(), integer()},
+          moves        :: list({integer(), integer(), boolean()})   %% [{From, To, Hits}]
+                            }).
 
--record(tavla_accepts, {
-          table_id  :: integer(),
-          player   :: 'PlayerId'(),
-          accept   :: boolean()
-                      }).
 
--record(tavla_timeouts, {
-          table_id  :: integer(),
-          player  :: 'PlayerId'()
-                      }).
+%-record(tavla_vidoes, {
+%          table_id  :: integer(),
+%          player   :: 'PlayerId'()
+%                      }).
 
--record(tavla_series_ended, {}).
+%-record(tavla_accepts, {
+%          table_id  :: integer(),
+%          player   :: 'PlayerId'(),
+%          accept   :: boolean()
+%                      }).
+
+%-record(tavla_timeouts, {
+%          table_id  :: integer(),
+%          player  :: 'PlayerId'()
+%                      }).
+
+-record(tavla_series_ended, {
+          table_id  :: integer(),
+          standings :: list(#'TavlaSeriesResult'{})
+                            }).
 
 -record(tavla_game_ended, {
           table_id  :: integer(),
-          winner  :: 'PlayerId'(),
+          reason  :: binary(), %% "win", "round_timeout", "set_timeout"
+          winner  :: null | 'PlayerId'(),
           results :: #'TavlaGameResults'{}
                      }).
+
+-record(tavla_tour_record, {
+          player_id       :: 'PlayerId'(),
+          place           :: integer(),
+          score           :: integer(),
+          status          :: atom() | binary() %% active | eliminated 
+         }).
+
+-record(tavla_tour_result, {
+          table_id         :: integer(),
+          tour_num         :: integer(),
+          records          :: list(#tavla_tour_record{})
+         }).
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -193,28 +256,17 @@
           accept = true:: boolean()
          }).
 
--record(tavla_game_player_state, { table_id  :: integer(),
-          whos_move     :: 'PlayerId'(),
-          game_state    :: atom(),
-          places        :: list(#'TavlaPlace'{} | null),
-          pile_height   :: integer(),
-          current_round :: integer(),
-          game_sub_type :: atom(),
-          next_turn_in  :: integer() | atom()
-          %% number of milliseconds until next turn or 'infinity'
-         }).
+%% -record('TavlaSetState', {
+%%           round_cur,
+%%           round_max,
+%%           set_cur,
+%%           set_max
+%%          }).
 
--record('TavlaSetState', {
-          round_cur,
-          round_max,
-          set_cur,
-          set_max
-         }).
-
--record('TavlaTimeouts', {
-          speed             :: atom(),      %% [slow, normal, fast, blitz]
-          turn_timeout      :: integer(),   %% timeout value for player turn
-          challenge_timeout :: integer(),   %% timeout value for challenge
-          ready_timeout     :: integer(),   %% timeout value for ready msg
-          rematch_timeout   :: integer()    %% timeout value for general api #rematch{} msg
-         }).
+%% -record('TavlaTimeouts', {
+%%           speed             :: atom(),      %% [slow, normal, fast, blitz]
+%%           turn_timeout      :: integer(),   %% timeout value for player turn
+%%           challenge_timeout :: integer(),   %% timeout value for challenge
+%%           ready_timeout     :: integer(),   %% timeout value for ready msg
+%%           rematch_timeout   :: integer()    %% timeout value for general api #rematch{} msg
+%%          }).
