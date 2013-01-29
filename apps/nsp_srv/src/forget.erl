@@ -57,7 +57,7 @@ create_message(UId, Token) ->
     Text = "Hello ~s.\nTo change your password, click on the link:\n~s",
 
     %%FIX: use/create module to generate URI
-    Url = lists:concat(["/login/forget/token/", mochiweb_util:quote_plus(Token)]),
+    Url = lists:concat([?HTTP_ADDRESS, "/login/forget/token/", mochiweb_util:quote_plus(Token)]),
     Content = io_lib:fwrite(Text, [UId, Url]),
 
     {Subject, Content}.
