@@ -27,6 +27,16 @@
 -include_lib("eunit/include/eunit.hrl").
 -include_lib("nsg_srv/include/settings.hrl").
 
+-record('TavlaPlayer', {
+          pid                      :: pid(),
+          player_id                :: any(),
+          player_info              :: #'PlayerInfo'{},
+          skill                    :: integer(),
+          collected                :: integer(),
+          color                    :: integer()
+         }).
+
+
 -record(state, {
 		  game_id               :: any(),
           players               :: list(#'TavlaPlayer'{}),

@@ -16,8 +16,8 @@
 
 -record(state, {
         moves = 0 :: integer(),
-        started = false :: boolean(),
-        next_initiated = false :: boolean(),
+%%        started = false :: boolean(),
+%%        next_initiated = false :: boolean(),
         table_id :: integer(),
         is_robot = true :: boolean(),
         board :: list(tuple('Color'(), integer) | null),
@@ -32,11 +32,11 @@
         bot :: pid(),
         conn :: pid(),
         hand :: list(),
-        set_state :: #'TavlaSetState'{},
         running_requests = dict:new() :: any(),
         delay :: integer(),
         mode :: atom(),
-        request_id = 0 }).
+        request_id = 0,
+        confirmation  :: yes_exit | no_exit | no}).
 
 % gen_server
 
@@ -49,9 +49,12 @@ start(Owner, PlayerInfo, GameId) -> gen_server:start(?MODULE, [Owner, PlayerInfo
 start_link(Owner, PlayerInfo, GameId) -> gen_server:start_link(?MODULE, [Owner, PlayerInfo, GameId], []).
 
 init([Owner, PlayerInfo, GameId]) ->
+    {ok, SPid} = game_session:start_link(self()),
+    game_session:bot_session_attach(SPid, PlayerInfo),
     UId = PlayerInfo#'PlayerInfo'.id,
-    ?INFO("TAVLABOT started with game_session pid: ~p user: ~p", [self(),PlayerInfo]),
-    {ok, #state{user = PlayerInfo, uid = UId, owner = Owner, gid = GameId}}.
+    ?INFO("BOTMODULE ~p started with game_session pid ~p", [UId,SPid]),
+    {ok, #state{user = PlayerInfo, uid = UId, owner = Owner, gid = GameId, session = SPid}}.
+
 
 handle_call({send_message, Msg0}, _From, State) ->
     BPid = State#state.bot,
@@ -82,25 +85,15 @@ handle_call({reply, Id, Answer}, _From, State) ->
     {reply, ok, State};
 
 handle_call(get_session, _From, State) ->
-    {ok, SPid} = game_session:start_link(self()),
-    game_session:bot_session_attach(SPid, State#state.user),
-    {reply, State#state.session, State#state{session = SPid}};
+    {reply, State#state.session, State};
+%    {ok, SPid} = game_session:start_link(self()),
+%    game_session:bot_session_attach(SPid, State#state.user),
+%    {reply, State#state.session, State#state{session = SPid}};
 
 handle_call(Request, _From, State) ->
     Reply = ok,
     ?INFO("unknown call: ~p", [Request]),
     {reply, Reply, State}.
-
-handle_cast({init_state, Situation}, State) ->
-    Mon = erlang:monitor(process, State#state.owner),
-    UId = State#state.uid,
-    GId = State#state.gid,
-    SPid = State#state.session,
-    game_session:bot_join_game(SPid, GId),
-    ?INFO("Init State User ~p",[State#state.user]),
-    BPid = proc_lib:spawn_link(game_tavla_bot, robot_init, [#state{gid = GId, uid = UId, conn = self(), table_id = State#state.table_id, user = State#state.user}]),
-    BPid ! {init_hand, Situation},
-    {noreply, State#state{bot = BPid, owner_mon = Mon}};
 
 handle_cast(join_game, State) ->
     Mon = erlang:monitor(process, State#state.owner),
@@ -135,16 +128,6 @@ robot_init_loop(State) -> % receiving messages from relay
     Id = State#state.uid,
     GameId = State#state.gid,
     receive
-        {init_hand, {[GI, GS], RobotInfo}} ->
-            {_Next, Delay} = RobotInfo,
-            #tavla_game_info{game_mode = Mode} = GI,
-            #tavla_game_player_state{whos_move = Turn, game_state = GameState, places = Hand} = GS,
-            State1 = State#state{delay = Delay, mode = Mode},
-            case {Turn, GameState} of
-                {_, _} ->
-                    ?INFO("TAVLABOT: not bot's move", []),
-                    tavla_client_loop(State1#state{hand = Hand})
-            end;
         join_game ->
             case call_rpc(S, #join_game{game = GameId}) of
                 #'TableInfo'{game = _Atom} -> tavla_client_loop(State);
@@ -158,45 +141,32 @@ tavla_client_loop(State) -> % incapsulate tavla protocol
     S = State#state.conn,
     GameId = State#state.gid,
     Id = State#state.uid,
-    Color = State#state.player_color,
+    MyColor = State#state.player_color,
     GameMode = State#state.mode,
     receive
-        #game_event{event = <<"tavla_next_turn">>, args = Params} ->
-            TableId = proplists:get_value(table_id, Params, 0),
-            case TableId == State#state.table_id of
-                true ->
-                    ?INFO("TAVLABOT ~p tavla_next_turn: GameMode:~p TableId~p Params:~p", [Id, GameMode, TableId, Params]),
-                    case check_can_roll(GameMode, TableId) of
-                       true ->
-                           ?INFO("TAVLABOT ~p tavla next turn: ~p",[Id, {State#state.started,State#state.next_initiated}]),
-                           case {proplists:get_value(player, Params), State#state.started} of
-                               {Id,false} ->
-                                   case State#state.next_initiated of
-                                       false -> roll_action(State,TableId);
-                                       true -> ignore
-                                   end;
-                               {Id,true} ->
-                                   roll_action(State,TableId);
-                               {_, false} ->
-                                   case State#state.next_initiated of
-                                       false -> roll_action(State,TableId);
-                                       true -> ignore
-                                   end;
-                               {_, true} -> ignore
-                           end,
-                           tavla_client_loop(State#state{next_initiated=true});
-                       false ->
-                           ?INFO("TAVLABOT ~p tavla next turn: ignoring (not main table)", [Id]),
-                           tavla_client_loop(State)
-                    end;
-            _ -> tavla_client_loop(State) end;
-        #game_event{event = <<"tavla_moves">>, args = Params} ->
+        #game_event{event = <<"tavla_next_turn">>, args = Params} = Msg ->
             TableId = proplists:get_value(table_id, Params, 0),
             case TableId == State#state.table_id of true ->
-
-            ?INFO("tavla moves: ~p",[Params]),
-            Player = proplists:get_value(player, Params),
-            PlayerColor = if Id == Player -> Color; true -> fix_color(Color) end,
+            ?INFO("TAVLABOT <~p> : Received message: ~p", [Id, Msg]),
+            case check_can_roll(GameMode, TableId) of
+                true ->
+                    case fix_color(proplists:get_value(color, Params)) of
+                        MyColor ->
+                            ?INFO("TAVLABOT <~p> Doing roll", [Id]),
+                            roll_action(State,TableId),
+                            tavla_client_loop(State);
+                        _  -> tavla_client_loop(State)
+                    end;
+                false ->
+                    ?INFO("TAVLABOT <~p> Ignoring (not main table)", [Id]),
+                    tavla_client_loop(State)
+            end;
+            _ -> tavla_client_loop(State) end;
+        #game_event{event = <<"tavla_moves">>, args = Params} = Msg ->
+            TableId = proplists:get_value(table_id, Params, 0),
+            case TableId == State#state.table_id of true ->
+            ?INFO("TAVLABOT <~p> : Received message: ~p", [Id, Msg]),
+            PlayerColor = fix_color(proplists:get_value(color, Params)),
             From = proplists:get_value(from, Params),
             To = proplists:get_value(to, Params),
             ?INFO("board before moves: ~p", [State#state.board]),
@@ -204,22 +174,39 @@ tavla_client_loop(State) -> % incapsulate tavla protocol
             FromR=rel(From,PlayerColor), ToR=rel(To,PlayerColor),
             NewBoard = reverse_board(follow_board(Board,FromR,ToR,PlayerColor), PlayerColor),
             ?INFO("board after moves: ~p", [NewBoard]),
-            tavla_client_loop(State#state{started=true,board = NewBoard,moves = State#state.moves + 1});
+            tavla_client_loop(State#state{board = NewBoard,moves = State#state.moves + 1});
 
             _ -> tavla_client_loop(State) end;
-        #game_event{event = <<"tavla_vido_request">>, args = Params} ->
+        #game_event{event = <<"tavla_turn_timeout">>, args = Params} = Msg ->
             TableId = proplists:get_value(table_id, Params, 0),
             case TableId == State#state.table_id of true ->
-
-%            ?INFO("tavla moves: ~p",[Params]),
-            To = proplists:get_value(from, Params),
-            vido(State,To,TableId),
-            tavla_client_loop(State);
-
+            ?INFO("TAVLABOT <~p> : Received message: ~p", [Id, Msg]),
+            PlayerColor = fix_color(proplists:get_value(color, Params)),
+            Moves = ext_to_moves(proplists:get_value(moves, Params)),
+            ?INFO("board before moves: ~p", [State#state.board]),
+            Board = reverse_board(State#state.board, PlayerColor),
+            F = fun({From, To}, B) ->
+                        FromR = rel(From, PlayerColor), ToR = rel(To, PlayerColor),
+                        follow_board(B, FromR, ToR, PlayerColor)
+                end,
+            NewBoard = reverse_board(lists:foldl(F, Board, Moves), PlayerColor),
+            ?INFO("board after moves: ~p", [NewBoard]),
+            tavla_client_loop(State#state{board = NewBoard, moves = State#state.moves + length(Moves)});
             _ -> tavla_client_loop(State) end;
-        #game_event{event = <<"tavla_surrender_request">>, args = Params} ->
+%%         #game_event{event = <<"tavla_vido_request">>, args = Params} ->
+%%             TableId = proplists:get_value(table_id, Params, 0),
+%%             case TableId == State#state.table_id of true ->
+%% 
+%% %            ?INFO("tavla moves: ~p",[Params]),
+%%             To = proplists:get_value(from, Params),
+%%             vido(State,To,TableId),
+%%             tavla_client_loop(State);
+%% 
+%%             _ -> tavla_client_loop(State) end;
+        #game_event{event = <<"tavla_surrender_request">>, args = Params} = Msg->
             TableId = proplists:get_value(table_id, Params, 0),
             case TableId == State#state.table_id of true ->
+            ?INFO("TAVLABOT <~p> : Received message: ~p", [Id, Msg]),
 
 %            ?INFO("tavla moves: ~p",[Params]),
             To = proplists:get_value(from, Params),
@@ -227,49 +214,119 @@ tavla_client_loop(State) -> % incapsulate tavla protocol
             tavla_client_loop(State);
 
             _ -> tavla_client_loop(State) end;
-        #game_event{event = <<"tavla_ack">>, args = Params} ->
+%%         #game_event{event = <<"tavla_ack">>, args = Params} ->
+%%             TableId = proplists:get_value(table_id, Params, 0),
+%%             case TableId == State#state.table_id of true ->
+%%             _To = proplists:get_value(from, Params),
+%%             _Type = proplists:get_value(type, Params),
+%%             tavla_client_loop(State);
+%% 
+%%             _ -> tavla_client_loop(State) end;
+        #game_event{event = <<"tavla_game_player_state">>, args = Params} = Msg->
             TableId = proplists:get_value(table_id, Params, 0),
             case TableId == State#state.table_id of true ->
-            _To = proplists:get_value(from, Params),
-            _Type = proplists:get_value(type, Params),
-            tavla_client_loop(State);
+            ?INFO("TAVLABOT <~p> : Received message: ~p", [Id, Msg]),
+            PlayersColors = proplists:get_value(players_colors, Params),
+            WhosMove = proplists:get_value(whos_move, Params),
+            BoardRaw = proplists:get_value(board, Params),
+            Dice = proplists:get_value(dice, Params),
+            GameState = proplists:get_value(game_state, Params),
+            Paused = proplists:get_value(paused, Params),
 
-            _ -> tavla_client_loop(State) end;
-        #game_event{event = <<"tavla_game_started">>, args = Params} ->
-            TableId = proplists:get_value(table_id, Params, 0),
-            case TableId == State#state.table_id of true ->
-            Players = proplists:get_value(players, Params),
-            User = State#state.user,
-            FoundMyself = lists:keyfind(User#'PlayerInfo'.id,#tavla_color_info.name,Players),
-%%            PlayerColor = case FoundMyself#tavla_color_info.color of 1 -> 2; 2 -> 1 end,
+            case Paused of
+                 true -> wait_for_resume();
+                 false -> ok
+            end,
+
+            FoundMyself = lists:keyfind(Id, #tavla_color_info.name, PlayersColors),
             PlayerColor = fix_color(FoundMyself#tavla_color_info.color),
-            ?INFO("TAVLABOT ~p game_started, color: ~p",[User#'PlayerInfo'.id, PlayerColor]),
-            Board = game_tavla:setup_board(PlayerColor),
-            tavla_client_loop(State#state{board = Board,moves=0,started=false,next_initiated=false,player_color=PlayerColor});
+            ?INFO("TAVLABOT ~p BoardRaw: ~p", [Id, BoardRaw]),
+            Board = if BoardRaw == null -> null;
+                       true -> ext_to_board(BoardRaw)
+                    end,
+            State1 = State#state{board = Board, moves = 0, player_color=PlayerColor},
+
+            ?INFO("TAVLABOT ~p player color: ~p",[Id, PlayerColor]),
+            MyMove = lists:member(PlayerColor, WhosMove),
+            case {MyMove, GameState} of
+                {true, <<"first_move_competition">>} ->
+                    roll_action(State, TableId),
+                    tavla_client_loop(State1);
+                {true, <<"waiting_for_roll">>} ->
+                    roll_action(State, TableId),
+                    tavla_client_loop(State1);
+                {true, <<"waiting_for_move">>} ->
+                    do_move(State, Dice, TableId, MyColor),
+                    tavla_client_loop(State1#state{moves = 1});
+                {_, <<"initializing">>} ->
+                    tavla_client_loop(State1);
+                {_, <<"finished">>} ->
+                    tavla_client_loop(State1);
+                {false, _} ->
+                    tavla_client_loop(State1)
+            end;
             _ -> tavla_client_loop(State) end;
-        #game_event{event = <<"tavla_rolls">>, args = Params} ->
+        #game_event{event = <<"tavla_game_started">>, args = Params} = Msg->
             TableId = proplists:get_value(table_id, Params, 0),
             case TableId == State#state.table_id of true ->
-            ?INFO("TAVLABOT ~p (color: ~p) tavla_rolls: ~p",[Id, Color, Params]),
-            State2 = case {fix_color(proplists:get_value(color, Params)),State#state.started} of
-                {Color,_} ->
-                      ?INFO("TAVLABOT ~p tavla rolls: dices=~p",[Id, proplists:get_value(dices, Params)]),
-                      case {Dices = proplists:get_value(dices, Params),State#state.started} of
-                        {[_A,_B],false} -> do_move(State,Dices,TableId,State#state.player_color), State#state{started = true, moves = State#state.moves + 1};
-                        {[_A,_B],true} -> do_move(State,Dices,TableId,State#state.player_color), State#state{moves = State#state.moves + 1};
-                        {[_C],_} -> State
-                      end;
-                _  -> ?INFO("TAVLABOT ~p tavla rolls: Ignore rolls (another color)",[Id]), State
+            ?INFO("TAVLABOT <~p> : Received message: ~p", [Id, Msg]),
+            Players = proplists:get_value(players, Params),
+            BoardRaw = proplists:get_value(board, Params),
+            Competition = proplists:get_value(do_first_move_competition_roll, Params),
+            FoundMyself = lists:keyfind(Id, #tavla_color_info.name, Players),
+            PlayerColor = fix_color(FoundMyself#tavla_color_info.color),
+            ?INFO("TAVLABOT ~p game_started, color: ~p",[Id, PlayerColor]),
+            ?INFO("TAVLABOT ~p game_started, BoardRaw: ~p",[Id, BoardRaw]),
+            Board = if BoardRaw == null -> null;
+                       true -> ext_to_board(BoardRaw)
+                    end,
+%%            Board = game_tavla:setup_board(PlayerColor),
+            if Competition -> roll_action(State,TableId); true -> do_nothing end,
+            tavla_client_loop(State#state{board = Board, moves=0, player_color=PlayerColor});
+            _ -> tavla_client_loop(State) end;
+        #game_event{event = <<"tavla_won_first_move">>, args = Params} = Msg ->
+            TableId = proplists:get_value(table_id, Params, 0),
+            case TableId == State#state.table_id of true ->
+            ?INFO("TAVLABOT <~p> : Received message: ~p", [Id, Msg]),
+            State2 = case fix_color(proplists:get_value(color, Params)) of
+                MyColor ->
+                    ?INFO("TAVLABOT <~p> : I won the first move order.", [Id]),
+                    case proplists:get_value(reroll, Params) of
+                        false ->
+                            Dice = proplists:get_value(dice, Params),
+                            ?INFO("TAVLABOT <~p> Reroll is not needed. Doing the first move with dice:~p",[Id, Dice]),
+                            case Dice of
+                                [_A,_B] -> do_move(State,Dice,TableId,MyColor), State#state{moves = State#state.moves + 1};
+                                [_C] -> State
+                            end;
+                        true ->
+                            ?INFO("TAVLABOT ~p Reroll needed. So doing it.",[Id]),
+                            roll_action(State, TableId)
+                    end;
+                _  -> ?INFO("TAVLABOT ~p tavla_won_first_move: Ignore rolls (another color)",[Id]), State
             end,
             tavla_client_loop(State2);
             _ -> tavla_client_loop(State) end;
-        #game_rematched{game = GI} when GameId == GI ->
-            ?INFO("tavla rematched: ~p", [{GameId}]),
-            tavla_client_loop(State);
-        #game_event{event = <<"player_left">>, args = Params} ->
+        #game_event{event = <<"tavla_rolls">>, args = Params} = Msg->
             TableId = proplists:get_value(table_id, Params, 0),
             case TableId == State#state.table_id of true ->
-            ?INFO("tavla player left: ~p", [Params]),
+            ?INFO("TAVLABOT <~p> : Received message: ~p", [Id, Msg]),
+            State2 = case fix_color(proplists:get_value(color, Params)) of
+                MyColor ->
+                      Dice = proplists:get_value(dices, Params),
+                      ?INFO("TAVLABOT <~p> Doing moves with dice: ~p",[Id, Dice]),
+                      case Dice of
+                        [_A,_B] -> do_move(State,Dice,TableId,MyColor), State#state{moves = State#state.moves + 1};
+                        [_C] -> State
+                      end;
+                _  -> ?INFO("TAVLABOT <~p> Ignore rolls (another color)",[Id]), State
+            end,
+            tavla_client_loop(State2);
+            _ -> tavla_client_loop(State) end;
+        #game_event{event = <<"player_left">>, args = Params} = Msg ->
+            TableId = proplists:get_value(table_id, Params, 0),
+            case TableId == State#state.table_id of true ->
+            ?INFO("TAVLABOT <~p> : Received message: ~p", [Id, Msg]),
             Replaced = proplists:get_value(bot_replaced, Params, false) orelse
                        proplists:get_value(human_replaced, Params, false),
             case Replaced of
@@ -279,38 +336,38 @@ tavla_client_loop(State) -> % incapsulate tavla protocol
                     tavla_client_loop(State)
             end;
             _ -> tavla_client_loop(State) end;
-        #game_event{event = <<"tavla_game_info">>, args = Args} ->
+        #game_event{event = <<"tavla_game_info">>, args = Args} = Msg->
+            ?INFO("TAVLABOT <~p> : Received message: ~p", [Id, Msg]),
              User = State#state.user,
              Mode = proplists:get_value(game_mode, Args),
-             SM = proplists:get_value(sets, Args),
              TableId = proplists:get_value(table_id, Args),
              ?INFO("TAVLABOT game_info ~p ~p",[self(),User]),
-             SC = proplists:get_value(set_no, Args),
-             RM = proplists:get_value(rounds, Args),
-             _TO = proplists:get_value(timeouts, Args),
              Players = proplists:get_value(players, Args),
+             SeriesConfirmMode = proplists:get_value(series_confirmation_mode, Args),
              ?INFO("TAVLABOT players: ~p",[Players]),
              Delay = game_tavla:get_timeout(robot, fast),
-             ST = #'TavlaSetState'{round_cur = 1, round_max = RM, set_cur = SC, set_max = SM},
-             CatchTID = case User == undefined of 
+             CatchTID = case User == undefined of
                             false -> FoundMyself = lists:keyfind(User#'PlayerInfo'.id,#'PlayerInfo'.id,Players),
                                     case FoundMyself of false -> State#state.table_id; _ -> TableId end;
                             true -> ?INFO("ERROR USER in ~p is not set!",[self()]), undefined
-             end,
-             tavla_client_loop( State#state{set_state = ST, table_id = CatchTID, delay = Delay, mode = Mode, players = Players});
-        #game_event{event = <<"tavla_series_ended">>, args = Params} ->
+                        end,
+             tavla_client_loop( State#state{table_id = CatchTID, delay = Delay, mode = Mode,
+                                            players = Players, confirmation = SeriesConfirmMode});
+        #game_event{event = <<"tavla_series_ended">>, args = Params} = Msg->
             TableId = proplists:get_value(table_id, Params, 0),
             case TableId == State#state.table_id of true ->
+            ?INFO("TAVLABOT <~p> : Received message: ~p", [Id, Msg]),
             tavla_client_loop(State);
             _ -> tavla_client_loop(State) end;
-        #game_event{event = <<"tavla_game_ended">>, args = Params} ->
+        #game_event{event = <<"tavla_game_ended">>, args = Params} = Msg->
             TableId = proplists:get_value(table_id, Params, 0),
             case TableId == State#state.table_id of true ->
+            ?INFO("TAVLABOT <~p> : Received message: ~p", [Id, Msg]),
             say_ready(State,TableId),
             tavla_client_loop(State);
             _ -> tavla_client_loop(State) end;
-        X ->
-            ?INFO("TAVLABOT received UNKNOWN event: ~p",[X]),
+        Msg ->
+            ?INFO("TAVLABOT <~p> Received UNKNOWN message: ~p",[Id, Msg]),
             tavla_client_loop(State)
     end.
 
@@ -396,7 +453,7 @@ make_decision(Board,Dices2,Color,TableId) -> % produces tavla moves
     ?INFO("Decision: ~p",[Decision]),
     Decision.
 
-norm([A,B]) -> case A > B of true -> {A,B}; false -> {B,A} end.
+%% norm([A,B]) -> case A > B of true -> {A,B}; false -> {B,A} end.
 first_move_table() -> [{{6,6},[{13,7},{13,7},{24,18},{24,18}]}, % based on 
                        {{6,5},[{24,13}]},
                        {{6,4},[{24,18},{13,9}]},
@@ -459,7 +516,7 @@ first_available_move(RealBoard,Dice,Color,TableId) ->
         end,
     {List, Board, FailedDice} = lists:foldl(F, {[], RelativeBoard, []}, Dice),
     ?INFO("moves found: ~p",[{List, FailedDice}]),
-    [#'TavlaAtomicMove'{table_id = TableId,from=rel(From,Color),to=rel(To,Color)} || {From,To} <- lists:reverse(List)]  ++
+    [#'TavlaAtomicMove'{from=rel(From,Color), to=rel(To,Color)} || {From,To} <- lists:reverse(List)]  ++
         if length(FailedDice) == 0; length(FailedDice) == length(Dice) -> [];
            true -> first_available_move(reverse_board(Board,Color),FailedDice,Color,TableId) end.
 
@@ -486,11 +543,11 @@ find_move(Color, OppColor, Die, Tactic, Board, [{Cell, No} | Rest]) ->
         _ -> find_move(Color, OppColor, Die, Tactic, Board, Rest)
     end.
 
-make_end_series(Color,TableId,Board) ->
-    lists:foldl(fun (A,Acc) -> ?INFO("~p / ~p~n",[A,Acc]), {Cell,No} = A, case Cell of null -> Acc; 
-                                  {Color,Count} -> Acc ++
-    [ #'TavlaAtomicMove'{table_id = TableId,from=No,to=27} || X <- lists:seq(1,Count)]; _ -> Acc end
-                                 end, [], lists:sublist(lists:zip(Board,lists:seq(0,27)),1,27)  ).
+%% make_end_series(Color,TableId,Board) ->
+%%     lists:foldl(fun (A,Acc) -> ?INFO("~p / ~p~n",[A,Acc]), {Cell,No} = A, case Cell of null -> Acc; 
+%%                                   {Color,Count} -> Acc ++
+%%     [ #'TavlaAtomicMove'{from=No, to=27} || X <- lists:seq(1,Count)]; _ -> Acc end
+%%                                  end, [], lists:sublist(lists:zip(Board,lists:seq(0,27)),1,27)  ).
 
 % actions
 
@@ -592,3 +649,13 @@ wait_for_resume() ->
         #game_paused{action = <<"resume">>} ->
             ok
     end.
+
+ext_to_board(ExtBoard) ->
+    [case Cell of
+         null -> null;
+         #tavla_checkers{color = C, number = N} -> {fix_color(C), N}
+     end || Cell <- ExtBoard].
+
+ext_to_moves(ExtMoves) ->
+    [{From, To} || #'TavlaAtomicMoveServer'{from = From, to = To} <- ExtMoves].
+

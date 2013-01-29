@@ -2,7 +2,17 @@
 -type 'Color'()   :: integer(). %% 'black' or 'red'
 -type 'Position'()   :: integer(). %% 'black' or 'red'
 
--record('TavlaPlace', { count :: integer } ).
+%%-record('TavlaPlace', { count :: integer } ).
+-record('TavlaAtomicMoveServer',
+         {from :: 'Position'(),
+          to   :: 'Position'(),
+          hits :: boolean(),
+          pips :: integer()
+         }).
+-record(tavla_checkers,
+        {color :: integer(),
+         number :: integer()
+        }).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%     EVENTS      %%%%%
@@ -43,15 +53,6 @@
           averagePlayDuration %% : Number;
           }).
 
-%% TODO: Remove this record after the game_tavla.erl
--record('TavlaPlayer', {
-          pid                      :: pid(),
-          player_id                :: any(),
-          player_info              :: #'PlayerInfo'{},
-          skill                    :: integer(),
-	  collected		   :: integer(),
-	  color                    :: integer()
-         }).
 
 -record(tavla_game_info, {
           game_type         :: atom(), %% TODO: Remove
@@ -98,7 +99,7 @@
 
 -record(tavla_game_started, {
           table_id       :: integer(),
-          board          :: list(tuple(integer(), integer()) | null),
+          board          :: list(#tavla_checkers{} | null),
 %%          another_boards :: list(#tavla_board{}),
           players        :: list(#tavla_color_info{}), %% TODO: Rename to players_colors
           current_round  :: integer(),
@@ -109,8 +110,8 @@
 
 -record(tavla_game_player_state, {
           table_id             :: integer(),
-          board                :: null | list(tuple(integer(), integer()) | null),
-          dice                 :: {null | integer(), null | integer()},
+          board                :: null | list(#tavla_checkers{} | null),
+          dice                 :: list(null | integer()),
           players_colors       :: list(#tavla_color_info{}),
           whos_move            :: list(integer()), %% Color
           game_state           :: initializing | first_move_competition | waiting_for_roll | waiting_for_move | finished,
@@ -124,7 +125,9 @@
 -record(tavla_won_first_move, {
           table_id  :: integer(),
           color     :: integer(),
-          player    :: 'PlayerId'()
+          player    :: 'PlayerId'(),
+          dice      :: list(integer()),
+          reroll    :: boolean()
                      }).
 
 -record(tavla_next_turn, {
@@ -146,15 +149,16 @@
           player       :: 'PlayerId'(),
           from         :: 'Position'(),
           to           :: 'Position'(),
-          hits = false :: boolean()
+          hits = false :: boolean(),
+          pips         :: integer()
                           }).
 
 -record(tavla_turn_timeout, {
           table_id     :: integer(),
           color        :: integer(),
           player       :: 'PlayerId'(),
-          dice         :: null | {integer(), integer()},
-          moves        :: list({integer(), integer(), boolean()})   %% [{From, To, Hits}]
+          dice         :: null | list(integer()),
+          moves        :: list(#'TavlaAtomicMoveServer'{})
                             }).
 
 
@@ -208,7 +212,7 @@
 
 -record(tavla_roll, {table_id :: any()}).
 
--record('TavlaAtomicMove', { table_id::integer(),from :: 'Position'(), to :: 'Position'() } ).
+-record('TavlaAtomicMove', {from :: 'Position'(), to :: 'Position'() } ).
 -record(tavla_move, { table_id  :: integer(), moves :: list(#'TavlaAtomicMove'{}), player :: 'PlayerId'() }).
 
 -record(tavla_skip, {table_id  :: integer()}).

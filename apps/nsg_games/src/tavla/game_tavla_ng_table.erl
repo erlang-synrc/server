@@ -41,6 +41,7 @@
          dice               :: {undefined | integer(), undefined | integer()}, %% The dice are used for first move order
                                %% determination and for playing. In first case the first element is for white die, and the
                                %% second one for black die.
+         pips_list          :: list(integer()),
          finish_reason      :: undefined | win | round_timeout | set_timeout,
          finish_info        :: undefined | {black | white, normal | mars}
         }).
@@ -109,6 +110,10 @@
 
 -define(BLACK, black).
 -define(WHITE, white).
+-define(WHITE_OUT, wo).
+-define(WHITE_BAR, wb).
+-define(BLACK_OUT, bo).
+-define(BLACK_BAR, bb).
 
 %% ====================================================================
 %% External functions
@@ -233,7 +238,7 @@ handle_info({timeout, Magic}, ?STATE_FIRST_MOVE_COMPETITION,
 
 handle_info({timeout, Magic}, ?STATE_PLAYING,
             #state{timeout_magic = Magic, game_id = GameId, table_id = TableId} = StateData) ->
-    ?INFO("TAVLA_NG_TABLE <~p,~p> Move timeout. Do an automatic move(s).", [GameId, TableId]),
+    ?INFO("TAVLA_NG_TABLE <~p,~p> Move timeout. Do an automatic action(s).", [GameId, TableId]),
     do_timeout_moves(StateData);
 
 handle_info({round_timeout, Round}, ?STATE_PLAYING,
@@ -306,12 +311,13 @@ handle_parent_message({replace_player, RequestId, UserInfo, PlayerId, SeatNum}, 
 handle_parent_message(start_round, ?STATE_WAITING_FOR_START,
                       #state{relay = Relay, turn_timeout = TurnTimeout,
                              round_timeout = RoundTimeout, set_timeout = SetTimeout,
-                             set_timer = SetTRef, desk_state = DeskState} = StateData) ->
+                             set_timer = SetTRef} = StateData) ->
     CurRound = 1,
     %% This fake desk state is needed because the order of the first move is not defined yet, so
     %% we can't use the desk module to create it.
     DeskState = #desk_state{state = undefined,
                             board = init_board(),
+                            dice = {undefined, undefined},
                             cur_color = undefined,
                             finish_reason = undefined,
                             finish_info = undefined},
@@ -324,7 +330,8 @@ handle_parent_message(start_round, ?STATE_WAITING_FOR_START,
     SetTRef = if is_integer(SetTimeout) -> erlang:send_after(SetTimeout, self(), set_timeout);
                  true -> undefined
               end,
-    NewStateData = StateData#state{cur_round = CurRound,
+    NewStateData = StateData#state{desk_state = DeskState,
+                                   cur_round = CurRound,
                                    timeout_timer = TRef,
                                    timeout_magic = Magic,
                                    round_timer = RoundTRef,
@@ -345,9 +352,15 @@ handle_parent_message(start_round, ?STATE_FINISHED,
               {bearoff_waste_moves, enabled},
               {first_move, StartColor}],
     {ok, Desk} = ?DESK:start(Params),
-    DeskState = init_desk_state(Desk),
+    DeskState = #desk_state{state = state_wait_roll,
+                            board = init_board(),
+                            dice = {undefined, undefined},
+                            cur_color = StartColor,
+                            finish_reason = undefined,
+                            finish_info = undefined},
+%%    DeskState = init_desk_state(Desk),
     %% Init timers
-    {Magic, TRef} = start_timer(TurnTimeout),
+    {TRef, Magic} = start_timer(TurnTimeout),
     RoundTRef = if is_integer(RoundTimeout) ->
                        erlang:send_after(RoundTimeout, self(), {round_timeout, NewCurRound});
                    true -> undefined
@@ -370,7 +383,7 @@ handle_parent_message(start_round, ?STATE_FINISHED,
     GameStartedMsg = create_tavla_game_started(DeskState, _DoRollMove = false, NewStateData),
     relay_publish_ge(Relay, GameStartedMsg),
     CurColor = DeskState#desk_state.cur_color,
-    relay_publish_ge(Relay, create_tavla_next_turn(CurColor, Players)),
+    relay_publish_ge(Relay, create_tavla_next_turn(CurColor, NewStateData)),
     {next_state, ?STATE_PLAYING, NewStateData};
 
 handle_parent_message(show_round_result, StateName,
@@ -379,7 +392,7 @@ handle_parent_message(show_round_result, StateName,
     {FinishInfo, RoundScore, AchsPoints, TotalScore} = ?SCORING:last_round_result(ScoringState),
     ?INFO("TAVLA_NG_TABLE <~p,~p> RoundScore: ~p Total score: ~p.", [GameId, TableId, RoundScore, TotalScore]),
     Msg = case FinishInfo of
-              {win, Winner} ->
+              {win, Winner, _Condition} ->
                   create_tavla_round_ended_win(Winner, RoundScore, TotalScore, AchsPoints,
                                                StateData);
               timeout ->
@@ -549,7 +562,7 @@ handle_player_action(#player{id = PlayerId, user_id = UserId},
         normal ->
             if StateName == ?STATE_PAUSE ->
                    relay_publish(Relay, create_game_paused_resume(UserId, GameId)),
-                   {Magic, TRef} = start_timer(Timeout),
+                   {TRef, Magic} = start_timer(Timeout),
                    {reply, 0, ResumedStateName, StateData#state{timeout_timer = TRef,
                                                                 timeout_magic = Magic}};
                true ->
@@ -574,7 +587,10 @@ handle_player_action(_Player, _Message, _From, StateName, StateData) ->
 %%===================================================================
 
 do_action(SeatNum, #tavla_roll{}, From, ?STATE_FIRST_MOVE_COMPETITION = StateName,
-          #state{desk_state = DeskState, players = Players, relay = Relay} = StateData) ->
+          #state{game_id = GameId, table_id = TableId,
+                 desk_state = DeskState, players = Players, relay = Relay} = StateData) ->
+    ?INFO("TAVLA_NG_TABLE_DBG <~p,~p> Action tavla_roll{} Deskstate: ~p.",
+          [GameId, TableId, DeskState]),
     #desk_state{dice = Dice} = DeskState,
     #player{color = Color} = get_player_by_seat_num(SeatNum, Players),
     Pos = if Color == ?WHITE -> 1;
@@ -594,21 +610,15 @@ do_action(SeatNum, #tavla_roll{}, From, ?STATE_FIRST_MOVE_COMPETITION = StateNam
            {reply, {error, already_rolled}, StateName, StateData}
     end;
 
-%% TODO: Move handling of the roll action to the tavla logic module.
-%% do_action(SeatNum, #tavla_roll{}, From, ?STATE_PLAYING = StateName, StateData) ->
-%%     do_game_action(SeatNum, take_from_table, From, StateName, StateData);
-
-do_action(SeatNum, #tavla_roll{}, _From, ?STATE_PLAYING = StateName,
-          #state{desk_state = DeskState, players = Players, relay = Relay} = StateData) ->
-    #desk_state{cur_color = CurColor,
-                dice = Dice} = DeskState,
+do_action(SeatNum, #tavla_roll{}, From, ?STATE_PLAYING = StateName,
+          #state{desk_state = DeskState, players = Players} = StateData) ->
+    #desk_state{state = DeskStateName,
+                cur_color = CurColor} = DeskState,
     #player{color = Color} = get_player_by_seat_num(SeatNum, Players),
     if CurColor == Color ->
-           if Dice == {undefined, undefined} ->
-                  NewDice = random_dice(),
-                  relay_publish_ge(Relay, create_tavla_rolls_dice(Color, NewDice, StateData)),
-                  NewDeskState = DeskState#desk_state{dice = NewDice},
-                  {reply, ok, StateName, StateData#state{desk_state = NewDeskState}};
+           if DeskStateName == state_wait_roll ->
+                  {Die1, Die2} = random_dice(),
+                  do_game_action(Color, {roll, Die1, Die2}, From, StateName, StateData);
               true ->
                   {reply, {error, already_rolled}, StateName, StateData}
            end;
@@ -622,22 +632,26 @@ do_action(_SeatNum, #tavla_roll{}, _From, StateName, StateData) ->
 
 do_action(SeatNum, #tavla_move{moves = ExtMoves}, From, ?STATE_PLAYING = StateName,
           #state{desk_state = DeskState, players = Players} = StateData) ->
-    #desk_state{cur_color = CurColor,
-                dice = Dice} = DeskState,
+    #desk_state{state = DeskStateName,
+                cur_color = CurColor} = DeskState,
     #player{color = Color} = get_player_by_seat_num(SeatNum, Players),
     if Color == CurColor ->
-           try ext_to_moves(ExtMoves) of
-               Moves ->
-                   do_game_action(Color, {moves, Dice, Moves}, From, StateName, StateData)
-           catch
-               _:_ ->
-                   {reply, {error, invalid_action}}
+           if DeskStateName == state_wait_move ->
+                  try ext_to_moves(ExtMoves) of
+                      Moves ->
+                          do_game_action(Color, {move, Moves}, From, StateName, StateData)
+                  catch
+                      _:_ ->
+                          {reply, {error, invalid_action}, StateName, StateData}
+                  end;
+              true ->
+                  {reply, {error, roll_first}, StateName, StateData}
            end;
        true ->
            {reply, {error, not_your_turn}, StateName, StateData}
     end;
 
-do_action(_SeatNum, #tavla_moves{}, _From, StateName, StateData) ->
+do_action(_SeatNum, #tavla_move{}, _From, StateName, StateData) ->
     {reply, {error, message_not_valid_for_a_current_state}, StateName, StateData};
 
 do_action(_SeatNum, #tavla_ready{}, _From, StateName, StateData) ->
@@ -667,48 +681,84 @@ do_first_move_competition_timeout_rolls(#state{desk_state = DeskState,
     NewDeskState = DeskState#desk_state{dice = {FinWhiteDie, FinBlackDie}},
     do_start_game(StateData#state{desk_state = NewDeskState}).
 
-do_start_game(#state{desk_state = DeskState, relay = Relay} = StateData) ->
+do_start_game(#state{desk_state = DeskState, relay = Relay,
+                     turn_timeout = TurnTimeout} = StateData) ->
     {WhiteDie, BlackDie} = Dice = DeskState#desk_state.dice,
     StartColor = if WhiteDie >= BlackDie -> ?WHITE;
                     true -> ?BLACK
                  end,
     Params = [{home_hit_and_run, enabled},
               {bearoff_waste_moves, enabled},
-              {first_move, StartColor}],
+              {first_move, StartColor},
+              {dice, Dice}],
     {ok, Desk} = ?DESK:start(Params),
-    NewDeskState = init_desk_state(Desk),
+    NewDeskState = #desk_state{state = state_wait_move,
+                               board = init_board(),
+                               dice = {undefined, undefined},
+                               pips_list = pips_list(WhiteDie, BlackDie),
+                               cur_color = StartColor,
+                               finish_reason = undefined,
+                               finish_info = undefined},
+
+%%    NewDeskState = init_desk_state(Desk),
     NewDeskState2 = NewDeskState#desk_state{dice = Dice},
-    Msg = create_won_first_move(StartColor, StateData),
+    Msg = create_won_first_move(StartColor, Dice, _Reroll = false, StateData),
     relay_publish_ge(Relay, Msg),
+    {TRef, Magic} = start_timer(TurnTimeout),
+    %% TODO: Timers
     {next_state, ?STATE_PLAYING, StateData#state{start_color = StartColor,
                                                  desk_rule_pid = Desk,
-                                                 desk_state = NewDeskState2
+                                                 desk_state = NewDeskState2,
+                                                 timeout_timer = TRef,
+                                                 timeout_magic = Magic
                                                 }}.
 
-do_timeout_moves(#state{desk_rule_pid = Desk, desk_state = DeskState} = StateData) ->
-    #desk_state{dice = Dice,
-                state = _DeskStateName,
+do_timeout_moves(#state{desk_rule_pid = Desk, desk_state = DeskState,
+                        game_id = GameId, table_id = TableId,
+                        players = Players} = StateData) ->
+    #desk_state{state = DeskStateName,
+                pips_list = PipsList,
                 cur_color = CurColor,
                 board = Board} = DeskState,
-    %% TODO: Use the DeskStateName after a handling of tavla roll action be moved to the tavla logic module
-    case Dice of
-        {undefined, undefined} ->
-            NewDice = random_dice(),
-            Moves = find_moves(CurColor, NewDice, Board),
-%%            {ok, Events1} = desk_player_action(Desk, CurColor, {roll, NewDice}),
-            {ok, Events2} = desk_player_action(Desk, CurColor, {move, NewDice, Moves}),
+    [#player{user_id = UserId}] = find_players_by_color(CurColor, Players),
+    case DeskStateName of
+        state_wait_roll ->
+            ?INFO("TAVLA_NG_TABLE <~p,~p> Do automatic roll for player <~p> (~p)",
+                  [GameId, TableId, CurColor, UserId]),
+            {Die1, Die2} = random_dice(),
+            {ok, Events1} = desk_player_action(Desk, CurColor, {roll, Die1, Die2}),
+            case [E || {next_player, _} = E <- Events1] of
+                [] -> %% Player can move => rolls_moves_timeout
+                    ?INFO("TAVLA_NG_TABLE <~p,~p> Do automatic move with dice ~p for player <~p> (~p)",
+                          [GameId, TableId, {Die1, Die2}, CurColor, UserId]),
+                    NewPipsList = pips_list(Die1, Die2),
+                    Moves = find_moves(CurColor, NewPipsList, Board),
+                    {ok, Events2} = desk_player_action(Desk, CurColor, {move, Moves}),
+                    Events = [case E of
+                                  {moves, CurColor, M} ->
+                                      {rolls_moves_timeout, CurColor, Die1, Die2, M};
+                                  _ -> E
+                              end || E <- Events2],
+                    NewDeskState = DeskState#desk_state{pips_list = NewPipsList},
+                    process_game_events(Events, StateData#state{desk_state = NewDeskState});
+                _ -> %% Only rolls_timeout
+                    ?INFO("TAVLA_NG_TABLE <~p,~p> No moves can be done for the dice ~p for player <~p> (~p)",
+                          [GameId, TableId, {Die1, Die2}, CurColor, UserId]),
+                    Events = [case E of
+                                  {rolls, CurColor, D1, D2} ->
+                                      {rolls_timeout, CurColor, D1, D2};
+                                  _ -> E
+                              end || E <- Events1],
+                    process_game_events(Events, StateData)
+                end;
+        state_wait_move ->
+            ?INFO("TAVLA_NG_TABLE <~p,~p> Do rest automatic move with pips ~p for player <~p> (~p)",
+                  [GameId, TableId, PipsList, CurColor, UserId]),
+            Moves = find_moves(CurColor, PipsList, Board),
+            {ok, Events1} = desk_player_action(Desk, CurColor, {move, Moves}),
             Events = [case E of
-                          {moves, CurColor, Moves} ->
-                              {rolls_moves_timeout, CurColor, NewDice, Moves};
-                          _ -> E
-                      end || E <- Events2],
-            process_game_events(Events, StateData);
-        _ ->
-            Moves = find_moves(CurColor, Dice, Board),
-            {ok, Events1} = desk_player_action(Desk, CurColor, {move, Dice, Moves}),
-            Events = [case E of
-                          {moves, CurColor, Moves} ->
-                              {moves_timeout, CurColor, Moves};
+                          {moves, CurColor, M} ->
+                              {moves_timeout, CurColor, M};
                           _ -> E
                       end || E <- Events1],
             process_game_events(Events, StateData)
@@ -724,7 +774,7 @@ do_game_action(Color, GameAction, From, StateName,
             gen_fsm:reply(From, ok),
             process_game_events(Events, StateData);
         {error, Reason} ->
-            ExtError = desk_error_to_ext(Reason),
+            ExtError = desk_error_to_ext(Reason), %% TODO: Fix desk_error_to_ext()
             {reply, ExtError, StateName, StateData}
     end.
 
@@ -745,7 +795,7 @@ process_game_events(Events, #state{desk_state = DeskState, timeout_timer = OldTR
                     {next_state, ?STATE_PLAYING, StateData#state{desk_state = NewDeskState}};
                 [_|_] ->
                     erlang:cancel_timer(OldTRef),
-                    {Magic, TRef} = start_timer(TurnTimeout),
+                    {TRef, Magic} = start_timer(TurnTimeout),
                     {next_state, ?STATE_PLAYING, StateData#state{desk_state = NewDeskState,
                                                                  timeout_timer = TRef,
                                                                  timeout_magic = Magic}}
@@ -794,39 +844,51 @@ finalize_round(#state{desk_state = #desk_state{finish_reason = FinishReason,
 handle_desk_events([], DeskState, _StateData) ->
     DeskState;
 
-handle_desk_events([Event | Events], DeskState, #state{relay = Relay} = StateData) ->
-    #desk_state{%%cur_color = CurColor,
-                %%dice = Dice,
-                board = Board} = DeskState,
+handle_desk_events([Event | Events], DeskState,
+                    #state{game_id = GameId, table_id = TableId,
+                           relay = Relay} = StateData) ->
+    ?INFO("TAVLA_NG_TABLE_DBG <~p,~p> handle_desk_events/3 Event: ~p", [GameId, TableId, Event]),
+    #desk_state{board = Board,
+                pips_list = OldPipsList} = DeskState,
     NewDeskState =
         case Event of
-            %% TODO: Add support of logic level rolls
-%%             {taked_from_table, SeatNum, Tash} ->
-%%                 [Tash | NewDeck] = Deck,
-%%                 Msg = create_okey_tile_taken_table(SeatNum, length(NewDeck), Players),
-%%                 relay_publish_ge(Relay, Msg),
-%%                 {_, Hand} = lists:keyfind(SeatNum, 1, Hands),
-%%                 NewHands = lists:keyreplace(SeatNum, 1, Hands, {SeatNum, [Tash | Hand]}),
-%%                 DeskState#desk_state{hands = NewHands, deck = NewDeck, state = state_discard};
+            {rolls, Color, Die1, Die2} ->
+                relay_publish_ge(Relay, create_tavla_rolls_dice(Color, {Die1, Die2}, StateData)),
+                PipsList = pips_list(Die1, Die2),
+                DeskState#desk_state{state = state_wait_move,
+                                     dice = {Die1, Die2}, pips_list = PipsList};
             {moves, Color, Moves} ->
-                [relay_publish_ge(Relay, create_tavla_moves(Color, From, To, Hits, StateData)) ||
-                   {From, To, Hits} <- Moves],
+                [relay_publish_ge(Relay, create_tavla_moves(Color, From, To, Type, Pips, StateData)) ||
+                   {Type, From, To, Pips} <- Moves],
+                UsedPipsList = [Pips || {_Type, _From, _To, Pips} <- Moves],
                 NewBoard = apply_moves(Color, Moves, Board),
-                DeskState#desk_state{board = NewBoard};
-            {rolls_moves_timeout, Color, Dice, Moves} -> %% Injected event
-                Msg = create_tavla_turn_timeout(Color, Dice, Moves, StateData),
-                relay_publish_ge(Relay, Msg),
+                DeskState#desk_state{board = NewBoard, pips_list = OldPipsList -- UsedPipsList};
+            {rolls_timeout, Color, Die1, Die2} -> %% Injected event
+%%                Msg = create_tavla_turn_timeout(Color, {Die1, Die2}, _Moves = [], StateData),
+%%                relay_publish_ge(Relay, Msg),
+                relay_publish_ge(Relay, create_tavla_rolls_dice(Color, {Die1, Die2}, StateData)),
+                DeskState#desk_state{dice = {Die1, Die2}};
+            {rolls_moves_timeout, Color, Die1, Die2, Moves} -> %% Injected event
+%%                Msg = create_tavla_turn_timeout(Color, {Die1, Die2}, Moves, StateData),
+%%                relay_publish_ge(Relay, Msg),
+                relay_publish_ge(Relay, create_tavla_rolls_dice(Color, {Die1, Die2}, StateData)),
+                [relay_publish_ge(Relay, create_tavla_moves(Color, From, To, Type, Pips, StateData)) ||
+                   {Type, From, To, Pips} <- Moves],
                 NewBoard = apply_moves(Color, Moves, Board),
-                DeskState#desk_state{board = NewBoard};
+                DeskState#desk_state{dice = {Die1, Die2}, board = NewBoard};
             {moves_timeout, Color, Moves} ->    %% Injected event
-                Msg = create_tavla_turn_timeout(Color, _Dice = undefined, Moves, StateData),
-                relay_publish_ge(Relay, Msg),
+%%                Msg = create_tavla_turn_timeout(Color, _Dice = undefined, Moves, StateData),
+%%                relay_publish_ge(Relay, Msg),
+                [relay_publish_ge(Relay, create_tavla_moves(Color, From, To, Type, Pips, StateData)) ||
+                   {Type, From, To, Pips} <- Moves],
                 NewBoard = apply_moves(Color, Moves, Board),
                 DeskState#desk_state{board = NewBoard};
             {next_player, Color} ->
                 Msg = create_tavla_next_turn(Color, StateData),
                 relay_publish_ge(Relay, Msg),
-                DeskState#desk_state{cur_color = Color, dice = {undefined, undefined}};
+                DeskState#desk_state{state = state_wait_roll, cur_color = Color,
+                                     dice = {undefined, undefined},
+                                     pips_list = []};
             {win, Color, Condition} ->
                 DeskState#desk_state{state = state_finished,
                                      finish_reason = win,
@@ -842,6 +904,7 @@ init_scoring(GameType, PlayersInfo, Rounds) ->
 random_die() ->
     crypto:rand_uniform(1, 7).
 
+%% random_dice() -> {Die1, Die2}
 random_dice() ->
     {random_die(), random_die()}.
 
@@ -1021,7 +1084,7 @@ create_tavla_game_player_state(_PlayerId, ?STATE_WAITING_FOR_START,
                  end,
     #tavla_game_player_state{table_id = TableId,
                              board = null,
-                             dice = {null, null},
+                             dice = [null, null],
                              players_colors = Colors,
                              whos_move = [],
                              game_state = initializing,
@@ -1089,7 +1152,7 @@ create_tavla_game_player_state(_PlayerId, ?STATE_PLAYING,
                              board = board_to_ext(Board),
                              dice = dice_to_ext(Dice),
                              players_colors = Colors,
-                             whos_move = color_to_ext(CurColor),
+                             whos_move = [color_to_ext(CurColor)],
                              game_state = GameState,
                              current_round = CurRound,
                              next_turn_in = Timeout,
@@ -1161,13 +1224,17 @@ create_tavla_game_started(DeskState, DoFirstMoveCompetitionRoll,
                         set_timeout = SetTimeout,
                         do_first_move_competition_roll = DoFirstMoveCompetitionRoll}.
 
-create_won_first_move(Color, #state{table_id = TableId, players = Players}) ->
+create_won_first_move(Color, Dice,Reroll, #state{table_id = TableId, players = Players}) ->
     [#player{user_id = UserId}] = find_players_by_color(Color, Players),
-    #tavla_won_first_move{table_id = TableId, color = Color, player = UserId}.
+    #tavla_won_first_move{table_id = TableId,
+                          color = color_to_ext(Color),
+                          player = UserId,
+                          dice = dice_to_ext(Dice),
+                          reroll = Reroll}.
 
 create_tavla_next_turn(Color, #state{table_id = TableId, players = Players}) ->
     [#player{user_id = UserId}] = find_players_by_color(Color, Players),
-    #tavla_next_turn{table_id = TableId, color = Color, player = UserId}.
+    #tavla_next_turn{table_id = TableId, color = color_to_ext(Color), player = UserId}.
 
 create_tavla_rolls_die(Color, Die, #state{table_id = TableId, players = Players}) ->
     [#player{user_id = UserId}] = find_players_by_color(Color, Players),
@@ -1179,21 +1246,21 @@ create_tavla_rolls_die(Color, Die, #state{table_id = TableId, players = Players}
 
 create_tavla_rolls_dice(Color, Dice, #state{table_id = TableId, players = Players}) ->
     [#player{user_id = UserId}] = find_players_by_color(Color, Players),
-    {ExtDie1, ExtDie2} = dice_to_ext(Dice),
     #tavla_rolls{table_id = TableId,
                  player = UserId,
                  color = color_to_ext(Color),
-                 dices = [ExtDie1, ExtDie2]
+                 dices = dice_to_ext(Dice)
                 }.
 
-create_tavla_moves(Color, From, To, Hits, #state{table_id = TableId, players = Players}) ->
+create_tavla_moves(Color, From, To, Type, Pips, #state{table_id = TableId, players = Players}) ->
     [#player{user_id = UserId}] = find_players_by_color(Color, Players),
     #tavla_moves{table_id = TableId,
                  color = color_to_ext(Color),
                  player = UserId,
                  from = pos_to_ext(From),
                  to = pos_to_ext(To),
-                 hits = Hits}.
+                 hits = Type == hit,
+                 pips = Pips}.
 
 create_player_left(SeatNum, UserInfo, Players) ->
     #player{user_id = OldUserId} = get_player_by_seat_num(SeatNum, Players),
@@ -1283,7 +1350,7 @@ create_tavla_turn_timeout(Color, Dice, Moves, #state{table_id = TableId, players
     [#player{user_id = UserId}] = find_players_by_color(Color, Players),
     #tavla_turn_timeout{table_id = TableId,
                         player = UserId,
-                        color = Color,
+                        color = color_to_ext(Color),
                         dice = DiceExt,
                         moves = moves_to_ext(Moves)}.
 
@@ -1300,15 +1367,11 @@ create_game_paused_resume(UserId, GameId) ->
                  retries = 0}.
 
 
-desk_error_to_ext(action_disabled) -> false;
-desk_error_to_ext(no_gosterge) -> false;
-desk_error_to_ext(no_8_tashes) -> false;
-desk_error_to_ext(no_okey_discarded) -> {error, there_is_no_okey_there};
-desk_error_to_ext(not_your_order) -> {error, not_your_turn};
-desk_error_to_ext(blocked) -> {error, okey_is_blocked};
-desk_error_to_ext(no_tash) -> {error, no_tash};
-desk_error_to_ext(no_such_tash) -> {error, no_such_tash};
-desk_error_to_ext(hand_not_match) -> {error, discarded_hand_does_not_match_server_state};
+desk_error_to_ext({position_occupied, _, _}) -> {error, position_occupied};
+desk_error_to_ext({waste_move_disabled, _, _}) -> {error, waste_move_disabled};
+desk_error_to_ext({hit_and_run_disabled, _, _}) -> {error, hit_and_run_disabled};
+desk_error_to_ext({no_checker, _, _}) -> {error, no_checker};
+desk_error_to_ext({invalid_move, _, _}) -> {error, invalid_move};
 desk_error_to_ext(E) -> {error, E}.
 
 players_ext_color_info(Players) ->
@@ -1318,40 +1381,51 @@ players_ext_color_info(Players) ->
      end || C <- [?WHITE, ?BLACK]].
 
 board_to_ext(Board) ->
-    Order = [wo] ++ lists:seq(1, 24) ++ [wk, bk, bo],
-    [case lists:keysearch(Pos, 1, Board) of
+    ?INFO("board_to_ext Board: ~p", [Board]),
+    Order = [?WHITE_OUT] ++ lists:seq(1, 24) ++ [?WHITE_BAR, ?BLACK_BAR, ?BLACK_OUT],
+    [case lists:keyfind(Pos, 1, Board) of
          {_, empty} -> null;
-         {_, {C, Num}} -> {color_to_ext(C), Num}
+         {_, {C, Num}} -> #tavla_checkers{color = color_to_ext(C), number = Num}
      end || Pos <- Order].
 
 moves_to_ext(Moves) ->
-    [{pos_to_ext(From), pos_to_ext(To), Hit} || {From, To, Hit} <- Moves].
+    [#'TavlaAtomicMoveServer'{from = pos_to_ext(From),
+                              to =  pos_to_ext(To),
+                              hits = Type == hit,
+                              pips = Pips} || {Type, From, To, Pips} <- Moves].
 
 ext_to_moves(ExtMoves) ->
-    [{ext_to_pos(From), ext_to_pos(To)} || {From, To} <- ExtMoves].
+    F = fun(#'TavlaAtomicMove'{from = From, to = To}) ->
+                {ext_to_pos(From), ext_to_pos(To)}
+        end,
+    lists:map(F, ExtMoves).
 
 pos_to_ext(Pos) ->
     case Pos of
-        wo -> 0;
-        wk -> 25;
-        bk -> 26;
-        bo -> 27;
+        ?WHITE_OUT -> 0;
+        ?WHITE_BAR -> 25;
+        ?BLACK_BAR -> 26;
+        ?BLACK_OUT -> 27;
         X -> X
     end.
 
 ext_to_pos(ExtPos) ->
      case ExtPos of
-         0 -> wo;
-         25 -> wk;
-         26 -> bk;
-         27 -> bo;
+         0 -> ?WHITE_OUT;
+         25 -> ?WHITE_BAR;
+         26 -> ?BLACK_BAR;
+         27 -> ?BLACK_OUT;
          X when is_integer(X), X >=1, X =< 24 -> X
      end.
 
+%% XXX Different colors id for different external terms is strange... 
 color_to_ext(?WHITE) -> 1;
 color_to_ext(?BLACK) -> 2.
 
-dice_to_ext({Die1, Die2}) -> {die_to_ext(Die1), die_to_ext(Die2)}.
+color_to_ext2(?WHITE) -> 2;
+color_to_ext2(?BLACK) -> 1.
+
+dice_to_ext({Die1, Die2}) -> [die_to_ext(Die1), die_to_ext(Die2)].
 
 die_to_ext(undefined) -> null;
 die_to_ext(Die) -> Die.
@@ -1399,7 +1473,7 @@ init_board() ->
      {07, empty}, {08, {?WHITE, 3}}, {09, empty}, {10, empty}, {11, empty}, {12, {?BLACK, 5}},
      {13, {?WHITE, 5}}, {14, empty}, {15, empty}, {16, empty}, {17, {?BLACK, 3}}, {18, empty},
      {19, {?BLACK, 5}}, {20, empty}, {21, empty}, {22, empty}, {23, empty}, {24, {?WHITE, 2}},
-     {wo, empty}, {bo, empty}, {wb, empty}, {bb, empty}
+     {?WHITE_OUT, empty}, {?BLACK_OUT, empty}, {?WHITE_BAR, empty}, {?BLACK_BAR, empty}
     ].
 
 
@@ -1407,19 +1481,18 @@ opponent_color(?WHITE) -> ?BLACK;
 opponent_color(?BLACK) -> ?WHITE.
 
 
-%% TODO: Implementation needed!!!
-
-find_moves(Color, Dice, Board) ->
-    [].
-
+pips_list(Die1, Die2) ->
+    if Die1 == Die2 -> [Die1, Die1, Die1, Die1];
+       true -> [Die1, Die2]
+    end.
 
 apply_moves(Color, Moves, Board) ->
-    F = fun({From, To, Hits}, BoardAcc) ->
-                apply_move(Color, From, To, Hits, BoardAcc)
+    F = fun({Type, From, To, _Pips}, BoardAcc) ->
+                apply_move(Color, From, To, Type, BoardAcc)
         end,
     lists:foldl(F, Board, Moves).
 
-apply_move(Color, From, To, Hits, Board) ->
+apply_move(Color, From, To, Type, Board) ->
     OppColor = opponent_color(Color),
     Board1 = case lists:keyfind(To, 1, Board) of
                  {_, empty} -> lists:keyreplace(To, 1, Board, {To, {Color, 1}});
@@ -1430,13 +1503,174 @@ apply_move(Color, From, To, Hits, Board) ->
                  {_, {Color, 1}} -> lists:keyreplace(From, 1, Board1, {From, empty});
                  {_, {Color, Num2}} -> lists:keyreplace(From, 1, Board1, {From, {Color, Num2 -1}})
              end,
-    if Hits ->
-           BarPos = if OppColor == ?WHITE -> wb;
-                       OppColor == ?BLACK -> bb end,
+    if Type == hit -> %% Increase number of the opponents battons on the bar
+           BarPos = if OppColor == ?WHITE -> ?WHITE_BAR;
+                       OppColor == ?BLACK -> ?BLACK_BAR end,
            case lists:keyfind(BarPos, 1, Board2) of
                {_, empty} -> lists:keyreplace(BarPos, 1, Board2, {BarPos, {OppColor, 1}});
                {_, {OppColor, Num3}} -> lists:keyreplace(BarPos, 1, Board2, {BarPos, {OppColor, Num3 + 1}})
            end;
+       Type == move ->
+           Board2
+    end.
+
+%%===================================================================
+%%
+
+find_moves(Color, PipsList, Board) ->
+    AdoptedBoard = if Color == ?BLACK -> reverse_board(Board);
+                      true -> Board end,
+    Moves = lists:reverse(find_moves2(AdoptedBoard, PipsList)),
+    if Color == ?BLACK -> reverse_moves(Moves);
+       true -> Moves
+    end.
+
+find_moves2(Board, PipsList) ->
+    case find_bar_out_moves(Board, PipsList) of
+        {ok, NewBoard, NewPipsList, Moves} ->
+            find_normal_moves(NewBoard, NewPipsList, Moves);
+        {stop, Moves} ->
+            Moves
+    end.
+
+find_bar_out_moves(Board, PipsList) ->
+    case get_checkers(?WHITE_BAR, Board) of
+        empty -> {ok, Board, PipsList, []};
+        {?WHITE, Num} -> find_bar_out_moves(Board, PipsList, PipsList, Num, [])
+    end.
+
+find_bar_out_moves(Board, OrigPipsList, _PipsList, _Num = 0, Moves) -> {ok, Board, OrigPipsList, Moves};
+find_bar_out_moves(_Board, _OrigPipsList, _PipsList = [], _Num, Moves) -> {stop, Moves};
+find_bar_out_moves(Board, OrigPipsList, [Pips | RestPipsList], Num, Moves) ->
+    case check_move(?WHITE_BAR, Pips, Board, false) of
+        {Type, To} ->
+            NewBoard = apply_move(?WHITE_BAR, To, Type, Board),
+            find_bar_out_moves(NewBoard, OrigPipsList -- [Pips], RestPipsList, Num - 1, [{?WHITE_BAR, To} | Moves]);
+        error ->
+            find_bar_out_moves(Board, OrigPipsList, RestPipsList, Num, Moves)
+    end.
+
+
+find_normal_moves(Board, PipsList, Moves) ->
+    BearOffMode = bearoff_mode(Board),
+    if BearOffMode -> find_normal_moves(Board, PipsList, [], true, Moves, 6);
+       true -> find_normal_moves(Board, PipsList, [], false, Moves, 24)
+    end.
+
+find_normal_moves(_Board, _PipsList = [], _FailedPipsList = [], _PreBearOffMode, Moves, _Pos) ->
+    Moves;
+find_normal_moves(_Board, _PipsList, _FailedPipsList, _PreBearOffMode, Moves, _Pos = 0) ->
+    Moves;
+find_normal_moves(Board, _PipsList = [], FailedPipsList, PreBearOffMode, Moves, Pos) ->
+    find_normal_moves(Board, FailedPipsList, [], PreBearOffMode, Moves, Pos - 1);
+find_normal_moves(Board, [Pips | Rest] = PipsList, FailedPipsList, PreBearOffMode, Moves, Pos) ->
+    case get_checkers(Pos, Board) of
+        {?WHITE, _} ->
+            BearOffMode = PreBearOffMode orelse bearoff_mode(Board), %% Optimization
+            case check_move(Pos, Pips, Board, BearOffMode) of
+                {Type, To} ->
+                    NewBoard = apply_move(Pos, To, Type, Board),
+                    find_normal_moves(NewBoard, Rest, FailedPipsList, BearOffMode, [{Pos, To} | Moves], Pos);
+                error ->
+                    find_normal_moves(Board, Rest, [Pips | FailedPipsList], BearOffMode, Moves, Pos)
+            end;
+        _ ->
+            find_normal_moves(Board, PipsList, FailedPipsList, PreBearOffMode, Moves, Pos - 1)
+    end.
+
+bearoff_mode(Board) ->
+    F = fun(Pos) -> not is_white(Pos, Board) end,
+    lists:all(F, [?WHITE_BAR | lists:seq(7, 24)]).
+
+is_white(Pos, Board) ->
+    case get_checkers(Pos, Board) of
+        {?WHITE, _} -> true;
+        _ -> false
+    end.
+
+%% check_move(From, Pips, Board, BearOffMode) -> {normal, To} | {hit, To} | error
+check_move(From, Pips, Board, BearOffMode) ->
+    To = new_pos(From, Pips),
+    if To == ?WHITE_OUT andalso BearOffMode ->
+           case no_white_checkers_behind(From, Board) of
+               true -> {normal, To};
+               false -> error
+           end;
+       To == ?WHITE_OUT -> error;
        true ->
+           case can_move_to(To, Board) of
+               {yes, normal} -> {normal, To};
+               {yes, hit} -> {hit, To};
+               no -> error
+           end
+    end.
+
+no_white_checkers_behind(From, Board) ->
+    if From == 6 -> true;
+       true ->
+           F = fun(Pos) -> not is_white(Pos, Board) end,
+           lists:all(F, lists:seq(From + 1, 6))
+    end.
+
+
+can_move_to(Pos, Board) ->
+    case get_checkers(Pos, Board) of
+        empty -> {yes, normal};
+        {?WHITE, _} -> {yes, normal};
+        {?BLACK, 1} -> {yes, hit};
+        {?BLACK, _} -> no
+    end.
+
+get_checkers(Pos, Board) ->
+    {_, Value} = lists:keyfind(Pos, 1, Board),
+    Value.
+
+new_pos(Pos, Pips) ->
+    case Pos of
+        ?WHITE_BAR -> 25 - Pips;
+        _ when is_integer(Pos) ->
+            Diff = Pos - Pips,
+            if Diff =< 0 -> ?WHITE_OUT;
+               Diff > 0 -> Diff
+            end
+    end.
+
+reverse_board(Board) ->
+    [{reverse_pos(Pos), reverse_value(Value)} || {Pos, Value} <- Board].
+
+reverse_moves(Moves) ->
+    [{reverse_pos(From), reverse_pos(To)} || {From, To} <- Moves].
+
+reverse_pos(Pos) ->
+    case Pos of
+        ?WHITE_OUT -> ?BLACK_OUT;
+        ?BLACK_OUT -> ?WHITE_OUT;
+        ?WHITE_BAR -> ?BLACK_BAR;
+        ?BLACK_BAR -> ?WHITE_BAR;
+        _ -> 25 - Pos
+    end.
+
+reverse_value(Value) ->
+    case Value of
+        empty -> empty;
+        {Color, Num} -> {opponent_color(Color), Num}
+    end.
+
+apply_move(From, To, Type, Board) ->
+    Board1 = case lists:keyfind(To, 1, Board) of
+                 {_, empty} -> lists:keyreplace(To, 1, Board, {To, {?WHITE, 1}});
+                 {_, {?WHITE, Num}} -> lists:keyreplace(To, 1, Board, {To, {?WHITE, Num + 1}});
+                 {_, {?BLACK, 1}} -> lists:keyreplace(To, 1, Board, {To, {?WHITE, 1}})
+             end,
+    Board2 = case lists:keyfind(From, 1, Board1) of
+                 {_, {?WHITE, 1}} -> lists:keyreplace(From, 1, Board1, {From, empty});
+                 {_, {?WHITE, Num2}} -> lists:keyreplace(From, 1, Board1, {From, {?WHITE, Num2 -1}})
+             end,
+    if Type == hit -> %% Increase number of the opponents battons on the bar
+           case lists:keyfind(?BLACK_BAR, 1, Board2) of
+               {_, empty} -> lists:keyreplace(?BLACK_BAR, 1, Board2, {?BLACK_BAR, {?BLACK, 1}});
+               {_, {?BLACK, Num3}} -> lists:keyreplace(?BLACK_BAR, 1, Board2, {?BLACK_BAR, {?BLACK, Num3 + 1}})
+           end;
+       Type == normal ->
            Board2
     end.
