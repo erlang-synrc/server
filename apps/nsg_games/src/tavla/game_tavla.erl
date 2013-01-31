@@ -237,7 +237,7 @@ vido_answer(From,To,A,_Pid,State) ->
     case A of
        true  -> publish_event(Relay, #tavla_ack{table_id = TableId, type=vido,from=From,to=To,answer=A}),
                 {reply, ok, state_rolls, State#state{vido = 2 * Vido}};
-       false -> Results = #'TavlaGameResults'{table_id = TableId,
+       false -> Results = #'TavlaGameResults'{
                    players = [#'TavlaPlayerScore'{player_id = To, score = 2 * Vido, winner = <<"true">>}, 
                    #'TavlaPlayerScore'{player_id = From, score = 0, winner = <<"none">>}]},
 

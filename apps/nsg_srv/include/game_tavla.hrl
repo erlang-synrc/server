@@ -2,21 +2,32 @@
 -type 'Color'()   :: integer(). %% 'black' or 'red'
 -type 'Position'()   :: integer(). %% 'black' or 'red'
 
+%%%%%%%%%%%%%%%%%%%%%%%
+%% Events data types
+%%%%%%%%%%%%%%%%%%%%%%%
+
 %%-record('TavlaPlace', { count :: integer } ).
+
 -record('TavlaAtomicMoveServer',
          {from :: 'Position'(),
           to   :: 'Position'(),
           hits :: boolean(),
           pips :: integer()
          }).
+
 -record(tavla_checkers,
         {color :: integer(),
          number :: integer()
         }).
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%     EVENTS      %%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%
+-record(tavla_tour_record, {
+          player_id       :: 'PlayerId'(),
+          place           :: integer(),
+          score           :: integer(),
+          status          :: atom() | binary() %% active | eliminated 
+         }).
+
+
 -record('TavlaPlayerScore', {
            player_id      :: 'PlayerId'(),
 %%           reason         :: atom(),
@@ -31,12 +42,6 @@
           winner = <<"none">> :: binary(),
           score :: integer()
                              }).
-
--record('TavlaGameResults', {
-           table_id  :: integer(),
-           game_id :: integer(),
-           players :: list(#'TavlaPlayerScore'{})
-                     }).
 
 -record('PlayerTavlaStats', {
           playerId, %% : int
@@ -53,21 +58,42 @@
           averagePlayDuration %% : Number;
           }).
 
+-record(tavla_color_info, {
+          name :: any(),
+          color :: integer()
+                     }).
+
+%% -record(tavla_board, {
+%%           id :: integer(),
+%%           name :: any(),
+%%           players :: list(#'PlayerInfo'{}),
+%%           main = false :: boolean()
+%%                      }).
+
+-record('TavlaGameResults', {
+%%           game_id :: integer(),
+           players :: list(#'TavlaPlayerScore'{})
+                     }).
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%     EVENTS      %%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 -record(tavla_game_info, {
+          table_id          :: integer(),
           game_type         :: atom(), %% TODO: Remove
           table_name        :: binary(),
           game_mode = undefined :: atom(),
           sets              :: null | integer(), %% total number of sets
           set_no            :: null | integer(), %% number of current set
-          table_id          :: integer(),
           tables_num        :: integer(),
           current_round     :: integer(), %% TODO: Remove
           rounds            :: integer(),
           players           :: list(#'PlayerInfo'{}),
           speed             :: atom(),      %% [slow, normal, fast, blitz]
           turn_timeout      :: integer(),   %% timeout value for player turn
-          challenge_timeout :: integer(),   %% timeout value for challenge
+          challenge_timeout :: integer(),   %% TODO: Remove, timeout value for challenge 
           ready_timeout     :: integer(),   %% timeout value for ready msg
           timeout           :: integer(),   %% TODO: Remove
           mul_factor        :: pos_integer(),
@@ -78,19 +104,6 @@
           tournament_type = standalone :: atom(), %% standalone | elimination | pointing | lucky
           series_confirmation_mode = yes_exit :: yes_exit | no_exit | no
                          }).
-
--record(tavla_color_info, {
-          name :: any(),
-          table_id  :: integer(),
-          color :: integer()
-                     }).
-
-%% -record(tavla_board, {
-%%           id :: integer(),
-%%           name :: any(),
-%%           players :: list(#'PlayerInfo'{}),
-%%           main = false :: boolean()
-%%                      }).
 
 -record(tavla_player_ready, {
           table_id  :: integer(),
@@ -158,7 +171,7 @@
           color        :: integer(),
           player       :: 'PlayerId'(),
           dice         :: null | list(integer()),
-          moves        :: list(#'TavlaAtomicMoveServer'{})
+          moves        :: null | list(#'TavlaAtomicMoveServer'{})
                             }).
 
 
@@ -189,13 +202,6 @@
           winner  :: null | 'PlayerId'(),
           results :: #'TavlaGameResults'{}
                      }).
-
--record(tavla_tour_record, {
-          player_id       :: 'PlayerId'(),
-          place           :: integer(),
-          score           :: integer(),
-          status          :: atom() | binary() %% active | eliminated 
-         }).
 
 -record(tavla_tour_result, {
           table_id         :: integer(),
