@@ -5,12 +5,13 @@
 -include_lib("nsm_db/include/user.hrl").
 -include_lib("nsm_gifts/include/common.hrl").
 -include_lib("nsm_db/include/tournaments.hrl").
--export([start_link/0, user_count/0, joined_users/1, write_cache/2, get_word/1, get_translation/1, gifts/2]).
+-export([start_link/0, user_count/0, joined_users/1, write_cache/2, get_word/1, get_translation/1, gifts/2, tournaments/0]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 -define(SERVER, ?MODULE).
--record(state, {user_count=0,last_check=undefined,tour_cache,translations,words,gifts}).
+-record(state, {user_count=0,last_check=undefined,tour_cache,translations,words,gifts,tournaments}).
 
 gifts(Min,Max) -> gen_server:call(?SERVER, {gifts,Min,Max}).
+tournaments() -> gen_server:call(?SERVER, tournaments).
 user_count() -> gen_server:call(?SERVER, user_count).
 joined_users(TID) -> gen_server:call(?SERVER, {joined_users,TID}).
 write_cache(TID,PlayRecord) -> gen_server:call(?SERVER, {write_cache,TID,PlayRecord}).
@@ -19,7 +20,8 @@ get_word(Word) -> gen_server:call(?SERVER, {get_word,Word}).
 get_translation({Lang,Translation}) -> gen_server:call(?SERVER, {get_translation,{Lang,Translation}}).
 
 init([]) -> 
-    State = #state{tour_cache=dict:new(),translations=dict:new(),words=dict:new(),gifts=nsm_db:all(gifts)},
+    State = #state{tour_cache=dict:new(),translations=dict:new(),words=dict:new(),
+     gifts=nsm_db:all(gifts),tournaments=nsm_db:all(tournament)},
     NewState = lists:foldl(fun({English, Lang, Word},ST) ->
 
                       Words0 = dict:store(English,
@@ -62,6 +64,9 @@ handle_call({get_word,Word}, _From, State)->
 handle_call({gifts,MinPrice,MaxPrice}, _From, State)->
    R = [ Gift || Gift <-State#state.gifts, Gift#gift.enabled_on_site, (Gift#gift.kakush_point >= MinPrice) and (Gift#gift.kakush_point =< MaxPrice)],
   {reply, R, State};
+
+handle_call(tournaments, _From, State)->
+  {reply, State#state.tournaments, State};
 
 handle_call({get_translation,{Lang,Translation}}, _From, State)->
   Return = case dict:find(Lang ++ "_" ++ Translation,State#state.translations) of 

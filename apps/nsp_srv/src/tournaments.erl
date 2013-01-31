@@ -50,7 +50,7 @@ body() ->
     #template{file=code:priv_dir(nsp_srv)++"/templates/info_page.html"}.
 
 content() ->
-  AllTours = nsm_db:all(tournament),
+  AllTours = user_counter:tournaments(),
   wf:state(all_fetch,AllTours),
 %  {{Y, M, D}, _} = calendar:now_to_datetime(erlang:now()),
 %  SY = integer_to_list(Y),
