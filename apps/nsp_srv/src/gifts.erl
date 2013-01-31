@@ -9,11 +9,12 @@
 -include("elements/records.hrl").
 
 -define(GIFTSPERPAGE, 20).
+-define(MIN_SLIDER_PRICE, 456000).
 -define(MAX_SLIDER_PRICE, 1200000).
 
 main() ->
     webutils:add_script("/nitrogen/blockui.js"),
-    wf:state(slider_min, 0),
+    wf:state(slider_min, ?MIN_SLIDER_PRICE),
     wf:state(slider_max, ?MAX_SLIDER_PRICE),
     #template { file=code:priv_dir(nsp_srv)++"/templates/bare.html" }.
 
@@ -31,7 +32,7 @@ body() ->
             #panel{id=slider_panel, style="position:absolute; left:276px; top:125px; width:400px; height:20px;", body=[
                 #slider{range = true, id=gifts_slider, max=?MAX_SLIDER_PRICE,
                     postback={?MODULE, {gifts_slider}},
-                    values=[{min,0}, {max,?MAX_SLIDER_PRICE}]
+                    values=[{min,?MIN_SLIDER_PRICE}, {max,?MAX_SLIDER_PRICE}]
                 }
             ]},
             #label{id=slider_cur_max_value, class="slider_cur_max_value", style="position:absolute; font-size:14px; left:678px; top:145px;", text="1 200 000"},
@@ -45,9 +46,11 @@ product_list_paged(Page) ->
     MinPrice = wf:state(slider_min),
     MaxPrice = wf:state(slider_max),
 
-    AllGiftsData = user_counter:gifts(), %nsm_db:all(gifts),
-    FilteredGiftsData = [Gift || Gift <- AllGiftsData, Gift#gift.enabled_on_site, (Gift#gift.kakush_point >= MinPrice) and (Gift#gift.kakush_point =< MaxPrice)],
+%    AllGiftsData = user_counter:gifts(), %nsm_db:all(gifts),
+%    FilteredGiftsData = [Gift || Gift <- AllGiftsData, Gift#gift.enabled_on_site, (Gift#gift.kakush_point >= MinPrice) and (Gift#gift.kakush_point =< MaxPrice)],
 
+    FilteredGiftsData = user_counter:gifts(MinPrice, MaxPrice),
+    
     OnlyGiftsData = lists:sublist( 
         lists:sort(
             fun(A, B) -> 

@@ -3,13 +3,14 @@
 -behaviour(gen_server).
 -include("uri_translator.hrl").
 -include_lib("nsm_db/include/user.hrl").
+-include_lib("nsm_gifts/include/common.hrl").
 -include_lib("nsm_db/include/tournaments.hrl").
--export([start_link/0, user_count/0, joined_users/1, write_cache/2, get_word/1, get_translation/1, gifts/0]).
+-export([start_link/0, user_count/0, joined_users/1, write_cache/2, get_word/1, get_translation/1, gifts/2]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 -define(SERVER, ?MODULE).
 -record(state, {user_count=0,last_check=undefined,tour_cache,translations,words,gifts}).
 
-gifts() -> gen_server:call(?SERVER, gifts).
+gifts(Min,Max) -> gen_server:call(?SERVER, {gifts,Min,Max}).
 user_count() -> gen_server:call(?SERVER, user_count).
 joined_users(TID) -> gen_server:call(?SERVER, {joined_users,TID}).
 write_cache(TID,PlayRecord) -> gen_server:call(?SERVER, {write_cache,TID,PlayRecord}).
@@ -58,8 +59,9 @@ handle_call({get_word,Word}, _From, State)->
        R -> R end,
   {reply, Return, State};
 
-handle_call(gifts, _From, State)->
-  {reply, State#state.gifts, State};
+handle_call({gifts,MinPrice,MaxPrice}, _From, State)->
+   R = [ Gift || Gift <-State#state.gifts, Gift#gift.enabled_on_site, (Gift#gift.kakush_point >= MinPrice) and (Gift#gift.kakush_point =< MaxPrice)],
+  {reply, R, State};
 
 handle_call({get_translation,{Lang,Translation}}, _From, State)->
   Return = case dict:find(Lang ++ "_" ++ Translation,State#state.translations) of 
