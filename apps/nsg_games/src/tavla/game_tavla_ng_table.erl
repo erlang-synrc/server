@@ -627,7 +627,7 @@ do_action(SeatNum, #tavla_roll{}, From, ?STATE_PLAYING = StateName,
     end;
 
 do_action(_SeatNum, #tavla_roll{}, _From, StateName, StateData) ->
-    {reply, {error, message_not_valid_for_a_current_state}, StateName, StateData};
+    {reply, {error, action_not_valid_for_a_current_state}, StateName, StateData};
 
 
 do_action(SeatNum, #tavla_move{moves = ExtMoves}, From, ?STATE_PLAYING = StateName,
@@ -652,14 +652,14 @@ do_action(SeatNum, #tavla_move{moves = ExtMoves}, From, ?STATE_PLAYING = StateNa
     end;
 
 do_action(_SeatNum, #tavla_move{}, _From, StateName, StateData) ->
-    {reply, {error, message_not_valid_for_a_current_state}, StateName, StateData};
+    {reply, {error, action_not_valid_for_a_current_state}, StateName, StateData};
 
 do_action(_SeatNum, #tavla_ready{}, _From, StateName, StateData) ->
     {reply, ok, StateName, StateData};
 
 
 do_action(_SeatNum, _UnsupportedAction, _From, StateName, StateData) ->
-    {reply, {error, unsupported}, StateName, StateData}.
+    {reply, {error, invalid_action}, StateName, StateData}.
 
 
 %%===================================================================
