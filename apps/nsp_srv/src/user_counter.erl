@@ -4,11 +4,12 @@
 -include("uri_translator.hrl").
 -include_lib("nsm_db/include/user.hrl").
 -include_lib("nsm_db/include/tournaments.hrl").
--export([start_link/0, user_count/0, joined_users/1, write_cache/2, get_word/1, get_translation/1]).
+-export([start_link/0, user_count/0, joined_users/1, write_cache/2, get_word/1, get_translation/1, gifts/0]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 -define(SERVER, ?MODULE).
--record(state, {user_count=0,last_check=undefined,tour_cache,translations,words}).
+-record(state, {user_count=0,last_check=undefined,tour_cache,translations,words,gifts}).
 
+gifts() -> gen_server:call(?SERVER, gifts).
 user_count() -> gen_server:call(?SERVER, user_count).
 joined_users(TID) -> gen_server:call(?SERVER, {joined_users,TID}).
 write_cache(TID,PlayRecord) -> gen_server:call(?SERVER, {write_cache,TID,PlayRecord}).
@@ -17,7 +18,7 @@ get_word(Word) -> gen_server:call(?SERVER, {get_word,Word}).
 get_translation({Lang,Translation}) -> gen_server:call(?SERVER, {get_translation,{Lang,Translation}}).
 
 init([]) -> 
-    State = #state{tour_cache=dict:new(),translations=dict:new(),words=dict:new()},
+    State = #state{tour_cache=dict:new(),translations=dict:new(),words=dict:new(),gifts=nsm_db:all(gifts)},
     NewState = lists:foldl(fun({English, Lang, Word},ST) ->
 
                       Words0 = dict:store(English,
@@ -56,6 +57,9 @@ handle_call({get_word,Word}, _From, State)->
        error -> {error,notfound}; 
        R -> R end,
   {reply, Return, State};
+
+handle_call(gifts, _From, State)->
+  {reply, State#state.gifts, State};
 
 handle_call({get_translation,{Lang,Translation}}, _From, State)->
   Return = case dict:find(Lang ++ "_" ++ Translation,State#state.translations) of 

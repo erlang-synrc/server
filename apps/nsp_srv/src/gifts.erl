@@ -45,7 +45,7 @@ product_list_paged(Page) ->
     MinPrice = wf:state(slider_min),
     MaxPrice = wf:state(slider_max),
 
-    AllGiftsData = nsm_db:all(gifts),
+    AllGiftsData = user_counter:gifts(), %nsm_db:all(gifts),
     FilteredGiftsData = [Gift || Gift <- AllGiftsData, Gift#gift.enabled_on_site, (Gift#gift.kakush_point >= MinPrice) and (Gift#gift.kakush_point =< MaxPrice)],
 
     OnlyGiftsData = lists:sublist( 
