@@ -166,8 +166,8 @@ menu_links() ->
       title=?_T("Set your game criteria and face your opponent"), id="mainmenumatchmaker"}},
     #listitem{body=#link{text=?_T("Rules"), url=?_U("/rules-okey"),
       title=?_T("Read the rules of our games"), id="mainmenurules"}},
-    %#listitem{body=#link{text=?_T("Gifts"), url=?_U("/gifts"),
-    %  title=?_T("You can see all the prizes here"), id="mainmenugifts"}},
+    #listitem{body=#link{text=?_T("Gifts"), url=?_U("/gifts"),
+      title=?_T("You can see all the prizes here"), id="mainmenugifts"}},
     #listitem{body=#link{text=?_T("Tournaments"), url=?_U("/tournaments"),
       title=?_T("You can join tournaments and show them all"), id="mainmenutournaments"}}
     %#listitem{body=#link{text=?_T("Groups"), url=?_U("/groups"),
