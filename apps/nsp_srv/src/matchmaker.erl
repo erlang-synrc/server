@@ -842,6 +842,7 @@ can_be_multiple(_Key)  -> false.
 
 api_event(Name, Tag, Args) -> webutils:api_event(Name, Tag, Args).
 
+event(logout) -> webutils:event(logout);
 event(Event) ->
   u_event(Event),
   X = wf:state(comet_pid),
