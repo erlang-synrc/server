@@ -69,6 +69,8 @@
          social_actions_enabled :: boolean(),
          tour                 :: undefined | integer(),
          tours                :: undefined | integer(),
+         publish_ge_to_parent :: boolean(),
+         parent_manages_rolls :: boolean(),
          %% Dynamic parameters
          desk_rule_pid        :: undefined | pid(),
          players,             %% The register of table players
@@ -162,6 +164,8 @@ init([GameId, TableId, Params]) ->
     TTable = proplists:get_value(ttable, Params),
     Tour = proplists:get_value(tour, Params),
     Tours = proplists:get_value(tours, Params),
+    PublishToParent = proplists:get_value(publish_ge_to_parent, Params),
+    ParentManagesRolls = proplists:get_value(parent_manages_rolls, Params),
     %% Next two options will be passed on table respawn (after fail or service maintaince)
     ScoringState = proplists:get_value(scoring_state, Params, init_scoring(GameMode, PlayersInfo, Rounds)),
     CurRound = proplists:get_value(cur_round, Params, 0),
@@ -196,6 +200,8 @@ init([GameId, TableId, Params]) ->
                                           next_series_confirmation = NextSeriesConfirmation,
                                           pause_mode = PauseMode,
                                           social_actions_enabled = SocialActionsEnabled,
+                                          publish_ge_to_parent = PublishToParent,
+                                          parent_manages_rolls = ParentManagesRolls,
                                           players = Players,
                                           start_color = undefined,
                                           cur_round = CurRound,
@@ -304,12 +310,12 @@ handle_parent_message({replace_player, RequestId, UserInfo, PlayerId, SeatNum}, 
     relay_kick_player(Relay, OldPlayerId),
     relay_register_player(Relay, UserId, PlayerId),
     ReplaceMsg = create_player_left(SeatNum, UserInfo, Players),
-    relay_publish_ge(Relay, ReplaceMsg),
+    publish_ge(ReplaceMsg, StateData),
     parent_confirm_replacement(Parent, TableId, RequestId),
     {next_state, StateName, StateData#state{players = NewPlayers2}};
 
 handle_parent_message(start_round, ?STATE_WAITING_FOR_START,
-                      #state{relay = Relay, turn_timeout = TurnTimeout,
+                      #state{turn_timeout = TurnTimeout,
                              round_timeout = RoundTimeout, set_timeout = SetTimeout,
                              set_timer = SetTRef} = StateData) ->
     CurRound = 1,
@@ -337,13 +343,12 @@ handle_parent_message(start_round, ?STATE_WAITING_FOR_START,
                                    round_timer = RoundTRef,
                                    set_timer = SetTRef},
     GameStartedMsg = create_tavla_game_started(DeskState, _DoOrderRoll = true, NewStateData),
-    relay_publish_ge(Relay, GameStartedMsg),
+    publish_ge(GameStartedMsg, NewStateData),
     {next_state, ?STATE_FIRST_MOVE_COMPETITION, NewStateData};
 
 handle_parent_message(start_round, ?STATE_FINISHED,
                       #state{cur_round = CurRound,
-                             start_color = LastStartColor, players = Players,
-                             relay = Relay, turn_timeout = TurnTimeout,
+                             start_color = LastStartColor, turn_timeout = TurnTimeout,
                              round_timeout = RoundTimeout, set_timeout = SetTimeout,
                              set_timer = SetTRef} = StateData) ->
     NewCurRound = CurRound + 1,
@@ -381,13 +386,13 @@ handle_parent_message(start_round, ?STATE_FINISHED,
                                    set_timer = NewSetTRef},
     %% Send notifications to clients
     GameStartedMsg = create_tavla_game_started(DeskState, _DoRollMove = false, NewStateData),
-    relay_publish_ge(Relay, GameStartedMsg),
+    publish_ge(GameStartedMsg, NewStateData),
     CurColor = DeskState#desk_state.cur_color,
-    relay_publish_ge(Relay, create_tavla_next_turn(CurColor, NewStateData)),
+    publish_ge(create_tavla_next_turn(CurColor, NewStateData), NewStateData),
     {next_state, ?STATE_PLAYING, NewStateData};
 
 handle_parent_message(show_round_result, StateName,
-                      #state{relay = Relay, scoring_state = ScoringState,
+                      #state{scoring_state = ScoringState,
                              game_id = GameId, table_id = TableId} = StateData) ->
     {FinishInfo, RoundScore, AchsPoints, TotalScore} = ?SCORING:last_round_result(ScoringState),
     ?INFO("TAVLA_NG_TABLE <~p,~p> RoundScore: ~p Total score: ~p.", [GameId, TableId, RoundScore, TotalScore]),
@@ -402,28 +407,28 @@ handle_parent_message(show_round_result, StateName,
                   create_tavla_round_ended_draw(set_timeout, RoundScore, TotalScore, AchsPoints,
                                                 StateData)
           end,
-    relay_publish_ge(Relay, Msg),
+    publish_ge(Msg, StateData),
     {next_state, StateName, StateData#state{}};
 
 %% Results = [{PlayerId, Position, Score, Status}] Status = winner | loser | eliminated | none
 handle_parent_message({show_series_result, Results}, StateName,
-                      #state{relay = Relay} = StateData) ->
+                      StateData) ->
     Msg = create_tavla_series_ended(Results, StateData),
-    relay_publish_ge(Relay, Msg),
+    publish_ge(Msg, StateData),
     {next_state, StateName, StateData#state{}};
 
 %% Results = [{UserId, Position, Score, Status}] Status = active | eliminated
 handle_parent_message({tour_result, TourNum, Results}, StateName,
-                      #state{relay = Relay, tournament_type = TTable} = StateData) ->
+                      #state{tournament_table = TTable} = StateData) ->
     NewTTable = [{TourNum, Results} | TTable],
     Msg = create_tavla_tour_result(TourNum, Results, StateName),
-    relay_publish_ge(Relay, Msg),
+    publish_ge(Msg, StateData),
     {next_state, StateName, StateData#state{tournament_table = NewTTable}};
 
 handle_parent_message({playing_tables_num, Num}, StateName,
-                      #state{relay = Relay} = StateData) ->
+                      StateData) ->
 %%XXX    Msg = create_tavla_playing_tables(Num),
-%%    relay_publish_ge(Relay, Msg),
+%%    publish_ge(Msg, StateData),
     {next_state, StateName, StateData};
 
 handle_parent_message(rejoin_players, StateName,
@@ -448,10 +453,42 @@ handle_parent_message(stop, _StateName,
 %%    relay_publish(Relay, {disconnect, table_closed}), %% XXX Looks like a hack... Should be sent personaly to players gamesessions
     {stop, normal, StateData};
 
+
+handle_parent_message({action, {competition_rolls, Die1, Die2} = Action},
+                      ?STATE_FIRST_MOVE_COMPETITION = StateName,
+                      #state{game_id = GameId, table_id = TableId,
+                             desk_state = DeskState} = StateData) ->
+    ?INFO("TAVLA_NG_TABLE <~p,~p>  Parent action received in state <~p>: ~p. Processing.",
+          [GameId, TableId, StateName, Action]),
+    publish_ge(create_tavla_rolls_die(?WHITE, Die1, StateData), StateData),
+    publish_ge(create_tavla_rolls_die(?BLACK, Die2, StateData), StateData),
+    NewDeskState = DeskState#desk_state{dice = {Die1, Die2}},
+    do_start_game(StateData#state{desk_state = NewDeskState});
+
+handle_parent_message({action, {rolls, Color, Die1, Die2} = Action},
+                      ?STATE_PLAYING = StateName,
+                      #state{game_id = GameId, table_id = TableId,
+                             relay = Relay} = StateData) ->
+    ?INFO("TAVLA_NG_TABLE <~p,~p>  Parent action for color <~p> received in state <~p>: ~p. Processing.",
+          [GameId, TableId, Color, StateName, Action]),
+    relay_publish_ge(Relay, create_tavla_next_turn(Color, StateData)),
+    case do_parent_game_action(Color, {roll, Die1, Die2}, StateData) of
+        {ok, NewStateName, NewStateData} ->
+            {next_state, NewStateName, NewStateData};
+        {error, Reason} ->
+            {stop, {parent_action_failed, Reason}, StateData}
+    end;
+
+handle_parent_message({action, Action}, StateName,
+                      #state{game_id = GameId, table_id = TableId} = StateData) ->
+    ?INFO("TAVLA_NG_TABLE <~p,~p>  Parent action received in state <~p>: ~p. Ignoring.",
+          [GameId, TableId, StateName, Action]),
+    {next_state, StateName, StateData};
+
 handle_parent_message(Message, StateName,
                       #state{game_id = GameId, table_id = TableId} = StateData) ->
-    ?ERROR("TAVLA_NG_TABLE <~p,~p> Unexpected parent message received in state <~p>: ~p. State: ~p. Stopping.",
-           [GameId, TableId, StateName, Message, StateName]),
+    ?ERROR("TAVLA_NG_TABLE <~p,~p> Unexpected parent message received in state <~p>: ~p. Stopping.",
+           [GameId, TableId, StateName, Message]),
     {stop, unexpected_parent_message, StateData}.
 
 
@@ -588,7 +625,7 @@ handle_player_action(_Player, _Message, _From, StateName, StateData) ->
 
 do_action(SeatNum, #tavla_roll{}, From, ?STATE_FIRST_MOVE_COMPETITION = StateName,
           #state{game_id = GameId, table_id = TableId,
-                 desk_state = DeskState, players = Players, relay = Relay} = StateData) ->
+                 desk_state = DeskState, players = Players} = StateData) ->
     ?INFO("TAVLA_NG_TABLE_DBG <~p,~p> Action tavla_roll{} Deskstate: ~p.",
           [GameId, TableId, DeskState]),
     #desk_state{dice = Dice} = DeskState,
@@ -597,12 +634,12 @@ do_action(SeatNum, #tavla_roll{}, From, ?STATE_FIRST_MOVE_COMPETITION = StateNam
              Color == ?BLACK -> 2 end,
     if element(Pos, Dice) == undefined ->
            Die = random_die(),
-           relay_publish_ge(Relay, create_tavla_rolls_die(Color, Die, StateData)),
+           publish_ge(create_tavla_rolls_die(Color, Die, StateData), StateData),
            NewDice = {WhiteDie, BlackDie} = setelement(Pos, Dice, Die),
            NewDeskState = DeskState#desk_state{dice = NewDice},
            if WhiteDie =/= undefined andalso BlackDie =/= undefined ->
                   gen_fsm:reply(From, ok),
-                  do_start_game(StateData#state{desk_state = DeskState});
+                  do_start_game(StateData#state{desk_state = NewDeskState});
               true ->
                   {reply, ok, StateName, StateData#state{desk_state = NewDeskState}}
            end;
@@ -611,7 +648,8 @@ do_action(SeatNum, #tavla_roll{}, From, ?STATE_FIRST_MOVE_COMPETITION = StateNam
     end;
 
 do_action(SeatNum, #tavla_roll{}, From, ?STATE_PLAYING = StateName,
-          #state{desk_state = DeskState, players = Players} = StateData) ->
+          #state{parent_manages_rolls = false,
+                 desk_state = DeskState, players = Players} = StateData) ->
     #desk_state{state = DeskStateName,
                 cur_color = CurColor} = DeskState,
     #player{color = Color} = get_player_by_seat_num(SeatNum, Players),
@@ -663,26 +701,24 @@ do_action(_SeatNum, _UnsupportedAction, _From, StateName, StateData) ->
 
 
 %%===================================================================
-do_first_move_competition_timeout_rolls(#state{desk_state = DeskState,
-                                               relay = Relay} = StateData) ->
+do_first_move_competition_timeout_rolls(#state{desk_state = DeskState} = StateData) ->
     {WhiteDie, BlackDie} = DeskState#desk_state.dice,
     FinWhiteDie = if WhiteDie == undefined ->
                          NewWhiteDie = random_die(),
-                         relay_publish_ge(Relay, create_tavla_rolls_die(?WHITE, NewWhiteDie, StateData)),
+                         publish_ge(create_tavla_rolls_die(?WHITE, NewWhiteDie, StateData), StateData),
                          NewWhiteDie;
                      true -> WhiteDie
                   end,
     FinBlackDie = if BlackDie == undefined ->
                          NewBlackDie = random_die(),
-                         relay_publish_ge(Relay, create_tavla_rolls_die(?BLACK, NewBlackDie, StateData)),
+                         publish_ge(create_tavla_rolls_die(?BLACK, NewBlackDie, StateData), StateData),
                          NewBlackDie;
                      true -> BlackDie
                   end,
     NewDeskState = DeskState#desk_state{dice = {FinWhiteDie, FinBlackDie}},
     do_start_game(StateData#state{desk_state = NewDeskState}).
 
-do_start_game(#state{desk_state = DeskState, relay = Relay,
-                     turn_timeout = TurnTimeout} = StateData) ->
+do_start_game(#state{desk_state = DeskState, turn_timeout = TurnTimeout} = StateData) ->
     {WhiteDie, BlackDie} = Dice = DeskState#desk_state.dice,
     StartColor = if WhiteDie >= BlackDie -> ?WHITE;
                     true -> ?BLACK
@@ -703,9 +739,8 @@ do_start_game(#state{desk_state = DeskState, relay = Relay,
 %%    NewDeskState = init_desk_state(Desk),
     NewDeskState2 = NewDeskState#desk_state{dice = Dice},
     Msg = create_won_first_move(StartColor, Dice, _Reroll = false, StateData),
-    relay_publish_ge(Relay, Msg),
+    publish_ge(Msg, StateData),
     {TRef, Magic} = start_timer(TurnTimeout),
-    %% TODO: Timers
     {next_state, ?STATE_PLAYING, StateData#state{start_color = StartColor,
                                                  desk_rule_pid = Desk,
                                                  desk_state = NewDeskState2,
@@ -766,6 +801,18 @@ do_timeout_moves(#state{desk_rule_pid = Desk, desk_state = DeskState,
 
 %%===================================================================
 
+do_parent_game_action(Color, GameAction,
+               #state{desk_rule_pid = Desk} = StateData) ->
+    ?INFO("TAVLA_NG_TABLE do_parent_game_action Color: ~p  GameAction: ~p", [Color, GameAction]),
+    case desk_player_action(Desk, Color, GameAction) of
+        {ok, Events} ->
+            {next_state, NewStateName, NewStateData} = process_game_events(Events, StateData),
+            {ok, NewStateName, NewStateData};
+        {error, Reason} ->
+            {error, Reason}
+    end.
+
+
 do_game_action(Color, GameAction, From, StateName,
                #state{desk_rule_pid = Desk} = StateData) ->
     ?INFO("TAVLA_NG_TABLE do_game_action Color: ~p  GameAction: ~p", [Color, GameAction]),
@@ -778,7 +825,7 @@ do_game_action(Color, GameAction, From, StateName,
             {reply, ExtError, StateName, StateData}
     end.
 
-
+%% process_game_events(Events, StateData) -> {next_state, StateName, NewStateData}
 process_game_events(Events, #state{desk_state = DeskState, timeout_timer = OldTRef,
                                    round_timeout = RoundTimeout, round_timer = RoundTRef,
                                    turn_timeout = TurnTimeout} = StateData) ->
@@ -845,47 +892,46 @@ handle_desk_events([], DeskState, _StateData) ->
     DeskState;
 
 handle_desk_events([Event | Events], DeskState,
-                    #state{game_id = GameId, table_id = TableId,
-                           relay = Relay} = StateData) ->
+                    #state{game_id = GameId, table_id = TableId} = StateData) ->
     ?INFO("TAVLA_NG_TABLE_DBG <~p,~p> handle_desk_events/3 Event: ~p", [GameId, TableId, Event]),
     #desk_state{board = Board,
                 pips_list = OldPipsList} = DeskState,
     NewDeskState =
         case Event of
             {rolls, Color, Die1, Die2} ->
-                relay_publish_ge(Relay, create_tavla_rolls_dice(Color, {Die1, Die2}, StateData)),
+                publish_ge(create_tavla_rolls_dice(Color, {Die1, Die2}, StateData), StateData),
                 PipsList = pips_list(Die1, Die2),
                 DeskState#desk_state{state = state_wait_move,
                                      dice = {Die1, Die2}, pips_list = PipsList};
             {moves, Color, Moves} ->
-                [relay_publish_ge(Relay, create_tavla_moves(Color, From, To, Type, Pips, StateData)) ||
+                [publish_ge(create_tavla_moves(Color, From, To, Type, Pips, StateData), StateData) ||
                    {Type, From, To, Pips} <- Moves],
                 UsedPipsList = [Pips || {_Type, _From, _To, Pips} <- Moves],
                 NewBoard = apply_moves(Color, Moves, Board),
                 DeskState#desk_state{board = NewBoard, pips_list = OldPipsList -- UsedPipsList};
             {rolls_timeout, Color, Die1, Die2} -> %% Injected event
 %%                Msg = create_tavla_turn_timeout(Color, {Die1, Die2}, _Moves = [], StateData),
-%%                relay_publish_ge(Relay, Msg),
-                relay_publish_ge(Relay, create_tavla_rolls_dice(Color, {Die1, Die2}, StateData)),
+%%                publish_ge(Msg, StateData),
+                publish_ge(create_tavla_rolls_dice(Color, {Die1, Die2}, StateData), StateData),
                 DeskState#desk_state{dice = {Die1, Die2}};
             {rolls_moves_timeout, Color, Die1, Die2, Moves} -> %% Injected event
 %%                Msg = create_tavla_turn_timeout(Color, {Die1, Die2}, Moves, StateData),
-%%                relay_publish_ge(Relay, Msg),
-                relay_publish_ge(Relay, create_tavla_rolls_dice(Color, {Die1, Die2}, StateData)),
-                [relay_publish_ge(Relay, create_tavla_moves(Color, From, To, Type, Pips, StateData)) ||
+%%                publish_ge(Msg, StateData),
+                publish_ge(create_tavla_rolls_dice(Color, {Die1, Die2}, StateData), StateData),
+                [publish_ge(create_tavla_moves(Color, From, To, Type, Pips, StateData), StateData) ||
                    {Type, From, To, Pips} <- Moves],
                 NewBoard = apply_moves(Color, Moves, Board),
                 DeskState#desk_state{dice = {Die1, Die2}, board = NewBoard};
             {moves_timeout, Color, Moves} ->    %% Injected event
 %%                Msg = create_tavla_turn_timeout(Color, _Dice = undefined, Moves, StateData),
-%%                relay_publish_ge(Relay, Msg),
-                [relay_publish_ge(Relay, create_tavla_moves(Color, From, To, Type, Pips, StateData)) ||
+%%                publish_ge(Msg, Statedata),
+                [publish_ge(create_tavla_moves(Color, From, To, Type, Pips, StateData), StateData) ||
                    {Type, From, To, Pips} <- Moves],
                 NewBoard = apply_moves(Color, Moves, Board),
                 DeskState#desk_state{board = NewBoard};
             {next_player, Color} ->
                 Msg = create_tavla_next_turn(Color, StateData),
-                relay_publish_ge(Relay, Msg),
+                publish_ge(Msg, StateData),
                 DeskState#desk_state{state = state_wait_roll, cur_color = Color,
                                      dice = {undefined, undefined},
                                      pips_list = []};
@@ -955,10 +1001,6 @@ find_players_by_seat_num(SeatNum, Players) ->
 find_players_by_color(Color, Players) ->
     midict:geti(Color, color, Players).
 
-
-%% find_connected_players(Players) -> [Player]
-find_connected_players(Players) ->
-    midict:geti(true, connected, Players).
 
 %% del_player(PlayerId, Players) -> NewPlayers
 del_player(PlayerId, Players) ->
@@ -1031,8 +1073,22 @@ parent_send_player_connected({ParentMod, ParentPid}, TableId, PlayerId) ->
 parent_send_player_disconnected({ParentMod, ParentPid}, TableId, PlayerId) ->
     ParentMod:table_message(ParentPid, TableId, {player_disconnected, PlayerId}).
 
+parent_publish_ge({ParentMod, ParentPid}, TableId, GameEvent) ->
+    ParentMod:table_message(ParentPid, TableId, {game_event, GameEvent}).
+
 desk_player_action(Desk, Color, Action) ->
     ?DESK:player_action(Desk, Color, Action).
+
+publish_ge(GameEvent, #state{relay = Relay, parent = Parent, table_id = TableId,
+                             publish_ge_to_parent = PublishToParent,
+                             parent_manages_rolls = ParentManagesRolls}) ->
+    case GameEvent of
+        #tavla_next_turn{} when ParentManagesRolls == true -> do_nothing;
+        _ ->  relay_publish_ge(Relay, GameEvent)
+    end,
+    if PublishToParent == true -> parent_publish_ge(Parent, TableId, GameEvent);
+       true -> do_nothing
+    end.
 
 %%===================================================================
 
@@ -1421,9 +1477,6 @@ ext_to_pos(ExtPos) ->
 %% XXX Different colors id for different external terms is strange... 
 color_to_ext(?WHITE) -> 1;
 color_to_ext(?BLACK) -> 2.
-
-color_to_ext2(?WHITE) -> 2;
-color_to_ext2(?BLACK) -> 1.
 
 dice_to_ext({Die1, Die2}) -> [die_to_ext(Die1), die_to_ext(Die2)].
 
