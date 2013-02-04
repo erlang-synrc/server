@@ -13,34 +13,32 @@
 -define(MAX_SLIDER_PRICE, 1200000).
 
 main() ->
-    webutils:add_script("/nitrogen/blockui.js"),
     wf:state(slider_min, ?MIN_SLIDER_PRICE),
     wf:state(slider_max, ?MAX_SLIDER_PRICE),
-    #template { file=code:priv_dir(nsp_srv)++"/templates/bare.html" }.
+    #template { file=code:priv_dir(nsp_srv)++"/templates/base.html" }.
 
 title() -> webutils:title(?MODULE).
 
 body() ->
-    [
-    "<section id='main'>
-		<div class='top-space top-space-2'>
-			<h1>Hedİyeler</h1>
-		</div>",
-        #panel{style="height:90px; font-size:16px;", body=[
-            #label{id=slider_min_value, style="position:absolute; left:276px; top:100px;", text="0"},
-            #label{id=slider_max_value, style="position:absolute; left:576px; top:100px; text-align:right; width:100px;", text=site_utils:long_integer_to_list(?MAX_SLIDER_PRICE)},
-            #panel{id=slider_panel, style="position:absolute; left:276px; top:125px; width:400px; height:20px;", body=[
-                #slider{range = true, id=gifts_slider, max=?MAX_SLIDER_PRICE,
-                    postback={?MODULE, {gifts_slider}},
-                    values=[{min,?MIN_SLIDER_PRICE}, {max,?MAX_SLIDER_PRICE}]
-                }
-            ]},
-            #label{id=slider_cur_max_value, class="slider_cur_max_value", style="position:absolute; font-size:14px; left:678px; top:145px;", text="1 200 000"},
-            #label{id=slider_cur_min_value, class="slider_cur_min_value", style="position:absolute; font-size:14px; left:78px; top:145px; text-align:right; width:200px;", text="0"}
+  [
+    #panel{class="page-content page-canvas", style="position:relative;", body=[
+      #h1{class="canvas-title", text="Hedİyeler"},
+      #hr{},
+      #panel{style="height:90px; font-size:16px;", body=[
+        #label{id=slider_min_value, style="position:absolute; left:276px; top:100px;", text="0"},
+        #label{id=slider_max_value, style="position:absolute; left:576px; top:100px; text-align:right; width:100px;", text=site_utils:long_integer_to_list(?MAX_SLIDER_PRICE)},
+        #panel{id=slider_panel, style="position:absolute; left:276px; top:125px; width:400px; height:20px;", body=[
+          #slider{range = true, id=gifts_slider, max=?MAX_SLIDER_PRICE,
+                  postback={?MODULE, {gifts_slider}},
+                  values=[{min,?MIN_SLIDER_PRICE}, {max,?MAX_SLIDER_PRICE}]
+          }
         ]},
-        #panel{id=product_list, body=product_list_paged(1)},
-        "</section>"
-    ].
+        #label{id=slider_cur_max_value, class="slider_cur_max_value", style="position:absolute; font-size:14px; left:678px; top:145px;", text="1 200 000"},
+        #label{id=slider_cur_min_value, class="slider_cur_min_value", style="position:absolute; font-size:14px; left:78px; top:145px; text-align:right; width:200px;", text="0"}
+      ]},
+      #panel{id=product_list, body=product_list_paged(1)}
+    ]}
+  ].
 
 product_list_paged(Page) ->
     MinPrice = wf:state(slider_min),

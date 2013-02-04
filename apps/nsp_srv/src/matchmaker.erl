@@ -44,7 +44,7 @@ main() ->
   wf:session({wf:q(game_name), wf:user()}, SavedSettings),
   wf:state(user_paid, nsm_accounts:user_paid(wf:user())),
 
-  #template { file=code:priv_dir(nsp_srv)++"/templates/matchmaker.html" }.
+  #template { file=code:priv_dir(nsp_srv)++"/templates/base.html" }.
 
 
 body() ->

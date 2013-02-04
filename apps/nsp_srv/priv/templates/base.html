@@ -7,15 +7,15 @@
   <meta http-equiv="pragma" content="no-cache" />
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
   <title>[[[page:title()]]]</title>
-  <link rel="stylesheet" type="text/css" href="/css/kindex.min.css" media="all" />
+  <link rel="stylesheet" type="text/css" href="[[[webutils:page_css_path()]]]" media="all" />
   [[[webutils:print_head()]]]
 </head>
-<body class="[[[webutils:page_module()]]]">
+<body>
   [[[fb_utils:init()]]]
   [[[webutils:header()]]]
   [[[page:body()]]]
   [[[webutils:counters()]]]
-  [[[webutils:footer_box()]]]
+  [[[webutils:footer()]]]
  <script>
   function ngn(){ [[[script]]] }
   window.onload = function(){
@@ -25,7 +25,7 @@
       script.onreadystatechange = function(){
         if (script.readyState == "loaded" || script.readyState == "complete"){
           ngn();
-          $(document).ready(slideShow("[[[site_utils:detect_language()]]]"));
+          [[[page:script()]]]
           var inIframe= top!=self;page.setFbIframe(inIframe);
           script.onreadystatechange = null;
         }
@@ -33,15 +33,15 @@
     } else {  //Others
       script.onload = function(){
         ngn();
-        $(document).ready(slideShow("[[[site_utils:detect_language()]]]"));
+        [[[webutils:page_script()]]]
         var inIframe= top!=self;page.setFbIframe(inIframe);
       };
     }
-    script.src = "/js/kindex.min.js";
+    script.src = "[[[webutils:page_script_path()]]]";
     document.getElementsByTagName("head")[0].appendChild(script);
   };
   </script>
-
+  [[[webutils:user_voice()]]]
   <script type="text/javascript">
   var _gaq = _gaq || [];
   _gaq.push(['_setAccount', 'UA-37172808-1']);
