@@ -2,7 +2,6 @@ var slang = 'en';
 var slides = new Object();
   slides.en = [
     '<img width="960" height="352" src="/images/slides/en/slide4.png">',
-    '<img width="960" height="352" src="/images/slides/en/slide4.png">',
     '<img width="960" height="352" src="/images/slides/en/slide3.png">',
     '<img width="960" height="352" src="/images/slides/en/slide2.png">'];
   slides.tr = [
