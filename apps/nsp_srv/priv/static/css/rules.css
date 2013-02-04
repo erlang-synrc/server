@@ -1,0 +1,19 @@
+.games_col1 {    background-color:#ddddff;    text-align:center;}
+.games_col2 {    background-color:#ffbbcc;    text-align:center;}
+.games_col3 {    background-color:#ddbbff;    text-align:center;}
+.games_col4 {    background-color:#ddffdd;    text-align:center;}
+.games_col5 {    text-align:center;}
+/* info pages */
+.info-page-header-panel{    width:100%;    padding:0px 0px 0px 0px;    color:#58595b;    font-family: 'Gotham Rounded Bold';}
+.info-page-content-panel{    width:100%;    padding:0px 0px 0px 0px;    color:#58595b;}
+.info-page-content-panel div{    position:absolute;}
+.info-page-bg{    margin-left:-24px;}
+/* rules pages */
+.rules-page-menu-elements{    position:absolute;    font-family: 'Gotham Rounded Bold';    font-size: 16px;    top:10px;    letter-spacing:-0.05px;}
+.rules-page-okey-label{    color:#444;    left:53px;}
+.rules-page-tavla-link{    color:#FFF;    left:224px;}
+.rules-page-king-link{    color:#FFF;    left:412px;}
+.rules-page-batak-link{    color:#FFF;    left:615px;}
+.rules-page-sorbi-link{    color:#FFF;    left:812px;}
+
+

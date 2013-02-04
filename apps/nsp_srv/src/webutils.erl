@@ -170,8 +170,8 @@ menu_links() ->
       title=?_T("You can see all the prizes here"), id="mainmenugifts"}},
     #listitem{body=#link{text=?_T("Tournaments"), url=?_U("/tournaments"),
       title=?_T("You can join tournaments and show them all"), id="mainmenutournaments"}}
-    %#listitem{body=#link{text=?_T("Groups"), url=?_U("/groups"),
-    %  title=?_T("You can manage your groups settings here"), id="mainmenugroups"}}
+%    #listitem{body=#link{text=?_T("Groups"), url=?_U("/groups"),
+%      title=?_T("You can manage your groups settings here"), id="mainmenugroups"}}
   ]},
   "</nav>"
 %      "<script>
@@ -216,6 +216,27 @@ user_avatar(medium) ->
 user_avatar(big) ->
     ok.
 
+footer() ->
+  case wf_context:page_module() of
+    view_table -> [];
+    _ ->
+      LinkList = [
+%       #listitem{body=[?_T("About Us")] },
+        #listitem{body=#link{url=?_U("/gifts"), text=?_T("Gifts")}},
+%       #listitem{body=?_T("Pointing System")},
+        #listitem{body=#link{url=?_U("/terms"), text=?_T("Terms of Service")}},
+        #listitem{body=#link{url=?_U("/privacy"), text=?_T("Privacy Policy")}},
+        #listitem{body=wf_tags:emit_tag(a, ?_T("Help & Support"),
+          [{href, "https://kakaranet.uservoice.com/"},{target,"_blank"}])},
+        #listitem{body=#link{url=?_U("/contact"), text=?_T("Contact")}},
+        #listitem{body=[?_T("2011&mdash;2012 &copy; Kakaranet. All rights reserved."),"<br/>",
+                        ?_T("Kakaranet is registered trademark of Paynet Inc."),"<br/>"]},
+        #listitem{body=[#checkbox { id=replay_guiders, text=?_T("Replay Guiders"), postback=replay_guiders_changed,
+                                    checked=(wf:cookie("replayguiders")=="yes") }]}
+      ],
+      #panel{class="page-content footer", body=[#list{class="navbar", body = LinkList},language()]}
+  end.
+
 footer_box() ->
   case wf_context:page_module() of
     view_table -> [];
@@ -242,6 +263,8 @@ footer_box() ->
       "</footer>"]
   end.
 
+uservoice() ->
+  [].
 
 event({error, Msg}) ->
     wf:wire(#alert{text=Msg});
@@ -252,6 +275,7 @@ event(register)->
     wf:session(fb_registration, undefined),
     wf:redirect(?_T("/login/register"));
 event(logout) ->
+  ?INFO("logout"),
   wf:session(fb_registration, undefined),
   wf:session(logged_with_fb, undefined),
   %wf:clear_session(),
@@ -1193,15 +1217,40 @@ quick_nav(FullSize) ->
 page_module() ->
     wf:to_list(wf_context:page_module()).
 
+page_script_path() -> ?STATIC_ADDRESS++ "/js/k" ++ page_module()++".min.js".
+
+page_css_path() -> ?STATIC_ADDRESS++ "/css/k" ++ page_module()++".min.css".
+
+page_script() ->
+  case wf_context:page_module() of
+    index -> ["$(document).ready(slideShow(\""++ site_utils:detect_language() ++"\"));"];
+    _ -> []
+  end.
+
+user_voice()->
+  case wf_context:page_module() of
+    index -> [];
+    _Mod ->
+      ["<script type=\"text/javascript\">",
+        "var uvOptions = {};",
+        "(function() {",
+          "var uv = document.createElement('script');",
+          "uv.type = 'text/javascript';",
+          "uv.async = true;",
+          "uv.src = ('https:' == document.location.protocol ? 'https://' : 'http://') + 'widget.uservoice.com/2nRvnf6ACekkhJwy8PZlA.js';",
+          "var s = document.getElementsByTagName('script')[0];",
+          "s.parentNode.insertBefore(uv, s);",
+        "})();",
+      "</script>"]
+  end.
+
 print_head() ->
-    Scripts = get_head(),
-    [
-        case Type of
-	        script -> "\t<script src=\""++Element++"\" type=\"text/javascript\" charset=\"utf-8\"></script>\n";
-        	raw -> "\t"++Element++"\n";
-        	Other -> ?PRINT({"Error", Other})
-        end || {Type, Element} <- Scripts
-    ].
+  Scripts = get_head(),
+  [case Type of
+      script -> "\t<script src=\""++Element++"\" type=\"text/javascript\" charset=\"utf-8\"></script>\n";
+      raw -> "\t"++Element++"\n";
+      Other -> ?PRINT({"Error", Other})
+    end || {Type, Element} <- Scripts].
 
 get_head() ->
     case wf:state(scripts) of

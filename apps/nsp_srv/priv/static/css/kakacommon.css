@@ -31,6 +31,14 @@ body {
   display:block;
 }
 
+.canvas-title{
+  font: 2.2em/1.35em 'Gotham Rounded Bold',"Trebuchet MS";
+  text-transform: uppercase;
+  color: #4a4a4a;
+  padding: 10px 0 15px;
+  margin:0;
+}
+
 a {text-decoration:none;color:#4ec3f1;}
 @font-face {
   font-family: 'HelveticaNeueBold';
@@ -53,7 +61,7 @@ a {text-decoration:none;color:#4ec3f1;}
 .ar {float:right;}
 .hidden {display:none;}
 
-.signup {
+/*.signup {
 	float:left;
 	position:relative;
 	margin:0px 0 -2px;
@@ -90,7 +98,7 @@ a {text-decoration:none;color:#4ec3f1;}
 	line-height:24px;
 	font-weight:bold;
 	text-shadow:0 1px 1px #fed17d;
-}
+}*/
 /* visual-area */
 .visual-area {
 	width:100%;
@@ -109,17 +117,17 @@ a {text-decoration:none;color:#4ec3f1;}
 	background:url(/images/bg-section-area.gif) repeat-x;
 }
 .stat-bar {
-	width:857px;
-	margin:0 auto 6px;
-	border:1px solid #d2dce1;
+  width:857px;
+  margin:0 auto 6px;
+  border:1px solid #d2dce1;
   background-color: #1b4f90;
   background-image: url(/images/indexbg.png);
   background-position: -10px -285px;
-	overflow:hidden;
-	-moz-border-radius:3px;
-	-webkit-border-radius:3px;
-	border-radius:3px;
-	padding:0 32px 0 68px;
+  overflow:hidden;
+  -moz-border-radius:3px;
+  -webkit-border-radius:3px;
+  border-radius:3px;
+  padding:0 32px 0 68px;
 }
 .dlist {
 	float:left;
@@ -882,44 +890,42 @@ a {text-decoration:none;color:#4ec3f1;}
 }
 .holder-box-2 {padding-bottom:0;}
 /* footer */
-footer {
-	border-top:3px solid #f8f8f8;
-	padding:8px 0 18px;
-	width:960px;
-	margin:0 auto;
-	overflow:hidden;
+.footer {
+  border-top:3px solid #f8f8f8;
+  padding:8px 0 18px;
 }
+
 .navbar {
-	float:left;
-	list-style:none;
-	margin:0;
-	padding:0;
+  float:left;
+  list-style:none;
+  margin:0;
+  padding:0;
 }
 .navbar li {
-	float:left;
-	padding:0 14px 0 15px;
+  float:left;
+  padding:0 14px 0 15px;
   background-image: url(/images/indexbg.png);
   background-position: -10px -436px;
-	font:1em/1.3em "Lucida Sans Unicode", "Lucida Grande", sans-serif;
-	color:#777;
+  font:1em/1.3em "Lucida Sans Unicode", "Lucida Grande", sans-serif;
+  color:#777;
 }
 .navbar li:first-child,
 .navbar li.first-child {background:none;}
 .navbar a {color:#777;}
-footer .lang {
-	float:right;
-	padding:0 0 0 19px;
-	color:#999;
-	font-size:1.1em;
-	line-height:1.27em;
-	cursor:pointer;
-	position:relative;
+.footer .lang {
+  float:right;
+  padding:0 0 0 19px;
+  color:#999;
+  font-size:1.1em;
+  line-height:1.27em;
+  cursor:pointer;
+  position:relative;
 }
-footer .lang img {
-	position:absolute;
-	left:0;
-	top:50%;
-	margin:-5px 0 0;
+.footer .lang img {
+  position:absolute;
+  left:0;
+  top:50%;
+  margin:-5px 0 0;
 }
 
 

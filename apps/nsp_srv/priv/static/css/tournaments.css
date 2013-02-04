@@ -1,0 +1,382 @@
+.tournaments_title {  width:250px;  height:43px;  background: url(/images/tournament/lobby/top_plask.png);
+  text-align:center;
+  font-size:18px;
+  color:#fff;
+  font-weight:bold;
+  line-height:43px;
+  margin-top:-30px;
+  margin-left:-3px;
+}
+.tournaments_second_title{
+  width:92px;
+  height:43px;
+  background: url(/images/tournament/tournaments_page/orange_plask_short.png);
+  text-align:center;
+  line-height:43px;
+  font-size:18px;
+  color:#fff;
+  font-weight:bold;
+  margin-top:-21px;
+  margin-left: -3px;
+}
+.tournaments_header{
+  width:100%;
+  height:40px;
+  float:left;
+  margin-top: -20px;
+}
+
+.tournament_rules,.tournament_setup {float:right;margin-left: 20px;}
+
+hr.tournaments_hr{
+  clear:both;
+  width:958px;
+  margin-left:-25px;
+  margin-top:40px;
+  color:#c2c2c2;
+}
+
+.tournaments_top_selector{
+  font-size:16px;
+  width:959px;
+  margin-left:-25px;
+  pagging:0;
+  display:table;
+  padding:0;
+}
+
+.tournaments_top_selector li{
+  display:table-cell;
+  width:33%;
+}
+
+.tournaments_top_selector a {
+  background:url(/images/tournament/tournaments_page/bar_1_normal.png) top center no-repeat;
+  background-size:100% auto;
+  font:15px 'Gotham Rounded Bold','Trebuchet MS';
+  color:#fff;
+  text-shadow:0 1px 1px #353535;
+  text-align:center;
+  margin:0;
+  padding:0;
+  padding-top:15px;
+  display:block;
+  height:56px;
+  background-color:#e4e8e9;
+}
+
+.tournaments_top_selector a:hover{
+  text-decoration:none;
+  background: url(/images/tournament/tournaments_page/bar_1_hover.png)  no-repeat bottom center;
+  background-size:100% auto;
+  background-position: 0 0;
+  background-color:#e4e8e9;
+}
+
+.tournaments_top_selector a:active{
+  text-decoration:none;
+  background: url(/images/tournament/tournaments_page/bar_1_hover.png)  no-repeat bottom center;
+  background-size:100% auto;
+  background-position: 0 0;
+  background-color:#e4e8e9;
+}
+
+
+.tournaments_featured {
+  width:959px;
+  margin: 0 -25px;
+  padding:0;
+  display:table;
+  margin-top:-17px;
+  padding-bottom:10px;
+  background-color:#e4e8e9;
+}
+
+.tournaments_featured_tours{
+  display:table-cell;
+  width:880px;
+  padding-left:5px;
+}
+
+.tournaments_featured_arrow{  display:table-cell;  width:40px;  text-align:center;  vertical-align:middle;}
+.tournaments_featured_arrow a{  width:15px;  height:22px;}
+.tournaments_filter_block{  margin: 20px auto;  padding:0;  text-align:center;  width:100%;}
+.tournaments_filter_block label{  width:120px;  text-align:right;  font-size:16px;  line-height:32px;  margin-right: 10px;}
+.tournaments_filter_block select{  width:110px;  height:32px;  font-size:16px;  margin-right:15px;  margin-top:0;}
+.tournaments_filter_block .alltour_btns_blue{  display:inline-block;}
+.tournaments_filter_block .alltour_big_buttons{  display:inline-block;}
+.tournaments_filter_block h3 {  margin: 0;  color: #DF4426;  font-size: 18px;  padding-bottom: 1px;  width:100%;  text-align:center;}
+.tournaments_filter_block .alltour_textbox1 {
+  width: 120px;
+  padding: 4px;
+  margin-top:8px;
+  -webkit-box-shadow: 0 0 4px #C6C6C6 inset;
+  -moz-box-shadow: 0 0 4px #c6c6c6 inset;
+  box-shadow: 0 0 4px #C6C6C6 inset;
+  -webkit-border-radius: 4px;
+  -moz-border-radius: 4px;
+  border-radius: 4px;
+  border: 1px solid #C6C6C6;
+  background:url(../images/tournament/new_tournament/calendar_icon.png) no-repeat 104px 1px;
+  background-color: white;
+  font-size: 16px;
+}
+
+.tournaments_filter_block .create-block{
+  padding: 0;
+  margin:0 15px;
+  background: white;
+  -webkit-box-shadow: none;
+  -moz-box-shadow: none;
+  box-shadow: none;
+  -webkit-border-radius: none;
+  -moz-border-radius: none;
+  border-radius: none;
+  border: none;
+  text-align:left;
+  width:auto;
+  display:inline-block;
+}
+
+.tournaments_filter_block .create-block .article1 {
+  border:none;
+}
+
+.tournaments_filter_block .create-block .article1 .list1_green  a,
+.tournaments_filter_block .create-block .article1 .list1_blue  a {  padding:3px 10px;  font-size:16px;  margin-right:5px;}
+.tournaments_filter_block .create-block .article1 .list1_blue a {
+  border: 1px solid #4B97CE;
+  background: #5CB6D8;
+  background: -moz-linear-gradient(top, rgba(92, 182, 216, 1) 0%, rgba(48, 120, 187, 1) 100%);
+  background: -webkit-linear-gradient(top, rgba(92, 182, 216, 1) 0%,rgba(48, 120, 187, 1) 100%);
+  background: -o-linear-gradient(top, rgba(92, 182, 216, 1) 0%,rgba(48, 120, 187, 1) 100%);
+  background: -ms-linear-gradient(top, rgba(92, 182, 216, 1) 0%,rgba(48, 120, 187, 1) 100%);
+  background: linear-gradient(top, rgba(92, 182, 216, 1) 0%,rgba(48, 120, 187, 1) 100%);
+  color: #ffffff;
+  text-shadow: 0 1px #6d6d6d;
+  -webkit-border-radius: 5px;
+  -moz-border-radius: 5px;
+  border-radius: 5px;
+  -webkit-box-shadow: 0 1px 1px #3674AA;
+  -moz-box-shadow: 0 1px 1px #3674AA;
+  box-shadow: 0 1px 1px #3674AA;
+}
+
+.tournaments_filter_block .create-block .article1 .list1_blue a:hover,
+.tournaments_filter_block .create-block .article1 .list1_blue .active a {
+  color: #A6A6A6;
+  text-decoration: none;
+  border-color: #9D9D9D;
+  -webkit-box-shadow: 0 0 4px #9D9D9D inset;
+  -moz-box-shadow: 0 0 4px #9d9d9d inset;
+  box-shadow: 0 0 4px #9D9D9D inset;
+  background: #EAEAEA;
+  text-shadow: -1px 0 #D9D9D9;
+}
+
+.tournaments_all_block {
+  width:100%;
+  float:left;
+  margin: 20px auto;
+}
+
+.tournaments_all_block .tts_tournament {margin:12px}
+
+.tts_tournament {
+  width:200px;
+  height:320px;
+  border:1px solid #adb1b0;
+  background-color:#f6f9ff;
+  float:left;
+  margin:0 8px;
+  text-align:center;
+  margin-bottom:8px;
+}
+
+.tts_title {
+  font:14px 'Gotham Rounded Bold','Trebuchet MS';
+  color:#fff;
+  text-shadow:0 1px 1px #353535;
+  text-align:center;
+  padding-top: 6px;
+}
+
+img.tts_avatar{
+  width: 184px;
+  -moz-border-radius:2px;
+  -webkit-border-radius:2px;
+  border-radius:2px;
+  border:1px solid #7e7f83;
+  margin:8px auto;
+}
+
+.tts_tournament label {
+  color:#f67436;
+  font-size:12px;
+  font-weight:bold;
+  display:inline-block;
+  width:100%;
+  text-align:left;
+  margin: 0 5px;
+}
+
+.tts_tournament span {
+  color:#222;
+  font-weight:normal;
+  margin-left: 5px;
+}
+
+.tts_prizes{
+  width:100%;
+  display:table;
+  margin:0;
+}
+
+.tts_prize{  display: table-cell;  text-align:center;}
+.tts_prize span {font-size: 14px;}
+.tts_prize hr {width: 55px;}
+.tts_prize_icon {  height:55px;  width:55px;  border:1px solid #ccd0d3;  background-color:#fff;  display:table-cell;  vertical-align: middle;}
+.tts_prize_icon img {  max-width:55px;  max-height:55px;}
+.alltour_title {  width:250px;  height:43px;  background: url(/images/tournament/lobby/top_plask.png);  position:absolute;  left:21px;  top:-7px;  text-align:center;}
+.alltour_second_title {    width:92px;    height:43px;    background: url(/images/tournament/tournaments_page/orange_plask_short.png);    position:absolute;    left:21px;    top:-7px;    text-align:center;}
+.alltour_title_label {    font-size:18px;    color:#fff;    font-weight:bold;    line-height:42px;}
+.alltour_textbox {    font-size:16px;    height:28px;    border:1px solid #cdcdcd;}
+
+.alltour_bars {
+    display:block;
+    width:300px; height:60px;
+    font:15px 'Gotham Rounded Bold','Trebuchet MS'; color:#fff; text-shadow:0 1px 1px #353535;
+    border:0px; line-height:46px; text-align:center;
+}
+
+.alltour_bar_1 {
+    background: url(/images/tournament/tournaments_page/bar_1_normal.png);
+}
+
+.alltour_bar_1:hover {
+    background: url(/images/tournament/tournaments_page/bar_1_hover.png);
+    text-decoration:none;
+}
+
+.alltour_bar_1:active {
+    background: url(/images/tournament/tournaments_page/bar_1_pressed.png);
+    text-decoration:none; line-height:48px;
+}
+
+.alltour_bar_2 {
+    background: url(/images/tournament/tournaments_page/bar_1_normal.png);
+}
+
+.alltour_bar_2:hover {
+    background: url(/images/tournament/tournaments_page/bar_1_hover.png);
+    text-decoration:none;
+}
+
+.alltour_bar_2:active {
+    background: url(/images/tournament/tournaments_page/bar_1_pressed.png);
+    text-decoration:none; line-height:48px;
+}
+
+.alltour_bar_3 {
+    background: url(/images/tournament/tournaments_page/bar_1_normal.png);
+}
+
+.alltour_bar_3:hover {
+    background: url(/images/tournament/tournaments_page/bar_1_hover.png);
+    text-decoration:none;
+}
+
+.alltour_bar_3:active {
+    height:60px; background: url(/images/tournament/tournaments_page/bar_1_pressed.png);
+    text-decoration:none; line-height:48px;
+}
+
+.alltour_bar_4 {    width:226px; height:60px; background: url(/images/tournament/tournaments_page/bar_4_normal.png);}
+.alltour_bar_5 {    width:188px; height:60px; background: url(/images/tournament/tournaments_page/bar_5_normal.png);}
+.alltour_arrow_left {    display:block;    width:15px; height:22px; background: url(/images/tournament/tournaments_page/arrow_left.png);}
+.alltour_arrow_right {    display:block;    width:15px; height:22px; background: url(/images/tournament/tournaments_page/arrow_right.png);}
+.alltour_btns_blue {    display:block;    font-size:12px; font-weight:bold; color:#111;    border:0px; text-align:center; line-height:52px;    height:52px;}
+.create-block .article1 .list1 li a.alltour_btns_blue{  line-height:40px;  height:40px;  color:#111;}
+.alltour_btn_blue_1 {    width:205px; background: url(/images/tournament/tournaments_page/btn_blue_1_normal.png);}
+.alltour_btn_blue_1:hover {    width:205px; background: url(/images/tournament/tournaments_page/btn_blue_1_hover.png);
+    text-decoration:none;
+}
+
+.alltour_btn_blue_1:active {
+    width:205px; background: url(/images/tournament/tournaments_page/btn_blue_1_pressed.png);
+    text-decoration:none; line-height:54px;
+}
+
+.alltour_btn_blue_2 {
+    width:150px; background: url(/images/tournament/tournaments_page/btn_blue_2_normal.png);
+}
+
+.alltour_btn_blue_2:hover {
+    width:150px; background: url(/images/tournament/tournaments_page/btn_blue_2_hover.png);
+    text-decoration:none;
+}
+
+.alltour_btn_blue_2:active {
+    width:150px; background: url(/images/tournament/tournaments_page/btn_blue_2_pressed.png);
+    text-decoration:none; line-height:54px;
+}
+
+.alltour_btn_blue_3 {
+    width:210px; background: url(/images/tournament/tournaments_page/btn_blue_3_normal.png);
+}
+
+.alltour_btn_blue_3:hover {
+    width:210px; background: url(/images/tournament/tournaments_page/btn_blue_3_hover.png);
+    text-decoration:none;
+}
+
+.alltour_btn_blue_3:active {
+    width:210px; background: url(/images/tournament/tournaments_page/btn_blue_3_pressed.png);
+    text-decoration:none; line-height:54px;
+}
+
+.alltour_btn_blue_4 {
+    width:147px; background: url(/images/tournament/tournaments_page/btn_blue_4_normal.png);
+}
+
+.alltour_btn_blue_4:hover {
+    width:147px; background: url(/images/tournament/tournaments_page/btn_blue_4_hover.png);
+    text-decoration:none;
+}
+
+.alltour_btn_blue_4:active {
+    width:147px; background: url(/images/tournament/tournaments_page/btn_blue_4_pressed.png);
+    text-decoration:none; line-height:54px;
+}
+
+.alltour_btn_blue_5 {
+    width:147px; background: url(/images/tournament/tournaments_page/btn_blue_5_normal.png);
+}
+
+.alltour_btn_blue_5:hover {
+    width:147px; background: url(/images/tournament/tournaments_page/btn_blue_5_hover.png);
+    text-decoration:none;
+}
+
+.alltour_btn_blue_5:active {
+    width:147px; background: url(/images/tournament/tournaments_page/btn_blue_5_pressed.png);
+    text-decoration:none; line-height:54px;
+}
+
+.alltour_big_buttons {    display:block; width:147px; height:52px;    font:18px 'Gotham Rounded Bold','Trebuchet MS'; color:#fff; text-shadow:0 1px 1px #353535;    border:0px; line-height:56px;    text-align:center;}
+.alltour_orange_button {    background: url(/images/tournament/tournaments_page/btn_orange_normal.png);}
+.alltour_orange_button:hover {    background: url(/images/tournament/tournaments_page/btn_orange_normal.png);    text-decoration:none;}
+.alltour_orange_button:active {    background: url(/images/tournament/tournaments_page/btn_orange_pressed.png);    text-decoration:none;    line-height:58px;}
+.alltour_gray_button {    background: url(/images/tournament/tournaments_page/btn_gray_normal.png);}
+.alltour_gray_button:hover {    background: url(/images/tournament/tournaments_page/btn_gray_normal.png);    text-decoration:none;}
+.alltour_gray_button:active {    background: url(/images/tournament/tournaments_page/btn_gray_pressed.png);    text-decoration:none;    line-height:58px;}
+.alltour_prize_icon_holder {    width:55px; height:55px;    border:1px solid #ccd0d3;
+    background-color:#fff;
+    display:table-cell; vertical-align:middle;
+}
+
+.alltour_prize_icon {
+    max-width:55px;
+    max-height:55px;
+    display:block;
+}

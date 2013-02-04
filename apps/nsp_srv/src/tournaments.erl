@@ -42,28 +42,24 @@ main() ->
    new Image('/images/tournament/tournaments_page/btn_gray_pressed.png');
    new Image('/images/tournament/tournaments_page/btn_gray_hover.png');
   </script>"}),
-  #template { file=code:priv_dir(nsp_srv)++"/templates/bare.html" }.
+  #template { file=code:priv_dir(nsp_srv)++"/templates/base.html" }.
 
 title() -> webutils:title(?MODULE).
 
 body() ->
-    #template{file=code:priv_dir(nsp_srv)++"/templates/info_page.html"}.
-
-content() ->
   AllTours = user_counter:tournaments(),
   wf:state(all_fetch,AllTours),
-%  {{Y, M, D}, _} = calendar:now_to_datetime(erlang:now()),
-%  SY = integer_to_list(Y),
-%  SM = integer_to_list(M),
-%  SD = integer_to_list(D),
   wf:state(alltour_arrow_shift, 0),
   wf:state(sort_order, descend),
   wf:state(per_page, 12),
+
   [
+  #panel{class="page-content", body=webutils:quick_nav()},
+  #panel{class="page-content page-canvas", body=[
     #panel{class="tournaments_title", body=?_T("TOURNAMENTS PAGE")},
     #panel{class="tournaments_header", body=[
-      #link{text=?_T("Tournament Setup!"), class="matchmaker_game_rules tournament_setup", postback=show_page_2},
-      #link{text=?_T("Turnament Rules!"), class="matchmaker_game_rules tournament_rules",  postback=show_page_1}
+      #link{text=?_T("Tournament Setup!"), class="lightgrey-bg lightgrey-btn tournament_setup", postback=show_page_2},
+      #link{text=?_T("Turnament Rules!"), class="lightgrey-bg lightgrey-btn tournament_rules",  postback=show_page_1}
     ]},
     #panel{id=explaination_holder, style="font-size:14px;", body=[]},
 
@@ -94,77 +90,19 @@ content() ->
     #hr{class="tournaments_hr"},
     #panel{class="tournaments_second_title", body=?_T("FILTER")},
 
-    prototype_doxtop_panel(),
+    #panel{class="tournaments_filter_block", body=[
+      game_type_filter(),
+      players_filter(),
+      quota_filter(),
+      sort_filter(),
+      view_filter(),
+      by_filter(),
+      #hr{}
+    ]},
 
-%    #panel{class="tournaments_filter_block", body=[
-%      #label{text=?_T("Game Type:")},
-%      #dropdown {id=tour_game, options=[#option{text=T} || T <- ["-", "OKEY", "TAVLA"]]},
-
-%      #label{text=?_T("Players Count:")},
-%      #dropdown {id=tour_players, options=[#option { text=T } || T <- ["-", "16", "32", "64", "128", "256", "512", "1024", "2048"]]},
-
-%      #label{text=?_T("Quota:")},
-%      #dropdown {id=tour_quota, options=[#option{text=T} || T <- ["-", "2","4","6","8", "10"]]},
-
-%      #label{text=?_T("Date:")},
-%      #checkbox{id=tour_date_check, style="width:20px; height:20px;", checked=false},
-%      #textbox{id=tour_date, class="alltour_textbox",
-%        style="width:120px; height:28px; font-size:16px;
-%               background:url(../images/tournament/new_tournament/calendar_icon.png) no-repeat 98px 2px;",
-%        text= (SD ++ "." ++ SM ++ "." ++ SY)}
-%    ]},
-
-%    #panel{class="tournaments_filter_block", body=[
-%      #label{text=?_T("Sort by type:")},
-%      #dropdown {postback=sort_order_set, id=sort_order, options=[
-%        #option { text=?_T("DESC") },
-%        #option { text=?_T("ASC") }
-%      ]},
-%      #label{text=?_T("View:")},
-%      #dropdown {postback=per_page_set, id=per_page,     options=[
-%        #option { text="12 " ++ ?_T("PCS") },
-%        #option { text="24 " ++ ?_T("PCS") },
-%        #option { text="24 " ++ ?_T("ALL") }
-%      ]}
-%    ]},
-
-%    #panel{class="tournaments_filter_block", body=[
-%      #link{class="alltour_btns_blue alltour_btn_blue_1", text=?_T("ACCORDING TO FRIENDS"), postback={sort_by, friends}},
-%      #link{class="alltour_btns_blue alltour_btn_blue_2", text=?_T("BY GIFTS"), postback={sort_by, gifts}},
-%      #link{class="alltour_btns_blue alltour_btn_blue_3", text=?_T("PARTICIPATION PERCENTAGE"), postback={sort_by, participation}}
-%    ]},
-
-%    #panel{class="tournaments_filter_block", body=[
-%      case nsm_accounts:user_paid(wf:user()) of
-%        true ->
-%          [
-%            #link{style="", class="alltour_big_buttons alltour_gray_button", text=?_T("FILTER"), postback=filter_pressed},
-%            #link{style="", class="alltour_big_buttons alltour_gray_button", text=?_T("RESET"), postback=clean_filter_pressed},
-%            #link{style="", class="alltour_big_buttons alltour_orange_button", text=?_T("NEW"), postback=new_pressed}
-%          ];
-%        false ->
-%          [
-%            #link{style="", class="alltour_big_buttons alltour_gray_button", text=?_T("FILTER"), postback=filter_pressed},
-%            #link{style="", class="alltour_big_buttons alltour_gray_button", text=?_T("RESET"), postback=clean_filter_pressed}
-%          ]
-%      end
-%    ]},
-%    #hr{},
-    #panel{class="tournaments_all_block", id=alltour_container, body=all_tours(AllTours,1)}
+    #panel{style="width:100%;overflow:auto;", body=#panel{style="float:left;", id=alltour_container, body=all_tours(AllTours,1)}}
+  ]}
   ].
-
-prototype_doxtop_panel() ->
-  #panel{class="tournaments_filter_block", body=[
-    game_type_filter(),
-    players_filter(),
-    %tournament_type_filter(),
-    %date_filter(SD, SM, SY),
-    quota_filter(),
-    sort_filter(),
-    view_filter(),
-    by_filter(),
-    #hr{}
-  ]}.
 
 players_filter()->
   #panel{class="create-block", body =[
@@ -552,37 +490,6 @@ event(filter_pressed) ->
     wf:state(date_filter, Date),
     event({page, 1});
 
-%event(clean_filter_pressed) ->
-%    wf:set(tour_game, "—"),
-%    wf:set(tour_players, "—"),
-%    wf:set(tour_quota, "—"),
-%    wf:replace(tour_date_check, #checkbox{id=tour_date_check, style="width:20px; height:20px;", checked=false}),
-%    wf:state(game_filter, undefined),
-%    wf:state(players_filter, undefined),
-%    wf:state(quota_filter, undefined),
-%    wf:state(date_filter, undefined),
-%    wf:state(sort_by, undefined),
-%    event({page, 1});
-
-%event(sort_order_set) ->
-%    wf:state(sort_order, case wf:q(sort_order) of
-%        "AZALAN" -> descend;
-%        _ -> ascend
-%    end),
-%    event({page, 1});
-
-%event(per_page_set) ->
-%    wf:state(per_page, case wf:q(per_page) of
-%        "12 ADET" -> 12;
-%        "24 ADET" -> 24;
-%        _ -> 480    % all can hang up a machine while rendering and 480 is dohuya enough
-%    end),
-%    event({page, 1});
-
-%event({sort_by, C}) ->
-%    wf:state(sort_by, C),
-%    event({page, 1});
-
 event({bar, B}) ->
     AllTours = wf:state(all_fetch),
     wf:state(bar, B),
@@ -593,9 +500,9 @@ event(show_page_1) ->
     wf:update(explaination_holder, [
         #br{},
         #br{},
-        #link{text=?_T("Hide"), class="matchmaker_game_rules", postback=hide_explaination},
+        #link{text=?_T("Hide"), class="lightgrey-bg lightgrey-btn", postback=hide_explaination},
         #template{file=code:priv_dir(nsp_srv)++"/templates/tournament_exp_1.html"},
-        #link{text=?_T("Hide"), class="matchmaker_game_rules", postback=hide_explaination},
+        #link{text=?_T("Hide"), class="lightgrey-bg lightgrey-btn", postback=hide_explaination},
         #br{},
         #br{}
     ]);
@@ -604,9 +511,9 @@ event(show_page_2) ->
     wf:update(explaination_holder, [
         #br{},
         #br{},
-        #link{text=?_T("Hide"), class="matchmaker_game_rules", postback=hide_explaination},
+        #link{text=?_T("Hide"), class="lightgrey-bg lightgrey-btn", postback=hide_explaination},
         #template{file=code:priv_dir(nsp_srv)++"/templates/tournament_exp_2.html"},
-        #link{text=?_T("Hide"), class="matchmaker_game_rules", postback=hide_explaination},
+        #link{text=?_T("Hide"), class="lightgrey-bg lightgrey-btn", postback=hide_explaination},
         #br{},
         #br{}
     ]);
@@ -615,28 +522,17 @@ event(hide_explaination) ->
     wf:update(explaination_holder, []);
 
 event({filter, {Key, Value}})->
-  case Key of
-%    date ->
-%      Date = case wf:q(tour_date_check1) of
-%        undefined -> undefined;
-%        _ ->
-%          SDate = wf:q(tour_date1),
-%          list_to_tuple([list_to_integer(N) || N <- lists:reverse(ling:split(SDate, "."))])
-%      end,
-%      wf:state(date_filter, Date);
-    _ ->
-      case wf:state(Key) of
-        Value ->
+  case wf:state(Key) of
+    Value ->
           ui_deselect({Key, Value}),
           wf:state(Key, undefined);
-        undefined ->
+    undefined ->
           ui_select({Key, Value}),
           wf:state(Key, Value);
-        Rest ->
+    Rest ->
           ui_deselect({Key, Rest}),
           ui_select({Key, Value}),
           wf:state(Key, Value)
-        end
   end,
 
   wf:state(game_filter, convert_state(game, wf:state(game))),

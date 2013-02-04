@@ -7,7 +7,7 @@
 -include("elements/records.hrl").
 -include("setup.hrl").
 
-main() -> #template { file=code:priv_dir(nsp_srv)++"/templates/index.html"}.
+main() -> #template { file=code:priv_dir(nsp_srv)++"/templates/base.html"}.
 
 title() -> "Kakaranet Okey".
 
