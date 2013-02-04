@@ -5,13 +5,13 @@ static="url(\/"
 
 if [ ${host}  == "srv1" ]
 then
-  static="url(\/\/static1.kakaranet.com/"
+  static="url(\/\/static1\.kakaranet\.com\/"
 elif [ $host  == "srv2" ]
 then
-  static="url(\/\/static2.kakaranet.com/"
+  static="url(\/\/static2\.kakaranet\.com\/"
 elif [ $host  == "srv3" ]
 then
-  static="url(\/\/static3.kakaranet.com/"
+  static="url(\/\/static3\.kakaranet\.com\/"
 fi
 
 declare -A replacements=(
@@ -20,8 +20,8 @@ declare -A replacements=(
 ["svgxmlns"]="svg xmlns"
 ["filterid"]="filter id"
 ["feColorMatrixtype"]="feColorMatrix type"
-[")}"]=");}"
-["hidden}"]="hidden;}"
+#[")}"]=");}"
+#["hidden}"]="hidden;}"
 )
 replacements+=(["url(\/"]="${static}")
 
