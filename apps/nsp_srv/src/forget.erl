@@ -53,8 +53,8 @@ create_token() ->
 create_message(#user{username = UId}, Url) ->
     create_message(UId, Url);
 create_message(UId, Token) ->
-    Subject = "Your forget password - Kakaranet.com",
-    Text = "Hello ~s.\nTo change your password, click on the link:\n~s",
+    Subject = "Şifre değişikliği - Kakaranet.com",
+    Text = "Merhaba ~s.\nYeni kakaranet.com şifreniz için aşağıdaki linki tıklayınız:\n~s",
 
     %%FIX: use/create module to generate URI
     Url = lists:concat([?HTTP_ADDRESS, "/login/forget/token/", mochiweb_util:quote_plus(Token)]),
