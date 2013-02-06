@@ -75,7 +75,7 @@ body() ->
   receive {comet_started,Pid} -> wf:state(comet_pid,Pid) end,
 
     Pool = nsx_opt:get_env(nsx_idgen, game_pool, 1000000),
-    Zone = Pool div 1000000,
+    Zone = 1,
     GameSrv = "game@srv" ++ integer_to_list(Zone) ++ ".kakaranet.com",
     NodeAtom = case Zone of
                     4 -> nsx_opt:get_env(nsm_db, game_srv_node, 'game@doxtop.cc');
