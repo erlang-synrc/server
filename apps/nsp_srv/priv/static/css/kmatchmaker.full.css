@@ -1291,6 +1291,59 @@ a.set-table-name {
   float:left;
 }
 
+.tourlobby_chat {
+    width:100%; height:243px; background-color:#fff;
+    left:275px; top:372px;
+    -moz-border-radius:2px;
+    -webkit-border-radius:2px;
+    border-radius:2px;
+    border:1px solid #cdcdcd;
+}
+
+.tourlobby_chat_window {
+    width:100%; height:152px; background-color:#fff;
+    left:10px; top:36px;
+    font-size:14px; line-height:20px;
+    overflow:auto;
+}
+
+.tourlobby_chat_panel {
+    width:100%; height:28px; background-color:#c7dbf4;
+    left:10px; top:0px;
+    float: left;
+}
+
+.tourlobby_chat_textarea {
+    width:800px; height:24px; background-color:#fff;
+    padding:5px;     float: left;
+    left:20px; top:197px;
+    -moz-border-radius:2px;
+    -webkit-border-radius:2px;
+    border-radius:2px;
+    border:1px solid #cdcdcd;
+    font-size:16px;
+    line-height:20px;
+    resize:none;
+}
+
+.tourlobby_chat_button {
+    display:block; width:74px; height:36px; background-color: #f7e84f;
+    font-size:16px; color:#121212; line-height:35px;
+    text-align:center; float: left;
+}
+
+.tourlobby_chat_button:hover {
+    display:block; width:74px; height:36px; background-color: #d04d05;
+    font-size:16px; color:#121212; line-height:35px;
+    text-align:center; float: left;
+    text-decoration:none;
+}
+
+.tourlobby_chat_button:active {
+    display:block; width:74px; height:36px; background-color: #f04d05;
+    font-size:16px; color:#121212; line-height:35px;
+    text-align:center; float: left;
+}
 
 
 * {font-size:100.01%;}
@@ -1326,6 +1379,14 @@ body {
   display:block;
 }
 
+.canvas-title{
+  font: 2.2em/1.35em 'Gotham Rounded Bold',"Trebuchet MS";
+  text-transform: uppercase;
+  color: #4a4a4a;
+  padding: 10px 0 15px;
+  margin:0;
+}
+
 a {text-decoration:none;color:#4ec3f1;}
 @font-face {
   font-family: 'HelveticaNeueBold';
@@ -1348,7 +1409,7 @@ a {text-decoration:none;color:#4ec3f1;}
 .ar {float:right;}
 .hidden {display:none;}
 
-.signup {
+/*.signup {
 	float:left;
 	position:relative;
 	margin:0px 0 -2px;
@@ -1385,7 +1446,7 @@ a {text-decoration:none;color:#4ec3f1;}
 	line-height:24px;
 	font-weight:bold;
 	text-shadow:0 1px 1px #fed17d;
-}
+}*/
 /* visual-area */
 .visual-area {
 	width:100%;
@@ -1404,17 +1465,17 @@ a {text-decoration:none;color:#4ec3f1;}
 	background:url(/images/bg-section-area.gif) repeat-x;
 }
 .stat-bar {
-	width:857px;
-	margin:0 auto 6px;
-	border:1px solid #d2dce1;
+  width:857px;
+  margin:0 auto 6px;
+  border:1px solid #d2dce1;
   background-color: #1b4f90;
   background-image: url(/images/indexbg.png);
   background-position: -10px -285px;
-	overflow:hidden;
-	-moz-border-radius:3px;
-	-webkit-border-radius:3px;
-	border-radius:3px;
-	padding:0 32px 0 68px;
+  overflow:hidden;
+  -moz-border-radius:3px;
+  -webkit-border-radius:3px;
+  border-radius:3px;
+  padding:0 32px 0 68px;
 }
 .dlist {
 	float:left;
@@ -2177,44 +2238,42 @@ a {text-decoration:none;color:#4ec3f1;}
 }
 .holder-box-2 {padding-bottom:0;}
 /* footer */
-footer {
-	border-top:3px solid #f8f8f8;
-	padding:8px 0 18px;
-	width:960px;
-	margin:0 auto;
-	overflow:hidden;
+.footer {
+  border-top:3px solid #f8f8f8;
+  padding:8px 0 18px;
 }
+
 .navbar {
-	float:left;
-	list-style:none;
-	margin:0;
-	padding:0;
+  float:left;
+  list-style:none;
+  margin:0;
+  padding:0;
 }
 .navbar li {
-	float:left;
-	padding:0 14px 0 15px;
+  float:left;
+  padding:0 14px 0 15px;
   background-image: url(/images/indexbg.png);
   background-position: -10px -436px;
-	font:1em/1.3em "Lucida Sans Unicode", "Lucida Grande", sans-serif;
-	color:#777;
+  font:1em/1.3em "Lucida Sans Unicode", "Lucida Grande", sans-serif;
+  color:#777;
 }
 .navbar li:first-child,
 .navbar li.first-child {background:none;}
 .navbar a {color:#777;}
-footer .lang {
-	float:right;
-	padding:0 0 0 19px;
-	color:#999;
-	font-size:1.1em;
-	line-height:1.27em;
-	cursor:pointer;
-	position:relative;
+.footer .lang {
+  float:right;
+  padding:0 0 0 19px;
+  color:#999;
+  font-size:1.1em;
+  line-height:1.27em;
+  cursor:pointer;
+  position:relative;
 }
-footer .lang img {
-	position:absolute;
-	left:0;
-	top:50%;
-	margin:-5px 0 0;
+.footer .lang img {
+  position:absolute;
+  left:0;
+  top:50%;
+  margin:-5px 0 0;
 }
 
 
@@ -3259,8 +3318,7 @@ body.extra-small-screen .LV_invalid {
   list-style:none;
   margin:20px 0;
   padding:0;
-  //float:left;
-  width:100%;
+  width:1000px;
   position:relative;
   z-index: 1;
   overflow: hidden;

@@ -3,6 +3,7 @@
 
 -export([start_link/0]).
 -export([start_lobby/1]).
+-export([start_chat_lobby/1]).
 -export([init/1]).
 
 start_link() ->
@@ -10,6 +11,9 @@ start_link() ->
 
 start_lobby(TID) ->
     supervisor:start_child(?MODULE, [TID]).
+
+start_chat_lobby(LobbyName) ->
+    supervisor:start_child(?MODULE, [LobbyName,chat]).
 
 init([]) ->
     {ok, {{simple_one_for_one, 1000, 3600},

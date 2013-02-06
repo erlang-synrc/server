@@ -14,6 +14,7 @@
 -include("setup.hrl").
 -include("gettext.hrl").
 
+-define(MAX_CHAT_LENGTH, 1024). % 1024 bytes
 -define(TABLE_UPDATE_INTERVAL, 10000).
 -define(TABLE_UPDATE_QUANTUM, 3000).
 
@@ -46,14 +47,14 @@ main() ->
 
   #template { file=code:priv_dir(nsp_srv)++"/templates/base.html" }.
 
-
 body() ->
   wf:state(buttons, green),
+  User = wf:user(),
   GameName = case wf:q(game_name) of 
     undefined -> "okey";
     Name -> Name 
   end,
-  case wf:user() of
+  case User of
     undefined -> [];
     _User ->
       X = rpc:call(?GAMESRVR_NODE,game_manager,get_lucky_table,[list_to_atom("game_"++GameName)]),
@@ -67,8 +68,25 @@ body() ->
   ui_update_buttons(),
   ui_paginate(),
   PagePid = self(),
-  wf:comet(fun() -> PagePid ! {comet_started,self()}, comet_update() end),
+  wf:comet(fun() -> PagePid ! {comet_started,self()}, 
+                    CometProcess = self(),
+                    nsx_msg:subscribe_for_tournament(GameName, wf:user(), CometProcess),
+                    comet_update() end),
   receive {comet_started,Pid} -> wf:state(comet_pid,Pid) end,
+
+    Pool = nsx_opt:get_env(nsx_idgen, game_pool, 1000000),
+    Zone = Pool div 1000000,
+    GameSrv = "game@srv" ++ integer_to_list(Zone) ++ ".kakaranet.com",
+    NodeAtom = case Zone of
+                    4 -> nsx_opt:get_env(nsm_db, game_srv_node, 'game@doxtop.cc');
+                    _ -> list_to_atom(GameSrv)
+               end,
+
+    case rpc:call(NodeAtom,nsm_srv_tournament_lobby,chat_history,[GameName]) of
+        H when is_list(H) -> add_chat_history(H);
+        _ -> ok
+    end,
+
 
   [
     #panel{class="page-content", body=webutils:quick_nav()},
@@ -103,7 +121,30 @@ body() ->
           #list{body=[#listitem{body=[#link{class="nextPage", text=">"}]}]}
         ]}
       ]},
-      #panel{id=info_table}
+      #panel{id=info_table},
+
+      #br{},
+
+      case User of
+           undefined -> "";
+           _ ->
+
+        #panel{class="tourlobby_chat", body=
+          case wf:user() of
+            undefined -> [];
+            _ ->
+              [
+                #panel{class="tourlobby_chat_panel", body=#label{class="tourlobby_chat_title", body=?_T("CHAT")}},
+                #panel{id=chat_history, class="tourlobby_chat_window", body=[]},
+	       #textbox{id=message_text_box, class="tourlobby_chat_textarea", postback=chat},
+                #link{id=chat_send_button, class="tourlobby_chat_button", text=?_T("Post"), postback=chat}
+              ]
+          end
+
+        }
+
+      end
+
     ]}
   ].
 
@@ -815,26 +856,24 @@ is_option_present(Key, Value) ->
   end.
 
 comet_update() -> comet_update(empty).
-comet_update(State) ->
-  timer:sleep(?TABLE_UPDATE_QUANTUM),
-%            X = rpc:call(?GAMESRVR_NODE,game_manager,get_lucky_table,[list_to_atom("game_"++?_U(wf:q(game_name)))]),
-%            wf:state(lucky,X),
-  garbage_collect(self()),
-  Tables = get_tables(),
-  wf:update(tables, show_table(Tables)),
-  ui_paginate(),
-  wf:flush(),
-  comet_update(State).
 
-%comet_update() ->
-%    wf:state(comet_pid,self()),
-%    receive 
-%        Z -> Tables = get_tables(),
-%             wf:update(tables, show_table(Tables)),
-%             ui_paginate(),
-%             wf:flush()
-%    end,
-%    comet_update().
+comet_update(State) ->
+    wf:state(comet_pid,self()),
+    garbage_collect(self()),
+    Tables = get_tables(),
+    wf:update(tables, show_table(Tables)),
+    ui_paginate(),
+    wf:flush(),
+    receive 
+        {delivery, ["tournament", TournamentId, "chat", _Action], {UserName, Action, Message}}  ->
+             process_chat(Action, UserName, Message);
+        Z -> Tables = get_tables(),
+             wf:update(tables, show_table(Tables)),
+             ui_paginate(),
+             wf:flush()
+    after ?TABLE_UPDATE_QUANTUM -> time_out
+    end,
+    comet_update(State).
 
 can_be_multiple(age)   -> false;
 can_be_multiple(users) -> true;
@@ -964,6 +1003,25 @@ u_event(clear_selection) ->
         u_event({tag, lists:nth(N, OldSettings)})
         || N <- lists:seq(3, length(OldSettings))
     ]
+    end;
+
+u_event(chat) ->
+    User = wf:user(),
+    GameName = case wf:q(game_name) of undefined -> "okey"; X -> X end,
+    Msg = wf:q(message_text_box),
+    case string:strip(Msg) of
+        "" ->
+            ok;        % dont send empty messages
+        Message ->
+            case length(Message) > ?MAX_CHAT_LENGTH of
+               true ->
+                    chat_info(#span{class=error, text= ?_T("Message too long.")});
+                false ->
+                    wf:set(message_text_box, ""),
+                    wf:wire("obj('message_text_box').focus();"),
+                    nsx_msg:notify_tournament_chat(GameName, "message", User, Msg)
+           end,
+           wf:flush()
     end;
 
 u_event(show_game_rules) ->
@@ -1123,3 +1181,31 @@ show_tab_guiders(ID) ->
                                                      [{s_T("Ok"), hide}], guider_400, guider_410, false, true, none, none)]) end;
         _ -> ok
     end.
+
+
+add_chat_history(Messages) -> [ process_chat(Action, User, Message) || {User, Action, Message} <- Messages ].
+process_chat("message", User, Message) -> chat_new_msg(User, Message).
+chat_info(Info) -> Terms = #panel{class="info", body = Info}, update_table_chat(Terms).
+chat_error(Message) -> chat_info(#span{class=error, text= Message}).
+chat_user_in(Username) -> 
+    Terms = #panel{class="user join", body = [ ?_TS("User $username$ connected.", 
+         [{username, Username}]) ]}, update_table_chat(Terms).
+
+chat_user_out(Username) -> 
+    Terms = #panel{class="user left", body = [ ?_TS("User $username$ has left.",
+         [{username, Username}]) ]}, update_table_chat(Terms).
+
+chat_new_msg(User, Message) ->
+    Terms = #panel{class="chat",
+        body = [
+            #span{class="username", style="font-weight:bold;", text = User},
+            ":&nbsp;", #span{text = Message}
+    ]},
+    update_table_chat(Terms).
+
+update_table_chat(Terms) ->
+    ?INFO("X"),
+    wf:insert_bottom(chat_history, Terms),
+    wf:wire("obj('chat_history').scrollTop = obj('chat_history').scrollHeight;"),
+    wf:flush().
+

@@ -950,4 +950,57 @@ a.set-table-name {
   float:left;
 }
 
+.tourlobby_chat {
+    width:100%; height:243px; background-color:#fff;
+    left:275px; top:372px;
+    -moz-border-radius:2px;
+    -webkit-border-radius:2px;
+    border-radius:2px;
+    border:1px solid #cdcdcd;
+}
+
+.tourlobby_chat_window {
+    width:100%; height:152px; background-color:#fff;
+    left:10px; top:36px;
+    font-size:14px; line-height:20px;
+    overflow:auto;
+}
+
+.tourlobby_chat_panel {
+    width:100%; height:28px; background-color:#c7dbf4;
+    left:10px; top:0px;
+    float: left;
+}
+
+.tourlobby_chat_textarea {
+    width:800px; height:24px; background-color:#fff;
+    padding:5px;     float: left;
+    left:20px; top:197px;
+    -moz-border-radius:2px;
+    -webkit-border-radius:2px;
+    border-radius:2px;
+    border:1px solid #cdcdcd;
+    font-size:16px;
+    line-height:20px;
+    resize:none;
+}
+
+.tourlobby_chat_button {
+    display:block; width:74px; height:36px; background-color: #f7e84f;
+    font-size:16px; color:#121212; line-height:35px;
+    text-align:center; float: left;
+}
+
+.tourlobby_chat_button:hover {
+    display:block; width:74px; height:36px; background-color: #d04d05;
+    font-size:16px; color:#121212; line-height:35px;
+    text-align:center; float: left;
+    text-decoration:none;
+}
+
+.tourlobby_chat_button:active {
+    display:block; width:74px; height:36px; background-color: #f04d05;
+    font-size:16px; color:#121212; line-height:35px;
+    text-align:center; float: left;
+}
 

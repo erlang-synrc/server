@@ -222,7 +222,8 @@ body() ->
                 #br{},
                 case T#tournament.creator == CurrentUser of
                      true -> case wf:state(tournament_started) of
-                            undefined -> #link{id=start_button, text=?_T("MANUAL START"), postback={start_tour, T#tournament.id, NPlayers,Quota,Tours,Speed,T#tournament.awards}};
+                            undefined -> #link{id=start_button, text=?_T("MANUAL START"), 
+                                       postback={start_tour, T#tournament.id, NPlayers,Quota,Tours,Speed,T#tournament.awards}};
                             _ -> "" end;
                     _ -> ""
                 end,
@@ -258,19 +259,22 @@ body() ->
                           #panel{style="background-color:888; height:135px; display:table-cell; vertical-align:middle;",
                                body=#image{style="max-width:130px; max-height:130px;", image=PI1} },
                            #label{style="font-size:12px; color:#000;", body=PN1}, "</center>",
-                        #panel{class="tourlobby_prize_star tourlobby_prize_star_1", body=#label{class="tourlobby_prize_star_text", body="1"} } ] },
+                        #panel{class="tourlobby_prize_star tourlobby_prize_star_1", 
+                               body=#label{class="tourlobby_prize_star_text", body="1"} } ] },
 
                 #panel{class="tourlobby_prize_2", body=[ "<center>", 
                            #panel{ style="background-color:888; height:135px; display:table-cell; vertical-align:middle;",
                               body=#image{style="max-width:130px; max-height:130px;", image=PI2} }, 
                            #label{style="font-size:12px; color:#000;", body=PN2}, "</center>",
-                        #panel{class="tourlobby_prize_star tourlobby_prize_star_2", body=#label{class="tourlobby_prize_star_text", body="2"} } ] },
+                        #panel{class="tourlobby_prize_star tourlobby_prize_star_2", 
+                               body=#label{class="tourlobby_prize_star_text", body="2"} } ] },
 
                 #panel{class="tourlobby_prize_3", body=[ "<center>",
                         #panel{ style="background-color:888; height:135px; display:table-cell; vertical-align:middle;",
                             body=#image{style="max-width:130px; max-height:130px;", image=PI3} },
                         #label{style="font-size:12px; color:#000;", body=PN3}, "</center>",
-                        #panel{class="tourlobby_prize_star tourlobby_prize_star_3", body=#label{class="tourlobby_prize_star_text", body="3"} } ] }
+                        #panel{class="tourlobby_prize_star tourlobby_prize_star_3", 
+                               body=#label{class="tourlobby_prize_star_text", body="3"} } ] }
         ] },
 
 
@@ -354,7 +358,9 @@ user_table(Users,CurrentUser,CurrentJoined) ->
                                          game_points=Score1, 
                                          kakush=Score2, 
                                          game_id=Color, 
-                                         realname=RealName}, N} <- lists:zip(Users,lists:seq(1,length(Users))),Name/=undefined,RealName/=undefined ] ]}
+                                         realname=RealName}, N} <- 
+                            
+                             lists:zip(Users,lists:seq(1,length(Users))),Name/=undefined,RealName/=undefined ] ]}
 
             % #link{class="tourlobby_view_mode_link", text=?_T("Short view"), postback={change_view, short}}
 

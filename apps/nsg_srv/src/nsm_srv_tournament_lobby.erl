@@ -24,6 +24,7 @@
 -define(TOURNAMENT_START_QUANT, 100).
 
 start_link(TID) -> gen_server:start_link({local, tid_to_atom(TID)}, ?MODULE, [TID], []).
+start_link(TID,chat) -> gen_server:start_link({local, tid_to_atom(TID)}, ?MODULE, {[TID],chat}, []).
 heartbeat(Server) -> gen_server:cast(Server, heartbeat).
 check_tournament_time(Server) -> gen_server:call(Server, check_tournament_time).
 start_tournament(Server) -> gen_server:cast(Server, start_tournament).
@@ -37,7 +38,6 @@ init([TID]) ->
     Tour = nsm_tournaments:get(TID),
     ?INFO("Lobby Starting: ~p",[Tour]),
     Server = self(),
-%    timer:apply_interval(?HEARTBEAT_INTERVAL, ?MODULE, heartbeat, [Server]),
     timer:apply_after(?TOURNAMENT_START_QUANT, ?MODULE, check_tournament_time, [Server]),
     nsx_msg:subscribe_tournament_lobby(TID, {?MODULE, messages_callback}, Server),
     ?MODULE:heartbeat(Server),
@@ -45,7 +45,15 @@ init([TID]) ->
     {ok, #state{tournament_id = TID, active_users = dict:new(), heartbeat_users = empty, last_check = now(),
                 server = Server, chat_history = queue:new(), start_date = Tour#tournament.start_date, 
                 joined_users = nsm_tournaments:joined_users(Tour#tournament.id),
-                start_time = Tour#tournament.start_time, tournament = Tour}}.
+                start_time = Tour#tournament.start_time, tournament = Tour}};
+
+init({[TID],chat}) ->
+    Server = self(),
+    ?INFO("Lobby Starting: ~p",[TID]),
+    nsx_msg:subscribe_tournament_lobby(TID, {?MODULE, messages_callback}, Server),
+    ?INFO("~w: started", [Server]),
+    {ok, #state{tournament_id = TID, active_users = dict:new(), heartbeat_users = empty, last_check = now(),
+                server = Server, chat_history = queue:new()}}.
 
 handle_call(active_users, _From, #state{active_users = AU} = State) ->
     List = dict:to_list(AU),

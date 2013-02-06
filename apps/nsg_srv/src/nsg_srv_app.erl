@@ -16,9 +16,17 @@ start(_StartType, _StartArgs) ->
 
     (catch 
     [ begin
-        ?INFO("Tournament Lobby Started ~p",[Tour#tournament.id]),
+%        ?INFO("Tournament Lobby Started ~p",[Tour#tournament.id]),
         nsm_srv_tournament_lobby_sup:start_lobby(erlang:integer_to_list(Tour#tournament.id))
     end || Tour <- nsm_tournaments:all(), ((Tour#tournament.id div 1000000) * 1000000) == Pool ]),
+  
+    case Pool of
+         4000000 -> nsm_srv_tournament_lobby_sup:start_chat_lobby("okey"),
+                    nsm_srv_tournament_lobby_sup:start_chat_lobby("tavla");
+         1000000 -> nsm_srv_tournament_lobby_sup:start_chat_lobby("okey"),
+                    nsm_srv_tournament_lobby_sup:start_chat_lobby("tavla");
+        _ -> skip
+    end,
 
     A.
 

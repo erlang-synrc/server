@@ -11530,13 +11530,14 @@ $.fn.cycle.transitions.wipe = function($cont, $slides, opts) {
 var slang = 'en';
 var slides = new Object();
   slides.en = [
-    '<img width="960" height="352" src="http://static1.kakaranet.com/images/slides/en/slide4.png">',
-    '<img width="960" height="352" src="http://static1.kakaranet.com/images/slides/en/slide3.png">',
-    '<img width="960" height="352" src="http://static1.kakaranet.com/images/slides/en/slide2.png">'];
+    '<img width="960" height="352" src="/images/slides/en/slide4.png">',
+    '<img width="960" height="352" src="/images/slides/en/slide3.png">',
+    '<img width="960" height="352" src="/images/slides/en/slide2.png">'];
   slides.tr = [
-    '<img width="960" height="352" src="http://static1.kakaranet.com/images/slides/tr/slide4.png">',
-    '<img width="960" height="352" src="http://static1.kakaranet.com/images/slides/tr/slide3.png">',
-    '<img width="960" height="352" src="http://static1.kakaranet.com/images/slides/tr/slide2.png">'];
+    '<img width="960" height="352" src="/images/slides/tr/slide_t_2.png">',
+    '<img width="960" height="352" src="/images/slides/tr/slide4.png">',
+    '<img width="960" height="352" src="/images/slides/tr/slide3.png">',
+    '<img width="960" height="352" src="/images/slides/tr/slide2.png">'];
 
 function loadedSlide(){
   $('.slideshow').cycle('resume');
