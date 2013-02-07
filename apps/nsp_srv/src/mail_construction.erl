@@ -20,17 +20,11 @@ excuse(User) ->
 
 invite_tournament_mail(User) ->
     Subject = ?_T("Turnuva Daveti"),
-    PlainText = ?_TS("Değerli $username$!\n\n"
+    PlainText = ?_TS("Okeysever Üyemiz $username$!\n\n"
 
-"29 Ocak Salı (bugün) saat 20:30 da oynanacak Nokia C2-02 \n"
-"cep telefonu ödüllü AKŞAM PAZARI okey turnuvasına bekliyoruz.\n"
-"Okey oynama ve kazanma keyfini kakaranet.com da yakalayın.\n\n"
- 
-"http://kakaranet.com/tournament/lobby/id/1000003\n\n"
- 
-"Gündüz 16:00 da oynanan SALIPAZARI turnuvasını ahmettez\n" 
-"adlı üyemiz kazanmıştır. Kendisini kutluyor ödülünü iyi\n"
-"günlerde kullanmasını diliyoruz.\n\n"
+"Sinema Keyfini kakaranet.com da çıkarın.\n"
+"7 Şubat (bugün) saat 16:00 da “Ev Sinema Sistemi” ödüllü okey turnuvasını kaçırmayın. Bekliyoruz.\n"
+"İyi keyifler...\n"
 
     "Kakaranet",[{username,User}]),
     {Subject,PlainText}.
