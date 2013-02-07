@@ -23,7 +23,7 @@ invite_tournament_mail(User) ->
     PlainText = ?_TS("Okeysever Üyemiz $username$!\n\n"
 
 "Sinema Keyfini kakaranet.com da çıkarın.\n"
-"7 Şubat (bugün) saat 16:00 da “Ev Sinema Sistemi” ödüllü okey turnuvasını kaçırmayın. Bekliyoruz.\n"
+"7 Şubat (bugün) saat 21:30 da “Ev Sinema Sistemi” ödüllü okey turnuvasını kaçırmayın. Bekliyoruz.\n"
 "İyi keyifler...\n"
 
     "Kakaranet",[{username,User}]),
