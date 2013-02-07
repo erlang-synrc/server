@@ -602,18 +602,18 @@ counters()->
     #list{body=[counter_item(G) || G <- Games]}
   ]}
 
-%   ,
-%   #panel{class="list-top-photo-h page-content", body = [
-%          #span{style="font-size:14px; line-height:24px;font-weight:bold;", body=[?_T("Players"), ": ",
-%                    [ 
-%                        case site_utils:user_link(Who) of
-%                          undefined -> "";
-%                          "" -> "";
-%                          URL ->
-%                            #span{body=#link{url=URL, text=Who ++ " ", style = "font-weight:bold;"}}
-%                        end
-%                     || Who <- online_users() ]
-%                ]}]}
+  ,
+   #panel{class="list-top-photo-h page-content", body = [
+          #span{style="font-size:14px; line-height:24px;font-weight:bold;", body=[?_T("Players"), ": ",
+                    [ 
+                        case site_utils:user_link(Who) of
+                          undefined -> "";
+                          "" -> "";
+                          URL ->
+                            #span{body=#link{url=URL, text=Who ++ " ", style = "font-weight:bold;"}}
+                        end
+                     || Who <- online_users() ]
+                ]}]}
 
 
   ].
