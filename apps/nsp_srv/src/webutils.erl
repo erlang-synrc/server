@@ -584,11 +584,11 @@ counters()->
   case wf:user() of
        undefined -> user_counter:register_user(self()),
                     skip;
-       LoggedUser -> %wf:comet(fun() -> 
+       LoggedUser -> wf:comet(fun() -> 
                    CometPid = self(), 
                    user_counter:register_user(CometPid)
 %                   gproc:reg({p,l,CometPid},LoggedUser),
-%                   comet_update() end)
+                   comet_update() end)
   end,
 %  WebSrvCounters = nsm_queries:map_reduce(user_counter,user_count,[]),
   OnlineCount = integer_to_list(user_counter:user_count()), %integer_to_list(lists:foldl(fun(X, Sum) -> X + Sum end, 0, WebSrvCounters)),
@@ -621,9 +621,8 @@ counters()->
   ].
 
 comet_update() ->
-   receive
-     X -> skip
-%   after 5000 -> skip
+   receive X -> skip
+   after 4000 -> skip
    end, comet_update().
 
 counter_item(Game)->
