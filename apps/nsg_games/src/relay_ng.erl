@@ -123,7 +123,7 @@ handle_cast(_Msg, State) ->
     {noreply, State}.
 
 %% --------------------------------------------------------------------
-handle_info({'DOWN', _, process, Pid, _},
+handle_info({'DOWN', _, process, Pid, Info},
             #state{subscribers = Subscribers, players = Players,
                    table = {TableMod, TablePid}} = State) ->
     case find_subscriber(Pid, Subscribers) of
@@ -134,6 +134,7 @@ handle_info({'DOWN', _, process, Pid, _},
             NewSubscribers = del_subscriber(Pid, Subscribers),
             case find_subscribers_by_player_id(PlayerId, NewSubscribers) of
                 [] ->
+                    ?INFO("RELAY_NG Player's (~p) session down: ~p", [PlayerId, Info]),
                     NewPlayers = update_player_status(PlayerId, offline, Players),
                     TableMod:relay_message(TablePid, {player_disconnected, PlayerId}),
                     {noreply, State#state{subscribers = NewSubscribers, players = NewPlayers}};
