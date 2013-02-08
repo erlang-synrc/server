@@ -628,7 +628,7 @@ invite_email(Subject, PlainTextTemplate) ->
       Mail = User#user.email,
       Username = User#user.username,
       PlainText = ?_TS(PlainTextTemplate, [{username, Username}]),
-      ?INFO("Mail ~p",[{User#user.email,Subject,PlainText}])
+      ?INFO("Mail ~p",[{User#user.email,Subject,PlainText}]),
       nsx_msg:notify_email(Subject, PlainText, Mail)
    end || User <- Users, User#user.email /= undefined, User#user.status == ok].
 
