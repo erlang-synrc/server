@@ -384,7 +384,7 @@ create_standalone_game(Game, Params, Users) ->
                            {set_timeout, infinity},
 %%                           {set_timeout, 10 * 60 *1000},
                            {speed, Speed},
-                           {game_type, GameMode},
+                           {game_mode, GameMode},
                            {rounds, Rounds},
                            {next_series_confirmation, no_exit},
                            {pause_mode, normal},
