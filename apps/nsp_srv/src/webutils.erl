@@ -573,7 +573,10 @@ show_if(remove_entry, Entry) ->
 show_if(_, _Entry) -> false.
 
 node_users() ->
-  {Users,B} = lists:partition(fun({_,_,A}) -> is_list(A) end, qlc:e(gproc:table())),
+  {Users,B} = lists:partition(fun({_,_,{A,user,Time}}) -> 
+                  {_,X}=calendar:time_difference(Time, calendar:now_to_datetime(now())),
+                  X < {0,10,0} end, qlc:e(gproc:table())),
+  [ exit(Pid,kill) || {_,Pid,{A,user,Time}} <- B],
   Users.
 
 online_users() ->
@@ -586,7 +589,7 @@ counters()->
        LoggedUser -> wf:comet(fun() -> 
                    CometPid = self(), 
                    user_counter:register_user(CometPid),
-                   gproc:reg({p,l,CometPid},LoggedUser),
+                   gproc:reg({p,l,CometPid},{LoggedUser,user,calendar:now_to_datetime(now())}),
                    comet_update() end)
   end,
 %  WebSrvCounters = nsm_queries:map_reduce(user_counter,user_count,[]),
@@ -620,7 +623,7 @@ counters()->
 
 comet_update() ->
    receive X -> skip
-   after 4000 -> skip
+%   after 30 -> skip
    end, comet_update().
 
 counter_item(Game)->

@@ -72,7 +72,7 @@ handle_call({get_translation,{Lang,Translation}}, _From, State)->
 handle_call(user_count, _From, State)->
   {L,T} = case State#state.last_check == undefined orelse 
                timer:now_diff(now(),State#state.last_check) div 1000000 > 30 of
-       true ->  Users = webutils:online_users(), %lists:partition(fun({_,_,A}) -> is_list(A) end, qlc:e(gproc:table())),
+       true ->  Users = webutils:online_users(), 
                 {length(Users),now()};
        false -> {State#state.user_count,State#state.last_check}
    end,
@@ -112,7 +112,7 @@ handle_call(_Request, _From, State) -> {reply, unknown, State}.
 handle_cast(_Msg, State) -> {noreply, State}.
 handle_info({'DOWN', Ref, _Type, Pid, _Info}, State) ->
      Users = State#state.active_users,
-     gproc:unreg({p,l,Pid}),
+%     gproc_lib:do_set_value({p,l,Pid}, 0, Pid),
      ?INFO("DOWN counter: ~p",[{Ref, _Type, Pid, _Info}]),
      erlang:demonitor(Ref),
      {noreply, State#state{active_users = Users - 1}};
