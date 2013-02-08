@@ -77,6 +77,7 @@ game_sup_domain(Module, Params) ->
         game_tavla -> tavla_sup;
         fl_lucky -> lucky_sup;
         game_okey_ng_trn_lucky -> lucky_sup;
+        game_tavla_ng_trn_paired -> tavla_sup;
         nsg_trn_standalone ->
             case proplists:get_value(game, Params) of
                 game_okey -> okey_sup;
@@ -409,6 +410,67 @@ create_standalone_game(Game, Params, Users) ->
                           {common_params, Params}
                          ])
 %%            create_table(Game, Params, Users)
+    end.
+
+
+create_paired_game(Game, Params, Users) ->
+    ?INFO("create_paired_game/3 Params:~p", [Params]),
+    case Game of
+        game_tavla ->
+            #pointing_rule{quota = Quota,
+                           kakush_winner = KakushForWinners,
+                           kakush_other = KakushForLoser,
+                           game_points = WinGamePoints
+                          } = proplists:get_value(pointing_rules, Params),
+            TableName = proplists:get_value(table_name, Params),
+            MulFactor = proplists:get_value(double_points, Params, 1),
+            SlangAllowed = proplists:get_value(slang, Params, false),
+            ObserversAllowed = proplists:get_value(observers, Params, false),
+            Speed = proplists:get_value(speed, Params, normal),
+            GameMode = proplists:get_value(game_mode, Params),
+            Rounds = case GameMode of
+                         _ -> proplists:get_value(rounds, Params, undefined)
+                     end,
+            BotsReplacementMode = case proplists:get_value(robots_replacement_allowed, Params, true) of
+                                      true -> enabled;
+                                      false -> disabled
+                                  end,
+            TableParams = [
+                           {table_name, TableName},
+                           {mult_factor, MulFactor},
+                           {slang_allowed, SlangAllowed},
+                           {observers_allowed, ObserversAllowed},
+                           {tournament_type, paired},
+                           {round_timeout, infinity},
+%%                           {round_timeout, 30 * 1000},
+                           {set_timeout, infinity},
+%%                           {set_timeout, 10 * 60 *1000},
+                           {speed, Speed},
+                           {game_mode, GameMode},
+                           {rounds, Rounds},
+                           {next_series_confirmation, no_exit},
+                           {pause_mode, normal},
+                           {social_actions_enabled, true}
+                         ],
+
+            create_game(game_tavla_ng_trn_paired,
+                         [{game, Game},
+                          {game_mode, GameMode},
+                          {game_name, TableName},
+                          {seats, 2},
+                          {registrants, Users},
+                          {initial_points, 0},
+                          {quota_per_round, Quota},
+                          {kakush_for_winners, KakushForWinners},
+                          {kakush_for_loser, KakushForLoser},
+                          {win_game_points, WinGamePoints},
+                          {mul_factor, MulFactor},
+                          {table_module, game_tavla_ng_table},
+                          {bot_module, game_tavla_bot},
+                          {bots_replacement_mode, BotsReplacementMode},
+                          {table_params, TableParams},
+                          {common_params, Params}
+                         ])
     end.
 
 
