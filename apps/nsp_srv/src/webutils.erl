@@ -581,7 +581,7 @@ node_users() ->
 
 online_users() ->
   OnlineUsers = nsm_queries:map_reduce(webutils,node_users,[]),
-  sets:to_list(sets:from_list([User||{_,_,User} <- OnlineUsers])).
+  sets:to_list(sets:from_list([User||{_,_,{User,user,Time}} <- OnlineUsers])).
 
 counters()->
   case wf:user() of
