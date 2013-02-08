@@ -17,6 +17,7 @@
 
 
 -define(MODE_STANDARD, standard).
+-define(MODE_PAIRED, paired).
 
 -define(ACH_WIN_NORMAL, 1).
 -define(ACH_WIN_MARS, 2).
@@ -41,7 +42,7 @@
 %% @doc Initialises scoring state.
 %% @end
 %% Types:
-%%     Mode = standard
+%%     Mode = standard | paired
 %%     SeatsInfo = [{SeatNum, Points}]
 %%       SeatNum = integer()
 %%       Points = integer()
@@ -49,7 +50,7 @@
 
 init(Mode, SeatsInfo, RoundsNum) ->
     ?INFO("TAVLA_NG_SCORING init Mode: ~p SeatsInfo = ~p RoundsNum = ~p", [Mode, SeatsInfo, RoundsNum]),
-    true = lists:member(Mode, [?MODE_STANDARD]),
+    true = lists:member(Mode, [?MODE_STANDARD, ?MODE_PAIRED]),
     true = is_integer(RoundsNum) orelse RoundsNum == undefined,
     SeatsNum = length(SeatsInfo),
     true = lists:seq(1, SeatsNum) == lists:sort([SeatNum || {SeatNum, _} <- SeatsInfo]),
@@ -192,4 +193,5 @@ points_matrix() ->
 
 %% @spec get_scoring_mode(GameMode) ->  ScoringMode
 %% @end
-get_scoring_mode(?MODE_STANDARD) ->  standard.
+get_scoring_mode(?MODE_STANDARD) ->  standard;
+get_scoring_mode(?MODE_PAIRED) ->  standard.
