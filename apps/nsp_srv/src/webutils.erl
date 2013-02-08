@@ -582,12 +582,11 @@ online_users() ->
 
 counters()->
   case wf:user() of
-       undefined -> user_counter:register_user(self()),
-                    skip;
+       undefined ->  skip;
        LoggedUser -> wf:comet(fun() -> 
                    CometPid = self(), 
-                   user_counter:register_user(CometPid)
-%                   gproc:reg({p,l,CometPid},LoggedUser),
+                   user_counter:register_user(CometPid),
+                   gproc:reg({p,l,CometPid},LoggedUser),
                    comet_update() end)
   end,
 %  WebSrvCounters = nsm_queries:map_reduce(user_counter,user_count,[]),
