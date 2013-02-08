@@ -69,8 +69,7 @@
          social_actions_enabled :: boolean(),
          tour                 :: undefined | integer(),
          tours                :: undefined | integer(),
-         publish_ge_to_parent :: boolean(),
-         parent_manages_rolls :: boolean(),
+         parent_mon_ref       :: reference(),
          %% Dynamic parameters
          desk_rule_pid        :: undefined | pid(),
          players,             %% The register of table players
@@ -156,7 +155,7 @@ init([GameId, TableId, Params]) ->
     ReadyTimeout = proplists:get_value(ready_timeout, Params, get_timeout(ready, Speed)), %% TODO Set this param explictly
     RoundTimeout = proplists:get_value(round_timeout, Params),
     SetTimeout = proplists:get_value(set_timeout, Params),
-    GameMode = proplists:get_value(game_type, Params),
+    GameMode = proplists:get_value(game_mode, Params),
     Rounds = proplists:get_value(rounds, Params),
     NextSeriesConfirmation = proplists:get_value(next_series_confirmation, Params),
     PauseMode = proplists:get_value(pause_mode, Params),
@@ -179,10 +178,13 @@ init([GameId, TableId, Params]) ->
     ?INFO("TAVLA_NG_TABLE_DBG <~p,~p> PlayersInfo: ~p.", [GameId, TableId, PlayersInfo]),
     ?INFO("TAVLA_NG_TABLE <~p,~p> Started.", [GameId, TableId]),
     parent_notify_table_created(Parent, TableId, Relay),
+    {_, ParentPid} = Parent,
+    ParentMonRef = erlang:monitor(process, ParentPid),
     {ok, ?STATE_WAITING_FOR_START, #state{game_id = GameId,
                                           table_id = TableId,
                                           table_name = TableName,
                                           parent = Parent,
+                                          parent_mon_ref = ParentMonRef,
                                           relay = Relay,
                                           mult_factor = MultFactor,
                                           slang_flag = SlangFlag,
@@ -200,8 +202,6 @@ init([GameId, TableId, Params]) ->
                                           next_series_confirmation = NextSeriesConfirmation,
                                           pause_mode = PauseMode,
                                           social_actions_enabled = SocialActionsEnabled,
-                                          publish_ge_to_parent = PublishToParent,
-                                          parent_manages_rolls = ParentManagesRolls,
                                           players = Players,
                                           start_color = undefined,
                                           cur_round = CurRound,
@@ -211,13 +211,13 @@ init([GameId, TableId, Params]) ->
 
 handle_event({parent_message, Message}, StateName,
              #state{game_id = GameId, table_id = TableId} = StateData) ->
-    ?INFO("TAVLA_NG_TABLE <~p,~p> Received message from the parent: ~p.",
+    ?INFO("TAVLA_NG_TABLE_DBG <~p,~p> Received message from the parent: ~p.",
           [GameId, TableId, Message]),
     handle_parent_message(Message, StateName, StateData);
 
 handle_event({relay_message, Message}, StateName,
              #state{game_id = GameId, table_id = TableId} =  StateData) ->
-    ?INFO("TAVLA_NG_TABLE <~p,~p> Received message from the relay: ~p.",
+    ?INFO("TAVLA_NG_TABLE_DBG <~p,~p> Received message from the relay: ~p.",
           [GameId, TableId, Message]),
     handle_relay_message(Message, StateName, StateData);
 
@@ -265,6 +265,13 @@ handle_info(set_timeout, StateName,
        true -> do_nothing
     end,
     finalize_round(StateData#state{desk_state = DeskState#desk_state{finish_reason = set_timeout}});
+
+handle_info({'DOWN', MonitorRef, _Type, _Object, Info}, _StateName,
+             #state{game_id = GameId, table_id = TableId, parent_mon_ref = MonitorRef
+                   } = StateData) ->
+    ?INFO("TAVLA_NG_TABLE <~p,~p> The parent is died with reason: ~p. Stopping",
+          [GameId, TableId, Info]),
+    {stop, parent_died, StateData};
 
 handle_info(Info, StateName, #state{game_id = GameId, table_id = TableId} = StateData) ->
     ?INFO("TAVLA_NG_TABLE <~p,~p> Unexpected message(info) received at state <~p>: ~p.",
@@ -315,10 +322,12 @@ handle_parent_message({replace_player, RequestId, UserInfo, PlayerId, SeatNum}, 
     {next_state, StateName, StateData#state{players = NewPlayers2}};
 
 handle_parent_message(start_round, ?STATE_WAITING_FOR_START,
-                      #state{turn_timeout = TurnTimeout,
+                      #state{game_id = GameId, table_id = TableId, turn_timeout = TurnTimeout, game_mode = GameMode,
                              round_timeout = RoundTimeout, set_timeout = SetTimeout,
                              set_timer = SetTRef} = StateData) ->
     CurRound = 1,
+    ?INFO("TAVLA_NG_TABLE <~p,~p> Recieved the directive to start new round (~p)", [GameId, TableId, CurRound]),
+    ?INFO("TAVLA_NG_TABLE <~p,~p> The start color will be determined by the competition rolls", [GameId, TableId]),
     %% This fake desk state is needed because the order of the first move is not defined yet, so
     %% we can't use the desk module to create it.
     DeskState = #desk_state{state = undefined,
@@ -342,17 +351,20 @@ handle_parent_message(start_round, ?STATE_WAITING_FOR_START,
                                    timeout_magic = Magic,
                                    round_timer = RoundTRef,
                                    set_timer = SetTRef},
-    GameStartedMsg = create_tavla_game_started(DeskState, _DoOrderRoll = true, NewStateData),
+    DoCompetitionRoll = if GameMode == paired -> false; true -> true end,
+    GameStartedMsg = create_tavla_game_started(DeskState, DoCompetitionRoll, NewStateData),
     publish_ge(GameStartedMsg, NewStateData),
     {next_state, ?STATE_FIRST_MOVE_COMPETITION, NewStateData};
 
 handle_parent_message(start_round, ?STATE_FINISHED,
-                      #state{cur_round = CurRound,
+                      #state{game_id = GameId, table_id = TableId, cur_round = CurRound,
                              start_color = LastStartColor, turn_timeout = TurnTimeout,
                              round_timeout = RoundTimeout, set_timeout = SetTimeout,
-                             set_timer = SetTRef} = StateData) ->
+                             set_timer = SetTRef, game_mode = GameMode} = StateData) ->
     NewCurRound = CurRound + 1,
     StartColor = opponent_color(LastStartColor),
+    ?INFO("TAVLA_NG_TABLE <~p,~p> Recieved the directive to start new round (~p)", [GameId, TableId, NewCurRound]),
+    ?INFO("TAVLA_NG_TABLE <~p,~p> Start color is ~p", [GameId, TableId, StartColor]),
     Params = [{home_hit_and_run, enabled},
               {bearoff_waste_moves, enabled},
               {first_move, StartColor}],
@@ -387,8 +399,11 @@ handle_parent_message(start_round, ?STATE_FINISHED,
     %% Send notifications to clients
     GameStartedMsg = create_tavla_game_started(DeskState, _DoRollMove = false, NewStateData),
     publish_ge(GameStartedMsg, NewStateData),
-    CurColor = DeskState#desk_state.cur_color,
-    publish_ge(create_tavla_next_turn(CurColor, NewStateData), NewStateData),
+    if GameMode =/= paired ->
+           CurColor = DeskState#desk_state.cur_color,
+           publish_ge(create_tavla_next_turn(CurColor, NewStateData), NewStateData);
+       true -> do_nothing
+    end,
     {next_state, ?STATE_PLAYING, NewStateData};
 
 handle_parent_message(show_round_result, StateName,
@@ -460,29 +475,38 @@ handle_parent_message({action, {competition_rolls, Die1, Die2} = Action},
                              desk_state = DeskState} = StateData) ->
     ?INFO("TAVLA_NG_TABLE <~p,~p>  Parent action received in state <~p>: ~p. Processing.",
           [GameId, TableId, StateName, Action]),
-    publish_ge(create_tavla_rolls_die(?WHITE, Die1, StateData), StateData),
-    publish_ge(create_tavla_rolls_die(?BLACK, Die2, StateData), StateData),
+%%    publish_ge(create_tavla_rolls_die(?WHITE, Die1, StateData), StateData),
+%%    publish_ge(create_tavla_rolls_die(?BLACK, Die2, StateData), StateData),
     NewDeskState = DeskState#desk_state{dice = {Die1, Die2}},
     do_start_game(StateData#state{desk_state = NewDeskState});
 
 handle_parent_message({action, {rolls, Color, Die1, Die2} = Action},
                       ?STATE_PLAYING = StateName,
                       #state{game_id = GameId, table_id = TableId,
-                             relay = Relay} = StateData) ->
-    ?INFO("TAVLA_NG_TABLE <~p,~p>  Parent action for color <~p> received in state <~p>: ~p. Processing.",
-          [GameId, TableId, Color, StateName, Action]),
+                             relay = Relay, turn_timeout = TurnTimeout} = StateData) ->
+    ?INFO("TAVLA_NG_TABLE <~p,~p>  Parent action received in state <~p>: ~p. Processing.",
+          [GameId, TableId, StateName, Action]),
     relay_publish_ge(Relay, create_tavla_next_turn(Color, StateData)),
-    case do_parent_game_action(Color, {roll, Die1, Die2}, StateData) of
-        {ok, NewStateName, NewStateData} ->
-            {next_state, NewStateName, NewStateData};
+    {TRef, Magic} = start_timer(TurnTimeout),
+    NewStateData1 = StateData#state{timeout_timer = TRef, timeout_magic = Magic},
+    case do_parent_game_action(Color, {roll, Die1, Die2}, NewStateData1) of
+        {ok, NewStateName, NewStateData2} ->
+            {next_state, NewStateName, NewStateData2};
         {error, Reason} ->
-            {stop, {parent_action_failed, Reason}, StateData}
+            {stop, {parent_action_failed, Reason}, NewStateData1}
     end;
 
 handle_parent_message({action, Action}, StateName,
                       #state{game_id = GameId, table_id = TableId} = StateData) ->
     ?INFO("TAVLA_NG_TABLE <~p,~p>  Parent action received in state <~p>: ~p. Ignoring.",
           [GameId, TableId, StateName, Action]),
+    {next_state, StateName, StateData};
+
+handle_parent_message({game_event, GameEvent}, StateName,
+                      #state{game_id = GameId, table_id = TableId, relay = Relay} = StateData) ->
+    ?INFO("TAVLA_NG_TABLE <~p,~p>  A game event received from the parent in state <~p>: ~p. Publish it.",
+          [GameId, TableId, StateName, GameEvent]),
+    relay_publish_ge(Relay, GameEvent),
     {next_state, StateName, StateData};
 
 handle_parent_message(Message, StateName,
@@ -648,7 +672,7 @@ do_action(SeatNum, #tavla_roll{}, From, ?STATE_FIRST_MOVE_COMPETITION = StateNam
     end;
 
 do_action(SeatNum, #tavla_roll{}, From, ?STATE_PLAYING = StateName,
-          #state{parent_manages_rolls = false,
+          #state{game_mode = standard,
                  desk_state = DeskState, players = Players} = StateData) ->
     #desk_state{state = DeskStateName,
                 cur_color = CurColor} = DeskState,
@@ -750,14 +774,14 @@ do_start_game(#state{desk_state = DeskState, turn_timeout = TurnTimeout} = State
 
 do_timeout_moves(#state{desk_rule_pid = Desk, desk_state = DeskState,
                         game_id = GameId, table_id = TableId,
-                        players = Players} = StateData) ->
+                        players = Players, game_mode = GameMode} = StateData) ->
     #desk_state{state = DeskStateName,
                 pips_list = PipsList,
                 cur_color = CurColor,
                 board = Board} = DeskState,
     [#player{user_id = UserId}] = find_players_by_color(CurColor, Players),
     case DeskStateName of
-        state_wait_roll ->
+        state_wait_roll when GameMode == standard ->
             ?INFO("TAVLA_NG_TABLE <~p,~p> Do automatic roll for player <~p> (~p)",
                   [GameId, TableId, CurColor, UserId]),
             {Die1, Die2} = random_dice(),
@@ -828,7 +852,7 @@ do_game_action(Color, GameAction, From, StateName,
 %% process_game_events(Events, StateData) -> {next_state, StateName, NewStateData}
 process_game_events(Events, #state{desk_state = DeskState, timeout_timer = OldTRef,
                                    round_timeout = RoundTimeout, round_timer = RoundTRef,
-                                   turn_timeout = TurnTimeout} = StateData) ->
+                                   turn_timeout = TurnTimeout, game_mode = GameMode} = StateData) ->
     NewDeskState = handle_desk_events(Events, DeskState, StateData), %% Track the desk and send game events to clients
     #desk_state{state = DeskStateName} = NewDeskState,
     case DeskStateName of
@@ -840,6 +864,11 @@ process_game_events(Events, #state{desk_state = DeskState, timeout_timer = OldTR
             case [E || {next_player, _} = E <- Events] of %% Find a next player event
                 [] ->
                     {next_state, ?STATE_PLAYING, StateData#state{desk_state = NewDeskState}};
+                [_,_] when GameMode == paired ->
+                    erlang:cancel_timer(OldTRef),
+                    {next_state, ?STATE_PLAYING, StateData#state{desk_state = NewDeskState,
+                                                                 timeout_timer = undefined,
+                                                                 timeout_magic = undefined}};
                 [_|_] ->
                     erlang:cancel_timer(OldTRef),
                     {TRef, Magic} = start_timer(TurnTimeout),
@@ -1080,14 +1109,16 @@ desk_player_action(Desk, Color, Action) ->
     ?DESK:player_action(Desk, Color, Action).
 
 publish_ge(GameEvent, #state{relay = Relay, parent = Parent, table_id = TableId,
-                             publish_ge_to_parent = PublishToParent,
-                             parent_manages_rolls = ParentManagesRolls}) ->
-    case GameEvent of
-        #tavla_next_turn{} when ParentManagesRolls == true -> do_nothing;
-        _ ->  relay_publish_ge(Relay, GameEvent)
-    end,
-    if PublishToParent == true -> parent_publish_ge(Parent, TableId, GameEvent);
-       true -> do_nothing
+                             game_mode = GameMode}) ->
+    case GameMode of
+        paired ->
+            case GameEvent of
+                #tavla_next_turn{} -> do_nothing;
+                _ ->  relay_publish_ge(Relay, GameEvent)
+            end,
+            parent_publish_ge(Parent, TableId, GameEvent);
+        _ ->
+            relay_publish_ge(Relay, GameEvent)
     end.
 
 %%===================================================================
@@ -1437,7 +1468,7 @@ players_ext_color_info(Players) ->
      end || C <- [?WHITE, ?BLACK]].
 
 board_to_ext(Board) ->
-    ?INFO("board_to_ext Board: ~p", [Board]),
+%%    ?INFO("board_to_ext Board: ~p", [Board]),
     Order = [?WHITE_OUT] ++ lists:seq(1, 24) ++ [?WHITE_BAR, ?BLACK_BAR, ?BLACK_OUT],
     [case lists:keyfind(Pos, 1, Board) of
          {_, empty} -> null;
