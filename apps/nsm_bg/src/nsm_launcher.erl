@@ -22,7 +22,7 @@ start_worker(Type, Name, Feed, Direct) ->
 
 handle_info(start_all, State) ->
     ?INFO("Starting workers..."),
-    Users = [User || User<-nsm_db:all(user)], %, User#user.email /= undefined, User#user.status == ok],
+    Users = [User || User<-nsm_db:all(user), User#user.email /= undefined, User#user.status == ok],
     Groups = nsm_db:all(group),
     [begin start_worker(group,Name,Feed,undefined) end || #group{username=Name,feed=Feed} <- Groups],
     [begin start_worker(user,Name,Feed,Direct) end || #user{username=Name,feed=Feed,direct=Direct} <- Users],
