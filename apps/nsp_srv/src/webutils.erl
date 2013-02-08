@@ -573,19 +573,23 @@ show_if(remove_entry, Entry) ->
 show_if(_, _Entry) -> false.
 
 node_users() ->
-  {Users,B} = lists:partition(fun({_,_,A}) -> is_list(A) end, qlc:e(gproc:table())),
+  {Users,B} = lists:partition(fun({_,_,{A,user,Time}}) -> 
+                  {_,X}=calendar:time_difference(Time, calendar:now_to_datetime(now())),
+                  X < {0,10,0} end, qlc:e(gproc:table())),
+  [ exit(Pid,kill) || {_,Pid,{A,user,Time}} <- B],
   Users.
 
 online_users() ->
   OnlineUsers = nsm_queries:map_reduce(webutils,node_users,[]),
-  sets:to_list(sets:from_list([User||{_,_,User} <- OnlineUsers])).
+  sets:to_list(sets:from_list([User||{_,_,{User,user,Time}} <- OnlineUsers])).
 
 counters()->
   case wf:user() of
-       undefined -> skip;
+       undefined ->  skip;
        LoggedUser -> wf:comet(fun() -> 
                    CometPid = self(), 
-                   gproc:reg({p,l,CometPid},LoggedUser),
+                   user_counter:register_user(CometPid),
+                   gproc:reg({p,l,CometPid},{LoggedUser,user,calendar:now_to_datetime(now())}),
                    comet_update() end)
   end,
 %  WebSrvCounters = nsm_queries:map_reduce(user_counter,user_count,[]),
@@ -603,7 +607,7 @@ counters()->
   ]}
 
   ,
-   #panel{class="list-top-photo-h page-content", body = [
+ #panel{class="list-top-photo-h page-content", body = [
           #span{style="font-size:14px; line-height:24px;font-weight:bold;", body=[?_T("Players"), ": ",
                     [ 
                         case site_utils:user_link(Who) of
@@ -615,12 +619,11 @@ counters()->
                      || Who <- online_users() ]
                 ]}]}
 
-
   ].
 
 comet_update() ->
-   receive
-     X -> skip
+   receive X -> skip
+%   after 30 -> skip
    end, comet_update().
 
 counter_item(Game)->

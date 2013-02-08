@@ -1204,7 +1204,7 @@ chat_new_msg(User, Message) ->
     update_table_chat(Terms).
 
 update_table_chat(Terms) ->
-    ?INFO("X"),
+%    ?INFO("X"),
     wf:insert_bottom(chat_history, Terms),
     wf:wire("obj('chat_history').scrollTop = obj('chat_history').scrollHeight;"),
     wf:flush().
