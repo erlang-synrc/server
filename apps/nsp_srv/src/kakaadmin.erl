@@ -739,18 +739,20 @@ create_new_contract_from_form() ->
     end.
 
 tournament_mail_form()->
-  #panel{class=mail_form, style="width:300px;", body=[
-    "<style>.mail_head{font-size:16px;}
-       .mail_form label {width:100%;margin:10px 0; display:block;}
-      .msg_area{resize:auto;cursor:pointer;width:100%;width:300px; height:150px; margin:10px 0;}
-      .mail_subj {width:100%;}
+  #panel{class=mail_form, style="width:100%;", body=[
+    "<style>.mail_head{font: 1em Arial,Helvetica,sans-serif; font-size:16px;font-weight:bold;}
+       .mail_form label {width:100%;margin:10px 0; display:block;font-size:16px;}
+      .msg_area{resize:auto;cursor:pointer;width:100%;width:100%; height:150px; padding:5px; margin:10px 0; font-size: 16px; line-height: 20px;}
+      .mail_subj {width:100%; height:24px;padding: 5px; font-size: 16px; line-height: 20px;}
+      .send_mail {font-size:16px;}
+      .ext-webkit :focus {outline: 1px solid #ededed;}
      </style>",
     #h1{class=mail_head, text=?_T("Invite mail:")},
     #label{text=?_T("Subject:")},
     #textbox{id=subj, class=mail_subj, text=?_T("Turnuva Daveti"), next=body},
     #label{text=?_T("Message:")},
     #textarea{id=body, class=msg_area, html_encode=true, text="Okeysever Üyemiz $username$!\n\nSinema Keyfini kakaranet.com da çıkarın.\n7 Şubat (bugün) saat 21:30 da “Ev Sinema Sistemi” ödüllü okey turnuvasını kaçırmayın.\nBekliyoruz.\nİyi keyifler...\nKakaranet"},
-    #button{text=?_T("Send"), postback=tournament_invite}
+    #button{style="padding: 0 7px;font-size:16px;", text=?_T("Send"), postback=tournament_invite}
   ]}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
