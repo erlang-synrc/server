@@ -8980,51 +8980,6 @@ jQuery.each([ "Height", "Width" ], function( i, name ) {
 window.jQuery = window.$ = jQuery;
 })(window);
 
-function hideFormText() {
-	// var _inputs = document.getElementsByTagName('input');
-	var _inputs = false;
-	var _txt = document.getElementsByTagName('textarea');
-	var _value = [];
-
-	if (_inputs) {
-		for(var i=0; i<_inputs.length; i++) {
-			if (_inputs[i].type == 'text' || _inputs[i].type == 'password') {
-
-				_inputs[i].index = i;
-				_value[i] = _inputs[i].value;
-
-				_inputs[i].onfocus = function(){
-					if (this.value == _value[this.index])
-						this.value = '';
-				}
-				_inputs[i].onblur = function(){
-					if (this.value == '')
-						this.value = _value[this.index];
-				}
-			}
-		}
-	}
-	if (_txt) {
-		for(var i=0; i<_txt.length; i++) {
-			_txt[i].index = i;
-			_value['txt'+i] = _txt[i].value;
-
-			_txt[i].onfocus = function(){
-				if (this.value == _value['txt'+this.index])
-					this.value = '';
-			}
-			_txt[i].onblur = function(){
-				if (this.value == '')
-					this.value = _value['txt'+this.index];
-			}
-		}
-	}
-}
-if (window.addEventListener)
-	window.addEventListener("load", hideFormText, false);
-else if (window.attachEvent)
-	window.attachEvent("onload", hideFormText);
-
 /*!
  * jQuery UI 1.8rc2
  *
@@ -13682,7 +13637,6 @@ var pp_alreadyInitialized = false; // Used for the deep linking to make sure not
     initPrettyPhoto();
 });*/
 // @depends ../nitrogen/js/jquery-1.6.2.js
-// @depends ../nitrogen/js/inputs.js
 // @depends ../nitrogen/jquery-ui.js
 // @depends ../nitrogen/livevalidation.js
 // @depends ../nitrogen/js/form.js
