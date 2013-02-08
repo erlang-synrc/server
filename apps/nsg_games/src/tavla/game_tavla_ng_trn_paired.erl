@@ -25,6 +25,7 @@
 -include_lib("nsg_srv/include/basic_types.hrl").
 -include_lib("nsm_db/include/table.hrl").
 -include_lib("nsm_db/include/accounts.hrl").
+-include_lib("nsg_srv/include/game_tavla.hrl").
 
 %% --------------------------------------------------------------------
 %% External exports
@@ -51,7 +52,6 @@
          kakush_for_loser  :: integer(),
          win_game_points   :: integer(),
          mul_factor        :: integer(),
-         speed             :: fast | normal,
          registrants       :: list(), %% [robot | binary()]
          bots_replacement_mode :: enabled | disabled,
          common_params     :: proplists:proplist(),
@@ -69,7 +69,10 @@
          timer             :: undefined | reference(),
          timer_magic       :: undefined | reference(),
          tables_wl         :: list(), %% Tables waiting list
-         tables_results    :: list()  %% [{TableId, TableResult}]
+         tables_results    :: list(),  %% [{TableId, TableResult}]
+         start_color       :: white | black,
+         cur_color         :: white | black,
+         next_turn_wl      :: list() %% [TableId]
         }).
 
 -record(player,
@@ -77,8 +80,7 @@
          id              :: pos_integer(),
          user_id,
          user_info       :: #'PlayerInfo'{},
-         is_bot          :: boolean(),
-         status          :: active | eliminated
+         is_bot          :: boolean()
         }).
 
 -record(table,
@@ -123,14 +125,18 @@
 -define(TABLE_STATE_WAITING_NEW_ROUND, waiting_new_round).
 -define(TABLE_STATE_FINISHED, finished).
 
--define(WAITING_PLAYERS_TIMEOUT, 3000) . %% Time between all table was created and starting a turn
+-define(WAITING_PLAYERS_TIMEOUT, 10000) . %% Time between all table was created and starting a turn
 -define(REST_TIMEOUT, 5000).             %% Time between a round finish and start of a new one
--define(SHOW_SERIES_RESULT_TIMEOUT, 15000).%% Time between a tour finish and start of a new one
+-define(SHOW_SERIES_RESULT_TIMEOUT, 30000).%% Time between a tour finish and start of a new one
 %%-define(SHOW_TOURNAMENT_RESULT_TIMEOUT, 15000). %% Time between last tour result showing and the tournament finish
 
 -define(TOURNAMENT_TYPE, paired).
 -define(GAME_TYPE, game_tavla).
 -define(SEATS_NUM, 2). %% TODO: Define this by a parameter. Number of seats per table
+
+-define(WHITE, white).
+-define(BLACK, black).
+
 %% ====================================================================
 %% External functions
 %% ====================================================================
@@ -166,7 +172,6 @@ client_request(Pid, Message, Timeout) ->
 init([GameId, Params, _Manager]) ->
     ?INFO("TRN_PAIRED <~p> Init started",[GameId]),
     Registrants =   get_param(registrants, Params),
-    Speed =         get_param(speed, Params),
     GameMode =      get_param(game_mode, Params),
     GameName =      get_param(game_name, Params),
     QuotaPerRound = get_param(quota_per_round, Params),
@@ -198,7 +203,6 @@ init([GameId, Params, _Manager]) ->
                              kakush_for_loser = KakushForLoser,
                              win_game_points = WinGamePoints,
                              mul_factor = MulFactor,
-                             speed = Speed,
                              registrants = Registrants,
                              bots_replacement_mode = BotsReplacementMode,
                              common_params = CommonParams,
@@ -393,15 +397,14 @@ handle_table_message(TableId, {round_finished, NewScoringState, _RoundScore, _To
     NewWL = lists:delete(TableId, WL),
     [send_to_table(TableModule, TPid, {playing_tables_num, length(NewWL)})
        || #table{pid = TPid, state = ?TABLE_STATE_WAITING_NEW_ROUND} <- tables_to_list(Tables)],
+    NewStateData = StateData#state{tables = NewTables,
+                                   tables_wl = NewWL},
     if NewWL == [] ->
            {TRef, Magic} = start_timer(?REST_TIMEOUT),
-           {next_state, StateName, StateData#state{tables = NewTables,
-                                                   tables_wl = [],
-                                                   timer = TRef,
-                                                   timer_magic = Magic}};
+           {next_state, StateName, NewStateData#state{timer = TRef,
+                                                      timer_magic = Magic}};
        true ->
-           {next_state, StateName, StateData#state{tables = NewTables,
-                                                   tables_wl = NewWL}}
+           remove_table_from_next_turn_wl(TableId, StateName, NewStateData)
     end;
 
 
@@ -419,17 +422,15 @@ handle_table_message(TableId, {game_finished, TableContext, _RoundScore, TableSc
     NewWL = lists:delete(TableId, WL),
     [send_to_table(TableModule, TPid, {playing_tables_num, length(NewWL)})
        || #table{pid = TPid, state = ?TABLE_STATE_FINISHED} <- tables_to_list(Tables)],
+    NewStateData = StateData#state{tables = NewTables,
+                                   tables_results = NewTablesResults,
+                                   tables_wl = NewWL},
     if NewWL == [] ->
            {TRef, Magic} = start_timer(?REST_TIMEOUT),
-           {next_state, ?STATE_TOUR_FINISHED, StateData#state{tables = NewTables,
-                                                             tables_results = NewTablesResults,
-                                                             tables_wl = [],
-                                                             timer = TRef,
-                                                             timer_magic = Magic}};
+           {next_state, ?STATE_TOUR_FINISHED, NewStateData#state{timer = TRef,
+                                                                 timer_magic = Magic}};
        true ->
-           {next_state, StateName, StateData#state{tables = NewTables,
-                                                   tables_results = NewTablesResults,
-                                                   tables_wl = NewWL}}
+           remove_table_from_next_turn_wl(TableId, StateName, NewStateData)
     end;
 
 
@@ -450,6 +451,26 @@ handle_table_message(TableId, {response, RequestId, Response},
             {next_state, StateName, StateData#state{tab_requests = NewTabRequests}}
     end;
 
+
+handle_table_message(TableId, {game_event, #tavla_next_turn{table_id = TableId,
+                                                            color = ExtColor}},
+                     ?STATE_TOUR_PROCESSING = StateName,
+                     #state{cur_color = CurColor, next_turn_wl = NextTurnWL,
+                            game_id = GameId} = StateData) ->
+    Color = ext_to_color(ExtColor),
+    ?INFO("TRN_PAIRED <~p> The 'tavla_next_turn event' received from table <~p>. "
+          "Color: ~p. CurColor: ~p, WaitList: ~p",
+          [GameId, TableId, Color, CurColor, NextTurnWL]),
+    true = opponent(CurColor) == Color, %% Assert 
+    true = lists:member(TableId, NextTurnWL), %% Assert
+    remove_table_from_next_turn_wl(TableId, StateName, StateData);
+
+handle_table_message(TableId, {game_event, GameEvent},
+                     ?STATE_TOUR_PROCESSING = StateName,
+                     #state{tables = Tables, table_module = TableModule} = StateData) ->
+    [send_to_table(TableModule, TablePid, {game_event, GameEvent}) ||
+       #table{pid = TablePid, id = TId} <- tables_to_list(Tables), TId =/= TableId],
+    {next_state, StateName, StateData};
 
 handle_table_message(TableId, Message, StateName, #state{game_id = GameId} = StateData) ->
     ?INFO("TRN_PAIRED <~p> Unhandled table message received from table <~p> in "
@@ -592,12 +613,13 @@ init_tour(Tour, #state{game_id = GameId, table_module = TableModule,
 
 start_tour(#state{game_id = GameId, tour = Tour} = StateData) ->
     ?INFO("TRN_PAIRED <~p> Starting tour <~p>...", [GameId, Tour]),
-    start_round(StateData).
+    start_round(StateData#state{start_color = undefined}).
 
 start_round(#state{game_id = GameId, game_type = GameType, game_mode = GameMode,
                    mul_factor = MulFactor, quota_per_round = Amount, tour = Tour,
-                   tables = Tables, players = Players, table_module = TableModule} = StateData) ->
-    ?INFO("TRN_PAIRED <~p> Starting tour <~p>...", [GameId, Tour]),
+                   tables = Tables, players = Players, table_module = TableModule,
+                   start_color = StartColor} = StateData) ->
+    ?INFO("TRN_PAIRED <~p> Starting new round...", [GameId]),
     UsersIds = [UserId || #player{user_id = UserId, is_bot = false} <- players_to_list(Players)],
     deduct_quota(GameId, GameType, GameMode, Amount, MulFactor, UsersIds),
     TablesList = tables_to_list(Tables),
@@ -607,9 +629,27 @@ start_round(#state{game_id = GameId, game_type = GameType, game_mode = GameMode,
         end,
     NewTables = lists:foldl(F, Tables, TablesList),
     WL = [T#table.id || T <- TablesList],
-    ?INFO("TRN_PAIRED <~p> Tour <~p> is started. Processing...", [GameId, Tour]),
+    ?INFO("TRN_PAIRED <~p> The round is started. Processing...", [GameId]),
+    NewStartColor =
+        if StartColor == undefined ->
+               {Die1, Die2} = competition_roll(),
+               [send_to_table(TableModule, Pid, {action, {competition_rolls, Die1, Die2}})
+                  || #table{pid = Pid} <- TablesList],
+               if Die1 > Die2 -> ?WHITE;
+                  true -> ?BLACK end;
+           true ->
+               OppColor = opponent(StartColor),
+               {Die1, Die2} = roll(),
+               [send_to_table(TableModule, Pid, {action, {rolls, OppColor, Die1, Die2}})
+                  || #table{pid = Pid} <- TablesList],
+               OppColor
+        end,
+    ?INFO("TRN_PAIRED <~p> Start color is ~p", [GameId, NewStartColor]),
     {next_state, ?STATE_TOUR_PROCESSING, StateData#state{tables = NewTables,
-                                                        tables_wl = WL}}.
+                                                         tables_wl = WL,
+                                                         start_color = NewStartColor,
+                                                         cur_color = NewStartColor,
+                                                         next_turn_wl = WL}}.
 
 finalize_tour(#state{game_id = GameId, tables_results = TResults,
                      tables = Tables, table_module = TableModule} = StateData) ->
@@ -868,6 +908,35 @@ table_req_replace_player(TableMod, TablePid, PlayerId, UserInfo, TableId, SeatNu
     send_to_table(TableMod, TablePid, {replace_player, RequestId, UserInfo, PlayerId, SeatNum}),
     NewRequests.
 
+
+remove_table_from_next_turn_wl(TableId, StateName,
+                               #state{game_id = GameId, cur_color = CurColor,
+                                      next_turn_wl = NextTurnWL, table_module = TableModule,
+                                      tables = Tables, tables_wl = TablesWL} = StateData) ->
+    ?INFO("TRN_PAIRED <~p> Removing table <~p> from the next turn waiting list: ~p.",
+          [GameId, TableId, NextTurnWL]),
+    NewNextTurnWL = lists:delete(TableId, NextTurnWL),
+    if NewNextTurnWL == [] ->
+           OppColor = opponent(CurColor),
+           {Die1, Die2} = roll(),
+           ?INFO("TRN_PAIRED <~p> The next turn waiting list is empty. Rolling dice for color ~p",
+                 [GameId, OppColor]),
+           [send_to_table(TableModule, TablePid, {action, {rolls, OppColor, Die1, Die2}}) ||
+              #table{pid = TablePid} <- tables_to_list(Tables)],
+           ?INFO("TRN_PAIRED <~p> New next turn waiting list is ~p",
+                 [GameId, TablesWL]),
+           {next_state, StateName, StateData#state{next_turn_wl = TablesWL,
+                                                   cur_color = OppColor}};
+       true ->
+           ?INFO("TRN_PAIRED <~p> The next turn waiting list is not empty:~p. Waiting for the rest players.",
+                 [GameId, NewNextTurnWL]),
+           {next_state, StateName, StateData#state{next_turn_wl = NewNextTurnWL}}
+    end.
+
+
+
+
+
 %% players_init() -> players()
 players_init() -> midict:new().
 
@@ -894,10 +963,6 @@ get_user_info(PlayerId, Players) ->
 get_user_id(PlayerId, Players) ->
     #player{user_id = UserId} = midict:fetch(PlayerId, Players),
     UserId.
-
-set_player_status(PlayerId, Status, Players) ->
-    Player = midict:fetch(PlayerId, Players),
-    store_player(Player#player{status = Status}, Players).
 
 %% del_player(PlayerId, Players) -> NewPlayers
 del_player(PlayerId, Players) ->
@@ -1005,11 +1070,12 @@ start_timer(Timeout) ->
 spawn_table(TableModule, GameId, TableId, Params) ->
     TableModule:start(GameId, TableId, Params).
 
-send_to_table(TableModule, TabPid, Message) ->
-    TableModule:parent_message(TabPid, Message).
+send_to_table(TableModule, TablePid, Message) ->
+    TableModule:parent_message(TablePid, Message).
 
 
 get_param(ParamId, Params) ->
+    ?INFO("get_param/2 ParamId:~p", [ParamId]),
     {_, Value} = lists:keyfind(ParamId, 1, Params),
     Value.
 
@@ -1067,3 +1133,20 @@ create_robot(BM, GameId) ->
     UserInfo = auth_server:robot_credentials(),
     {ok, NPid} = BM:start(self(), UserInfo, GameId),
     {NPid, UserInfo}.
+
+competition_roll() ->
+    {Die1, Die2} = roll(),
+    if Die1 == Die2 -> competition_roll();
+       true -> {Die1, Die2}
+    end.
+
+roll() ->
+    Die1 = crypto:rand_uniform(1, 7),
+    Die2 = crypto:rand_uniform(1, 7),
+    {Die1, Die2}.
+
+opponent(?WHITE) -> ?BLACK;
+opponent(?BLACK) -> ?WHITE.
+
+ext_to_color(1) -> ?WHITE;
+ext_to_color(2) -> ?BLACK.
