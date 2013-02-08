@@ -582,11 +582,13 @@ online_users() ->
 
 counters()->
   case wf:user() of
-       undefined -> skip;
-       LoggedUser -> wf:comet(fun() -> 
+       undefined -> user_counter:register_user(self()),
+                    skip;
+       LoggedUser -> %wf:comet(fun() -> 
                    CometPid = self(), 
-                   gproc:reg({p,l,CometPid},LoggedUser),
-                   comet_update() end)
+                   user_counter:register_user(CometPid)
+%                   gproc:reg({p,l,CometPid},LoggedUser),
+%                   comet_update() end)
   end,
 %  WebSrvCounters = nsm_queries:map_reduce(user_counter,user_count,[]),
   OnlineCount = integer_to_list(user_counter:user_count()), %integer_to_list(lists:foldl(fun(X, Sum) -> X + Sum end, 0, WebSrvCounters)),
@@ -602,18 +604,18 @@ counters()->
     #list{body=[counter_item(G) || G <- Games]}
   ]}
 
-  ,
-   #panel{class="list-top-photo-h page-content", body = [
-          #span{style="font-size:14px; line-height:24px;font-weight:bold;", body=[?_T("Players"), ": ",
-                    [ 
-                        case site_utils:user_link(Who) of
-                          undefined -> "";
-                          "" -> "";
-                          URL ->
-                            #span{body=#link{url=URL, text=Who ++ " ", style = "font-weight:bold;"}}
-                        end
-                     || Who <- online_users() ]
-                ]}]}
+%  ,
+%   #panel{class="list-top-photo-h page-content", body = [
+%          #span{style="font-size:14px; line-height:24px;font-weight:bold;", body=[?_T("Players"), ": ",
+%                    [ 
+%                        case site_utils:user_link(Who) of
+%                          undefined -> "";
+%                          "" -> "";
+%                          URL ->
+%                            #span{body=#link{url=URL, text=Who ++ " ", style = "font-weight:bold;"}}
+%                        end
+%                     || Who <- online_users() ]
+%                ]}]}
 
 
   ].
@@ -621,6 +623,7 @@ counters()->
 comet_update() ->
    receive
      X -> skip
+%   after 5000 -> skip
    end, comet_update().
 
 counter_item(Game)->

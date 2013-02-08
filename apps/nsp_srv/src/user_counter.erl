@@ -3,15 +3,20 @@
 -behaviour(gen_server).
 -include("uri_translator.hrl").
 -include_lib("nsm_db/include/user.hrl").
+-include_lib("nsx_config/include/log.hrl").
 -include_lib("nsm_gifts/include/common.hrl").
 -include_lib("nsm_db/include/tournaments.hrl").
--export([start_link/0, user_count/0, joined_users/1, write_cache/2, get_word/1, get_translation/1, gifts/2, tournaments/0]).
+-export([start_link/0, user_count/0, joined_users/1, write_cache/2, get_word/1,
+         get_translation/1, gifts/2, tournaments/0, register_user/1]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 -define(SERVER, ?MODULE).
--record(state, {user_count=0,last_check=undefined,tour_cache,translations,words,gifts,tournaments}).
+-record(state, {user_count=0,last_check=undefined,tour_cache,translations,words,gifts,tournaments,active_users}).
+
+% this is actually a cache layer
 
 gifts(Min,Max) -> gen_server:call(?SERVER, {gifts,Min,Max}).
 tournaments() -> gen_server:call(?SERVER, tournaments).
+register_user(Pid) -> gen_server:call(?SERVER, {register_user,Pid}).
 user_count() -> gen_server:call(?SERVER, user_count).
 joined_users(TID) -> gen_server:call(?SERVER, {joined_users,TID}).
 write_cache(TID,PlayRecord) -> gen_server:call(?SERVER, {write_cache,TID,PlayRecord}).
@@ -21,36 +26,20 @@ get_translation({Lang,Translation}) -> gen_server:call(?SERVER, {get_translation
 
 init([]) -> 
     State = #state{tour_cache=dict:new(),translations=dict:new(),words=dict:new(),
-     gifts=nsm_db:all(gifts),tournaments=nsm_db:all(tournament)},
+                   gifts=nsm_db:all(gifts),tournaments=nsm_db:all(tournament),active_users=0},
     NewState = lists:foldl(fun({English, Lang, Word},ST) ->
 
                       Words0 = dict:store(English,
-             #ut_word{english = English, lang = "en", word = English},
-                       ST#state.words),
-
+             #ut_word{english = English, lang = "en", word = English}, ST#state.words),
                       Words = dict:store(Word,
-             #ut_word{english = Word, lang = Lang, word = Word},
-                       Words0),
-
+             #ut_word{english = Word, lang = Lang, word = Word}, Words0),
                       Translations0 = dict:store(Lang ++ "_" ++ Word,
-             #ut_translation{source = {Lang, Word}, word = English},
-                       ST#state.translations),
-
+             #ut_translation{source = {Lang, Word}, word = English}, ST#state.translations),
                       Translations1 = dict:store("en_" ++ English,
-             #ut_translation{source = {"en", English}, word = English},
-                       Translations0),
-
+             #ut_translation{source = {"en", English}, word = English}, Translations0),
                       Translations = dict:store(Lang ++ "_" ++ English,
-             #ut_translation{source = {Lang, English}, word = Word},
-                       Translations1),
-
+             #ut_translation{source = {Lang, English}, word = Word}, Translations1),
                       ST#state{words = Words, translations = Translations}
-
-%                          ok = nsm_db:put(#ut_word{english = English, lang = "en",  word = English}),
-%                          ok = nsm_db:put(#ut_word{english = Word,    lang = Lang,  word = Word}),
-%                          ok = nsm_db:put(#ut_translation{source = {Lang, Word},    word = English}),
-%                          ok = nsm_db:put(#ut_translation{source = {"en", English}, word = English}),
-%                          ok = nsm_db:put(#ut_translation{source = {Lang, English}, word = Word}),
 
     end, State, ?URI_DICTIONARY),
    {ok, NewState}.
@@ -68,20 +57,29 @@ handle_call({gifts,MinPrice,MaxPrice}, _From, State)->
 handle_call(tournaments, _From, State)->
   {reply, State#state.tournaments, State};
 
+handle_call({register_user,Pid}, _From, State)->
+  erlang:monitor(process,Pid),
+   ?INFO("UP counter: ~p",[Pid]),
+  Users = State#state.active_users,
+  {reply, Users, State#state{active_users = Users + 1}};
+
 handle_call({get_translation,{Lang,Translation}}, _From, State)->
   Return = case dict:find(Lang ++ "_" ++ Translation,State#state.translations) of 
        error -> {error,notfound}; 
        R -> R end,
   {reply, Return, State};
 
+%handle_call(user_count, _From, State)->
+%  {L,T} = case State#state.last_check == undefined orelse 
+%               timer:now_diff(now(),State#state.last_check) div 1000000 > 60 * 5 of
+%       true ->  Users = webutils:online_users(), %lists:partition(fun({_,_,A}) -> is_list(A) end, qlc:e(gproc:table())),
+%                {length(Users),now()};
+%       false -> {State#state.user_count,State#state.last_check}
+%   end,
+%  {reply, L, State#state{user_count = L, last_check = T}};
+
 handle_call(user_count, _From, State)->
-  {L,T} = case State#state.last_check == undefined orelse 
-               timer:now_diff(now(),State#state.last_check) div 1000000 > 60 * 5 of
-       true ->  Users = webutils:online_users(), %lists:partition(fun({_,_,A}) -> is_list(A) end, qlc:e(gproc:table())),
-                {length(Users),now()};
-       false -> {State#state.user_count,State#state.last_check}
-   end,
-  {reply, L, State#state{user_count = L, last_check = T}};
+  {reply, State#state.active_users, State};
 
 handle_call({joined_users,TID}, _From, State)->
   {LS,TS} = case dict:find(TID,State#state.tour_cache) of 
@@ -108,10 +106,16 @@ handle_call({write_cache,TID,Item}, _From, State)->
                  {NewList,now()}
     end,
     Dict = dict:store(TID,{JU,T},State#state.tour_cache),
-  {reply, JU, State#state{tour_cache=Dict}};
+    {reply, JU, State#state{tour_cache=Dict}};
 
 handle_call(_Request, _From, State) -> {reply, unknown, State}.
 handle_cast(_Msg, State) -> {noreply, State}.
+handle_info({'DOWN', Ref, _Type, Pid, _Info}, State) ->
+     Users = State#state.active_users,
+     ?INFO("DOWN counter: ~p",[{Ref, _Type, Pid, _Info}]),
+     erlang:demonitor(Ref),
+     {noreply, State#state{active_users = Users - 1}};
+
 handle_info(_Info, State) -> {noreply, State}.
 terminate(_Reason, _State) -> ok.
 code_change(_OldVsn, State, _Extra) -> {ok, State}.
