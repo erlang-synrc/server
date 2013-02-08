@@ -252,16 +252,6 @@ get_my_discussions(_FId, Page, PageAmount, UserUid) ->
     lists:flatten([nsm_db:select(entry,[{where, fun(#entry{entry_id=ID})-> ID=:=Pid end},
         {order, {1, descending}},{limit, {1,1}}]) || Pid <- Pids]).
 
-get_feed_by_user_or_group(UserOrGroup) ->
-    case nsm_users:get_user(UserOrGroup) of
-        {ok, User} -> {ok, user, User#user.feed, User#user.direct};
-        _          -> case nsm_db:get(group, UserOrGroup) of
-                        {ok, Group} -> {ok, group, Group#group.feed, undefined};
-                        _           -> {ok, group, undefined, undefined}    % group may be late to a base
-%                        _           -> {error, not_found}
-                      end
-    end.
-
 test_likes() ->
     add_like(1, "17a10803-f064-4718-ae46-4a6d3c88415c-0796e2bb", "derp"),
     add_like(1, "17a10803-f064-4718-ae46-4a6d3c88415c-0796e2bb", "derpina"),

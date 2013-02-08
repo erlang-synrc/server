@@ -11,4 +11,3 @@ init([]) ->
     {ok, {{simple_one_for_one, 5, 10},
           [{nsm_consumer, {nsm_consumer, start_link, []},
             transient, 3000, worker, [nsm_consumer]}]}}.
-

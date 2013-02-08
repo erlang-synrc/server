@@ -9,40 +9,15 @@
 -include_lib("nsm_gifts/include/common.hrl").
 -include("nsm_bg.hrl").
 -export([init/1, handle_notice/3, get_opts/1, handle_info/2]).
--record(state, {owner = "", type :: user | group, feed, direct }).
+-record(state, {owner = "feed_owner", type :: user | group | system, feed, direct }).
 
-init(Params) ->
-    Owner = ?gv(owner, Params),
-    GivenFeedId = ?gv(feed_id, Params),
+init(Params) -> 
+    Owner   = proplists:get_value(owner,  Params),
+    Type    = proplists:get_value(type,   Params),
+    Feed    = proplists:get_value(feed,   Params),
+    Direct  = proplists:get_value(direct, Params, undefined),
     ?INFO("Init worker with start params: ~p", [Params]),
-    case Owner of
-        "system" ->
-            {ok, #state{owner = Owner,
-                                type = system,
-                                feed = -1,
-                                direct = undefined}};
-        _ ->
-            case GivenFeedId of
-                undefined ->
-                    case feed:get_feed_by_user_or_group(Owner) of
-                        {ok, Type, FeedId, DirectId} ->
-%                            ?INFO("Owner: ~p, Type: ~p, FeedId: ~p, DirectId: ~p", [Owner, Type, FeedId, DirectId]),
-                            {ok, #state{owner = Owner,
-                                        type = Type,
-                                        feed = FeedId,
-                                        direct = DirectId}};
-                        Error ->
-                            ?INFO("Worker init error ~p", [Error]),
-                            {stop, Error}
-                    end;
-                OkFeedId ->
-                    ?INFO("Inited from given owner: ~p, FeedId: ~p", [Owner, OkFeedId]),
-                    {ok, #state{owner = Owner,
-                                type = group,
-                                feed = OkFeedId,
-                                direct = undefined}}
-            end
-    end.
+    {ok, #state{owner = Owner, type = Type, feed = Feed, direct = Direct}}.
 
 handle_notice(["feed", "delete", Owner] = Route, Message,
               #state{owner = Owner} = State) ->
