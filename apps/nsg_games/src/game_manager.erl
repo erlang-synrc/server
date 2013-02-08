@@ -449,7 +449,7 @@ create_paired_game(Game, Params, Users) ->
                            {game_mode, GameMode},
                            {rounds, Rounds},
                            {next_series_confirmation, no_exit},
-                           {pause_mode, normal},
+                           {pause_mode, disabled},
                            {social_actions_enabled, true}
                          ],
 
