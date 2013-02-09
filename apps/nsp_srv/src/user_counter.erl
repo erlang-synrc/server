@@ -25,8 +25,7 @@ get_word(Word) -> gen_server:call(?SERVER, {get_word,Word}).
 get_translation({Lang,Translation}) -> gen_server:call(?SERVER, {get_translation,{Lang,Translation}}).
 
 init([]) -> 
-    State = #state{tour_cache=dict:new(),translations=dict:new(),words=dict:new(),
-                   gifts=nsm_db:all(gifts),tournaments=nsm_db:all(tournament),active_users=0},
+    State = #state{tour_cache=dict:new(),translations=dict:new(),words=dict:new(),active_users=0},
     NewState = lists:foldl(fun({English, Lang, Word},ST) ->
 
                       Words0 = dict:store(English,
@@ -51,11 +50,17 @@ handle_call({get_word,Word}, _From, State)->
   {reply, Return, State};
 
 handle_call({gifts,MinPrice,MaxPrice}, _From, State)->
-   R = [ Gift || Gift <-State#state.gifts, Gift#gift.enabled_on_site, (Gift#gift.kakush_point >= MinPrice) and (Gift#gift.kakush_point =< MaxPrice)],
-  {reply, R, State};
+   Gifts = case State#state.gifts of
+        undefined -> nsm_db:all(gifts);
+        A -> A end,
+   R = [ Gift || Gift <-Gifts, Gift#gift.enabled_on_site, (Gift#gift.kakush_point >= MinPrice) and (Gift#gift.kakush_point =< MaxPrice)],
+  {reply, R, State#state{gifts=Gifts}};
 
 handle_call(tournaments, _From, State)->
-  {reply, State#state.tournaments, State};
+   Tournaments = case State#state.tournaments of
+        undefined -> nsm_db:all(tournament);
+        A -> A end,
+  {reply, Tournaments, State#state{tournaments=Tournaments}};
 
 handle_call({register_user,Pid}, _From, State)->
   erlang:monitor(process,Pid),
