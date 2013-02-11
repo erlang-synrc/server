@@ -68,8 +68,9 @@
          tab_requests      :: dict(),  %% {RequestId, RequestContext}
          timer             :: undefined | reference(),
          timer_magic       :: undefined | reference(),
-         tables_wl         :: list(), %% Tables waiting list
+         tables_wl         :: list(),  %% Tables waiting list
          tables_results    :: list(),  %% [{TableId, TableResult}]
+         series_results    :: list(),  %% [{TableId, SeriesResult}]
          start_color       :: white | black,
          cur_color         :: white | black,
          next_turn_wl      :: list() %% [TableId]
@@ -222,24 +223,24 @@ handle_event(go, ?STATE_INIT, #state{game_id = GameId, registrants = Registrants
    init_tour(1, NewStateData);
 
 handle_event({client_message, Message}, StateName, #state{game_id = GameId} = StateData) ->
-    ?INFO("TRN_PAIRED <~p> Received the message from a client: ~p.", [GameId, Message]),
+    ?INFO("TRN_PAIRED_DBG <~p> Received the message from a client: ~p.", [GameId, Message]),
     handle_client_message(Message, StateName, StateData);
 
 handle_event({table_message, TableId, Message}, StateName, #state{game_id = GameId} = StateData) ->
-    ?INFO("TRN_PAIRED <~p> Received the message from table <~p>: ~p.", [GameId, TableId, Message]),
+    ?INFO("TRN_PAIRED_DBG <~p> Received the message from table <~p>: ~p.", [GameId, TableId, Message]),
     handle_table_message(TableId, Message, StateName, StateData);
 
 handle_event(Message, StateName, #state{game_id = GameId} = StateData) ->
-    ?INFO("TRN_PAIRED <~p> Unhandled message(event) received in state <~p>: ~p.",
+    ?INFO("TRN_PAIRED_DBG <~p> Unhandled message(event) received in state <~p>: ~p.",
           [GameId, StateName, Message]),
     {next_state, StateName, StateData}.
 
 handle_sync_event({client_request, Request}, From, StateName, #state{game_id = GameId} = StateData) ->
-    ?INFO("TRN_PAIRED <~p> Received the request from a client: ~p.", [GameId, Request]),
+    ?INFO("TRN_PAIRED_DBG <~p> Received the request from a client: ~p.", [GameId, Request]),
     handle_client_request(Request, From, StateName, StateData);
 
 handle_sync_event(Request, From, StateName, #state{game_id = GameId} = StateData) ->
-    ?INFO("TRN_PAIRED <~p> Unhandled request(event) received in state <~p> from ~p: ~p.",
+    ?INFO("TRN_PAIRED_DBG <~p> Unhandled request(event) received in state <~p> from ~p: ~p.",
           [GameId, StateName, From, Request]),
     {reply, {error, unknown_request}, StateName, StateData}.
 
@@ -263,9 +264,38 @@ handle_info({timeout, Magic}, ?STATE_WAITING_FOR_PLAYERS,
     start_tour(StateData);
 
 handle_info({timeout, Magic}, ?STATE_TOUR_PROCESSING,
-            #state{timer_magic = Magic, game_id = GameId} = StateData) ->
-    ?INFO("TRN_PAIRED <~p> Time to start new round.", [GameId]),
-    start_round(StateData);
+            #state{timer_magic = Magic, game_id = GameId, tables = Tables,
+                   seats = Seats, players = Players, table_module = TableModule,
+                   bot_module = BotModule, player_id_counter = PlayerIdCounter,
+                   game_type = GameType, common_params = CommonParams,
+                   tab_requests = Requests} = StateData) ->
+    ?INFO("TRN_PAIRED <~p> Time to start new round. Checking start conditions...", [GameId]),
+    DisconnectedSeats = find_disconnected_seats(Seats),
+    DisconnectedPlayers = [PlayerId || #seat{player_id = PlayerId} <- DisconnectedSeats],
+    ConnectedRealPlayers = [PlayerId || #player{id = PlayerId, is_bot = false} <- players_to_list(Players),
+                                        not lists:member(PlayerId, DisconnectedPlayers)],
+    case ConnectedRealPlayers of
+        [] -> %% Finish game
+            ?INFO("TRN_PAIRED <~p> No real players left in tournament. "
+                  "Stopping the game.", [GameId]),
+            finalize_tables_with_disconnect(TableModule, Tables),
+            {stop, normal, StateData#state{tables = [], seats = []}};
+        _ -> %% Replace disconnected players by bots and start the round
+            ?INFO("TRN_PAIRED <~p> Enough real players in the game to continue. "
+                  "Replacing disconnected players by bots.", [GameId]),
+            {Replacements, NewPlayers, NewSeats, NewPlayerIdCounter} =
+                replace_by_bots(DisconnectedSeats, GameId, BotModule, Players, Seats, PlayerIdCounter),
+            NewRequests = req_replace_players(TableModule, Tables, Replacements, Requests),
+            Users = [if Bot -> robot; true -> UserId end
+                     || #player{user_id = UserId, is_bot = Bot} <- players_to_list(NewPlayers)],
+            DeclRec = create_decl_rec(GameType, CommonParams, GameId, Users),
+            gproc:set_value({p,l,self()}, DeclRec),
+            ?INFO("TRN_PAIRED <~p> The replacement is completed.", [GameId]),
+            start_round(StateData#state{tab_requests = NewRequests,
+                                        players = NewPlayers,
+                                        seats = NewSeats,
+                                        player_id_counter = NewPlayerIdCounter})
+    end;
 
 handle_info({timeout, Magic}, ?STATE_TOUR_FINISHED,
             #state{timer_magic = Magic, game_id = GameId} = StateData) ->
@@ -276,6 +306,20 @@ handle_info({timeout, Magic}, ?STATE_SHOW_TOUR_RESULT,
             #state{timer_magic = Magic, game_id = GameId} = StateData) ->
     ?INFO("TRN_PAIRED <~p> Time to finalize the game.", [GameId]),
     finalize_tournament(StateData);
+
+handle_info({publish_series_result, TableId}, StateName,
+            #state{game_id = GameId, tables = Tables, table_module = TableModule,
+                   series_results = SeriesResults} = StateData) ->
+    ?INFO("TRN_PAIRED <~p> Time to publish the series result for table <~p>.", [GameId, TableId]),
+    case fetch_table(TableId, Tables) of
+        #table{state = ?TABLE_STATE_FINISHED, pid = TablePid} ->
+            {_, SeriesResult} = lists:keyfind(TableId, 1, SeriesResults),
+            send_to_table(TableModule, TablePid, {show_series_result, SeriesResult});
+        _ ->
+            ?INFO("TRN_PAIRED <~p> Don't publish the series result because the state of table <~p> "
+                  "is not 'finished'.", [GameId, TableId])
+    end,
+    {next_state, StateName, StateData};
 
 %% handle_info({timeout, Magic}, ?STATE_FINISHED,
 %%             #state{timer_magic = Magic, tables = Tables, game_id = GameId,
@@ -411,8 +455,11 @@ handle_table_message(TableId, {round_finished, NewScoringState, _RoundScore, _To
 handle_table_message(TableId, {game_finished, TableContext, _RoundScore, TableScore},
                      ?STATE_TOUR_PROCESSING = StateName,
                      #state{game_id = GameId, tables = Tables, tables_wl = WL,
-                            table_module = TableModule, tables_results = TablesResults
-                           } = StateData) ->
+                            table_module = TableModule, tables_results = TablesResults,
+                            game_type = GameType, game_mode = GameMode, mul_factor = MulFactor,
+                            kakush_for_winners = KakushForWinners, kakush_for_loser = KakushForLoser,
+                            win_game_points = WinGamePoints, players = Players,
+                            series_results = SeriesResults} = StateData) ->
     ?INFO("TRN_PAIRED <~p> Last round of the set is finished (table <~p>).", [GameId, TableId]),
     NewTablesResults = [{TableId, TableScore} | TablesResults],
     #table{pid = TablePid} = Table = fetch_table(TableId, Tables),
@@ -422,9 +469,18 @@ handle_table_message(TableId, {game_finished, TableContext, _RoundScore, TableSc
     NewWL = lists:delete(TableId, WL),
     [send_to_table(TableModule, TPid, {playing_tables_num, length(NewWL)})
        || #table{pid = TPid, state = ?TABLE_STATE_FINISHED} <- tables_to_list(Tables)],
+    SeriesResult = series_result(TableScore),
+    NewSeriesResults = [{TableId, SeriesResult} | SeriesResults],
+    ?INFO("TRN_STANDALONE <~p> Set result: ~p", [GameId, SeriesResult]),
+    Points = calc_players_prize_points(SeriesResult, KakushForWinners, KakushForLoser, WinGamePoints, MulFactor, Players),
+    UsersPrizePoints = prepare_users_prize_points(Points, Players),
+    ?INFO("TRN_STANDALONE <~p> Prizes: ~p", [GameId, UsersPrizePoints]),
+    add_points_to_accounts(UsersPrizePoints, GameId, GameType, GameMode, MulFactor),
     NewStateData = StateData#state{tables = NewTables,
                                    tables_results = NewTablesResults,
+                                   series_results = NewSeriesResults,
                                    tables_wl = NewWL},
+    erlang:send_after(?REST_TIMEOUT, self(), {publish_series_result, TableId}),
     if NewWL == [] ->
            {TRef, Magic} = start_timer(?REST_TIMEOUT),
            {next_state, ?STATE_TOUR_FINISHED, NewStateData#state{timer = TRef,
@@ -608,7 +664,8 @@ init_tour(Tour, #state{game_id = GameId, table_module = TableModule,
                                                             tour = Tour,
                                                             reg_requests = dict:new(),
                                                             tab_requests = dict:new(),
-                                                            tables_results = []
+                                                            tables_results = [],
+                                                            series_results = []
                                                            }}.
 
 start_tour(#state{game_id = GameId, tour = Tour} = StateData) ->
@@ -616,7 +673,7 @@ start_tour(#state{game_id = GameId, tour = Tour} = StateData) ->
     start_round(StateData#state{start_color = undefined}).
 
 start_round(#state{game_id = GameId, game_type = GameType, game_mode = GameMode,
-                   mul_factor = MulFactor, quota_per_round = Amount, tour = Tour,
+                   mul_factor = MulFactor, quota_per_round = Amount,
                    tables = Tables, players = Players, table_module = TableModule,
                    start_color = StartColor} = StateData) ->
     ?INFO("TRN_PAIRED <~p> Starting new round...", [GameId]),
@@ -651,15 +708,8 @@ start_round(#state{game_id = GameId, game_type = GameType, game_mode = GameMode,
                                                          cur_color = NewStartColor,
                                                          next_turn_wl = WL}}.
 
-finalize_tour(#state{game_id = GameId, tables_results = TResults,
-                     tables = Tables, table_module = TableModule} = StateData) ->
+finalize_tour(#state{game_id = GameId} = StateData) ->
     ?INFO("TRN_PAIRED <~p> Finalizing the tour...", [GameId]),
-    [begin
-       #table{pid = TablePid} = fetch_table(TableId, Tables),
-        SeriesResult = series_result(Result),
-        ?INFO("TRN_PAIRED <~p> Set result: ~p", [GameId, SeriesResult]),
-        send_to_table(TableModule, TablePid, {show_series_result, SeriesResult})
-     end || {TableId, Result} <- TResults],
     {TRef, Magic} = start_timer(?SHOW_SERIES_RESULT_TIMEOUT),
     ?INFO("TRN_PAIRED <~p> The tour is finalized. "
           "Waiting some time (~p secs) before continue...",
@@ -704,6 +754,52 @@ deduct_quota(GameId, GameType, GameMode, Amount, MulFactor, UsersIds) ->
          nsm_accounts:transaction(binary_to_list(UserId), ?CURRENCY_QUOTA, -RealAmount, TI)
      end || UserId <- UsersIds],
     ok.
+
+%% calc_players_prize_points(SeriesResult, KakushForWinner, KakushForLoser,
+%%                           WinGamePoints, MulFactor, Players) -> Points
+%% Types:
+%%     SeriesResult = [{PlayerId, _Pos, _Points, Status}]
+%%          Status = winner | looser
+%%     Points = [{PlayerId, KakushPoints, GamePoints}]
+calc_players_prize_points(SeriesResult, KakushForWinners, KakushForLoser, WinGamePoints, MulFactor, Players) ->
+    SeriesResult1 = [begin
+                         #'PlayerInfo'{id = UserId, robot = Robot} = get_user_info(PlayerId, Players),
+                         Paid = is_paid(user_id_to_string(UserId)),
+                         Winner = Status == winner,
+                         {PlayerId, Winner, Robot, Paid}
+                     end || {PlayerId, _Pos, _Points, Status} <- SeriesResult],
+    Paids   = [PlayerId || {PlayerId, _Winner, _Robot, _Paid = true} <- SeriesResult1],
+    Winners = [PlayerId || {PlayerId, _Winner = true, _Robot, _Paid} <- SeriesResult1],
+    TotalNum = length(SeriesResult),
+    PaidsNum = length(Paids),
+    WinnersNum = length(Winners),
+    KakushPerWinner = round(((KakushForWinners * MulFactor) * PaidsNum div TotalNum) / WinnersNum),
+    KakushPerLoser = (KakushForLoser * MulFactor) * PaidsNum div TotalNum,
+    WinGamePoints1 = WinGamePoints * MulFactor,
+    [begin
+         {KakushPoints, GamePoints} = calc_points(KakushPerWinner, KakushPerLoser, WinGamePoints1, Paid, Robot, Winner),
+         {PlayerId, KakushPoints, GamePoints}
+     end || {PlayerId, Winner, Robot, Paid} <- SeriesResult1].
+
+
+calc_points(KakushPerWinner, KakushPerLoser, WinGamePoints, Paid, Robot, Winner) ->
+    if Robot -> {0, 0};
+       not Paid andalso Winner -> {0, WinGamePoints};
+       not Paid -> {0, 0};
+       Paid andalso Winner -> {KakushPerWinner, WinGamePoints};
+       Paid -> {KakushPerLoser, 0}
+    end.
+
+
+%% prepare_users_prize_points(Points, Players) -> UsersPrizePoints
+%% Types:
+%%     Points = [{PlayerId, KakushPoints, GamePoints}]
+%%     UserPrizePoints = [{UserIdStr, KakushPoints, GamePoints}]
+prepare_users_prize_points(Points, Players) ->
+    [{user_id_to_string(get_user_id(PlayerId, Players)), K, G} || {PlayerId, K, G} <- Points].
+
+
+is_paid(UserId) -> nsm_accounts:user_paid(UserId).
 
 
 %% add_points_to_accounts(Points, GameId, GameType, GameMode, MulFactor) -> ok
@@ -797,6 +893,26 @@ register_new_player(UserInfo, TableId, Players, Seats, PlayerId) ->
     NewPlayers = store_player(#player{id = PlayerId, user_id = UserId,
                                       user_info = UserInfo, is_bot = Bot}, Players),
     {SeatNum, NewPlayers, NewSeats}.
+
+%% replace_by_bots(DisconnectedSeats, GameId, BotModule, Players, Seats, PlayerIdCounter) ->
+%%                                       {Replacements, NewPlayers, NewSeats, NewPlayerIdCounter}
+%% Types: Disconnected = [#seat{}]
+%%        Replacements = [{PlayerId, UserInfo, TableId, SeatNum}]
+replace_by_bots(DisconnectedSeats, GameId, BotModule, Players, Seats, PlayerIdCounter) ->
+    F = fun(#seat{player_id = PlayerId,
+                  table = TableId,
+                  seat_num = SeatNum}, {RAcc, PAcc, SAcc, Counter}) ->
+                NewPAcc1 = del_player(PlayerId, PAcc),
+                NewSAcc = set_seat(TableId, SeatNum, _PlayerId = Counter, _Bot = true,
+                                   _RegByTable = false, _Connected = false, _Free = false, SAcc),
+                #'PlayerInfo'{id = UserId} = UserInfo = spawn_bot(GameId, BotModule),
+                NewPAcc = store_player(#player{id = Counter, user_id = UserId,
+                                               user_info = UserInfo, is_bot = true}, NewPAcc1),
+                NewRAcc = [{Counter, UserInfo, TableId, SeatNum} | RAcc],
+                {NewRAcc, NewPAcc, NewSAcc, Counter + 1}
+        end,
+    lists:foldl(F, {[], Players, Seats, PlayerIdCounter}, DisconnectedSeats).
+
 
 enough_players(Seats) ->
     NonEmptySeats = find_non_free_seats(Seats),
@@ -899,6 +1015,16 @@ finalize_tables_with_disconnect(TableModule, Tables) ->
                 send_to_table(TableModule, TablePid, stop)
         end,
     lists:foreach(F, tables_to_list(Tables)).
+
+
+%% req_replace_players(TableMod, Tables, Replacements, TabRequests) -> NewRequests
+req_replace_players(TableMod, Tables, Replacements, TabRequests) ->
+    F = fun({NewPlayerId, UserInfo, TableId, SeatNum}, Acc) ->
+                #table{pid = TablePid} = fetch_table(TableId, Tables),
+                table_req_replace_player(TableMod, TablePid, NewPlayerId, UserInfo, TableId, SeatNum, Acc)
+        end,
+    lists:foldl(F, TabRequests, Replacements).
+
 
 
 %% table_req_replace_player(TableMod, TablePid, PlayerId, UserInfo, TableId, SeatNum, TabRequests) -> NewRequests
@@ -1009,6 +1135,9 @@ find_seats_by_player_id(PlayerId, Seats) ->
 find_seats_by_table_id(TabId, Seats) ->
     midict:geti(TabId, table_id, Seats).
 
+find_disconnected_seats(Seats) ->
+    midict:geti(false, connected, Seats).
+
 find_free_seats(TableId, Seats) ->
     midict:geti(true, {free_at_tab, TableId}, Seats).
 
@@ -1046,7 +1175,7 @@ store_seat(#seat{table = TabId, seat_num = SeatNum, player_id = PlayerId,
                  true ->
                      [{table_id, TabId}, {free, false}, {{free_at_tab, TabId}, false},
                       {player_at_table, {PlayerId, TabId}}, {player_id, PlayerId},
-                      {{connected, TabId}, Connected}]
+                      {{connected, TabId}, Connected}, {connected, Connected}]
               end,
     midict:store({TabId, SeatNum}, Seat, Indices, Seats).
 
