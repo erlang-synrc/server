@@ -286,10 +286,7 @@ handle_info({timeout, Magic}, ?STATE_TOUR_PROCESSING,
             {Replacements, NewPlayers, NewSeats, NewPlayerIdCounter} =
                 replace_by_bots(DisconnectedSeats, GameId, BotModule, Players, Seats, PlayerIdCounter),
             NewRequests = req_replace_players(TableModule, Tables, Replacements, Requests),
-            Users = [if Bot -> robot; true -> UserId end
-                     || #player{user_id = UserId, is_bot = Bot} <- players_to_list(NewPlayers)],
-            DeclRec = create_decl_rec(GameType, CommonParams, GameId, Users),
-            gproc:set_value({p,l,self()}, DeclRec),
+            update_gproc(GameId, GameType, CommonParams, NewPlayers),
             ?INFO("TRN_PAIRED <~p> The replacement is completed.", [GameId]),
             start_round(StateData#state{tab_requests = NewRequests,
                                         players = NewPlayers,
@@ -825,7 +822,9 @@ reg_player_with_replace(UserInfo, TableId, SeatNum, OldPlayerId, From, StateName
                         #state{game_id = GameId, players = Players, tables = Tables,
                                game_type = GameType, seats = Seats, player_id_counter = PlayerId,
                                tab_requests = TabRequests, reg_requests = RegRequests,
-                               table_module = TableModule, common_params = CommonParams} = StateData) ->
+                               table_module = TableModule, common_params = CommonParams,
+                               game_mode = GameMode, mul_factor = MulFactor,
+                               quota_per_round = Amount} = StateData) ->
     #'PlayerInfo'{id = UserId, robot = IsBot} = UserInfo,
     NewPlayers = del_player(OldPlayerId, Players),
     NewPlayers2 = store_player(#player{id = PlayerId, user_id = UserId,
@@ -835,12 +834,17 @@ reg_player_with_replace(UserInfo, TableId, SeatNum, OldPlayerId, From, StateName
                         _Connected = false, _Free = false, Seats),
     ?INFO("TRN_PAIRED <~p> User ~p assigned to seat <~p> of table <~p>.", [GameId, UserId, SeatNum, TableId]),
     NewRegRequests = dict:store(PlayerId, From, RegRequests),
-    TablePid = get_table_pid(TableId, Tables),
+    #table{pid = TablePid, state = TableStateName} = fetch_table(TableId, Tables),
     NewTabRequests = table_req_replace_player(TableModule, TablePid, PlayerId, UserInfo, TableId, SeatNum, TabRequests),
-    Users = [if Bot -> robot; true -> UId end || #player{user_id = UId, is_bot = Bot}
-                                                            <- players_to_list(NewPlayers2)],
-    DeclRec = create_decl_rec(GameType, CommonParams, GameId, Users),
-    gproc:set_value({p,l,self()}, DeclRec),
+    case TableStateName of
+        ?TABLE_STATE_IN_PROGRESS when not IsBot->
+            ?INFO("TRN_PAIRED <~p> User ~p is a real player <~p> and he was registered in the middle of the round."
+                  "So deduct some quota.", [GameId, UserId, PlayerId]),
+            deduct_quota(GameId, GameType, GameMode, Amount, MulFactor, [UserId]);
+        _ -> do_nothing
+    end,
+
+    update_gproc(GameId, GameType, CommonParams, NewPlayers2),
     {next_state, StateName, StateData#state{players = NewPlayers2,
                                             seats = NewSeats,
                                             player_id_counter = PlayerId + 1,
@@ -860,12 +864,7 @@ reg_new_player(UserInfo, TableId, SeatNum, From, StateName,
     NewTabRequests = table_req_replace_player(TableModule, TablePid, PlayerId, UserInfo,
                                               TableId, SeatNum, TabRequests),
     NewRegRequests = dict:store(PlayerId, From, RegRequests),
-
-    Users = [if Bot -> robot; true -> UId end || #player{user_id = UId, is_bot = Bot}
-                                                            <- players_to_list(NewPlayers)],
-    DeclRec = create_decl_rec(GameType, CommonParams, GameId, Users),
-    gproc:set_value({p,l,self()}, DeclRec),
-
+    update_gproc(GameId, GameType, CommonParams, NewPlayers),
     EnoughPlayers = enough_players(NewSeats),
     if StateName == ?STATE_EMPTY_SEATS_FILLING andalso EnoughPlayers ->
            ?INFO("TRN_PAIRED <~p> It's enough players registered to start the game. "
@@ -917,6 +916,13 @@ replace_by_bots(DisconnectedSeats, GameId, BotModule, Players, Seats, PlayerIdCo
 enough_players(Seats) ->
     NonEmptySeats = find_non_free_seats(Seats),
     length(NonEmptySeats) > 0.
+
+
+update_gproc(GameId, GameType, CommonParams, Players) ->
+    Users = [if Bot -> robot; true -> UId end || #player{user_id = UId, is_bot = Bot}
+                                                            <- players_to_list(Players)],
+    DeclRec = create_decl_rec(GameType, CommonParams, GameId, Users),
+    gproc:set_value({p,l,self()}, DeclRec).
 
 %% prepare_players_for_new_tour(InitialPoints, Players) -> [{PlayerId, UserInfo, Points}]
 prepare_players_for_new_tour(InitialPoints, Players) ->
@@ -1045,8 +1051,8 @@ remove_table_from_next_turn_wl(TableId, StateName,
     if NewNextTurnWL == [] ->
            OppColor = opponent(CurColor),
            {Die1, Die2} = roll(),
-           ?INFO("TRN_PAIRED <~p> The next turn waiting list is empty. Rolling dice for color ~p",
-                 [GameId, OppColor]),
+           ?INFO("TRN_PAIRED <~p> The next turn waiting list is empty. Rolling dice for color ~p: ~p",
+                 [GameId, OppColor, [Die1, Die2]]),
            [send_to_table(TableModule, TablePid, {action, {rolls, OppColor, Die1, Die2}}) ||
               #table{pid = TablePid} <- tables_to_list(Tables)],
            ?INFO("TRN_PAIRED <~p> New next turn waiting list is ~p",
@@ -1148,7 +1154,7 @@ find_non_free_seats(Seats) ->
     midict:geti(false, free, Seats).
 
 find_registered_robot_seats(Seats) ->
-    [S || S = #seat{registered_by_table = true, is_bot = true} <- find_free_seats(Seats)].
+    [S || S = #seat{registered_by_table = true, is_bot = true} <- find_non_free_seats(Seats)].
 
 fetch_seat(TableId, SeatNum, Seats) -> midict:fetch({TableId, SeatNum}, Seats).
 
