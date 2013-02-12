@@ -134,6 +134,7 @@ handle_cast({messages_callback, Envelope}, #state{active_users = AU, heartbeat_u
             {noreply, State#state{active_users = AU1, heartbeat_users = HU1}};
         ["tournament", _TId, "chat", _Action] ->
             NewChatHistory = save_chat(Envelope#envelope.payload, ChatHistory),
+            ?INFO("Chat Message: ~p",[{_TId,_Action}]),
             {noreply, State#state{chat_history = NewChatHistory}}
     end.
 
