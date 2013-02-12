@@ -269,17 +269,17 @@ handle_info(set_timeout, StateName,
 handle_info({'DOWN', MonitorRef, _Type, _Object, Info}, _StateName,
              #state{game_id = GameId, table_id = TableId, parent_mon_ref = MonitorRef
                    } = StateData) ->
-    ?INFO("TAVLA_NG_TABLE <~p,~p> The parent is died with reason: ~p. Stopping",
+    ?INFO("TAVLA_NG_TABLE_DBG <~p,~p> The parent is died with reason: ~p. Stopping",
           [GameId, TableId, Info]),
     {stop, parent_died, StateData};
 
 handle_info(Info, StateName, #state{game_id = GameId, table_id = TableId} = StateData) ->
-    ?INFO("TAVLA_NG_TABLE <~p,~p> Unexpected message(info) received at state <~p>: ~p.",
+    ?INFO("TAVLA_NG_TABLE_DBG <~p,~p> Unexpected message(info) received at state <~p>: ~p.",
           [GameId, TableId, StateName, Info]),
     {next_state, StateName, StateData}.
 
 terminate(Reason, StateName, #state{game_id = GameId, table_id = TableId, relay = Relay}) ->
-    ?INFO("TAVLA_NG_TABLE <~p,~p> Shutting down at state: <~p>. Reason: ~p",
+    ?INFO("TAVLA_NG_TABLE_DBG <~p,~p> Shutting down at state: <~p>. Reason: ~p",
           [GameId, TableId, StateName, Reason]),
     ?RELAY:stop(Relay),
     ok.
