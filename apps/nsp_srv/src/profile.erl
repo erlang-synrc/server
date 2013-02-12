@@ -865,17 +865,15 @@ u_event({process_delivery, UId, GiftId, GiftTimestamp, SName}) ->
     HasNotConfirmed = fun(F, OL) ->
         case OL of
             [] -> false;
-            [#membership_purchase{state=S}|T] -> case S of
+            [#membership_purchase{state=S}|T] ->
+              case S of
                 confirmed -> F(F, T);
                 _ -> true
-            end
+              end
         end
     end,
     case HasNotConfirmed(HasNotConfirmed, Orders) of
-        true ->
-            wf:wire(#alert{text=?_T("Sorry, not all of your payments are yet confirmed. We are working on it, please wait a little bit more.")}),
-            wf:wire(simple_lightbox, #hide{});
-        false ->
+        false when Orders=/=[] ->
             case nsm_db:get(config, "delivery/notifications/email") of
                 {error, notfound} ->
                     ?ERROR("Delivery error, delivery/notifications/email not set"),
@@ -897,7 +895,10 @@ u_event({process_delivery, UId, GiftId, GiftTimestamp, SName}) ->
                     wf:wire(#alert{text=?_T("Ok, the delivery is on its' way now!")}),
                     wf:wire(simple_lightbox, #hide{}),
                     wf:redirect("/profile/gifts")
-            end
+            end;
+        _ ->
+            wf:wire(#alert{text=?_T("Sorry, not all of your payments are yet confirmed. We are working on it, please wait a little bit more.")}),
+            wf:wire(simple_lightbox, #hide{})
     end;
 
 u_event(Any) ->
