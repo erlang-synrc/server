@@ -73,7 +73,6 @@
 
 -include_lib("nsx_config/include/log.hrl"). %% XXX
 
-
 -define(CHECKERS_NUM, 15).
 
 -define(WHITE_OUT, wo).
@@ -228,7 +227,7 @@ process_moves(PlayerId, Moves, _StateName,
         {ok, NewBoard, NewPipsList, NewHittedHomePositions, RealMoves} ->
             ?INFO("process_moves/4 After:", []),
             board_to_text(NewBoard),  %% Show the board
-            MovesEvents = [{moves, PlayerId, lists:reverse(RealMoves)}], %% TODO
+            MovesEvents = [{moves, PlayerId, lists:reverse(RealMoves)}],
             case is_game_finished(PlayerId, NewBoard) of
                 {yes, Condition} ->
                     Events = [{win, PlayerId, Condition} | MovesEvents],
@@ -450,42 +449,48 @@ check_move_posibility(Color, From, To, Pips, Board, BearoffWasteMoveEnabled,
 
 check_home_hit_and_run(Color, From, To, Pips, Board, BearoffWasteMoveEnabled,
                        HomeHitAndRunEnabled, HitedHomePositions) ->
-    IsAllowed = if HomeHitAndRunEnabled -> true;
-                   true ->
-                       {_, Num} = get_checkers(From, Board),
-                       if Num > 1 -> true;
-                          true -> not lists:member(From, HitedHomePositions)
-                       end
-                end,
-    if IsAllowed -> check_waste_move(Color, From, To, Pips, Board, BearoffWasteMoveEnabled,
-                                     HomeHitAndRunEnabled, HitedHomePositions);
+    TestPassed = if HomeHitAndRunEnabled -> true;
+                    true ->
+                        {_, Num} = get_checkers(From, Board),
+                        if Num > 1 -> true;
+                           true -> not lists:member(From, HitedHomePositions)
+                        end
+                 end,
+    if TestPassed -> check_waste_move(Color, From, To, Pips, Board, BearoffWasteMoveEnabled,
+                                      HomeHitAndRunEnabled, HitedHomePositions);
        true -> {error, hit_and_run}
     end.
 
 
 check_waste_move(Color, From, To, Pips, Board, BearoffWasteMoveEnabled,
                  HomeHitAndRunEnabled, HitedHomePositions) ->
-    IsAllowed = if BearoffWasteMoveEnabled -> true;
-                   true ->
-                       case detect_bearoff_mode(Color, Board) of
-                           false -> true;
-                           true ->
-                               case To == out_position(Color) of
-                                   true -> true;
-                                   false -> true %% TODO: Check bear-off posibility
-                               end
-                       end
-                end,
-    if IsAllowed -> check_destination_pos(Color, To, Board);
+    BearOffMode = detect_bearoff_mode(Color, Board),
+    OutPos = out_position(Color),
+    TestPassed = if BearoffWasteMoveEnabled -> true;
+                    true ->
+                        case BearOffMode of
+                            false -> true;
+                            true ->
+                                case To == OutPos of
+                                    true -> true;
+                                    false -> true %% TODO: Check bear-off posibility
+                                end
+                        end
+                 end,
+    if TestPassed -> check_destination_pos(Color, To, Board, BearOffMode, OutPos);
        true -> {error, waste_move}
     end.
 
 
-check_destination_pos(Color, To, Board) ->
-    case check_destination(Color, To, Board) of
-        ok -> ok;
-        hit -> hit;
-        occupied -> {error, occupied}
+check_destination_pos(Color, To, Board, BearOffMode, OutPos) ->
+    if To == OutPos andalso not BearOffMode ->
+           {error, not_bear_off_mode};
+       true ->
+           case check_destination(Color, To, Board) of
+               ok -> ok;
+               hit -> hit;
+               occupied -> {error, occupied}
+           end
     end.
 
 
