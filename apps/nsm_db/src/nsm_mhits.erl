@@ -9,11 +9,11 @@ stat_word(Word) -> nsm_db:all_by_index(mhits, <<"mhits_word_bin">>, Word).
 stat_date(Date) -> nsm_db:all_by_index(mhits, <<"mhits_date_bin">>, Date).
 stat_ip_date(IP, Date) -> nsm_db:all_by_index(mhits, <<"mhits_ip_date_bin">>, {IP, Date}).
 stat_word_ip_date(Word,IP,Date) -> nsm_db:all_by_index(mhits, <<"mhits_word_ip_date_bin">>, {Word,IP, Date}).
-clean_date(Date) -> nsm_db:delete_by_index(mhits, <<"mhits_date_bin">>, Date).
-clean_all() -> nsm_db:delete_by_index(mhits, <<"bucket_bin">>, mhits).
+rremove_date(Date) -> nsm_db:delete_by_index(mhits, <<"mhits_date_bin">>, Date).
+rremove_all() -> nsm_db:delete_by_index(mhits, <<"bucket_bin">>, mhits).
 
 dump_raw() ->
-  [{Pid, describe(Pid), length(dict(Pid)), Mem} || {Pid, Mem} <- top(full_memory, 15)].
+  [{Pid, describe(Pid), length(dict(Pid)), Mem} || {Pid, Mem} <- top(full_memory, 25)].
 
 dump() ->
   Pid = spawn(fun() ->
@@ -75,3 +75,11 @@ get_state(Server) when is_pid(Server) ->
   Stat3 = fun(Pid) -> proplists:get_value("State", Stat2(Pid)) end,
   Stat3(Server).
 
+clear_nitrogen_acc_loops() ->
+   Top = dump(),
+   [begin
+      case process_info(Pid)/=undefined andalso proplists:get_value(current_function,process_info(Pid)) of
+           {action_comet,accumulator_loop,Y} -> erlang:send(Pid,die);
+           _ -> skip
+      end
+   end || {Pid,Name,X,Mem} <- Top].
