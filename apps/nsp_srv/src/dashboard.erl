@@ -31,8 +31,25 @@ main() ->
   end.
 
 body() ->
+  {Rt, Rv} = timer:tc(webutils, get_ribbon_menu, []),
+  {Ft, Fv} = timer:tc(webutils, get_friends, []),
+  {Gt, Gv} = timer:tc(webutils, get_groups, []),
+  {Ct, Cv} = timer:tc(dashboard, content, []),
+  ?INFO("Ribbon: ~p  Friends: ~p  Groups: ~p", [Rt, Ft, Gt]),
+  ?INFO("Content: ~p~n", [Ct]),
+  ["<div class=\"list-top-photo-h\">",
+        webutils:get_hemen_nav(),
+  "</div>",
+  "<section id=\"main\">",
+    "<section id=\"content\">",
+      Cv,
+    "</section>",
+    "<aside id=\"aside\">",
+      Rv, Fv, Gv,
+    "</aside>",
+  "</section>"].
   %catch(gproc:reg({p,l,self()},wf:user())),
-  #template{file=code:priv_dir(nsp_srv)++"/templates/inner_page.html"}.
+  %#template{file=code:priv_dir(nsp_srv)++"/templates/inner_page.html"}.
 
 content() -> dashboard:view_feed_mkh().
 
