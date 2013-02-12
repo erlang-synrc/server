@@ -38,12 +38,14 @@ handle_info(start_all, State) ->
     case Node of
          1 -> RunGroups(Groups);
          4 -> RunGroups(Groups);
-         5 -> RunGroups(Groups) end,
+         5 -> RunGroups(Groups);
+         _ -> skip end,
     [begin start_worker(user,Name,Feed,Direct) end || #user{username=Name,feed=Feed,direct=Direct} <- Users],
     case Node of
          1 -> RunSystem();
          4 -> RunSystem();
-         5 -> RunSystem() end,
+         5 -> RunSystem();
+         _ -> skip end,
     garbage_collect(self()),
     {noreply, State};
 
