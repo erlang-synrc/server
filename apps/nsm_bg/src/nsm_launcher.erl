@@ -31,7 +31,7 @@ handle_info(start_all, State) ->
     Users = case Node of
                  4 -> [User || User<-nsm_db:all(user), User#user.email /= undefined, User#user.status == ok];
                  5 -> [User || User<-nsm_db:all(user), User#user.email /= undefined, User#user.status == ok];
-                 X -> [U||#user{username=U,status=ok,email=E}<-nsm_db:all(user), CheckNode(U)==X,E/=undefined]
+                 X -> [R||R=#user{username=U,status=ok,email=E}<-nsm_db:all(user), CheckNode(U)==X,E/=undefined]
     end,
     ?INFO("Users Count on Node ~p: ~p",[Node,length(Users)]),
     Groups = nsm_db:all(group),
