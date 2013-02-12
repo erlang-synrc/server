@@ -22,11 +22,30 @@ start_worker(Type, Name, Feed, Direct) ->
 
 handle_info(start_all, State) ->
     ?INFO("Starting workers..."),
-    Users = [User || User<-nsm_db:all(user), User#user.email /= undefined, User#user.status == ok],
+
+    CheckNode = fun(X) -> lists:foldl(fun(A, Sum) -> A + Sum end, 0, X) rem 3 + 1 end,
+    RunGroups = fun(Groups) -> [begin start_worker(group,Name,Feed,undefined) end 
+                                || #group{username=Name,feed=Feed} <- Groups] end,
+    RunSystem = fun() -> start_worker(system,"system",-1,undefined) end,
+    Node = nsx_opt:get_env(nsm_bg,pool,5),
+    Users = case Node of
+                 4 -> [User || User<-nsm_db:all(user), User#user.email /= undefined, User#user.status == ok];
+                 5 -> [User || User<-nsm_db:all(user), User#user.email /= undefined, User#user.status == ok];
+                 X -> [R||R=#user{username=U,status=ok,email=E}<-nsm_db:all(user), CheckNode(U)==X,E/=undefined]
+    end,
+    ?INFO("Users Count on Node ~p: ~p",[Node,length(Users)]),
     Groups = nsm_db:all(group),
-    [begin start_worker(group,Name,Feed,undefined) end || #group{username=Name,feed=Feed} <- Groups],
+    case Node of
+         1 -> RunGroups(Groups);
+         4 -> RunGroups(Groups);
+         5 -> RunGroups(Groups);
+         _ -> skip end,
     [begin start_worker(user,Name,Feed,Direct) end || #user{username=Name,feed=Feed,direct=Direct} <- Users],
-    start_worker(system,"system",-1,undefined),
+    case Node of
+         1 -> RunSystem();
+         4 -> RunSystem();
+         5 -> RunSystem();
+         _ -> skip end,
     garbage_collect(self()),
     {noreply, State};
 
