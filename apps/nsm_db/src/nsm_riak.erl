@@ -1153,7 +1153,7 @@ purge_feed(FeedId) ->
     nsm_db:put(Feed#feed{top=undefined}).
 
 purge_unverified_feeds() ->
-    [purge_feed(FeedId) || #user{feed=FeedId,status=S,email=E} <- nsm_db:all(user),E==undefined,S/=ok].
+    [purge_feed(FeedId) || #user{feed=FeedId,status=S,email=E} <- nsm_db:all(user),E==undefined].
 
 purge_system_messages() ->
     [delete_system_messages(U,FeedId) || U=#user{feed=FeedId} <- nsm_db:all(user)].
