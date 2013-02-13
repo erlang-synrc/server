@@ -1169,7 +1169,7 @@ delete_system_messages(FeedId) ->
          _ ->  Relinked = [begin E = lists:nth(N,Relink),
                                {Next,Prev} = case N of 
                                    1 -> case Len of
-                                             1 -> E;
+                                             1 -> {undefined,undefined};
                                              _ -> NextEntry = lists:nth(N+1,Relink),
                                                  {undefined,NextEntry#entry.id}
                                         end;
@@ -1183,7 +1183,7 @@ delete_system_messages(FeedId) ->
                end || N <- lists:seq(1,Len)],
                Link = hd(Relinked),
                nsm_db:put(Feed#feed{top=Link#entry.id}),
-               [nsm_db:put(E) || E <- Relinked] 
+               [nsm_db:put(X) || X <- Relinked] 
     end,
     Len.
 
