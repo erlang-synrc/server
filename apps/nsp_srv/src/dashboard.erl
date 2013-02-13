@@ -34,7 +34,7 @@ body() ->
   {Rt, Rv} = timer:tc(webutils, get_ribbon_menu, []),
   {Ft, Fv} = timer:tc(webutils, get_friends, []),
   {Gt, Gv} = timer:tc(webutils, get_groups, []),
-  {Ct, Cv} = timer:tc(dashboard, content, []),
+  {Ct, Cv} = timer:tc(dashboard, view_feed_mkh, []),
   ?INFO("Ribbon: ~p  Friends: ~p  Groups: ~p", [Rt, Ft, Gt]),
   ?INFO("Content: ~p~n", [Ct]),
   ["<div class=\"list-top-photo-h\">",
@@ -49,9 +49,6 @@ body() ->
     "</aside>",
   "</section>"].
   %catch(gproc:reg({p,l,self()},wf:user())),
-  %#template{file=code:priv_dir(nsp_srv)++"/templates/inner_page.html"}.
-
-content() -> dashboard:view_feed_mkh().
 
 feed_form() ->
   FId = webutils:user_info(feed),
@@ -64,38 +61,31 @@ feed_form() ->
   ].
 
 view_feed_mkh() ->
-    wf:session(autocomplete_list_values, []), %%%
-    UserInfo = webutils:user_info(),
-    ?PRINT(UserInfo),
-    NotVerified = UserInfo#user.status == not_verified,
-    BuySuccess = wf:q(buy) == "success",
-    InternalError = wf:q('__submodule__') == "internal_error",
+  wf:session(autocomplete_list_values, []), %%%
+  UserInfo = webutils:user_info(),
+  NotVerified = UserInfo#user.status == not_verified,
+  BuySuccess = wf:q(buy) == "success",
+  InternalError = wf:q('__submodule__') == "internal_error",
 
-    if
-        NotVerified ->
-            %% show notification about email verification
-            wf:update(notification_area, verification_notification());
-        BuySuccess ->
-            case buy:package() of
-                undefined ->
-                    ?WARNING("buy success received, but there are no package information in session");
-                Package ->
-                    wf:update(notification_area, buy_success_notification(Package))
-            end;
-        InternalError ->
-            wf:update(notification_area, internal_error_notification());
-        true ->
-            ok
-    end,
+  if NotVerified ->
+      %% show notification about email verification
+      wf:update(notification_area, verification_notification());
+    BuySuccess ->
+      case buy:package() of
+        undefined -> ?WARNING("buy success received, but there are no package information in session");
+        Package -> wf:update(notification_area, buy_success_notification(Package))
+      end;
+    InternalError -> wf:update(notification_area, internal_error_notification());
+    true -> ok
+  end,
 
-    FId = webutils:user_info(feed),
-    Feeds = view_feed(),
-
-    [
-        #panel{id=notification_area},
-        entry_form(FId),
-        #panel{class="posts_container_mkh", body=[Feeds]}
-    ].
+  FId = webutils:user_info(feed),
+  wf:wire(site_utils:postback_to_js_string(?MODULE, load_feeds)),
+  [
+    #panel{id=notification_area},
+    entry_form(FId),
+    #panel{id=feeds_container, class="posts_container_mkh", body=[]}
+  ].
 
 search_container(FId) ->
     ?INFO("Search Container"),
@@ -138,48 +128,42 @@ search_container(FId) ->
         #panel{style="height:15px;clear:both"}
     ].
 
-entry_form(FId) ->
-    ?INFO("Entry Form"),
-    entry_form(FId, ?MODULE, {add_entry, FId}).
-
+entry_form(FId) -> entry_form(FId, ?MODULE, {add_entry, FId}).
 
 entry_form(FId, Delegate, Postback) ->
-    %% cool way to create JavaScript code which does postback call
-    Anchor = wf_context:anchor(), ValidationGroup = wf_context:event_validation_group(),
-    Postback_js = wf_event:generate_postback_script(Postback, Anchor, ValidationGroup, Delegate, undefined),
-    wf:wire(wf:f("objs('add_entry_textbox')
-        .bind('keyup keydown change', function(){
-            var $this=objs('add_entry_textbox');
-            var l = parseInt($this.attr('value').length);
-            if(l > 0){
-                objs('sendentry').css('background','url(/images/grn-shr-btn.png) no-repeat');
-                objs('sendentry').css('cursor','pointer');
-            }
-            if(l <= 0){
-                objs('sendentry').css('background','url(/images/gre_shr_btn.png) no-repeat');
-                objs('sendentry').css('cursor','default');
-            }
-            objs('text_length').text((l>1000)?(~b-l):'');
-        })
-        .bind('keypress', function(e){
-            var code = e.keyCode || e.which;
-    		if (code == 13) {
-                if (!e.shiftKey) {~s; return false;}  // send postback
-            }
-    		if (code != 116 && code != 46 && code > 40 || code == 32){
-                return $(this).trigger('change').attr('value').length < ~b // deny only text keys
-            }
-        })",
-        [?ENTRY_TEXT_LENGTH, Postback_js, ?ENTRY_TEXT_LENGTH])),
-    wf:wire(add_entry_textbox, #event { type=focus, actions=#script { script="add_myfeed_to();" } }),
-    wf:wire(to_tauto_container, #event { type=click, actions=#script { script="$('.wfid_to_tauto').focus();" } }),
-    [
-        search_container(FId),
-        #span{id=text_length, class="info-textbox-length"}
-    ].
+  wf:wire(
+    wf:f("objs('add_entry_textbox')
+      .bind('keyup keydown change', function(){
+        var $this=objs('add_entry_textbox');
+        var l = parseInt($this.attr('value').length);
+        if(l > 0){
+          objs('sendentry').css('background','url(/images/grn-shr-btn.png) no-repeat');
+          objs('sendentry').css('cursor','pointer');
+        }
+        if(l <= 0){
+          objs('sendentry').css('background','url(/images/gre_shr_btn.png) no-repeat');
+          objs('sendentry').css('cursor','default');
+        }
+        objs('text_length').text((l>1000)?(~b-l):'');
+      })
+      .bind('keypress', function(e){
+        var code = e.keyCode || e.which;
+        if (code == 13) {
+          if (!e.shiftKey) {~s; return false;}  // send postback
+        }
+        if (code != 116 && code != 46 && code > 40 || code == 32){
+          return $(this).trigger('change').attr('value').length < ~b // deny only text keys
+        }
+      })",
+      [?ENTRY_TEXT_LENGTH, site_utils:postback_to_js_string(Delegate, Postback), ?ENTRY_TEXT_LENGTH])),
+  wf:wire(add_entry_textbox, #event { type=focus, actions=#script { script="add_myfeed_to();" } }),
+  wf:wire(to_tauto_container, #event { type=click, actions=#script { script="$('.wfid_to_tauto').focus();" } }),
+  [
+    search_container(FId),
+    #span{id=text_length, class="info-textbox-length"}
+  ].
 
-view_feed() ->
-    view_feed(undefined).
+view_feed() -> view_feed(undefined).
 view_feed(StartFrom) ->
     {Entries, FId} = get_entries(StartFrom),
     case FId of
@@ -192,7 +176,7 @@ view_feed(StartFrom) ->
     webutils:view_feed_entries(?MODULE, ?FEED_PAGEAMOUNT, Entries).
 
 get_entries(StartFrom) ->
-    UserInfo = wf:session(user_info),
+  UserInfo = wf:session(user_info),
     {UserFiler, _IsGroup, _AddFilter} = case {wf:q("user"), wf:q("group")} of
         {undefined, undefined} -> {undefined, false, undefined};
         {undefined, GroupName} ->
@@ -226,7 +210,6 @@ get_entries(StartFrom) ->
             FeedId = UserInfo#user.feed,
             {feed:get_entries_in_feed(FeedId, StartFrom, ?FEED_PAGEAMOUNT), FeedId}
     end.
-
 
 user_blocked_message(U) ->
     #panel{style="font: 1em Arial,Helvetica,sans-serif;font-size: 14px;font-weight: bold;", body=[
@@ -315,6 +298,11 @@ event(Event) ->
 	undefined -> wf:redirect_to_login(?_U("/login"));
         User      -> inner_event(Event, User)
     end.
+
+inner_event(load_feeds, _) ->
+  {T,Feeds} = timer:tc(dashboard, view_feed, []),
+  ?INFO("Feeds load time:~p", [T]),
+  wf:update(feeds_container, Feeds);
 
 inner_event(account, _) ->
     wf:redirect(?_U("/login"));
