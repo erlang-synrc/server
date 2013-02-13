@@ -1156,9 +1156,10 @@ purge_unverified_feeds() ->
     [purge_feed(FeedId) || #user{feed=FeedId,status=S,email=E} <- nsm_db:all(user),E==undefined,S/=ok].
 
 purge_system_messages() ->
-    [delete_system_messages(FeedId) || #user{feed=FeedId} <- nsm_db:all(user)].
+    [delete_system_messages(U,FeedId) || U=#user{feed=FeedId} <- nsm_db:all(user)].
 
-delete_system_messages(FeedId) ->
+delete_system_messages(U,FeedId) ->
+    ?INFO("Cleaning ~p user feed from system messages",[U]),
     {ok,Feed} = nsm_db:get(feed,FeedId),
     Entries = riak_entry_traversal(Feed#feed.top, -1),
     {Removal,Relink} = lists:partition(fun(#entry{type={_,Type}}) -> Type == system orelse Type == system_note end,Entries),
