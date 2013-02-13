@@ -34,7 +34,7 @@ body() ->
   ["<br><br>",
   "<section id=\"main\">",
     "<section id=\"content\">", feed(), "</section>",
-    "<aside id='aside' class='aside'>",#panel{id=aside,body=[]},"</aside>",
+    "<aside id='aside'>",webutils:get_ribbon_menu(),#panel{id=aside,body=[]},"</aside>",
   "</section>"].
 
 feed() ->
@@ -170,10 +170,9 @@ read_entries(Pid, StartFrom, FeedId)->
   end.
 
 aside() ->
-    Rv = webutils:get_ribbon_menu(),
     Fv = webutils:get_friends(),
     Gv = webutils:get_groups(),
-    [Rv,Fv,Gv].
+    [Fv,Gv].
 
 traverse_entries(_, undefined, _) -> [];
 traverse_entries(_, _, 0) -> [];
