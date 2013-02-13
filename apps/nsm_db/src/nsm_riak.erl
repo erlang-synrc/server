@@ -1161,8 +1161,7 @@ purge_system_messages() ->
 delete_system_messages(FeedId) ->
     {ok,Feed} = nsm_db:get(feed,FeedId),
     Entries = riak_entry_traversal(Feed#feed.top, -1),
-    {Removal,Relink} = lists:partition(fun(#entry{type={_,Type}}) -> 
-                             Type == system orelse Type == system_note end,Entries),
+    {Removal,Relink} = lists:partition(fun(#entry{type={_,Type}}) -> Type == system orelse Type == system_note end,Entries),
     [nsm_db:delete(entry,Id)||#entry{id=Id}<-Removal],
     Len = length(Relink),
     case Len of
@@ -1170,7 +1169,7 @@ delete_system_messages(FeedId) ->
          _ ->  Relinked = [begin E = lists:nth(N,Relink),
                                {Next,Prev} = case N of 
                                    1 -> case Len of
-                                             1 -> E;
+                                             1 -> {undefined,undefined};
                                              _ -> NextEntry = lists:nth(N+1,Relink),
                                                  {undefined,NextEntry#entry.id}
                                         end;
@@ -1182,7 +1181,9 @@ delete_system_messages(FeedId) ->
                                 end,
                                 E#entry{next = Next, prev = Prev}
                end || N <- lists:seq(1,Len)],
-               [nsm_db:put(E) || E <- Relinked] 
+               Link = hd(Relinked),
+               nsm_db:put(Feed#feed{top=Link#entry.id}),
+               [nsm_db:put(X) || X <- Relinked] 
     end,
     Len.
 
