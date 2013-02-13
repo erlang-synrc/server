@@ -158,7 +158,7 @@ process_delivery({_, _, FeedOwner, _}, ["likes", _, _, "add_like"], {User, E}) -
     wf:flush();
 
 process_delivery(_, show_entry, Entry) ->
-  timer:sleep(100),
+%  timer:sleep(100),
   wf:insert_bottom(feed, #view_entry{entry=Entry}),
   wf:flush();
 
