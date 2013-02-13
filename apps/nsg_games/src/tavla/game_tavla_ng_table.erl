@@ -13,7 +13,6 @@
 -include_lib("nsx_config/include/log.hrl").
 -include_lib("nsg_srv/include/basic_types.hrl").
 -include_lib("nsg_srv/include/settings.hrl").
-%-include_lib("nsg_srv/include/game_okey.hrl").
 -include_lib("nsg_srv/include/game_tavla.hrl").
 -include_lib("nsg_srv/include/requests.hrl").
 
@@ -42,7 +41,7 @@
                                %% determination and for playing. In first case the first element is for white die, and the
                                %% second one for black die.
          pips_list          :: list(integer()),
-         finish_reason      :: undefined | win | round_timeout | set_timeout,
+         finish_reason      :: undefined | win | round_timeout | set_timeout | surrender,
          finish_info        :: undefined | {black | white, normal | mars}
         }).
 
@@ -163,8 +162,6 @@ init([GameId, TableId, Params]) ->
     TTable = proplists:get_value(ttable, Params),
     Tour = proplists:get_value(tour, Params),
     Tours = proplists:get_value(tours, Params),
-    PublishToParent = proplists:get_value(publish_ge_to_parent, Params),
-    ParentManagesRolls = proplists:get_value(parent_manages_rolls, Params),
     %% Next two options will be passed on table respawn (after fail or service maintaince)
     ScoringState = proplists:get_value(scoring_state, Params, init_scoring(GameMode, PlayersInfo, Rounds)),
     CurRound = proplists:get_value(cur_round, Params, 0),
@@ -174,8 +171,8 @@ init([GameId, TableId, Params]) ->
                    {observers_allowed, false},
                    {table, {?MODULE, self()}}],
     {ok, Relay} = ?RELAY:start(RelayParams),
-    ?INFO("TAVLA_NG_TABLE_DBG <~p,~p> Set timeout: ~p, round timeout: ~p.", [GameId, TableId, SetTimeout, RoundTimeout]),
-    ?INFO("TAVLA_NG_TABLE_DBG <~p,~p> PlayersInfo: ~p.", [GameId, TableId, PlayersInfo]),
+    [?INFO("TAVLA_NG_TABLE_DBG <~p,~p> Parameter <~p> : ~p", [GameId, TableId, P, V]) ||
+           {P, V} <- Params],
     ?INFO("TAVLA_NG_TABLE <~p,~p> Started.", [GameId, TableId]),
     parent_notify_table_created(Parent, TableId, Relay),
     {_, ParentPid} = Parent,
@@ -249,22 +246,38 @@ handle_info({timeout, Magic}, ?STATE_PLAYING,
 
 handle_info({round_timeout, Round}, ?STATE_PLAYING,
             #state{cur_round = Round, desk_state = DeskState, game_id = GameId,
-                   table_id = TableId, timeout_timer = TRef} = StateData) ->
-    ?INFO("TAVLA_NG_TABLE <~p,~p> Time to finish round ~p because the round timeout.", [GameId, TableId, Round]),
-    if TRef =/= undefined -> erlang:cancel_timer(TRef);
-       true -> do_nothing
-    end,
+                   table_id = TableId} = StateData) ->
+    ?INFO("TAVLA_NG_TABLE <~p,~p> Time to finish round ~p because of the "
+          "round timeout.", [GameId, TableId, Round]),
     finalize_round(StateData#state{desk_state = DeskState#desk_state{finish_reason = timeout}});
 
-handle_info(set_timeout, StateName,
+handle_info(set_timeout, ?STATE_PLAYING,
             #state{cur_round = Round, desk_state = DeskState, game_id = GameId,
-                   table_id = TableId, timeout_timer = TRef} = StateData) when
-  StateName =/= ?STATE_SET_FINISHED ->
-    ?INFO("TAVLA_NG_TABLE <~p,~p> Time to finish round ~p and the set because the set timeout.", [GameId, TableId, Round]),
-    if TRef =/= undefined -> erlang:cancel_timer(TRef);
-       true -> do_nothing
-    end,
+                   table_id = TableId} = StateData) ->
+    ?INFO("TAVLA_NG_TABLE <~p,~p> Time to finish round ~p and the set because of "
+          "the set timeout.", [GameId, TableId, Round]),
     finalize_round(StateData#state{desk_state = DeskState#desk_state{finish_reason = set_timeout}});
+
+handle_info(set_timeout, ?STATE_SET_FINISHED = StateName,
+            #state{game_id = GameId, table_id = TableId} = StateData) ->
+    ?INFO("TAVLA_NG_TABLE <~p,~p> Time to finish the set because of the set timeout. "
+          "But the set is finished already. Ignoring", [GameId, TableId]),
+    {next_state, StateName, StateData};
+
+handle_info(set_timeout, StateName,
+            #state{game_id = GameId, table_id = TableId, scoring_state = ScoringState,
+                   parent = Parent, players = Players, timeout_timer = TRef} = StateData) ->
+    ?INFO("TAVLA_NG_TABLE <~p,~p> Time to finish the set because of the set "
+          "timeout at state <~p>. The set is over", [GameId, TableId, StateName]),
+    if TRef =/= undefined -> erlang:cancel_timer(TRef);
+       true -> do_nothing end,
+    NewStateData = StateData#state{timeout_timer = undefined,
+                                   timeout_magic = undefined},
+    {_, RoundScore, _, TotalScore} = ?SCORING:last_round_result(ScoringState),
+    RoundScorePl = [{get_player_id_by_seat_num(SeatNum, Players), Points} || {SeatNum, Points} <- RoundScore],
+    TotalScorePl = [{get_player_id_by_seat_num(SeatNum, Players), Points} || {SeatNum, Points} <- TotalScore],
+    parent_send_set_res(Parent, TableId, ScoringState, RoundScorePl, TotalScorePl),
+    {next_state, ?STATE_SET_FINISHED, NewStateData};
 
 handle_info({'DOWN', MonitorRef, _Type, _Object, Info}, _StateName,
              #state{game_id = GameId, table_id = TableId, parent_mon_ref = MonitorRef
@@ -415,6 +428,9 @@ handle_parent_message(show_round_result, StateName,
               {win, Winner, _Condition} ->
                   create_tavla_round_ended_win(Winner, RoundScore, TotalScore, AchsPoints,
                                                StateData);
+              {surrender, Surrender, _Condition} ->
+                  create_tavla_round_ended_surrender(Surrender, RoundScore, TotalScore, AchsPoints,
+                                                     StateData);
               timeout ->
                   create_tavla_round_ended_draw(round_timeout, RoundScore, TotalScore, AchsPoints,
                                                 StateData);
@@ -719,6 +735,15 @@ do_action(_SeatNum, #tavla_move{}, _From, StateName, StateData) ->
 do_action(_SeatNum, #tavla_ready{}, _From, StateName, StateData) ->
     {reply, ok, StateName, StateData};
 
+do_action(SeatNum, #tavla_surrender{}, From, ?STATE_PLAYING,
+          #state{desk_state = DeskState, players = Players} = StateData) ->
+    #player{color = Color} = get_player_by_seat_num(SeatNum, Players),
+    #desk_state{board = Board} = DeskState,
+    gen_fsm:reply(From, ok),
+    Condition = surrender_condition(Color, Board),
+    NewDeskState = DeskState#desk_state{finish_reason = surrender,
+                                        finish_info = {Color, Condition}},
+    finalize_round(StateData#state{desk_state = NewDeskState});
 
 do_action(_SeatNum, _UnsupportedAction, _From, StateName, StateData) ->
     {reply, {error, invalid_action}, StateName, StateData}.
@@ -845,7 +870,7 @@ do_game_action(Color, GameAction, From, StateName,
             gen_fsm:reply(From, ok),
             process_game_events(Events, StateData);
         {error, Reason} ->
-            ExtError = desk_error_to_ext(Reason), %% TODO: Fix desk_error_to_ext()
+            ExtError = desk_error_to_ext(Reason),
             {reply, ExtError, StateName, StateData}
     end.
 
@@ -886,31 +911,47 @@ on_game_finish(StateData) ->
 
 finalize_round(#state{desk_state = #desk_state{finish_reason = FinishReason,
                                                finish_info = FinishInfo},
-                      scoring_state = ScoringState,
-                      parent = Parent, players = Players,
-                      game_id = GameId, table_id = TableId} = StateData) ->
+                      scoring_state = ScoringState, timeout_timer = TimeoutTRef,
+                      round_timer = RoundTRef, parent = Parent, players = Players,
+                      game_id = GameId, table_id = TableId, cur_round = CurRound} = StateData) ->
     ?INFO("TAVLA_NG_TABLE <~p,~p> Finalizing the round. Finish reason: ~p. Finish info: ~p.",
           [GameId, TableId, FinishReason, FinishInfo]),
+    if TimeoutTRef =/= undefined -> erlang:cancel_timer(TimeoutTRef);
+       true -> do_nothing
+    end,
+    if RoundTRef =/= undefined -> erlang:cancel_timer(RoundTRef);
+       true -> do_nothing
+    end,
     FR = case FinishReason of
              timeout -> timeout;
              set_timeout -> set_timeout;
              win ->
                  {WinnerColor, Condition} = FinishInfo,
                  [#player{seat_num = SeatNum}] = find_players_by_color(WinnerColor, Players),
-                 {win, SeatNum, Condition}
+                 {win, SeatNum, Condition};
+             surrender ->
+                 {SurrenderColor, Condition} = FinishInfo,
+                 [#player{seat_num = SeatNum}] = find_players_by_color(SurrenderColor, Players),
+                 {surrender, SeatNum, Condition}
          end,
     {NewScoringState, GameOver} = ?SCORING:round_finished(ScoringState, FR),
+    NewStateData = StateData#state{scoring_state = NewScoringState,
+                                   timeout_timer = undefined,
+                                   timeout_magic = undefined,
+                                   round_timer = undefined},
+
     {_, RoundScore, _, TotalScore} = ?SCORING:last_round_result(NewScoringState),
     RoundScorePl = [{get_player_id_by_seat_num(SeatNum, Players), Points} || {SeatNum, Points} <- RoundScore],
     TotalScorePl = [{get_player_id_by_seat_num(SeatNum, Players), Points} || {SeatNum, Points} <- TotalScore],
+
     if GameOver ->
-           ?INFO("TAVLA_NG_TABLE <~p,~p> Set is over.", [GameId, TableId]),
-           parent_send_game_res(Parent, TableId, NewScoringState, RoundScorePl, TotalScorePl),
-           {next_state, ?STATE_SET_FINISHED, StateData#state{scoring_state = NewScoringState}};
+           ?INFO("TAVLA_NG_TABLE <~p,~p> The set is over.", [GameId, TableId]),
+           parent_send_set_res(Parent, TableId, NewScoringState, RoundScorePl, TotalScorePl),
+           {next_state, ?STATE_SET_FINISHED, NewStateData};
        true ->
-           ?INFO("TAVLA_NG_TABLE <~p,~p> Round is over.", [GameId, TableId]),
+           ?INFO("TAVLA_NG_TABLE <~p,~p> Round <~p> is over.", [GameId, TableId, CurRound]),
            parent_send_round_res(Parent, TableId, NewScoringState, RoundScorePl, TotalScorePl),
-           {next_state, ?STATE_FINISHED, StateData#state{scoring_state = NewScoringState}}
+           {next_state, ?STATE_FINISHED, NewStateData}
     end.
 
 
@@ -1093,7 +1134,7 @@ parent_notify_table_created({ParentMod, ParentPid}, TableId, RelayPid) ->
 parent_send_round_res({ParentMod, ParentPid}, TableId, ScoringState, RoundScores, TotalScores) ->
     ParentMod:table_message(ParentPid, TableId, {round_finished, ScoringState, RoundScores, TotalScores}).
 
-parent_send_game_res({ParentMod, ParentPid}, TableId, ScoringState, RoundScores, TotalScores) ->
+parent_send_set_res({ParentMod, ParentPid}, TableId, ScoringState, RoundScores, TotalScores) ->
     ParentMod:table_message(ParentPid, TableId, {game_finished, ScoringState, RoundScores, TotalScores}).
 
 parent_send_player_connected({ParentMod, ParentPid}, TableId, PlayerId) ->
@@ -1373,14 +1414,35 @@ create_tavla_round_ended_win(Winner, RoundScore, TotalScore, _PlayersAchsPoints,
                                          score = Score
                                         }
                  end || SeatNum <- [1, 2]],
-    Results = #'TavlaGameResults'{
-                                  %%table_id  :: integer(),
-                                  %%game_id :: integer(),
-                                  players = PlResults
-                                 },
+    Results = #'TavlaGameResults'{players = PlResults},
+    #'TavlaPlayerScore'{player_id = WinnerUserId} =
+                            lists:keyfind(<<"true">>, #'TavlaPlayerScore'.winner, PlResults),
     #tavla_game_ended{table_id = TableId,
                       reason = <<"win">>,
-                      winner = Winner,
+                      winner = WinnerUserId,
+                      results =  Results}.
+
+create_tavla_round_ended_surrender(Surrender, RoundScore, TotalScore, _PlayersAchsPoints,
+                                   #state{table_id = TableId, players = Players}) ->
+    PlResults = [begin
+                     #player{user_id = UserId} = get_player_by_seat_num(SeatNum, Players),
+                     WinnerStatus = if SeatNum =/= Surrender -> <<"true">>;
+                                       true -> <<"none">> end,
+                     {_, Score} = lists:keyfind(SeatNum, 1, TotalScore),
+                     {_, ScoreDelta} = lists:keyfind(SeatNum, 1, RoundScore),
+                     #'TavlaPlayerScore'{player_id = UserId,
+                                         %%reason :: atom(),
+                                         winner = WinnerStatus,
+                                         score_delta = ScoreDelta,
+                                         score = Score
+                                        }
+                 end || SeatNum <- [1, 2]],
+    Results = #'TavlaGameResults'{players = PlResults},
+    #'TavlaPlayerScore'{player_id = WinnerUserId} =
+                            lists:keyfind(<<"true">>, #'TavlaPlayerScore'.winner, PlResults),
+    #tavla_game_ended{table_id = TableId,
+                      reason = <<"surrender">>,
+                      winner = WinnerUserId,
                       results =  Results}.
 
 create_tavla_round_ended_draw(Reason, RoundScore, TotalScore, _PlayersAchsPoints,
@@ -1396,11 +1458,7 @@ create_tavla_round_ended_draw(Reason, RoundScore, TotalScore, _PlayersAchsPoints
                                          score = Score
                                         }
                  end || SeatNum <- [1, 2]],
-    Results = #'TavlaGameResults'{
-                                  %%table_id  :: integer(),
-                                  %%game_id :: integer(),
-                                  players = PlResults
-                                 },
+    Results = #'TavlaGameResults'{players = PlResults},
     ReasonStr = case Reason of
                     round_timeout -> <<"round_timeout">>;
                     set_timeout -> <<"set_timeout">>
@@ -1578,25 +1636,44 @@ apply_moves(Color, Moves, Board) ->
 
 apply_move(Color, From, To, Type, Board) ->
     OppColor = opponent_color(Color),
-    Board1 = case lists:keyfind(To, 1, Board) of
-                 {_, empty} -> lists:keyreplace(To, 1, Board, {To, {Color, 1}});
-                 {_, {Color, Num}} -> lists:keyreplace(To, 1, Board, {To, {Color, Num + 1}});
-                 {_, {OppColor, 1}} -> lists:keyreplace(To, 1, Board, {To, {Color, 1}})
+    Board1 = case get_checkers(To, Board) of
+                 empty -> set_checkers(To, {Color, 1}, Board);
+                 {Color, Num} -> set_checkers(To, {Color, Num + 1}, Board);
+                 {OppColor, 1} -> set_checkers(To, {Color, 1}, Board)
              end,
-    Board2 = case lists:keyfind(From, 1, Board1) of
-                 {_, {Color, 1}} -> lists:keyreplace(From, 1, Board1, {From, empty});
-                 {_, {Color, Num2}} -> lists:keyreplace(From, 1, Board1, {From, {Color, Num2 -1}})
+    Board2 = case get_checkers(From, Board1) of
+                 {Color, 1} -> set_checkers(From, empty, Board1);
+                 {Color, Num2} -> set_checkers(From, {Color, Num2 -1}, Board1)
              end,
     if Type == hit -> %% Increase number of the opponents battons on the bar
-           BarPos = if OppColor == ?WHITE -> ?WHITE_BAR;
-                       OppColor == ?BLACK -> ?BLACK_BAR end,
-           case lists:keyfind(BarPos, 1, Board2) of
-               {_, empty} -> lists:keyreplace(BarPos, 1, Board2, {BarPos, {OppColor, 1}});
-               {_, {OppColor, Num3}} -> lists:keyreplace(BarPos, 1, Board2, {BarPos, {OppColor, Num3 + 1}})
+           BarPos = bar_position(OppColor),
+           case get_checkers(BarPos, Board2) of
+               empty -> set_checkers(BarPos, {OppColor, 1}, Board2);
+               {OppColor, Num3} -> set_checkers(BarPos, {OppColor, Num3 + 1}, Board2)
            end;
        Type == move ->
            Board2
     end.
+
+%% surrender_condition(Color, Board) -> normal | mars
+surrender_condition(Color, Board) ->
+    case get_checkers(out_position(Color), Board) of
+        {Color, _} -> normal;
+        empty -> mars
+    end.
+
+get_checkers(Pos, Board) ->
+    {_, Value} = lists:keyfind(Pos, 1, Board),
+    Value.
+
+set_checkers(Pos, Value, Board) ->
+    lists:keyreplace(Pos, 1, Board, {Pos, Value}).
+
+out_position(?WHITE) -> ?WHITE_OUT;
+out_position(?BLACK) -> ?BLACK_OUT.
+
+bar_position(?WHITE) -> ?WHITE_BAR;
+bar_position(?BLACK) -> ?BLACK_BAR.
 
 %%===================================================================
 %%
@@ -1628,7 +1705,7 @@ find_bar_out_moves(_Board, _OrigPipsList, _PipsList = [], _Num, Moves) -> {stop,
 find_bar_out_moves(Board, OrigPipsList, [Pips | RestPipsList], Num, Moves) ->
     case check_move(?WHITE_BAR, Pips, Board, false) of
         {Type, To} ->
-            NewBoard = apply_move(?WHITE_BAR, To, Type, Board),
+            NewBoard = apply_move(?WHITE, ?WHITE_BAR, To, Type, Board),
             find_bar_out_moves(NewBoard, OrigPipsList -- [Pips], RestPipsList, Num - 1, [{?WHITE_BAR, To} | Moves]);
         error ->
             find_bar_out_moves(Board, OrigPipsList, RestPipsList, Num, Moves)
@@ -1653,7 +1730,7 @@ find_normal_moves(Board, [Pips | Rest] = PipsList, FailedPipsList, PreBearOffMod
             BearOffMode = PreBearOffMode orelse bearoff_mode(Board), %% Optimization
             case check_move(Pos, Pips, Board, BearOffMode) of
                 {Type, To} ->
-                    NewBoard = apply_move(Pos, To, Type, Board),
+                    NewBoard = apply_move(?WHITE, Pos, To, Type, Board),
                     find_normal_moves(NewBoard, Rest, FailedPipsList, BearOffMode, [{Pos, To} | Moves], Pos);
                 error ->
                     find_normal_moves(Board, Rest, [Pips | FailedPipsList], BearOffMode, Moves, Pos)
@@ -1672,18 +1749,18 @@ is_white(Pos, Board) ->
         _ -> false
     end.
 
-%% check_move(From, Pips, Board, BearOffMode) -> {normal, To} | {hit, To} | error
+%% check_move(From, Pips, Board, BearOffMode) -> {move, To} | {hit, To} | error
 check_move(From, Pips, Board, BearOffMode) ->
     To = new_pos(From, Pips),
     if To == ?WHITE_OUT andalso BearOffMode ->
            case no_white_checkers_behind(From, Board) of
-               true -> {normal, To};
+               true -> {move, To};
                false -> error
            end;
        To == ?WHITE_OUT -> error;
        true ->
            case can_move_to(To, Board) of
-               {yes, normal} -> {normal, To};
+               {yes, normal} -> {move, To};
                {yes, hit} -> {hit, To};
                no -> error
            end
@@ -1704,10 +1781,6 @@ can_move_to(Pos, Board) ->
         {?BLACK, 1} -> {yes, hit};
         {?BLACK, _} -> no
     end.
-
-get_checkers(Pos, Board) ->
-    {_, Value} = lists:keyfind(Pos, 1, Board),
-    Value.
 
 new_pos(Pos, Pips) ->
     case Pos of
@@ -1740,21 +1813,3 @@ reverse_value(Value) ->
         {Color, Num} -> {opponent_color(Color), Num}
     end.
 
-apply_move(From, To, Type, Board) ->
-    Board1 = case lists:keyfind(To, 1, Board) of
-                 {_, empty} -> lists:keyreplace(To, 1, Board, {To, {?WHITE, 1}});
-                 {_, {?WHITE, Num}} -> lists:keyreplace(To, 1, Board, {To, {?WHITE, Num + 1}});
-                 {_, {?BLACK, 1}} -> lists:keyreplace(To, 1, Board, {To, {?WHITE, 1}})
-             end,
-    Board2 = case lists:keyfind(From, 1, Board1) of
-                 {_, {?WHITE, 1}} -> lists:keyreplace(From, 1, Board1, {From, empty});
-                 {_, {?WHITE, Num2}} -> lists:keyreplace(From, 1, Board1, {From, {?WHITE, Num2 -1}})
-             end,
-    if Type == hit -> %% Increase number of the opponents battons on the bar
-           case lists:keyfind(?BLACK_BAR, 1, Board2) of
-               {_, empty} -> lists:keyreplace(?BLACK_BAR, 1, Board2, {?BLACK_BAR, {?BLACK, 1}});
-               {_, {?BLACK, Num3}} -> lists:keyreplace(?BLACK_BAR, 1, Board2, {?BLACK_BAR, {?BLACK, Num3 + 1}})
-           end;
-       Type == normal ->
-           Board2
-    end.
