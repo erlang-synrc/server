@@ -21,6 +21,8 @@
 
 -define(ACH_WIN_NORMAL, 1).
 -define(ACH_WIN_MARS, 2).
+-define(ACH_OPP_SURRENDER_NORMAL, 3).
+-define(ACH_OPP_SURRENDER_MARS, 4).
 
 
 -record(state,
@@ -91,7 +93,8 @@ last_round_result(#state{round_score = RoundScore,
 %% @end
 %% Types:
 %%     FinishReason = timeout | set_timeout |
-%%                    {win, SeatNum, Condition}
+%%                    {win, SeatNum, Condition} |
+%%                    {surrender, SeatNum, Condition}
 %%       Condition = normal | mars
 %%     GameisOver = boolean() 
 
@@ -135,14 +138,17 @@ players_achivements(Mode, Seats, FinishInfo) ->
         set_timeout ->
             [{SeatNum, player_achivements_no_winner(Mode, SeatNum)} || SeatNum <- Seats];
         {win, Winner, Condition} ->
-            [{SeatNum, player_achivements_win(Mode, SeatNum, Winner, Condition)} || SeatNum <- Seats]
+            [{SeatNum, player_achivements_win(Mode, SeatNum, Winner, Condition)} || SeatNum <- Seats];
+        {surrender, Surrender, Condition} ->
+            [{SeatNum, player_achivements_surrender(Mode, SeatNum, Surrender, Condition)} || SeatNum <- Seats]
     end.
 
 
 %% finish_info(GameMode, FinishReason) ->
 %%      timeout |
 %%      set_timeout |
-%%      {win, Winner, Condition}
+%%      {win, Winner, Condition} |
+%%      {surrender, Surrender, Condition}
 finish_info(_GameMode, FinishReason) -> FinishReason.
 
 
@@ -169,13 +175,20 @@ player_achivements_no_winner(Mode, SeatNum) ->
 player_achivements_win(Mode, SeatNum, Winner, Condition) ->
     player_achivements(Mode, SeatNum, win, Winner, Condition).
 
+player_achivements_surrender(Mode, SeatNum, Surrender, Condition) ->
+    player_achivements(Mode, SeatNum, surrender, Surrender, Condition).
 
-%% player_achivements(Mode, SeatNum, FinishType, Winner, Condition) -> [{AchId}]
-player_achivements(_Mode, SeatNum, FinishType, Winner, Condition) ->
+
+%% player_achivements(Mode, SeatNum, FinishType, Subject, Condition) -> [{AchId}]
+player_achivements(_Mode, SeatNum, FinishType, Subject, Condition) ->
     L=[%% 1
-       {?ACH_WIN_NORMAL, FinishType == win andalso SeatNum == Winner andalso Condition == normal},
+       {?ACH_WIN_NORMAL, FinishType == win andalso SeatNum == Subject andalso Condition == normal},
        %% 2
-       {?ACH_WIN_MARS, FinishType == win andalso SeatNum == Winner andalso Condition == mars}
+       {?ACH_WIN_MARS, FinishType == win andalso SeatNum == Subject andalso Condition == mars},
+       %% 3
+       {?ACH_OPP_SURRENDER_NORMAL, FinishType == surrender andalso SeatNum =/= Subject andalso Condition == normal},
+       %% 4
+       {?ACH_OPP_SURRENDER_MARS, FinishType == surrender andalso SeatNum =/= Subject andalso Condition == mars}
       ],
     [Ach || {Ach, true} <- L].
 
@@ -185,8 +198,8 @@ get_pointing_rules(ScoringMode) ->
     Rules.
 
 points_matrix() ->
-    [%%          1   2 <--- achievement number
-     {standard, [1,  2]}
+    [%ScoringMode  1   2   3   4 <--- achievement number
+     {standard,   [1,  2,  1,  2]}
     ].
 
 %%===================================================================
