@@ -1146,6 +1146,46 @@ riak_read_acl_entries(C, Next, Result) ->
          {error,notfound} -> Result
     end.
 
+purge_feed(FeedId) ->
+    {ok,Feed} = nsm_db:get(feed,FeedId),
+    Removal = riak_entry_traversal(Feed#feed.top, -1),
+    [nsm_db:delete(entry,Id)||#entry{id=Id}<-Removal],
+    nsm_db:put(Feed#feed{top=undefined}).
+
+purge_unverified_feeds() ->
+    [purge_feed(FeedId) || #user{feed=FeedId,status=S,email=E} <- nsm_db:all(user),E==undefined,S/=ok].
+
+purge_system_messages() ->
+    [delete_system_messages(FeedId) || #user{feed=FeedId} <- nsm_db:all(user)].
+
+delete_system_messages(FeedId) ->
+    {ok,Feed} = nsm_db:get(feed,FeedId),
+    Entries = riak_entry_traversal(Feed#feed.top, -1),
+    {Removal,Relink} = lists:partition(fun(#entry{type={_,Type}}) -> 
+                             Type == system orelse Type == system_note end,Entries),
+    [nsm_db:delete(entry,Id)||#entry{id=Id}<-Removal],
+    Len = length(Relink),
+    case Len of
+         0 -> skip;
+         _ ->  Relinked = [begin E = lists:nth(N,Relink),
+                               {Next,Prev} = case N of 
+                                   1 -> case Len of
+                                             1 -> E;
+                                             _ -> NextEntry = lists:nth(N+1,Relink),
+                                                 {undefined,NextEntry#entry.id}
+                                        end;
+                                 Len -> PrevEntry = lists:nth(N-1,Relink),
+                                       {PrevEntry#entry.id,undefined};
+                                   _ -> PrevEntry = lists:nth(N-1,Relink),
+                                        NextEntry = lists:nth(N+1,Relink),
+                                       {PrevEntry#entry.id,NextEntry#entry.id}
+                                end,
+                                E#entry{next = Next, prev = Prev}
+               end || N <- lists:seq(1,Len)],
+               [nsm_db:put(E) || E <- Relinked] 
+    end,
+    Len.
+
 riak_entry_traversal(undefined, _) -> [];
 riak_entry_traversal(_, 0) -> [];
 riak_entry_traversal(Next, Count)->
