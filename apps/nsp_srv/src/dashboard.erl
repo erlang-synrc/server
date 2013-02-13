@@ -34,33 +34,18 @@ body() ->
   {Rt, Rv} = timer:tc(webutils, get_ribbon_menu, []),
   {Ft, Fv} = timer:tc(webutils, get_friends, []),
   {Gt, Gv} = timer:tc(webutils, get_groups, []),
-  {Ct, Cv} = timer:tc(dashboard, view_feed_mkh, []),
   ?INFO("Ribbon: ~p  Friends: ~p  Groups: ~p", [Rt, Ft, Gt]),
-  ?INFO("Content: ~p~n", [Ct]),
   ["<div class=\"list-top-photo-h\">",
         webutils:get_hemen_nav(),
   "</div>",
   "<section id=\"main\">",
-    "<section id=\"content\">",
-      Cv,
-    "</section>",
+    "<section id=\"content\">", feed(), "</section>",
     "<aside id=\"aside\">",
       Rv, Fv, Gv,
     "</aside>",
   "</section>"].
-  %catch(gproc:reg({p,l,self()},wf:user())),
 
-feed_form() ->
-  FId = webutils:user_info(feed),
-  [
-    #panel{body=entry_form(FId), style="width:600px"},
-    #grid_clear{},
-    #panel{id=attachment_box},
-    #grid_clear{},
-    #panel{id=feed, body=view_feed()}
-  ].
-
-view_feed_mkh() ->
+feed() ->
   wf:session(autocomplete_list_values, []), %%%
   UserInfo = webutils:user_info(),
   NotVerified = UserInfo#user.status == not_verified,
@@ -80,11 +65,10 @@ view_feed_mkh() ->
   end,
 
   FId = webutils:user_info(feed),
-  wf:wire(site_utils:postback_to_js_string(?MODULE, load_feeds)),
   [
     #panel{id=notification_area},
     entry_form(FId),
-    #panel{id=feeds_container, class="posts_container_mkh", body=[]}
+    #panel{id=feeds_container, class="posts_container_mkh", body=show_feed(FId)}
   ].
 
 search_container(FId) ->
@@ -163,53 +147,43 @@ entry_form(FId, Delegate, Postback) ->
     #span{id=text_length, class="info-textbox-length"}
   ].
 
-view_feed() -> view_feed(undefined).
-view_feed(StartFrom) ->
-    {Entries, FId} = get_entries(StartFrom),
-    case FId of
-        %% user blocked, have nothing to update
-        undefined ->
-            ok;
-        _ ->
-            comet_feed:start(user, FId, wf:user(), wf:session(user_info))
+show_feed(undefined) -> [];
+show_feed(Fid) ->
+  {ok, Pid} = comet_feed:start(user, Fid, wf:user(), wf:session(user_info)),
+  wf:state(comet_feed_pid, pid_to_list(Pid)),
+  spawn(fun()->
+    Entrs = dashboard:read_entries(Pid, undefined, Fid),
+    Last = case Entrs of
+      [] -> [];
+      _ -> lists:last(Entrs)
     end,
-    webutils:view_feed_entries(?MODULE, ?FEED_PAGEAMOUNT, Entries).
+    Pid ! {delivery, check_more, {?MODULE, length(Entrs), Last}}
+  end),
+  [
+    #panel{id = feed, body=[]},
+    #panel{id = more_button_holder, body=[]}
+  ].
 
-get_entries(StartFrom) ->
-  UserInfo = wf:session(user_info),
-    {UserFiler, _IsGroup, _AddFilter} = case {wf:q("user"), wf:q("group")} of
-        {undefined, undefined} -> {undefined, false, undefined};
-        {undefined, GroupName} ->
-            Group = nsm_groups:get_group(GroupName),
-            {Group#group.feed, true, feed};
-        {UUid, _}              -> {UUid, false, user}
-    end,
+read_entries(Pid, StartFrom, FeedId)->
+  Feed = case StartFrom of
+    undefined-> nsm_db:get(feed, FeedId);
+    S -> nsm_db:get(entry, {S, FeedId})
+  end,
+  case Feed of
+    {error, notfound} -> [];
+    {ok, #feed{}=F} -> traverse_entries(Pid, F#feed.top, ?FEED_PAGEAMOUNT);
+    {ok, #entry{prev = E}} -> traverse_entries(Pid, E, ?FEED_PAGEAMOUNT)
+  end.
 
-    case {wf:q("filter"), UserFiler} of
-        {"direct",_} ->
-            case wf:q("tu") of
-                undefined -> ok;
-                TU -> autocomplete_select_event({struct, [{<<"id">>, "1" },{<<"value">>, encode_term({TU, user})}]} , "tag")
-            end,
-            FeedId = UserInfo#user.direct,
-            {feed:get_direct_messages(FeedId, StartFrom, ?FEED_PAGEAMOUNT), FeedId} ;
-        {undefined, undefined} ->
-            FeedId = UserInfo#user.feed,
-            {feed:get_entries_in_feed(FeedId, StartFrom, ?FEED_PAGEAMOUNT), FeedId};
-        {undefined, U} ->
-            FeedId = UserInfo#user.feed,
-            case lists:member(U, nsm_users:get_blocked_users(wf:user())) of
-                true ->
-                    wf:update(notification_area, #notice{type=message, title=?_T("You have blocked"),
-                        body = user_blocked_message(U)}),
-                    {[] , undefined};
-                _ ->
-                    {feed:get_entries_in_feed(FeedId, StartFrom, ?FEED_PAGEAMOUNT), FeedId}
-            end;
-        _  ->
-            FeedId = UserInfo#user.feed,
-            {feed:get_entries_in_feed(FeedId, StartFrom, ?FEED_PAGEAMOUNT), FeedId}
-    end.
+traverse_entries(_, undefined, _) -> [];
+traverse_entries(_, _, 0) -> [];
+traverse_entries(Pid, Next, Count)->
+  case nsm_db:get(entry, Next) of
+    {error, notfound}->[];
+    {ok, R}->
+      Pid ! {delivery, show_entry, R},
+      [R | traverse_entries(Pid, R#entry.prev, Count-1)]
+  end.
 
 user_blocked_message(U) ->
     #panel{style="font: 1em Arial,Helvetica,sans-serif;font-size: 14px;font-weight: bold;", body=[
@@ -298,11 +272,6 @@ event(Event) ->
 	undefined -> wf:redirect_to_login(?_U("/login"));
         User      -> inner_event(Event, User)
     end.
-
-inner_event(load_feeds, _) ->
-  {T,Feeds} = timer:tc(dashboard, view_feed, []),
-  ?INFO("Feeds load time:~p", [T]),
-  wf:update(feeds_container, Feeds);
 
 inner_event(account, _) ->
     wf:redirect(?_U("/login"));
@@ -455,15 +424,15 @@ inner_event({block, CheckedUser}, User) ->
 
 inner_event({unblock, CheckedUser}, User) ->
     nsx_msg:notify(["subscription", "user", User, "unblock_user"], {CheckedUser}),
-    Feeds = view_feed(undefined),
     wf:update(blockunblock, #link{text=?_T("Block this user"), url="javascript:void(0)", postback={block, CheckedUser}}),
-    wf:update(feed, Feeds);
+    Fid = webutils:user_info(User, feed),
+    show_feed(Fid);
 
-inner_event({unblock_load, CheckedUser, Offset}, User) ->
+inner_event({unblock_load, CheckedUser, _Offset}, User) ->
     nsx_msg:notify(["subscription", "user", User, "unblock_user"], {CheckedUser}),
-    Feeds = view_feed(Offset),
     wf:update(blockunblock, #link{text=?_T("Block this user"), url="javascript:void(0)", postback={block, CheckedUser}}),
-    wf:update(feed, Feeds);
+    Fid = webutils:user_info(User, feed),
+    show_feed(Fid);
 
 inner_event({remove_select_event, Value}, _) ->
     case wf:session(autocomplete_list_values) of
@@ -517,9 +486,11 @@ is_direct_message_page() ->
         ;_       -> false
     end.
 
-%% when more button presed
-on_more_entries({EntryId, _FeedId}, _Count) ->
-    erlang:element(1, get_entries(EntryId)).
+more_entries(Entry) ->
+  Fid = webutils:user_info(feed),
+  Pid = list_to_pid(wf:state(comet_feed_pid)),
+  Entrs = read_entries(Pid, element(1,Entry#entry.id), Fid),
+  Pid ! {delivery, check_more, {?MODULE, length(Entrs), lists:last(Entrs)}}.
 
 autocomplete_enter_event(SearchTerm, _Tag) ->
     AlreadySelected = wf:session_default(autocomplete_list_values, []),

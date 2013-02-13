@@ -294,6 +294,10 @@ event({change_language,SL}) ->
     wf:redirect(uri_translator:translate(URI, SL, NewLang));
 event({birthday_changed}) ->
     element_register:event({birthday_changed});
+
+event({more_entries, dashboard, LastId}) ->
+  dashboard:more_entries(LastId);
+
 event({more_entries, Module, PageAmount, LastId}) ->
     Entries = Module:on_more_entries(LastId, PageAmount),
     ?PRINT({length(Entries), PageAmount}),

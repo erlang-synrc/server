@@ -158,9 +158,20 @@ process_delivery({_, _, FeedOwner, _}, ["likes", _, _, "add_like"], {User, E}) -
     ?INFO("Like e: ~p   owner: ~p   lpid: ~p" , [E, FeedOwner, LikePanelId]),
     wf:flush();
 
-process_delivery(Info, Route, Message) -> % just to avoid nevedomaya yebanaya huynya
-    ?WARNING("Unexpected delivery: ~p ~p ~p", [Info, Route, Message]).
+process_delivery(_, show_entry, Entry) ->
+  wf:insert_bottom(feed, #view_entry{entry=Entry}),
+  wf:flush();
 
+process_delivery(_, check_more, {Module, Count, LastId})->
+  Btn = case Count < ?FEED_PAGEAMOUNT of
+    true -> [];
+    _ -> #button{class="btn-submit", text = ?_T("More"), postback = {more_entries, Module, LastId}}
+  end,
+  wf:update(more_button_holder, Btn),
+  wf:flush();
+
+process_delivery(Info, Route, Message) -> 
+  ?WARNING("Unexpected delivery: ~p ~p ~p", [Info, Route, Message]).
 
 delete_entry(EntryId) ->
     wf:wire(#hide {target=EntryId, effect=blind, speed=500}),
