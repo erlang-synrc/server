@@ -31,18 +31,10 @@ main() ->
   end.
 
 body() ->
-  {Rt, Rv} = timer:tc(webutils, get_ribbon_menu, []),
-  {Ft, Fv} = timer:tc(webutils, get_friends, []),
-  {Gt, Gv} = timer:tc(webutils, get_groups, []),
-  ?INFO("Ribbon: ~p  Friends: ~p  Groups: ~p", [Rt, Ft, Gt]),
-  ["<div class=\"list-top-photo-h\">",
-        webutils:get_hemen_nav(),
-  "</div>",
+  ["<br><br>",
   "<section id=\"main\">",
     "<section id=\"content\">", feed(), "</section>",
-    "<aside id=\"aside\">",
-      Rv, Fv, Gv,
-    "</aside>",
+    "<aside id='aside' class='aside'>",#panel{id=aside,body=[]},"</aside>",
   "</section>"].
 
 feed() ->
@@ -151,7 +143,9 @@ show_feed(undefined) -> [];
 show_feed(Fid) ->
   {ok, Pid} = comet_feed:start(user, Fid, wf:user(), wf:session(user_info)),
   wf:state(comet_feed_pid, pid_to_list(Pid)),
+  X = dashboard:aside(),
   spawn(fun()->
+    Pid ! {delivery, aside, X},
     Entrs = dashboard:read_entries(Pid, undefined, Fid),
     Last = case Entrs of
       [] -> [];
@@ -174,6 +168,12 @@ read_entries(Pid, StartFrom, FeedId)->
     {ok, #feed{}=F} -> traverse_entries(Pid, F#feed.top, ?FEED_PAGEAMOUNT);
     {ok, #entry{prev = E}} -> traverse_entries(Pid, E, ?FEED_PAGEAMOUNT)
   end.
+
+aside() ->
+    Rv = webutils:get_ribbon_menu(),
+    Fv = webutils:get_friends(),
+    Gv = webutils:get_groups(),
+    [Rv,Fv,Gv].
 
 traverse_entries(_, undefined, _) -> [];
 traverse_entries(_, _, 0) -> [];

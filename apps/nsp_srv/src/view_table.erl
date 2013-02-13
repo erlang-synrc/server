@@ -325,7 +325,7 @@ start_pre_comet_process(Id, Skip) ->
     TableId = wf:state(table_id),
     GameType = Table#game_table.game_type,
     case Skip of 
-         skip ->  wf:comet_global(fun() ->
+         skip ->  wf:comet(fun() ->
 			    WebPid ! {comet_started, self()},
 			    put(user, webutils:user_info()),
 			    put(game_type, GameType),
@@ -341,7 +341,7 @@ start_pre_comet_process(Id, Skip) ->
 				    exit("No one really wants to start comet")
 			    end
 		   end, {chat_table, Id});
-         (_) ->   wf:comet_global(fun() ->
+         (_) ->   wf:comet(fun() ->
                             ?INFO("view table comet process"),
 			    wf:session({table_comet_pid,Id}, self()),
 			    WebPid ! {comet_started, self()},

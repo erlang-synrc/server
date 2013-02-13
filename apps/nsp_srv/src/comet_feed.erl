@@ -31,11 +31,10 @@ start(Type, FeedId, FeedOwner, CurrentUser) ->
 comet_update(Type, FeedId, FeedOwner, CurrentUser) ->
     receive
         {delivery, Route, Message} ->
-            ?DBG("feed(~p-~p): delivery. Route ~p, Message: ~p",
-                 [FeedOwner, CurrentUser, Route, Message]),
+%            ?DBG("feed(~p-~p): delivery. Route ~p, Message: ~p", [FeedOwner, CurrentUser, Route, Message]),
             process_delivery({Type, FeedId, FeedOwner, CurrentUser}, Route, Message);
-        'INIT' ->
-            ?INFO("feed(~p-~p): init received", [FeedOwner, CurrentUser]);
+        'INIT' -> skip;
+%            ?INFO("feed(~p-~p): init received", [FeedOwner, CurrentUser]);
         Unexpected ->
             ?WARNING("feed(~p-~p): unexpected message: ~p",
                      [FeedOwner, CurrentUser, Unexpected])
@@ -56,7 +55,7 @@ process_delivery({_Type, FeedId, Owner, CurrentUser},
              _ ->
                  [D || {_, group} = D <- Destinations]
          end,
-    ?PRINT({FeedId, CurrentUser#user.direct, CurrentUser#user.feed, To}),
+%    ?PRINT({FeedId, CurrentUser#user.direct, CurrentUser#user.feed, To}),
     CurrentUserName = CurrentUser#user.username,
     CurrentUserDirect = CurrentUser#user.direct,
     if
@@ -99,7 +98,7 @@ process_delivery({Type, FeedId, Owner, _},
                  ["feed", _Type, WhoShares, "entry", NewEntryId, "share"],
                  #entry{entry_id = EntryId, raw_description = Desc, media = Medias,
                         to = Destinations, from = From}) ->
-    ?PRINT({"SHARE",EntryId }),
+%    ?PRINT({"SHARE",EntryId }),
     %% FIXME: sharing is like posting to the wall
     case lists:member({Owner, Type}, Destinations) of
          true ->
@@ -115,7 +114,7 @@ process_delivery({Type, FeedId, Owner, _},
 process_delivery({_Type, _FeedId, Owner, _},
                  ["feed", _, _WhoEdits, "entry", EntryId, "edit"],
                  [NewText|_]) ->
-    ?PRINT({"EDIT", Owner, EntryId }),
+%    ?PRINT({"EDIT", Owner, EntryId }),
     edit_entry(EntryId, NewText);
 
 %%-----------------------------------------------------------------------------
@@ -155,11 +154,17 @@ process_delivery({_, _, FeedOwner, _}, ["likes", _, _, "add_like"], {User, E}) -
     LikePanelId = element_view_entry:like_panel_id(EntryId),
     {LikeBox, _} = element_view_entry:like_string_and_button_bool(E, FeedOwner, [#one_like{user_id=User, entry_id=EntryId, feed_id=FeedId}]),
     wf:update(LikePanelId, LikeBox),
-    ?INFO("Like e: ~p   owner: ~p   lpid: ~p" , [E, FeedOwner, LikePanelId]),
+%    ?INFO("Like e: ~p   owner: ~p   lpid: ~p" , [E, FeedOwner, LikePanelId]),
     wf:flush();
 
 process_delivery(_, show_entry, Entry) ->
+  timer:sleep(100),
   wf:insert_bottom(feed, #view_entry{entry=Entry}),
+  wf:flush();
+
+process_delivery(_, aside, Body) ->
+  ?INFO("Body: ~p",[Body]),
+  wf:update(aside, Body),
   wf:flush();
 
 process_delivery(_, check_more, {Module, Count, LastId})->
