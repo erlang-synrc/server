@@ -188,6 +188,9 @@ init([GameId, Params, _Manager]) ->
 
     TablesNum = length(Registrants) div ?SEATS_NUM, %% TODO: The parameter should be base
 
+    [?INFO("TRN_PAIRED_DBG <~p> Parameter <~p> : ~p", [GameId, P, V]) ||
+     {P, V} <- Params],
+
     ?INFO("TRN_PAIRED <~p> started.  Pid:~p", [GameId, self()]),
 
     gen_fsm:send_all_state_event(self(), go),
