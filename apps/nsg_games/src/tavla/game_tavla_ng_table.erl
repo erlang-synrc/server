@@ -107,6 +107,7 @@
 -define(RELAY, relay_ng).
 -define(DESK, game_tavla_ng_desk).
 -define(SCORING, game_tavla_ng_scoring).
+-define(LIB, game_tavla_lib).
 
 -define(BLACK, black).
 -define(WHITE, white).
@@ -978,6 +979,7 @@ handle_desk_events([Event | Events], DeskState,
                    {Type, From, To, Pips} <- Moves],
                 UsedPipsList = [Pips || {_Type, _From, _To, Pips} <- Moves],
                 NewBoard = apply_moves(Color, Moves, Board),
+                show_boards(GameId, TableId, Color, Moves, Board, NewBoard),
                 DeskState#desk_state{board = NewBoard, pips_list = OldPipsList -- UsedPipsList};
             {rolls_timeout, Color, Die1, Die2} -> %% Injected event
 %%                Msg = create_tavla_turn_timeout(Color, {Die1, Die2}, _Moves = [], StateData),
@@ -991,6 +993,7 @@ handle_desk_events([Event | Events], DeskState,
                 [publish_ge(create_tavla_moves(Color, From, To, Type, Pips, StateData), StateData) ||
                    {Type, From, To, Pips} <- Moves],
                 NewBoard = apply_moves(Color, Moves, Board),
+                show_boards(GameId, TableId, Color, Moves, Board, NewBoard),
                 DeskState#desk_state{dice = {Die1, Die2}, board = NewBoard};
             {moves_timeout, Color, Moves} ->    %% Injected event
 %%                Msg = create_tavla_turn_timeout(Color, _Dice = undefined, Moves, StateData),
@@ -998,6 +1001,7 @@ handle_desk_events([Event | Events], DeskState,
                 [publish_ge(create_tavla_moves(Color, From, To, Type, Pips, StateData), StateData) ||
                    {Type, From, To, Pips} <- Moves],
                 NewBoard = apply_moves(Color, Moves, Board),
+                show_boards(GameId, TableId, Color, Moves, Board, NewBoard),
                 DeskState#desk_state{board = NewBoard};
             {next_player, Color} ->
                 Msg = create_tavla_next_turn(Color, StateData),
@@ -1011,6 +1015,16 @@ handle_desk_events([Event | Events], DeskState,
                                      finish_info = {Color, Condition}}
         end,
     handle_desk_events(Events, NewDeskState, StateData).
+
+
+show_boards(GameId, TableId, Color, Moves, Board1, Board2) ->
+    B1 = ?LIB:board_to_text2(Board1),
+    B2 = ?LIB:board_to_text2(Board2),
+    ?INFO("TAVLA_NG_TABLE_DBG <~p,~p> Color <~p> moves: ~p", [GameId, TableId, Color, Moves]),
+    ?INFO("TAVLA_NG_TABLE_DBG <~p,~p> The Board before:", [GameId, TableId]),
+    [?INFO("TAVLA_NG_TABLE_DBG <~p,~p> Board: ~s", [GameId, TableId, S]) || S <- B1],
+    ?INFO("TAVLA_NG_TABLE_DBG <~p,~p> The Board after:", [GameId, TableId]),
+    [?INFO("TAVLA_NG_TABLE_DBG <~p,~p> Board: ~s", [GameId, TableId, S]) || S <- B2].
 
 %%===================================================================
 init_scoring(GameType, PlayersInfo, Rounds) ->
