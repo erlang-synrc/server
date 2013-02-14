@@ -11,7 +11,8 @@
 %% Exported Functions
 %%
 -export([board_to_text1/1,
-         board_to_text2/1]).
+         board_to_text2/1,
+         board_to_text3/1]).
 
 -define(BLACK, black).
 -define(WHITE, white).
@@ -35,7 +36,6 @@ board_to_text1(Board) ->
     Str6 = list_to_colors(List2, Board),
     [Str1, Str2, Str3, Str4, Str5, Str6, Str7].
 
-
 board_to_text2(Board) ->
     Str1 = "|xoxoxo-xoxoxo| ",
     Str4 = "|------+------| ",
@@ -48,6 +48,11 @@ board_to_text2(Board) ->
     Str6 = "|" ++ list_to_colors2(List2, Board) ++ "|" ++ list_to_colors2([?WHITE_OUT], Board),
     [Str1, Str2, Str3, Str4, Str5, Str6, Str7].
 
+board_to_text3(Board) ->
+    ["(" ++ checker(?WHITE_OUT, Board)++ ")" ++ checker(?BLACK_BAR, Board) ++
+    "|" ++ quater(1, 6, Board) ++ "|" ++ quater(7, 12, Board) ++ "|" ++
+    quater(13, 18, Board) ++ "|" ++ quater(19, 24, Board) ++ "|" ++
+    checker(?WHITE_BAR, Board) ++ "(" ++ checker(?BLACK_OUT, Board) ++ ")"].
 
 get_checkers(Pos, Board) ->
     {_, Value} = lists:keyfind(Pos, 1, Board),
@@ -92,3 +97,13 @@ list_to_colors2(List, Board) ->
          {?BLACK, _} -> "B"
      end || Pos <- List].
 
+checker(Pos, Board) ->
+    case get_checkers(Pos, Board) of
+        empty -> "  ";
+        {?WHITE, Num} -> "W" ++ io_lib:format("~.16b", [Num]);
+        {?BLACK, Num} -> "B" ++ io_lib:format("~.16b", [Num])
+    end.
+
+quater(First, Last, Board)->
+    F = fun(Pos) -> "-" ++ checker(Pos, Board) end,
+    lists:flatmap(F, lists:seq(First, Last)) ++ "-".
