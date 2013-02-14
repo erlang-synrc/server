@@ -71,8 +71,6 @@
 %% gen_fsm callbacks
 -export([init/1, handle_event/3, handle_sync_event/4, handle_info/3, terminate/3, code_change/4]).
 
--include_lib("nsx_config/include/log.hrl"). %% XXX
-
 -define(CHECKERS_NUM, 15).
 
 -define(WHITE_OUT, wo).
@@ -220,13 +218,9 @@ process_moves(PlayerId, Moves, _StateName,
                     bearoff_waste_moves_enabled = BearoffWasteMovesEnabled,
                     home_hit_and_run_enabled = HomeHitAndRunEnabled,
                     hitted_home_positions = HittedHomePositions} = StateData) ->
-    ?INFO("process_moves/4 Color: ~p, Moves: ~p, PipsList: ~p", [PlayerId, Moves, PipsList]),
-    board_to_text(Board), %% Show the board
     case apply_moves(PlayerId, PipsList, Moves, Board, BearoffWasteMovesEnabled,
                      HomeHitAndRunEnabled, HittedHomePositions) of
         {ok, NewBoard, NewPipsList, NewHittedHomePositions, RealMoves} ->
-            ?INFO("process_moves/4 After:", []),
-            board_to_text(NewBoard),  %% Show the board
             MovesEvents = [{moves, PlayerId, lists:reverse(RealMoves)}],
             case is_game_finished(PlayerId, NewBoard) of
                 {yes, Condition} ->
@@ -549,7 +543,6 @@ take_pips(Color, {From, To}, _Pips, _BearoffMode)
        Color == ?WHITE andalso (From == ?BLACK_BAR orelse To == ?BLACK_OUT);
        Color == ?BLACK andalso (From == ?WHITE_BAR orelse To == ?WHITE_OUT)
   ->
-    ?INFO("take_pips Preconditions check", []),
     error;
 
 take_pips(Color, {From, To}, PipsList, Board) ->
@@ -575,22 +568,16 @@ find_pips(Color, Dist, To, PipsList, Board) ->
                    Out = out_position(Color),
                    if To == Out ->
                           case more_far_checkers_exist(Color, Dist, Board) of
-                              true -> 
-                                  ?INFO("find_pips More far checkers exists", []),
-                                  error;
+                              true -> error;
                               false ->
                                   BiggestPips = lists:max(PipsList),
                                   if BiggestPips >= Dist -> {ok, BiggestPips};
                                      true -> error
                                   end
                           end;
-                      true ->
-                          ?INFO("find_pips To=/=Out", []),
-                          error
+                      true -> error
                    end;
-               true ->
-                   ?INFO("find_pips not Bear-off mode", []),
-                   error
+               true -> error
             end
     end.
 
@@ -609,39 +596,3 @@ more_far_checkers_exist(Color, Dist, Board) ->
         end,
     lists:any(F, lists:seq(RangeMin, RangeMax)).
 
-board_to_text(Board) ->
-    Str1 = "13 14 15 16 17 18 BB 19 20 21 22 23 24 BO",
-    Str4 = "                  ||                     ",
-    Str7 = "12 11 10 09 08 07 WB 06 05 04 03 02 01 WO",
-    List1 = [13, 14, 15, 16, 17, 18, bb, 19, 20 ,21, 22, 23, 24, bo],
-    List2 = [12, 11, 10, 09, 08, 07, wb, 06, 05 ,04, 03, 02, 01, wo],
-    Str2 = list_to_colors(List1, Board),
-    Str3 = list_to_checkers(List1, Board),
-    Str5 = list_to_checkers(List2, Board),
-    Str6 = list_to_colors(List2, Board),
-    ?INFO("~s", [Str1]),
-    ?INFO("~s", [Str2]),
-    ?INFO("~s", [Str3]),
-    ?INFO("~s", [Str4]),
-    ?INFO("~s", [Str5]),
-    ?INFO("~s", [Str6]),
-    ?INFO("~s", [Str7]).
-
-list_to_checkers(List, Board) ->
-    F = fun(Pos) ->
-                case get_checkers(Pos, Board) of
-                    empty -> "   ";
-                    {_, Num} -> io_lib:format("~2b ", [Num])
-                end
-        end,
-    lists:flatmap(F, List).
-
-list_to_colors(List, Board) ->
-    F = fun(Pos) ->
-                case get_checkers(Pos, Board) of
-                    empty -> "   ";
-                    {?WHITE, _} -> " W ";
-                    {?BLACK, _} -> " B "
-                end
-        end,
-    lists:flatmap(F, List).
