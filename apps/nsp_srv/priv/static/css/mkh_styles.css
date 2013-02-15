@@ -9,7 +9,7 @@
 /*---- game slider <---*/
 
 .form-001 .submitTo {
-    background: url("/images/bg-form-001.gif") repeat-x scroll 0 0 transparent;
+    background: url("../images/bg-form-001.gif") repeat-x scroll 0 0 transparent;
     border: 0 none;
     color: #888888;
     cursor: default;
@@ -89,15 +89,14 @@
 }
 
 ul.ui-autocomplete {
-    margin: 0;
-    padding: 0;
-    position: absolute;
+    //margin: 0;
+    //padding: 0;
+    //position: absolute;
 }
 .ui-corner-all {
     -moz-border-radius: 4px 4px 4px 4px;
 }
 .ui-widget-content {
-    background: url("images/ui-bg_flat_75_ffffff_40x100.png") repeat-x scroll 50% 50% #FFFFFF;
     border: 1px solid #AAAAAA;
     color: #222222;
 }
@@ -112,8 +111,8 @@ ul.ui-autocomplete {
     padding: 2px;
 }
 .ui-autocomplete {
-    cursor: default;
-    position: absolute;
+    //cursor: default;
+    //position: absolute;
 }
 
 .inner_textaera {
@@ -134,7 +133,7 @@ ul.ui-autocomplete {
     height: 30px;
     float:right;
     cursor: text;
-    background: url("/images/textbox-bg.png") repeat-x scroll center top white;
+    background: url("../images/textbox-bg.png") repeat-x scroll center top white;
     border-color: #727272 #B4B4B4 #DADADA;
     border-left: 1px solid #B4B4B4;
     border-right: 1px solid #B4B4B4;
@@ -206,7 +205,7 @@ ul.ui-autocomplete {
 }
 
 .loading_spiner {
-    background: url('/images/spinner.gif');
+    background: url('../images/spinner.gif');
     background-repeat: no-repeat;
     background-position: center;
     width: 25px;
@@ -438,7 +437,7 @@ q	border:1px solid #c8c8c8;
 	/*border:1px solid #a0bc63;*/
 	border: 1px solid #D9D9D9;
 	cursor:pointer;
-	background:url("/images/gre_shr_btn.png") repeat-x;
+	background:url("../images/gre_shr_btn.png") repeat-x;
 	width:72px;
 	height:38px;
 	color:#5d7731;

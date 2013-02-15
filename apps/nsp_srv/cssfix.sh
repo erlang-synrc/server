@@ -7,3 +7,4 @@ cd priv/static/css
 ./cssfix.sh ktournaments.min.css
 ./cssfix.sh krules_okey.min.css
 ./cssfix.sh kgifts.min.css
+./cssfix.sh kdashboard.min.css

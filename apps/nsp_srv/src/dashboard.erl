@@ -15,6 +15,7 @@
 -define(ENTRY_TEXT_LENGTH, 350).
 -define(PAGEAMOUNT, 3).
 -define(MAX_NUM_OF_ATTACMNETS_PER_TIME, 3).
+-define(TOOLTIP_TIMEOUT, "1500").
 
 title() -> webutils:title(?MODULE).
 
@@ -22,20 +23,21 @@ main() ->
   case wf:user() of
     undefined -> wf:redirect(?_U("/login"));
     _User ->
-      webutils:js_for_main_authorized_game_stats_menu(),
       case webutils:guiders_ok("dashboard_guiders_shown") of
         true -> guiders_script();
         false -> ok
       end,
-      #template { file=code:priv_dir(nsp_srv)++"/templates/bare.html"}
+      #template { file=code:priv_dir(nsp_srv)++"/templates/base.html"}
   end.
 
 body() ->
-  ["<br><br>",
-  "<section id=\"main\">",
+  #panel{class="page-content page-canvas", style="overflow:auto;margin-top:20px;", body=[
     "<section id=\"content\">", feed(), "</section>",
-    "<aside id='aside'>",webutils:get_ribbon_menu(),#panel{id=aside,body=[]},"</aside>",
-  "</section>"].
+    #panel{class="aside", body=[
+      webutils:get_ribbon_menu(),
+      #panel{id=aside,body=[]}
+    ]}
+  ]}.
 
 feed() ->
   wf:session(autocomplete_list_values, []), %%%
@@ -62,47 +64,6 @@ feed() ->
     entry_form(FId),
     #panel{id=feeds_container, class="posts_container_mkh", body=show_feed(FId)}
   ].
-
-search_container(FId) ->
-    ?INFO("Search Container"),
-    wf:wire(wf:f("MyFeedEvent='~s';",[wf_event:serialize_event_context({add_to_event, "MyFeed"}, undefined, undefined, dashboard)])),
-    [
-        #panel{class="form-001", body=[
-            #panel{id="form001toRow", style="display:none;", class="row", body=[
-                #label{id="toentry", text=?_T("To")++":", class="to-entry"},
-                #panel{id="to_tauto_container", style="width:100%;", body=[
-                    #panel{id="flashm", style="", body=[]},
-                    #panel{style="", body=[
-                        "<span id='atocompletetextbox'>",
-                        #textbox_autocomplete_custom{id="to_tauto", class="inner_textaera", tag=direct_to, delay=0},
-                        "</span>"
-                    ]}
-                ]}
-            ]},
-            #panel{class="row", body=[    
-                "<table cellspacing=0 cellpadding=0 border=0><tr><td id='guidersaddentrybox'>",
-                #textarea{ class="input-textarea", id="add_entry_textbox", placeholder=?_T("Put your thoughts in here...")},
-                "</td><td id='guiderssharebutton'>",
-                #button{id="sendentry", postback={add_entry, FId}, text=?_T("Share"), class="submit"},
-                "</td></tr></table>"
-            ]},
-            #grid_clear{},
-            #span{id=attachment_error},
-            #grid_clear{},
-            #panel{id=attachment_thumb},
-            #grid_clear{},
-            "<span id='guidersattachmentbox'>",
-            #panel{id="attachlinkpanel", class="row", style="width:200px;", body=[
-                #link{body=io_lib:format("<p><strong>~s:</strong> ~s...</p>",[?_T("Add"), ?_T("Image, music, file")]),
-                    postback=show_add_attachment}
-            ]},
-            "<span>",
-            #grid_clear{},
-            #panel{id=attachment_box},
-            #grid_clear{}
-        ]},
-        #panel{style="height:15px;clear:both"}
-    ].
 
 entry_form(FId) -> entry_form(FId, ?MODULE, {add_entry, FId}).
 
@@ -133,10 +94,51 @@ entry_form(FId, Delegate, Postback) ->
       })",
       [?ENTRY_TEXT_LENGTH, site_utils:postback_to_js_string(Delegate, Postback), ?ENTRY_TEXT_LENGTH])),
   wf:wire(add_entry_textbox, #event { type=focus, actions=#script { script="add_myfeed_to();" } }),
-  wf:wire(to_tauto_container, #event { type=click, actions=#script { script="$('.wfid_to_tauto').focus();" } }),
+  wf:wire(to_tauto_container, #event{ type=click, actions=#script { script="$('.wfid_to_tauto').focus();" } }),
   [
     search_container(FId),
     #span{id=text_length, class="info-textbox-length"}
+  ].
+
+search_container(FId) ->
+  wf:wire(wf:f("MyFeedEvent='~s';",[wf_event:serialize_event_context({add_to_event, "MyFeed"}, undefined, undefined, dashboard)])),
+  [
+    #panel{class="form-001", body=[
+      #panel{id="form001toRow", style="display:none;", class="row", body=[
+        #label{id="toentry", text=?_T("To")++":", class="to-entry"},
+        #panel{id="to_tauto_container", style="width:100%;", body=[
+          #panel{id="flashm", style="", body=[]},
+          #textbox_autocomplete{id="to_tauto", class="inner_textaera", tag=direct_to, delay=0}
+        ]}
+      ]},
+      #panel{class="row", body=[
+      "<table cellspacing=0 cellpadding=0 border=0>",
+        "<tr>",
+          "<td id='guidersaddentrybox'>",
+            #textarea{ class="input-textarea", id="add_entry_textbox", placeholder=?_T("Put your thoughts in here...")},
+          "</td>",
+          "<td id='guiderssharebutton'>",
+            #button{id="sendentry", postback={add_entry, FId}, text=?_T("Share"), class="submit", actions="obj('me').title=\""++?_T("Click here to post your entry to the feed. You can still remove it anytime")++"\""},
+          "</td>",
+        "</tr>",
+      "</table>"
+      ]},
+
+      #grid_clear{},
+      #span{id=attachment_error},
+      #grid_clear{},
+      #panel{id=attachment_thumb},
+      #grid_clear{},
+      "<span id='guidersattachmentbox'>",
+        #panel{id="attachlinkpanel", class="row", style="width:200px;", body=[
+          #link{body=io_lib:format("<p><strong>~s:</strong> ~s...</p>",[?_T("Add"), ?_T("Image, music, file")]), postback=show_add_attachment}
+        ]},
+      "<span>",
+      #grid_clear{},
+      #panel{id=attachment_box},
+      #grid_clear{}
+    ]},
+    #panel{style="height:15px;clear:both"}
   ].
 
 show_feed(undefined) -> [];
@@ -323,12 +325,11 @@ inner_event({add_entry, _}, User) ->
 
             post_entry(DashboardOwner, Desc, Medias),
 
-            nsx_msg:notify(["feed", "user", wf:user(), "count_entry_in_statistics"], {}),  
+            nsx_msg:notify(["feed", "user", wf:user(), "count_entry_in_statistics"], {}),
 
             wf:session(autocomplete_list_values, []),
             wf:update(text_length, ""),
             wf:wire("upd_scrollers(); remove_all_tos();"),
-            wf:wire("qtip_all_links();"),
             wf:wire(#attr{target=add_entry_textbox, attr="value", value=""})
     end;
 
@@ -492,6 +493,7 @@ more_entries(Entry) ->
   Pid ! {delivery, check_more, {?MODULE, length(Entrs), lists:last(Entrs)}}.
 
 autocomplete_enter_event(SearchTerm, _Tag) ->
+  ?INFO("Autocomplete enter event"),
     AlreadySelected = wf:session_default(autocomplete_list_values, []),
     DataU = case nsm_users:list_subscr(wf:user ()) of
             [] -> [];
@@ -515,27 +517,22 @@ autocomplete_enter_event(SearchTerm, _Tag) ->
             || GId <- Gs, lists:member(list_to_binary(GId), AlreadySelected)=:=false ]
     end,
     Data = DataU ++ DataG,
-    List = [
-        begin
-            ?PRINT({enter_event, Label, Value}),
-            {struct,[{id, Id }, {label, Label}, {value, Value}]}
-        end|| {struct,[{id, Id }, {label, Label}, {value, Value}]} <- Data,
+    List = [ I || {struct,[{id, _Id }, {label, Label}, {value, _Value}]} = I <- Data,
       string:str(string:to_lower(binary_to_list(Label)), string:to_lower(SearchTerm)) > 0
     ],
+    ?INFO("autocomplete list: ~p", [List]),
     mochijson2:encode(List).
 
 autocomplete_select_event({struct, [{<<"id">>, _ },{<<"value">>, Value}]} , _Tag) ->
+    ?INFO("Autocomplete select event value: ~p~n", [Value]),
     FlashID = wf:temp_id(),
-    ?PRINT(Value),
     case lists:member(Value, wf:session_default(autocomplete_list_values, [])) of
         false ->
             User = wf:user(),
             %% Value is encoded in autocomplete_enter_event/2. Example: {Username, user}
             Label = case decode_term(Value) of
-                {User, _} ->
-                    ?_T("MyFeed");
-                {OtherUserOrGroup, _} ->
-                    OtherUserOrGroup
+                {User, _} -> ?_T("MyFeed");
+                {OtherUserOrGroup, _} -> OtherUserOrGroup
             end,
             ?PRINT(decode_term(Value)),
 
@@ -552,6 +549,7 @@ autocomplete_select_event({struct, [{<<"id">>, _ },{<<"value">>, Value}]} , _Tag
                             #script{script="delete_flash_to(obj('me'));clear_tauto();"}] } }
                 ]},
             wf:insert_bottom(flashm, #panel { id=FlashID, style="display: none;", body=InnerPanel}),
+            ?INFO("Wire clear tauto field"),
             wf:wire("clear_tauto();"),
             wf:session(autocomplete_list_values, lists:append(
                 wf:session_default(autocomplete_list_values, []), [Value])),

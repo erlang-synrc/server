@@ -7,6 +7,7 @@ git checkout kmatchmaker.min.css
 git checkout ktournaments.min.css
 git checkout krules_okey.min.css
 git checkout kgifts.min.css
+git checkout kdashboard.min.css
 
 git pull
 
@@ -15,3 +16,4 @@ git pull
 ./cssfix.sh ktournaments.min.css
 ./cssfix.sh krules_okey.min.css
 ./cssfix.sh kgifts.min.css
+./cssfix.sh kdashboard.min.css

@@ -1,11 +1,13 @@
 JS_FILES=priv/static/js/kakara.js priv/static/js/kindex.js priv/static/js/kmatchmaker.js \
 priv/static/js/krules_okey.js \
 priv/static/js/kgifts.js \
-priv/static/js/ktournaments.js
+priv/static/js/ktournaments.js \
+priv/static/js/kdashboard.js
 CSS_FILES=priv/static/css/kakara.css priv/static/css/kindex.css priv/static/css/kmatchmaker.css \
 priv/static/css/krules_okey.css \
 priv/static/css/kgifts.css \
-priv/static/css/ktournaments.css
+priv/static/css/ktournaments.css \
+priv/static/css/kdashboard.css
 ROOT_PATH=priv/static/
 #########################################################################
 MINIFIED_JS_FILES=$(JS_FILES:.js=.min.js)
