@@ -23,11 +23,20 @@ main() ->
   case wf:user() of
     undefined -> wf:redirect(?_U("/login"));
     _User ->
+      case wf_context:page_module() of
+        dashboard -> [];
+        _ -> webutils:js_for_main_authorized_game_stats_menu()
+      end,
       case webutils:guiders_ok("dashboard_guiders_shown") of
         true -> guiders_script();
         false -> ok
       end,
-      #template { file=code:priv_dir(nsp_srv)++"/templates/base.html"}
+      case wf_context:page_module() of
+        dashboard ->
+          #template { file=code:priv_dir(nsp_srv)++"/templates/base.html"};
+        _ ->
+          #template { file=code:priv_dir(nsp_srv)++"/templates/bare.html"}
+      end
   end.
 
 body() ->
