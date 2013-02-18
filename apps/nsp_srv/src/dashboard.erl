@@ -44,7 +44,7 @@ body() ->
     "<section id=\"content\">", feed(), "</section>",
     #panel{class="aside", body=[
       webutils:get_ribbon_menu(),
-      #panel{id=aside,body=[]}
+      #panel{id=aside,body=dashboard:aside()}
     ]}
   ]}.
 
@@ -130,9 +130,9 @@ show_feed(undefined) -> [];
 show_feed(Fid) ->
   {ok, Pid} = comet_feed:start(user, Fid, wf:user(), wf:session(user_info)),
   wf:state(comet_feed_pid, pid_to_list(Pid)),
-  X = dashboard:aside(),
+%  X = dashboard:aside(),
   spawn(fun()->
-    Pid ! {delivery, aside, X},
+%    Pid ! {delivery, aside, X},
     Entrs = dashboard:read_entries(Pid, undefined, Fid),
     Last = case Entrs of
       [] -> [];
