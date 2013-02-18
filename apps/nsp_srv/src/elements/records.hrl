@@ -71,8 +71,10 @@
 -record(purchases_grid, {?ELEMENT_BASE(element_purchases_grid), data = []}).
 
 -record(inplace_textbox1, {?ELEMENT_BASE(element_inplace_textbox1), tag, text="",
-                           entry_id=indefined, feed_id=undefined, eb_id=undefined, tb_id=undefined, vp_id=undefined,
+                           entry_id=undefined, feed_id=undefined, eb_id=undefined, tb_id=undefined, vp_id=undefined,
                            html_encode=true, start_mode=view, validators=[], delegate=undefined}).
 
 
 -record(textbox_autocomplete_custom, {?ELEMENT_BASE(element_textbox_autocomplete_custom), tag, text="", minLength=2, delay=300, html_encode=true, next, postback, delegate=undefined }).
+
+-record(textboxlist, {?ELEMENT_BASE(element_textboxlist), delegate, postback}).
