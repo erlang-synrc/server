@@ -486,7 +486,7 @@ textboxlist_event(SearchTerm) ->
         {error, notfound}-> []
       end || GId <- Gs]
   end,
-  Data = lists:filter(fun({E,_}) -> string:str(string:to_lower(E), string:to_lower(SearchTerm)) > 0 end, DataU ++ DataG),
+  Data = lists:filter(fun({E,_}) -> string:str(string:to_lower(E), string:to_lower(SearchTerm)) > 0 end, lists:flatten(DataU ++ DataG)),
   List = [{array, [
     list_to_binary([atom_to_list(T), "_", string:to_lower(L)]),
     list_to_binary("<b>"++L++"</b>"),
