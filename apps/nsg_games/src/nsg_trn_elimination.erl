@@ -39,11 +39,12 @@
         {%% Static values
          game_id           :: pos_integer(),
          trn_id            :: term(),
-         table_params            :: proplists:proplist(),
+         table_params      :: proplists:proplist(),
          tours_plan        :: list(integer()), %% Defines how many players will be passed to a next tour
          tours             :: integer(),
          players_per_table :: integer(),
-         quota_per_round   :: integer(),
+         quota_per_round   :: integer(), %% Using for the calculation of qouta amount which be deducted from players every tour
+         rounds_per_tour   :: integer(), %% Using for the calculation of qouta amount which be deducted from players every tour
          speed             :: fast | normal,
          awards            :: list(), %% [FirtsPrize, SecondPrize, ThirdPrize], Prize = undefined | GiftId
          demo_mode         :: boolean(), %% If true then results of tours will be generated randomly
@@ -153,9 +154,10 @@ init([GameId, Params, _Manager]) ->
     ?INFO("TRN_ELIMINATION <~p> Init started",[GameId]),
     Registrants = get_param(registrants, Params),
     QuotaPerRound = get_param(quota_per_round, Params),
+    RoundsPerTour = get_param(rounds_per_tour, Params),
     Tours = get_param(tours, Params),
     ToursPlan = get_param(plan, Params),
-    PlayersPerTable = get_param(player_per_table, Params),
+    PlayersPerTable = get_param(players_per_table, Params),
     Speed = get_param(speed, Params),
     GameType = get_param(game_type, Params),
     GameMode = get_param(game_mode, Params),
@@ -181,6 +183,7 @@ init([GameId, Params, _Manager]) ->
                              trn_id = TrnId,
                              table_params = TableParams,
                              quota_per_round = QuotaPerRound,
+                             rounds_per_tour = RoundsPerTour,
                              tours_plan = ToursPlan,
                              tours = Tours,
                              players_per_table = PlayersPerTable,
@@ -549,12 +552,13 @@ init_tour(Tour, #state{game_id = GameId, tours_plan = Plan, tournament_table = T
                        table_params = TableParams, players = Players, quota_per_round = QuotaPerRound,
                        table_id_counter = TableIdCounter, tables = OldTables, tours = Tours,
                        players_per_table = PlayersPerTable, game_type = GameType,
-                       game_mode = GameMode, table_module = TableModule} = StateData) ->
+                       game_mode = GameMode, table_module = TableModule,
+                       rounds_per_tour = RoundsPerTour} = StateData) ->
     ?INFO("TRN_ELIMINATION <~p> Initializing tour <~p>...", [GameId, Tour]),
     PlayersList = prepare_players_for_new_tour(Tour, TTable, Plan, Players),
     PrepTTable = prepare_ttable_for_tables(TTable, Players),
     UsersIds = [UserId || {_, #'PlayerInfo'{id = UserId}, _} <- PlayersList],
-    deduct_quota(GameId, GameType, GameMode, QuotaPerRound*?ROUNDS_PER_TOUR, UsersIds),
+    deduct_quota(GameId, GameType, GameMode, QuotaPerRound * RoundsPerTour, UsersIds),
     {NewTables, Seats, NewTableIdCounter, CrRequests} =
         setup_tables(TableModule, PlayersList, PlayersPerTable, PrepTTable, Tour,
                      Tours, TableIdCounter, GameId, TableParams),
