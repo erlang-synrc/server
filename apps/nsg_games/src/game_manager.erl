@@ -74,12 +74,15 @@ get_requirements(GameFSM,M) -> (game_monitor_module(GameFSM, M)):get_requirement
 game_sup_domain(Module, Params) ->
     case Module of
         game_okey_ng_trn_elim -> okey_sup;
-        game_tavla -> tavla_sup;
-        fl_lucky -> lucky_sup;
-        game_okey_ng_trn_lucky -> lucky_sup;
         game_tavla_ng_trn_paired -> tavla_sup;
         nsg_trn_standalone ->
             case proplists:get_value(game, Params) of
+                game_okey -> okey_sup;
+                game_tavla -> tavla_sup;
+                _ -> game_sup
+            end;
+        nsg_trn_elimination ->
+            case proplists:get_value(game_type, Params) of
                 game_okey -> okey_sup;
                 game_tavla -> tavla_sup;
                 _ -> game_sup
@@ -474,32 +477,144 @@ create_paired_game(Game, Params, Users) ->
     end.
 
 
-start_tournament(TourId,NumberOfTournaments,NumberOfPlayers,Quota,Tours,Speed,GiftIds) ->
+create_elimination_trn(GameType, Params, Registrants) ->
+    ?INFO("create_elimination_trn/3 Params:~p", [Params]),
+    TrnId         = proplists:get_value(trn_id, Params),
+    QuotaPerRound = proplists:get_value(quota_per_round, Params),
+    PlayersNumber = proplists:get_value(players_number, Params),
+    Tours         = proplists:get_value(tours, Params),
+    GameMode      = proplists:get_value(game_mode, Params),
+    Speed         = proplists:get_value(speed, Params),
+    Awards        = proplists:get_value(awards, Params),
+    RegistrantsNum = length(Registrants),
+    if RegistrantsNum =/= PlayersNumber ->
+           ?ERROR("create_elimination_trn/3 Error: Wrong number of the registrants: ~p (required: ~p). ",
+                  [RegistrantsNum, PlayersNumber]),
+           exit(wrong_registrants_number);
+       true -> do_nothing
+    end,
+    {ok, Plan} = nsg_matrix_elimination:get_plan(GameType, QuotaPerRound, PlayersNumber, Tours),
+    case GameType of
+        game_okey ->
+            Rounds = 10,
+            {ok, SetTimeout} = nsm_db:get(config,"games/okey/trn/elim/tour_time_limit/"++integer_to_list(Tours), 20*60*1000),
+            TableParams = [
+                           {table_name, ""},
+                           {tournament_type, elimination},
+                           {round_timeout, infinity},
+                           {set_timeout, SetTimeout},
+                           {speed, Speed},
+                           {game_type, GameMode},
+                           {rounds, Rounds},
+                           {gosterge_finish_allowed, undefined},
+                           {reveal_confirmation, true},
+                           {next_series_confirmation, no},
+                           {pause_mode, disabled},
+                           {observers_allowed, false},
+                           {slang_allowed, false},
+                           {social_actions_enabled, false},
+                           {mult_factor, 1}
+                         ],
+            create_game(nsg_trn_elimination,
+                        [{game_type, GameType},
+                         {game_mode, GameMode},
+                         {registrants, Registrants},
+                         {plan, Plan},
+                         {quota_per_round, QuotaPerRound},
+                         {rounds_per_tour, Rounds},
+                         {tours, Tours},
+                         {players_per_table, 4},
+                         {speed, Speed},
+                         {awards, Awards},
+                         {trn_id, TrnId},
+                         {table_module, game_okey_ng_table_trn},
+                         {demo_mode, false},
+                         {table_params, TableParams}
+                        ]);
+        game_tavla ->
+            Rounds = 3,
+            {ok, SetTimeout} = nsm_db:get(config,"games/tavla/trn/elim/tour_time_limit/"++integer_to_list(Tours), 20*60*1000),
+            TableParams = [
+                           {table_name, ""},
+                           {tournament_type, elimination},
+                           {round_timeout, infinity},
+                           {set_timeout, SetTimeout},
+                           {speed, Speed},
+                           {game_mode, GameMode},
+                           {rounds, Rounds},
+                           {next_series_confirmation, no},
+                           {pause_mode, disabled},
+                           {slang_allowed, false},
+                           {observers_allowed, false},
+                           {social_actions_enabled, false},
+                           {mult_factor, 1}
+                         ],
 
-    {ok,Tournament} = nsm_db:get(tournament,TourId),
-    ImagioUsers = nsm_auth:imagionary_users2(),
-    RealPlayersUnsorted = nsm_tournaments:joined_users(TourId),
+            create_game(nsg_trn_elimination,
+                        [{game_type, GameType},
+                         {game_mode, GameMode},
+                         {registrants, Registrants},
+                         {plan, Plan},
+                         {quota_per_round, QuotaPerRound},
+                         {rounds_per_tour, Rounds},
+                         {tours, Tours},
+                         {players_per_table, 2},
+                         {speed, Speed},
+                         {awards, Awards},
+                         {trn_id,TrnId},
+                         {table_module, game_tavla_ng_table},
+                         {demo_mode, false},
+                         {table_params, TableParams}
+                        ])
+    end.
+
+
+start_tournament(TrnId,NumberOfTournaments,NumberOfPlayers,_Quota,_Tours,_Speed,GiftIds) ->
+
+    {ok,Tournament} = nsm_db:get(tournament,TrnId),
+    #tournament{quota = QuotaPerRound,
+                tours = Tours,
+                game_type = GameType,
+                game_mode = GameMode,
+                speed = Speed} = Tournament,
+%%    ImagioUsers = nsm_auth:imagionary_users2(),
+    RealPlayersUnsorted = nsm_tournaments:joined_users(TrnId),
     RealPlayersPR = lists:keysort(#play_record.other, RealPlayersUnsorted),
     ?INFO("Head: ~p",[hd(RealPlayersPR)]),
     RealPlayers = [list_to_binary(Who)||#play_record{who=Who}<-RealPlayersPR, Who /= undefined],
 
-    Registrants = case NumberOfPlayers > length(RealPlayers) of
-                       true -> nsm_db:put(Tournament#tournament{status=canceled}), RealPlayers;
-                       false -> [lists:nth(N,RealPlayers)||N<-lists:seq(1,NumberOfPlayers)] end,
+%%     Registrants = case NumberOfPlayers > length(RealPlayers) of
+%%                        true -> nsm_db:put(Tournament#tournament{status=canceled}), RealPlayers;
+%%                        false -> [lists:nth(N,RealPlayers)||N<-lists:seq(1,NumberOfPlayers)] end,
+    RealPlayersNumber = length(RealPlayers),
+    Registrants = if NumberOfPlayers == RealPlayersNumber -> RealPlayers;
+                     NumberOfPlayers > RealPlayersNumber ->
+                         RealPlayers ++ [list_to_binary(nsm_auth:ima_gio2(N)) ||
+                                            N <- lists:seq(1, NumberOfPlayers-RealPlayersNumber)];
+                     true -> lists:sublist(RealPlayers, NumberOfPlayers)
+                  end,
 
+    ?INFO("Registrants: ~p",[Registrants]),
     OkeyTournaments =
         [begin
+             Params = [{trn_id, TrnId},
+                       {quota_per_round, QuotaPerRound},
+                       {players_number, NumberOfPlayers},
+                       {tours, Tours},
+                       {game_mode, GameMode},
+                       {speed, Speed},
+                       {awards, GiftIds}],
+             {ok,GameId,A} = create_elimination_trn(GameType, Params, Registrants),
 
-             ?INFO("Registrants: ~p",[Registrants]),
-
-             {ok,GameId,A} = game_manager:create_game(game_okey_ng_trn_elim, [{registrants, Registrants},
-                                                               {quota_per_round, Tournament#tournament.quota},
-                                                               {tours, Tournament#tournament.tours},
-                                                               {speed, Tournament#tournament.speed},
-                                                               {game_mode, Tournament#tournament.game_mode},
-                                                               {awards, GiftIds},
-                                                               {trn_id,TourId},
-                                                               {demo_mode, false}]),
+%%              {ok,GameId,A} = game_manager:create_game(game_okey_ng_trn_elim, [{registrants, Registrants},
+%%                                                                {quota_per_round, Tournament#tournament.quota},
+%%                                                                {players, NumberOfPlayers},
+%%                                                                {tours, Tournament#tournament.tours},
+%%                                                                {speed, Tournament#tournament.speed},
+%%                                                                {game_mode, Tournament#tournament.game_mode},
+%%                                                                {awards, GiftIds},
+%%                                                                {trn_id,TrnId},
+%%                                                                {demo_mode, false}]),
 
              nsm_db:put(Tournament#tournament{status=activated}),
 
