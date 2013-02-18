@@ -42,7 +42,7 @@ render_element(Record) ->
             #panel { id=ViewPanelID, class="entry-main-panel", body=[
                 #panel { id=LabelID, class="entry-main-text", body=Text}
             ]},
-            #panel { id=EditPanelID, class="edit", body=[
+            #panel { id=EditPanelID, class="edit", style="display:none;", body=[
                 #textbox { id=TextBoxID, text=Text, next=OKButtonID },
                 " ",
                 #link{id=OKButtonID, text=?_T("OK"), class="clr-4", url="javascript:void(0)",actions=OKEvent#event { type=click }},

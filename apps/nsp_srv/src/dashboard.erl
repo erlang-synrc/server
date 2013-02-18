@@ -131,17 +131,23 @@ show_feed(Fid) ->
   {ok, Pid} = comet_feed:start(user, Fid, wf:user(), wf:session(user_info)),
   wf:state(comet_feed_pid, pid_to_list(Pid)),
 %  X = dashboard:aside(),
-  spawn(fun()->
+%  spawn(fun()->
 %    Pid ! {delivery, aside, X},
-    Entrs = dashboard:read_entries(Pid, undefined, Fid),
-    Last = case Entrs of
-      [] -> [];
-      _ -> lists:last(Entrs)
-    end,
-    Pid ! {delivery, check_more, {?MODULE, length(Entrs), Last}}
-  end),
+%    Entrs = dashboard:read_entries(Pid, undefined, Fid),
+%    Last = case Entrs of
+%      [] -> [];
+%      _ -> lists:last(Entrs)
+%    end,
+%    Pid ! {delivery, check_more, {?MODULE, length(Entrs), Last}}
+%  end),
+  Entries = nsm_db:entries_in_feed(Fid, ?FEED_PAGEAMOUNT),
+  Last = case Entries of
+    [] -> [];
+    _ -> lists:last(Entries)
+  end,
+  Pid ! {delivery, check_more, {?MODULE, length(Entries), Last}},
   [
-    #panel{id = feed, body=[]},
+    #panel{id = feed, body=[[#view_entry{entry = E} || E <- Entries]]},%read_entries(Pid, undefined, Fid)},
     #panel{id = more_button_holder, body=[]}
   ].
 
@@ -413,22 +419,6 @@ inner_event({unblock_load, CheckedUser, _Offset}, User) ->
     wf:update(blockunblock, #link{text=?_T("Block this user"), url="javascript:void(0)", postback={block, CheckedUser}}),
     Fid = webutils:user_info(User, feed),
     show_feed(Fid);
-
-%inner_event({remove_select_event, Value}, _) ->
-%    case wf:session(autocomplete_list_values) of
-%        undefined -> ok
-%        ;L        -> wf:session(autocomplete_list_values, lists:delete(Value, L)), ok
-%    end;
-
-%inner_event({add_to_event, "MyFeed"}, _) ->
-%    Owner = case  wf:state(feed_owner) of
-%        undefined ->
-%            {wf:user(), user};
-%        {Type, Name} ->
-%            {Name, Type}
-%    end,
-%    Value = encode_term(Owner),
-%    autocomplete_select_event({struct, [{<<"id">>, 1 },{<<"value">>, Value}]} , direct_to);
 
 inner_event(notice_close, _) ->
     wf:update(notification_area, []);
