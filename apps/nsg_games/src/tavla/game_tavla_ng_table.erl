@@ -337,8 +337,7 @@ handle_parent_message({replace_player, RequestId, UserInfo, PlayerId, SeatNum}, 
 
 handle_parent_message(start_round, ?STATE_WAITING_FOR_START,
                       #state{game_id = GameId, table_id = TableId, turn_timeout = TurnTimeout, game_mode = GameMode,
-                             round_timeout = RoundTimeout, set_timeout = SetTimeout,
-                             set_timer = SetTRef} = StateData) ->
+                             round_timeout = RoundTimeout, set_timeout = SetTimeout} = StateData) ->
     CurRound = 1,
     ?INFO("TAVLA_NG_TABLE <~p,~p> Recieved the directive to start new round (~p)", [GameId, TableId, CurRound]),
     ?INFO("TAVLA_NG_TABLE <~p,~p> The start color will be determined by the competition rolls", [GameId, TableId]),
@@ -453,7 +452,7 @@ handle_parent_message({show_series_result, Results}, StateName,
 handle_parent_message({tour_result, TourNum, Results}, StateName,
                       #state{tournament_table = TTable} = StateData) ->
     NewTTable = [{TourNum, Results} | TTable],
-    Msg = create_tavla_tour_result(TourNum, Results, StateName),
+    Msg = create_tavla_tour_result(TourNum, Results, StateData),
     publish_ge(Msg, StateData),
     {next_state, StateName, StateData#state{tournament_table = NewTTable}};
 
