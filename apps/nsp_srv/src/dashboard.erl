@@ -25,6 +25,7 @@ main() ->
     _User ->
       case wf_context:page_module() of
         dashboard -> [];
+        view_user -> [];
         _ -> webutils:js_for_main_authorized_game_stats_menu()
       end,
       case webutils:guiders_ok("dashboard_guiders_shown") of
@@ -32,8 +33,8 @@ main() ->
         false -> ok
       end,
       case wf_context:page_module() of
-        dashboard ->
-          #template { file=code:priv_dir(nsp_srv)++"/templates/base.html"};
+        dashboard -> #template { file=code:priv_dir(nsp_srv)++"/templates/base.html"};
+        view_user -> #template { file=code:priv_dir(nsp_srv)++"/templates/base.html"};
         _ ->
           #template { file=code:priv_dir(nsp_srv)++"/templates/bare.html"}
       end
@@ -41,37 +42,40 @@ main() ->
 
 body() ->
   #panel{class="page-content page-canvas", style="overflow:auto;margin-top:20px;", body=[
-    "<section id=\"content\">", feed(), "</section>",
+    "<section id=\"content\">", feed(wf:user()), "</section>",
     #panel{class="aside", body=[
       webutils:get_ribbon_menu(),
-      #panel{id=aside,body=dashboard:aside()}
+      #panel{id=aside,body=aside()}
     ]}
   ]}.
 
-feed() ->
-  UserInfo = webutils:user_info(),
-  NotVerified = UserInfo#user.status == not_verified,
-  BuySuccess = wf:q(buy) == "success",
-  InternalError = wf:q('__submodule__') == "internal_error",
+feed(Uid) ->
+  case nsm_users:get_user(Uid) of
+    {ok, User} ->
+      NotVerified = User#user.status == not_verified,
+      BuySuccess = wf:q(buy) == "success",
+      InternalError = wf:q('__submodule__') == "internal_error",
 
-  if NotVerified ->
-      %% show notification about email verification
-      wf:update(notification_area, verification_notification());
-    BuySuccess ->
-      case buy:package() of
-        undefined -> ?WARNING("buy success received, but there are no package information in session");
-        Package -> wf:update(notification_area, buy_success_notification(Package))
-      end;
-    InternalError -> wf:update(notification_area, internal_error_notification());
-    true -> ok
-  end,
+      if NotVerified ->
+        %% show notification about email verification
+        wf:update(notification_area, verification_notification());
+        BuySuccess ->
+          case buy:package() of
+            undefined -> ?WARNING("buy success received, but there are no package information in session");
+            Package -> wf:update(notification_area, buy_success_notification(Package))
+          end;
+        InternalError -> wf:update(notification_area, internal_error_notification());
+        true -> ok
+      end,
 
-  FId = webutils:user_info(feed),
-  [
-    #panel{id=notification_area},
-    entry_form(FId),
-    #panel{id=feeds_container, class="posts_container_mkh", body=show_feed(FId)}
-  ].
+      Fid = User#user.feed,
+      [
+        #panel{id=notification_area},
+        entry_form(Fid),
+        #panel{id=feeds_container, class="posts_container_mkh", body=show_feed(Fid, Uid)}
+      ];
+    {error, notfound} -> []
+  end.
 
 entry_form(FId) -> entry_form(FId, ?MODULE, {add_entry, FId}).
 
@@ -102,10 +106,23 @@ entry_form(FId, Delegate, Postback) ->
 %      })",
 %      [?ENTRY_TEXT_LENGTH, site_utils:postback_to_js_string(Delegate, Postback), ?ENTRY_TEXT_LENGTH]
 %  )),
+  Recipients = case  wf:q("filter") of
+    "direct" ->
+      case wf:q("tu") of
+        undefined -> [];
+        To -> ["user_"++To, "<b>"++To++"</b>", "<b>"++To++"</b>"]
+      end;
+    undefined ->
+      case wf:q("id") of
+        undefined->[];
+        User ->  ["user_"++User, "<b>"++User++"</b>", "<b>"++User++"</b>"]
+      end;
+    _ -> []
+  end,
   [
   #panel{class=entry_form, body=[
     #label{text=?_T("To")++":"},
-    #panel{class=autocompletelist, body=#textboxlist{id=recipients_list}},
+    #panel{class=autocompletelist, body=#textboxlist{id=recipients_list, value=Recipients}},
     #panel{id=flashm, body=[]},
     #panel{body=[
       "<span id='guidersaddentrybox'>", #textarea{id=add_entry_textbox, placeholder=?_T("Put your thoughts in here...")},"</span>",
@@ -126,9 +143,11 @@ entry_form(FId, Delegate, Postback) ->
   #span{id=text_length}
   ].
 
-show_feed(undefined) -> [];
-show_feed(Fid) ->
-  {ok, Pid} = comet_feed:start(user, Fid, wf:user(), wf:session(user_info)),
+show_feed(undefined, _) -> [];
+show_feed(Fid, Uid) ->
+  UserInfo = wf:session(user_info),
+  ?INFO("INFO: ~p", [UserInfo]),
+  {ok, Pid} = comet_feed:start(user, Fid, Uid, UserInfo),
   wf:state(comet_feed_pid, pid_to_list(Pid)),
 %  X = dashboard:aside(),
 %  spawn(fun()->
@@ -140,7 +159,11 @@ show_feed(Fid) ->
 %    end,
 %    Pid ! {delivery, check_more, {?MODULE, length(Entrs), Last}}
 %  end),
-  Entries = nsm_db:entries_in_feed(Fid, ?FEED_PAGEAMOUNT),
+  FID = case  wf:q("filter") of
+    "direct" -> UserInfo#user.direct;
+    _ -> Fid
+  end,
+  Entries = nsm_db:entries_in_feed(FID, ?FEED_PAGEAMOUNT),
   Last = case Entries of
     [] -> [];
     _ -> lists:last(Entries)
@@ -412,13 +435,13 @@ inner_event({unblock, CheckedUser}, User) ->
     nsx_msg:notify(["subscription", "user", User, "unblock_user"], {CheckedUser}),
     wf:update(blockunblock, #link{text=?_T("Block this user"), url="javascript:void(0)", postback={block, CheckedUser}}),
     Fid = webutils:user_info(User, feed),
-    show_feed(Fid);
+    show_feed(Fid, User#user.username);
 
 inner_event({unblock_load, CheckedUser, _Offset}, User) ->
     nsx_msg:notify(["subscription", "user", User, "unblock_user"], {CheckedUser}),
     wf:update(blockunblock, #link{text=?_T("Block this user"), url="javascript:void(0)", postback={block, CheckedUser}}),
     Fid = webutils:user_info(User, feed),
-    show_feed(Fid);
+    show_feed(Fid, User#user.username);
 
 inner_event(notice_close, _) ->
     wf:update(notification_area, []);
@@ -448,12 +471,6 @@ get_page_number() ->
             catch
                _:_   -> 1
             end
-    end.
-
-is_direct_message_page() ->
-    case wf:q("filter") of
-        "direct" -> true
-        ;_       -> false
     end.
 
 more_entries(Entry) ->

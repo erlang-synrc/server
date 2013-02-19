@@ -518,6 +518,25 @@ div.post:first-child {background:none !important}
 .aside .user-info .img img {    border:1px solid #c8c8c8;    padding:6px;    margin-left:17px;}
 .aside .user-info span {    font-weight:normal;    font-size:1.1em;    padding-left:0px;}#aside .descr .img img {vertical-align:top;}
 
+.paid_user_avatar{
+  border:3px solid #ffb03b;
+  margin-left:-3px;
+  margin-top:-3px;
+  margin-bottom:-3px;
+}
+.paid_user_avatar_photo{
+  loat:left;
+  border:4px solid #ffb03b;
+  padding:0px;
+  background:#fff;
+  width:150px;
+  height:150px;
+  margin:0 4px 0 0;
+}
+.aside .user-info .paid_user_avatar_img img {
+  border:7px solid #ffb03b;    margin-left:17px;
+}
+
 .input-textarea:focus, .textareabox-mkh:focus{outline:none;}
 
 input, select, textarea {font: 12px/15px Arial,Helvetica,sans-serif;vertical-align: middle;}

@@ -10,23 +10,29 @@ render_element(R = #textboxlist{}) ->
   Anchor = R#textboxlist.anchor,
   Dlgt = R#textboxlist.delegate,
   Postback = wf_event:serialize_event_context({textboxlist_event, Dlgt}, Anchor, undefined, ?MODULE),
-  S = wf:f("
-    $(function(){var t = new $.TextboxList('~s',
-      {unique: true,
-        startEditableBit:false,
-        inBetweenEditableBits:false,
-        plugins: {
-          autocomplete:{
-            minLenght:2,
-            onlyFromValues: true,
-            queryRemote: true,
-            remote: {
-              postback: '~s'
-            }
-          }
-        }
-      });
-    });", ["#"++Id, Postback]),
+  Value = R#textboxlist.value,
+
+  S = wf:f("$(function(){"++
+    "var t = new $.TextboxList('~s',"++
+      "{unique: true,"++
+        "startEditableBit:false,"++
+        "inBetweenEditableBits:false,"++
+        "plugins: {"++
+          "autocomplete:{"++
+            "minLenght:2,"++
+            "onlyFromValues: true,"++
+            "queryRemote: true,"++
+            "remote: {"++
+              "postback: '~s'"++
+            "}"++
+          "}"++
+        "}"++
+    "});"++
+    "var item = '~s'.split(',');"++
+    "if(item!=''){"++
+      "t.add(null, item[0],  item[1], item[3]);"++
+    "}"++
+  "});", ["#"++Id, Postback, string:join(Value, ",")]),
   wf:wire(#script{script=S}),
 
   wf_tags:emit_tag(input, [
