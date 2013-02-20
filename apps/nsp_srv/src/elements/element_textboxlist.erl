@@ -32,7 +32,12 @@ render_element(R = #textboxlist{}) ->
     "if(item!=''){"++
       "t.add(null, item[0],  item[1], item[3]);"++
     "}"++
-  "});", ["#"++Id, Postback, string:join(Value, ",")]),
+    "var input = $('~s');" ++
+    "var pad = $(input).outerWidth(true)-$(input).outerWidth();"++
+    "var w = $(input).parent().width() - $(input).prev().outerWidth(true);" ++
+    "$(input).next().width(w-pad);" ++
+    "$(input).next().children('.textboxlist-autocomplete').width(w-pad);"++
+  "});", ["#"++Id, Postback, string:join(Value, ","), R#textboxlist.id]),
   wf:wire(#script{script=S}),
 
   wf_tags:emit_tag(input, [

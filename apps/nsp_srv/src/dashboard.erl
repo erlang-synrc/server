@@ -134,7 +134,7 @@ entry_form(FId, Type, Delegate, Postback) ->
   [
   #panel{class=entry_form, body=[
     #label{text=?_T("To")++":"},
-    #panel{class=autocompletelist, body=#textboxlist{id=recipients_list, value=Recipients}},
+    #textboxlist{id=recipients_list, value=Recipients},
     #panel{id=flashm, body=[]},
     #panel{body=[
       "<span id='guidersaddentrybox'>", #textarea{id=add_entry_textbox, placeholder=?_T("Put your thoughts in here...")},"</span>",
