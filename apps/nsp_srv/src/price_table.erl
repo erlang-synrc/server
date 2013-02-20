@@ -47,7 +47,11 @@ table()->
 
 -spec table(PaymentType::payment_type())->#table{}.
 table(PaymentType)->
-    Packages = nsm_membership_packages:list_packages([{payment_type, PaymentType},{available_for_sale, true}]),
+    Packages = [PKG||PKG<-nsm_db:all(membership_package),PKG#membership_package.payment_type==PaymentType,
+                                          PKG#membership_package.available_for_sale==true],
+
+   ?INFO("Packages Found: ~p",[length(Packages)]),
+   %nsm_membership_packages:list_packages([{payment_type, PaymentType},{available_for_sale, true}]),
 
     % get packages and sort them by No
     PackagesSorted =
@@ -55,6 +59,9 @@ table(PaymentType)->
                        #membership_package{no=No2})->
                            No1 < No2
                    end, Packages),
+
+   ?INFO("Packages Sorted: ~p",[length(Packages)]),
+
     % rows headers
     InfoColumn =
         [[?_T("Please join"), #br{}, ?_T("Select package")],
@@ -64,6 +71,9 @@ table(PaymentType)->
          ""], % buttons row hasn't row header
 
     % map membership_package fields to corresponding rows
+
+    ?INFO("before"),
+
     PacketColumns =
         [[
           [#span{class="top", text=io_lib:format("~s ~p", [?_T("Packet"), P#membership_package.no]), html_encode=false},
@@ -73,6 +83,8 @@ table(PaymentType)->
           wf:to_list(P#membership_package.quota),
           buy_button_element(P#membership_package.id, PaymentType, nsm_membership_packages:check_limit_over(wf:user(), P#membership_package.id))
          ] || P <- PackagesSorted],
+
+    ?INFO("after"),
 
     % transform columns data to table rows
     Rows = columns_to_rows([InfoColumn|PacketColumns]),

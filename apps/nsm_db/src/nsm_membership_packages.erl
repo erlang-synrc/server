@@ -401,7 +401,7 @@ get_monthly_purchase_limit() ->
     ?MP_MONTHLY_LIMIT_MULTIPLIER * MostExpencivePackageWorth.
 
 check_limit_over(UId, PackageId) ->
-    Limit = get_monthly_purchase_limit(),
+    Limit = ?MP_MONTHLY_LIMIT_MULTIPLIER, %get_monthly_purchase_limit(),
     {ok, Package} = nsm_membership_packages:get_package(PackageId),
     PackagePrice = Package#membership_package.amount,
     {{CurYear, CurMonth, _}, _} = calendar:now_to_datetime(now()),
