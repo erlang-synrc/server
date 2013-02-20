@@ -20,10 +20,17 @@ main() ->
 title() -> webutils:title(?MODULE).
 
 body() ->
-    #template{file=code:priv_dir(nsp_srv)++"/templates/view-group.html"}.
-
-content() ->
-    content(1).
+  [
+    #panel{class="page-content page-canvas", style="height:770px;margin-top:20px;", body=[
+      "<section id=\"content\">",
+        content(1),
+      "</section>",
+      #panel{class=aside, body=[ 
+        group_info(),
+        get_members()
+      ]}
+    ]}
+  ].
 
 content(Page) ->
     friends:content(Page,?_T("All users of Kakaranet")).

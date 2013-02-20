@@ -4,14 +4,18 @@ priv/static/js/kgifts.js \
 priv/static/js/ktournaments.js \
 priv/static/js/kdashboard.js \
 priv/static/js/kview_user.js \
-priv/static/js/kview_group.js
+priv/static/js/kview_group.js \
+priv/static/js/kview_all_users.js \
+priv/static/js/kview_members.js
 CSS_FILES=priv/static/css/kakara.css priv/static/css/kindex.css priv/static/css/kmatchmaker.css \
 priv/static/css/krules_okey.css \
 priv/static/css/kgifts.css \
 priv/static/css/ktournaments.css \
 priv/static/css/kdashboard.css \
 priv/static/css/kview_user.css \
-priv/static/css/kview_group.css
+priv/static/css/kview_group.css \
+priv/static/css/kview_all_users.css \
+priv/static/css/kview_members.css
 ROOT_PATH=priv/static/
 #########################################################################
 MINIFIED_JS_FILES=$(JS_FILES:.js=.min.js)

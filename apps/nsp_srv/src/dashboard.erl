@@ -26,7 +26,9 @@ main() ->
       case wf_context:page_module() of
         dashboard -> [];
         view_user -> [];
+        view_all_users -> [];
         view_group -> [];
+        view_members -> [];
         _ -> webutils:js_for_main_authorized_game_stats_menu()
       end,
       case webutils:guiders_ok("dashboard_guiders_shown") of
@@ -36,7 +38,9 @@ main() ->
       case wf_context:page_module() of
         dashboard -> #template { file=code:priv_dir(nsp_srv)++"/templates/base.html"};
         view_user -> #template { file=code:priv_dir(nsp_srv)++"/templates/base.html"};
+        view_all_users -> #template { file=code:priv_dir(nsp_srv)++"/templates/base.html"};
         view_group -> #template { file=code:priv_dir(nsp_srv)++"/templates/base.html"};
+        view_members -> #template { file=code:priv_dir(nsp_srv)++"/templates/base.html"};
         _ ->
           #template { file=code:priv_dir(nsp_srv)++"/templates/bare.html"}
       end
