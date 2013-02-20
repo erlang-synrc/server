@@ -963,7 +963,6 @@ get_ribbon_menu() ->
                 BlockUnblock,
                 #list{class="list-6", body=[
                     #listitem{body=#link{url="javascript:void(0)",
-                        postback={direct_message_to, CheckedUser},
                         body=[#image{image="/images/ico-04.gif", style="width:27px;height:34px"}, ?_T("Send direct message")]}},
                         #listitem{body=#link{url="#", body=[
                             #image{image="/images/ico-05.gif", style="width:27px;height:34px"}, ?_T("Notification options")

@@ -25,9 +25,9 @@ get_avatar(Avatar, Size) ->
 	#avatar{small = Small} when Size =:= small -> Small;
 	#avatar{tiny = Tiny} when Size =:= tiny -> Tiny;
 	_ -> case Size of
-		 big -> "/images/no_avatar_big.jpg";
-		 small -> "/images/no_avatar_small.jpg";
-		 tiny -> "/images/no_avatar_tiny.jpg"
+		 big -> ?STATIC_ADDRESS ++ "/images/no_avatar_big.jpg";
+		 small -> ?STATIC_ADDRESS ++ "/images/no_avatar_small.jpg";
+		 tiny -> ?STATIC_ADDRESS ++ "/images/no_avatar_tiny.jpg"
 	     end
     end.
 

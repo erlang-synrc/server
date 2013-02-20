@@ -590,7 +590,7 @@ input, select, textarea {font: 12px/15px Arial,Helvetica,sans-serif;vertical-ali
   }
   .textboxlist-autocomplete-placeholder { padding: 5px 7px; }
   .textboxlist-autocomplete-results { margin: 0; padding: 0; }
-  .textboxlist-autocomplete-result { margin: 0; padding: 5px; list-style-type: none; background: #eee; }
+  .textboxlist-autocomplete-result { margin: 0; padding: 5px; list-style-type: none; background: #eee; font-weight:bold; font-size:14px;line-height: 30px;}
   .textboxlist-autocomplete-result-focus { background: #C6D9E4; }
   .textboxlist-autocomplete-highlight { background: #EEF0C4; font-weight: bold; }
   .textboxlist {cursor:text;background:#ffffff;}

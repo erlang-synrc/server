@@ -9,3 +9,4 @@ cd priv/static/css
 ./cssfix.sh kgifts.min.css
 ./cssfix.sh kdashboard.min.css
 ./cssfix.sh kview_user.min.css
+./cssfix.sh kview_group.min.css
