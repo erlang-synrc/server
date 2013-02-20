@@ -722,10 +722,10 @@ input, select, textarea {font: 12px/15px Arial,Helvetica,sans-serif;vertical-ali
     padding: 0;
   }
   .entry_form textarea {
-    width: 530px;
+    width: 550px;
     height: 45px;
     margin-top:10px;
-    margin-left: 30px;
+    margin-left: 5px;
     font-size: 16px;
     border: 1px solid #ccc;
     word-wrap: break-word;
