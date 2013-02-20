@@ -1,0 +1,110 @@
+.user-list {
+  list-style:none;
+	margin:0 0 0 -30px;
+	padding:0;
+	width:695px;
+}
+.user-list:after {
+	clear:both;
+	content:"";
+	display:block;
+}
+.user-item {
+	float:left;
+	width:109px;
+	height:136px;
+	padding:8px 0 10px 30px;
+}
+.user-list .entity {
+	cursor:pointer;
+	display:block;
+	width:100%;
+	color:#969696;
+}
+.user-list .entity .img {
+	display:block;
+	border:1px solid #c8c8c8;
+	padding:6px;
+}
+.user-list .entity .img img {vertical-align:top;}
+.user-list .entity .user-name {
+	display:block;
+	width:100%;
+	text-align:center;
+	padding:5px 0;
+	color:#969696;
+	font-size:1.1em;
+	line-height:1.27em;
+}
+.user-list .entity:hover {
+	text-decoration:none;
+	position:relative;
+}
+.user-list .entity:hover .user-name {color:#ad3531;}
+.user-list .tooltip-1 {
+	display:block;
+	width:314px;
+	position:absolute;
+	left:10px;
+	top:-140px;
+	background:url(../images/none.gif);
+}
+.user-list .user-item:hover,
+.user-list .user-item.hover {position:relative;}
+.user-list .user-item:hover .tooltip-1,
+.user-list .user-item.hover .tooltip-1 {display:block;}
+.user-list .tooltip-1 .t {
+	padding:7px 0 0;
+	width:100%;
+	background:url(../images/bg-tooltip-t.png) no-repeat;
+}
+.user-list .tooltip-1 .b  {
+	height:87px;
+	overflow:hidden;
+	background:url(../images/bg-tooltip-b.png) no-repeat;
+}
+.user-list .tooltip-1 .c {
+	background:url(../images/bg-tooltip-c.png) repeat-y;
+	padding:5px 16px 0 13px;
+}
+.user-list .tooltip-1 .c:after {
+	clear:both;
+	content:"";
+	display:block;
+}
+.user-list .tooltip-1 .frame {
+	float:left;
+	position:relative;
+	margin:0 0 -53px;
+	width:285px;
+}
+.user-list .tooltip-1 .img {
+	float:left;
+	border:1px solid #c8c8c8;
+	background:#fff;
+	padding:4px;
+	margin:0 15px 0 0;
+}
+.user-list .tooltip-1 .img img {vertical-align:top;}
+.user-list .tooltip-1 .descr {
+	overflow:hidden;
+	padding:5px 0 0;
+}
+.user-list .tooltip-1 .descr .user-name {
+	display:block;
+	font-size:1.8em;
+	line-height:1.167em;
+	color:#404040;
+	padding:0 0 16px;
+}
+.user-list .func-list {
+	list-style:none;
+	margin:0;
+	padding:0;
+}
+.user-list .func-list li {
+	font-size:1.2em;
+	line-height:1.25em;
+	font-weight:bold;
+}
+.user-list .func-list a {color:#1ca1e3;}

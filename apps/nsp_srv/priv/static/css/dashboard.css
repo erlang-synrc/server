@@ -506,6 +506,13 @@ div.post:first-child {background:none !important}
   padding:30px 0 13px;
 }
 
+.all-user-box-text {
+  text-align:center;
+  margin-top:9px;
+  font-size:14px;
+  color:rgb(114, 114, 114);
+  font-weight:bold;
+}
 
 .statistics-box-text {
   font-size:14px;
@@ -590,10 +597,18 @@ input, select, textarea {font: 12px/15px Arial,Helvetica,sans-serif;vertical-ali
   }
   .textboxlist-autocomplete-placeholder { padding: 5px 7px; }
   .textboxlist-autocomplete-results { margin: 0; padding: 0; }
-  .textboxlist-autocomplete-result { margin: 0; padding: 5px; list-style-type: none; background: #eee; }
+  .textboxlist-autocomplete-result { margin: 0; padding: 5px; list-style-type: none; background: #eee; font-weight:bold; font-size:14px;line-height: 30px;}
   .textboxlist-autocomplete-result-focus { background: #C6D9E4; }
   .textboxlist-autocomplete-highlight { background: #EEF0C4; font-weight: bold; }
-  .textboxlist {cursor:text;background:#ffffff;}
+  .textboxlist {
+    cursor:text;
+    background:#ffffff;
+    display:inline-block;
+    vertical-align:middle;
+    margin:5px;
+    line-height:25px;
+    font-size:14px;
+  }
   .textboxlist-bits { zoom: 1; overflow: hidden; margin: 0; padding:2px 4px; border: 1px solid #ccc; *padding-bottom: 3px;}
   .textboxlist-bit { list-style-type: none; float: left; display: block; padding: 0; margin: 0 5px 3px 0; cursor: default;}
   .textboxlist-bit-editable { border: 1px solid #fff; }
@@ -678,14 +693,6 @@ input, select, textarea {font: 12px/15px Arial,Helvetica,sans-serif;vertical-ali
     padding: 10px 5px;
     font: 1em Arial,Helvetica,sans-serif;
   }
-  .autocompletelist{
-    width:625px;
-    display:inline-block;
-    vertical-align:middle;
-    margin:5px;
-    line-height:25px;
-    font-size:14px;
-  }
 
   .entry_form label {
     font-weight:bold;
@@ -722,10 +729,10 @@ input, select, textarea {font: 12px/15px Arial,Helvetica,sans-serif;vertical-ali
     padding: 0;
   }
   .entry_form textarea {
-    width: 530px;
+    width: 550px;
     height: 45px;
     margin-top:10px;
-    margin-left: 30px;
+    margin-left: 5px;
     font-size: 16px;
     border: 1px solid #ccc;
     word-wrap: break-word;

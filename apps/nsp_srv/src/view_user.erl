@@ -31,7 +31,7 @@ title() -> webutils:title(?MODULE).
 body() ->
   User = wf:state(user),
   #panel{class="page-content page-canvas", style="overflow:auto;margin-top:20px;", body=[
-    "<section id=\"content\">", dashboard:feed(User#user.username), "</section>",
+    "<section id=\"content\">", dashboard:feed(user, User#user.username), "</section>",
     #panel{class="aside", body=[
       #panel{id=aside,body=[
         user_info(),

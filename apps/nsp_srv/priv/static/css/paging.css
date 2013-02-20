@@ -1,0 +1,63 @@
+.paging-2 {    width:100%;    overflow:hidden;    position:relative;}
+.paging-2 .center {    position:relative;    float:left;    left:50%;}
+.paging-2 .center ul {float:left;    margin:0;    padding:0;    list-style:none;    position:relative;    left:-50%;}
+.paging-2 .center li {float:left;
+  padding:0 2px 2px;
+  text-align:center;
+  font-size:12px;
+  line-height:22px;
+  font-family:'HELVETICANEUELTSTD-BD';
+  width:26px;
+  height:25px;
+}
+.paging-2 .center a {    display:block;
+    height:23px;
+    color:#717171;
+    text-shadow:0 1px #fbfbfb;
+    border:1px solid #c9c9c9;
+    background:rgb(249,249,249);
+    background:-moz-linear-gradient(top, rgba(249,249,249,1) 0%, rgba(234,234,234,1) 100%);
+    background:-webkit-gradient(linear, left top, left bottom, color-stop(0%,rgba(249,249,249,1)), color-stop(100%,rgba(234,234,234,1)));
+    background:-webkit-linear-gradient(top, rgba(249,249,249,1) 0%,rgba(234,234,234,1) 100%);
+    background:-o-linear-gradient(top, rgba(249,249,249,1) 0%,rgba(234,234,234,1) 100%);
+    background:-ms-linear-gradient(top, rgba(249,249,249,1) 0%,rgba(234,234,234,1) 100%);
+    background:linear-gradient(top, rgba(249,249,249,1) 0%,rgba(234,234,234,1) 100%);
+    -webkit-box-shadow:0 1px 1px #e8e8e8;
+    -moz-box-shadow:0 1px 1px #e8e8e8;
+    box-shadow:0 1px 1px #e8e8e8;
+    -webkit-border-radius:3px;
+    -moz-border-radius:3px;
+    border-radius:3px;
+    position:relative;
+}
+
+.paging-2 .center ul span {
+    float:left;
+    width:24px;
+    height:23px;
+    color:#717171;
+    color:#f2f2f2;
+    text-shadow:0 1px #5b5b5b;
+    -webkit-box-shadow:0 0 4px #505050 inset;
+    -moz-box-shadow:0 0 4px #505050 inset;
+    box-shadow:0 0 4px #505050 inset;
+    background:#676767;
+    border:1px solid #505050;
+    -webkit-border-radius:3px;
+    -moz-border-radius:3px;
+    border-radius:3px;
+}
+.paging-2 .center a:hover {
+    background:#676767;
+    border-color:#505050;
+    color:#f2f2f2;
+    text-shadow:0 1px #5b5b5b;
+    -webkit-box-shadow:0 0 4px #505050 inset;
+    -moz-box-shadow:0 0 4px #505050 inset;
+    box-shadow:0 0 4px #505050 inset;
+    text-decoration:none;
+}
+.paging-2 {
+    background:url(../images/bg-dashed.gif) repeat-x;
+    padding:27px 0 28px;
+}

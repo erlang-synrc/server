@@ -26,6 +26,9 @@ main() ->
       case wf_context:page_module() of
         dashboard -> [];
         view_user -> [];
+        view_all_users -> [];
+        view_group -> [];
+        view_members -> [];
         _ -> webutils:js_for_main_authorized_game_stats_menu()
       end,
       case webutils:guiders_ok("dashboard_guiders_shown") of
@@ -35,6 +38,9 @@ main() ->
       case wf_context:page_module() of
         dashboard -> #template { file=code:priv_dir(nsp_srv)++"/templates/base.html"};
         view_user -> #template { file=code:priv_dir(nsp_srv)++"/templates/base.html"};
+        view_all_users -> #template { file=code:priv_dir(nsp_srv)++"/templates/base.html"};
+        view_group -> #template { file=code:priv_dir(nsp_srv)++"/templates/base.html"};
+        view_members -> #template { file=code:priv_dir(nsp_srv)++"/templates/base.html"};
         _ ->
           #template { file=code:priv_dir(nsp_srv)++"/templates/bare.html"}
       end
@@ -42,44 +48,54 @@ main() ->
 
 body() ->
   #panel{class="page-content page-canvas", style="overflow:auto;margin-top:20px;", body=[
-    "<section id=\"content\">", feed(wf:user()), "</section>",
+    "<section id=\"content\">", feed(user, wf:user()), "</section>",
     #panel{class="aside", body=[
       webutils:get_ribbon_menu(),
       #panel{id=aside,body=aside()}
     ]}
   ]}.
 
-feed(Uid) ->
-  case nsm_users:get_user(Uid) of
+feed(user, Uid) ->
+  case nsm_db:get(user, Uid) of
+    {error, notfound} -> [];
     {ok, User} ->
-      NotVerified = User#user.status == not_verified,
-      BuySuccess = wf:q(buy) == "success",
-      InternalError = wf:q('__submodule__') == "internal_error",
+      Feed = feed(User#user.feed, {user, Uid}),
+      upd_notifications(User),
+      Feed
+  end;
+feed(group, Gid) ->
+  case nsm_db:get(group, Gid) of
+    {error, notfound} -> [];
+    {ok, Group} ->
+      ?INFO("Group feed: ~p", [Gid]),
+      feed(Group#group.feed, {group, Group#group.username})
+  end;
+feed(Fid, {Type, Ownid}) ->
+  ?INFO("Feed type: ~p", [Type]),
+  [
+    #panel{id=notification_area},
+    entry_form(Fid, Type, ?MODULE, {add_entry, Fid}),
+    #panel{id=feeds_container, class="posts_container_mkh", body=show_feed(Fid, Type, Ownid)}
+  ].
 
-      if NotVerified ->
-        %% show notification about email verification
-        wf:update(notification_area, verification_notification());
-        BuySuccess ->
-          case buy:package() of
-            undefined -> ?WARNING("buy success received, but there are no package information in session");
-            Package -> wf:update(notification_area, buy_success_notification(Package))
-          end;
-        InternalError -> wf:update(notification_area, internal_error_notification());
-        true -> ok
-      end,
+upd_notifications(User) ->
+  NotVerified = User#user.status == not_verified,
+  BuySuccess = wf:q(buy) == "success",
+  InternalError = wf:q('__submodule__') == "internal_error",
 
-      Fid = User#user.feed,
-      [
-        #panel{id=notification_area},
-        entry_form(Fid),
-        #panel{id=feeds_container, class="posts_container_mkh", body=show_feed(Fid, Uid)}
-      ];
-    {error, notfound} -> []
+  if NotVerified ->
+      %% show notification about email verification
+      wf:update(notification_area, verification_notification());
+    BuySuccess ->
+      case buy:package() of
+        undefined -> ?WARNING("buy success received, but there are no package information in session");
+        Package -> wf:update(notification_area, buy_success_notification(Package))
+      end;
+    InternalError -> wf:update(notification_area, internal_error_notification());
+    true -> ok
   end.
 
-entry_form(FId) -> entry_form(FId, ?MODULE, {add_entry, FId}).
-
-entry_form(FId, Delegate, Postback) ->
+entry_form(FId, Type, Delegate, Postback) ->
 %  wf:wire(
 %    wf:f("objs('add_entry_textbox')
 %      .bind('keyup keydown change', function(){
@@ -115,14 +131,14 @@ entry_form(FId, Delegate, Postback) ->
     undefined ->
       case wf:q("id") of
         undefined->[];
-        User ->  ["user_"++User, "<b>"++User++"</b>", "<b>"++User++"</b>"]
+        Id ->  [atom_to_list(Type) ++ "_" ++ Id, "<b>"++Id++"</b>", "<b>"++Id++"</b>"]
       end;
     _ -> []
   end,
   [
   #panel{class=entry_form, body=[
     #label{text=?_T("To")++":"},
-    #panel{class=autocompletelist, body=#textboxlist{id=recipients_list, value=Recipients}},
+    #textboxlist{id=recipients_list, value=Recipients},
     #panel{id=flashm, body=[]},
     #panel{body=[
       "<span id='guidersaddentrybox'>", #textarea{id=add_entry_textbox, placeholder=?_T("Put your thoughts in here...")},"</span>",
@@ -143,11 +159,11 @@ entry_form(FId, Delegate, Postback) ->
   #span{id=text_length}
   ].
 
-show_feed(undefined, _) -> [];
-show_feed(Fid, Uid) ->
+show_feed(undefined, _, _) -> [];
+show_feed(Fid, Type, Uid) when is_atom(Type) ->
   UserInfo = wf:session(user_info),
-  ?INFO("INFO: ~p", [UserInfo]),
-  {ok, Pid} = comet_feed:start(user, Fid, Uid, UserInfo),
+  ?INFO("SNOW FEED INFO: ~p", [UserInfo]),
+  {ok, Pid} = comet_feed:start(Type, Fid, Uid, UserInfo),
   wf:state(comet_feed_pid, pid_to_list(Pid)),
 %  X = dashboard:aside(),
 %  spawn(fun()->
@@ -421,11 +437,6 @@ inner_event({set_user_status, Status}, User) ->
 inner_event({set_user_status}, User) ->
     nsx_msg:notify(["subscription", "user", User, "set_user_game_status"], {wf:q(user_status)});
 
-%inner_event({direct_message_to, CheckedUser}, _) ->
-    %autocomplete_select_event({struct, [{<<"id">>, CheckedUser},{<<"value">>, CheckedUser}]} , CheckedUser),
-    %wf:wire("set_focus_to_search()"),
-%    ok;
-
 inner_event({block, CheckedUser}, User) ->
     nsx_msg:notify(["subscription", "user", User, "block_user"], {CheckedUser}),
     wf:update(blockunblock, #link{text=?_T("Unblock this user"), url="javascript:void(0)", postback={unblock, CheckedUser}}),
@@ -435,13 +446,13 @@ inner_event({unblock, CheckedUser}, User) ->
     nsx_msg:notify(["subscription", "user", User, "unblock_user"], {CheckedUser}),
     wf:update(blockunblock, #link{text=?_T("Block this user"), url="javascript:void(0)", postback={block, CheckedUser}}),
     Fid = webutils:user_info(User, feed),
-    show_feed(Fid, User#user.username);
+    show_feed(Fid, user, User#user.username);
 
 inner_event({unblock_load, CheckedUser, _Offset}, User) ->
     nsx_msg:notify(["subscription", "user", User, "unblock_user"], {CheckedUser}),
     wf:update(blockunblock, #link{text=?_T("Block this user"), url="javascript:void(0)", postback={block, CheckedUser}}),
     Fid = webutils:user_info(User, feed),
-    show_feed(Fid, User#user.username);
+    show_feed(Fid, user, User#user.username);
 
 inner_event(notice_close, _) ->
     wf:update(notification_area, []);
@@ -480,11 +491,11 @@ more_entries(Entry) ->
   Pid ! {delivery, check_more, {?MODULE, length(Entrs), lists:last(Entrs)}}.
 
 textboxlist_event(SearchTerm) ->
-  DataU = case nsm_users:list_subscr(wf:user ()) of
+  DataU = case nsm_users:list_subscr(wf:user()) of
     [] -> [];
     Sub -> [{Who, user} || #subs{whom = Who} <- Sub]
   end,
-
+  ?INFO("Users:~p", [DataU]),
   DataG = case nsm_groups:list_groups_per_user(wf:user()) of
     [] -> [];
     Gs ->
@@ -496,8 +507,13 @@ textboxlist_event(SearchTerm) ->
   Data = lists:filter(fun({E,_}) -> string:str(string:to_lower(E), string:to_lower(SearchTerm)) > 0 end, lists:flatten(DataU ++ DataG)),
   List = [{array, [
     list_to_binary([atom_to_list(T), "_", string:to_lower(L)]),
-    list_to_binary("<b>"++L++"</b>"),
-    list_to_binary("<b>" ++ L++ "</b>")] }|| {L,T} <- Data],
+    list_to_binary(L),
+    list_to_binary("<b>" ++ L ++ "</b>"),
+    list_to_binary("<img src=\""
+      ++ avatar:get_avatar_by_username(string:to_lower(L), tiny)
+      ++ "\" style='float:left;width:30px;height:30px;margin:0 5px 0 0;'/>"
+      ++ L)] }
+  || {L,T} <- Data],
   mochijson2:encode({array, List}).
 
 inplace_textbox_event(_, Value, {undefined, undefined}) ->
@@ -599,6 +615,7 @@ has_group_destination([H | T]) ->
 
 post_entry(DashboardOwner, Desc, Medias) ->
   User = wf:user(),
+  ?INFO("POST ENTRY ~nRecipients list:~p", [wf:qs(recipients_list)]),
   % please consult me before changing logic here <maxim@synrc.com>
   Recipients= [
     case lists:prefix("user_", E) of

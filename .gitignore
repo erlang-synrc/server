@@ -2,3 +2,7 @@ deps
 node
 ebin
 *.dets
+*.gz
+*.full.css
+*.full.js
+*.dump

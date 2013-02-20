@@ -1,5 +1,5 @@
 -name WEBSERVER_NODE
--setcookie nitrogen
+-setcookie nitrogen1
 +K true
 +A 5
 -env ERL_MAX_PORTS 20000

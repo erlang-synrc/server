@@ -9,6 +9,9 @@ git checkout krules_okey.min.css
 git checkout kgifts.min.css
 git checkout kdashboard.min.css
 git checkout kview_user.min.css
+git checkout kview_group.min.css
+git checkout kview_all_users.min.css
+git checkout kview_members.min.css
 
 git pull
 
@@ -19,3 +22,6 @@ git pull
 ./cssfix.sh kgifts.min.css
 ./cssfix.sh kdashboard.min.css
 ./cssfix.sh kview_user.min.css
+./cssfix.sh kview_group.min.css
+./cssfix.sh kview_all_users.min.css
+./cssfix.sh kview_members.min.css

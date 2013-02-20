@@ -14,24 +14,29 @@ main() -> dashboard:main().
 title() -> webutils:title(?MODULE).
 
 body() ->
-    #template{file=code:priv_dir(nsp_srv)++"/templates/view-group.html"}.
-
-content() ->
-    GId = wf:q(id),
-    UId = wf:user(),
-    {_, Group} = nsm_groups:get_group(GId),
-    case Group of
-        notfound -> [ 
-                no_group() 
-            ];
+  GId = wf:q(id),
+  UId = wf:user(),
+  {_, Group} = nsm_groups:get_group(GId),
+  #panel{class="page-content page-canvas", style="overflow:auto;margin-top:20px;", body=[
+    "<section id=\"content\">",
+      case Group of
+        notfound -> [no_group()];
         _ -> [
-                req_invite(),
-                case nsm_groups:user_has_access(UId, GId) of
-                    true -> feed_form(Group);
-                    false -> hidden_form()
-                end
-            ]
-    end.
+          req_invite(),
+          case nsm_groups:user_has_access(UId, GId) of
+            true -> dashboard:feed(group, GId);
+            false -> hidden_form()
+          end
+        ]
+      end,
+    "</section>",
+    #panel{class="aside", body=[
+      #panel{id=aside,body=[
+        group_info(),
+        get_members()
+      ]}
+    ]}
+  ]}.
 
 req_invite() ->
     GId = wf:q(id),
@@ -118,28 +123,6 @@ no_group() ->
                 #panel{style="height:10px;clear:both"}
             ]}
     ].
-
-feed_form(Group) ->
-    GId = Group#group.username,
-    FId = Group#group.feed,
-    wf:state(feed_owner, {group, GId}),
-    [
-        #panel{body=dashboard:entry_form(FId, dashboard, {add_entry, FId})},
-        #grid_clear{},
-        #panel{id=attachment_box},
-        #grid_clear{},
-        #panel{body=view_feed(Group)}
-    ].
-
-view_feed(Group) ->
-    UId = wf:user(),
-    GId = Group#group.username,
-    FId = Group#group.feed,
-    {ok, UInfo} = nsm_users:get_user(UId),
-    Entries = nsm_db:entries_in_feed(FId, ?FEED_PAGEAMOUNT),
-    comet_feed:start(group, FId, GId, UInfo),
-    webutils:view_feed_entries(?MODULE, ?FEED_PAGEAMOUNT, Entries).
-
 
 get_members() ->
     GId = wf:q(id),
@@ -404,15 +387,11 @@ event({do_leave, GId}) ->
 event(Other) ->
     dashboard:event(Other).
 
-%% when more button presed
-on_more_entries({EntryId, FeedId}, Count) ->
-   nsm_db:entries_in_feed(FeedId, EntryId, Count).
+textboxlist_event(SearchTerm)-> dashboard:textboxlist_event(SearchTerm).
+more_entries(Entry) -> dashboard:more_entries(Entry).
 
 finish_upload_event(X1, X2, X3, X4) ->
     dashboard:finish_upload_event(X1, X2, X3, X4).
-
-autocomplete_enter_event(SearchTerm, _Tag) -> dashboard:autocomplete_enter_event(SearchTerm, _Tag).
-autocomplete_select_event(SI , _Tag) -> dashboard:autocomplete_select_event(SI, _Tag).
 
 inplace_textbox_event(Tag, Value, FeedEntry) ->
     dashboard:inplace_textbox_event(Tag, Value, FeedEntry).
