@@ -20,13 +20,28 @@ main() ->
 title() -> webutils:title(?MODULE).
 
 body() ->
-    view_group:body().
+  GId = wf:q(id),
+  UId = wf:user(),
+  {_, Group} = nsm_groups:get_group(GId),
+  #panel{class="page-content page-canvas", style="margin-top:20px;height:770px;",
+   body=[    "<section id=\"content\">",
+      case Group of
+        notfound -> [];
+        _ -> [
+          case nsm_groups:user_has_access(UId, GId) of
+            true -> content(1);
+            false -> []
+          end
+        ]
+      end,
+    "</section>",
+    #panel{class="aside", body=[
+      #panel{id=aside,body=[
+        view_group:group_info()
+      ]}
+    ]}
+  ]}.
 
-group_info() ->
-    view_group:group_info().
-
-content() ->
-    content(1).
 
 content(Page) ->
     friends:content(Page,?_TS("Members of $group$", [{group, wf:state(curgroup)}])).

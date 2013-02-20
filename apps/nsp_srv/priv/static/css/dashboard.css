@@ -506,6 +506,13 @@ div.post:first-child {background:none !important}
   padding:30px 0 13px;
 }
 
+.all-user-box-text {
+  text-align:center;
+  margin-top:9px;
+  font-size:14px;
+  color:rgb(114, 114, 114);
+  font-weight:bold;
+}
 
 .statistics-box-text {
   font-size:14px;
@@ -517,6 +524,25 @@ div.post:first-child {background:none !important}
 .aside .user-info li {    font-weight:bold;    font-size:1.1em;    list-style:none;    padding:0 0 0 0px;    margin-left:-16px;}
 .aside .user-info .img img {    border:1px solid #c8c8c8;    padding:6px;    margin-left:17px;}
 .aside .user-info span {    font-weight:normal;    font-size:1.1em;    padding-left:0px;}#aside .descr .img img {vertical-align:top;}
+
+.paid_user_avatar{
+  border:3px solid #ffb03b;
+  margin-left:-3px;
+  margin-top:-3px;
+  margin-bottom:-3px;
+}
+.paid_user_avatar_photo{
+  loat:left;
+  border:4px solid #ffb03b;
+  padding:0px;
+  background:#fff;
+  width:150px;
+  height:150px;
+  margin:0 4px 0 0;
+}
+.aside .user-info .paid_user_avatar_img img {
+  border:7px solid #ffb03b;    margin-left:17px;
+}
 
 .input-textarea:focus, .textareabox-mkh:focus{outline:none;}
 
@@ -557,3 +583,176 @@ input, select, textarea {font: 12px/15px Arial,Helvetica,sans-serif;vertical-ali
 }
 
 .clear {  clear: both;  display: block;  overflow: hidden;  visibility: hidden;  width: 0;  height: 0;}
+  .textboxlist-autocomplete { position: absolute; }
+  .textboxlist-autocomplete-placeholder, .textboxlist-autocomplete-results {
+    opacity: 0.9;
+    filter: alpha(opacity=90);
+
+    background: #eee;
+    -webkit-box-shadow: 0 3px 3px #ccc;
+    -moz-box-shadow: 0 3px 3px #ccc;
+    box-shadow: 0 3px 3px #ccc;
+    border: 1px solid #999;
+    border-top: none; display: none;
+  }
+  .textboxlist-autocomplete-placeholder { padding: 5px 7px; }
+  .textboxlist-autocomplete-results { margin: 0; padding: 0; }
+  .textboxlist-autocomplete-result { margin: 0; padding: 5px; list-style-type: none; background: #eee; font-weight:bold; font-size:14px;line-height: 30px;}
+  .textboxlist-autocomplete-result-focus { background: #C6D9E4; }
+  .textboxlist-autocomplete-highlight { background: #EEF0C4; font-weight: bold; }
+  .textboxlist {
+    cursor:text;
+    background:#ffffff;
+    display:inline-block;
+    vertical-align:middle;
+    margin:5px;
+    line-height:25px;
+    font-size:14px;
+  }
+  .textboxlist-bits { zoom: 1; overflow: hidden; margin: 0; padding:2px 4px; border: 1px solid #ccc; *padding-bottom: 3px;}
+  .textboxlist-bit { list-style-type: none; float: left; display: block; padding: 0; margin: 0 5px 3px 0; cursor: default;}
+  .textboxlist-bit-editable { border: 1px solid #fff; }
+  .textboxlist-bit-editable-input { border: 0; padding: 2px 0; *padding-bottom: 0; height: 16px; font-size:16px;}
+  .textboxlist-bit-editable-input:focus { outline: 0; }
+  .textboxlist-bit-box {
+    position: relative;
+    cursor: default;
+    border: 1px solid #f5b74e;
+    background: #feda71;
+    background: -moz-linear-gradient(top,rgba(254,218,113,1) 0,rgba(254,188,75,1) 100%);
+    background: -webkit-gradient(linear,left top,left bottom,color-stop(0%,rgba(254,218,113,1)),color-stop(100%,rgba(254,188,75,1)));
+    background: -webkit-linear-gradient(top,rgba(254,218,113,1) 0,rgba(254,188,75,1) 100%);
+    background: -o-linear-gradient(top,rgba(254,218,113,1) 0,rgba(254,188,75,1) 100%);
+    background: -ms-linear-gradient(top,rgba(254,218,113,1) 0,rgba(254,188,75,1) 100%);
+    background: linear-gradient(top,rgba(254,218,113,1) 0,rgba(254,188,75,1) 100%);
+    -webkit-box-shadow: 0 1px 1px #cbcbcb;
+    -moz-box-shadow: 0 1px 1px #cbcbcb;
+    box-shadow: 0 1px 1px #cbcbcb;
+    font-size: 14px;
+    font-weight: bold;
+    color: #963;
+    text-shadow: 0 1px #fedd9a;
+    line-height:25px;
+    padding:0 25px 0 5px;
+  }
+  .textboxlist-bit-box-deletable {}
+  .textboxlist-bit-box-deletebutton {
+    position: absolute;
+    right: 4px;
+    top: 6px;
+    display: block;
+    width: 16px;
+    height: 16px;
+    font-size: 1px;
+    background: url(../images/ico-close.png) no-repeat;
+  }
+  .textboxlist-bit-box-deletebutton:hover {
+    border: none; text-decoration: none;
+  }
+  .textboxlist-bit-box-hover {
+    background:rgb(140,140,140);
+    background:-moz-linear-gradient(top, rgba(176,176,176,1) 0%, rgba(127,127,127,1) 100%);
+    background:-webkit-gradient(linear, left top, left bottom, color-stop(0%,rgba(176,176,176,1)), color-stop(100%,rgba(127,127,127,1)));
+    background:-webkit-linear-gradient(top, rgba(176,176,176,1) 0%,rgba(127,127,127,1) 100%);
+    background:-o-linear-gradient(top, rgba(176,176,176,1) 0%,rgba(127,127,127,1) 100%);
+    background:-ms-linear-gradient(top, rgba(176,176,176,1) 0%,rgba(127,127,127,1) 100%);
+    background:linear-gradient(top, rgba(176,176,176,1) 0%,rgba(127,127,127,1) 100%);
+    -moz-box-shadow:0 2px 3px #abafb2;  -webkit-box-shadow:0 2px 3px #abafb2;  box-shadow:0 2px 3px #abafb2;
+    color:#fff;
+    text-shadow:0 1px 1px #353535;
+    border:1px solid #8c8c8c;
+  }
+  .textboxlist-bit-box-focus {
+    background:rgb(92,182,216);
+    background:-moz-linear-gradient(top, rgba(92,182,216,1) 0%, rgba(48,120,187,1) 100%);
+    background:-webkit-gradient(linear, left top, left bottom, color-stop(0%,rgba(92,182,216,1)), color-stop(100%,rgba(48,120,187,1)));
+    background:-webkit-linear-gradient(top, rgba(92,182,216,1) 0%,rgba(48,120,187,1) 100%);
+    background:-o-linear-gradient(top, rgba(92,182,216,1) 0%,rgba(48,120,187,1) 100%);
+    background:-ms-linear-gradient(top, rgba(92,182,216,1) 0%,rgba(48,120,187,1) 100%);
+    background:linear-gradient(top, rgba(92,182,216,1) 0%,rgba(48,120,187,1) 100%);  color:#f9f9f9;
+    border-color:#4b97ce !important;
+    -webkit-box-shadow:0 1px 1px #3674aa;
+    -moz-box-shadow:0 1px 1px #3674aa;
+    box-shadow:0 1px 1px #3674aa;
+    text-shadow:0 1px 1px #353535;
+  }
+  .textboxlist-bit-box-focus .textboxlist-bit-box-deletebutton { }
+
+  .entry_form{
+    width:100%;
+    border: 1px solid #d9d9d9;
+    -moz-border-radius: 3px;
+    -webkit-border-radius: 3px;
+    border-radius: 3px;
+    background: #fefae9;
+    background: -moz-linear-gradient(top, #fefae9 0%, #ffffff 100%);
+    background: -webkit-linear-gradient(top, #fefae9 0%, #ffffff 100%);
+    background: -o-linear-gradient(top, #fefae9 0%, #ffffff 100%);
+    background: -ms-linear-gradient(top, #fefae9 0%, #ffffff 100%);
+    background: linear-gradient(top, #fefae9 0%, #ffffff 100%);
+    padding: 10px 5px;
+    font: 1em Arial,Helvetica,sans-serif;
+  }
+
+  .entry_form label {
+    font-weight:bold;
+    font-size:16px;
+  }
+
+  .entry_form .submit{
+    float:right;
+    width: 80px;
+    height: 39px;
+    margin-top:10px;
+    margin-right:8px;
+    font: 1.6em/1.188em 'Gotham Rounded Bold',"Trebuchet MS";
+
+    background:rgb(140,140,140);
+    background:-moz-linear-gradient(top, rgba(176,176,176,1) 0%, rgba(127,127,127,1) 100%);
+    background:-webkit-gradient(linear, left top, left bottom, color-stop(0%,rgba(176,176,176,1)), color-stop(100%,rgba(127,127,127,1)));
+    background:-webkit-linear-gradient(top, rgba(176,176,176,1) 0%,rgba(127,127,127,1) 100%);
+    background:-o-linear-gradient(top, rgba(176,176,176,1) 0%,rgba(127,127,127,1) 100%);
+    background:-ms-linear-gradient(top, rgba(176,176,176,1) 0%,rgba(127,127,127,1) 100%);
+    background:linear-gradient(top, rgba(176,176,176,1) 0%,rgba(127,127,127,1) 100%);
+    border:1px solid #8c8c8c;
+    -moz-box-shadow:0 2px 3px #abafb2;
+    -webkit-box-shadow:0 2px 3px #abafb2;
+    box-shadow:0 2px 3px #abafb2;
+    -moz-border-radius:3px;
+    -webkit-border-radius:3px;
+    border-radius:3px;
+    color:#fff;
+    text-shadow:0 1px 1px #353535;
+
+    cursor: default;
+    border: 0;
+    padding: 0;
+  }
+  .entry_form textarea {
+    width: 550px;
+    height: 45px;
+    margin-top:10px;
+    margin-left: 5px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    word-wrap: break-word;
+  }
+
+  .attachpanel {
+    font-size:14px;
+    margin-top:10px;
+    color: #636363;
+  }
+  .attachpanel a {
+    color:#636363;
+  }
+  .attachment_box {
+    margin-top:10px;
+  }
+
+  .attachment_box input {
+    font-size:14px;
+  }
+  .attachment_thumb {
+    margin-top:10px;
+  }

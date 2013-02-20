@@ -422,7 +422,7 @@ entry_element_usual(E, Comments, Avatar, {MediaThumb, MediaLists0}, _TargetMedia
                                                 [site_utils:user_link(D), site_utils:username_upper(D)])
                                         end 
                                     end
-                                    || Dst <-  E#entry.to, Dst /= {User, user}
+                                    || Dst <-  E#entry.to, Dst /= {User, user}, Dst /=[]
                                 ], ", ") ++ StC, IsEditable}
                     end
             end
@@ -431,7 +431,7 @@ entry_element_usual(E, Comments, Avatar, {MediaThumb, MediaLists0}, _TargetMedia
     ViewPanelID = wf:temp_id(),
     TextBoxID   = wf:temp_id(),
     Description = case IsDirectMessage of
-        true -> #inplace_textbox1 { 
+        true -> #inplace_textbox1 {
                     text=E#entry.description, eb_id=EntryBodyId, vp_id=ViewPanelID, tb_id=TextBoxID,
                     entry_id=E#entry.entry_id, feed_id=E#entry.feed_id
                 };

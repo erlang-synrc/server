@@ -29,22 +29,19 @@ main_authorized() ->
 title() -> webutils:title(?MODULE).
 
 body() ->
-    #template{file=code:priv_dir(nsp_srv)++"/templates/view-user.html"}.
-
-content()->
-    feed_form().
-
-get_friends() ->
-    User = wf:state(user),
-    webutils:get_friends(User).
-
-
-get_groups() ->
-    User = wf:state(user),
-    webutils:get_groups(User).
+  User = wf:state(user),
+  #panel{class="page-content page-canvas", style="overflow:auto;margin-top:20px;", body=[
+    "<section id=\"content\">", dashboard:feed(user, User#user.username), "</section>",
+    #panel{class="aside", body=[
+      #panel{id=aside,body=[
+        user_info(),
+        webutils:get_friends(User),
+        webutils:get_groups(User)
+      ]}
+    ]}
+  ]}.
 
 user_info() ->
-
     Info = wf:state(user),
     DOB = case Info#user.age of
         undefined ->
@@ -141,35 +138,6 @@ user_info() ->
         ]}
    ]}.
 
-feed_form()->
-    User = wf:state(user),
-    FId  = User#user.feed,
-    [
-     #panel{body=dashboard:entry_form(FId, dashboard, {add_entry, FId})},
-     #grid_clear{},
-     #panel{id=attachment_box},
-     #grid_clear{},
-     #panel{body=view_feed()}
-    ].
-
-
-view_feed() ->
-    User = wf:state(user),
-    FId = User#user.feed,
-    UId = User#user.username,
-    Entries = nsm_db:entries_in_feed(FId, ?FEED_PAGEAMOUNT),
-    comet_feed:start(user, FId, UId, wf:session(user_info)),
-    webutils:view_feed_entries(?MODULE, ?FEED_PAGEAMOUNT, Entries).
-
-entry_form() ->
-    User = wf:state(user),
-    FId  = User#user.feed,
-    [
-     #textbox{style="width: 90%", class="inputText",
-              id=add_entry_textbox, next=submit, delegate=dashboard, postback={add_entry, FId}},
-     #button{class="inputButton", id=submit, delegate=dashboard, text=?_T("Post"), postback={add_entry, FId}}
-    ].
-
 view_user(Users) ->
     Source = [ #panel{style="text-align: left;", body = site_utils:user_vcard(UId)}
                || #subscription{whom = UId} <- Users ],
@@ -187,17 +155,11 @@ event({make_affiliate, User}) ->
     nsx_msg:notify(["affiliates", "user", User, "create_affiliate"], {}),
     wf:redirect("");
 
-event(Other) ->
-    dashboard:event(Other).
+event(Other) -> dashboard:event(Other).
 
-%% when more button presed
-on_more_entries({EntryId, FeedId}, Count) ->
-   nsm_db:entries_in_feed(FeedId, EntryId, Count).
+textboxlist_event(SearchTerm)-> dashboard:textboxlist_event(SearchTerm).
 
-
-
-autocomplete_enter_event(SearchTerm, _Tag) -> dashboard:autocomplete_enter_event(SearchTerm, _Tag).
-autocomplete_select_event(SI , _Tag) -> dashboard:autocomplete_select_event(SI, _Tag).
+more_entries(Entry) -> dashboard:more_entries(Entry).
 
 finish_upload_event(X1, X2, X3, X4) ->
     dashboard:finish_upload_event(X1, X2, X3, X4).

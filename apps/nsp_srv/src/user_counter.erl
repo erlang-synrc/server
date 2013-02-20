@@ -7,15 +7,16 @@
 -include_lib("nsm_gifts/include/common.hrl").
 -include_lib("nsm_db/include/tournaments.hrl").
 -export([start_link/0, user_count/0, joined_users/1, write_cache/2, get_word/1,
-         get_translation/1, gifts/2, tournaments/0, register_user/1]).
+         get_translation/1, gifts/2, tournaments/0, register_user/1, packages/0]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 -define(SERVER, ?MODULE).
--record(state, {user_count=0,last_check=undefined,tour_cache,translations,words,gifts,tournaments,active_users}).
+-record(state, {user_count=0,packages,last_check=undefined,tour_cache,translations,words,gifts,tournaments,active_users}).
 
 % this is actually a cache layer
 
 gifts(Min,Max) -> gen_server:call(?SERVER, {gifts,Min,Max}).
 tournaments() -> gen_server:call(?SERVER, tournaments).
+packages() -> gen_server:call(?SERVER, packages).
 register_user(Pid) -> gen_server:call(?SERVER, {register_user,Pid}).
 user_count() -> gen_server:call(?SERVER, user_count).
 joined_users(TID) -> gen_server:call(?SERVER, {joined_users,TID}).
@@ -61,6 +62,12 @@ handle_call(tournaments, _From, State)->
         undefined -> nsm_db:all(tournament);
         A -> A end,
   {reply, Tournaments, State#state{tournaments=Tournaments}};
+
+handle_call(packages, _From, State)->
+   Tournaments = case State#state.packages of
+        undefined -> nsm_db:all(membership_package);
+        A -> A end,
+  {reply, Tournaments, State#state{packages=Tournaments}};
 
 handle_call({register_user,Pid}, _From, State)->
   erlang:monitor(process,Pid),
