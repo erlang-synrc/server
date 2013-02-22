@@ -1531,9 +1531,10 @@ create_game_paused_resume(UserId, GameId) ->
 desk_error_to_ext({position_occupied, _, _}) -> {error, position_occupied};
 desk_error_to_ext({waste_move_disabled, _, _}) -> {error, waste_move_disabled};
 desk_error_to_ext({hit_and_run_disabled, _, _}) -> {error, hit_and_run_disabled};
+desk_error_to_ext({not_bear_off_mode, _, _}) -> {error, not_bear_off_mode};
 desk_error_to_ext({no_checker, _, _}) -> {error, no_checker};
 desk_error_to_ext({invalid_move, _, _}) -> {error, invalid_move};
-desk_error_to_ext(E) -> {error, E}.
+desk_error_to_ext(_E) -> {error, unknown_error}.
 
 players_ext_color_info(Players) ->
     [begin
