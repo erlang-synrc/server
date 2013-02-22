@@ -47,6 +47,7 @@
 %%      Moves = [{From, To}]         || {position_occupied, Move, RestMoves},
 %%        From = wb, bb, 1-24        || {waste_move_disabled, Move, RestMoves},
 %%        To = wo, bo, 1-24          || {hit_and_run_disabled, Move, RestMoves},
+%%                                   || {not_bear_off_mode, Move, RestMoves},
 %%                                   || {no_checker, Move, RestMoves},
 %%                                   || {invalid_move, Move, RestMoves}
 
@@ -387,6 +388,7 @@ apply_moves2(Color, PipsList, [{From, To} = Move | RestMoves], Board, MoveEvents
                 {error, occupied} -> {error, {position_occupied, Move, RestMoves}};
                 {error, waste_move} -> {error, {waste_move_disabled, Move, RestMoves}};
                 {error, hit_and_run} -> {error, {hit_and_run_disabled, Move, RestMoves}};
+                {error, not_bear_off_mode} -> {error, {not_bear_off_mode, Move, RestMoves}};
                 {error, no_checker} -> {error, {no_checker, Move, RestMoves}}
             end;
         error -> {error, {invalid_move, Move, RestMoves}}
