@@ -666,18 +666,18 @@ start_game(State) ->
 
     timer:sleep(500), % sync error in client
 
-    publish_event(Relay, #tavla_game_info{game_type = game_tavla, 
+    publish_event(Relay, #tavla_game_info{%game_type = game_tavla, 
                                           table_name = TableName,
                                           table_id = TableId,
                                           tables_num = TablesNum,
-                                          current_round = State#state.current_round,
+                                          %current_round = State#state.current_round,
                                           rounds = State#state.rounds,
                                           players = PInfos, 
                                           game_mode = State#state.game_mode,
                                           turn_timeout = State#state.turn_timeout,
-                                          challenge_timeout = State#state.challenge_timeout,
+                                          %challenge_timeout = State#state.challenge_timeout,
                                           ready_timeout = State#state.ready_timeout,
-                                          timeout = State#state.turn_timeout,
+                                          %timeout = State#state.turn_timeout,
                                           mul_factor = State#state.mul_factor,
                                           slang_flag = State#state.slang_flag,
                                           observer_flag = State#state.observer_flag

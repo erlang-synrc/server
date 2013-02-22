@@ -82,20 +82,20 @@
 
 -record(tavla_game_info, {
           table_id          :: integer(),
-          game_type         :: atom(), %% TODO: Remove
+%%          game_type         :: atom(), %% TODO: Remove
           table_name        :: binary(),
           game_mode = undefined :: atom(),
           sets              :: null | integer(), %% total number of sets
           set_no            :: null | integer(), %% number of current set
           tables_num        :: integer(),
-          current_round     :: integer(), %% TODO: Remove
+%%          current_round     :: integer(), %% TODO: Remove
           rounds            :: integer(),
           players           :: list(#'PlayerInfo'{}),
           speed             :: atom(),      %% [slow, normal, fast, blitz]
           turn_timeout      :: integer(),   %% timeout value for player turn
-          challenge_timeout :: integer(),   %% TODO: Remove, timeout value for challenge 
+%%          challenge_timeout :: integer(),   %% TODO: Remove, timeout value for challenge 
           ready_timeout     :: integer(),   %% timeout value for ready msg
-          timeout           :: integer(),   %% TODO: Remove
+%%          timeout           :: integer(),   %% TODO: Remove
           mul_factor        :: pos_integer(),
           slang_flag        :: boolean(),
           observer_flag     :: boolean(),
