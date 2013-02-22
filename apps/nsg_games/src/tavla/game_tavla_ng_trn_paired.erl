@@ -175,6 +175,7 @@ init([GameId, Params, _Manager]) ->
     Registrants =   get_param(registrants, Params),
     GameMode =      get_param(game_mode, Params),
     GameName =      get_param(game_name, Params),
+    TablesNum =     get_param(tables_num, Params),
     QuotaPerRound = get_param(quota_per_round, Params),
     KakushForWinners = get_param(kakush_for_winners, Params),
     KakushForLoser = get_param(kakush_for_loser, Params),
@@ -185,8 +186,6 @@ init([GameId, Params, _Manager]) ->
     BotModule =     get_param(bot_module, Params),
     BotsReplacementMode = get_param(bots_replacement_mode, Params),
     CommonParams  = get_param(common_params, Params),
-
-    TablesNum = length(Registrants) div ?SEATS_NUM, %% TODO: The parameter should be base
 
     [?INFO("TRN_PAIRED_DBG <~p> Parameter <~p> : ~p", [GameId, P, V]) ||
      {P, V} <- Params],
