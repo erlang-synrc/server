@@ -391,7 +391,8 @@ create_standalone_game(Game, Params, Users) ->
                            {rounds, Rounds},
                            {next_series_confirmation, no_exit},
                            {pause_mode, normal},
-                           {social_actions_enabled, true}
+                           {social_actions_enabled, true},
+                           {tables_num, 1}
                          ],
 
             create_game(nsg_trn_standalone,
@@ -438,6 +439,7 @@ create_paired_game(Game, Params, Users) ->
                                       true -> enabled;
                                       false -> disabled
                                   end,
+            TablesNum = length(Users) div 2,
             TableParams = [
                            {table_name, TableName},
                            {mult_factor, MulFactor},
@@ -453,16 +455,16 @@ create_paired_game(Game, Params, Users) ->
                            {rounds, Rounds},
                            {next_series_confirmation, no_exit},
                            {pause_mode, disabled},
-                           {social_actions_enabled, true}
+                           {social_actions_enabled, true},
+                           {tables_num, TablesNum}
                          ],
 
             create_game(game_tavla_ng_trn_paired,
                          [{game, Game},
                           {game_mode, GameMode},
                           {game_name, TableName},
-                          {seats, 2},
+                          {tables_num, TablesNum},
                           {registrants, Users},
-                          {initial_points, 0},
                           {quota_per_round, Quota},
                           {kakush_for_winners, KakushForWinners},
                           {kakush_for_loser, KakushForLoser},
@@ -547,7 +549,8 @@ create_elimination_trn(GameType, Params, Registrants) ->
                            {slang_allowed, false},
                            {observers_allowed, false},
                            {social_actions_enabled, false},
-                           {mult_factor, 1}
+                           {mult_factor, 1},
+                           {tables_num, 1}
                          ],
 
             create_game(nsg_trn_elimination,
