@@ -69,6 +69,7 @@
          tour                 :: undefined | integer(),
          tours                :: undefined | integer(),
          parent_mon_ref       :: reference(),
+         tables_num           :: integer(), %% For paired mode >= 1, otherwise  = 1
          %% Dynamic parameters
          desk_rule_pid        :: undefined | pid(),
          players,             %% The register of table players
@@ -163,6 +164,7 @@ init([GameId, TableId, Params]) ->
     TTable = proplists:get_value(ttable, Params),
     Tour = proplists:get_value(tour, Params),
     Tours = proplists:get_value(tours, Params),
+    TablesNum = proplists:get_value(tables_num, Params),
     %% Next two options will be passed on table respawn (after fail or service maintaince)
     ScoringState = proplists:get_value(scoring_state, Params, init_scoring(GameMode, PlayersInfo, Rounds)),
     CurRound = proplists:get_value(cur_round, Params, 0),
@@ -204,7 +206,8 @@ init([GameId, TableId, Params]) ->
                                           start_color = undefined,
                                           cur_round = CurRound,
                                           scoring_state = ScoringState,
-                                          tournament_table = TTable
+                                          tournament_table = TTable,
+                                          tables_num = TablesNum
                                          }}.
 
 handle_event({parent_message, Message}, StateName,
@@ -1182,7 +1185,7 @@ create_tavla_game_info(#state{table_name = TName, mult_factor = MulFactor,
                               speed = Speed, turn_timeout = TurnTimeout,
                               ready_timeout = ReadyTimeout, game_mode = GameMode,
                               rounds = Rounds1, players = Players, tour = Tour,
-                              tours = Tours, pause_mode = PauseMode,
+                              tours = Tours, pause_mode = PauseMode, tables_num = TablesNum,
                               tournament_type = TournamentType, table_id = TableId,
                               social_actions_enabled = SocialActionsEnabled,
                               next_series_confirmation = ConfirmMode}) ->
@@ -1199,7 +1202,7 @@ create_tavla_game_info(#state{table_name = TName, mult_factor = MulFactor,
                      sets = Sets,
                      set_no = SetNo,
                      table_id  = TableId,
-                     tables_num = 1,
+                     tables_num = TablesNum,
                      %%current_round :: integer(),
                      rounds = Rounds,
                      players = PInfos,
