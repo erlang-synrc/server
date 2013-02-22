@@ -96,32 +96,29 @@ upd_notifications(User) ->
   end.
 
 entry_form(FId, Type, Delegate, Postback) ->
-%  wf:wire(
-%    wf:f("objs('add_entry_textbox')
-%      .bind('keyup keydown change', function(){
-%        var $this=objs('add_entry_textbox');
-%        var l = parseInt($this.attr('value').length);
-%        if(l > 0){
-%          objs('sendentry').css('background','url(/images/grn-shr-btn.png) no-repeat');
-%          objs('sendentry').css('cursor','pointer');
-%        }
-%        if(l <= 0){
-%          objs('sendentry').css('background','url(/images/gre_shr_btn.png) no-repeat');
-%          objs('sendentry').css('cursor','default');
-%        }
-%        objs('text_length').text((l>1000)?(~b-l):'');
-%      })
-%      .bind('keypress', function(e){
-%        var code = e.keyCode || e.which;
-%        if (code == 13) {
-%          if (!e.shiftKey) {~s; return false;}  // send postback
-%        }
-%        if (code != 116 && code != 46 && code > 40 || code == 32){
-%          return $(this).trigger('change').attr('value').length < ~b // deny only text keys
-%        }
-%      })",
-%      [?ENTRY_TEXT_LENGTH, site_utils:postback_to_js_string(Delegate, Postback), ?ENTRY_TEXT_LENGTH]
-%  )),
+  wf:wire(wf:f("objs('add_entry_textbox').bind('keydown change paste',"++
+    "function(){"++
+      "var $this=objs('add_entry_textbox');" ++
+      "setTimeout(function(){" ++
+      "var l = parseInt($this.attr('value').length);" ++
+      "console.log('lenght: ' + l);" ++
+      "if(l>0){" ++
+        "objs('sendentry').addClass('enabled').removeClass('disabled');" ++
+      "}else{" ++
+        "objs('sendentry').removeClass('enabled').addClass('disabled');"
+      "}" ++
+    "},0);" ++
+    "}).bind('keypress',"++
+      "function(e){" ++
+        "var code = e.keyCode || e.wich;" ++
+        "if(code == 13) {" ++
+          "if(!e.shiftKey){ ~s return false;}" ++
+        "}" ++
+        "if(code != 116 && code !=46 && code >40 || code ==32){" ++
+          "return $(this).trigger('change').attr('value').length < ~b;" ++
+        "}" ++
+      "}"
+  ");",[site_utils:postback_to_js_string(Delegate, Postback), ?ENTRY_TEXT_LENGTH])),
   Recipients = case  wf:q("filter") of
     "direct" ->
       case wf:q("tu") of
@@ -143,7 +140,7 @@ entry_form(FId, Type, Delegate, Postback) ->
     #panel{body=[
       "<span id='guidersaddentrybox'>", #textarea{id=add_entry_textbox, placeholder=?_T("Put your thoughts in here...")},"</span>",
       "<span id='guiderssharebutton'>",
-        #button{id="sendentry", postback={add_entry, FId}, text=?_T("Share"), class="submit",
+        #button{id=sendentry, postback={add_entry, FId}, text=?_T("Share"), class="submit disabled",
           actions="obj('me').title=\""++?_T("Click here to post your entry to the feed. You can still remove it anytime")++"\""},
       "</span>"
     ]},
