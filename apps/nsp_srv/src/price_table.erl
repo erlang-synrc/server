@@ -45,34 +45,15 @@ table()->
 	end 
     ]}.
 
-
-%% Packages conditions
-check_conditions(_, _, false) -> false;
-check_conditions([{available_for_sale, AS}|T],
-                 MP = #membership_package{available_for_sale = AS1}, _) ->
-    check_conditions(T, MP, AS == AS1);
-check_conditions([{payment_type, PT}|T],
-                 MP = #membership_package{payment_type = PT1}, _) ->
-    check_conditions(T, MP, PT == PT1);
-
-%%TODO: Add purchase conditions
-check_conditions([], _, true) -> true.
-
-list_packages(Options) ->
-    Predicate =
-        fun(MP = #membership_package{}) ->
-                check_conditions(Options, MP, true)
-        end,
-
-    lists:filter(Predicate,list_packages()).
-
 list_packages()->
      user_counter:packages().
 
 -spec table(PaymentType::payment_type())->#table{}.
 table(PaymentType)->
-    Packages = list_packages([{payment_type, PaymentType},{available_for_sale, true}]),
+    Packages = [PKG||PKG<-list_packages(),PKG#membership_package.payment_type==PaymentType,
+                                          PKG#membership_package.available_for_sale==true],
 
+ 
     % get packages and sort them by No
     PackagesSorted =
         lists:sort(fun(#membership_package{no=No1},
