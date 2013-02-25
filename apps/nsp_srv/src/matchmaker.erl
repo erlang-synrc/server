@@ -67,12 +67,13 @@ body() ->
 
   ui_update_buttons(),
   ui_paginate(),
-  PagePid = self(),
-  wf:comet(fun() -> PagePid ! {comet_started,self()}, 
+%  PagePid = self(),
+  {ok,CometPid} = wf:comet(fun() -> %PagePid ! {comet_started,self()}, 
                     CometProcess = self(),
                     nsx_msg:subscribe_for_tournament(GameName, wf:user(), CometProcess),
                     comet_update() end),
-  receive {comet_started,Pid} -> wf:state(comet_pid,Pid) end,
+  wf:state(comet_pid,CometPid),
+%  receive {comet_started,Pid} -> wf:state(comet_pid,Pid) end,
 
     Pool = nsx_opt:get_env(nsx_idgen, game_pool, 1000000),
     Zone = Pool div 1000000,
@@ -859,12 +860,12 @@ is_option_present(Key, Value) ->
 comet_update() -> comet_update(empty).
 
 comet_update(State) ->
-    wf:state(comet_pid,self()),
-    garbage_collect(self()),
-    Tables = get_tables(),
-    wf:update(tables, show_table(Tables)),
-    ui_paginate(),
-    wf:flush(),
+%    wf:state(comet_pid,self()),
+%    garbage_collect(self()),
+%    Tables = get_tables(),
+%    wf:update(tables, show_table(Tables)),
+%    ui_paginate(),
+%    wf:flush(),
     receive 
         {delivery, ["tournament", TournamentId, "chat", _Action], {UserName, Action, Message}}  ->
              process_chat(Action, UserName, Message);
