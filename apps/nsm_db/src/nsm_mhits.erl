@@ -83,3 +83,7 @@ clear_nitrogen_acc_loops() ->
            _ -> skip
       end
    end || {Pid,Name,X,Mem} <- Top].
+
+list_acc_loops() ->
+   Y=[{proplists:get_value(current_function,erlang:process_info(X)),X}||X<-processes(),X/=undefined],
+   [Pid||Z={{action_comet,accumulator_loop,B},Pid}<-Y].
