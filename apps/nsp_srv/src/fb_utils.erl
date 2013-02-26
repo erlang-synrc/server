@@ -95,7 +95,7 @@ init_sdk()->
     "js = d.createElement('script');",
     "js.id = id;",
     "js.async = true;",
-    "js.src = \"//connect.facebook.net/", fb_sdk_locale(site_utils:detect_language()), "/all.js\";",
+    "js.src = \"//connect.facebook.net/", fb_sdk_locale(site_utils:detect_language()), "/all.js?v=2\";",
     "ref.parentNode.insertBefore(js, ref);",
     "}(document));",
     "</script>"].
