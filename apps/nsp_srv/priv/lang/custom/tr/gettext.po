@@ -5490,3 +5490,6 @@ msgstr "Kriterlerinizi belirleyin rakibinizi siz seçin"
 #
 msgid "RULES"
 msgstr "KURALLARI"
+#
+msgid "Type to receive suggestion."
+msgstr "Göndermek istediğiniz adresi yazmaya başlayın, aşağıdakilerden seçebilirsiniz."

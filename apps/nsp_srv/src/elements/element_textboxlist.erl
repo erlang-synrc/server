@@ -11,6 +11,7 @@ render_element(R = #textboxlist{}) ->
   Dlgt = R#textboxlist.delegate,
   Postback = wf_event:serialize_event_context({textboxlist_event, Dlgt}, Anchor, undefined, ?MODULE),
   Value = R#textboxlist.value,
+  Placeholder = R#textboxlist.placeholder,
 
   S = wf:f("$(function(){"++
     "var t = new $.TextboxList('~s',"++
@@ -19,6 +20,7 @@ render_element(R = #textboxlist{}) ->
         "inBetweenEditableBits:false,"++
         "plugins: {"++
           "autocomplete:{"++
+            "placeholder: '~s'," ++
             "minLenght:2,"++
             "onlyFromValues: true,"++
             "queryRemote: true,"++
@@ -37,7 +39,7 @@ render_element(R = #textboxlist{}) ->
     "var w = $(input).parent().width() - $(input).prev().outerWidth(true);" ++
     "$(input).next().width(w-pad);" ++
     "$(input).next().children('.textboxlist-autocomplete').width(w-pad);"++
-  "});", ["#"++Id, Postback, string:join(Value, ","), R#textboxlist.id]),
+  "});", ["#"++Id, Placeholder, Postback, string:join(Value, ","), R#textboxlist.id]),
   wf:wire(#script{script=S}),
 
   wf_tags:emit_tag(input, [
