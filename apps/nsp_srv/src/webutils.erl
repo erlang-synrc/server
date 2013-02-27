@@ -694,7 +694,7 @@ get_friends(User) ->
                 ]}
         end,
         #span_b{class="links", body=[
-            #link{text=?_T("All the people on kakaranet"), url="/view/all-users", id="alluserslink",
+            #link{text=?_T("All the people on kakaranet"), url="/view/members/id/kakaranet", id="alluserslink",
             title=?_T("You can unsubscribe or write someone private message via this list")}
         ]}
     ],
