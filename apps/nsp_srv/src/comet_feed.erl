@@ -168,7 +168,7 @@ process_delivery(_, aside, Body) ->
   wf:flush();
 
 process_delivery(_, check_more, {Module, Count, LastId})->
-  Btn = case Count < ?FEED_PAGEAMOUNT of
+  Btn = case Count =< ?FEED_PAGEAMOUNT of
     true -> [];
     _ -> #button{class="btn-submit", text = ?_T("More"), postback = {more_entries, Module, LastId}}
   end,

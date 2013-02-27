@@ -82,8 +82,13 @@ upd_notifications(User) ->
   NotVerified = User#user.status == not_verified,
   BuySuccess = wf:q(buy) == "success",
   InternalError = wf:q('__submodule__') == "internal_error",
+  NoCurrent = case nsm_acl:check_access(wf:user(), {feature, admin}) of
+    allow -> false;
+    _ -> User#user.username /= wf:user()
+  end,
 
-  if NotVerified ->
+  if NoCurrent -> ok;
+    NotVerified ->
       %% show notification about email verification
       wf:update(notification_area, verification_notification());
     BuySuccess ->
@@ -135,7 +140,7 @@ entry_form(FId, Type, Delegate, Postback) ->
   [
   #panel{class=entry_form, body=[
     #label{text=?_T("To")++":"},
-    #textboxlist{id=recipients_list, value=Recipients},
+    #textboxlist{id=recipients_list, value=Recipients, placeholder=?_T("Type to receive suggestion.")},
     #panel{id=flashm, body=[]},
     #panel{body=[
       "<span id='guidersaddentrybox'>", #textarea{id=add_entry_textbox, placeholder=?_T("Put your thoughts in here...")},"</span>",
@@ -485,7 +490,11 @@ more_entries(Entry) ->
   Fid = webutils:user_info(feed),
   Pid = list_to_pid(wf:state(comet_feed_pid)),
   Entrs = read_entries(Pid, element(1,Entry#entry.id), Fid),
-  Pid ! {delivery, check_more, {?MODULE, length(Entrs), lists:last(Entrs)}}.
+  Last = case Entrs of
+    [] -> [];
+     _ -> lists:last(Entrs)
+  end,
+  Pid ! {delivery, check_more, {?MODULE, length(Entrs), Last}}.
 
 textboxlist_event(SearchTerm) ->
   DataU = case nsm_users:list_subscr(wf:user()) of

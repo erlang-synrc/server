@@ -77,4 +77,4 @@
 
 -record(textbox_autocomplete_custom, {?ELEMENT_BASE(element_textbox_autocomplete_custom), tag, text="", minLength=2, delay=300, html_encode=true, next, postback, delegate=undefined }).
 
--record(textboxlist, {?ELEMENT_BASE(element_textboxlist), delegate, postback, value=[]}).
+-record(textboxlist, {?ELEMENT_BASE(element_textboxlist), delegate, postback, value=[], placeholder="Type to receive suggestions"}).
