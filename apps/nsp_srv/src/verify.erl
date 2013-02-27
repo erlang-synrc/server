@@ -1,7 +1,5 @@
 -module(verify).
-
 -compile(export_all).
-
 -include_lib("nsm_db/include/config.hrl").
 -include_lib("nsm_db/include/user.hrl").
 -include("gettext.hrl").
@@ -10,11 +8,6 @@
 main() ->
     VerificationCode = wf:q(code),
     wf:redirect(lists:concat(["/login/verify/code/", VerificationCode])).
-
-
-%%
-%% Utility functions
-%%
 
 -spec verify_account(string()) -> {error, atom()} | {ok, atom()}.
 verify_account(Code) ->

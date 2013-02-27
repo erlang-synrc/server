@@ -17,33 +17,11 @@ reset_language() ->
 detect_language() ->
     case get(gettext_language) of
         undefined ->
-            L = [ %%FIX: add user's profile check
+            L = [ 
                   fun() -> wf:session(lang) end,
                   fun() -> wf:cookie("lang") end,
-%                  fun() ->
-%                          Request = wf_context:request_bridge(),
-%                          Ip = Request:peer_ip(),
-%                          case egeoip:lookup(Ip) of
-%                              {ok, R} ->
-%                                  Lang = egeoip:get(R, country_code),
-%                                  case lists:member(Lang, uri_translator:languages()) of
-%                                      true ->
-%                                          Lang;
-%                                      false ->
-%                                          undefined
-%                                  end;
-%                              _ ->
-%                                  undefined
-%                          end
-%                  end,
-%                  fun() -> %% detecting language from url if nothing from above can tell you language to use
-%                          RequestBridge = wf_context:request_bridge(),
-%                          uri_translator:language(RequestBridge:path())
-%                  end,
                   fun() -> "tr" end ],
             V = try_f(L),
-            %% catch added for calls from handlers, when state can
-            %% be not initialized yet
             case catch wf:session(lang, V) of
                 {'EXIT', _} ->
                     ok;
@@ -166,15 +144,6 @@ local_time_to_text({D, H}) ->
 
 feed_time_tuple({D, H}) ->
     local_time_to_text({D,H}).
-    % format disable by Kunthar
-    %Seconds = calendar:datetime_to_gregorian_seconds({D,H}),
-    %CurrentSeconds = calendar:datetime_to_gregorian_seconds({date(), time()}),
-    %case CurrentSeconds - Seconds of
-    %    D1 when D1 < 60    -> io_lib:fwrite("~p seconds ago", [D1]);
-    %    D2 when D2 < 3600  -> io_lib:fwrite("~p minutes ago", [round(D2/60)]);
-    %    D3 when D3 < 86400 -> io_lib:fwrite("~p hours ago",   [round(D3/3600)])
-    %    ;_                 -> local_time_to_text({D,H})
-    %end.
 
 -spec check_date_correct({integer()|string(),integer()|string(),integer()|string()}) -> {ok|error, {integer()|string(),integer()|string(),integer()|string()}}.
 check_date_correct({SYear,SMonth,SDay} = OrigDate) ->
