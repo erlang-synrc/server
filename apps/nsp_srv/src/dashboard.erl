@@ -82,8 +82,13 @@ upd_notifications(User) ->
   NotVerified = User#user.status == not_verified,
   BuySuccess = wf:q(buy) == "success",
   InternalError = wf:q('__submodule__') == "internal_error",
+  NoCurrent = case nsm_acl:check_access(wf:user(), {feature, admin}) of
+    allow -> false;
+    _ -> User#user.username /= wf:user()
+  end,
 
-  if NotVerified ->
+  if NoCurrent -> ok;
+    NotVerified ->
       %% show notification about email verification
       wf:update(notification_area, verification_notification());
     BuySuccess ->
