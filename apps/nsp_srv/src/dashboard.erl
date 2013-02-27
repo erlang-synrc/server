@@ -485,7 +485,11 @@ more_entries(Entry) ->
   Fid = webutils:user_info(feed),
   Pid = list_to_pid(wf:state(comet_feed_pid)),
   Entrs = read_entries(Pid, element(1,Entry#entry.id), Fid),
-  Pid ! {delivery, check_more, {?MODULE, length(Entrs), lists:last(Entrs)}}.
+  Last = case Entrs of
+    [] -> [];
+     _ -> lists:last(Entrs)
+  end,
+  Pid ! {delivery, check_more, {?MODULE, length(Entrs), Last}}.
 
 textboxlist_event(SearchTerm) ->
   DataU = case nsm_users:list_subscr(wf:user()) of
