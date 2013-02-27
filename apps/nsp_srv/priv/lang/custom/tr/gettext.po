@@ -5493,3 +5493,6 @@ msgstr "KURALLARI"
 #
 msgid "Type to receive suggestion."
 msgstr "Göndermek istediğiniz adresi yazmaya başlayın, aşağıdakilerden seçebilirsiniz."
+#
+msgid "Players can't replace robots if no free seats"
+msgstr "Sadece robotlar ile oynamak istiyorum"
