@@ -18,7 +18,7 @@ start(Type, FeedId, FeedOwner, CurrentUser) ->
         %% put info to process dictionary, to later examine who is owner
         %% of the process
         put('**process_description**', [comet_feed, FeedOwner, CurrentUser#user.username]),
-        ?INFO("(in comet):start ~p feed comet for =~p. Pid=~p ", [Type, FeedOwner, self()]),
+        ?INFO("Feed comet type ~p for ~p Pid ~p ", [Type, FeedOwner, self()]),
         case Type of
             user ->
                 nsx_msg:subscribe_user(FeedOwner, self());

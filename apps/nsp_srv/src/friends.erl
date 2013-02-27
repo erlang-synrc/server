@@ -32,7 +32,7 @@ main_authorized() ->
             UserList = [FrId || #subs{whom=FrId} <- nsm_users:list_subscr(UserName)],
             wf:state(userlist, lists:sort(UserList)),
             wf:state(userlist_count, length(UserList)),
-            dashboard:main();
+            wall:main();
         Reason ->
             ?ERROR("unable to get user info: User=~p, Reason=~p", [UserName, Reason]),
             wf:redirect("404")
@@ -70,7 +70,7 @@ user_info() ->
     UserOrNot = wf:q('of'),
     case UserOrNot of
         undefined ->
-            webutils:get_ribbon_menu();
+            wall:get_ribbon_menu();
         _ ->
             view_user:user_info()
     end.
@@ -204,7 +204,7 @@ friends_view(UId) ->
                             #br{},
                             #br{},
                             #list{class="func-list", body=[
-                                #listitem{body=#link{url=io_lib:format("/dashboard/filter/direct/tu/~s",[UId]), text=?_T("Send direct message"), title=?_T("You can send a message only this user will read")}},
+                                #listitem{body=#link{url=io_lib:format("/wall/filter/direct/tu/~s",[UId]), text=?_T("Send direct message"), title=?_T("You can send a message only this user will read")}},
                                 SubUnsubItem
                             ]}
                         ]}

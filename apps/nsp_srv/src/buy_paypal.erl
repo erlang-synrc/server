@@ -327,9 +327,9 @@ process_completed() ->
                 ok ->
                     %% delete package from session. Purchase completed
                     buy:package(undefined),
-                    wf:redirect(?_U("/dashboard/buy/success"));
+                    wf:redirect(?_U("/buy/paypal/success"));
                 {error, untracked} ->
-                    wf:redirect(?_U("/dashboard"));
+                    wf:redirect(?_U("/profile/account"));
                 {error, check_failed} ->
                     error_handler(?gv("txn_id", PDTParams))
             end;

@@ -15,7 +15,7 @@ main() ->
     wf:state(userlist_count, length(UserList)),
     {ok, Group} = nsm_groups:get_group(GId),
     wf:state(curgroup, Group#group.name),
-    dashboard:main().
+    wall:main().
 
 title() -> webutils:title(?MODULE).
 
@@ -37,7 +37,7 @@ body() ->
     "</section>",
     #panel{class="aside", body=[
       #panel{id=aside,body=[
-        view_group:group_info()
+        wall:group_info()
       ]}
     ]}
   ]}.
@@ -57,17 +57,17 @@ get_members() ->
     ].
 
 incoming_requests() ->
-    view_group:incoming_requests().
+    wall:incoming_requests().
 
 outgoing_invites() ->
     [].
 
 
 group_edit_form(Owner) ->
-    view_group:group_edit_form(Owner).
+    wall:group_edit_form(Owner).
 
 show_editgroup_content() ->
-    view_group:show_editgroup_content().
+    wall:show_editgroup_content().
 
 api_event(Name, Tag, Args)->
   webutils:api_event(Name, Tag, Args).
@@ -93,11 +93,11 @@ event({unsubscribe,_,_,_}=Event) ->
     friends:event(Event);
 
 event(Other) ->
-    view_group:event(Other).
+    wall:event(Other).
 
 finish_upload_event(X1, X2, X3, X4) ->
-    dashboard:finish_upload_event(X1, X2, X3, X4).
+    wall:finish_upload_event(X1, X2, X3, X4).
 
 autocomplete_enter_event(SearchTerm, SearchField) ->
-    view_group:autocomplete_enter_event(SearchTerm, SearchField).
+    wall:autocomplete_enter_event(SearchTerm, SearchField).
 

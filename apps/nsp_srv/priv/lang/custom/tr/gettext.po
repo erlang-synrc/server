@@ -5492,7 +5492,54 @@ msgid "RULES"
 msgstr "KURALLARI"
 #
 msgid "Type to receive suggestion."
-msgstr "Göndermek istediğiniz adresi yazmaya başlayın, aşağıdakilerden seçebilirsiniz."
+msgstr ""
+"Göndermek istediğiniz adresi yazmaya başlayın, aşağıdakilerden "
+"seçebilirsiniz."
 #
 msgid "Players can't replace robots if no free seats"
 msgstr "Sadece robotlar ile oynamak istiyorum"
+#
+msgid "CREATED"
+msgstr "CREATED"
+#
+msgid "Disallow Replace Robots"
+msgstr "Disallow Replace Robots"
+#
+msgid "Invite mail:"
+msgstr "Invite mail:"
+#
+msgid "Message:"
+msgstr "Message:"
+#
+msgid ""
+"Okeysever Üyemiz $username$!\n"
+"\n"
+"Sinema Keyfini kakaranet.com da çıkarın.\n"
+"7 Şubat (bugün) saat 21:30 da “Ev Sinema Sistemi” ödüllü okey turnuvasını "
+"kaçırmayın. Bekliyoruz.\n"
+"İyi keyifler...\n"
+"Kakaranet"
+msgstr ""
+"Okeysever Üyemiz $username$!\n"
+"\n"
+"Sinema Keyfini kakaranet.com da çıkarın.\n"
+"7 Şubat (bugün) saat 21:30 da “Ev Sinema Sistemi” ödüllü okey turnuvasını "
+"kaçırmayın. Bekliyoruz.\n"
+"İyi keyifler...\n"
+"Kakaranet"
+#
+msgid "Subject:"
+msgstr "Subject:"
+#
+msgid "Turnuva Daveti"
+msgstr "Turnuva Daveti"
+#
+msgid "Wall"
+msgstr "Sayfam"
+#
+msgid ""
+"You may unsubscribe from group messages this way.\n"
+"                              You can also subscribe back later if you wish"
+msgstr ""
+"You may unsubscribe from group messages this way.\n"
+"                              You can also subscribe back later if you wish"

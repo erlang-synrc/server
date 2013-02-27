@@ -17,7 +17,7 @@ body() ->
       case wf:user() of
         undefined -> wf:redirect(?_U("/login"));
         _User ->
-          Dashboard = ?_U("/dashboard"),
+          Dashboard = ?_U("/wall"),
           case Url of
             "" -> wf:redirect(Dashboard);
             _  -> wf:redirect_from_login(Dashboard)

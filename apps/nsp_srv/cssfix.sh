@@ -8,6 +8,7 @@ cd priv/static/css
 ./cssfix.sh krules_okey.min.css
 ./cssfix.sh kgifts.min.css
 ./cssfix.sh kdashboard.min.css
+./cssfix.sh kwall.min.css
 ./cssfix.sh kview_user.min.css
 ./cssfix.sh kview_group.min.css
 ./cssfix.sh kview_all_users.min.css

@@ -1,6 +1,13 @@
 #!/bin/bash
 
-rels/app/node/bin/ns_node stop
-rels/game/node/bin/ns_node stop
-#rels/web/node/bin/ns_node stop
-rels/public/node/bin/ns_node stop
+NODE=${1:-"public"}
+BIN="rels/$NODE/node/bin/ns_node"
+
+if [ "$NODE" == "all" ]; then
+   rels/app/node/bin/ns_node stop
+   rels/game/node/bin/ns_node stop
+   rels/public/node/bin/ns_node stop
+else
+   $BIN stop
+fi
+

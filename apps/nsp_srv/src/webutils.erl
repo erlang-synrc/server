@@ -160,7 +160,7 @@ menu_links() ->
   ["<nav>",
   #list{body=[
 %    #listitem{body=#link{text=?_T("Home"), url=?_U("/"), id="mainmenumainpage"}},
-    #listitem{body=#link{text=?_T("My Page"), url=?_U("/dashboard"),
+    #listitem{body=#link{text=?_T("Wall"), url=?_U("/wall"),
       title=?_T("You can share information with others"), id="mainmenumypage"}},
     #listitem{body=#link{text=?_T("Matchmaker"), url=?_U("/matchmaker/okey"),
       title=?_T("Set your game criteria and face your opponent"), id="mainmenumatchmaker"}},
@@ -684,19 +684,21 @@ get_friends(User) ->
         case User#user.username == wf:user() of
             true ->
                 #span_b{class="links", body=[
-                    #link{text=?_T("All your friends"), url="/friends", id="friendslink",
+                    #link{style="font-size:12pt;",text=?_T("All your friends"), 
+                          url="/friends", id="friendslink",
                     title=?_T("You can unsubscribe or write someone private message via this list")}
                 ]};
             false ->
                 #span_b{class="links", body=[
-                    #link{text=?_T("All friends of ") ++ User#user.username, url="/friends/of/"++User#user.username,
+                    #link{style="font-size:12pt;", text=?_T("All friends of ") ++ User#user.username, 
+                          url="/friends/of/"++User#user.username,
                     id="friendslink", title=?_T("You can unsubscribe or write someone private message via this list")}
                 ]}
-        end,
-        #span_b{class="links", body=[
-            #link{text=?_T("All the people on kakaranet"), url="/view/members/id/kakaranet", id="alluserslink",
-            title=?_T("You can unsubscribe or write someone private message via this list")}
-        ]}
+        end %,
+%        #span_b{class="links", body=[
+ %           #link{text=?_T("All the people on kakaranet"), url="/view/members/id/kakaranet", id="alluserslink",
+  %          title=?_T("You can unsubscribe or write someone private message via this list")}
+%        ]}
     ],
     [
         "<span id='guidersfriends'>",
@@ -705,7 +707,7 @@ get_friends(User) ->
     ].
 
 get_metalist(Id, Title, Module, List, EmptyMsg, Nav) ->
-    ?INFO("METALIST: ~p",[{Id, Title, Module, List, EmptyMsg, Nav}]),
+%    ?INFO("METALIST: ~p",[{Id, Title, Module, List, EmptyMsg, Nav}]),
     Friends = case Module:List(Id) of
         [] ->
             [EmptyMsg];
@@ -725,7 +727,7 @@ get_metalist(Id, Title, Module, List, EmptyMsg, Nav) ->
                                     _ -> ""
                                 end
                             },
-                            #link{text=RealName, url=site_utils:user_link(Who)}
+                            #link{text=RealName, style="font-size:12pt;",url=site_utils:user_link(Who)}
                         ]};
                         _ -> ""
                         end
@@ -808,7 +810,7 @@ get_groups(User) ->
                     {ok, Group} ->
                     GName = Group#group.name,
                     #listitem{body=[
-                        #link{body=[GName], url=site_utils:group_link(GId)},
+                        #link{body=[GName], style="font-size:12pt;", url=site_utils:group_link(GId)},
                         #span{style="padding-left:4px;", text="(" ++ integer_to_list(UC) ++ ")"}
                     ]};
                     _ -> ""
@@ -826,13 +828,15 @@ get_groups(User) ->
                 true ->
                     [
                         #span_b{class="links", body=[
-                            #link{text=?_T("List of all your groups"), url="/groups/of/"++wf:user(), id="groupslink",
+                            #link{style="font-size:12pt;", text=?_T("List of all your groups"),
+                                  url="/groups/of/"++wf:user(), id="groupslink",
                                   title=?_T("You can unsubscribe a group from this list")}
-                        ]},
-                        #span_b{class="links", body=[
-                            #link{text=?_T("List of all groups on kakaranet"), url="/groups", id="allgroupslink",
-                                  title=?_T("You can subscribe to any group from this list")}
-                        ]}
+                        ]} %,
+%                        #span_b{class="links", body=[
+ %                           #link{style="font-size:11pt;",text=?_T("List of all groups on kakaranet"), 
+  %                                url="/groups", id="allgroupslink",
+  %                                title=?_T("You can subscribe to any group from this list")}
+   %                     ]}
                     ];
                 false->
                     ""  % here should be all users groups link
@@ -880,247 +884,6 @@ get_misc_links() ->
                 []
         end
     ].
-
-get_ribbon_menu() ->
-    CheckedUser = case {wf:q("user"),wf:user()} of
-        {CU,CU} -> undefined;
-        _       -> wf:q("user")
-    end,
-    IsSubscribedUser = case CheckedUser of
-        undefined -> undefined;
-        _         -> feed:is_subscribed_user(wf:user(), CheckedUser)
-    end,
-    User = case CheckedUser of
-        undefined -> webutils:user_info();
-        _         -> {ok, Usr} = nsm_users:get_user(CheckedUser), Usr
-    end,
-    {SubscribersCount, FriendsCount, CommentsCount, LikesCount} =
-    case CheckedUser of
-        undefined -> {0,0,0,0};
-        _         -> {
-            feed:user_subscription_count(CheckedUser),
-            feed:user_friends_count(CheckedUser),
-            feed:user_comments_count(CheckedUser),
-            feed:user_likes_count(CheckedUser)
-        }
-    end,
-    UId = case wf:q("user") of
-        undefined -> wf:user();
-        U -> U
-    end,
-    Scores = scoring:score_entries(UId),
-    SNum = integer_to_list(length(Scores)),
-    SPoints = integer_to_list(lists:sum([S#scoring_record.score_points || S <- Scores])),
-
-    NewDirectMessages=false,    %PUBLIC BETA 
-    BlockedUsers = nsm_users:get_blocked_users(wf:user()),
-    BlockUnblock = case CheckedUser of
-        undefined -> [];
-        _ -> case lists:member(CheckedUser, BlockedUsers) of
-                true ->
-                    #panel{id="blockunblock", class="center",
-                        body=#link{text=?_T("Unblock this user"),url="javascript:void(0)",
-                            postback={unblock, CheckedUser}
-                        }
-                    }
-                ;_   ->
-                    #panel{id="blockunblock", class="center",
-                        body=#link{text=?_T("Block this user"), url="javascript:void(0)",
-                            postback={block, CheckedUser}
-                        }
-                    }
-             end
-    end,
-    MenuTail = case {CheckedUser, IsSubscribedUser} of
-        {undefined, undefined} ->
-            #list{class="add-nav", body=[
-                #listitem{body=[
-                    "<span id='guidersmyfeed'>",
-                    #link{url="/dashboard",
-                        text=?_T("My Feed"),
-                        title=?_T("All your own and your friends posts. And your favourite groups' posts too."),
-                        id="myfeedlink"
-                    },
-                    "</span>"
-                ]},
-                #listitem{body=[
-                    "<span id='guidersdirectmessages'>",
-                    #link{url="/dashboard/filter/direct",
-                        title=?_T("Your private correspondence, no one other can read"),
-                        id="directmessageslink",
-                        body=[
-                            #span{text=?_T("Direct messages")},
-                            #image{image="/images/ico-002.gif", style="width:22px;height:22px", show_if=NewDirectMessages}
-                        ]
-                    },
-                    "</span>"
-                ]}
-%PHASE1                #listitem{body=[#link{url="/dashboard/filter/my_discussions", text=?_T("My Discussions")}]},
-%PHASE1                #listitem{body=[#link{url="#", text=?_T("Best of day")}]}
-            ]};
-        {_, true}  -> [
-                #link{text=?_T("Unsubscribe"), url="#", class="btn-abone btn-abone-2", postback={unsubscribe, CheckedUser}},
-                BlockUnblock,
-                #list{class="list-6", body=[
-                    #listitem{body=#link{url="javascript:void(0)",
-                        body=[#image{image="/images/ico-04.gif", style="width:27px;height:34px"}, ?_T("Send direct message")]}},
-                        #listitem{body=#link{url="#", body=[
-                            #image{image="/images/ico-05.gif", style="width:27px;height:34px"}, ?_T("Notification options")
-                        ]}
-                    }
-                ]},
-                #list{class="list-5", body=[
-                    #listitem{body=
-                        #link{url="/friends/t/subscribtion",
-                            text=integer_to_list(SubscribersCount) ++ " " ++ ?_T("subscription")
-                        }
-                    },
-                    #listitem{body=
-                        #link{url="/friends/t/subscribers",
-                            text=integer_to_list(FriendsCount) ++ " " ++ ?_T("subscribers")
-                        }
-                    },
-                    #listitem{body=
-                        #link{url="/dashboard/filter/comments/user/" ++ wf:to_list(CheckedUser),
-                            text=integer_to_list(CommentsCount) ++ " " ++ ?_T("comments")
-                        }
-                    },
-                    #listitem{body=
-                        #link{url="/dashboard/filter/like/user/" ++ wf:to_list(CheckedUser),
-                            text=integer_to_list(LikesCount) ++ " " ++ ?_T("likes")
-                        }
-                    }
-                ]}
-            ];
-        {_, false} -> [
-                #link{text=?_T("Subscribe"), url="#", class="btn-abone", postback={subscribe, CheckedUser}},
-                BlockUnblock,
-                #list{class="list-5", body=[
-                    #listitem{body=
-                        #link{url="/friends/t/subscribtion",
-                            text=integer_to_list(SubscribersCount) ++ " " ++ ?_T("subscription")
-                        }
-                    },
-                    #listitem{body=
-                        #link{url="/friends/t/subscribers",
-                            text=integer_to_list(FriendsCount) ++ " " ++ ?_T("subscribers")
-                        }
-                    },
-                    #listitem{body=
-                        #link{url="/dashboard/filter/comments/user/" ++ wf:to_list(CheckedUser),
-                            text=integer_to_list(CommentsCount) ++ " " ++ ?_T("comments")
-                        }
-                    },
-                    #listitem{body=
-                        #link{url="/dashboard/filter/like/user/" ++ wf:to_list(CheckedUser),
-                            text=integer_to_list(LikesCount) ++ " " ++ ?_T("likes")
-                        }
-                    }
-                ]}
-            ];
-        _-> ""
-    end,
-%    StatusBlock = case {CheckedUser, IsSubscribedUser} of
-%        {undefined, undefined} ->
-%            #panel{class="form-002", body=[
-%                #form{body=[
-%                    #dropdown{class="cs-2", id="user_status",
-%                        postback={set_user_status},
-%                        value=nsm_users:get_user_game_status(User#user.username),
-%                        options=[
-%                            #option{text=?_T("Online"),         value="online"}
-%PHASE1                        #option{text=?_T("Offline"),        value="offline"},
-%PHASE1                        #option{text=?_T("Busy"),           value="busy"},
-%PHASE1                        #option{text=?_T("Free for game"),  value="free_for_game"},
-%PHASE1                        #option{text=?_T("Invisible"),      value="invisible"}
-%                        ]
-%                    }
-%                ]}
-%            ], id="statuschanger"}
-%        ;_->
-%            {Status,ClassStatus} = case nsm_users:get_user_game_status(CheckedUser) of
-%                "offline"       -> {"Offline","stat-offline"};
-%                "busy"          -> {"Busy", "stat-busy"};
-%                "free_for_game" -> {"Free for game", "stat-ffg"};
-%                "invisible"     -> {"Invisible", "stat-invisible"};
-%                _               -> {"Online","stat-online"}
-%            end,
-%            io_lib:format("<span class=\"stat-info\"><span class=\"~s\">~s</span></span>", [ClassStatus, Status])
-%    end,
-%    wf:wire(wf:f("TestStOpt[0]='~s';",[wf_event:serialize_event_context({set_user_status, "online"}, undefined, undefined, dashboard)])),
-%    wf:wire(wf:f("TestStOpt[1]='~s';",[wf_event:serialize_event_context({set_user_status, "offline"}, undefined, undefined, dashboard)])),
-%    wf:wire(wf:f("TestStOpt[2]='~s';",[wf_event:serialize_event_context({set_user_status, "busy"}, undefined, undefined, dashboard)])),
-%    wf:wire(wf:f("TestStOpt[3]='~s';",[wf_event:serialize_event_context({set_user_status, "free_for_game"}, undefined, undefined, dashboard)])),
-%    wf:wire(wf:f("TestStOpt[4]='~s';",[wf_event:serialize_event_context({set_user_status, "invisible"}, undefined, undefined, dashboard)])),
-    [
-        #panel{class="top-box", body=[
-            case nsm_accounts:user_paid(element(2, User) ) of
-                true -> 
-                    #panel{class="paid_user_avatar_photo", body=[#image{image=get_user_avatar(element(2, User) ,"big"), style="height:150px; width:150px;"}], style="margin-left:19px;"};
-                _ -> 
-                    #panel{class="photo", body=[#image{image=get_user_avatar(element(2, User) ,"big"), style="height:150px; width:150px;"}], style="margin-left:19px;"}
-            end
-%            #panel{class="holder", body=[
-%                io_lib:format("<strong class=\"title\">~s</strong>", [?_T("Status")]),
-%                StatusBlock,
-%                #list{class="list-ico", body=[
-%                    #listitem{body=#image{image="/images/ico-001.png", style="width:12px; height:17px"}},
-%                    #listitem{body=#image{image="/images/ico-001.png", style="width:12px; height:17px"}},
-%                    #listitem{body=#image{image="/images/ico-001.png", style="width:12px; height:17px"}},
-%                    #listitem{body=#image{image="/images/ico-001.png", style="width:12px; height:17px"}},
-%                    #listitem{body=#image{image="/images/ico-001.png", style="width:12px; height:17px"}},
-%                    #listitem{body=#image{image="/images/ico-001.png", style="width:12px; height:17px"}}
-%                ]}
-%            ]}
-        ]},
-        #h3{class="title-box", text=wf:to_list(User#user.name) ++ " " ++ wf:to_list(User#user.surname)},
-        #panel{class="block", body=[
-            #panel{class="gallery-game", body=[
-                #panel{class="slider-container", body=[
-                 #panel{class="slider-content", body=[
-                  #panel{class="slider", body=[
-                    #list{body=[
-                        #listitem{body=#image{image="/images/img-013.gif", style="width:53px;height:26px"}},
-                        #listitem{body=io_lib:format("<span>~s</span><strong>~s</strong>",[?_T("Num"), SNum])},
-                        #listitem{body=io_lib:format("<span>~s</span><strong>~s</strong>",[?_T("Points"), SPoints])}
-                    ]}
-                  ]}
-                 ]}
-                ]}
-%                #link{class="prev-link"},
-%                #link{class="next-link"}
-            ]},
-            MenuTail
-        ]},
-        statistics_block(User)
-    ].
-
-statistics_block(Info) ->
-    try % this fails if user reloads page fast enough after deleting an entry
-        EntriesCount  = feed:get_entries_count(Info#user.username),
-        CommentsCount = feed:get_comments_count(Info#user.username),
-        Subscriptions = nsm_users:list_subscr(Info#user.username),
-        Subscribers   = nsm_users:list_subscr_me(Info#user.username),
-        LikesCount    = feed:get_user_likes_count(Info#user.username),
-
-        #panel{class="box statistics-box-text", body=[
-            "<span id='guidersstatistics'>",
-            #h3{text=?_T("STATISTICS")},
-            #span{text=?_T("Subscriptions")++": "++integer_to_list(length(Subscriptions))},
-            #br{},
-            #span{text=?_T("Subscribers")++": "++integer_to_list(length(Subscribers))},
-            #br{},
-            #span{text=?_T("Entries")++": "++integer_to_list(EntriesCount)},
-            #br{},
-            #span{text=?_T("Comments")++": "++integer_to_list(CommentsCount)},
-            #br{},
-            #span{text=?_T("Likes")++": "++integer_to_list(LikesCount)},
-            "</span>"
-        ]}
-    catch
-        _:_ ->
-            ""  % well, if it is impossible to gather statistic right now - there will be no statistics block
-    end.
 
 affiliates_if_any(User) ->
     case nsm_affiliates:is_existing_affiliate(User#user.username) of
@@ -1500,3 +1263,6 @@ js_for_main_authorized_game_stats_menu() ->
 
         });
 	</script>").
+
+
+

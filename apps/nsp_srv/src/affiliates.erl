@@ -30,7 +30,7 @@ main_authorized() ->
         {ok, UserInfo} ->
             wf:state(user, UserInfo),
             wf:state(affiliates_of, UserName),
-            dashboard:main();
+            wall:main();
         Reason ->
             ?ERROR("unable to get user info: User=~p, Reason=~p", [UserName, Reason]),
             wf:redirect("404")

@@ -586,7 +586,7 @@ event({show_more_att, Target,  AttLists}) ->
     wf:update(Target, AttLists);
 
 event({show_add_attachment, EId, ViewAttachment, AttachmentError, MSI}) ->
-    dashboard:check_number_of_uploads(AttachmentError, EId) == ok andalso
+    wall:check_number_of_uploads(AttachmentError, EId) == ok andalso
     begin
         BoxId = wf:temp_id(),
         UploadId = lists:concat(["upload_", BoxId]),
