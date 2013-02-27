@@ -473,6 +473,7 @@ event(create_pressed) ->
 
 event({start_tournament, TourName, TourDesc, TourDate, TourTime, TourPlayers, TourQuota, Prize1, Prize2, Prize3, TourType, TourGame, TourGameType, Tours, TourSpeed}) ->
     TID = nsm_tournaments:create(wf:user(), TourName, TourDesc, TourDate, TourTime, TourPlayers, TourQuota, [Prize1, Prize2, Prize3], TourType, TourGame, TourGameType, Tours, TourSpeed),
+    user_counter:retournaments(),
     nsm_tournaments:join(wf:user(), TID),
     AllowedUsers = lists:subtract(["maxim","sustel","ahmettez","serg","doxtop"], [wf:user()]),
     [case nsm_db:get(user,User) of

@@ -20,6 +20,9 @@ main() ->
     end.
 
 main_authorized() ->
+    user_counter:regroups(),
+%    Groups = user_counter:groups(),
+%    wf:state(groups,Groups),
     Tooltip  = wf:q(tooltip),
     if
         Tooltip /= undefined ->
@@ -214,7 +217,8 @@ get_group_rows(Page) ->
     Offset = (Page - 1) * ?GROUPPERPAGE + 1,
     case wf:q("of") of
         undefined ->
-            All = lists:sort(fun(#group{created=T1}, #group{created=T2}) -> T2 =< T1 end, nsm_groups:get_all_groups()),
+            All = lists:sort(fun(#group{created=T1}, #group{created=T2}) -> T2 =< T1 end, user_counter:groups()),
+                                                                                          %nsm_groups:get_all_groups()),
             {group_row(lists:sublist(All, Offset, ?GROUPPERPAGE)), length(All)};
         UId ->
             case nsm_groups:list_groups_per_user(UId) of
@@ -376,7 +380,7 @@ event(create_new_group) ->
     end,    
     GId = site_utils:validate_group_id(PGId),
     ?INFO("New group: ~p ~p ~p ~p",[GId, GName, GDesc, GPublicity]),
-    AllGroups = [G#group.username || G <- nsm_groups:get_all_groups()],
+    AllGroups = [G#group.username || G <- user_counter:groups()],%nsm_groups:get_all_groups()],
     case GId of 
         "" ->
             wf:wire(#alert{text=?_T("Group should have some kind of shortname")});
