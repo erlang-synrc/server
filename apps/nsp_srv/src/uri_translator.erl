@@ -4,30 +4,11 @@
 -include_lib("nitrogen_core/include/wf.hrl").
 -include_lib("nsx_config/include/log.hrl").
 -include("setup.hrl").
+-compile(export_all).
 
-%% API
--export([languages/0, language/1, translate/1, translate/2, translate/3]).
-
-%%====================================================================
-%% API
-%%====================================================================
 -spec languages() -> [string()].
 languages() -> ["tr", "en"].
-%    case get(cache__languages) of
-%        undefined ->
-%            L = languages0(),
-%            put(cache__languages, L),
-%            L;
-%        L -> L
-%    end.
-
-% Get all supported languages
 languages0() -> ["tr","en"].
-
-%    sets:to_list(
-%      sets:from_list( %% TODO: may be it's too bad for speed? Returning ["tr", "en"] can be just fine
-%        [ L || #ut_word{lang = L} <- nsm_db:all(ut_word)]
-%        )).
 
 -spec language(string()) -> undefined | string().
 language("/") ->
