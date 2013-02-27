@@ -20,72 +20,13 @@ main() ->
     end.
 
 main_authorized() ->
-    Tooltip  = wf:q(tooltip),
-    if
-        Tooltip /= undefined ->
-            tooltip_content(Tooltip);
-        true ->
-            webutils:add_raw("
-                <script src=\"/nitrogen/js/jquery.validate.min.js\" type=\"text/javascript\"></script>
-                <script type=\"text/javascript\">
-                var formV = undefined;
-                var ReloadPostback = undefined;
-                $(document).ready(function() {
-                    $( \"#add_group_dialog\" ).dialog({
-                            autoOpen: false,
-                            height: 300,
-                            width: 350,
-                            modal: true,
-                            buttons: {
-                                \"Create a group\": function() {
-                                    if(formV.checkForm()){
-                                        submit_function();
-                                    }else{
-                                        formV.showErrors();
-                                    }
-                                },
-                                \"Cancel\": function() {$( this ).dialog( \"close\" );}
-                            },
-                            close: function() {
-                            }
-                    });
-                    formV = $('#add_new_group_form').validate();
-
-                });
-
-                function submit_function(){
-                    var gname=$('#group_name').val();
-                    var gdesc=$('#group_description').val();
-                    var gtype=$('#group_type').val();
-                    $.post('/groups/create/new', { gname: gname, gdesc: gdesc, gtype: gtype },
-                    function(data) {
-                      var obj=jQuery.parseJSON(data);
-                      if(obj.status == 'ok'){
-                        $( \"#add_group_dialog\" ).dialog( \"close\" );
-                        reload_current_content();
-                      }else{
-                        // print error error
-                        $('#gc_error_label').html('Error:'+obj.error_description)
-                      }
-                    });
-                }
-
-                function clear_form_values(){
-                    formV.resetForm();formV.reset();formV.clean();
-                    $('#group_name').val('');
-                    $('#group_description').val('');
-                }
-
-                function reload_current_content() {
-                    console.log('reload current content');
-                    if(ReloadPostback != undefined){
-                        Nitrogen.$queue_event(null, ReloadPostback, '');
-                    }
-                }
-                </script>
-            "),
-            #template { file=code:priv_dir(nsp_srv)++"/templates/bare.html" }
-    end.
+  Tooltip  = wf:q(tooltip),
+  if
+    Tooltip /= undefined ->
+      tooltip_content(Tooltip);
+    true ->
+      #template { file=code:priv_dir(nsp_srv) ++ "/templates/base.html" }
+  end.
 
 title() -> webutils:title(?MODULE).
 
@@ -95,14 +36,50 @@ get_page_from_path(PI) ->
         _ -> default
     end.
 
-body() ->
-    #template{file=code:priv_dir(nsp_srv)++"/templates/inner_page2.html"}.
+body() -> [
+  #panel{class="page-content", body=webutils:quick_nav()},
+  "<section id=\"main\">",
+    content(1),
+    %pagenator_buttons(),
+    #panel{class="side-col", body=[
+      top_adv(),
+      get_popular_group_container(),
+      active_members()
+    ]},
+  "</section>",
+
+  "<div id=\"add_group_dialog\" title=\"Create a new group\">",
+    "<form id=\"add_new_group_form\">",
+      "<fieldset>",
+        "<div>",
+          "<div>Group name</div>",
+          "<div><input name=\"group_name\" id=\"group_name\" class=\"required\"></div>",
+        "</div>",
+        "<div>",
+          "<div>Description</div>",
+          "<div>",
+            "<textarea id=\"group_description\" class=\"required\"></textarea>",
+          "</div>",
+        "</div>",
+        "<div>",
+          "<div>Private</div>",
+          "<div>",
+            "<select id=\"group_type\">",
+              "<option value=\"false\">Public</option>",
+              "<option value=\"true\">Private</option>",
+            "</select>",
+          "</div>",
+        "</div>",
+        "<div id=\"gc_error_label\"></div>",
+      "</fieldset>",
+    "</form>",
+  "</div>"
+  ].
 
 
 tooltip_content(_GName) ->
     #template{file=code:priv_dir(nsp_srv)++"/templates/tooltip.html"}.
 
-content()     -> content(1).
 content(PageNumber) ->
     Anchor = wf_context:anchor(), ValidationGroup = wf_context:event_validation_group(),
     Postback_js = wf_event:generate_postback_script(search_group, Anchor, ValidationGroup, ?MODULE, undefined),

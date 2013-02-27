@@ -12,3 +12,4 @@ cd priv/static/css
 ./cssfix.sh kview_group.min.css
 ./cssfix.sh kview_all_users.min.css
 ./cssfix.sh kview_members.min.css
+./cssfix.sh kgroups.min.css
