@@ -295,8 +295,8 @@ event({change_language,SL}) ->
 event({birthday_changed}) ->
     element_register:event({birthday_changed});
 
-event({more_entries, dashboard, LastId}) ->
-  dashboard:more_entries(LastId);
+event({more_entries, wall, LastId}) ->
+  wall:more_entries(LastId);
 
 event({more_entries, Module, PageAmount, LastId}) ->
     Entries = Module:on_more_entries(LastId, PageAmount),

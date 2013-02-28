@@ -3,12 +3,16 @@
 -include_lib("nsx_config/include/log.hrl").
 -include_lib("nsm_db/include/membership_packages.hrl").
 -include_lib("nsm_db/include/config.hrl").
--export([init/1, handle_notice/3, get_opts/1, handle_info/2]).
--record(state, {smtp_options = []}).
+-export([init/1, handle_notice/3, get_opts/1, handle_info/2, start_link/2]).
+-record(state, {name,type,smtp_options = []}).
 
-init([]) ->
+start_link(Mod,Args) -> gen_server:start_link(Mod, Args, []).
+
+init(Params) ->
     SMTPOptions = read_smtp_options(),
-    {ok, #state{smtp_options = SMTPOptions}}.
+    Name = proplists:get_value(name,Params),
+    Type = proplists:get_value(type,Params),
+    {ok, #state{smtp_options = SMTPOptions,name=Name,type=Type}}.
 
 handle_notice(["email", "send"], {Subject, Content, To}, #state{smtp_options = Options} = State) ->
     ?INFO("email(~p): send email to ~s. Subject:~s", [self(), To, Subject]),

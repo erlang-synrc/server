@@ -4,10 +4,15 @@
 -include_lib("nsx_config/include/log.hrl").
 -include_lib("nsm_db/include/user.hrl").
 -include("nsm_bg.hrl").
--export([init/1, handle_notice/3, handle_info/2, get_opts/1, start_worker/4]).
--record(state, {name}).
+-export([init/1, handle_notice/3, handle_info/2, get_opts/1, start_worker/4, start_link/2]).
+-record(state, {name,type}).
 
-init([{name, Name}]) -> {ok, #state{name = Name}}.
+start_link(Mod,Args) -> gen_server:start_link(Mod, Args, []).
+
+init(Params) -> 
+    Name = proplists:get_value(name,Params),
+    Type = proplists:get_value(type,Params),
+    {ok, #state{name = Name,type=Type}}.
 
 handle_notice(["user", "init"], Message, State) ->
     start_worker(user, Message, undefined, undefined),
@@ -18,7 +23,7 @@ handle_notice(Route, Message, State) ->
     {noreply, State}.
 
 start_worker(Type, Name, Feed, Direct) ->
-    nsm_bg_workers_sup:start_worker(nsm_writer, [{owner,Name},{feed,Feed},{type,Type},{direct,Direct}]).
+    nsm_bg_workers_sup:start_worker(nsm_writer, [{name,Name},{feed,Feed},{type,Type},{direct,Direct}]).
 
 handle_info(start_all, State) ->
     ?INFO("Starting workers..."),
