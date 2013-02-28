@@ -736,11 +736,23 @@ get_metalist(Id, Title, Module, List, EmptyMsg, Nav) ->
             end
     end,
     [
-        #panel{class="box", body=[
-            #h3{text=Title}, #list{class="list-photo", body=[ Friends ]},
+%        #panel{class="page-content page-canvas", body=[
+        #panel{class="box", style="border:0", body=[
+            #h3{text=Title, style=get_metalist_section_style() },
+                             #list{class="list-photo", body=[ Friends ]},
             Nav
         ]}
     ].
+
+get_metalist_section_style() ->
+    "background: url(/images/tournament/lobby/top_plask.png);"
+  "text-align:left;"
+  "font-size:18px;"
+  "color:#fff;"
+  "font-weight:bold;"
+  "line-height:43px;"
+  "margin-top:10px;"
+  "padding-top:-30px;".
 
 get_avatar(U) -> get_avatar(U,"tiny").
 get_avatar(#user{avatar={_,_,_,Avatar}},"tiny") -> Avatar;
@@ -821,8 +833,8 @@ get_groups(User) ->
     end,
     [
         "<span id='guidersgroups'>",
-        #panel{class="box", body=[
-            #h3{text=?_T("GROUPS")},
+        #panel{class="box", style="border:0", body=[
+            #h3{text=?_T("GROUPS"), style=get_metalist_section_style()},
             #list{class="list-photo list-photo-in", body=[ Groups ]},
             case User#user.username == wf:user() of
                 true ->

@@ -99,21 +99,22 @@ content(PageNumber) ->
     wf:wire(wf:f("ReloadPostback='~s';",[wf_event:serialize_event_context({page, PageNumber}, undefined, undefined, groups)])),
     [
         #panel{class="main-col", body=[
-            #panel{class="top-space", body=[
+%            #panel{class="top-space", body=[
 %PHASE1                #panel{class="search-cell", body=[
 %                    #form{body=[
 %                        #panel{class="text", body=#textbox{id="search_textbox"}},
 %                        #button{class="btn-submit-mkh", id="sendsearch", postback={search_group, 1}, text=?_T("Search")}
 %                    ]}
 %                ]},
-                #h1{text=?_T("Groups")}
+                #h1{text=?_T("Groups"),style=webutils:get_metalist_section_style()++
+			"width:200px;height:43px;padding-left:20px;margin-top:-24px;margin-bottom:25px;text-transform:uppercase;"},
 %PHASE1                #panel{id="create_new_group", class="group-create-new-container", body=#link{
 %                    url="javascript:void(0)",
 %                    actions=#event{type=click, actions=[
 %                        #script{script="clear_form_values();$(\"#add_group_dialog\").dialog(\"open\");"}
 %                    ]},
 %                    text=?_T("Create a group")}}
-            ]},
+ %           ]},
             #panel{id="groups_content", body=[
                 inner_content(PageNumber)
             ]}
@@ -215,9 +216,9 @@ split_subs(L, A)  ->
     split_subs(L3, A ++ [L2]).
 
 group_row(GL) when is_list(GL)->
-    #list{class="group-list-mkh", body=[ show_group_ul(X) || X <- GL]};
+    #list{class="group-list-mkh", style="font-size:10pt;", body=[ show_group_ul(X) || X <- GL]};
 group_row(GL) ->
-    #list{class="group-list-mkh", body=show_group_ul(GL)}.
+    #list{class="group-list-mkh", style="font-size:10pt;", body=show_group_ul(GL)}.
 
 show_group_ul(#group{username=GName, description=GDesc, name=GFineName, users_count=GroupMembersCount}) ->
     GFullName = case GFineName of
