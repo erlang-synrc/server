@@ -18,26 +18,7 @@
 
 title() -> webutils:title(?MODULE).
 
-main() ->
-  case wf:user() of
-    undefined -> wf:redirect(?_U("/login"));
-    _User ->
-      case wf_context:page_module() of
-        wall -> [];
-        view_members -> [];
-        _ -> webutils:js_for_main_authorized_game_stats_menu()
-      end,
-      case webutils:guiders_ok("dashboard_guiders_shown") of
-        true -> ok;%guiders_script();
-        false -> ok
-      end,
-      case wf_context:page_module() of
-        wall -> #template { file=code:priv_dir(nsp_srv)++"/templates/base.html"};
-        view_members -> #template { file=code:priv_dir(nsp_srv)++"/templates/base.html"};
-        _ ->
-          #template { file=code:priv_dir(nsp_srv)++"/templates/bare.html"}
-      end
-  end.
+main() -> #template { file=code:priv_dir(nsp_srv)++"/templates/base.html"}.
 
 body() ->
   {FeedType,TypeDefined} = case wf:q(type) of "user" -> {user,true}; "gr"++XX -> {group,true}; _ -> {user,false} end,
@@ -55,7 +36,7 @@ body() ->
                                  false -> hidden_form() end ]} end;
         false -> {_,UserInfo} = nsm_users:get_user(User),
                 case UserInfo of
-                     notfound -> {false,[not_found("User")]};
+                     notfound -> {false,feed(user, system)};
                      _ -> {true,feed(FeedType, User)} end
       end,
 

@@ -5,7 +5,6 @@
 -include("setup.hrl").
 
 main() ->
-    webutils:js_for_main_authorized_game_stats_menu(),
     #template { file=code:priv_dir(nsp_srv)++"/templates/bare.html" }.
 
 title() -> webutils:title(?MODULE).

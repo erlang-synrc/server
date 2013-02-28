@@ -1,4 +1,7 @@
-.tournaments_title {  width:250px;  height:43px;  background: url(/images/tournament/lobby/top_plask.png);
+.tournaments_title {
+  width:250px;
+  height:43px;
+  background: url(/images/tournament/lobby/top_plask.png);
   text-align:center;
   font-size:18px;
   color:#fff;

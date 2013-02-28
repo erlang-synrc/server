@@ -48,11 +48,14 @@
 	left:10px;
 	top:-140px;
 	background:url(../images/none.gif);
+    z-index:99999;
 }
 .user-list .user-item:hover,
 .user-list .user-item.hover {position:relative;}
+
 .user-list .user-item:hover .tooltip-1,
-.user-list .user-item.hover .tooltip-1 {display:block;}
+.user-list .user-item.hover .tooltip-1 {display:block;z-index:1}
+
 .user-list .tooltip-1 .t {
 	padding:7px 0 0;
 	width:100%;

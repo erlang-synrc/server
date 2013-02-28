@@ -40,19 +40,24 @@ main_authorized() ->
 
 title() -> webutils:title(?MODULE).
 
-body() ->
-    #template{file=code:priv_dir(nsp_srv)++"/templates/view-user.html"}.
+body() -> [
+  #panel{class="page-content", body=webutils:quick_nav()},
+  #panel{class="page-content page-canvas", style="overflow:auto;", body=[
+    #panel{class=aside, body=[
+      user_info(),
+      get_friends(),
+      get_groups()
+    ]},
+    #panel{class=friendlist, body=content(1)}
+  ]}].
 
-content()     -> content(1).
 content(Page) -> content(Page, ?_T("FRIENDS")).
 content(Page, Title) ->
     [
         #panel{class="top-space", body=[
             #h1{text=Title},
             #textbox{id=nick_filter, style="width:84px; height:19px; border-radius:3px; border: 1px solid rgb(201, 201, 201); float:left;"},
-            #link{postback=filter_by_nick, class="set-table-name", text=?_T("Filter by nick"), style="float:left; font-weight:bold; padding-left:8px; padding-top:5px;"},
-            #br{},
-            #br{}
+            #link{postback=filter_by_nick, class="set-table-name", text=?_T("Filter by nick"), style="float:left; font-weight:bold; padding-left:8px; padding-top:5px;"}
         ]},
         #panel{id="friends_content", body=getPageContent(Page)}
     ].
