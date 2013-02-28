@@ -93,8 +93,8 @@ translate_word(from_en, EnglishWord, DstLang) ->
 
 is_supported(Lang) ->
     case lists:member(Lang, languages()) of
-	false ->
-            ?ERROR("Unsupported language: ~p",[Lang]);
+	false -> ok;
+%            ?ERROR("Unsupported language: ~p",[Lang]);
 %	    throw(unsupported_language);
 	true ->
 	    ok

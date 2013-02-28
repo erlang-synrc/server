@@ -78,7 +78,6 @@
                          {"verify", "es", "verificar"},
                          {"view", "es", "ver"},
                          {"group", "es", "grupo"},
-                         {"wall", "es", "wall"},
                          {"view-group", "es", "ver-grupo"},
                          {"view-table", "es", "ver-tabla"},
                          {"view-user", "es", "ver-usuario"},

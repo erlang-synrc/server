@@ -161,6 +161,7 @@ show_feed(Fid, Type, Uid) when is_atom(Type) ->
   CheckNode = fun(X) -> lists:foldl(fun(A, Sum) -> A + Sum end, 0, X) rem 3 + 1 end,
   AppNode = case Node of
                  4 -> nsx_opt:get_env(nsm_db,app_srv_node,'app@doxtop.cc');
+                 5 -> nsx_opt:get_env(nsm_db,app_srv_node,'app@doxtop.cc');
                  _ -> list_to_atom("app@srv"++integer_to_list(CheckNode(UserInfo#user.username))++".kakaranet.com") end,
 
   CachePid = rpc:call(AppNode,nsm_bg,pid,[UserInfo#user.username]),
