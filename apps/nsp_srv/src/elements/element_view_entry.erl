@@ -460,9 +460,9 @@ entry_element_usual(E, Comments, Avatar, {MediaThumb, MediaLists0}, _TargetMedia
           Description,
           #panel{class="meta", body=[
             io_lib:format("<span class=\"entry-time\"> ~s </span>",[Time]),
-            #list{class="list-4", body=[
+            #list{class=feed_entry_actions, body=[
               #listitem{body=#link{
-                text=?_T("Comment"), class="clr-1", url="javascript:void(0)", show_if=ViewC,
+                text=?_T("Comment"), url="javascript:void(0)", show_if=ViewC,
                 actions=[
                   #event{type=click, actions=[
                     #hide{},
@@ -470,10 +470,10 @@ entry_element_usual(E, Comments, Avatar, {MediaThumb, MediaLists0}, _TargetMedia
                     #show{target=CommentRingId}
                   ]}
                 ]}},
-              #listitem{body=#link{text=?_T("Like"), class="clr-1", id=LikeBtnId, postback={like_entry, E, LikeBtnId}, show_if=LikeBtnShow}},
-              #listitem{body=#link{text=?_T("Share"), class="clr-1", id=ShareBtnId,
+              #listitem{body=#link{text=?_T("Like"), id=LikeBtnId, postback={like_entry, E, LikeBtnId}, show_if=LikeBtnShow}},
+              #listitem{body=#link{text=?_T("Share"), id=ShareBtnId,
                 show_if=wf:user() /= E#entry.shared andalso wf:user() /= E#entry.from, postback={share_entry, E, ShareBtnId}}},
-              #listitem{body=#link{text=?_T("Edit"), show_if=IsDirectMessage, class="clr-4", url="javascript:void(0)",
+              #listitem{body=#link{text=?_T("Edit"), show_if=IsDirectMessage, url="javascript:void(0)",
                 actions=[
                   #event { type=click, actions=[
                     #hide { target=ViewPanelID },
@@ -482,7 +482,7 @@ entry_element_usual(E, Comments, Avatar, {MediaThumb, MediaLists0}, _TargetMedia
                   ]}
                 ]}
               },
-              #listitem{body=#link{text=?_T("Remove"),class="clr-2", url="javascript:void(0)",
+              #listitem{body=#link{text=?_T("Remove"), url="javascript:void(0)",
                 show_if= webutils:show_if(remove_entry, E),
                 postback={remove_entry, E#entry.entry_id, TempId, E#entry.to, E#entry.from},
                 title=?_T("Clicking here will remove an entry from your own and your friends feeds")}

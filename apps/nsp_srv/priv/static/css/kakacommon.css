@@ -392,44 +392,6 @@ a {text-decoration:none;color:#4ec3f1;}
 	color:#4ec3f1;
 	margin:0 0 13px;
 }
-.list-4 {
-	list-style:none;
-	margin:0;
-	padding:0;
-	float:left;
-}
-.list-4 li {
-	float:left;
-	padding:0 0 0 5px;
-	font-size:9px;
-	line-height:12px;
-	font-weight:bold;
-}
-.list-4 li a {
-	color:#fff;
-	float:left;
-	padding:2px 4px;
-	height:13px;
-	-moz-border-radius:2px;
-	-webkit-border-radius:2px;
-	border-radius:2px;
-}
-.list-4 li a.clr-1 {
-	background:url(/images/btn-6.gif) repeat-x;
-	text-shadow:1px 1px 1px #768c4c
-}
-.list-4 li a.clr-2 {
-	background:url(/images/btn-7.gif) repeat-x;
-	text-shadow:1px 1px 1px #a17d7d
-}
-.list-4 li a.clr-3 {
-	background:url(/images/btn-8.gif) repeat-x;
-	text-shadow:1px 1px 1px #357e9a
-}
-.list-4 li a.clr-4 {
-	background:url(/images/btn-9.gif) repeat-x;
-	text-shadow:1px 1px 1px #636363
-}
 .post .like-box {
 	width:100%;
 	padding:7px 0 12px 32px;
@@ -1168,15 +1130,15 @@ a {text-decoration:none;color:#4ec3f1;}
 }
 .popup-2 label a {color:#ababab;}
 .popup-2 .text {
-	width:288px;
-	height:33px;
-	overflow:hidden;
-	background:url(/images/bg-txt-1.gif) no-repeat;
-	border:1px solid #d2d9dc;
-	margin:0 0 11px;
-	-moz-border-radius:2px;
-	-webkit-border-radius:2px;
-	border-radius:2px;
+  width:288px;
+  height:33px;
+  overflow:hidden;
+  background:#ffffff;
+  border:1px solid #d2d9dc;
+  margin:0 0 11px;
+  -moz-border-radius:2px;
+  -webkit-border-radius:2px;
+  border-radius:2px;
 }
 .popup-2 .text:after {
 	clear:both;
