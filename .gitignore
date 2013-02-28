@@ -4,5 +4,8 @@ ebin
 *.dets
 *.gz
 *.full.css
+*.full.css.gz
+*.min.css.gz
 *.full.js
+*.min.js.gz
 *.dump

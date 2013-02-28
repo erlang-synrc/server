@@ -17,7 +17,16 @@
   [[[webutils:counters()]]]
   [[[webutils:footer()]]]
  <script>
-  function ngn(){ [[[script]]] }
+  function ngn(){
+    [[[script]]]
+    var sec = '[[[webutils:secondary_script()]]]';
+    console.log(sec);
+    if(sec){
+      var secscript = document.createElement("script");
+      secscript.src = sec+'?v=3';
+      document.getElementsByTagName('head')[0].appendChild(secscript);
+    }
+  }
   window.onload = function(){
     var script = document.createElement("script");
     script.type = "text/javascript";

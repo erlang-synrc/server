@@ -4,6 +4,7 @@ priv/static/js/kgifts.js \
 priv/static/js/ktournaments.js \
 priv/static/js/kdashboard.js \
 priv/static/js/kwall.js \
+priv/static/js/kwall.sec.js \
 priv/static/js/kview_user.js \
 priv/static/js/kview_group.js \
 priv/static/js/kview_all_users.js \

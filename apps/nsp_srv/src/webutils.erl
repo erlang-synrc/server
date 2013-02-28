@@ -1000,6 +1000,12 @@ page_module() ->
 
 page_script_path() -> ?STATIC_ADDRESS++ "/js/k" ++ page_module()++".min.js".
 
+secondary_script() -> 
+  case wf_context:page_module() of
+    wall -> ?STATIC_ADDRESS ++ "/js/k"++ page_module() ++ ".sec.min.js";
+    _ -> []
+  end.
+
 page_css_path() -> ?STATIC_ADDRESS++ "/css/k" ++ page_module()++".min.css".
 
 page_script() ->

@@ -30,6 +30,7 @@ render_element(R = #textboxlist{}) ->
           "}"++
         "}"++
     "});"++
+    "$('.textboxlist').get(-1).remove();"++
     "var item = '~s'.split(',');"++
     "if(item!=''){"++
       "t.add(null, item[0],  item[1], item[3]);"++
@@ -42,12 +43,23 @@ render_element(R = #textboxlist{}) ->
   "});", ["#"++Id, Placeholder, Postback, string:join(Value, ","), R#textboxlist.id]),
   wf:wire(#script{script=S}),
 
-  wf_tags:emit_tag(input, [
+  FakeWidth = case site_utils:detect_language() of
+    "en" -> "628";
+    "tr" -> "609"
+  end,
+
+  [
+    wf_tags:emit_tag(input, [
     {type, text},
     {class, [textboxlist, R#textboxlist.class]},
     {style, [R#textboxlist.style, "display:none;"]},
     {id, Id}
-  ]).
+  ]),
+  % fake
+  #panel{class=textboxlist, style="width:"++FakeWidth++"px;", body=#list{class="textboxlist-bits", body=[
+    #listitem{class="textboxlist-bit textboxlist-bit-editable", body=#textbox{class="textboxlist-bit-editable-input"}}
+  ]}}
+  ].
 
 event({textboxlist_event, Delegate})->
   wf_context:type(first_request),
