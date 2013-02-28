@@ -14,8 +14,8 @@ function release_node {
 
 if [ "$NODE" == "all" ]; then
    echo "Releasing all nodes..."
-   #release_node app
-   #release_node game
+   release_node app
+   release_node game
    #release_node web
    release_node public
 else
