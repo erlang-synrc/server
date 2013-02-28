@@ -15,10 +15,10 @@ init([]) ->
 
     case nsx_opt:get_env(nsm_bg,start_email,false) of
          false -> skip;
-         true ->  nsm_bg_workers_sup:start_worker(nsm_mailer, [])
+         true ->  nsm_bg_workers_sup:start_worker(nsm_mailer, [{name,"@mailer"},{type,system}])
     end,
 
-    {ok, BPid} = nsm_bg_workers_sup:start_worker(nsm_launcher, [{name, "firestarter"}]),
+    {ok, BPid} = nsm_bg_workers_sup:start_worker(nsm_launcher, [{name, "@launcher"},{type,system}]),
     erlang:send(BPid,start_all),
 
     {ok,#state{}}.

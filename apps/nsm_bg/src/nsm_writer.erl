@@ -9,16 +9,18 @@
 -include_lib("nsm_gifts/include/common.hrl").
 -include("nsm_bg.hrl").
 -export([init/1, handle_notice/3, get_opts/1, handle_info/2, handle_call/3, 
-        cached_feed/3, cached_direct/3, feed_refresh/3, direct_refresh/3]).
+        cached_feed/3, cached_direct/3, feed_refresh/3, direct_refresh/3, start_link/2]).
 -record(state, {owner = "feed_owner", type :: user | group | system, feed, direct, cached_feed,cached_direct }).
 
+start_link(Mod,Args) -> gen_server:start_link(Mod, Args, []).
+
 init(Params) -> 
-    Owner   = proplists:get_value(owner,  Params),
+    Owner   = proplists:get_value(name,   Params),
     Type    = proplists:get_value(type,   Params),
     Feed    = proplists:get_value(feed,   Params),
     Direct  = proplists:get_value(direct, Params, undefined),
     gproc:reg({p,l,Owner}, {Type,Feed,Direct}),
-    ?INFO("Init worker with start params: ~p", [Params]),
+    ?INFO("Init worker: ~p", [Params]),
     {ok, #state{owner = Owner, type = Type, feed = Feed, direct = Direct}}.
 
 cached_feed(Pid,Fid,Page) -> gen_server:call(Pid,{cached_feed,Fid,Page}).
