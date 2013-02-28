@@ -176,7 +176,8 @@ process_delivery(_, check_more, {Module, Count, LastId})->
   wf:flush();
 
 process_delivery(Info, Route, Message) -> 
-  ?WARNING("Unexpected delivery: ~p ~p ~p", [Info, Route, Message]).
+  ?WARNING("Unexpected delivery: ~p ~p ~p", [Info, Route, Message]),
+  wf:flush().
 
 delete_entry(EntryId) ->
     wf:wire(#hide {target=EntryId, effect=blind, speed=500}),

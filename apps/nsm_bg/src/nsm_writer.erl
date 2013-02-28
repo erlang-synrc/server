@@ -8,16 +8,43 @@
 -include_lib("nsm_db/include/tournaments.hrl").
 -include_lib("nsm_gifts/include/common.hrl").
 -include("nsm_bg.hrl").
--export([init/1, handle_notice/3, get_opts/1, handle_info/2]).
--record(state, {owner = "feed_owner", type :: user | group | system, feed, direct }).
+-export([init/1, handle_notice/3, get_opts/1, handle_info/2, handle_call/3, 
+        cached_feed/3, cached_direct/3, feed_refresh/3, direct_refresh/3]).
+-record(state, {owner = "feed_owner", type :: user | group | system, feed, direct, cached_feed,cached_direct }).
 
 init(Params) -> 
     Owner   = proplists:get_value(owner,  Params),
     Type    = proplists:get_value(type,   Params),
     Feed    = proplists:get_value(feed,   Params),
     Direct  = proplists:get_value(direct, Params, undefined),
+    gproc:reg({p,l,Owner}, {Type,Feed,Direct}),
     ?INFO("Init worker with start params: ~p", [Params]),
     {ok, #state{owner = Owner, type = Type, feed = Feed, direct = Direct}}.
+
+cached_feed(Pid,Fid,Page) -> gen_server:call(Pid,{cached_feed,Fid,Page}).
+cached_direct(Pid,Fid,Page) -> gen_server:call(Pid,{cached_direct,Fid,Page}).
+feed_refresh(Pid,Fid,Page) -> gen_server:call(Pid,{feed_refresh,Fid,Page}).
+direct_refresh(Pid,Fid,Page) -> gen_server:call(Pid,{direct_refresh,Fid,Page}).
+
+handle_call({cached_feed,FId,Page},From,State) ->
+    Reply = case State#state.cached_feed of
+                 undefined -> nsm_db:entries_in_feed(FId,Page);
+                 A -> A end,
+    {reply,Reply,State#state{cached_feed=Reply}};
+
+handle_call({cached_direct,FId,Page},From,State) ->
+    Reply = case State#state.cached_direct of
+                 undefined -> nsm_db:entries_in_feed(FId,Page);
+                 A -> A end,
+    {reply,Reply,State#state{cached_direct=Reply}};
+
+handle_call({feed_refresh,FId,Page},From,State) ->
+    Reply = nsm_db:entries_in_feed(FId,Page),
+    {reply,ok,State#state{cached_feed=Reply}};
+
+handle_call({direct_refresh,FId,Page},From,State) ->
+    Reply = nsm_db:entries_in_feed(FId,Page),
+    {reply,ok,State#state{cached_direct=Reply}}.
 
 handle_notice(["feed", "delete", Owner] = Route, Message,
               #state{owner = Owner} = State) ->
@@ -44,6 +71,8 @@ handle_notice(["feed", "group", GroupId, "entry", EntryId, "add"] = Route,
             SE = Subs#group_subs.user_posts_count,
             nsm_db:put(Subs#group_subs{user_posts_count = SE+1})
     end,    
+
+    self() ! {feed_refresh,Feed,20},
     {noreply, State};
 
 handle_notice(["feed", "user", FeedOwner, "entry", EntryId, "add"] = Route,
@@ -58,25 +87,26 @@ handle_notice(["feed", "user", FeedOwner, "entry", EntryId, "add"] = Route,
         FeedOwner == From andalso FeedOwner == WorkerOwner->
             FilteredDst = [D || {_, group} = D <- Destinations],
             feed:add_entry(Feed, From, FilteredDst, EntryId, Desc, Medias,
-                           {user, normal});
+                           {user, normal}), self() ! {feed_refresh,Feed,20};
 
         %% friend added message to public feed
         FeedOwner == From ->
             feed:add_entry(Feed, From, [], EntryId, Desc, Medias,
-                           {user, normal});
+                           {user, normal}), self() ! {feed_refresh,Feed,20};
 
         %% direct message to worker owner
         FeedOwner == WorkerOwner ->
             feed:add_direct_message(Direct, From, [{FeedOwner, user}],
-                                    EntryId, Desc, Medias);
+                                    EntryId, Desc, Medias), self ! {direct_refresh,Direct,20};
 
         %% user sent direct message to friend, add copy to his direct feed
         From == WorkerOwner ->
             feed:add_direct_message(Direct, WorkerOwner, Destinations,
-                                    EntryId, Desc, Medias);
+                                    EntryId, Desc, Medias), self ! {direct_refresh,Direct,20};
         true ->
             ?INFO("not matched case in entry->add")
     end,
+    
     {noreply, State};
 
 % add/delete system message

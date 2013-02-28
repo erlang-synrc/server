@@ -41,32 +41,30 @@ init([Module | Args]) ->
             {ok, SystemQueue} = subscribe_system(Channel), % subscribe for system events
 
             %% register in gproc if gproc name specified
-            GProcName = ?gv(gproc_name, Options),
-            case GProcName of
-                undefined ->
-                    ok;
-                Name ->
+%            GProcName = ?gv(gproc_name, Options),
+%            case GProcName of
+%                undefined ->
+%                    ok;
+%                Name ->
 %                    ?INFO("register ~p in gproc with name ~p", [Module, Name]),
-                    catch gproc:reg(gproc_key(Name), Module)
-            end,
+%                    catch gproc:reg(gproc_key(Name), Module)
+%            end,
 
             {ok, #state{callback_state = CState,
                         callback       = Module,
                         channel        = Channel,
                         system_queue   = SystemQueue,
                         callback_queue = CallbackQueue,
-                        channel_mon    = MonRef,
-                        gproc_name     = GProcName}};
+                        channel_mon    = MonRef}};
+%                        gproc_name     = GProcName}};
 
         {stop, Reason} ->    {stop, Reason};
         {'EXIT', Reason} ->  {stop, {init_failed, {Module, Reason}}}
     end.
 
-
 handle_call(Request, _From, State) ->
-    ?WARNING("unexpected call: ~p", [Request]),
-    Reply = ok,
-    {reply, Reply, State}.
+    {Reply, Answer, NewState} = nsm_writer:handle_call(Request,_From,State#state.callback_state),
+    {reply, Answer, State}.
 
 handle_cast({delivery, Envelope}, State) ->
     %% transform mq fromat to pass to callback module

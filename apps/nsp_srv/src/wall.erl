@@ -83,7 +83,7 @@ feed(group, Gid) ->
       feed(Group#group.feed, {group, Group#group.username})
   end;
 feed(Fid, {Type, Ownid}) ->
-  ?INFO("Feed type: ~p", [Type]),
+%  ?INFO("Feed type: ~p", [Type]),
   [
     #panel{id=notification_area},
     entry_form(Fid, Type, ?MODULE, {add_entry, Fid}),
@@ -156,11 +156,23 @@ show_feed(Fid, Type, Uid) when is_atom(Type) ->
   UserInfo = wf:session(user_info),
   {ok, Pid} = comet_feed:start(Type, Fid, Uid, UserInfo),
   wf:state(comet_feed_pid, pid_to_list(Pid)),
-  FID = case  wf:q("filter") of
-    "direct" -> UserInfo#user.direct;
-    _ -> Fid
+
+  Node = nsx_opt:get_env(nsx_idgen,game_pool,5000000) div 1000000,
+  CheckNode = fun(X) -> lists:foldl(fun(A, Sum) -> A + Sum end, 0, X) rem 3 + 1 end,
+  AppNode = case Node of
+                 4 -> nsx_opt:get_env(nsm_db,app_srv_node,'app@doxtop.cc');
+                 _ -> list_to_atom("app@srv"++integer_to_list(CheckNode(UserInfo#user.username))++".kakaranet.com") end,
+
+  CachePid = rpc:call(AppNode,nsm_bg,pid,[UserInfo#user.username]),
+
+  Answer = case  wf:q("filter") of
+    "direct" -> rpc:call(AppNode,nsm_writer,cached_direct,[CachePid, UserInfo#user.direct, ?FEED_PAGEAMOUNT]);
+    _ -> rpc:call(AppNode,nsm_writer,cached_feed,[CachePid, Fid, ?FEED_PAGEAMOUNT])
   end,
-  Entries = nsm_db:entries_in_feed(FID, ?FEED_PAGEAMOUNT),
+  
+  Entries = case Answer of
+                 {badrpc,_} -> []; 
+                 X -> X end,
   Last = case Entries of
     [] -> [];
     _ -> lists:last(Entries)
