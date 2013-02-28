@@ -675,7 +675,7 @@ get_friends(User) ->
                 "<p><strong>",
                 ?_T("Make new friends on kakaranet."),
                 "</strong></p>",
-                #link{url="/view/all-users", class="btn", text=?_T("Find someone!")}
+                #link{url="/view/members/id/kakaranet", class="btn", text=?_T("Find someone!")}
             ]};
         false ->
             ?_T("User is not subscribed to anyone")
