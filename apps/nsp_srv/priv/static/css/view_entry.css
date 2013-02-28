@@ -1,0 +1,9 @@
+.feed_entry_actions {  list-style:none;  margin:0;  padding:0;  float:left;}
+.feed_entry_actions li {  float:left;  padding:0 0 0 5px;  font-size:9px;  line-height:12px;  font-weight:bold;}
+.feed_entry_actions li a {
+  float:left;
+  padding:2px 1px;
+  font-size:13px;
+  font-weight:normal;
+  text-decoration:underline;
+}

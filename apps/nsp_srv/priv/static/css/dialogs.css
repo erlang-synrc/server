@@ -1,0 +1,24 @@
+/* Create group/group settings */
+.group-settings .textarea {
+  float:left;
+  width:288px;
+  height:113px;
+  background: #ffffff;
+  border:1px solid #d2d9dc;
+  -moz-border-radius:2px;
+  -webkit-border-radius:2px;
+  border-radius:2px;
+  overflow:hidden;
+}
+.group-settings .textarea textarea {
+  background:none;
+  border:0;
+  color:#444;
+  float:left;
+  font-size:12px;
+  line-height:15px;
+  margin:0;
+  padding:9px 12px;
+  width:264px;
+  height:95px;
+}

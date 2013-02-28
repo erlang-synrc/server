@@ -171,25 +171,46 @@ line-height:1.115em;
 }
 .popup-2 .col-r p {margin:0 0 17px;font-size:1.4em;line-height:1.21em;}
 
-.list-2 {list-style:none;margin:0;padding:0 0 12px;}.list-2 li {padding:0 0 5px 14px;background:url(../images/bul-02.gif) no-repeat 0 4px;font-size:1.4em;line-height:1.21em;}.list-3 {list-style:none;margin:0;padding:0 0 6px;}.list-3 li {font-size:1.2em;line-height:1.25em;}.list-3 a {color:#5fa5d6;}.form-1 {width:448px;position:relative;overflow:hidden;margin:0 -10px 0 0;padding:0 2px 2px 0;}.form-1 .ar {padding:8px 0 0;}.form-1 .chk {float:left;width:16px;height:15px;padding:0;margin:0 2px 0 0;}.popup-2 .form-1 label {float:left;font-size:1.2em;line-height:1.5em;color:#444;padding:0 13px 0 0;}.form-1 .btn-submit {float:left;position:relative;margin:-8px 0 0;padding:0 0 1px;border:1px solid #a6c069;cursor:pointer;background:url(../images/btn-3.gif) repeat-x;width:60px;
-height:30px;
--moz-border-radius:3px;
--webkit-border-radius:3px;
-border-radius:3px;
-color:#5d7731;
-text-shadow:0 1px 1px #cfe5a4;
-font:12px/30px 'HelveticaNeueBold';
--moz-box-shadow:0 1px 2px #d3d3d3;
--webkit-box-shadow:0 1px 2px #d3d3d3;
-box-shadow:0 1px 2px #d3d3d3;
+.list-2 {list-style:none;margin:0;padding:0 0 12px;}
+.list-2 li {padding:0 0 5px 14px;background:url(../images/bul-02.gif) no-repeat 0 4px;font-size:1.4em;line-height:1.21em;}
+.list-3 {list-style:none;margin:0;padding:0 0 6px;}
+.list-3 li {font-size:1.2em;line-height:1.25em;}
+.list-3 a {color:#5fa5d6;}
+.form-1 {width:448px;position:relative;overflow:hidden;margin:0 -10px 0 0;padding:0 2px 2px 0;}
+.form-1 .ar {padding:8px 0 0;}
+.form-1 .chk {float:left;width:16px;height:15px;padding:0;margin:0 2px 0 0;}
+.popup-2 .form-1 label {float:left;font-size:1.2em;line-height:1.5em;color:#444;padding:0 13px 0 0;}
+.form-1 .btn-submit {
+  float:left;
+  position:relative;
+  margin:-8px 0 0;
+  padding:0 0 1px;
+  border:1px solid #a6c069;
+  cursor:pointer;
+  background:url(../images/btn-3.gif) repeat-x;width:60px;
+  height:30px;
+  -moz-border-radius:3px;
+  -webkit-border-radius:3px;
+  border-radius:3px;
+  color:#5d7731;
+  text-shadow:0 1px 1px #cfe5a4;
+  font:12px/30px 'HelveticaNeueBold';
+  -moz-box-shadow:0 1px 2px #d3d3d3;
+  -webkit-box-shadow:0 1px 2px #d3d3d3;
+  box-shadow:0 1px 2px #d3d3d3;
 }
 .popup-3 {
     width:680px;
 }
 .popup-3 .frame {padding:0;}
-.popup-3 .head {display:block;background:#f8f8f8 url(../images/bg-head.gif) repeat-x 0 100%;padding:8px 12px 10px;font-size:1.8em;line-height:1.166em;color:#3f3f3f;margin:0 0 20px;}.popup-3 .col-holder {width:100%;overflow:hidden;margin:0 0 19px;background:url(../images/bg-col-holder.gif) repeat-y 355px 0;}.popup-3 .col-1 {float:left;width:290px;padding:0 8px 0 32px;}.popup-3 .col-2 {float:right;padding:0 31px 0 9px;width:240px;}.popup-2 label {display:block;padding:0 0 7px;font-size:1.2em;line-height:1.25em;}.popup-2 label:after {clear:both;content:"";display:block;}.popup-2 label a {color:#ababab;}.popup-2 .text {width:288px;height:33px;overflow:hidden;background:url(../images/bg-txt-1.gif) no-repeat;border:1px solid #d2d9dc;margin:0 0 11px;-moz-border-radius:2px;-webkit-border-radius:2px;
-border-radius:2px;
-}
+.popup-3 .head {display:block;background:#f8f8f8 url(../images/bg-head.gif) repeat-x 0 100%;
+  padding:8px 12px 10px;font-size:1.8em;line-height:1.166em;color:#3f3f3f;margin:0 0 20px;}
+.popup-3 .col-holder {width:100%;overflow:hidden;margin:0 0 19px;background:url(../images/bg-col-holder.gif) repeat-y 355px 0;}
+.popup-3 .col-1 {float:left;width:290px;padding:0 8px 0 32px;}
+.popup-3 .col-2 {float:right;padding:0 31px 0 9px;width:240px;}
+.popup-2 label {display:block;padding:0 0 7px;font-size:1.2em;line-height:1.25em;}
+.popup-2 label:after {clear:both;content:"";display:block;}
+.popup-2 label a {color:#ababab;}
 .popup-2 .text:after {
 clear:both;
 content:"";
@@ -312,27 +333,3 @@ line-height:1.214em;
 }
 .popup-3 .col-4 .btn:hover {text-decoration:none;}
 .popup-2 .holder {font-size: 1.2em;padding: 0 10px 10px;}
-
-.group-settings .textarea {
-    float:left;
-    width:288px;
-    height:113px;
-    background:url(../images/bg-tarea.gif) no-repeat;
-    border:1px solid #d2d9dc;
-    -moz-border-radius:2px;
-    -webkit-border-radius:2px;
-    border-radius:2px;
-    overflow:hidden;
-}
-.group-settings .textarea textarea {
-    background:none;
-    border:0;
-    color:#444;
-    float:left;
-    font-size:12px;
-    line-height:15px;
-    margin:0;
-    padding:9px 12px;
-    width:264px;
-    height:95px;
-}
