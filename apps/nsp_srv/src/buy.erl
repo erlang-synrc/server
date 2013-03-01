@@ -16,7 +16,6 @@
 -define(DEFAULT_REQ_TIMEOUT, 10000).
 
 main() ->
-    webutils:redirect_to_ssl("buy"),
     ?INFO("Buy page: ~p",[wf:user()]),
     User = wf:user(),
     if

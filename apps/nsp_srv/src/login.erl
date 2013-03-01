@@ -10,7 +10,6 @@
 -compile(export_all).
 
 main() ->
-%    webutils:redirect_to_ssl("login"),
     #template { file = code:priv_dir(nsp_srv)++"/templates/bare.html" }.
 
 body()->

@@ -19,34 +19,6 @@
 
 -define(GROUPS_ON_DASHBOARD, 10).
 
-redirect_to_ssl(Page) ->
-    Req = wf_context:request_bridge(),
-    Port = Req:peer_port(),
-    Host = hd(ling:split(proplists:get_value(host, wf_context:headers()), ":")),
-    ?INFO("Req ~p Port ~p Host ~p",[Req,Port,Host]),
-    case Port of
-        443 -> ok;
-        _ -> wf:redirect(["https://",Host,"/",Page])
-    end.
-
-redirect_to_tcp(Page) ->
-%    Req = wf_context:request_bridge(),
-%    Port = Req:peer_port(),
-%    Host = hd(ling:split(proplists:get_value(host, wf_context:headers()), ":")),
-%    ?INFO("Req ~p Port ~p Host ~p",[Req,Port,Host]),
-%    case Port of
-%        80 -> no_redirect;
-%        8000 -> no_redirect;
-%        _ ->
-%            case Host == "kakaranet.com" orelse "srv2.kakaranet.com" == Host 
-%                orelse "srv1.kakaranet.com" == Host of
-%                 false ->  wf:redirect_from_login(?HTTP_ADDRESS ++ "/" ++ Page);
-%                 true ->  
-                      wf:redirect_from_login("/" ++Page)
-%            end 
-  %  end
-   .
-
 main() -> [].
 
 user_info() ->
