@@ -49,7 +49,8 @@
 %%        To = wo, bo, 1-24          || {hit_and_run_disabled, Move, RestMoves},
 %%                                   || {not_bear_off_mode, Move, RestMoves},
 %%                                   || {no_checker, Move, RestMoves},
-%%                                   || {invalid_move, Move, RestMoves}
+%%                                   || {invalid_move, Move, RestMoves},
+%%                                   || {move_from_bar_first, Move, RestMoves}
 
 %% Outgoing events:
 %%  {next_player, Color}
@@ -389,7 +390,8 @@ apply_moves2(Color, PipsList, [{From, To} = Move | RestMoves], Board, MoveEvents
                 {error, waste_move} -> {error, {waste_move_disabled, Move, RestMoves}};
                 {error, hit_and_run} -> {error, {hit_and_run_disabled, Move, RestMoves}};
                 {error, not_bear_off_mode} -> {error, {not_bear_off_mode, Move, RestMoves}};
-                {error, no_checker} -> {error, {no_checker, Move, RestMoves}}
+                {error, no_checker} -> {error, {no_checker, Move, RestMoves}};
+                {error, move_from_bar_first} -> {error, {move_from_bar_first, Move, RestMoves}}
             end;
         error -> {error, {invalid_move, Move, RestMoves}}
     end.
@@ -436,6 +438,21 @@ is_any_move_available_desk(Color, Pips, Board, BearoffWasteMoveEnabled,
 %% check_move_posibility/8 -> ok | hit | {error, Reason}
 check_move_posibility(Color, From, To, Pips, Board, BearoffWasteMoveEnabled,
                       HomeHitAndRunEnabled, HitedHomePositions) ->
+    BarPos = bar_position(Color),
+    CheckersOnBar = case get_checkers(BarPos, Board) of
+                        {Color, _} -> true;
+                        empty -> false
+                    end,
+    if From =/= BarPos andalso CheckersOnBar ->
+           {error, move_from_bar_first};
+       true ->
+           check_checker(Color, From, To, Pips, Board, BearoffWasteMoveEnabled,
+                         HomeHitAndRunEnabled, HitedHomePositions)
+    end.
+
+
+check_checker(Color, From, To, Pips, Board, BearoffWasteMoveEnabled,
+              HomeHitAndRunEnabled, HitedHomePositions) ->
     case get_checkers(From, Board) of
         {Color, _} -> check_home_hit_and_run(Color, From, To, Pips, Board, BearoffWasteMoveEnabled,
                                              HomeHitAndRunEnabled, HitedHomePositions);
