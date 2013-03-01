@@ -50,7 +50,8 @@ body() ->
   #panel{class="page-content", body=webutils:quick_nav()},
   #panel{class="page-content page-canvas", style="overflow:auto;", body=[
     #panel{class=aside, body=[
-      user_info(),
+%      user_info(),
+      wall:get_ribbon_menu(Info),
       wall:get_friends(Info),
       wall:get_groups(Info)
     ]},
@@ -74,7 +75,7 @@ user_info() ->
         undefined ->
             wall:get_ribbon_menu();
         _ ->
-            wall:user_info()
+            webutils:user_info()
     end.
 
 getPageContent(Page) ->

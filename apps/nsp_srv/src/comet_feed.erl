@@ -17,7 +17,7 @@ start(Type, FeedId, FeedOwner, CurrentUser) ->
     wf:comet(fun()->
         %% put info to process dictionary, to later examine who is owner
         %% of the process
-        put('**process_description**', [comet_feed, FeedOwner, CurrentUser#user.username]),
+        put('**process_description**', [comet_feed, FeedOwner, CurrentUser]),
         ?INFO("Feed comet type ~p for ~p Pid ~p ", [Type, FeedOwner, self()]),
         case Type of
             user ->

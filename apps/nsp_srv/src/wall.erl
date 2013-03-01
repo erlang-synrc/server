@@ -45,8 +45,8 @@ body() ->
     "<section id=\"content\">", Wall, "</section>",
     case Exists of 
          true -> #panel{class="aside", body=[case FeedType of
-                                                  user -> [ get_ribbon_menu(), #panel{id=aside,body=aside(Info)} ];
-                                                  _    -> [ group_info(), get_members() ] end ]}; 
+                                                  user -> [ get_ribbon_menu(Info), #panel{id=aside,body=aside(Info)} ];
+                                                  _    -> [ group_info(Info), get_members() ] end ]}; 
          false -> "" end 
   ]}.
 
@@ -256,8 +256,10 @@ new_statistic(SubscribersCount,FriendsCount,CommentsCount,LikesCount,EntriesCoun
           #listitem{body=#link{url="/wall/filter/like/user/" ++ wf:to_list(CheckedUser),
                     text=integer_to_list(EntriesCount) ++ " " ++ ?_T("entries") }} ]}.
 
-get_ribbon_menu() ->
-    CheckedUser = case {wf:q("id"),wf:user()} of
+get_ribbon_menu() -> get_ribbon_menu(wf:user()).
+get_ribbon_menu(User) ->
+    ?INFO("get_ribbon_menu: ~p",[User]),
+    CheckedUser = case {wf:q(id),wf:user()} of
         {CU,CU} -> undefined;
         {CUA,CUB}   -> CUA
     end,
@@ -265,10 +267,10 @@ get_ribbon_menu() ->
         undefined -> undefined;
         _         -> feed:is_subscribed_user(wf:user(), CheckedUser)
     end,
-    User = case CheckedUser of
-        undefined -> webutils:user_info();
-        _         -> {ok, Usr} = nsm_users:get_user(CheckedUser), Usr
-    end,
+%    User = case CheckedUser of
+%        undefined -> webutils:user_info();
+%        _         -> {ok, Usr} = nsm_users:get_user(CheckedUser), Usr
+%    end,
     SubscribersCount = feed:user_subscription_count(User#user.username),
     FriendsCount = feed:user_friends_count(User#user.username),
     CommentsCount = feed:get_comments_count(User#user.username),
@@ -281,7 +283,7 @@ get_ribbon_menu() ->
     BlockedUsers = case wf:user() of
                         undefined -> [];
                         _ -> nsm_users:get_blocked_users(wf:user()) end,
-    BlockUnblock = case CheckedUser of
+    BlockUnblock = case User of
         undefined -> [];
         _ -> case lists:member(CheckedUser, BlockedUsers) of
                 true ->
@@ -975,12 +977,12 @@ incoming_requests() ->
             ]}]
     end.
 
-group_info() ->
+group_info(Group) ->
   UId = wf:user(),
   GId = wf:q(id),
-  case nsm_groups:get_group(GId) of
-    {error, notfound} -> [];
-    {ok, Group} ->
+%  case nsm_groups:get_group(GId) of
+%    {error, notfound} -> [];
+%    {ok, Group} ->
       CTime = Group#group.created,
       {D,_H} = calendar:now_to_local_time(CTime),
       Date = io_lib:fwrite("~b/~b/~b", tuple_to_list(D)),
@@ -1035,8 +1037,8 @@ group_info() ->
         group_edit_form(Group),
         #br{},
         #br{}
-      ]}
-  end.
+      ]}.
+%  end.
 
 user_in_group() ->
     GId = wf:q(id),
