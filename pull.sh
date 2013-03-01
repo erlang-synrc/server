@@ -11,6 +11,8 @@ git checkout kwall.min.css
 git checkout kfriends.min.css
 git checkout kview_members.min.css
 git checkout kgroups.min.css
+git checkout kcontact.min.css
+git checkout kprofile.min.css
 
 git pull
 
@@ -23,3 +25,5 @@ git pull
 ./cssfix.sh kfriends.min.css
 ./cssfix.sh kview_members.min.css
 ./cssfix.sh kgroups.min.css
+./cssfix.sh kcontact.min.css
+./cssfix.sh kprofile.min.css

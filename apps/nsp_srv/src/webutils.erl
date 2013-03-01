@@ -782,41 +782,6 @@ affiliates(User) ->
             ]}
     end.
 
-get_hemen_nav() ->
-    get_hemen_nav(dashboard).
-get_hemen_nav(Page) ->
-    ListClass = case Page of dashboard -> "list-top-photo";
-                             matchmaker -> "list-top-photo"; 
-                             tournament -> "list-top-photo"; _ -> "" end,
-    #list{class="hemen-nav "++ListClass, body=[
-    begin
-        Link = case Page of tournament -> #link{postback=Postback};
-                            %matchmaker -> #link{postback=Postback};
-                             _ -> #link{url=Url} end,
-        #listitem{class=Class, body=[Link#link{body=[
-	    #panel{class="box",body=[
-		#panel{class="img", body=[#image{image=Img1, style="width:160px;height:88px"}]},
-		#panel{class="img img-2", body=[#image{image=Img2, style="width:160px;height:88px"}]}
-	    ]},
-	    case Page of
-                dashboard -> "";
-                matchmaker -> "";
-                tournament -> "";
-		_ -> #span{class="descr", text=?_T("Let's Play!")}
-	    end,
-	    #panel{class="stat", body=[#span{text=?_T("Very soon...")}]},
-	    "<em><img class=\"png\" src=\""++Img3++"\" alt=\"\" width=\"77\" height=\"77\" ></em>"
-	]}]}
-    end || {Postback, Url, Class, Img1, Img2, Img3} <-
-	[
-	{{game, okey}, ?_U("/matchmaker/okey"), "mkh_active", "/images/img-007.jpg", "/images/img-008.jpg", "/images/text-okey.png"},
-	{{game, tavla}, ?_U("/matchmaker/tavla"), "mkh_active", "/images/img-005.jpg", "/images/img-006.jpg", "/images/text-tavla.png"},
-	{undefined, "#", "", "/images/img-003.jpg", "/images/img-004.jpg", "/images/text-king.png"},
-	{undefined, "#", "", "/images/img-001.jpg", "/images/img-002.jpg", "/images/text-batak.png"},
-	{undefined, "#", "", "/images/img-009.jpg", "/images/img-010.jpg", "/images/text-sorbi.png"}
-	]
-    ]}.
-
 quick_nav() -> quick_nav(false).
 
 quick_nav(FullSize) ->

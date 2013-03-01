@@ -19,20 +19,15 @@
 
 main() ->
     tw_utils:app_callback(),
-    webutils:add_script("/nitrogen/js/form.js"),
-    webutils:add_script("/nitrogen/js/input-type-file.js"),
-    webutils:add_script("/nitrogen/blockui.js"),
-    #template { file=code:priv_dir(nsp_srv)++"/templates/bare.html" }.
+    #template { file=code:priv_dir(nsp_srv)++"/templates/base.html" }.
 
 title() -> webutils:title(?MODULE).
 
 body() ->
-    case wf:user() of
-	undefined ->
-	    wf:redirect_to_login("/");
-	_User ->
-	    main_authorized()
-    end.
+  case wf:user() of
+    undefined -> wf:redirect_to_login("/");
+    _User -> main_authorized()
+  end.
 
 main_authorized() ->
     Col = #panel{class=col, body=section_body(get_current_section())},
@@ -53,16 +48,16 @@ main_authorized() ->
     end,
     Aside = #aside{body=#list{body=[#listitem{class=case get_current_section() of S -> active; _ -> "" end,
 					      body=#link{text=T, url=U}} || {S, U,T} <- Links]}},
-    [#panel{class="list-top-photo-h", body=webutils:get_hemen_nav()},
-     #section{class="profile-block", body=[Col, Aside]}
-    ].
+  [
+    #panel{class="page-content", body=webutils:quick_nav()},
+    #panel{class="page-content page-canvas profile-block", body=[Col, Aside]}
+  ].
 
 get_current_section() ->
-    case wf:q('__submodule__') of
-	undefined -> profile;
-	Page -> list_to_existing_atom(Page)
-    end.
-
+  case wf:q('__submodule__') of
+    undefined -> profile;
+    Page -> list_to_existing_atom(Page)
+  end.
 
 callback(#api{anchor = Id, name = Name}, DataVar) ->
     wf:f("obj('~s').~p(~s)", [Id, Name, DataVar]).
@@ -138,23 +133,26 @@ section_body(profile) ->
     AvatarP = avatar_update_box(User),
 
     Services = #panel{class=cell,body=[
-      #h3{text=?_T("Services")},
+      #panel{text=?_T("Services"), class="section-title"},
       #list{class="soc-list",body=[
         fb_utils:service_item(),
         tw_utils:service_item()
       ]}
     ]},
-    [
-     #h1{text=?_T("Profile Information")},
-     #panel{id=profile_info},
-     #panel{class="profile-info", body=[
+  [
+    #hr{class="page-content-hr"},
+    #panel{body=?_T("Profile Information"), class="section-second-title"},
+    #panel{id=profile_info, body=[]},
+     #panel{class="profile-info",
+      body=[
 	    #panel{class="col-l",body=["<form>", ColL, "</form>"]},
 	    #panel{class="col-r",body= [AvatarP, Services]}]}
     ];
 section_body(gifts) ->
     AllGifts = lists:reverse(lists:sort(nsm_users:list_gifts_of(wf:user()))),
     [
-        #h1{text=?_T("Gifts")},
+      #hr{class="page-content-hr"},
+      #panel{text=?_T("Gifts"), class="section-second-title"},
         #list{class="history-list", id=orders_list, body = [
             begin
 %                SDate = site_utils:feed_time_tuple(calendar:now_to_local_time(BoughtTime)),
@@ -268,7 +266,8 @@ section_body(account) ->
             #user_address{address = Address, city = City, postal_code = PostalCode, phone = Phone, personal_id = PersonalId} = UA
     end,
     [
-	#h1{text=?_T("Account")},
+    #hr{class="page-content-hr"},
+	#panel{text=?_T("Account"), class="section-second-title"},
 	#panel{class="inform-block", body = [
 	    "<dt><dl>"++ ?_T("Remaining Kakush") ++": <dd>"++wf:to_list(Kakush)++"</dd>&nbsp;&nbsp;&nbsp;</dl>",
 	    "<dl> "++ ?_T("Kakush Currency") ++": <dd>"++wf:to_list(KakushCurrency)++"</dd>&nbsp;TL&nbsp;&nbsp;&nbsp;</dl>",
@@ -310,7 +309,7 @@ section_body(account) ->
             ]},
             #panel{class="col-r",body=[
                 #panel{class=cell,body=[
-                    #h3{text=?_T("Convert kakush to quota")},
+                    #panel{text=?_T("Convert kakush to quota"), class="section-title", style="font-size:14px;"},
                     #panel{class=row, body=[
                         #label{text=?_T("Amount"), style="width:100px;"},
                         #panel{class=text, style="width:132px;", body = #textbox{id=kakush_to_quota, style="width:132px;"}},
@@ -325,7 +324,9 @@ section_body(invite) ->
     captcha:generate(invite),
     u_event(generate_invite),
     RSpan = " <span class=\"req\">*</span>",
-    [#h1{text=?_T("Invite")},
+    [
+    #hr{class="page-content-hr"},
+    #panel{text=?_T("Invite"), class="section-second-title"},
      #panel{id=invite_info},
      #panel{class="invite-form", body=[
 	"<form>",
@@ -362,7 +363,8 @@ section_body(invite) ->
 		]}]}
 	]},
 	"</form>"]},
-    #h1{text=?_T("Sent invites")},
+    #hr{class="page-content-hr"},
+    #panel{text=?_T("Sent invites"), class="section-second-title"},
     #panel{id=invite_list, body=invite_list()}
     ];
 
@@ -378,7 +380,8 @@ section_body(_) ->
 
     {_, PersonalScore} = nsm_db:get(personal_score, wf:user()),
     [
-        #h1{text=?_T("Player statistics")},
+      #hr{class="page-content-hr"},
+      #panel{text=?_T("Player statistics"), class="section-second-title"},
         case PersonalScore of 
             notfound -> [];
             PS -> #panel{body=[
@@ -491,7 +494,7 @@ invite_list() ->
 avatar_update_box(User) ->
     Avatar = avatar:get_avatar_by_username(User#user.username, big),
     #panel{class=cell,body=[
-			    #h3{text=?_T("Avatar")},
+			    #panel{text=?_T("Avatar"), class="section-title"},
 			    #panel{id=avatarholder, class=photo, body=#image{image=Avatar, class=
                     case nsm_accounts:user_paid(User#user.username) of
                         true -> "paid_user_avatar";
@@ -916,7 +919,6 @@ undef_to_empty_str(Rec) when is_tuple(Rec) ->
 
 create_tour_body() ->
     [
-    %#panel{class="list-top-photo-h", body=webutils:get_hemen_nav(tournament)},
      #section{class="create-area", body=#section{class="create-block",
            body=[
                  #panel{id="welcome_text", body=?_T("Please select game type.")},

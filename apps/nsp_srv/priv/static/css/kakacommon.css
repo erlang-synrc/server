@@ -1929,6 +1929,7 @@ body.extra-small-screen .LV_invalid {
 }
 
 .section-title{
+  font: 1em Arial,Helvetica,sans-serif;
   background: #ff8a00;
   border:1px solid #abb5bb;
   text-align:left;
@@ -1939,4 +1940,41 @@ body.extra-small-screen .LV_invalid {
   margin-top:10px;
   text-transform:uppercase;
   padding: 0 13px;
+}
+
+.page-content-title{
+  font: 1em Arial,Helvetica,sans-serif;
+  width: 250px;
+  height: 43px;
+  background: #ff8a00;
+  border: 1px solid #abb5bb;
+  text-align: center;
+  font-size: 18px;
+  color: #fff;font-weight: bold;
+  line-height: 43px;
+  margin-top: -30px;
+  margin-left: -3px;
+}
+
+.section-second-title{
+  font: 1em Arial,Helvetica,sans-serif;
+  height: 43px;
+  background: #ff8a00;
+  text-align: center;
+  line-height: 43px;
+  font-size: 18px;
+  color: #fff;
+  font-weight: bold;
+  margin-top: -21px;
+  margin-left: -3px;
+}
+
+.notable{
+  font: 13px 'Gotham Rounded Bold',"Trebuchet MS",Arial,Helvetica,sans-serif;
+}
+
+hr.page-content-hr{
+  clear: both;
+  width: 958px;
+  color: #c2c2c2;
 }
