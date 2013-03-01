@@ -30,7 +30,7 @@ render_element(R = #textboxlist{}) ->
           "}"++
         "}"++
     "});"++
-    "$('.textboxlist').get(-1).remove();"++
+    "$($('.textboxlist').get(-1)).remove();"++
     "var item = '~s'.split(',');"++
     "if(item!=''){"++
       "t.add(null, item[0],  item[1], item[3]);"++
