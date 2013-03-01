@@ -23,9 +23,11 @@ main() -> #template { file=code:priv_dir(nsp_srv)++"/templates/base.html"}.
 
 body() ->
   {FeedType,TypeDefined} = case wf:q(type) of "user" -> {user,true}; "gr"++XX -> {group,true}; _ -> {user,false} end,
-  User = case TypeDefined of true -> case wf:q(id) of undefined -> "0"; A -> A end; false -> wf:user() end,
+  User = case TypeDefined of 
+              true -> case wf:q(id) of undefined -> "0"; A -> A end; 
+              false -> wf:user() end,
 
-  ?INFO("Check: ~p",[{FeedType,User}]),
+  ?INFO("Check: ~p",[{FeedType,User,wf:q(FeedType)}]),
 
   {Exists,Wall,Info} = case FeedType == group of
         true -> {_, GroupInfo} = nsm_groups:get_group(User),
@@ -198,7 +200,7 @@ get_friends(User) ->
           ]};
         false ->
           #span_b{class="links", body=[
-            #link{style="font-size:12pt;", text=?_T("All friends of ") ++ User#user.username, url="/friends/of/"++User#user.username, id="friendslink",
+            #link{style="font-size:12pt;", text=?_T("All friends of ") ++ User#user.username, url="/friends/id/"++User#user.username, id="friendslink",
             title=?_T("You can unsubscribe or write someone private message via this list")}
           ]}
       end,
@@ -317,6 +319,8 @@ get_ribbon_menu(User) ->
     case ((Admin == allow) or (CheckedUser == undefined)) and (User#user.status /= ok) of
 	true -> wf:update(notification_area, verification_notification());
 	false -> skip end,
+
+    ?INFO("ribbon2: ~p ~p",[CheckedUser, IsSubscribedUser]),
 
     MenuTail = case {CheckedUser, IsSubscribedUser} of
         {undefined, undefined} ->

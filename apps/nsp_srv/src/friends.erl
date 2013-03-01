@@ -1,5 +1,4 @@
-%% -*- mode: nitrogen -*-
--module (friends).
+-module(friends).
 -compile(export_all).
 -include_lib("nitrogen_core/include/wf.hrl").
 -include_lib("nsm_db/include/user.hrl").
@@ -18,12 +17,10 @@ main() ->
     end.
 
 main_authorized() ->
-    UserOrNot = wf:q('of'),
-    case UserOrNot of
-        undefined ->
-            UserName = wf:user();
-        MrX ->
-            UserName = MrX
+    UserOrNot = wf:q('id'),
+    UserName = case UserOrNot of
+        undefined -> wf:user();
+        MrX -> MrX
     end,
     case catch nsm_users:get_user(UserName) of
         {ok, UserInfo} ->
@@ -41,8 +38,14 @@ main_authorized() ->
 title() -> webutils:title(?MODULE).
 
 body() -> 
-  User = wf:q('of'),
-  Info = case nsm_db:get(user,wf:user()) of 
+  User = wf:q('id'),
+  {Type,CheckedUser} = case User of
+%                     undefined -> Group = wf:q('group'),
+%                                  case Group of
+                                       undefined -> {user,wf:user()};
+%                                       G -> {group,G} end;
+                     X -> {user,X} end,
+  Info = case nsm_db:get(Type,CheckedUser) of 
                     {ok,I} -> I;
                     _ -> undefined end,
   ?INFO("body: User ~p Info ~p",[User, Info]),
@@ -50,7 +53,6 @@ body() ->
   #panel{class="page-content", body=webutils:quick_nav()},
   #panel{class="page-content page-canvas", style="overflow:auto;", body=[
     #panel{class=aside, body=[
-%      user_info(),
       wall:get_ribbon_menu(Info),
       wall:get_friends(Info),
       wall:get_groups(Info)
@@ -68,15 +70,6 @@ content(Page, Title) ->
         ]},
         #panel{id="friends_content", body=getPageContent(Page)}
     ].
-
-user_info() ->
-    UserOrNot = wf:q('of'),
-    case UserOrNot of
-        undefined ->
-            wall:get_ribbon_menu();
-        _ ->
-            webutils:user_info()
-    end.
 
 getPageContent(Page) ->
     [
