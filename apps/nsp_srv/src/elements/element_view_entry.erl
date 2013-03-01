@@ -350,9 +350,10 @@ entry_element_usual(E, Comments, Avatar, {MediaThumb, MediaLists0}, _TargetMedia
     TempId = E#entry.entry_id,
 
     AttachmentBox = wf:temp_id(),
+    %E#entry.created_time = {},
 
-    LocalTime = calendar:now_to_local_time(E#entry.created_time),
-    Time = site_utils:feed_time_tuple(LocalTime),
+    Diff = trunc(timer:now_diff(now(), E#entry.created_time) * 0.000001),
+    Time = timestamp_label(calendar:seconds_to_daystime(Diff), E#entry.created_time),
 
     Events = [
         #event {type=mouseover,target=remove, actions=#show {}},
@@ -497,6 +498,15 @@ entry_element_usual(E, Comments, Avatar, {MediaThumb, MediaLists0}, _TargetMedia
         ]}
       ]}
     ].
+
+timestamp_label({0, _}, Time) ->
+  {_, H} = calendar:now_to_local_time(Time),
+  io_lib:format("~2..0b:~2..0b:~2..0b", tuple_to_list(H));
+timestamp_label({Days, _}, _) when Days < 7 -> io_lib:format("~p days ago", [Days]);
+timestamp_label({Days, _}, _) when Days < 31 -> io_lib:format("~p weeks ago", [trunc(Days/7)]);
+timestamp_label({Days, _}, _) when Days < 365 -> io_lib:format("~p months ago", [trunc(Days/7)]);
+timestamp_label({Days, _}, _) when Days > 365 -> io_lib:format("~p years ago", [trunc(Days/365)]);
+timestamp_label({Days, _}, _) -> io_lib:format("~p days ago", [Days]).
 
 comments_element(EId, Comments, Anchor, Avatar) ->
     comments_element(EId, Comments, Anchor, Avatar, undefined, undefined, undefined, undefined).

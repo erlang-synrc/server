@@ -177,9 +177,44 @@ read_entries(Pid, StartFrom, FeedId)->
   end.
 
 aside() ->
-    Fv = webutils:get_friends(),
+    Fv = get_friends(),
     Gv = webutils:get_groups(),
     [Fv,Gv].
+
+get_friends() ->
+  UserName = case wf:q('of') of
+    undefined -> wf:user();
+    Name -> Name
+  end,
+  case nsm_db:get(user, UserName) of
+    {ok, User}->
+      Msg = case User#user.username == wf:user() of
+        true ->
+          #panel{class="mark-cell", body=[
+            #p{body=["<strong>",?_T("Make new friends on kakaranet."),"</strong>"]},
+            #link{url="/view/members/id/kakaranet", class="btn", text=?_T("Find someone!")}
+          ]};
+        false -> ?_T("User is not subscribed to anyone")
+      end,
+      Nav = case User#user.username == wf:user() of
+        true ->
+          #span_b{class="links", body=[
+            #link{style="font-size:12pt;",text=?_T("All your friends"), url="/friends", id="friendslink",
+            title=?_T("You can unsubscribe or write someone private message via this list")}
+          ]};
+        false ->
+          #span_b{class="links", body=[
+            #link{style="font-size:12pt;", text=?_T("All friends of ") ++ User#user.username, url="/friends/of/"++User#user.username, id="friendslink",
+            title=?_T("You can unsubscribe or write someone private message via this list")}
+          ]}
+      end,
+%        #span_b{class="links", body=[
+%           #link{text=?_T("All the people on kakaranet"), url="/view/members/id/kakaranet", id="alluserslink",
+%          title=?_T("You can unsubscribe or write someone private message via this list")}
+%        ]}
+      webutils:get_metalist(User, ?_T("FRIENDS"), nsm_users, list_subscr_usernames, Msg, Nav);
+   {error, notfound} -> []
+  end.
 
 new_statistic(SubscribersCount,FriendsCount,CommentsCount,LikesCount,EntriesCount,CheckedUser) ->
     #list{class="list-5", body=[

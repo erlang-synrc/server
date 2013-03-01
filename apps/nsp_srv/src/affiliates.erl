@@ -249,11 +249,6 @@ purchases_list(PurchasesList) ->
         ]}
     ].
 
-% left side
-get_friends() ->
-    User = wf:state(user),
-    webutils:get_friends(User).
-
 get_groups() ->
     User = wf:state(user),
     webutils:get_groups(User).

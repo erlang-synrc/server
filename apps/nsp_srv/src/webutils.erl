@@ -659,53 +659,6 @@ get_members(GId) ->
     ],
     get_metalist(GId, ?_T("MEMBERS"), nsm_groups, list_group_members, ?_T("Group have no members"), Nav).
 
-get_friends() ->
-    User = webutils:user_info(),
-    get_friends(User).
-
-get_friends(User) ->
-    Msg = case User#user.username == wf:user() of
-        true ->
-            #panel{class="mark-cell", body=[
-                #br{},
-                #br{},
-                #br{},
-                #br{},
-                #br{},
-                "<p><strong>",
-                ?_T("Make new friends on kakaranet."),
-                "</strong></p>",
-                #link{url="/view/members/id/kakaranet", class="btn", text=?_T("Find someone!")}
-            ]};
-        false ->
-            ?_T("User is not subscribed to anyone")
-    end,
-    Nav = [
-        case User#user.username == wf:user() of
-            true ->
-                #span_b{class="links", body=[
-                    #link{style="font-size:12pt;",text=?_T("All your friends"), 
-                          url="/friends", id="friendslink",
-                    title=?_T("You can unsubscribe or write someone private message via this list")}
-                ]};
-            false ->
-                #span_b{class="links", body=[
-                    #link{style="font-size:12pt;", text=?_T("All friends of ") ++ User#user.username, 
-                          url="/friends/of/"++User#user.username,
-                    id="friendslink", title=?_T("You can unsubscribe or write someone private message via this list")}
-                ]}
-        end %,
-%        #span_b{class="links", body=[
- %           #link{text=?_T("All the people on kakaranet"), url="/view/members/id/kakaranet", id="alluserslink",
-  %          title=?_T("You can unsubscribe or write someone private message via this list")}
-%        ]}
-    ],
-    [
-        "<span id='guidersfriends'>",
-        get_metalist(User, ?_T("FRIENDS"), nsm_users, list_subscr_usernames, Msg, Nav),
-        "</span>"
-    ].
-
 get_metalist(Id, Title, Module, List, EmptyMsg, Nav) ->
 %    ?INFO("METALIST: ~p",[{Id, Title, Module, List, EmptyMsg, Nav}]),
     Friends = case Module:List(Id) of

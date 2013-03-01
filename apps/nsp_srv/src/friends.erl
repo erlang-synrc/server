@@ -45,7 +45,7 @@ body() -> [
   #panel{class="page-content page-canvas", style="overflow:auto;", body=[
     #panel{class=aside, body=[
       user_info(),
-      get_friends(),
+      wall:get_friends(),
       get_groups()
     ]},
     #panel{class=friendlist, body=content(1)}
@@ -61,11 +61,6 @@ content(Page, Title) ->
         ]},
         #panel{id="friends_content", body=getPageContent(Page)}
     ].
-
-
-get_friends() ->
-    User = wf:state(user),
-    webutils:get_friends(User).
 
 get_groups() ->
     User = wf:state(user),
