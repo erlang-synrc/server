@@ -972,6 +972,7 @@ handle_desk_events([Event | Events], DeskState,
     NewDeskState =
         case Event of
             {rolls, Color, Die1, Die2} ->
+                ?INFO("TAVLA_NG_TABLE_DBG <~p,~p> Board: Color <~p> rolls(himself): ~p", [GameId, TableId, Color, {Die1, Die2}]),
                 publish_ge(create_tavla_rolls_dice(Color, {Die1, Die2}, StateData), StateData),
                 PipsList = pips_list(Die1, Die2),
                 DeskState#desk_state{state = state_wait_move,
@@ -981,21 +982,25 @@ handle_desk_events([Event | Events], DeskState,
                    {Type, From, To, Pips} <- Moves],
                 UsedPipsList = [Pips || {_Type, _From, _To, Pips} <- Moves],
                 NewBoard = apply_moves(Color, Moves, Board),
-                show_boards(GameId, TableId, Color, Moves, Board, NewBoard),
+                ?INFO("TAVLA_NG_TABLE_DBG <~p,~p> Board: Color <~p> moves(himself): ~p", [GameId, TableId, Color, Moves]),
+                show_boards(GameId, TableId, Board, NewBoard),
                 DeskState#desk_state{board = NewBoard, pips_list = OldPipsList -- UsedPipsList};
             {rolls_timeout, Color, Die1, Die2} -> %% Injected event
+                ?INFO("TAVLA_NG_TABLE_DBG <~p,~p> Board: Color <~p> rolls(auto): ~p", [GameId, TableId, Color, {Die1, Die2}]),
 %%                Msg = create_tavla_turn_timeout(Color, {Die1, Die2}, _Moves = [], StateData),
 %%                publish_ge(Msg, StateData),
                 publish_ge(create_tavla_rolls_dice(Color, {Die1, Die2}, StateData), StateData),
                 DeskState#desk_state{dice = {Die1, Die2}};
             {rolls_moves_timeout, Color, Die1, Die2, Moves} -> %% Injected event
+                ?INFO("TAVLA_NG_TABLE_DBG <~p,~p> Board: Color <~p> rolls(auto): ~p", [GameId, TableId, Color, {Die1, Die2}]),
 %%                Msg = create_tavla_turn_timeout(Color, {Die1, Die2}, Moves, StateData),
 %%                publish_ge(Msg, StateData),
                 publish_ge(create_tavla_rolls_dice(Color, {Die1, Die2}, StateData), StateData),
                 [publish_ge(create_tavla_moves(Color, From, To, Type, Pips, StateData), StateData) ||
                    {Type, From, To, Pips} <- Moves],
                 NewBoard = apply_moves(Color, Moves, Board),
-                show_boards(GameId, TableId, Color, Moves, Board, NewBoard),
+                ?INFO("TAVLA_NG_TABLE_DBG <~p,~p> Board: Color <~p> moves(auto): ~p", [GameId, TableId, Color, Moves]),
+                show_boards(GameId, TableId, Board, NewBoard),
                 DeskState#desk_state{dice = {Die1, Die2}, board = NewBoard};
             {moves_timeout, Color, Moves} ->    %% Injected event
 %%                Msg = create_tavla_turn_timeout(Color, _Dice = undefined, Moves, StateData),
@@ -1003,9 +1008,11 @@ handle_desk_events([Event | Events], DeskState,
                 [publish_ge(create_tavla_moves(Color, From, To, Type, Pips, StateData), StateData) ||
                    {Type, From, To, Pips} <- Moves],
                 NewBoard = apply_moves(Color, Moves, Board),
-                show_boards(GameId, TableId, Color, Moves, Board, NewBoard),
+                ?INFO("TAVLA_NG_TABLE_DBG <~p,~p> Board: Color <~p> moves(auto): ~p", [GameId, TableId, Color, Moves]),
+                show_boards(GameId, TableId, Board, NewBoard),
                 DeskState#desk_state{board = NewBoard};
             {next_player, Color} ->
+                ?INFO("TAVLA_NG_TABLE_DBG <~p,~p> Board: Waiting for Color <~p> roll...", [GameId, TableId, Color]),
                 Msg = create_tavla_next_turn(Color, StateData),
                 publish_ge(Msg, StateData),
                 DeskState#desk_state{state = state_wait_roll, cur_color = Color,
@@ -1019,12 +1026,11 @@ handle_desk_events([Event | Events], DeskState,
     handle_desk_events(Events, NewDeskState, StateData).
 
 
-show_boards(GameId, TableId, Color, Moves, Board1, Board2) ->
+show_boards(GameId, TableId, Board1, Board2) ->
     B1 = ?LIB:board_to_text4(Board1),
     B2 = ?LIB:board_to_text4(Board2),
     M = ["    ", "    ", "    ", " => " ,"    ", "    ", "    "],
     T = lists:zip3(B1, M, B2),
-    ?INFO("TAVLA_NG_TABLE_DBG <~p,~p> Board: Color <~p> moves: ~p", [GameId, TableId, Color, Moves]),
     [?INFO("TAVLA_NG_TABLE_DBG <~p,~p> Board: ~s~s~s", [GameId, TableId, S1, S2, S3])
      || {S1, S2, S3} <- T].
 
