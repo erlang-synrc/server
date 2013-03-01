@@ -22,13 +22,13 @@
 main() -> [].
 
 user_info() ->
-    User = wf:session(user_info),
-    case User of
-        undefined ->
-            erlang:throw(not_logged_in);
-        _ ->
-            User
-    end.
+    User = wf:session(user_info). %,
+%    case User of
+%        undefined ->
+%            erlang:throw(not_logged_in);
+%        _ ->
+%            User
+%    end.
 
 user_info(Field) ->
     user_info(user_info(), Field).

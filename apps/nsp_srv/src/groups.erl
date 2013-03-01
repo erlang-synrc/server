@@ -106,7 +106,7 @@ content(PageNumber) ->
 %                        #button{class="btn-submit-mkh", id="sendsearch", postback={search_group, 1}, text=?_T("Search")}
 %                    ]}
 %                ]},
-                #h1{text=?_T("Groups"),style=webutils:get_metalist_section_style()++
+                #h1{text=?_T("Groups"),class="section-title",style=%webutils:get_metalist_section_style()++
 			"width:200px;height:43px;padding-left:20px;margin-top:-24px;margin-bottom:25px;text-transform:uppercase;"},
 %PHASE1                #panel{id="create_new_group", class="group-create-new-container", body=#link{
 %                    url="javascript:void(0)",

@@ -40,13 +40,19 @@ main_authorized() ->
 
 title() -> webutils:title(?MODULE).
 
-body() -> [
+body() -> 
+  User = wf:q('of'),
+  Info = case nsm_db:get(user,wf:user()) of 
+                    {ok,I} -> I;
+                    _ -> undefined end,
+  ?INFO("body: User ~p Info ~p",[User, Info]),
+  [
   #panel{class="page-content", body=webutils:quick_nav()},
   #panel{class="page-content page-canvas", style="overflow:auto;", body=[
     #panel{class=aside, body=[
       user_info(),
-      wall:get_friends(),
-      get_groups()
+      wall:get_friends(Info),
+      webutils:get_groups(Info)
     ]},
     #panel{class=friendlist, body=content(1)}
   ]}].
@@ -62,9 +68,9 @@ content(Page, Title) ->
         #panel{id="friends_content", body=getPageContent(Page)}
     ].
 
-get_groups() ->
-    User = wf:state(user),
-    webutils:get_groups(User).
+%get_groups() ->
+%    User = wf:state(user),
+%    webutils:get_groups(User).
 
 user_info() ->
     UserOrNot = wf:q('of'),
@@ -72,7 +78,7 @@ user_info() ->
         undefined ->
             wall:get_ribbon_menu();
         _ ->
-            view_user:user_info()
+            wall:user_info()
     end.
 
 getPageContent(Page) ->

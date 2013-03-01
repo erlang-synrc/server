@@ -24,51 +24,40 @@ body() ->
   {FeedType,TypeDefined} = case wf:q(type) of "user" -> {user,true}; "gr"++XX -> {group,true}; _ -> {user,false} end,
   User = case TypeDefined of true -> case wf:q(id) of undefined -> "0"; A -> A end; false -> wf:user() end,
 
-%  ?INFO("Check: ~p",[{?_T(wf:q(type))}]),
+  ?INFO("Check: ~p",[{FeedType,User}]),
 
-  {Exists,Wall} = case FeedType == group of
-        true -> {_, Group} = nsm_groups:get_group(User),
-                case Group of
-                     notfound -> {false,[not_found("Group")]};
+  {Exists,Wall,Info} = case FeedType == group of
+        true -> {_, GroupInfo} = nsm_groups:get_group(User),
+                case GroupInfo of
+                     notfound -> {false,[not_found("Group"),undefined]};
                      _ -> {true,[ req_invite(),
                             case nsm_groups:user_has_access(wf:user(), User) of
-                                  true -> feed(group, User);
-                                 false -> hidden_form() end ]} end;
+                                  true -> feed(GroupInfo#group.feed, group, GroupInfo);
+                                 false -> hidden_form() end ],GroupInfo} end;
         false -> {_,UserInfo} = nsm_users:get_user(User),
                 case UserInfo of
-                     notfound -> {false,feed(user, system)};
-                     _ -> {true,feed(FeedType, User)} end
+                     notfound -> {false,not_found("User"),undefined};
+                     _ -> {true,feed(UserInfo#user.feed, FeedType, UserInfo),UserInfo} end
       end,
 
   #panel{class="page-content page-canvas", style="overflow:auto;margin-top:20px;", body=[
     "<section id=\"content\">", Wall, "</section>",
     case Exists of 
          true -> #panel{class="aside", body=[case FeedType of
-                                                  user -> [ get_ribbon_menu(), #panel{id=aside,body=aside()} ];
+                                                  user -> [ get_ribbon_menu(), #panel{id=aside,body=aside(Info)} ];
                                                   _    -> [ group_info(), get_members() ] end ]}; 
          false -> "" end 
   ]}.
 
-feed(user, Uid) ->
-  case nsm_db:get(user, Uid) of
-    {error, notfound} -> [];
-    {ok, User} ->
-      Feed = feed(User#user.feed, {user, Uid}),
-%      upd_notifications(User),
-      Feed
-  end;
-feed(group, Gid) ->
-  case nsm_db:get(group, Gid) of
-    {error, notfound} -> [];
-    {ok, Group} ->
-      feed(Group#group.feed, {group, Group#group.username})
-  end;
-feed(Fid, {Type, Ownid}) ->
-%  ?INFO("Feed type: ~p", [Type]),
+%feed(user,  User)  -> feed(User#user.feed,   {user,  User});
+%feed(group, Group) -> feed(Group#group.feed, {group, Group}).
+
+feed(Fid, Type, Info) ->
+  ?INFO("Feed ~p Type ~p Owner ~p", [Fid,Type,Info]),
   [
     #panel{id=notification_area},
     entry_form(Fid, Type, ?MODULE, {add_entry, Fid}),
-    #panel{id=feeds_container, class="posts_container_mkh", body=show_feed(Fid, Type, Ownid)}
+    #panel{id=feeds_container, class="posts_container_mkh", body=show_feed(Fid, Type, Info)}
   ].
 
 entry_form(FId, Type, Delegate, Postback) ->
@@ -133,22 +122,33 @@ entry_form(FId, Type, Delegate, Postback) ->
   ].
 
 show_feed(undefined, _, _) -> [];
-show_feed(Fid, Type, Uid) when is_atom(Type) ->
+show_feed(Fid, Type, Info) when is_atom(Type) ->
   UserInfo = wf:session(user_info),
-  {ok, Pid} = comet_feed:start(Type, Fid, Uid, UserInfo),
-  wf:state(comet_feed_pid, pid_to_list(Pid)),
+
+  Uid = case Type of
+             user -> Info#user.username;
+             groupr -> Info#group.username;
+             _ -> "system" end,
+
+  Pid = case UserInfo of
+       undefined -> self();
+       _ -> {ok, P} = comet_feed:start(Type, Fid, Uid, UserInfo),
+            wf:state(comet_feed_pid, pid_to_list(P)), P end,
+
 
   Node = nsx_opt:get_env(nsx_idgen,game_pool,5000000) div 1000000,
   CheckNode = fun(X) -> lists:foldl(fun(A, Sum) -> A + Sum end, 0, X) rem 3 + 1 end,
   AppNode = case Node of
                  4 -> nsx_opt:get_env(nsm_db,app_srv_node,'app@doxtop.cc');
                  5 -> nsx_opt:get_env(nsm_db,app_srv_node,'app@doxtop.cc');
-                 _ -> list_to_atom("app@srv"++integer_to_list(CheckNode(UserInfo#user.username))++".kakaranet.com") end,
+                 _ -> list_to_atom("app@srv"++integer_to_list(CheckNode(Uid))++".kakaranet.com") end,
 
-  CachePid = rpc:call(AppNode,nsm_bg,pid,[UserInfo#user.username]),
+  CachePid = rpc:call(AppNode,nsm_bg,pid,[Uid]),
 
   Answer = case  wf:q("filter") of
-    "direct" -> rpc:call(AppNode,nsm_writer,cached_direct,[CachePid, UserInfo#user.direct, ?FEED_PAGEAMOUNT]);
+    "direct" -> case UserInfo of
+                     undefined -> [];
+                     _ -> rpc:call(AppNode,nsm_writer,cached_direct,[CachePid, UserInfo#user.direct, ?FEED_PAGEAMOUNT]) end;
     _ -> rpc:call(AppNode,nsm_writer,cached_feed,[CachePid, Fid, ?FEED_PAGEAMOUNT])
   end,
   
@@ -176,18 +176,20 @@ read_entries(Pid, StartFrom, FeedId)->
     {ok, #entry{prev = E}} -> traverse_entries(Pid, E, ?FEED_PAGEAMOUNT)
   end.
 
-aside() ->
-    Fv = get_friends(),
-    Gv = webutils:get_groups(),
+aside(Info) ->
+    Fv = get_friends(Info),
+    Gv = webutils:get_groups(Info),
     [Fv,Gv].
 
-get_friends() ->
-  UserName = case wf:q('of') of
-    undefined -> wf:user();
-    Name -> Name
-  end,
-  case nsm_db:get(user, UserName) of
-    {ok, User}->
+get_friends(undefined) -> [];
+get_friends(User) ->
+  ?INFO("get_friends: ~p",[User]),
+%  UserName = case wf:q('of') of
+%    undefined -> wf:user();
+%    Name -> Name
+%  end,
+%  case nsm_db:get(user, UserName) of
+%    {ok, User}->
       Msg = case User#user.username == wf:user() of
         true ->
           #panel{class="mark-cell", body=[
@@ -212,9 +214,9 @@ get_friends() ->
 %           #link{text=?_T("All the people on kakaranet"), url="/view/members/id/kakaranet", id="alluserslink",
 %          title=?_T("You can unsubscribe or write someone private message via this list")}
 %        ]}
-      webutils:get_metalist(User, ?_T("FRIENDS"), nsm_users, list_subscr_usernames, Msg, Nav);
-   {error, notfound} -> []
-  end.
+      webutils:get_metalist(User, ?_T("FRIENDS"), nsm_users, list_subscr_usernames, Msg, Nav).
+%   {error, notfound} -> []
+%  end.
 
 new_statistic(SubscribersCount,FriendsCount,CommentsCount,LikesCount,EntriesCount,CheckedUser) ->
     #list{class="list-5", body=[
@@ -251,7 +253,9 @@ get_ribbon_menu() ->
     SNum = integer_to_list(length(Scores)),
     SPoints = integer_to_list(lists:sum([S#scoring_record.score_points || S <- Scores])),
     NewDirectMessages=false,
-    BlockedUsers = nsm_users:get_blocked_users(wf:user()),
+    BlockedUsers = case wf:user() of
+                        undefined -> [];
+                        _ -> nsm_users:get_blocked_users(wf:user()) end,
     BlockUnblock = case CheckedUser of
         undefined -> [];
         _ -> case lists:member(CheckedUser, BlockedUsers) of
