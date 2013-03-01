@@ -249,10 +249,6 @@ purchases_list(PurchasesList) ->
         ]}
     ].
 
-get_groups() ->
-    User = wf:state(user),
-    webutils:get_groups(User).
-
 user_info() ->
     UserOrNot = wf:q('of'),
     case UserOrNot of

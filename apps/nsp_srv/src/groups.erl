@@ -106,8 +106,12 @@ content(PageNumber) ->
 %                        #button{class="btn-submit-mkh", id="sendsearch", postback={search_group, 1}, text=?_T("Search")}
 %                    ]}
 %                ]},
+<<<<<<< HEAD
                 #h1{text=?_T("Groups"),class="section-title",style=%webutils:get_metalist_section_style()++
 			"width:200px;height:43px;padding-left:20px;margin-top:-24px;margin-bottom:25px;text-transform:uppercase;"},
+=======
+                #h1{text=?_T("Groups"), class="section-title", style="width:200px;"},
+>>>>>>> 4ac837cdd18f3fc03d65dfed30efd8be50f556b7
 %PHASE1                #panel{id="create_new_group", class="group-create-new-container", body=#link{
 %                    url="javascript:void(0)",
 %                    actions=#event{type=click, actions=[
