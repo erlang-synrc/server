@@ -1020,13 +1020,13 @@ handle_desk_events([Event | Events], DeskState,
 
 
 show_boards(GameId, TableId, Color, Moves, Board1, Board2) ->
-    B1 = ?LIB:board_to_text2(Board1),
-    B2 = ?LIB:board_to_text2(Board2),
-    ?INFO("TAVLA_NG_TABLE_DBG <~p,~p> Color <~p> moves: ~p", [GameId, TableId, Color, Moves]),
-    ?INFO("TAVLA_NG_TABLE_DBG <~p,~p> The Board before:", [GameId, TableId]),
-    [?INFO("TAVLA_NG_TABLE_DBG <~p,~p> Board: ~s", [GameId, TableId, S]) || S <- B1],
-    ?INFO("TAVLA_NG_TABLE_DBG <~p,~p> The Board after:", [GameId, TableId]),
-    [?INFO("TAVLA_NG_TABLE_DBG <~p,~p> Board: ~s", [GameId, TableId, S]) || S <- B2].
+    B1 = ?LIB:board_to_text4(Board1),
+    B2 = ?LIB:board_to_text4(Board2),
+    M = ["    ", "    ", "    ", " => " ,"    ", "    ", "    "],
+    T = lists:zip3(B1, M, B2),
+    ?INFO("TAVLA_NG_TABLE_DBG <~p,~p> Board: Color <~p> moves: ~p", [GameId, TableId, Color, Moves]),
+    [?INFO("TAVLA_NG_TABLE_DBG <~p,~p> Board: ~s~s~s", [GameId, TableId, S1, S2, S3])
+     || {S1, S2, S3} <- T].
 
 %%===================================================================
 init_scoring(GameType, PlayersInfo, Rounds) ->
@@ -1533,6 +1533,7 @@ desk_error_to_ext({waste_move_disabled, _, _}) -> {error, waste_move_disabled};
 desk_error_to_ext({hit_and_run_disabled, _, _}) -> {error, hit_and_run_disabled};
 desk_error_to_ext({not_bear_off_mode, _, _}) -> {error, not_bear_off_mode};
 desk_error_to_ext({no_checker, _, _}) -> {error, no_checker};
+desk_error_to_ext({move_from_bar_first, _, _}) -> {error, move_from_bar_first};
 desk_error_to_ext({invalid_move, _, _}) -> {error, invalid_move};
 desk_error_to_ext(_E) -> {error, unknown_error}.
 
