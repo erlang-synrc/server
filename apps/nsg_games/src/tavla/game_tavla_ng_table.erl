@@ -866,13 +866,18 @@ do_parent_game_action(Color, GameAction,
 
 
 do_game_action(Color, GameAction, From, StateName,
-               #state{desk_rule_pid = Desk} = StateData) ->
-    ?INFO("TAVLA_NG_TABLE do_game_action Color: ~p  GameAction: ~p", [Color, GameAction]),
+               #state{game_id = GameId, table_id = TableId, desk_rule_pid = Desk} = StateData) ->
+    ?INFO("TAVLA_NG_TABLE <~p,~p> Appling the action: Color <~p>  GameAction: ~p",
+          [GameId, TableId, Color, GameAction]),
     case desk_player_action(Desk, Color, GameAction) of
         {ok, Events} ->
+            ?INFO("TAVLA_NG_TABLE <~p,~p> The game action applied successfully.",
+                  [GameId, TableId]),
             gen_fsm:reply(From, ok),
             process_game_events(Events, StateData);
         {error, Reason} ->
+            ?INFO("TAVLA_NG_TABLE <~p,~p> The action was rejected by the reason: ~p",
+                  [GameId, TableId, Reason]),
             ExtError = desk_error_to_ext(Reason),
             {reply, ExtError, StateName, StateData}
     end.
