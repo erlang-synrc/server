@@ -1,4 +1,3 @@
-%% -*- mode: nitrogen -*-
 -module (view_members).
 -compile(export_all).
 -include_lib("nitrogen_core/include/wf.hrl").
@@ -37,7 +36,7 @@ body() ->
     "</section>",
     #panel{class="aside", body=[
       #panel{id=aside,body=[
-        wall:group_info()
+        wall:group_info(Group)
       ]}
     ]}
   ]}.
