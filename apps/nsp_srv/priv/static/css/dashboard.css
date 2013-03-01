@@ -419,15 +419,11 @@ div.post:first-child {background:none !important}
   padding:0 10px 7px;
   margin:0 0 12px;}
 .aside .box h3,.side-col .box h3 {
-  font-size:16px;
   margin:0 -10px 10px;
-  color:#545454;
-  background:#e1eff7 url(../images/bg-title-01.gif) repeat-x;
-  line-height:31px;
   padding:0 13px;
-  border-bottom:1px solid #dedfdf;
   letter-spacing:0px;
-  text-transform: uppercase;}
+  text-transform: uppercase;
+}
 .aside .box h3 span,.side-col .box h3 span {  font-size:12px;  font-weight:bold;}
 .aside .list-photo,.side-col .list-photo {  margin:0;  padding:0 0 5px 1px;  list-style:none;  font-size:12px;  font-weight:bold;}
 .aside .list-photo li,.side-col .list-photo li {  overflow:hidden;  padding:0 0 5px;  vertical-align:top;}
@@ -738,5 +734,13 @@ input, select, textarea {font: 12px/15px Arial,Helvetica,sans-serif;vertical-ali
     margin-top:10px;
   }
 
-.orange-title{
+.section-title{
+  background: #ff8a00;
+  border:1px solid #abb5bb;
+  text-align:left;
+  font-size:18px;
+  color:#fff;
+  font-weight:bold;
+  line-height:43px;
+  margin-top:10px;
 }

@@ -2,7 +2,6 @@ JS_FILES=priv/static/js/kakara.js priv/static/js/kindex.js priv/static/js/kmatch
 priv/static/js/krules_okey.js \
 priv/static/js/kgifts.js \
 priv/static/js/ktournaments.js \
-priv/static/js/kdashboard.js \
 priv/static/js/kwall.js \
 priv/static/js/kfriends.js \
 priv/static/js/kwall.sec.js \
@@ -14,7 +13,6 @@ priv/static/css/kgifts.css \
 priv/static/css/kwall.css \
 priv/static/css/kfriends.css \
 priv/static/css/ktournaments.css \
-priv/static/css/kdashboard.css \
 priv/static/css/kview_members.css \
 priv/static/css/kgroups.css
 ROOT_PATH=priv/static/
