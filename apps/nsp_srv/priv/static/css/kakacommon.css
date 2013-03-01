@@ -1927,3 +1927,16 @@ body.extra-small-screen .LV_invalid {
   font-weight:bold;
   font-size: 12px;
 }
+
+.section-title{
+  background: #ff8a00;
+  border:1px solid #abb5bb;
+  text-align:left;
+  font-size:18px;
+  color:#fff;
+  font-weight:bold;
+  line-height:43px;
+  margin-top:10px;
+  text-transform:uppercase;
+  padding: 0 13px;
+}

@@ -46,7 +46,7 @@ body() -> [
     #panel{class=aside, body=[
       user_info(),
       wall:get_friends(),
-      get_groups()
+      wall:get_groups()
     ]},
     #panel{class=friendlist, body=content(1)}
   ]}].
@@ -61,10 +61,6 @@ content(Page, Title) ->
         ]},
         #panel{id="friends_content", body=getPageContent(Page)}
     ].
-
-get_groups() ->
-    User = wf:state(user),
-    webutils:get_groups(User).
 
 user_info() ->
     UserOrNot = wf:q('of'),

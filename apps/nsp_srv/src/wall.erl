@@ -15,6 +15,7 @@
 -define(PAGEAMOUNT, 3).
 -define(MAX_NUM_OF_ATTACMNETS_PER_TIME, 3).
 -define(TOOLTIP_TIMEOUT, "1500").
+-define(GROUPS_ON_DASHBOARD, 10).
 
 title() -> webutils:title(?MODULE).
 
@@ -44,7 +45,7 @@ body() ->
     "<section id=\"content\">", Wall, "</section>",
     case Exists of 
          true -> #panel{class="aside", body=[case FeedType of
-                                                  user -> [ get_ribbon_menu(), #panel{id=aside,body=aside()} ];
+                                                  user -> [ get_ribbon_menu(), #panel{id=aside,body=[get_friends(), get_groups()]} ];
                                                   _    -> [ group_info(), get_members() ] end ]}; 
          false -> "" end 
   ]}.
@@ -176,11 +177,6 @@ read_entries(Pid, StartFrom, FeedId)->
     {ok, #entry{prev = E}} -> traverse_entries(Pid, E, ?FEED_PAGEAMOUNT)
   end.
 
-aside() ->
-    Fv = get_friends(),
-    Gv = webutils:get_groups(),
-    [Fv,Gv].
-
 get_friends() ->
   UserName = case wf:q('of') of
     undefined -> wf:user();
@@ -208,12 +204,53 @@ get_friends() ->
             title=?_T("You can unsubscribe or write someone private message via this list")}
           ]}
       end,
-%        #span_b{class="links", body=[
-%           #link{text=?_T("All the people on kakaranet"), url="/view/members/id/kakaranet", id="alluserslink",
-%          title=?_T("You can unsubscribe or write someone private message via this list")}
-%        ]}
       webutils:get_metalist(User, ?_T("FRIENDS"), nsm_users, list_subscr_usernames, Msg, Nav);
    {error, notfound} -> []
+  end.
+
+get_groups() ->
+  UserName = case wf:q('of') of
+    undefined -> wf:user();
+    Name -> Name
+  end,
+  case nsm_db:get(user, UserName) of
+    {ok, User} ->
+      Groups = case nsm_groups:list_groups_per_user(User#user.username) of
+        [] ->
+          case User#user.username == wf:user() of
+            true -> ?_T("You are currently not in any group");
+            false -> ?_TS("$user$ is currently not in any group", [{user, User#user.username}])
+          end;
+        Gs ->
+          UC_GId = lists:sublist(lists:reverse(lists:sort([{nsm_groups:group_members_count(GId), GId} || GId <- Gs])), ?GROUPS_ON_DASHBOARD),
+          lists:flatten([
+            begin
+              case nsm_groups:get_group(GId) of
+                {ok, Group} ->
+                  GName = Group#group.name,
+                  #listitem{body=[
+                    #link{body=[GName], style="font-size:12pt;", url=site_utils:group_link(GId)},
+                    #span{style="padding-left:4px;", text="(" ++ integer_to_list(UC) ++ ")"}
+                  ]};
+                _ -> ""
+              end
+            end
+            || {UC, GId} <- UC_GId])
+      end,
+
+      #panel{class="box", style="border:0", body=[
+        #h3{text=?_T("GROUPS"), class="section-title"},
+        #list{class="list-photo list-photo-in", body=[ Groups ]},
+        case User#user.username == wf:user() of
+          true ->
+            #span_b{class="links", body=[
+              #link{style="font-size:12pt;", text=?_T("List of all your groups"), url="/groups/of/"++wf:user(), id="groupslink",
+                title=?_T("You can unsubscribe a group from this list")}
+            ]};
+          false-> ""  % here should be all users groups link
+        end
+      ]};
+    {error, notfound}->[]
   end.
 
 new_statistic(SubscribersCount,FriendsCount,CommentsCount,LikesCount,EntriesCount,CheckedUser) ->

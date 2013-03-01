@@ -735,69 +735,6 @@ get_group_avatar(GId, Variant) -> %PUBLIC BETA - we don't have that option for n
             "/images/no_avatar_"++Variant++".jpg"
     end.
 
-
-get_groups() ->
-    User = webutils:user_info(),
-    get_groups(User).
-
-%% user - #user{username}
-get_groups(User) ->
-    Groups = case nsm_groups:list_groups_per_user(User#user.username) of
-        [] ->
-            case User#user.username == wf:user() of
-                true ->
-                    ?_T("You are currently not in any group");
-                false ->
-                    ?_TS("$user$ is currently not in any group", [{user, User#user.username}])
-            end;
-        Gs ->
-            UC_GId = lists:sublist(
-                lists:reverse(
-                    lists:sort([{nsm_groups:group_members_count(GId), GId} || GId <- Gs])
-                ), 
-            ?GROUPS_ON_DASHBOARD),
-            lists:flatten([
-                begin
-                     case nsm_groups:get_group(GId) of
-                    {ok, Group} ->
-                    GName = Group#group.name,
-                    #listitem{body=[
-                        #link{body=[GName], style="font-size:12pt;", url=site_utils:group_link(GId)},
-                        #span{style="padding-left:4px;", text="(" ++ integer_to_list(UC) ++ ")"}
-                    ]};
-                    _ -> ""
-                      end
-                end
-                || {UC, GId} <- UC_GId
-            ])
-    end,
-    [
-        "<span id='guidersgroups'>",
-        #panel{class="box", style="border:0", body=[
-            #h3{text=?_T("GROUPS"), class="section-title"},
-            #list{class="list-photo list-photo-in", body=[ Groups ]},
-            case User#user.username == wf:user() of
-                true ->
-                    [
-                        #span_b{class="links", body=[
-                            #link{style="font-size:12pt;", text=?_T("List of all your groups"),
-                                  url="/groups/of/"++wf:user(), id="groupslink",
-                                  title=?_T("You can unsubscribe a group from this list")}
-                        ]} %,
-%                        #span_b{class="links", body=[
- %                           #link{style="font-size:11pt;",text=?_T("List of all groups on kakaranet"), 
-  %                                url="/groups", id="allgroupslink",
-  %                                title=?_T("You can subscribe to any group from this list")}
-   %                     ]}
-                    ];
-                false->
-                    ""  % here should be all users groups link
-            end
-        ]},
-        "</span>"
-    ].
-
-
 get_tournaments() ->
     User = webutils:user_info(),
     Tournaments = case tournaments:user_tournaments(User) of
