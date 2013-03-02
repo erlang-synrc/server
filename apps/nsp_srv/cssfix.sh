@@ -13,3 +13,4 @@ cd priv/static/css
 ./cssfix.sh kgroups.min.css
 ./cssfix.sh kcontact.min.css
 ./cssfix.sh kprofile.min.css
+./cssfix.sh kinfo.min.css

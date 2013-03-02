@@ -1,0 +1,120 @@
+.info-page-header-panel{
+    width:100%;
+    padding:0px 0px 0px 0px;
+    color:#58595b;
+    font-family: 'Gotham Rounded Bold';
+}
+
+.info-page-header-panel div{
+    position:absolute;
+}
+
+.info-page-content-panel{
+    width:100%;
+    padding:0px 0px 0px 0px; 
+    color:#58595b;
+}
+
+.info-page-content-panel div{
+    position:absolute;
+}
+
+.info-page-content-panel b{
+    color:#FC6404;
+    font-weight:normal;
+}
+
+.info-page-h1{
+    font-size:32pt; 
+    font-weight:bold;
+}
+
+.info-page-h2{
+    font-size:28pt; 
+    font-weight:bold;
+}
+
+.info-page-subt{
+    font-size:11.5pt; 
+    font-weight:bold;
+}
+
+.info-page-between-subt{
+    height:8px;
+}
+
+.info-page-menu-elements{
+    position:absolute; 
+    font-family: 'Gotham Rounded Bold';
+    font-size: 16px;
+    top:20px; 
+    letter-spacing:-0.05px;
+    white-space: nowrap;
+}
+
+.info-page-gifts-label{
+    color:#444;
+    left:43px;
+}
+
+.info-page-gifts-link{
+    color:#FFF;
+    left:43px;
+}
+
+.info-page-tournaments-label{
+    color:#444;
+    left:188px;
+}
+
+.info-page-tournaments-link{
+    color:#FFF;
+    left:188px;
+}
+
+.info-page-social-label{
+    color:#444;
+    left:350px;
+}
+
+.info-page-social-link{
+    color:#FFF;
+    left:350px;
+}
+
+.info-page-matchmaker-label{
+    color:#444;
+    left:527px;
+}
+
+.info-page-matchmaker-link{
+    color:#FFF;
+    left:527px;
+}
+
+.info-page-membership-label{
+    color:#444;
+    left:698px;
+}
+
+.info-page-membership-link{
+    color:#FFF;
+    left:698px;
+}
+
+.info-page-join-link{
+    color:#FFF;
+    left:877px;
+}
+
+.info-page-bg{
+    margin-left:-24px;
+}
+
+.info-page-menu-panel {
+  position: relative;
+  margin-left: -25px;
+  margin-top: -19px;
+  padding-left: 25px;
+  padding-top: 15px;
+}

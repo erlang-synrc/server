@@ -13,6 +13,7 @@ git checkout kview_members.min.css
 git checkout kgroups.min.css
 git checkout kcontact.min.css
 git checkout kprofile.min.css
+git checkout kinfo.min.css
 
 git pull
 
@@ -27,3 +28,4 @@ git pull
 ./cssfix.sh kgroups.min.css
 ./cssfix.sh kcontact.min.css
 ./cssfix.sh kprofile.min.css
+./cssfix.sh kinfo.min.css
