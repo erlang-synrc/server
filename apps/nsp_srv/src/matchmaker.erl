@@ -67,24 +67,13 @@ body() ->
 
   ui_update_buttons(),
   ui_paginate(),
-%  PagePid = self(),
-  {ok,CometPid} = wf:comet(fun() -> %PagePid ! {comet_started,self()}, 
+  {ok,CometPid} = wf:comet(fun() -> 
                     CometProcess = self(),
                     nsx_msg:subscribe_for_tournament(GameName, wf:user(), CometProcess),
                     comet_update() end),
   wf:state(comet_pid,CometPid),
-%  receive {comet_started,Pid} -> wf:state(comet_pid,Pid) end,
 
-    Pool = nsx_opt:get_env(nsx_idgen, game_pool, 1000000),
-    Zone = Pool div 1000000,
-    GameSrv = "game@srv1.kakaranet.com",
-    NodeAtom = case Zone of
-                    4 -> nsx_opt:get_env(nsm_db, game_srv_node, 'game@doxtop.cc');
-                    5 -> nsx_opt:get_env(nsm_db, game_srv_node, 'game@doxtop.cc');
-                    _ -> list_to_atom(GameSrv)
-               end,
-
-    case rpc:call(NodeAtom,nsm_srv_tournament_lobby,chat_history,[GameName]) of
+    case nsm_queries:lobby_history([1,GameName]) of 
         H when is_list(H) -> add_chat_history(H);
         _ -> ok
     end,
@@ -520,14 +509,7 @@ show_table(Tables) ->
       #table{class="view_table_table article-table", style="width:100%", rows=[
         begin
           {info, {_, TId}} = InfoPostback,
-          Zone = TId div 1000000,
-          WebSrv = "public@srv" ++ integer_to_list(Zone) ++ ".kakaranet.com",
-          NodeAtom = case Zone of
-            4 -> nsx_opt:get_env(nsm_db,web_srv_node,'web@doxtop.cc');
-            _ -> list_to_atom(WebSrv)
-          end,
-          %{ok, WholeTable}
-          Res = rpc:call(NodeAtom,view_table,get_table,[TId,wf:state(table)]),
+          Res = nsm_queries:public_table([TId,wf:state(table)]),
 
           case Res of
             {ok,WholeTable} ->
@@ -612,7 +594,7 @@ show_table(Tables) ->
                 #tablecell{ class=cell3, body = ["<nobr>", Buttons, "</nobr>"]}
               ]};
 
-              X ->% ?INFO("Matchmaker #game_table rpc:call failed: ~p",[X]),
+              X ->% ?INFO("Matchmaker #game_table rpc:cal failed: ~p",[X]),
                 ""
           end
         end
@@ -969,13 +951,7 @@ u_event(create_game) ->
 u_event({info, {Target, TId}}) ->
     {ok, TableSettings} = case Target of
         table ->
-            Zone = TId div 1000000,
-            WebSrv = "public@srv" ++ integer_to_list(Zone) ++ ".kakaranet.com",
-            NodeAtom = case Zone of
-                            4 -> nsx_opt:get_env(nsm_db, web_srv_node, 'web@doxtop.cc');
-                            _ -> list_to_atom(WebSrv)
-                       end,
-            {ok, Table} = rpc:call(NodeAtom,view_table,get_table,[TId,wf:state(table)]),
+            {ok, Table} = nsm_queries:public_table([TId,wf:state(table)]),
             ?INFO("INFO: ~p",[{TId,Table}]),
             {ok,Table};
         save_table -> table_manager:get_save_table_setting(TId)
@@ -985,14 +961,7 @@ u_event({info, {Target, TId}}) ->
 
 u_event({delete_table, TId, ProcId}) ->
     GameName = case wf:q(game_name) of undefined -> "okey"; X -> X end,
-
-    Zone = TId div 1000000,
-    GameNode = list_to_atom("game@srv"++integer_to_list(Zone)++".kakaranet.com"),
-    NodeAtom = case Zone of
-                    4 -> nsx_opt:get_env(nsm_db, web_srv_node, 'web@doxtop.cc');
-                    _ -> GameNode
-               end,
-    A = rpc:call(NodeAtom,game_manager,destroy_game,[case GameName of "tavla" -> tavla_sup; _ -> okey_sup end, TId]),
+    A = nsm_queries:delete_table([TId,case GameName of "tavla" -> tavla_sup; _ -> okey_sup end]),
     ?INFO("Table Deleted ~p",[A]);
 
 u_event(clear_selection) ->

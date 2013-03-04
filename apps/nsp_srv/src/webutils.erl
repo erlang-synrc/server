@@ -568,8 +568,7 @@ counters()->
                    gproc:reg({p,l,CometPid},{LoggedUser,user,calendar:now_to_datetime(now())}),
                    comet_update() end)
   end,
-%  WebSrvCounters = nsm_queries:map_reduce(user_counter,user_count,[]),
-  OnlineCount = integer_to_list(user_counter:user_count()), %integer_to_list(lists:foldl(fun(X, Sum) -> X + Sum end, 0, WebSrvCounters)),
+  OnlineCount = integer_to_list(user_counter:user_count()), 
   Games = [okey, tavla, king, batak, sorbi],
 
   [

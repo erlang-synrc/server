@@ -143,13 +143,13 @@ show_feed(Fid, Type, Info) when is_atom(Type) ->
                  5 -> nsx_opt:get_env(nsm_db,app_srv_node,'app@doxtop.cc');
                  _ -> list_to_atom("app@srv"++integer_to_list(CheckNode(Uid))++".kakaranet.com") end,
 
-  CachePid = rpc:call(AppNode,nsm_bg,pid,[Uid]),
+%  CachePid = rpc:call(AppNode,nsm_bg,pid,[Uid]),
 
   Answer = case  wf:q("filter") of
     "direct" -> case UserInfo of
                      undefined -> [];
-                     _ -> rpc:call(AppNode,nsm_writer,cached_direct,[CachePid, UserInfo#user.direct, ?FEED_PAGEAMOUNT]) end;
-    _ -> rpc:call(AppNode,nsm_writer,cached_feed,[CachePid, Fid, ?FEED_PAGEAMOUNT])
+                     _ -> rpc:call(AppNode,nsm_writer,cached_direct,[Uid, UserInfo#user.direct, ?FEED_PAGEAMOUNT]) end;
+    _ -> rpc:call(AppNode,nsm_writer,cached_feed,[Uid, Fid, ?FEED_PAGEAMOUNT])
   end,
   
   Entries = case Answer of

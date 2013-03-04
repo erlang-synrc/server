@@ -10,10 +10,9 @@
 -include_lib("nsx_config/include/log.hrl").
 -include_lib("stdlib/include/qlc.hrl").
 -include_lib("nsm_db/include/accounts.hrl").
--compile(export_all). 
 -record(state, { game_tavla = 0, game_okey = 0 }).
 
-destroy_game(Sup, Pid) -> game_sup:stop_game(Sup,Pid).
+destroy_game(Pid,Sup) -> game_sup:stop_game(Sup,Pid).
 
 create_game(GameFSM, Params) ->
     GameId = id_generator:get_id(),

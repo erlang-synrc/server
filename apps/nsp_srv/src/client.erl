@@ -55,13 +55,7 @@ token() ->
                                       4 -> "127.0.1.1";
                                       _ -> lists:nth(Zone,?SERVER_HOST)
                                  end,
-                          GameNode = case Zone of
-                                4 -> nsx_opt:get_env(nsm_db,game_srv_node,'game@doxtop.cc');
-                                _ -> list_to_atom("game@srv"++integer_to_list(Zone)++".kakaranet.com")
-                          end,
-                          T = rpc:call(GameNode,auth_server,store_token,[generate_token0(),U]),
-                          ?INFO("Connect to Game Node: ~p",[GameNode]),
-                          ?INFO("Connect to Game Host: ~p",[Host]),
+                          T = nsm_queries:store_token([GameId,generate_token0(),U]),
                           [
                             io_lib:fwrite("flashvars.host = \"~s\";~n",[Host]),
                             io_lib:fwrite("flashvars.tokenKey = encodeURIComponent(\"~s\");~n", [T]),
