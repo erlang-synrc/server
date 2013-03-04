@@ -8,7 +8,7 @@
 
 -behaviour(gen_server).
 
--export([store_token/2,start_link/0,
+-export([store_token/3,start_link/0,
          robot_credentials/0,
          fake_credentials/0,
          get_user_info/1, get_user_info/2,
@@ -40,8 +40,8 @@
          score :: integer()}).
 
 start_link() -> gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
-store_token(Token, UserId) when is_list(Token) -> store_token(list_to_binary(Token), UserId);
-store_token(Token, UserId) when is_binary(Token) -> gen_server:call(?SERVER, {store_token, Token, UserId}).
+store_token(GameId, Token, UserId) when is_list(Token) -> store_token(GameId, list_to_binary(Token), UserId);
+store_token(GameId, Token, UserId) when is_binary(Token) -> gen_server:call(?SERVER, {store_token, GameId, Token, UserId}).
 get_user_info(Token) when is_list(Token)  -> get_user_info(list_to_binary(Token));
 get_user_info(Token) when is_binary(Token) -> gen_server:call(?SERVER, {get_user_info, Token}).
 get_user_info(Token, Id) when is_list(Token) -> get_user_info(list_to_binary(Token), Id);
@@ -54,12 +54,12 @@ robot_credentials() -> gen_server:call(?SERVER, {robot_credentials}).
 
 init([]) ->
     Tokens = ets:new(tokens, [private, ordered_set, {keypos, #authtoken.token}]),
-    store_token(Tokens, <<?TEST_TOKEN>>, "maxim"),
-    store_token(Tokens, <<?TEST_TOKEN2>>, "alice"),
+    store_token(0,Tokens, <<?TEST_TOKEN>>, "maxim"),
+    store_token(0,Tokens, <<?TEST_TOKEN2>>, "alice"),
     {ok, #state{tokens = Tokens}}.
 
-handle_call({store_token, Token, UserId}, _From, #state{tokens = E} = State) ->
-    store_token(E, Token, UserId),
+handle_call({store_token, GameId, Token, UserId}, _From, #state{tokens = E} = State) ->
+    store_token(GameId, E, Token, UserId),
     {reply, Token, State};
 
 handle_call({get_user_info, Token}, _From, #state{tokens = E} = State) ->
@@ -116,7 +116,7 @@ fake_credentials0(Spare) ->
     Id = list_to_binary(binary_to_list(H0#'PlayerInfo'.login) ++ integer_to_list(id_generator:get_id2())),
     H0#'PlayerInfo'{id = Id}.
 
-store_token(E, Token, UserId) ->
+store_token(GameId, E, Token, UserId) ->
     ?INFO("storing token: ~p", [Token]),
     Data = #authtoken{token = Token, id = UserId},
     ets:insert(E, Data).

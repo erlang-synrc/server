@@ -64,9 +64,38 @@ get_single_tables(Setting,UId,GameFSM,_Convert, LeftList) ->
         nomore_own -> qlc:next_answers(Cursor(UId, NotAvailable, Own), 10)
     end.
 
-
 map_reduce(Module, Fun, Args)->
-  lists:flatten([ case rpc:call(Node, Module, Fun, Args) of
-      {badrpc, _Reason} -> [];
-      R -> R
-    end || Node <- nsx_opt:get_env(nsm_db, nodes, [])]).
+    lists:flatten([ case rpc:call(Node, Module, Fun, Args) of
+                       {badrpc, _Reason} -> [];
+                       R -> R end || Node <- nsx_opt:get_env(nsm_db, nodes, [])]).
+
+map_call(NodeType,Module,Fun,Args=[ID|Rest],NodeHash) ->
+
+    Node = nsx_opt:get_env(nsx_idgen,game_pool,5000000) div 1000000,
+
+    DefaultNodeAtom = case NodeType of
+                           "app" -> app_srv_node;
+                           "game" -> game_srv_node;
+                           "public" -> web_srv_node end,
+
+    ServerNode = case Node of
+                      4 -> nsx_opt:get_env(nsm_db,DefaultNodeAtom,'maxim@synrc.com');
+                      5 -> nsx_opt:get_env(nsm_db,DefaultNodeAtom,'maxim@synrc.com');
+                      _ -> list_to_atom(NodeType ++ "@srv" ++ 
+                           integer_to_list(NodeHash(ID)) ++
+                           ".kakaranet.com") end,
+
+    ?INFO("map_call: ~p",[{ServerNode,Module,Fun,Args}]),
+    rpc:call(ServerNode,Module,Fun,Args).
+
+string_map(X) -> lists:foldl(fun(A,Sum)->A+Sum end,0,X) rem 3+1.
+long_map(X)   -> X div 1000000.
+ 
+consumer_pid(Args)       -> map_call("app", nsm_bg,pid,Args,string_map).
+start_lobby(Args)        -> map_call("game",nsm_srv_tournament_lobby_sup,start_lobby,Args,long_map).
+lobby_history(Args)      -> map_call("game",nsm_srv_tournament_lobby,chat_history,Args,long_map).
+start_tournament(Args)   -> map_call("game",game_manager,start_tournament,Args,long_map).
+tournament_started(Args) -> map_call("game",game_manager,  get_tournament,Args,long_map).
+store_token(Args)        -> map_call("game",auth_server,store_token,Args,long_map).
+delete_table(Args)       -> map_call("game",game_manager,destroy_game,Args,long_map).
+public_table(Args)       -> map_call("public",view_table,get_table,Args,long_map).

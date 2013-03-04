@@ -481,14 +481,8 @@ event({start_tournament, TourName, TourDesc, TourDate, TourTime, TourPlayers, To
            {error, _} -> ?INFO("TOURNAMENT DEFAULT USERS SKIP: ~p",[User])
      end || User <- AllowedUsers],
 
-    Zone = TID div 1000000,
-    GameSrv = "game@srv" ++ integer_to_list(Zone) ++ ".kakaranet.com",
-    NodeAtom = case Zone of
-                   4 -> nsx_opt:get_env(nsm_db, game_srv_node, 'game@doxtop.cc');
-                   _ -> list_to_atom(GameSrv)
-              end,
+    nsm_queries:start_lobby([TID]),
 
-    rpc:call(NodeAtom,nsm_srv_tournament_lobby_sup,start_lobby,[TID]),
     URL = ?_U("tournament/lobby/id/")++integer_to_list(TID),
 
     % notification via text messaging

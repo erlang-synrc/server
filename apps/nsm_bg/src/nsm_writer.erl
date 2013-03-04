@@ -23,8 +23,8 @@ init(Params) ->
     ?INFO("Init worker: ~p", [Params]),
     {ok, #state{owner = Owner, type = Type, feed = Feed, direct = Direct}}.
 
-cached_feed(Pid,Fid,Page) -> gen_server:call(Pid,{cached_feed,Fid,Page}).
-cached_direct(Pid,Fid,Page) -> gen_server:call(Pid,{cached_direct,Fid,Page}).
+cached_feed(Uid,Fid,Page) -> Pid = nsm_bg:pid(Uid), gen_server:call(Pid,{cached_feed,Fid,Page}).
+cached_direct(Uid,Fid,Page) -> Pid = nsm_bg:pid(Uid), gen_server:call(Pid,{cached_direct,Fid,Page}).
 feed_refresh(Pid,Fid,Page) -> gen_server:call(Pid,{feed_refresh,Fid,Page}).
 direct_refresh(Pid,Fid,Page) -> gen_server:call(Pid,{direct_refresh,Fid,Page}).
 

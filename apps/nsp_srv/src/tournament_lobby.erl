@@ -52,14 +52,6 @@ guiders_script() ->
     ],
     wf:wire(Guiders).
 
-node_by_id(Id, Type) ->
-    Zone = Id div 1000000,
-    GameSrv = atom_to_list(Type) ++ "@srv" ++ integer_to_list(Zone) ++ ".kakaranet.com",
-    case Zone of
-         4 -> nsx_opt:get_env(nsm_db, game_srv_node, 'game@doxtop.cc');
-         _ -> list_to_atom(GameSrv)
-    end.
-
 body() ->
   TimeStampMeasure1 = now(),
 
@@ -73,15 +65,8 @@ body() ->
     TID = T#tournament.id,
     CurrentUser = wf:user(),
 
-    Zone = TID div 1000000,
-    GameSrv = "game@srv" ++ integer_to_list(Zone) ++ ".kakaranet.com",
-    NodeAtom = case Zone of
-                    4 -> nsx_opt:get_env(nsm_db, game_srv_node, 'game@doxtop.cc');
-                    _ -> list_to_atom(GameSrv)
-               end,
-
     case T#tournament.status of
-         activated -> TourGameSrv = case rpc:call(NodeAtom, game_manager,get_tournament,[TID]) of
+         activated -> TourGameSrv = case nsm_queries:tournament_started([TID]) of 
                          TournamentString when is_list(TournamentString) ->  wf:state(tour_long_id, TournamentString),
                                              wf:state(tournament_started, true);
                          _ -> undefined
@@ -106,8 +91,6 @@ body() ->
             {error,_} -> 0 end,
 
     JoinedUsers0 = user_counter:joined_users(T#tournament.id), 
-
-    NodeAtom = node_by_id(T#tournament.id, game),
 
     Date = integer_to_list(element(3, T#tournament.start_date)) ++ "." ++ 
            integer_to_list(element(2, T#tournament.start_date)) ++ "." ++ 
@@ -149,18 +132,11 @@ body() ->
     Length = length(JoinedUsers0),
     DateTime = Date ++ " " ++ Time,
 
-%    AddMe = case UserJoined of
-%         false -> UserPlayRecord = [#play_record{who = CurrentUser, game_points = GamePoints,
-%                                  kakush = Kakush, game_id = yellow,
-%                                  realname = CurrentUser }];
-%          _ -> [] end,
-
-
     JoinedUsers = AddMe ++ JoinedUsers0,
 
     start_comet(JoinedUsers,integer_to_list(T#tournament.id),CurrentUser,UserJoined),
 
-    case rpc:call(NodeAtom,nsm_srv_tournament_lobby,chat_history,[T#tournament.id]) of
+    case nsm_queries:lobby_history([T#tournament.id]) of 
         H when is_list(H) -> add_chat_history(H);
         _ -> ok
     end,
@@ -592,13 +568,7 @@ event(leave_tournament) ->
 
 event({start_tour, Id, NPlayers,Q,T,S,P}) ->
     wf:state(tour_start_time, time()),
-    Zone = Id div 1000000,
-    GameSrv = "game@srv" ++ integer_to_list(Zone) ++ ".kakaranet.com",
-    NodeAtom = case Zone of
-                    4 -> nsx_opt:get_env(nsm_db, game_srv_node, 'game@doxtop.cc');
-                    _ -> list_to_atom(GameSrv)
-               end,
-    TourId = rpc:call(NodeAtom, game_manager,start_tournament,[Id, 1, NPlayers,Q,T,S,P]),
+    TourId = nsm_queries:start_tournament([Id, 1, NPlayers,Q,T,S,P]), 
     ?INFO("Tournament Started: ~p",[TourId]),
     wf:replace(attach_button, #link{id=attach_button, class="tourlobby_yellow_button", text=?_T("TAKE MY SEAT"), postback=attach}),
     wf:replace(start_button, ""),
@@ -646,23 +616,18 @@ get_timer_for_now() ->
                         true -> integer_to_list(N) ++ " " ++ ?_T("days");
                         false -> 
                             DTime = case date() == TourDate of
-                                true -> calendar:time_to_seconds(TourTime) - calendar:time_to_seconds(time());
-%%                                    case wf:state(tour_long_id) of 
-  %                                      [] -> calendar:time_to_seconds(TourTime) - calendar:time_to_seconds(time());
-  %                                      _ -> 0  % started tournament is always either NOW or FINISHED
-  %                                  end;
+                                true -> %calendar:time_to_seconds(TourTime) - calendar:time_to_seconds(time());
+                                    case wf:state(tour_long_id) of 
+                                      [] -> calendar:time_to_seconds(TourTime) - calendar:time_to_seconds(time());
+                                      _ -> 0  % started tournament is always either NOW or FINISHED
+                                  end;
+
                                 false ->
                                     0
                             end,
                             case DTime =< 0 of
                                 true -> 
-                                    Zone = Id div 1000000,
-                                    GameSrv = "game@srv" ++ integer_to_list(Zone) ++ ".kakaranet.com",
-                                    NodeAtom = case Zone of
-                                               4 -> nsx_opt:get_env(nsm_db, game_srv_node, 'game@doxtop.cc');
-                                               _ -> list_to_atom(GameSrv)
-                                    end,
-                                    case rpc:call(NodeAtom, game_manager,get_tournament,[Id]) of
+                                    case nsm_queries:tournament_started([Id]) of 
                                         [] -> case T#tournament.status of
                                                     created -> ?_T("CREATED");
                                                     activated -> ?_T("NOW");
