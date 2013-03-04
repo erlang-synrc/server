@@ -16,7 +16,6 @@ body() ->
   #panel{class="page-content", body=webutils:quick_nav()},
   #panel{class="page-content page-canvas notable", body=[
     #panel{text=?_T("ADDRESS"), class="page-content-title"},
-    #hr{class="page-content-hr"},
     #p{body="PAYNET İNTERNET ve BİLİŞİM HİZMETLERİ A.Ş."},
     #p{body="Kısıklı Caddesi No: 79"},
     #p{body="Üsküdar - İSTANBUL 34662"},

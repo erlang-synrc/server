@@ -1,9 +1,9 @@
--module(friends).
+-module(members).
 -compile(export_all).
 -include_lib("nitrogen_core/include/wf.hrl").
 -include_lib("nsm_db/include/user.hrl").
 -include_lib("nsm_db/include/feed.hrl").
--include_lib("nsx_config/include/log.hrl"). 
+-include_lib("nsx_config/include/log.hrl").
 -include("elements/records.hrl").
 -include("gettext.hrl").
 -include("setup.hrl").
@@ -11,71 +11,91 @@
 -define(FRIENDSPERPAGE, 20).
 
 main() ->
-    case wf:user() /= undefined of
-        true  -> main_authorized();
-        false -> wf:redirect_to_login(?_U("/login"))
-    end.
+  case wf:user() /= undefined of
+    true  -> main_authorized();
+    false -> wf:redirect_to_login(?_U("/login"))
+  end.
 
 main_authorized() ->
-    UserOrNot = wf:q('id'),
-    UserName = case UserOrNot of
-        undefined -> wf:user();
-        MrX -> MrX
-    end,
-    case catch nsm_users:get_user(UserName) of
-        {ok, UserInfo} ->
-            wf:state(user, UserInfo),
-            wf:state(feed_owner, {user, UserName}),
-            UserList = [FrId || #subs{whom=FrId} <- nsm_users:list_subscr(UserName)],
-            wf:state(userlist, lists:sort(UserList)),
-            wf:state(userlist_count, length(UserList)),
-            wall:main();
-        Reason ->
-            ?ERROR("unable to get user info: User=~p, Reason=~p", [UserName, Reason]),
-            wf:redirect("404")
-    end.
+  case wf:q('__submodule__') of
+    "group" ->
+      Gid = wf:q('id'),
+      Uid = wf:user(),
+      UserList = [UId || UId <- nsm_groups:list_group_members(Gid)], 
+      CurrentGroup = case nsm_groups:get_group(Gid) of
+        {error, notfound} -> undefined;
+        {ok, Group} -> Group#group.name
+      end;
+    _ ->
+      Gid = undefined,
+      Uid = case wf:q('id') of undefined -> wf:user(); Id -> Id end,
+      CurrentGroup = undefined,
+      UserList = [FrId || #subs{whom=FrId} <- nsm_users:list_subscr(Uid)]
+  end,
+  ?INFO("Mebers Uid: ~p  Gid: ~p Group: ~p", [Uid, Gid, CurrentGroup]),
+
+  case nsm_db:get(user, Uid) of
+    {error, notfound} -> wf:redirect("/404");
+    {ok, UserInfo} ->
+      wf:state(user, UserInfo),
+      wf:state(feed_owner, {user, Uid}),
+      wf:state(userlist, lists:sort(UserList)),
+      wf:state(userlist_count, length(UserList)),
+      wf:state(curgroup, CurrentGroup),
+      wall:main()
+  end.
 
 title() -> webutils:title(?MODULE).
 
-body() -> 
-  User = wf:q('id'),
-  {Type,CheckedUser} = case User of
-%                     undefined -> Group = wf:q('group'),
-%                                  case Group of
-                                       undefined -> {user,wf:user()};
-%                                       G -> {group,G} end;
-                     X -> {user,X} end,
-  Info = case nsm_db:get(Type,CheckedUser) of 
-                    {ok,I} -> I;
-                    _ -> undefined end,
-  ?INFO("body: User ~p Info ~p",[User, Info]),
+body() ->
+  {Type, Name} = case wf:q('__submodule__') of 
+    "group" -> {group, wf:q('id')};
+    _ -> {user, case wf:q('id') of undefined -> wf:user(); Id -> Id end }
+  end,
+
+  Info = case nsm_db:get(Type, Name) of
+    {error, notfound} -> undefined;
+    {ok, I} -> I
+  end,
+
+  ?INFO("body: User ~p Info ~p",[wf:user(), Info]),
   [
   #panel{class="page-content", body=webutils:quick_nav()},
-  #panel{class="page-content page-canvas", style="overflow:auto;", body=[
+  #panel{class="page-content page-canvas", body=[
     #panel{class=aside, body=[
-      wall:get_ribbon_menu(Info),
-      wall:get_friends(Info),
-      wall:get_groups(Info)
+      case wf:q('__submodule__') of
+       "group" -> wall:group_info(Info);
+        _ ->
+          ?INFO("~n Wall ~p", [Info]),
+          [
+            wall:get_ribbon_menu(Info),
+            wall:get_friends(Info),
+            wall:get_groups(Info)
+          ]
+      end
     ]},
-    #panel{class=friendlist, body=content(1)}
-  ]}].
+    #panel{class=friendlist, body=
+      case wf:q('__submodule__') of
+        "group" ->
+          case nsm_groups:user_has_access(wf:user(), Name) of
+            true -> content(1, ?_TS("Members of $group$", [{group, wf:state(curgroup)}]));
+            false -> []
+          end;
+        _ -> content(1, ?_T("FRIENDS"))
+      end
+    }
+  ]}
+  ].
 
-content(Page) -> content(Page, ?_T("FRIENDS")).
 content(Page, Title) ->
-    [
-        #panel{class="top-space", body=[
-            #h1{text=Title},
-            #textbox{id=nick_filter, style="width:84px; height:19px; border-radius:3px; border: 1px solid rgb(201, 201, 201); float:left;"},
-            #link{postback=filter_by_nick, class="set-table-name", text=?_T("Filter by nick"), style="float:left; font-weight:bold; padding-left:8px; padding-top:5px;"}
-        ]},
-        #panel{id="friends_content", body=getPageContent(Page)}
-    ].
-
-getPageContent(Page) ->
-    [
-        get_users_view(get_subscribed_users(Page), Page)
-    ].
-
+  [
+    #h1{class="page-content-title", text=Title},
+    #panel{class="content-filter", body=[
+      #textbox{id=nick_filter},
+      #link{postback=filter_by_nick, text=?_T("Filter by nick")}
+    ]},
+    #panel{id=friends_content, body=get_users_view(get_subscribed_users(Page), Page)}
+  ].
 
 get_users_view(UsersView, PageNumber) ->
     NextButton = case PageNumber < (wf:state(userlist_count) div ?FRIENDSPERPAGE + 1) of
@@ -236,7 +256,7 @@ inner_event({page, N}, _) ->
         N < 1 -> 1;
         true  -> N
     end,
-    wf:update(friends_content, getPageContent(ActualNumber));
+    wf:update(friends_content, get_users_view(get_subscribed_users(ActualNumber), ActualNumber));
 
 inner_event(go_to_page, User) ->
     Page = list_to_integer(wf:q(pager_textbox)),
@@ -246,12 +266,15 @@ inner_event(go_to_page, User) ->
     end;
 
 inner_event(filter_by_nick, User) ->
-    Filter = wf:q(nick_filter),
-    UserList = [FrId || #subs{whom=FrId} <- nsm_users:list_subscr(User)],
-    FilteredUserList = [UId || UId <- UserList, string:str(UId, Filter) /= 0],
-    wf:state(userlist, lists:sort(FilteredUserList)),
-    wf:state(userlist_count, length(FilteredUserList)),
-    event({page, 1});
+  Filter = wf:q(nick_filter),
+  UserList = case wf:q('__submodule__') of
+    "group" -> [UId || UId <- nsm_groups:list_group_members(wf:q(id))];
+    _ -> [FrId || #subs{whom=FrId} <- nsm_users:list_subscr(User)] 
+  end,
+  FilteredUserList = [UId || UId <- UserList, string:str(UId, Filter) /= 0],
+  wf:state(userlist, lists:sort(FilteredUserList)),
+  wf:state(userlist_count, length(FilteredUserList)),
+  event({page, 1});
 
 inner_event({unsubscribe, _, Who, SUId}, User1) ->
     nsx_msg:notify(["subscription", "user", User1, "remove_subscribe"], {Who}),
@@ -270,7 +293,6 @@ inner_event({subscribe, _, Who, SUId}, User1)   ->
     wf:wire("blur();"),
     wf:wire("qtip_all_links();");
 
+inner_event(Any, _)-> webutils:event(Any).
 
-inner_event(Any, _)->
-    webutils:event(Any).
-
+api_event(Name, Tag, Args) -> webutils:api_event(Name, Tag, Args).

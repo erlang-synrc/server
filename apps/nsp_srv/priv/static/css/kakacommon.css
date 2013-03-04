@@ -1975,6 +1975,7 @@ body.extra-small-screen .LV_invalid {
 
 hr.page-content-hr{
   clear: both;
-  width: 958px;
+  //width: 958px;
   color: #c2c2c2;
+  width:100%;
 }

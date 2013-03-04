@@ -1,8 +1,8 @@
 .user-list {
   list-style:none;
-	margin:0 0 0 -30px;
-	padding:0;
-	width:695px;
+  margin:35px 0 0;
+  padding:0;
+  width:100%;
 }
 .user-list:after {
 	clear:both;
@@ -10,10 +10,10 @@
 	display:block;
 }
 .user-item {
-	float:left;
-	width:109px;
-	height:136px;
-	padding:8px 0 10px 30px;
+  float:left;
+  width:109px;
+  height:136px;
+  margin:10px;
 }
 .user-list .entity {
 	cursor:pointer;
@@ -42,19 +42,18 @@
 }
 .user-list .entity:hover .user-name {color:#ad3531;}
 .user-list .tooltip-1 {
-	display:block;
-	width:314px;
-	position:absolute;
-	left:10px;
-	top:-140px;
-	background:url(../images/none.gif);
-    z-index:99999;
+  display:block;
+  width:314px;
+  position:absolute;
+  left:10px;
+  top:-140px;
+  display:none;
 }
 .user-list .user-item:hover,
 .user-list .user-item.hover {position:relative;}
 
 .user-list .user-item:hover .tooltip-1,
-.user-list .user-item.hover .tooltip-1 {display:block;z-index:1}
+.user-list .user-item.hover .tooltip-1 {display:block;}
 
 .user-list .tooltip-1 .t {
 	padding:7px 0 0;
