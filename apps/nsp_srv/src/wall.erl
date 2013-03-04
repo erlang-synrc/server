@@ -188,19 +188,19 @@ get_friends(User) ->
         true ->
           #panel{class="mark-cell", body=[
             #p{body=["<strong>",?_T("Make new friends on kakaranet."),"</strong>"]},
-            #link{url="/view/members/id/kakaranet", class="btn", text=?_T("Find someone!")}
+            #link{url="/members/group/id/kakaranet", class="btn", text=?_T("Find someone!")}
           ]};
         false -> ?_T("User is not subscribed to anyone")
       end,
       Nav = case User#user.username == wf:user() of
         true ->
           #span_b{class="links", body=[
-            #link{style="font-size:12pt;",text=?_T("All your friends"), url="/friends", id="friendslink",
+            #link{style="font-size:12pt;",text=?_T("All your friends"), url="/members", id="friendslink",
             title=?_T("You can unsubscribe or write someone private message via this list")}
           ]};
         false ->
           #span_b{class="links", body=[
-            #link{style="font-size:12pt;", text=?_T("All friends of ") ++ User#user.username, url="/friends/id/"++User#user.username, id="friendslink",
+            #link{style="font-size:12pt;", text=?_T("All friends of ") ++ User#user.username, url="/members/id/"++User#user.username, id="friendslink",
             title=?_T("You can unsubscribe or write someone private message via this list")}
           ]}
       end,
@@ -1020,7 +1020,7 @@ group_info(Group) ->
       end,
 
       #panel{class="box user-info", body=[
-        #h3{id=group_info_name, text=GroupTitle},
+        #h3{id=group_info_name, text=GroupTitle, class="section-title", style="background:#4ec3f1;"},
         Description,
         #br{},
         #br{},

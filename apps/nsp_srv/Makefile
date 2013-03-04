@@ -3,24 +3,22 @@ priv/static/js/krules_okey.js \
 priv/static/js/kgifts.js \
 priv/static/js/ktournaments.js \
 priv/static/js/kwall.js \
-priv/static/js/kfriends.js \
 priv/static/js/kwall.sec.js \
-priv/static/js/kview_members.js \
 priv/static/js/kgroups.js \
 priv/static/js/kcontact.js \
 priv/static/js/kprofile.js \
-priv/static/js/kinfo.js
+priv/static/js/kinfo.js \
+priv/static/js/kmembers.js
 CSS_FILES=priv/static/css/kakara.css priv/static/css/kindex.css priv/static/css/kmatchmaker.css \
 priv/static/css/krules_okey.css \
 priv/static/css/kgifts.css \
 priv/static/css/kwall.css \
-priv/static/css/kfriends.css \
 priv/static/css/ktournaments.css \
-priv/static/css/kview_members.css \
 priv/static/css/kgroups.css \
 priv/static/css/kcontact.css \
 priv/static/css/kprofile.css \
-priv/static/css/kinfo.css
+priv/static/css/kinfo.css \
+priv/static/css/kmembers.css
 ROOT_PATH=priv/static/
 #########################################################################
 MINIFIED_JS_FILES=$(JS_FILES:.js=.min.js)

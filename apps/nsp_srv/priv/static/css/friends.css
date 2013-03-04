@@ -1,1 +1,22 @@
-.friendlist{float:right;}
+.friendlist{
+  margin-left: 222px;
+  display: block;
+  padding: 0 20px;
+}
+
+.content-filter{
+  margin-left:10px;
+  margin-top:30px;
+}
+
+.friendlist a{
+  font-size: 13px;
+  font-weight: normal;
+  text-decoration: underline;
+}
+
+.friendlist input {
+  font-size:16px;
+  border-radius:3px;
+  border: 1px solid rgb(201, 201, 201);
+}

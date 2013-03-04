@@ -626,7 +626,7 @@ user_count(GameH) ->
 get_members(GId) ->
     Nav = [
         #span_b{class="links", body=[
-          #link{text=?_T("All members"), url=?_U("/view/members")++"/id/"++GId}
+          #link{text=?_T("All members"), url=?_U("/members/group")++"/id/"++GId}
         ]}
     ],
     get_metalist(GId, ?_T("MEMBERS"), nsm_groups, list_group_members, ?_T("Group have no members"), Nav).
