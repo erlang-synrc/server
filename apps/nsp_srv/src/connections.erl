@@ -1,4 +1,4 @@
--module(members).
+-module(connections).
 -compile(export_all).
 -include_lib("nitrogen_core/include/wf.hrl").
 -include_lib("nsm_db/include/user.hrl").
@@ -48,7 +48,7 @@ main_authorized() ->
 title() -> webutils:title(?MODULE).
 
 body() ->
-  {Type, Name} = case wf:q('__submodule__') of 
+  {Type, Name} = case wf:q('__submodule__') of
     "group" -> {group, wf:q('id')};
     _ -> {user, case wf:q('id') of undefined -> wf:user(); Id -> Id end }
   end,

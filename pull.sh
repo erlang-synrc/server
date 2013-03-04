@@ -8,7 +8,7 @@ git checkout ktournaments.min.css
 git checkout krules_okey.min.css
 git checkout kgifts.min.css
 git checkout kwall.min.css
-git checkout kmembers.min.css
+git checkout kconnections.min.css
 git checkout kgroups.min.css
 git checkout kcontact.min.css
 git checkout kprofile.min.css
@@ -22,7 +22,7 @@ git pull
 ./cssfix.sh krules_okey.min.css
 ./cssfix.sh kgifts.min.css
 ./cssfix.sh kwall.min.css
-./cssfix.sh kmembers.min.css
+./cssfix.sh kconnections.min.css
 ./cssfix.sh kgroups.min.css
 ./cssfix.sh kcontact.min.css
 ./cssfix.sh kprofile.min.css
