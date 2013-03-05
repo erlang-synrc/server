@@ -3765,7 +3765,7 @@ msgid "Unknown"
 msgstr "Bilinmiyor"
 #
 msgid "You"
-msgstr "Siz"
+msgstr "Sen"
 #
 msgid "and"
 msgstr "ve"
@@ -5543,3 +5543,21 @@ msgid ""
 msgstr ""
 "You may unsubscribe from group messages this way.\n"
 "                              You can also subscribe back later if you wish"
+#
+msgid "Direct Messages"
+msgstr "Direct Messages"
+#
+msgid "days ago"
+msgstr "gün önce"
+#
+msgid "entries"
+msgstr "entries"
+#
+msgid "months ago"
+msgstr "ay önce"
+#
+msgid "weeks ago"
+msgstr "weeks ago"
+#
+msgid "years ago"
+msgstr "yıl önce"

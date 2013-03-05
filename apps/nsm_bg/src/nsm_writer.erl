@@ -28,6 +28,11 @@ cached_direct(Uid,Fid,Page) -> Pid = nsm_bg:pid(Uid), gen_server:call(Pid,{cache
 feed_refresh(Pid,Fid,Page) -> gen_server:call(Pid,{feed_refresh,Fid,Page}).
 direct_refresh(Pid,Fid,Page) -> gen_server:call(Pid,{direct_refresh,Fid,Page}).
 
+cached_friends(Uid,Fid,Page) -> Pid = nsm_bg:pid(Uid), gen_server:call(Pid,{cached_friends,Fid,Page}).
+cached_groups(Uid,Fid,Page) -> Pid = nsm_bg:pid(Uid), gen_server:call(Pid,{cached_groups,Fid,Page}).
+friends_refresh(Pid,Fid,Page) -> gen_server:call(Pid,{friens_refresh,Fid,Page}).
+groups_refresh(Pid,Fid,Page) -> gen_server:call(Pid,{groups_refresh,Fid,Page}).
+
 handle_call({cached_feed,FId,Page},From,State) ->
     Reply = case State#state.cached_feed of
                  undefined -> nsm_db:entries_in_feed(FId,Page);

@@ -330,7 +330,7 @@ get_ribbon_menu(User) ->
                                                            ?_T("My Feed")]}},
                         #listitem{body=#link{url="/wall/filter/direct", 
                                              body=[ #image{image="/images/ico-05.gif", style="width:27px;height:34px"},
-                                                           ?_T("Direct Messages")]}}   ]},
+                                                           ?_T("Direct messages")]}}   ]},
                     new_statistic(SubscribersCount,FriendsCount,CommentsCount,LikesCount,EntriesCount,CheckedUser) ];
 
         {_, true}  -> [#link{text=?_T("Unsubscribe"), url="#", class="btn-abone btn-abone-2", postback={unsubscribe, CheckedUser}},

@@ -845,6 +845,11 @@ msgstr ""
 "üzere.\n\nKakaranet."
 
 msgid ""
+"Direct Messages"
+msgstr ""
+"Direct Messages"
+
+msgid ""
 "Direct messages"
 msgstr ""
 "Direct messages"
@@ -4182,9 +4187,19 @@ msgstr ""
 "days"
 
 msgid ""
+"days ago"
+msgstr ""
+"days ago"
+
+msgid ""
 "elimination"
 msgstr ""
 "elimination"
+
+msgid ""
+"entries"
+msgstr ""
+"entries"
 
 msgid ""
 "error"
@@ -4255,6 +4270,11 @@ msgid ""
 "members"
 msgstr ""
 "members"
+
+msgid ""
+"months ago"
+msgstr ""
+"months ago"
 
 msgid ""
 "no"
@@ -4367,9 +4387,19 @@ msgstr ""
 "username..."
 
 msgid ""
+"weeks ago"
+msgstr ""
+"weeks ago"
+
+msgid ""
 "write us a"
 msgstr ""
 "write us a"
+
+msgid ""
+"years ago"
+msgstr ""
+"years ago"
 
 msgid ""
 "~p not found~n"

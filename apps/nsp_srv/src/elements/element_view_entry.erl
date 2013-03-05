@@ -380,7 +380,7 @@ entry_element_usual(E, Comments, Avatar, {MediaThumb, MediaLists0}, _TargetMedia
         {unknown, unknown} -> {"",false};
         _ ->
             {DmFrom, DmFromLink, IsEditable} = case {E#entry.from, wf:user()} of
-                {DMF, DMF} -> {"You", wf:user(), true};
+                {DMF, DMF} -> {?_T("You"), wf:user(), true};
                 _ -> {E#entry.from, E#entry.from, false}
             end,
 
@@ -401,11 +401,11 @@ entry_element_usual(E, Comments, Avatar, {MediaThumb, MediaLists0}, _TargetMedia
                                 false ->
                                     case Type of
                                     user ->
-                                         {io_lib:format(StO ++ " to <a href=\"~s\">~s</a>" ++ StC,
+                                         {io_lib:format(StO ++ " <b>&rarr;</b> <a href=\"~s\">~s</a>" ++ StC,
                                             [site_utils:user_link(DmFromLink), DmFrom, site_utils:user_link(DmToLink),
-                                        case Name =:= wf:user() of true -> "You"; false -> DmTo end]), IsEditable};
+                                        case Name =:= wf:user() of true -> ?_T("You"); false -> DmTo end]), IsEditable};
                                     group ->
-                                        {io_lib:format(StO ++ " to <a href=\"~s\">~s</a>" ++ StC,
+                                        {io_lib:format(StO ++ " <b>&rarr;</b> <a href=\"~s\">~s</a>" ++ StC,
                                             [site_utils:user_link(DmFromLink), DmFrom, site_utils:group_link(DmToLink), DmTo]), 
                                             IsEditable}
                                     end
@@ -502,10 +502,10 @@ entry_element_usual(E, Comments, Avatar, {MediaThumb, MediaLists0}, _TargetMedia
 timestamp_label({0, _}, Time) ->
   {_, H} = calendar:now_to_local_time(Time),
   io_lib:format("~2..0b:~2..0b:~2..0b", tuple_to_list(H));
-timestamp_label({Days, _}, _) when Days < 7 -> io_lib:format("~p days ago", [Days]);
-timestamp_label({Days, _}, _) when Days < 31 -> io_lib:format("~p weeks ago", [trunc(Days/7)]);
-timestamp_label({Days, _}, _) when Days < 365 -> io_lib:format("~p months ago", [trunc(Days/7)]);
-timestamp_label({Days, _}, _) when Days > 365 -> io_lib:format("~p years ago", [trunc(Days/365)]);
+timestamp_label({Days, _}, _) when Days < 7 -> io_lib:format("~p " ++ ?_T("days ago"), [Days]);
+timestamp_label({Days, _}, _) when Days < 31 -> io_lib:format("~p " ++ ?_T("weeks ago"), [trunc(Days/7)]);
+timestamp_label({Days, _}, _) when Days < 365 -> io_lib:format("~p " ++ ?_T("months ago"), [trunc(Days/7)]);
+timestamp_label({Days, _}, _) when Days > 365 -> io_lib:format("~p " ++ ?_T("years ago"), [trunc(Days/365)]);
 timestamp_label({Days, _}, _) -> io_lib:format("~p days ago", [Days]).
 
 comments_element(EId, Comments, Anchor, Avatar) ->
