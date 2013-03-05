@@ -55,13 +55,6 @@ generate_token(User) ->
     ?INFO("with result :~p~n", [Res]),
     Token.
 
-update_gamestate(GaId, NewGameState) ->
-    ?INFO("GaId: ~p~nState:~p~n~n", [GaId, NewGameState]),
-    case NewGameState of
-         finished -> table_manager:delete_table({gameId, GaId});
-         _ -> ok
-    end.
-
 generate_token0() -> T0 = crypto:rand_bytes(100), T = base64:encode(T0), T.
 
 build_user_info(#user{username = UserName,

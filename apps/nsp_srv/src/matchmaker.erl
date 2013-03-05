@@ -954,7 +954,7 @@ u_event({info, {Target, TId}}) ->
             {ok, Table} = nsm_queries:public_table([TId,wf:state(table)]),
             ?INFO("INFO: ~p",[{TId,Table}]),
             {ok,Table};
-        save_table -> table_manager:get_save_table_setting(TId)
+        save_table -> {ok,#game_table{}} 
     end,
     Info = webutils:table_info(TableSettings),
     wf:update(info_table, #dialog{body=Info});

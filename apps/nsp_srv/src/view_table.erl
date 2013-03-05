@@ -211,31 +211,7 @@ table(Id, _Joined=true) ->
 
 table(Id, _Joined=false) ->
     ?INFO("table not joined yet"),
-%    UId = wf:user(),
-%    Table = wf:state(table),
-%    {ok, User} = nsm_users:get_user(UId),
-
-%    Options = case wf:q(lucky) of
-%                  "true" ->
-%                      [feellucky];
-%                  _ ->
-%                      []
-%              end,
     table_ok(Id).
-
-%   case table_manager:join_table(User, Id, Options) of
-%	ok ->
-%	    table_ok(Id);
-%	{error, Error} ->
-%	    {ok, Pid} = sync_with_pre_comet(),
-%	    exit_from_pre_comet(Pid), %% if error, comet wont really start
-%	    case Error of
-%	    end,
-%	    [#grid_8{id=error_info, prefix=1, alpha=true, body=[Msg]},
-%	     #grid_clear{}
-%	    ]
-%   end.
-%   table_ok(Id).
 
 sync_with_pre_comet() ->
     receive {comet_started, Pid} -> {ok, Pid}

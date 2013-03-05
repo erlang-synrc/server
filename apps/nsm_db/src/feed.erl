@@ -85,36 +85,6 @@ get_comments_count(Uid) ->
             0
     end.
 
-broadcast({group, Group}, Entry) ->
-    Users = nsm_groups:list_group_members(Group),
-    multi_broadcast(Users, Entry);
-
-broadcast(new_table, #game_table{owner=UId} = Table) ->
-    GIds = nsm_groups:list_groups_per_user(UId),
-
-    UsersList0 = rpc:call(?WEBSERVER_NODE,site_utils,get_usort_user,[GIds, []]),
-    Fun = fun(User) -> table_manager:filter_table(User, Table) end,
-    UsersList = lists:filter(Fun, UsersList0) -- [UId],
-
-    Message = create_message(Table),
-    multi_broadcast(UsersList, Message);
-
-broadcast(User, Entry) ->
-    Users = [Friend || #subs{who = Friend} <- nsm_users:list_subscr_me(User)],
-    multi_broadcast(Users, Entry).
-
-multi_broadcast(Users, #entry{entry_id=EId} = Entry) ->
-    [ begin
-          {ok, U} = nsm_users:get_user(UserId),
-          FId = U#user.feed,
-          NewEntry = Entry#entry{id={EId, FId},
-                                 feed_id = FId},
-        nsm_db:put(NewEntry)
-      end
-      || UserId <- Users ],
-    ok.
-
-
 get_feed(FId) -> nsm_db:get(feed, FId).
 get_entries_in_feed(FId) -> nsm_db:entries_in_feed(FId).
 get_entries_in_feed(FId, Count) -> nsm_db:entries_in_feed(FId, Count).

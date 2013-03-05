@@ -155,10 +155,6 @@ check_date_correct({SYear,SMonth,SDay} = OrigDate) ->
 	    {error, OrigDate}
     end.
 
--spec how_old({integer(),integer(),integer()}) -> integer().
-how_old({Day,Month,Year}) ->
-    table_manager:get_user_ag(#user{age = {Year,Month,Day}}).
-
 element_value(Element) ->
     case wf:q(Element) of
         "undefined" -> undefined;
