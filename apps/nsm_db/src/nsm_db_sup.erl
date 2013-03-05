@@ -54,11 +54,5 @@ init([]) ->
     _ -> skip
           end,
 
-    % you can put zealot_auth here if it is not working with start_link
-
-%    Auth = {zealot_auth, {zealot_auth, start_link, []}, Restart, Shutdown, Type, [zealot_auth]},
-    TableManager = {table_manager, {table_manager, start_link, []}, Restart, Shutdown, Type, [table_manager]},
-%    TopMan = {topman, {topman, start, []}, Restart, Shutdown, Type, [topman, pushsub]},
-
-    {ok, { {one_for_one, 5, 10}, [TableManager]} }.
+    {ok, { {one_for_one, 5, 10}, []} }.
 
