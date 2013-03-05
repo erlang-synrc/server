@@ -486,7 +486,7 @@ check_waste_move(Color, From, To, Pips, Board, BearoffWasteMoveEnabled,
                             true ->
                                 case To == OutPos of
                                     true -> true;
-                                    false -> true %% TODO: Check bear-off posibility
+                                    false -> not out_possible(Color, Pips, Board)
                                 end
                         end
                  end,
@@ -505,6 +505,22 @@ check_destination_pos(Color, To, Board, BearOffMode, OutPos) ->
                occupied -> {error, occupied}
            end
     end.
+
+out_possible(Color, Pips, Board) ->
+    out_pip_exists(Color, Pips, Board) orelse
+    far_pip_exists(Color, Pips, Board).
+
+far_pip_exists(Color, Pips, Board) ->
+    MaxPip = lists:max(Pips),
+    not more_far_checkers_exist(Color, MaxPip, Board).
+
+out_pip_exists(Color, Pips, Board) ->
+    F = fun(Pip) -> case get_checkers(prev_pos(Color, ?WHITE_OUT, Pip), Board) of
+                        {Color, _} -> true;
+                        _ -> false
+                    end
+        end,
+    lists:any(F, Pips).
 
 
 detect_bearoff_mode(Color, Board) ->
@@ -538,6 +554,16 @@ new_pos(?BLACK, From, Pips) ->
        (From + Pips) < 25 -> From + Pips;
        (From + Pips) >= 25 -> ?BLACK_OUT
     end.
+
+prev_pos(?WHITE, At, Pips) ->
+    if At == ?WHITE_OUT -> Pips;
+       is_integer(At) -> At + Pips
+    end;
+prev_pos(?BLACK, At, Pips) ->
+    if At == ?BLACK_OUT -> 25 - Pips;
+       is_integer(At) -> At - Pips
+    end.
+
 
 route(?WHITE) -> lists:seq(24, 1, -1);
 route(?BLACK) -> lists:seq(1, 24).
