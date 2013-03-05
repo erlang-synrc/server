@@ -433,6 +433,7 @@ entry_element_usual(E, Comments, Avatar, {MediaThumb, MediaLists0}, _TargetMedia
     TextBoxID   = wf:temp_id(),
     Description = case IsDirectMessage of
         true -> #inplace_textbox1 {
+                    style="font-size: 12pt;",
                     text=E#entry.description, eb_id=EntryBodyId, vp_id=ViewPanelID, tb_id=TextBoxID,
                     entry_id=E#entry.entry_id, feed_id=E#entry.feed_id
                 };
@@ -446,21 +447,8 @@ entry_element_usual(E, Comments, Avatar, {MediaThumb, MediaLists0}, _TargetMedia
     LikeBtnId       = wf:temp_id(),
     LikePanelId     = like_panel_id(E#entry.entry_id),
     ShareBtnId       = wf:temp_id(),
-    [
-      #panel{class="post", id=TempId, actions=Events, body=[
-        #panel{class="entry-avatar", body=[
-          #link{body=Avatar, url=site_utils:user_link(E#entry.from)}
-        ]},
-        #panel{class="entity", body=[
-          TitleStr,
-          case E#entry.shared of
-            undefined -> [];
-            "" -> [];
-            Someone -> #span{style="font-size:12px;", body=[" (", ?_T("shared by"), " <b>", #link{text=Someone, url=site_utils:user_link(Someone)}, "</b>)"]}
-          end,
-          Description,
-          #panel{class="meta", body=[
-            io_lib:format("<span class=\"entry-time\"> ~s </span>",[Time]),
+
+    EntryActionsLine = 
             #list{class=feed_entry_actions, body=[
               #listitem{body=#link{
                 text=?_T("Comment"), url="javascript:void(0)", show_if=ViewC,
@@ -488,8 +476,25 @@ entry_element_usual(E, Comments, Avatar, {MediaThumb, MediaLists0}, _TargetMedia
                 postback={remove_entry, E#entry.entry_id, TempId, E#entry.to, E#entry.from},
                 title=?_T("Clicking here will remove an entry from your own and your friends feeds")}
               }
-            ]}
+            ]},
+
+    [
+      #panel{class="post", id=TempId, actions=Events, body=[
+        #panel{class="entry-avatar", body=[
+          #link{body=Avatar, url=site_utils:user_link(E#entry.from)}
+        ]},
+        #panel{class="entity", body=[
+          TitleStr,
+          case E#entry.shared of
+            undefined -> [];
+            "" -> [];
+            Someone -> #span{style="font-size:14px;", body=[" (", ?_T("via"), " <b>", #link{text=Someone, url=site_utils:user_link(Someone)}, "</b>)"]}
+          end,
+          #panel{class="meta", body=[
+            EntryActionsLine,
+            io_lib:format("<span class=\"entry-time\"> ~s </span>",[Time])
           ]},
+          Description,
           #panel{id=LikePanelId, body=[LikeBox]},
           #panel{body=MediaThumb},
           #grid_clear{},
