@@ -581,3 +581,19 @@ rk_user_feed(User) ->
 
 rk_group_feed(Group) ->
     rk([feed, group, Group, '*', '*', '*']).
+
+retrieve_connections(Id,Type) ->
+    Friends = case Type of 
+                  user -> nsm_users:list_subscr_usernames(Id);
+                     _ -> nsm_groups:list_group_members(Id) end,
+    case Friends of
+	[] -> [];
+	Full -> Sub = lists:sublist(Full, 10),
+                case Sub of
+                     [] -> [];
+                      _ -> Data = [begin case nsm_db:get(user,Who) of
+                                       {ok,User} -> RealName = nsm_users:user_realname_user(User),
+                                                    Paid = nsm_accounts:user_paid(Who),
+                                                    {Who,Paid,RealName};
+				               _ -> undefined end end || Who <- Sub],
+			   [X||X<-Data, X/=undefiend] end end.

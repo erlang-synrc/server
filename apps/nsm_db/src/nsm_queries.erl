@@ -92,6 +92,10 @@ string_map(X) -> lists:foldl(fun(A,Sum)->A+Sum end,0,X) rem 3+1.
 long_map(X)   -> X div 1000000.
  
 consumer_pid(Args)       -> map_call("app", nsm_bg,pid,Args,string_map).
+cached_feed(Args)        -> map_call("app", nsm_writer,cached_feed,Args,string_map).
+cached_direct(Args)      -> map_call("app", nsm_writer,cached_direct,Args,string_map).
+cached_friends(Args)     -> map_call("app", nsm_writer,cached_friends,Args,string_map).
+cached_groups(Args)      -> map_call("app", nsm_writer,cached_groups,Args,string_map).
 start_lobby(Args)        -> map_call("game",nsm_srv_tournament_lobby_sup,start_lobby,Args,long_map).
 lobby_history(Args)      -> map_call("game",nsm_srv_tournament_lobby,chat_history,Args,long_map).
 start_tournament(Args)   -> map_call("game",game_manager,start_tournament,Args,long_map).

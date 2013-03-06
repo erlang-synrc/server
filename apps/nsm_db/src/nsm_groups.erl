@@ -1,35 +1,20 @@
 -module(nsm_groups).
-
+-compile(export_all).
 -include("user.hrl").
 -include("feed.hrl").
 -include_lib("nsx_config/include/log.hrl").
 
--export([
-            create_group_directly_to_db/5,
-            add_to_group_directly_to_db/3,
-            delete_group_directly_from_db/1,
-
-            list_groups_per_user/1,
-            list_group_members/1,
-            list_group_members_with_types/1,
-            list_group_members_by_type/2,
-
-            get_all_groups/0,
-            get_popular_groups/0,
-            get_group/1,
-            group_exists/1,
-            group_publicity/1,
-            group_members_count/1,
-
-            join_group/2,
-            approve_request/3,
-            reject_request/3,
-            user_in_group/2,
-            user_is_owner/2,
-            group_user_type/2,
-            change_group_user_type/3,
-            user_has_access/2
-        ]).
+retrieve_groups(User) ->
+    ?INFO("retrieve_groups: ~p",[User]),
+    case nsm_groups:list_groups_per_user(User) of
+         [] -> [];
+         Gs -> UC_GId = lists:sublist(lists:reverse(
+                              lists:sort([{nsm_groups:group_members_count(GId), GId} || GId <- Gs])), 
+                                    20),
+               Result = [begin case nsm_groups:get_group(GId) of
+                                   {ok, Group} -> {Group#group.name,GId,UC};
+                                   _ -> undefined end end || {UC, GId} <- UC_GId],
+               [X||X<-Result,X/=undefined] end.
 
 create_group_directly_to_db(UId, GId, Name, Desc, Publicity) ->
     FId = nsm_db:feed_create(),
@@ -46,8 +31,7 @@ create_group_directly_to_db(UId, GId, Name, Desc, Publicity) ->
     nsm_groups:add_to_group_directly_to_db(UId, GId, member),
     GId.
 
-add_to_group(Who, GId, Type, Owner) -> % for internal use only
-    nsx_msg:notify(["subscription", "user", Owner, "add_to_group"], {GId, Who, Type}).
+add_to_group(Who, GId, Type, Owner) -> nsx_msg:notify(["subscription", "user", Owner, "add_to_group"], {GId, Who, Type}).
 
 add_to_group_directly_to_db(UId, GId, Type) ->
     nsm_db:put(#group_subs{user_id=UId, group_id=GId, user_type=Type}),
@@ -71,21 +55,12 @@ delete_group_directly_from_db(GId) ->
             nsm_mq_channel:close(Channel)
     end.
 
-list_groups_per_user(UId) ->
-    [GId || #group_subs{group_id=GId} <- nsm_db:all_by_index(group_subs, <<"group_subs_user_id_bin">>, UId) ].
+list_groups_per_user(UId) -> [GId || #group_subs{group_id=GId} <- nsm_db:all_by_index(group_subs, <<"group_subs_user_id_bin">>, UId) ].
+list_group_members(GId) -> [UId || #group_subs{user_id=UId, user_type=UT} <- nsm_db:all_by_index(group_subs, <<"group_subs_group_id_bin">>, GId), UT == member ].
+list_group_members_by_type(GId, Type) -> [UId || #group_subs{user_id=UId, user_type=UT} <- nsm_db:all_by_index(group_subs, <<"group_subs_group_id_bin">>, GId), UT == Type ].
+list_group_members_with_types(GId) -> [{UId, UType} || #group_subs{user_id=UId, user_type=UType} <- nsm_db:all_by_index(group_subs, <<"group_subs_group_id_bin">>, list_to_binary(GId)) ].
 
-list_group_members(GId) ->
-    [UId || #group_subs{user_id=UId, user_type=UT} <- nsm_db:all_by_index(group_subs, <<"group_subs_group_id_bin">>, GId), UT == member ].
-
-list_group_members_by_type(GId, Type) ->
-    [UId || #group_subs{user_id=UId, user_type=UT} <- nsm_db:all_by_index(group_subs, <<"group_subs_group_id_bin">>, GId), UT == Type ].
-
-list_group_members_with_types(GId) ->
-    [{UId, UType} || #group_subs{user_id=UId, user_type=UType} <- nsm_db:all_by_index(group_subs, <<"group_subs_group_id_bin">>, list_to_binary(GId)) ].
-
-get_group(GId) ->
-    nsm_db:get(group, GId).
-
+get_group(GId) -> nsm_db:get(group, GId).
 
 user_is_owner(UId, GId) ->
     {R, Group} = nsm_db:get(group, GId),
@@ -109,11 +84,8 @@ group_user_type(UId, GId) ->
         {ok, #group_subs{user_type=Type}} -> Type
     end.
 
-get_all_groups() ->
-    nsm_db:all(group).
-
+get_all_groups() -> nsm_db:all(group).
 get_popular_groups() -> ["kakaranet", "yeniler"].   % :-)
-
 
 %% join if group public, or send join request to group
 join_group(GId, User) ->
@@ -134,14 +106,9 @@ join_group(GId, User) ->
         _ -> {error, notfound}
     end.
 
-approve_request(UId, GId, Owner) ->
-    add_to_group(UId, GId, member, Owner).
-
-reject_request(UId, GId, Owner) ->
-    add_to_group(UId, GId, reqrejected, Owner).
-
-change_group_user_type(UId, GId, Type) ->
-    nsx_msg:notify(["subscription", "user", UId, "add_to_group"], {GId, UId, Type}).
+approve_request(UId, GId, Owner) -> add_to_group(UId, GId, member, Owner).
+reject_request(UId, GId, Owner) -> add_to_group(UId, GId, reqrejected, Owner).
+change_group_user_type(UId, GId, Type) -> nsx_msg:notify(["subscription", "user", UId, "add_to_group"], {GId, UId, Type}).
 
 group_exists(GId) ->
     {R, _} = get_group(GId),
@@ -182,5 +149,3 @@ user_has_access(UId, GId) ->
                 _ -> false
             end
     end.
-
-

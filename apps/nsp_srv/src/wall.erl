@@ -135,33 +135,21 @@ show_feed(Fid, Type, Info) when is_atom(Type) ->
        _ -> {ok, P} = comet_feed:start(Type, Fid, Uid, UserInfo),
             wf:state(comet_feed_pid, pid_to_list(P)), P end,
 
-
-  Node = nsx_opt:get_env(nsx_idgen,game_pool,5000000) div 1000000,
-  CheckNode = fun(X) -> lists:foldl(fun(A, Sum) -> A + Sum end, 0, X) rem 3 + 1 end,
-  AppNode = case Node of
-                 4 -> nsx_opt:get_env(nsm_db,app_srv_node,'app@doxtop.cc');
-                 5 -> nsx_opt:get_env(nsm_db,app_srv_node,'app@doxtop.cc');
-                 _ -> list_to_atom("app@srv"++integer_to_list(CheckNode(Uid))++".kakaranet.com") end,
-
-%  CachePid = rpc:call(AppNode,nsm_bg,pid,[Uid]),
-
   Answer = case  wf:q("filter") of
     "direct" -> case UserInfo of
                      undefined -> [];
-                     _ -> rpc:call(AppNode,nsm_writer,cached_direct,[Uid, UserInfo#user.direct, ?FEED_PAGEAMOUNT]) end;
-    _ -> rpc:call(AppNode,nsm_writer,cached_feed,[Uid, Fid, ?FEED_PAGEAMOUNT])
+                     _ -> nsm_queries:cached_direct([Uid, UserInfo#user.direct, ?FEED_PAGEAMOUNT]) end;
+           _ -> nsm_queries:cached_feed([Uid, Fid, ?FEED_PAGEAMOUNT])
   end,
   
-  Entries = case Answer of
-                 {badrpc,_} -> []; 
-                 X -> X end,
+  Entries = case Answer of {badrpc,_} -> []; X -> X end,
   Last = case Entries of
     [] -> [];
     _ -> lists:last(Entries)
   end,
   Pid ! {delivery, check_more, {?MODULE, length(Entries), Last}},
   [
-    #panel{id = feed, body=[[#view_entry{entry = E} || E <- Entries]]},%read_entries(Pid, undefined, Fid)},
+    #panel{id = feed, body=[[#view_entry{entry = E} || E <- Entries]]},
     #panel{id = more_button_holder, body=[]}
   ].
 
@@ -204,33 +192,22 @@ get_friends(User) ->
             title=?_T("You can unsubscribe or write someone private message via this list")}
           ]}
       end,
-      webutils:get_metalist(User, ?_T("FRIENDS"), nsm_users, list_subscr_usernames, Msg, Nav).
+      webutils:get_metalist(User#user.username, ?_T("FRIENDS"), user, Msg, Nav).
 
 get_groups(undefined) -> [];
 get_groups(User) ->
-  ?INFO("get_groups: ~p",[User]),
-      Groups = case nsm_groups:list_groups_per_user(User#user.username) of
-        [] ->
-          case User#user.username == wf:user() of
-            true -> ?_T("You are currently not in any group");
-            false -> ?_TS("$user$ is currently not in any group", [{user, User#user.username}])
-          end;
-        Gs ->
-          UC_GId = lists:sublist(lists:reverse(lists:sort([{nsm_groups:group_members_count(GId), GId} || GId <- Gs])), ?GROUPS_ON_DASHBOARD),
-          lists:flatten([
-            begin
-              case nsm_groups:get_group(GId) of
-                {ok, Group} ->
-                  GName = Group#group.name,
-                  #listitem{body=[
-                    #link{body=[GName], style="font-size:12pt;", url=site_utils:group_link(GId)},
-                    #span{style="padding-left:4px;", text="(" ++ integer_to_list(UC) ++ ")"}
-                  ]};
-                _ -> ""
-              end
-            end
-            || {UC, GId} <- UC_GId])
-      end,
+    ?INFO("get_groups: ~p",[User]),
+
+    Data = case nsm_queries:cached_groups([User#user.username]) of
+                {badrpc,_} -> nsm_groups:retrieve_groups(User);
+                         X -> X end,
+    Groups = case Data of
+         [] -> case User#user.username == wf:user() of
+                    true -> ?_T("You are currently not in any group");
+                    false -> ?_TS("$user$ is currently not in any group", [{user, User#user.username}]) end;
+          _ -> lists:flatten([  #listitem{body=[
+                        #link{body=[Name], style="font-size:12pt;", url=site_utils:group_link(Id)},
+                        #span{style="padding-left:4px;", text="(" ++ integer_to_list(Count) ++ ")"}]} || {Name,Id,Count} <- Data]) end,
 
       #panel{class="box", style="border:0", body=[
         #h3{text=?_T("GROUPS"), class="section-title"},

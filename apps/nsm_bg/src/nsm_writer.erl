@@ -8,9 +8,11 @@
 -include_lib("nsm_db/include/tournaments.hrl").
 -include_lib("nsm_gifts/include/common.hrl").
 -include("nsm_bg.hrl").
--export([init/1, handle_notice/3, get_opts/1, handle_info/2, handle_call/3, 
-        cached_feed/3, cached_direct/3, feed_refresh/3, direct_refresh/3, start_link/2]).
--record(state, {owner = "feed_owner", type :: user | group | system, feed, direct, cached_feed,cached_direct }).
+-export([init/1, handle_notice/3, get_opts/1, handle_info/2, handle_call/3, start_link/2,
+        cached_feed/3, cached_direct/3, feed_refresh/3, direct_refresh/3,
+        cached_friends/2, cached_groups/1 ]).
+-record(state, {owner = "feed_owner", type :: user | group | system, 
+                feed, direct, cached_feed,cached_direct,cached_friends,cached_groups }).
 
 start_link(Mod,Args) -> gen_server:start_link(Mod, Args, []).
 
@@ -25,13 +27,13 @@ init(Params) ->
 
 cached_feed(Uid,Fid,Page) -> Pid = nsm_bg:pid(Uid), gen_server:call(Pid,{cached_feed,Fid,Page}).
 cached_direct(Uid,Fid,Page) -> Pid = nsm_bg:pid(Uid), gen_server:call(Pid,{cached_direct,Fid,Page}).
+cached_friends(Id,Type) -> Pid = nsm_bg:pid(Id), gen_server:call(Pid,{cached_friends,Id,Type}).
+cached_groups(Id) -> Pid = nsm_bg:pid(Id), gen_server:call(Pid,{cached_groups,Id}).
+
 feed_refresh(Pid,Fid,Page) -> gen_server:call(Pid,{feed_refresh,Fid,Page}).
 direct_refresh(Pid,Fid,Page) -> gen_server:call(Pid,{direct_refresh,Fid,Page}).
-
-cached_friends(Uid,Fid,Page) -> Pid = nsm_bg:pid(Uid), gen_server:call(Pid,{cached_friends,Fid,Page}).
-cached_groups(Uid,Fid,Page) -> Pid = nsm_bg:pid(Uid), gen_server:call(Pid,{cached_groups,Fid,Page}).
-friends_refresh(Pid,Fid,Page) -> gen_server:call(Pid,{friens_refresh,Fid,Page}).
-groups_refresh(Pid,Fid,Page) -> gen_server:call(Pid,{groups_refresh,Fid,Page}).
+%friends_refresh(Pid,Fid,Page) -> gen_server:call(Pid,{friens_refresh,Fid,Page}).
+%groups_refresh(Pid,Fid,Page) -> gen_server:call(Pid,{groups_refresh,Fid,Page}).
 
 handle_call({cached_feed,FId,Page},From,State) ->
     Reply = case State#state.cached_feed of
@@ -44,6 +46,18 @@ handle_call({cached_direct,FId,Page},From,State) ->
                  undefined -> nsm_db:entries_in_feed(FId,Page);
                  A -> A end,
     {reply,Reply,State#state{cached_direct=Reply}};
+
+handle_call({cached_friends,Id,Type},From,State) ->
+    Reply = case State#state.cached_friends of
+                 undefined -> nsm_users:retrieve_connections(Id,Type);
+                 A -> A end,
+    {reply,Reply,State#state{cached_friends=Reply}};
+
+handle_call({cached_groups,User},From,State) ->
+    Reply = case State#state.cached_groups of
+                 undefined -> nsm_groups:retrieve_groups(User);
+                 A -> A end,
+    {reply,Reply,State#state{cached_groups=Reply}};
 
 handle_call({feed_refresh,FId,Page},From,State) ->
     Reply = nsm_db:entries_in_feed(FId,Page),

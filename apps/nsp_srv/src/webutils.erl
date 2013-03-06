@@ -1,8 +1,5 @@
-%% -*- mode: nitrogen -*-
 -module(webutils).
 -compile(export_all).
-
-
 -include_lib("nitrogen_core/include/wf.hrl").
 -include_lib("nsm_db/include/user.hrl").
 -include_lib("nsm_db/include/config.hrl").
@@ -17,27 +14,15 @@
 
 -define(TOOLTIP_TIMEOUT, "1500").
 
--define(GROUPS_ON_DASHBOARD, 10).
-
 main() -> [].
 
-user_info() ->
-    User = wf:session(user_info). %,
-%    case User of
-%        undefined ->
-%            erlang:throw(not_logged_in);
-%        _ ->
-%            User
-%    end.
-
-user_info(Field) ->
-    user_info(user_info(), Field).
+user_info() -> User = wf:session(user_info).
+user_info(Field) -> user_info(user_info(), Field).
 user_info(User, Field) ->
     RecordInfo = record_info(fields, user),
     [user | RecordValue] = tuple_to_list(User),
     UserInfo = lists:zip(RecordInfo, RecordValue),
     proplists:get_value(Field, UserInfo).
-
 
 title(_Site) ->
     User = wf:user(),
@@ -146,18 +131,6 @@ menu_links() ->
       title=?_T("You can manage your groups settings here"), id="mainmenugroups"}}
   ]},
   "</nav>"
-%      "<script>
-%      (function(){
-%          var C = {text:false};
-%          var P = {my:'top right', at:'bottom left'};
-%          var S = {delay: "++?TOOLTIP_TIMEOUT++"};
-%          objs('mainmenumainpage').qtip({content: C, position: P, show: S} );
-%          objs('mainmenumypage').qtip({content: C, position: P, show: S});
-%          objs('mainmenugifts').qtip({content: C, position: P, show: S});
-%          objs('mainmenutournaments').qtip({content: C, position: P, show: S});
-%          objs('mainmenugroups').qtip({content: C, position: P, show: S});
-%      })();
-%      </script>"
 	 ].
 
 language() ->
@@ -512,18 +485,12 @@ login(UserField, PassField, MsgBox)->
     Password = wf:q(PassField),
 
     case nsm_auth:login([{username, User},{password, Password}]) of
-        {ok, User} ->
-            login:login_user(User);
-        {error, user_not_found} ->
-            display_error(MsgBox, "User not found");
-        {error, not_verified} ->
-            login:login_user(User);
-        {error, banned} ->
-            display_error(MsgBox, "Account is banned.");
-        {error, unknown} ->
-            display_error(MsgBox, "Your account is damaged. Contact with administrator.");
-        {error, incorrect_password} ->
-            display_error(MsgBox, "Bad password")
+                         {ok, User} -> login:login_user(User);
+              {error, not_verified} -> login:login_user(User);
+            {error, user_not_found} -> display_error(MsgBox, "User not found");
+                    {error, banned} -> display_error(MsgBox, "Account is banned.");
+                   {error, unknown} -> display_error(MsgBox, "Your account is damaged. Contact with administrator.");
+        {error, incorrect_password} -> display_error(MsgBox, "Bad password")
     end.
 
 display_error(MsgBox, Message)->
@@ -628,42 +595,21 @@ get_members(GId) ->
           #link{text=?_T("All members"), url=?_U("/connections/group")++"/id/"++GId}
         ]}
     ],
-    get_metalist(GId, ?_T("MEMBERS"), nsm_groups, list_group_members, ?_T("Group have no members"), Nav).
+    get_metalist(GId, ?_T("MEMBERS"), group, ?_T("Group have no members"), Nav).
 
-get_metalist(Id, Title, Module, List, EmptyMsg, Nav) ->
-%    ?INFO("METALIST: ~p",[{Id, Title, Module, List, EmptyMsg, Nav}]),
-    Friends = case Module:List(Id) of
-        [] ->
-            [EmptyMsg];
-        Full ->
-            Sub = lists:sublist(Full, 10),
-            case Sub of
-                [] -> [];
-                _ ->    
-                    [begin
-                        case nsm_db:get(user,Who) of
-                        {ok,User} ->
-                        RealName = nsm_users:user_realname_user(User),   % because name is changable
-                        #listitem{body=[
-                            #image{image=get_avatar(Who), style=
-                                case nsm_accounts:user_paid(Who) of
-                                    true -> "border:3px solid #ffb03b; padding:0px;";
-                                    _ -> ""
-                                end
-                            },
-                            #link{text=RealName, style="font-size:12pt;",url=site_utils:user_link(Who)}
-                        ]};
-                        _ -> ""
-                        end
-                    end
-                    || Who <- Sub]
-            end
-    end,
-  #panel{class="box", style="border:0", body=[
-    #h3{text=Title, class="section-title" },
-    #list{class="list-photo", body=[ Friends ]},
-    Nav
-  ]}.
+get_metalist(Id, Title, Type, EmptyMsg, Nav) ->
+    Data = case nsm_queries:cached_friends([Id,Type]) of
+                {badrpc,_} -> nsm_users:retrieve_connections(Id,Type);
+                X -> X end, 
+    ?INFO("metalist: ~p",[{Id,Type,Data}]),
+    Friends = case Data of
+                [] -> [EmptyMsg];
+                Full -> lists:flatten([#listitem{body=[#image{image=get_avatar(Who), 
+                                          style= case Paid of true -> "border:3px solid #ffb03b; padding:0px;"; _ -> "" end},
+                               #link{text=RealName, style="font-size:12pt;",url=site_utils:user_link(Who)}]}||{Who,Paid,RealName}<-Data]) end,
+    #panel{class="box", style="border:0", body=[
+        #h3{text=Title, class="section-title" },
+        #list{class="list-photo", body=[ Friends ]}, Nav ]}.
 
 get_avatar(U) -> get_avatar(U,"tiny").
 get_avatar(#user{avatar={_,_,_,Avatar}},"tiny") -> Avatar;
