@@ -38,8 +38,8 @@ render_element(R = #textboxlist{}) ->
     "var input = $('~s');" ++
     "var pad = $(input).outerWidth(true)-$(input).outerWidth();"++
     "var w = $(input).parent().width() - $(input).prev().outerWidth(true);" ++
-    "$(input).next().width(w-pad);" ++
-    "$(input).next().children('.textboxlist-autocomplete').width(w-pad);"++
+    "$(input).next().width(Math.floor(w-pad));" ++
+    "$(input).next().children('.textboxlist-autocomplete').width(Math.floor(w-pad));"++
   "});", ["#"++Id, Placeholder, Postback, string:join(Value, ","), R#textboxlist.id]),
   wf:wire(#script{script=S}),
 
