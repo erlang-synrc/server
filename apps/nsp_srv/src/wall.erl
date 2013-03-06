@@ -129,7 +129,7 @@ show_feed(Fid, Type, Info) when is_atom(Type) ->
 
   Uid = case Type of
              user -> Info#user.username;
-             groupr -> Info#group.username;
+             group -> Info#group.username;
              _ -> "system" end,
 
   Pid = case UserInfo of
