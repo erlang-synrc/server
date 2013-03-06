@@ -23,6 +23,8 @@ start(_StartType, _StartArgs) ->
     case Pool of
          4000000 -> nsm_srv_tournament_lobby_sup:start_chat_lobby("okey"),
                     nsm_srv_tournament_lobby_sup:start_chat_lobby("tavla");
+         5000000 -> nsm_srv_tournament_lobby_sup:start_chat_lobby("okey"),
+                    nsm_srv_tournament_lobby_sup:start_chat_lobby("tavla");
          1000000 -> nsm_srv_tournament_lobby_sup:start_chat_lobby("okey"),
                     nsm_srv_tournament_lobby_sup:start_chat_lobby("tavla");
         _ -> skip

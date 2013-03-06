@@ -73,7 +73,7 @@ body() ->
                     comet_update() end),
   wf:state(comet_pid,CometPid),
 
-    case nsm_queries:lobby_history([1,GameName]) of 
+    case nsm_queries:lobby_history([1000001,GameName]) of 
         H when is_list(H) -> add_chat_history(H);
         _ -> ok
     end,
