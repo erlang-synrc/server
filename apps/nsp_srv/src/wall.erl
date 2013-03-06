@@ -29,6 +29,8 @@ body() ->
 
   ?INFO("Check: ~p",[{FeedType,User,wf:q(FeedType)}]),
 
+  wf:state(feed_owner,{FeedType,User}),
+
   {Exists,Wall,Info} = case FeedType == group of
         true -> {_, GroupInfo} = nsm_groups:get_group(User),
                 case GroupInfo of
@@ -585,11 +587,10 @@ inner_event({add_entry, _}, User) ->
 
 inner_event({comment_entry, EntryTrueId, _CommentsPanelId, SourceElementId, _ViewAtt, MSI}, User) ->
     UserDashboard = wf:state(feed_owner),
+     ?INFO("comment: ~p",[UserDashboard]),
     {OwnerType, DashboardOwner} = case UserDashboard of
-        {T, Name} ->
-            {T, Name};
-        _ ->
-            {user, wf:user()}
+        {T, Name} -> {T, Name};
+                _ -> {user, wf:user()}
     end,
     reset_number_of_uploads(EntryTrueId),
     Value = wf:q(SourceElementId),
@@ -602,7 +603,7 @@ inner_event({comment_entry, EntryTrueId, _CommentsPanelId, SourceElementId, _Vie
             end,
             wf:state(MSI, []),
             nsx_msg:notify(["feed", "user", wf:user(), "count_comment_in_statistics"], {}),  
-            nsx_msg:notify([feed, OwnerType, DashboardOwner, comment, utils:uuid_ex(), add],
+            nsx_msg:notify(["feed", OwnerType, DashboardOwner, comment, utils:uuid_ex(), add],
                 [User, EntryTrueId, undefined, Value, Medias])
     end;
 
