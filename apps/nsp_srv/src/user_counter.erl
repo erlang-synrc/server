@@ -8,10 +8,10 @@
 -include_lib("nsm_db/include/tournaments.hrl").
 -export([start_link/0, user_count/0, joined_users/1, write_cache/2, get_word/1,
          get_translation/1, gifts/2, tournaments/0, register_user/1, packages/0,groups/0,
-         retournaments/0,repackages/0,regroups/0]).
+         retournaments/0,repackages/0,regroups/0, active_users_top/0]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 -define(SERVER, ?MODULE).
--record(state, {user_count=0,packages,last_check=undefined,tour_cache,translations,words,gifts,tournaments,active_users,groups}).
+-record(state, {user_count=0,packages,last_check=undefined,tour_cache,translations,words,gifts,tournaments,active_users,active_users_top,groups}).
 
 % this is actually a cache layer
 
@@ -29,6 +29,7 @@ write_cache(TID,PlayRecord) -> gen_server:call(?SERVER, {write_cache,TID,PlayRec
 start_link() -> gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
 get_word(Word) -> gen_server:call(?SERVER, {get_word,Word}).
 get_translation({Lang,Translation}) -> gen_server:call(?SERVER, {get_translation,{Lang,Translation}}).
+active_users_top() -> gen_server:call(?SERVER, active_users_top).
 
 init([]) -> 
     State = #state{tour_cache=dict:new(),translations=dict:new(),words=dict:new(),active_users=0},
@@ -113,6 +114,12 @@ handle_call(user_count, _From, State)->
    end,
   {reply, L, State#state{user_count = L, last_check = T}};
 
+handle_call(active_users_top, _From, State)->
+  Top = case State#state.active_users_top of
+    undefined -> nsm_db:all(active_users_top);
+    T -> T
+  end,
+  {reply, lists:map(fun(U)-> {U, nsm_accounts:user_paid(U#active_users_top.user_id)} end, Top), State#state{active_users_top=Top}};
 %handle_call(user_count, _From, State)->
 %  {reply, State#state.active_users, State};
 

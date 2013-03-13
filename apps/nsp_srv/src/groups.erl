@@ -284,18 +284,18 @@ get_popular_group_container() ->
 
 
 active_members() ->
-    ActiveUsers = nsm_users:get_active_user_top(),
+    ActiveUsers = user_counter:active_users_top(),
     #panel{class="cell-space", body=[
         #h3{text=?_T("Active members")},
         #list{class="soc-users", body=[
             #listitem{body=#link{url=site_utils:user_link(Uid),
                 body=#image{image=webutils:get_user_avatar(Uid, "small"), style="width:52px;height:52px", class=
-                    case nsm_accounts:user_paid(Uid) of
+                    case Paid of
                         true -> "paid_user_avatar";
                         _ -> ""
                     end
                 }, style="width:52px;height:52px"}}
-            || {Uid, _} <- ActiveUsers
+            || {Uid, Paid} <- ActiveUsers
         ]}
     ]}.
 
