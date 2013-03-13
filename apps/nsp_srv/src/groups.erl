@@ -20,7 +20,7 @@ main() ->
     end.
 
 main_authorized() ->
-  user_counter:regroups(),
+%  user_counter:regroups(),
   Tooltip  = wf:q(tooltip),
   if
     Tooltip /= undefined ->
