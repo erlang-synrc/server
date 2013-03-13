@@ -1546,6 +1546,9 @@ desk_error_to_ext({not_bear_off_mode, _, _}) -> {error, not_bear_off_mode};
 desk_error_to_ext({no_checker, _, _}) -> {error, no_checker};
 desk_error_to_ext({move_from_bar_first, _, _}) -> {error, move_from_bar_first};
 desk_error_to_ext({invalid_move, _, _}) -> {error, invalid_move};
+desk_error_to_ext(too_many_moves) -> {error, too_many_moves};
+desk_error_to_ext(invalid_action) -> {error, invalid_action};
+desk_error_to_ext(not_your_order) -> {error, not_your_turn};
 desk_error_to_ext(_E) -> {error, unknown_error}.
 
 players_ext_color_info(Players) ->
