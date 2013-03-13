@@ -7,7 +7,7 @@
 
 main() ->
     VerificationCode = wf:q(code),
-    wf:redirect(lists:concat(["/login/verify/code/", VerificationCode])).
+    wf:redirect(lists:concat([?HTTPS_ADDRESS,"/login/verify/code/", VerificationCode])).
 
 -spec verify_account(string()) -> {error, atom()} | {ok, atom()}.
 verify_account(Code) ->
@@ -18,11 +18,11 @@ verify_account(Code) ->
         {ok, User0} ->
             UpdateUser = User0#user{status = ok},
             nsm_db:put(UpdateUser),
-            %nsx_msg:notify(["system", "put"], UpdateUser),
+            nsx_msg:notify(["system", "put"], UpdateUser),
             wf:session(user_info, UpdateUser),
             {ok, account_activated}
     end.
 
 -spec create_url(string()) -> iolist().
 create_url(Code) ->
-    lists:concat([?_U("/login/verify"), "/code/", Code]).
+    lists:concat([?HTTPS_ADDRESS,?_U("/login/verify"), "/code/", Code]).
