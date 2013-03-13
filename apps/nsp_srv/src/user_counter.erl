@@ -94,7 +94,7 @@ handle_call(regroups, _From, State)->
 
 handle_call({register_user,Pid}, _From, State)->
   erlang:monitor(process,Pid),
-%   ?INFO("UP counter: ~p",[Pid]),
+   ?INFO("UP counter: ~p",[Pid]),
   Users = State#state.active_users,
   {reply, Users, State#state{active_users = Users + 1}};
 
@@ -147,7 +147,7 @@ handle_call(_Request, _From, State) -> {reply, unknown, State}.
 handle_cast(_Msg, State) -> {noreply, State}.
 handle_info({'DOWN', Ref, _Type, Pid, _Info}, State) ->
      Users = State#state.active_users,
-%     ?INFO("DOWN counter: ~p",[{Ref, _Type, Pid, _Info}]),
+     ?INFO("DOWN counter: ~p",[{Ref, _Type, Pid, _Info}]),
      erlang:demonitor(Ref),
      {noreply, State#state{active_users = Users - 1}};
 
