@@ -7,7 +7,7 @@
 
 main() ->
     VerificationCode = wf:q(code),
-    wf:redirect(lists:concat(["/login/verify/code/", VerificationCode])).
+    wf:redirect(lists:concat([?HTTPS_ADDRESS,"/login/verify/code/", VerificationCode])).
 
 -spec verify_account(string()) -> {error, atom()} | {ok, atom()}.
 verify_account(Code) ->
@@ -25,4 +25,4 @@ verify_account(Code) ->
 
 -spec create_url(string()) -> iolist().
 create_url(Code) ->
-    lists:concat([?_U("/login/verify"), "/code/", Code]).
+    lists:concat([?HTTPS_ADDRESS,?_U("/login/verify"), "/code/", Code]).
