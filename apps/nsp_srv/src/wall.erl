@@ -296,7 +296,7 @@ get_ribbon_menu(User) ->
             end,
 
     case ((Admin == allow) or (CheckedUser == undefined)) and (User#user.status /= ok) of
-	true -> wf:update(notification_area, verification_notification());
+	true -> wf:update(notification_area, verification_notification(User#user.email,User#user.verification_code));
 	false -> skip end,
 
     ?INFO("ribbon2: ~p ~p",[CheckedUser, IsSubscribedUser]),
@@ -685,11 +685,10 @@ inner_event({unblock_load, CheckedUser, _Offset}, User) ->
 inner_event(notice_close, _) ->
     wf:update(notification_area, []);
 
-inner_event(notice_resend, _User) ->
+inner_event({notice_resend,Mail,VerificationCode}, _User) ->
     UserInfo = webutils:user_info(),
-    Mail = UserInfo#user.email,
-    VerificationCode = UserInfo#user.verification_code,
-    {Subject, PlpainText} = mail_construction:verification(Mail, VerificationCode),
+    MyMail = UserInfo#user.email, % we sending email to current logged user, e.g. to admin for unlock user
+    {Subject, PlpainText} = mail_construction:verification(MyMail, VerificationCode),
     nsx_msg:notify_email(Subject, PlpainText, Mail),
     wf:update(notification_area, [#notice{type=message, title=?_T("Verification letter sent"),
                         body = ?_T("Please check your mailbox."), delay=2000}]);
@@ -779,11 +778,11 @@ check_number_of_uploads(ErrorBox, Entry) ->
 reset_number_of_uploads() ->  reset_number_of_uploads(main_form).
 reset_number_of_uploads(Entry) ->  wf:state({Entry, num_of_attached}, 0).
 
-verification_notification() ->
+verification_notification(Mail,Code) ->
     #notice{type=message, position=left, title=?_T("Verification required"),
         body=[
             #p{body=?_T("Email address must be verified!")},
-            #button{class="fb_continue", postback=notice_resend, text=?_T("Resend verification")},
+            #button{class="fb_continue", postback={notice_resend,Mail,Code}, text=?_T("Resend verification")},
             #button{class="fb_continue", postback=notice_close,  text=?_T("Close")}
     ]}.
 
