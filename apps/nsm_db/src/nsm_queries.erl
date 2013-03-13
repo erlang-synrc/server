@@ -69,9 +69,13 @@ map_reduce(Module, Fun, Args)->
                        {badrpc, _Reason} -> [];
                        R -> R end || Node <- nsx_opt:get_env(nsm_db, nodes, [])]).
 
-map_call(NodeType,Module,Fun,Args=[ID|Rest],NodeHash) ->
+map_call(NodeType,Module,Fun,Args=[ID|Rest],NodeHash0) ->
 
     Node = nsx_opt:get_env(nsx_idgen,game_pool,5000000) div 1000000,
+
+    NodeHash = case NodeHash0 of
+                    string_map -> fun(X) -> string_map(X) end;
+                    long_map -> fun(X) -> long_map(X) end end,
 
     DefaultNodeAtom = case NodeType of
                            "app" -> app_srv_node;
