@@ -119,7 +119,7 @@ handle_call(active_users_top, _From, State)->
     undefined -> nsm_db:all(active_users_top);
     T -> T
   end,
-  {reply, lists:map(fun(U)-> {U, nsm_accounts:user_paid(U#active_users_top.user_id)} end, Top), State#state{active_users_top=Top}};
+  {reply, lists:map(fun(U)-> {U#active_users_top.user_id, nsm_accounts:user_paid(U#active_users_top.user_id)} end, Top), State#state{active_users_top=Top}};
 %handle_call(user_count, _From, State)->
 %  {reply, State#state.active_users, State};
 
