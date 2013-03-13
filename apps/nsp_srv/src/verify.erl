@@ -18,7 +18,7 @@ verify_account(Code) ->
         {ok, User0} ->
             UpdateUser = User0#user{status = ok},
             nsm_db:put(UpdateUser),
-            %nsx_msg:notify(["system", "put"], UpdateUser),
+            nsx_msg:notify(["system", "put"], UpdateUser),
             wf:session(user_info, UpdateUser),
             {ok, account_activated}
     end.
