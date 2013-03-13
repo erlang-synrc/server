@@ -596,4 +596,4 @@ retrieve_connections(Id,Type) ->
                                                     Paid = nsm_accounts:user_paid(Who),
                                                     {Who,Paid,RealName};
 				               _ -> undefined end end || Who <- Sub],
-			   [X||X<-Data, X/=undefiend] end end.
+			   [X||X<-Data, X/=undefined] end end.
