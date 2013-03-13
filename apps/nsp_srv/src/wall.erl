@@ -689,7 +689,7 @@ inner_event({notice_resend,Mail,VerificationCode}, _User) ->
     UserInfo = webutils:user_info(),
     MyMail = UserInfo#user.email, % we sending email to current logged user, e.g. to admin for unlock user
     {Subject, PlpainText} = mail_construction:verification(MyMail, VerificationCode),
-    nsx_msg:notify_email(Subject, PlpainText, Mail),
+    nsx_msg:notify_email(Subject, PlpainText, MyMail),
     wf:update(notification_area, [#notice{type=message, title=?_T("Verification letter sent"),
                         body = ?_T("Please check your mailbox."), delay=2000}]);
 
