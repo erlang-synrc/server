@@ -509,7 +509,7 @@ timestamp_label({0, _}, Time) ->
   io_lib:format("~2..0b:~2..0b:~2..0b", tuple_to_list(H));
 timestamp_label({Days, _}, _) when Days < 7 -> io_lib:format("~p " ++ ?_T("days ago"), [Days]);
 timestamp_label({Days, _}, _) when Days < 31 -> io_lib:format("~p " ++ ?_T("weeks ago"), [trunc(Days/7)]);
-timestamp_label({Days, _}, _) when Days < 365 -> io_lib:format("~p " ++ ?_T("months ago"), [trunc(Days/7)]);
+timestamp_label({Days, _}, _) when Days < 365 -> io_lib:format("~p " ++ ?_T("months ago"), [trunc(Days/30)]);
 timestamp_label({Days, _}, _) when Days > 365 -> io_lib:format("~p " ++ ?_T("years ago"), [trunc(Days/365)]);
 timestamp_label({Days, _}, _) -> io_lib:format("~p days ago", [Days]).
 
