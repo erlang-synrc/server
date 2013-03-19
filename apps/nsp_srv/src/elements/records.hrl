@@ -78,3 +78,6 @@
 -record(textbox_autocomplete_custom, {?ELEMENT_BASE(element_textbox_autocomplete_custom), tag, text="", minLength=2, delay=300, html_encode=true, next, postback, delegate=undefined }).
 
 -record(textboxlist, {?ELEMENT_BASE(element_textboxlist), delegate, postback, value=[], placeholder="Type to receive suggestions"}).
+
+-record(google_pie_chart, {?ELEMENT_BASE(element_google_pie_chart), delegate, postback}).
+-record(google_candlestick, {?ELEMENT_BASE(element_google_candlestick), delegate, postback}).

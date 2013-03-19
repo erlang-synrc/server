@@ -8,7 +8,8 @@ priv/static/js/kgroups.js \
 priv/static/js/kcontact.js \
 priv/static/js/kprofile.js \
 priv/static/js/kinfo.js \
-priv/static/js/kconnections.js
+priv/static/js/kconnections.js \
+priv/static/js/kstats.js
 CSS_FILES=priv/static/css/kakara.css priv/static/css/kindex.css priv/static/css/kmatchmaker.css \
 priv/static/css/krules_okey.css \
 priv/static/css/kgifts.css \
@@ -18,7 +19,8 @@ priv/static/css/kgroups.css \
 priv/static/css/kcontact.css \
 priv/static/css/kprofile.css \
 priv/static/css/kinfo.css \
-priv/static/css/kconnections.css
+priv/static/css/kconnections.css \
+priv/static/css/kstats.css
 ROOT_PATH=priv/static/
 #########################################################################
 MINIFIED_JS_FILES=$(JS_FILES:.js=.min.js)
