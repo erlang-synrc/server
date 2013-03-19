@@ -169,11 +169,11 @@ tavla_client_loop(State) -> % incapsulate tavla protocol
             PlayerColor = fix_color(proplists:get_value(color, Params)),
             From = proplists:get_value(from, Params),
             To = proplists:get_value(to, Params),
-            ?INFO("board before moves: ~p", [State#state.board]),
+%%            ?INFO("board before moves: ~p", [State#state.board]),
             Board = reverse_board(State#state.board, PlayerColor),
             FromR=rel(From,PlayerColor), ToR=rel(To,PlayerColor),
             NewBoard = reverse_board(follow_board(Board,FromR,ToR,PlayerColor), PlayerColor),
-            ?INFO("board after moves: ~p", [NewBoard]),
+%%            ?INFO("board after moves: ~p", [NewBoard]),
             tavla_client_loop(State#state{board = NewBoard,moves = State#state.moves + 1});
 
             _ -> tavla_client_loop(State) end;
@@ -183,14 +183,14 @@ tavla_client_loop(State) -> % incapsulate tavla protocol
             ?INFO("TAVLABOT ~p : Received message: ~p", [Id, Msg]),
             PlayerColor = fix_color(proplists:get_value(color, Params)),
             Moves = ext_to_moves(proplists:get_value(moves, Params)),
-            ?INFO("board before moves: ~p", [State#state.board]),
+%%            ?INFO("board before moves: ~p", [State#state.board]),
             Board = reverse_board(State#state.board, PlayerColor),
             F = fun({From, To}, B) ->
                         FromR = rel(From, PlayerColor), ToR = rel(To, PlayerColor),
                         follow_board(B, FromR, ToR, PlayerColor)
                 end,
             NewBoard = reverse_board(lists:foldl(F, Board, Moves), PlayerColor),
-            ?INFO("board after moves: ~p", [NewBoard]),
+%%            ?INFO("board after moves: ~p", [NewBoard]),
             tavla_client_loop(State#state{board = NewBoard, moves = State#state.moves + length(Moves)});
             _ -> tavla_client_loop(State) end;
 %%         #game_event{event = <<"tavla_vido_request">>, args = Params} ->
@@ -280,7 +280,6 @@ tavla_client_loop(State) -> % incapsulate tavla protocol
             Board = if BoardRaw == null -> null;
                        true -> ext_to_board(BoardRaw)
                     end,
-%%            Board = game_tavla:setup_board(PlayerColor),
             if Competition -> roll_action(State,TableId); true -> do_nothing end,
             tavla_client_loop(State#state{board = Board, moves=0, player_color=PlayerColor});
             _ -> tavla_client_loop(State) end;
@@ -295,10 +294,7 @@ tavla_client_loop(State) -> % incapsulate tavla protocol
                         false ->
                             Dice = proplists:get_value(dice, Params),
                             ?INFO("TAVLABOT ~p Reroll is not needed. Doing the first move with dice:~p",[Id, Dice]),
-                            case Dice of
-                                [_A,_B] -> do_move(State,Dice,TableId,MyColor), State#state{moves = State#state.moves + 1};
-                                [_C] -> State
-                            end;
+                            do_move(State,Dice,TableId,MyColor), State#state{moves = State#state.moves + 1};
                         true ->
                             ?INFO("TAVLABOT ~p Reroll needed. So doing it.",[Id]),
                             roll_action(State, TableId)
@@ -314,12 +310,15 @@ tavla_client_loop(State) -> % incapsulate tavla protocol
             State2 = case fix_color(proplists:get_value(color, Params)) of
                 MyColor ->
                       Dice = proplists:get_value(dices, Params),
-                      ?INFO("TAVLABOT ~p Doing moves with dice: ~p",[Id, Dice]),
                       case Dice of
-                        [_A,_B] -> do_move(State,Dice,TableId,MyColor), State#state{moves = State#state.moves + 1};
-                        [_C] -> State
+                        [_A,_B] ->
+                            ?INFO("TAVLABOT ~p Doing moves with dice: ~p",[Id, Dice]),
+                            do_move(State,Dice,TableId,MyColor), State#state{moves = State#state.moves + 1};
+                        [_C] ->
+                            ?INFO("TAVLABOT ~p Ignore the roll (first move competition)",[Id]),
+                            State
                       end;
-                _  -> ?INFO("TAVLABOT ~p Ignore rolls (another color)",[Id]), State
+                _  -> ?INFO("TAVLABOT ~p Ignore the roll (another color)",[Id]), State
             end,
             tavla_client_loop(State2);
             _ -> tavla_client_loop(State) end;
@@ -423,7 +422,7 @@ follow_board(Board,From,To,PlayerColor) -> % track the moves to keep board consi
                        _ -> {KC,Sum+KA} 
                   end
             end,{0,0}, BoardWithKicks),
-    ?INFO("Kick: ~p",[{KickColor,KickAmount}]),
+%%    ?INFO("Kick: ~p",[{KickColor,KickAmount}]),
     NewBoard = [ case {No,KickColor} of
         {25,_} when KickColor =/= 0 -> case Cell of
                        null -> {KickColor,KickAmount};
@@ -506,16 +505,16 @@ reverse_board(Board,PlayerColor) ->
 first_available_move(RealBoard,Dice,Color,TableId) ->
     RelativeBoard = reverse_board(RealBoard,Color),
     F = fun(Die, {MovesAcc, BoardAcc, FailedDiceAcc}) ->
-                ?INFO("board: ~p", [BoardAcc]),
+%%                ?INFO("board: ~p", [BoardAcc]),
                 Tactic = tactical_criteria(BoardAcc, Color),
-                ?INFO("tactical criteria: ~p", [Tactic]),
+%%                ?INFO("tactical criteria: ~p", [Tactic]),
                 case find_move(Color, Die, Tactic, BoardAcc) of
                     {Move, NewBoard} -> {[Move | MovesAcc], NewBoard, FailedDiceAcc};
                     false -> {MovesAcc, BoardAcc, [Die | FailedDiceAcc]}
                 end
         end,
     {List, Board, FailedDice} = lists:foldl(F, {[], RelativeBoard, []}, Dice),
-    ?INFO("moves found: ~p",[{List, FailedDice}]),
+%%    ?INFO("moves found: ~p",[{List, FailedDice}]),
     [#'TavlaAtomicMove'{from=rel(From,Color), to=rel(To,Color)} || {From,To} <- lists:reverse(List)]  ++
         if length(FailedDice) == 0; length(FailedDice) == length(Dice) -> [];
            true -> first_available_move(reverse_board(Board,Color),FailedDice,Color,TableId) end.
