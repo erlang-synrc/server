@@ -992,26 +992,20 @@ handle_desk_events([Event | Events], DeskState,
                 DeskState#desk_state{board = NewBoard, pips_list = OldPipsList -- UsedPipsList};
             {rolls_timeout, Color, Die1, Die2} -> %% Injected event
                 ?INFO("TAVLA_NG_TABLE_DBG <~p,~p> Board: Color <~p> rolls(auto): ~p", [GameId, TableId, Color, {Die1, Die2}]),
-%%                Msg = create_tavla_turn_timeout(Color, {Die1, Die2}, _Moves = [], StateData),
-%%                publish_ge(Msg, StateData),
-                publish_ge(create_tavla_rolls_dice(Color, {Die1, Die2}, StateData), StateData),
+                Msg = create_tavla_turn_timeout(Color, {Die1, Die2}, _Moves = [], StateData),
+                publish_ge(Msg, StateData),
                 DeskState#desk_state{dice = {Die1, Die2}};
             {rolls_moves_timeout, Color, Die1, Die2, Moves} -> %% Injected event
                 ?INFO("TAVLA_NG_TABLE_DBG <~p,~p> Board: Color <~p> rolls(auto): ~p", [GameId, TableId, Color, {Die1, Die2}]),
-%%                Msg = create_tavla_turn_timeout(Color, {Die1, Die2}, Moves, StateData),
-%%                publish_ge(Msg, StateData),
-                publish_ge(create_tavla_rolls_dice(Color, {Die1, Die2}, StateData), StateData),
-                [publish_ge(create_tavla_moves(Color, From, To, Type, Pips, StateData), StateData) ||
-                   {Type, From, To, Pips} <- Moves],
+                Msg = create_tavla_turn_timeout(Color, {Die1, Die2}, Moves, StateData),
+                publish_ge(Msg, StateData),
                 NewBoard = apply_moves(Color, Moves, Board),
                 ?INFO("TAVLA_NG_TABLE_DBG <~p,~p> Board: Color <~p> moves(auto): ~p", [GameId, TableId, Color, Moves]),
                 show_boards(GameId, TableId, Board, NewBoard),
                 DeskState#desk_state{dice = {Die1, Die2}, board = NewBoard};
             {moves_timeout, Color, Moves} ->    %% Injected event
-%%                Msg = create_tavla_turn_timeout(Color, _Dice = undefined, Moves, StateData),
-%%                publish_ge(Msg, Statedata),
-                [publish_ge(create_tavla_moves(Color, From, To, Type, Pips, StateData), StateData) ||
-                   {Type, From, To, Pips} <- Moves],
+                Msg = create_tavla_turn_timeout(Color, _Dice = undefined, Moves, StateData),
+                publish_ge(Msg, StateData),
                 NewBoard = apply_moves(Color, Moves, Board),
                 ?INFO("TAVLA_NG_TABLE_DBG <~p,~p> Board: Color <~p> moves(auto): ~p", [GameId, TableId, Color, Moves]),
                 show_boards(GameId, TableId, Board, NewBoard),
