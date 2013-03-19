@@ -91,11 +91,12 @@ content() ->
             #textbox{style="position:absolute; left:405px; top:77px; width:508px; height:28px; font-size:16px;", class="newtour_textbox", id=tournament_desc},
 
             #label{style="position:absolute; left:-28px; top:145px; width:150px; text-align:right;", text=?_T("Game Type:")},
-            #dropdown {id=tour_game, style="position:absolute; left:126px; top:138px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
-                        #option { text="OKEY" }
+            #dropdown {postback = tour_game_changed, id=tour_game, style="position:absolute; left:126px; top:138px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
+                        #option { text="OKEY" },
+                        #option { text="TAVLA" }
             ]},
             #label{style="position:absolute; left:253px; top:145px; width:100px; text-align:right;", text=?_T("Game Mode:")},
-            #dropdown {id=tour_esli, style="position:absolute; left:357px; top:138px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
+            #dropdown {postback = game_mode_changed, id=tour_esli, style="position:absolute; left:357px; top:138px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
                         #option { text=?_T("Standard"), value=standard },
                         #option { text=?_T("Even/Odd"), value=evenodd},
                         #option { text=?_T("Color"), value=color }
@@ -121,8 +122,8 @@ content() ->
 
             #label{style="position:absolute; left:-9px; top:197px; width:150px; text-align:right;", text=?_T("Tournament Type:")},
             #dropdown {postback=tournament_type_changed, id=tour_type, style="position:absolute; left:146px; top:190px; width:90px; height:32px; font-size:16px; padding-top:2px;", options=[
-                        #option { text="Elemeli", value=elimination }
-%                        #option { text="POINTING", value=pointing }
+                        #option { text="Elemeli", value=elimination },
+                        #option { text="POINTING", value=pointing }
             ]},
 
             #label{style="position:absolute; left:252px; top:197px; width:100px; text-align:right;", text=?_T("Game Speed")++":"},
@@ -289,6 +290,7 @@ get_prizes_total(Prizes) ->
     || Id <- Prizes]).
 
 get_cur_prize_fund() ->
+    GameType = tour_game_to_game_type(wf:q(tour_game)),
     NPlayers = list_to_integer(wf:q(tour_players)),
     Quota = case wf:state(workaround_quota) of 
         undefined -> 
@@ -304,7 +306,8 @@ get_cur_prize_fund() ->
             wf:state(workaround_tours, undefined),
             T
     end,
-    case game_okey_ng_trn_elim:get_prize_fund(Quota, NPlayers, Tours) of
+%    case game_okey_ng_trn_elim:get_prize_fund(Quota, NPlayers, Tours) of
+    case rpc:call(?GAMESRVR_NODE, nsg_matrix_elimination, get_prize_fund, [GameType, Quota, NPlayers, Tours]) of
         {ok, PrizeFund} -> 100*PrizeFund;
         _ -> 0
     end.
@@ -345,11 +348,13 @@ event({newtour_slider}) ->
     wf:wire(#event{postback=update_product_list});
 
 event(update_product_list) ->
+    GameType = tour_game_to_game_type(wf:q(tour_game)),
     Players = list_to_integer(wf:q(tour_players)),
     Quota = list_to_integer(wf:q(tour_quota)),
     Tours = list_to_integer(wf:q(tour_tours)),
 
-    {ok,PlanDesc1} = rpc:call(?GAMESRVR_NODE, game_okey_ng_trn_elim,get_plan_desc,[Quota,Players,Tours]),
+%%    {ok,PlanDesc1} = rpc:call(?GAMESRVR_NODE, game_okey_ng_trn_elim,get_plan_desc,[Quota,Players,Tours]),
+    {ok,PlanDesc1} = rpc:call(?GAMESRVR_NODE, nsg_matrix_elimination,get_plan_desc,[GameType,Quota,Players,Tours]),
 
     PlanI = lists:seq(1, length(PlanDesc1)),
     PlanDesc = #table{rows=[
@@ -508,12 +513,56 @@ event({start_tournament, TourName, TourDesc, TourDate, TourTime, TourPlayers, To
     webutils:post_user_system_message(Desc),
     wf:redirect(URL);
 
+%XXX
+event(tour_game_changed) ->
+    case wf:q(tour_game) of
+        "OKEY" ->
+            wf:replace(tour_type, #dropdown {postback=tournament_type_changed, id=tour_type, style="position:absolute; left:146px; top:190px; width:90px; height:32px; font-size:16px; padding-top:2px;", options=[
+                        #option { text="Elemeli", value=elimination },
+                        #option { text="POINTING", value=pointing }
+            ]});
+        "TAVLA" ->
+            wf:replace(tour_type, #dropdown {postback=tournament_type_changed, id=tour_type, style="position:absolute; left:146px; top:190px; width:90px; height:32px; font-size:16px; padding-top:2px;", options=[
+                        #option { text="Elemeli", value=elimination }
+            ]})
+    end,
+    wf:wire(#event{postback=tournament_type_changed});
+
 event(tournament_type_changed) ->
     case wf:q(tour_type) of
         "elimination" ->
-            wf:replace(tour_players, #dropdown {postback=prize_fund_and_tours_and_quota_changed, id=tour_players, style="position:absolute; left:610px; top:138px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
-                #option { text=integer_to_list(P) }
-            || P <- [2048, 1024, 512, 256, 128, 64, 32, 16] ]});
+            case wf:q(tour_game) of
+                "OKEY" ->
+                    wf:replace(tour_esli, #dropdown {postback=game_mode_changed, id=tour_esli, style="position:absolute; left:357px; top:138px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
+                        #option { text=?_T("Standard"), value=standard },
+                        #option { text=?_T("Even/Odd"), value=evenodd},
+                        #option { text=?_T("Color"), value=color }
+                    ]});
+                "TAVLA" ->
+                    wf:replace(tour_esli, #dropdown {postback=game_mode_changed, id=tour_esli, style="position:absolute; left:357px; top:138px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
+                        #option { text=?_T("Standard"), value=standard }
+                    ]})
+            end;
+        "pointing" ->
+            wf:replace(tour_esli, #dropdown {postback=game_mode_changed, id=tour_esli, style="position:absolute; left:357px; top:138px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
+                #option { text=?_T("Standard"), value=standard }
+            ]})
+    end,
+    wf:wire(#event{postback=game_mode_changed});
+
+event(game_mode_changed) ->
+    case wf:q(tour_type) of
+        "elimination" ->
+            case wf:q(tour_game) of
+                "OKEY" ->
+                    wf:replace(tour_players, #dropdown {postback=prize_fund_and_tours_and_quota_changed, id=tour_players, style="position:absolute; left:610px; top:138px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
+                        #option { text=integer_to_list(P) }
+                    || P <- [2048, 1024, 512, 256, 128, 64, 32, 16] ]});
+                "TAVLA" ->
+                    wf:replace(tour_players, #dropdown {postback=prize_fund_and_tours_and_quota_changed, id=tour_players, style="position:absolute; left:610px; top:138px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
+                        #option { text=integer_to_list(P) }
+                    || P <- [16] ]})
+            end;
         "pointing" ->
             wf:replace(tour_players, #dropdown {postback=prize_fund_and_tours_and_quota_changed, id=tour_players, style="position:absolute; left:610px; top:138px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
                 #option { text=integer_to_list(P) }
@@ -524,20 +573,28 @@ event(tournament_type_changed) ->
 event(prize_fund_and_tours_and_quota_changed) ->
     case wf:q(tour_type) of
         "elimination" ->
-            case wf:q(tour_players) of
-                "16" -> wf:state(workaround_quota, 10),
-                    wf:replace(tour_quota, #dropdown {postback=prize_fund_and_tours_changed, id=tour_quota, style="position:absolute; left:807px; top:138px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
-                        #option { text="10" },
-                        #option { text="8" }
-                    ]});
-                _ -> wf:state(workaround_quota, 10),
-                    wf:replace(tour_quota, #dropdown {postback=prize_fund_and_tours_changed, id=tour_quota, style="position:absolute; left:807px; top:138px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
-                        #option { text="10" },
-                        #option { text="8" },
-                        #option { text="6" },
-                        #option { text="4" },
-                        #option { text="2" }
-                    ]})
+            case wf:q(tour_game) of
+                "OKEY" ->
+                    case wf:q(tour_players) of
+                        "16" -> wf:state(workaround_quota, 10),
+                            wf:replace(tour_quota, #dropdown {postback=prize_fund_and_tours_changed, id=tour_quota, style="position:absolute; left:807px; top:138px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
+                                #option { text="10" },
+                                #option { text="8" }
+                            ]});
+                        _ -> wf:state(workaround_quota, 10),
+                            wf:replace(tour_quota, #dropdown {postback=prize_fund_and_tours_changed, id=tour_quota, style="position:absolute; left:807px; top:138px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
+                                #option { text="10" },
+                                #option { text="8" },
+                                #option { text="6" },
+                                #option { text="4" },
+                                #option { text="2" }
+                            ]})
+                    end;
+                "TAVLA" ->
+                     wf:state(workaround_quota, 10),
+                     wf:replace(tour_quota, #dropdown {postback=prize_fund_and_tours_changed, id=tour_quota, style="position:absolute; left:807px; top:138px; width:110px; height:32px; font-size:16px; padding-top:2px;", options=[
+                                #option { text="10" }
+                            ]})
             end;
         "pointing" ->
             case wf:q(tour_players) of
@@ -570,7 +627,10 @@ event(prize_fund_and_tours_and_quota_changed) ->
     wf:wire(#event{postback=prize_fund_and_tours_changed});
 
 event(prize_fund_and_tours_changed) ->
-    Tours = game_okey_ng_trn_elim:get_tours(list_to_integer(wf:q(tour_quota)), list_to_integer(wf:q(tour_players)) ), 
+%%    Tours = game_okey_ng_trn_elim:get_tours(list_to_integer(wf:q(tour_quota)), list_to_integer(wf:q(tour_players)) ), 
+    GameType = tour_game_to_game_type(wf:q(tour_game)),
+    Tours = rpc:call(?GAMESRVR_NODE, nsg_matrix_elimination, get_tours,
+                     [GameType, list_to_integer(wf:q(tour_quota)), list_to_integer(wf:q(tour_players)) ]), 
 
     ?INFO("Tours: ~p",[Tours]),
             case Tours of
@@ -606,3 +666,6 @@ event(hide_details) ->
 
 event(Any) ->
     webutils:event(Any).
+
+tour_game_to_game_type("OKEY") -> game_okey;
+tour_game_to_game_type("TAVLA") -> game_tavla.
