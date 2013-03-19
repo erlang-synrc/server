@@ -5557,7 +5557,7 @@ msgid "months ago"
 msgstr "ay önce"
 #
 msgid "weeks ago"
-msgstr "weeks ago"
+msgstr "hafta önce"
 #
 msgid "years ago"
 msgstr "yıl önce"
