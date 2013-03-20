@@ -256,7 +256,7 @@ tavla_client_loop(State) -> % incapsulate tavla protocol
                     roll_action(State1, TableId),
                     tavla_client_loop(State1);
                 {true, <<"waiting_for_move">>} ->
-                    do_move(State1, Dice, TableId, MyColor),
+                    do_move(State1, Dice, TableId, PlayerColor),
                     tavla_client_loop(State1#state{moves = 1});
                 {_, <<"initializing">>} ->
                     tavla_client_loop(State1);
