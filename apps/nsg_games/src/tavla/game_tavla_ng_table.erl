@@ -897,7 +897,7 @@ process_game_events(Events, #state{desk_state = DeskState, timeout_timer = OldTR
             case [E || {next_player, _} = E <- Events] of %% Find a next player event
                 [] ->
                     {next_state, ?STATE_PLAYING, StateData#state{desk_state = NewDeskState}};
-                [_,_] when GameMode == paired ->
+                [_|_] when GameMode == paired ->
                     erlang:cancel_timer(OldTRef),
                     {next_state, ?STATE_PLAYING, StateData#state{desk_state = NewDeskState,
                                                                  timeout_timer = undefined,
