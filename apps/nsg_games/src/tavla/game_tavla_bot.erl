@@ -250,13 +250,13 @@ tavla_client_loop(State) -> % incapsulate tavla protocol
             MyMove = lists:member(fix_color(PlayerColor), WhosMove),
             case {MyMove, GameState} of
                 {true, <<"first_move_competition">>} ->
-                    roll_action(State, TableId),
+                    roll_action(State1, TableId),
                     tavla_client_loop(State1);
                 {true, <<"waiting_for_roll">>} ->
-                    roll_action(State, TableId),
+                    roll_action(State1, TableId),
                     tavla_client_loop(State1);
                 {true, <<"waiting_for_move">>} ->
-                    do_move(State, Dice, TableId, MyColor),
+                    do_move(State1, Dice, TableId, MyColor),
                     tavla_client_loop(State1#state{moves = 1});
                 {_, <<"initializing">>} ->
                     tavla_client_loop(State1);
