@@ -96,7 +96,7 @@ game_table_to_settings(#game_table{name           = Name,
                                                     }) ->
     AllowReplacement = case GameType of
                            game_okey -> true;
-                           game_tavla -> false
+                           game_tavla -> true
                        end,
     Setting =
         [{table_name, Name},

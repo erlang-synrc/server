@@ -34,21 +34,32 @@
 %%                 State = empty | {Color, CheckersNumber}
 %%                   Color = black | white
 %%                   CheckersNumber = 1-15
+%%  dice - initial dice value. Define this option if dice was defined by the first move competition
+%%           procedure. So the player should do moves at start instead roll.
+%%           Type: {Die1, Die2}
+%%                    Die1 = Die2 = 1-6
 
 %%             Players actions       ||            Errors
-%%  {move, Dice, Moves}              || not_your_order, to_many_moves,
-%%      Dice = {1-6, 1-6}            || more_moves_needed, {invalid_move, Move, RestMoves},
+%%  {roll, Die1, Die2}               || not_your_order, invalid_action
+%%      Die1 = Die2 = 1-6            ||
+%%                                   ||
+%%  {move, Moves}                    || not_your_order, invalid_action, too_many_moves,
 %%      Moves = [{From, To}]         || {position_occupied, Move, RestMoves},
 %%        From = wb, bb, 1-24        || {waste_move_disabled, Move, RestMoves},
-%%        To = wo, bo, 1-24          || {hit_and_run_disabled, Move, RestMoves}
-%%                                   || {no_checker, Move, RestMoves}
+%%        To = wo, bo, 1-24          || {hit_and_run_disabled, Move, RestMoves},
+%%                                   || {not_bear_off_mode, Move, RestMoves},
+%%                                   || {no_checker, Move, RestMoves},
+%%                                   || {invalid_move, Move, RestMoves},
+%%                                   || {move_from_bar_first, Move, RestMoves}
 
 %% Outgoing events:
 %%  {next_player, Color}
 %%      Color = black | white
+%%  {rolls, Color, Die1, Die2}
 %%  {moves, Color, Moves}
-%%      Moves = [{Type, From, To}]
+%%      Moves = [{Type, From, To, Pips}]
 %%        Type = move | hit
+%%        Pips = 1-6
 %%  {win, Color, Condition}
 %%      Condition = normal | mars
 
@@ -71,7 +82,8 @@
 -define(WHITE, white).
 -define(BLACK, black).
 
--define(STATE_PLAYING, state_playing).
+-define(STATE_WAIT_ROLL, state_wait_roll).
+-define(STATE_WAIT_MOVE, state_wait_move).
 -define(STATE_FINISHED, state_finished).
 
 -record(state,
@@ -79,6 +91,8 @@
          bearoff_waste_moves_enabled :: boolean(),
          first_move                  :: black | white,
          board                       :: dict(),
+         pips_list                   :: undefined | list(integer()),
+         hitted_home_positions       :: list(),
          current                     :: black | white,
          finish_conditions           :: undefined | {black | white, normal | mars}
         }).
@@ -103,17 +117,26 @@ init(Params) ->
     BearoffWasteMoves = get_param(bearoff_waste_moves, Params),
     FirstMove = get_param(first_move, Params),
     BoardSpec = get_option(board, Params, undefined),
-    validate_params(HomeHitAndRun, BearoffWasteMoves, FirstMove, BoardSpec),
+    Dice = get_option(dice, Params, undefined),
+    validate_params(HomeHitAndRun, BearoffWasteMoves, FirstMove, BoardSpec, Dice),
     Board = if BoardSpec == undefined -> init_board(initial_board());
                true -> init_board(BoardSpec)
             end,
-    {ok, ?STATE_PLAYING,
-     #state{home_hit_and_run_enabled = HomeHitAndRun == enabled,
-            bearoff_waste_moves_enabled = BearoffWasteMoves == enabled,
-            first_move = FirstMove,
-            current = FirstMove,
-            board = Board
-           }}.
+    State = #state{home_hit_and_run_enabled = HomeHitAndRun == enabled,
+                   bearoff_waste_moves_enabled = BearoffWasteMoves == enabled,
+                   first_move = FirstMove,
+                   current = FirstMove,
+                   board = Board,
+                   pips_list = undefined,
+                   hitted_home_positions = []
+                  },
+    case Dice of
+        undefined ->
+           {ok, ?STATE_WAIT_ROLL, State};
+        {Die1, Die2} ->
+           PipsList = pips_list(Die1, Die2),
+           {ok, ?STATE_WAIT_MOVE, State#state{pips_list = PipsList}}
+    end.
 
 %% --------------------------------------------------------------------
 handle_event(_Event, StateName, StateData) ->
@@ -152,10 +175,18 @@ code_change(_OldVsn, StateName, StateData, _Extra) ->
 %%          {error, Reason}
 %% @end
 
-handle_player_action(PlayerId, {move, Dice, Moves}, ?STATE_PLAYING = StateName,
+handle_player_action(PlayerId, {roll, Die1, Die2}, ?STATE_WAIT_ROLL = StateName,
                      #state{current = Current} = StateData) ->
     if PlayerId == Current ->
-           process_move(PlayerId, Dice, Moves, StateName, StateData);
+           process_roll(PlayerId, Die1, Die2, StateName, StateData);
+       true ->
+           {error, not_your_order}
+    end;
+
+handle_player_action(PlayerId, {move, Moves}, ?STATE_WAIT_MOVE = StateName,
+                     #state{current = Current} = StateData) ->
+    if PlayerId == Current ->
+           process_moves(PlayerId, Moves, StateName, StateData);
        true ->
            {error, not_your_order}
     end;
@@ -167,24 +198,55 @@ handle_player_action(_PlayerId, _Action, _StateName, _StateData) ->
 %%% Internal functions
 %% --------------------------------------------------------------------
 
-process_move(PlayerId, {Die1, Die2}, Moves, _StateName,
+process_roll(PlayerId, Die1, Die2, _StateName,
              #state{board = Board, bearoff_waste_moves_enabled = BearoffWasteMovesEnabled,
                     home_hit_and_run_enabled = HomeHitAndRunEnabled} = StateData) ->
-    Pips = if Die1 == Die2 -> [Die1, Die1, Die1, Die1];
-              true -> [Die1, Die2]
-           end,
-    case apply_moves(PlayerId, Pips, Moves, Board, BearoffWasteMovesEnabled, HomeHitAndRunEnabled) of
-        {ok, NewBoard, Events} ->
+    PipsList = if Die1 == Die2 -> [Die1, Die1, Die1, Die1];
+                  true -> [Die1, Die2]
+               end,
+    case is_any_move_available(PlayerId, PipsList, Board, BearoffWasteMovesEnabled,
+                               HomeHitAndRunEnabled, []) of
+        true ->
+            Events = [{rolls, PlayerId, Die1, Die2}],
+            {ok, Events, ?STATE_WAIT_MOVE, StateData#state{pips_list = PipsList}};
+        false ->
+            Opponent = opponent(PlayerId),
+            Events = [{next_player, Opponent} , {rolls, PlayerId, Die1, Die2}],
+            {ok, Events, ?STATE_WAIT_ROLL, StateData#state{current = Opponent}}
+    end.
+
+process_moves(PlayerId, Moves, _StateName,
+             #state{board = Board, pips_list = PipsList,
+                    bearoff_waste_moves_enabled = BearoffWasteMovesEnabled,
+                    home_hit_and_run_enabled = HomeHitAndRunEnabled,
+                    hitted_home_positions = HittedHomePositions} = StateData) ->
+    case apply_moves(PlayerId, PipsList, Moves, Board, BearoffWasteMovesEnabled,
+                     HomeHitAndRunEnabled, HittedHomePositions) of
+        {ok, NewBoard, NewPipsList, NewHittedHomePositions, RealMoves} ->
+            MovesEvents = [{moves, PlayerId, lists:reverse(RealMoves)}],
             case is_game_finished(PlayerId, NewBoard) of
                 {yes, Condition} ->
-                    Events = [{win, PlayerId, Condition}, {moves, PlayerId, Moves}],
+                    Events = [{win, PlayerId, Condition} | MovesEvents],
                     {ok, Events, ?STATE_FINISHED, StateData#state{board = NewBoard,
                                                                   finish_conditions = {PlayerId, Condition}}};
                 no ->
-                    Opponent = opponent(PlayerId),
-                    Events = [{next_player, opponent(PlayerId)}, {moves, PlayerId, Moves}],
-                    {ok, Events, ?STATE_PLAYING, StateData#state{board = NewBoard,
-                                                                 current = Opponent}}
+                    AnyMoveAvailable = NewPipsList =/= [] andalso
+                                       is_any_move_available(PlayerId, NewPipsList, NewBoard, BearoffWasteMovesEnabled,
+                                                             HomeHitAndRunEnabled, NewHittedHomePositions),
+                    if AnyMoveAvailable ->
+                           {ok, MovesEvents, ?STATE_WAIT_MOVE,
+                            StateData#state{board = NewBoard,
+                                            pips_list = NewPipsList,
+                                            hitted_home_positions = NewHittedHomePositions}};
+                       true ->
+                           Opponent = opponent(PlayerId),
+                           Events = [{next_player, Opponent} | MovesEvents],
+                           {ok, Events, ?STATE_WAIT_ROLL,
+                            StateData#state{board = NewBoard,
+                                            pips_list = [],
+                                            hitted_home_positions = [],
+                                            current = Opponent}}
+                    end
             end;
         {error, Reason} ->
             {error, Reason}
@@ -248,8 +310,11 @@ get_option(Id, Params, DefaultValue) ->
 
 
 %% TODO: Implement the validator
-validate_params(_HomeHitAndRun, _WastePipsDuringBearoff, _FirstMove, _Desk) ->
+validate_params(_HomeHitAndRun, _WastePipsDuringBearoff, _FirstMove, _Desk, _Dice) ->
     ok.
+
+pips_list(Die, Die) -> [Die, Die, Die, Die];
+pips_list(Die1, Die2) -> [Die1, Die2].
 
 
 %% opponent(Color1) -> Color2
@@ -280,58 +345,53 @@ move_checker(From, To, Board) ->
                end,
     case dict:fetch(To, NewBoard) of
         empty -> dict:store(To, {Color, 1}, NewBoard);
-        {Color, ToNum} -> dict:store(To, {Color, ToNum + 1})
+        {Color, ToNum} -> dict:store(To, {Color, ToNum + 1}, NewBoard)
     end.
 
 
-apply_moves(_Color, Pips, Moves, _Board,
-            _BearoffWastePipsEnabled, _HomeHitAndRunEnabled) when
-  length(Moves) > length(Pips) ->
-    {error, to_many_moves};
+apply_moves(_Color, PipsList, Moves, _Board, _BearoffWasteMoveEnabled,
+            _HomeHitAndRunEnabled, _HittedHomePositions)
+  when length(Moves) > length(PipsList) ->
+    {error, too_many_moves};
 
-apply_moves(Color, Pips, Moves, Board,
-            BearoffWasteMoveEnabled, HomeHitAndRunEnabled) ->
-    apply_moves2(Color, Pips, Moves, Board, [],
-                 BearoffWasteMoveEnabled, HomeHitAndRunEnabled, []).
+apply_moves(Color, PipsList, Moves, Board,
+            BearoffWasteMoveEnabled, HomeHitAndRunEnabled, HittedHomePositions) ->
+    apply_moves2(Color, PipsList, Moves, Board, _MoveEvents = [], HittedHomePositions,
+                 BearoffWasteMoveEnabled, HomeHitAndRunEnabled).
 
 
-apply_moves2(_Color, [], [], Board, MoveEvents,
-             _BearoffWasteMoveEnabled, _HomeHitAndRunEnabled, _HittedHomePositions) ->
-    {ok, Board, MoveEvents};
+apply_moves2(_Color, PipsList, _Moves = [], Board, MoveEvents, HittedHomePositions,
+             _BearoffWasteMoveEnabled, _HomeHitAndRunEnabled) ->
+    {ok, Board, PipsList, HittedHomePositions, MoveEvents};
 
-apply_moves2(Color, Pips, [], Board, MoveEvents,
-             BearoffWasteMoveEnabled, HomeHitAndRunEnabled, HittedHomePositions) ->
-    case is_any_move_available(Color, Pips, Board, BearoffWasteMoveEnabled,
-                               HomeHitAndRunEnabled, HittedHomePositions) of
-        false -> {ok, Board, MoveEvents};
-        true -> {error, more_moves_needed}
-    end;
-
-apply_moves2(Color, Pips, [{From, To} = Move | RestMoves], Board, MoveEvents,
-             BearoffWasteMoveEnabled, HomeHitAndRunEnabled, HittedHomePositions) ->
-    case take_pips(Color, Move, Pips, Board) of
-        {ok, NewPips} ->
-            case check_move_posibility(Color, From, To, Pips, Board, BearoffWasteMoveEnabled,
+apply_moves2(Color, PipsList, [{From, To} = Move | RestMoves], Board, MoveEvents,
+             HittedHomePositions, BearoffWasteMoveEnabled, HomeHitAndRunEnabled) ->
+    case take_pips(Color, Move, PipsList, Board) of
+        {ok, Pips, NewPipsList} ->
+            case check_move_posibility(Color, From, To, PipsList, Board, BearoffWasteMoveEnabled,
                                        HomeHitAndRunEnabled, HittedHomePositions) of
                 ok ->
                     NewBoard = move_checker(From, To, Board),
-                    NewMoveEvents = [{move, From, To} | MoveEvents],
-                    apply_moves2(Color, NewPips, RestMoves, NewBoard, NewMoveEvents, BearoffWasteMoveEnabled,
-                                 HomeHitAndRunEnabled, HittedHomePositions);
+                    NewMoveEvents = [{move, From, To, Pips} | MoveEvents],
+                    apply_moves2(Color, NewPipsList, RestMoves, NewBoard, NewMoveEvents,
+                                 HittedHomePositions, BearoffWasteMoveEnabled, HomeHitAndRunEnabled);
                 hit ->
                     NewBoard1 = move_checker(To, bar_position(opponent(Color)), Board),
                     NewBoard2 = move_checker(From, To, NewBoard1),
                     {HomeMin, HomeMax} = home_range(Color),
-                    NewHittedHomePositions = if To >= HomeMin andalso To =< HomeMax -> [To | HittedHomePositions];
-                                               true -> HittedHomePositions
-                                            end,
-                    NewMoveEvents = [{hit, From, To} | MoveEvents],
-                    apply_moves2(Color, NewPips, RestMoves, NewBoard2, NewMoveEvents, BearoffWasteMoveEnabled,
-                                 HomeHitAndRunEnabled, NewHittedHomePositions);
+                    NewHittedHomePositions = if To >= HomeMin andalso To =< HomeMax ->
+                                                    [To | HittedHomePositions];
+                                                true -> HittedHomePositions end,
+                    NewMoveEvents = [{hit, From, To, Pips} | MoveEvents],
+                    apply_moves2(Color, NewPipsList, RestMoves, NewBoard2, NewMoveEvents,
+                                 NewHittedHomePositions, BearoffWasteMoveEnabled,
+                                 HomeHitAndRunEnabled);
                 {error, occupied} -> {error, {position_occupied, Move, RestMoves}};
                 {error, waste_move} -> {error, {waste_move_disabled, Move, RestMoves}};
                 {error, hit_and_run} -> {error, {hit_and_run_disabled, Move, RestMoves}};
-                {error, no_checker} -> {error, {no_checker, Move, RestMoves}}
+                {error, not_bear_off_mode} -> {error, {not_bear_off_mode, Move, RestMoves}};
+                {error, no_checker} -> {error, {no_checker, Move, RestMoves}};
+                {error, move_from_bar_first} -> {error, {move_from_bar_first, Move, RestMoves}}
             end;
         error -> {error, {invalid_move, Move, RestMoves}}
     end.
@@ -378,6 +438,21 @@ is_any_move_available_desk(Color, Pips, Board, BearoffWasteMoveEnabled,
 %% check_move_posibility/8 -> ok | hit | {error, Reason}
 check_move_posibility(Color, From, To, Pips, Board, BearoffWasteMoveEnabled,
                       HomeHitAndRunEnabled, HitedHomePositions) ->
+    BarPos = bar_position(Color),
+    CheckersOnBar = case get_checkers(BarPos, Board) of
+                        {Color, _} -> true;
+                        empty -> false
+                    end,
+    if From =/= BarPos andalso CheckersOnBar ->
+           {error, move_from_bar_first};
+       true ->
+           check_checker(Color, From, To, Pips, Board, BearoffWasteMoveEnabled,
+                         HomeHitAndRunEnabled, HitedHomePositions)
+    end.
+
+
+check_checker(Color, From, To, Pips, Board, BearoffWasteMoveEnabled,
+              HomeHitAndRunEnabled, HitedHomePositions) ->
     case get_checkers(From, Board) of
         {Color, _} -> check_home_hit_and_run(Color, From, To, Pips, Board, BearoffWasteMoveEnabled,
                                              HomeHitAndRunEnabled, HitedHomePositions);
@@ -387,43 +462,65 @@ check_move_posibility(Color, From, To, Pips, Board, BearoffWasteMoveEnabled,
 
 check_home_hit_and_run(Color, From, To, Pips, Board, BearoffWasteMoveEnabled,
                        HomeHitAndRunEnabled, HitedHomePositions) ->
-    IsAllowed = if HomeHitAndRunEnabled -> true;
-                   true ->
-                       {_, Num} = get_checkers(From, Board),
-                       if Num > 1 -> true;
-                          true -> not lists:member(From, HitedHomePositions)
-                       end
-                end,
-    if IsAllowed -> check_waste_move(Color, From, To, Pips, Board, BearoffWasteMoveEnabled,
-                                     HomeHitAndRunEnabled, HitedHomePositions);
+    TestPassed = if HomeHitAndRunEnabled -> true;
+                    true ->
+                        {_, Num} = get_checkers(From, Board),
+                        if Num > 1 -> true;
+                           true -> not lists:member(From, HitedHomePositions)
+                        end
+                 end,
+    if TestPassed -> check_waste_move(Color, From, To, Pips, Board, BearoffWasteMoveEnabled,
+                                      HomeHitAndRunEnabled, HitedHomePositions);
        true -> {error, hit_and_run}
     end.
 
 
 check_waste_move(Color, From, To, Pips, Board, BearoffWasteMoveEnabled,
                  HomeHitAndRunEnabled, HitedHomePositions) ->
-    IsAllowed = if BearoffWasteMoveEnabled -> true;
-                   true ->
-                       case detect_bearoff_mode(Color, Board) of
-                           false -> true;
-                           true ->
-                               case To == out_position(Color) of
-                                   true -> true;
-                                   false -> true %% TODO: Check bear-off posibility
-                               end
-                       end
-                end,
-    if IsAllowed -> check_destination_pos(Color, To, Board);
+    BearOffMode = detect_bearoff_mode(Color, Board),
+    OutPos = out_position(Color),
+    TestPassed = if BearoffWasteMoveEnabled -> true;
+                    true ->
+                        case BearOffMode of
+                            false -> true;
+                            true ->
+                                case To == OutPos of
+                                    true -> true;
+                                    false -> not out_possible(Color, Pips, Board)
+                                end
+                        end
+                 end,
+    if TestPassed -> check_destination_pos(Color, To, Board, BearOffMode, OutPos);
        true -> {error, waste_move}
     end.
 
 
-check_destination_pos(Color, To, Board) ->
-    case check_destination(Color, To, Board) of
-        ok -> ok;
-        hit -> hit;
-        occupied -> {error, occupied}
+check_destination_pos(Color, To, Board, BearOffMode, OutPos) ->
+    if To == OutPos andalso not BearOffMode ->
+           {error, not_bear_off_mode};
+       true ->
+           case check_destination(Color, To, Board) of
+               ok -> ok;
+               hit -> hit;
+               occupied -> {error, occupied}
+           end
     end.
+
+out_possible(Color, Pips, Board) ->
+    out_pip_exists(Color, Pips, Board) orelse
+    far_pip_exists(Color, Pips, Board).
+
+far_pip_exists(Color, Pips, Board) ->
+    MaxPip = lists:max(Pips),
+    not more_far_checkers_exist(Color, MaxPip, Board).
+
+out_pip_exists(Color, Pips, Board) ->
+    F = fun(Pip) -> case get_checkers(prev_pos(Color, ?WHITE_OUT, Pip), Board) of
+                        {Color, _} -> true;
+                        _ -> false
+                    end
+        end,
+    lists:any(F, Pips).
 
 
 detect_bearoff_mode(Color, Board) ->
@@ -450,13 +547,23 @@ home_range(?BLACK) -> {19, 24}.
 new_pos(?WHITE, From, Pips) ->
     if From == ?WHITE_BAR -> 25 - Pips;
        (From - Pips) > 0 -> From - Pips;
-       (From - Pips) == 0 -> ?WHITE_OUT
+       (From - Pips) =< 0 -> ?WHITE_OUT
     end;
 new_pos(?BLACK, From, Pips) ->
     if From == ?BLACK_BAR -> Pips;
        (From + Pips) < 25 -> From + Pips;
-       (From + Pips) == 25 -> ?BLACK_OUT
+       (From + Pips) >= 25 -> ?BLACK_OUT
     end.
+
+prev_pos(?WHITE, At, Pips) ->
+    if At == ?WHITE_OUT -> Pips;
+       is_integer(At) -> At + Pips
+    end;
+prev_pos(?BLACK, At, Pips) ->
+    if At == ?BLACK_OUT -> 25 - Pips;
+       is_integer(At) -> At - Pips
+    end.
+
 
 route(?WHITE) -> lists:seq(24, 1, -1);
 route(?BLACK) -> lists:seq(1, 24).
@@ -480,33 +587,42 @@ take_pips(Color, {From, To}, _Pips, _BearoffMode)
        From == ?BLACK_BAR andalso To == ?BLACK_OUT;
        Color == ?WHITE andalso (From == ?BLACK_BAR orelse To == ?BLACK_OUT);
        Color == ?BLACK andalso (From == ?WHITE_BAR orelse To == ?WHITE_OUT)
-  -> error;
+  ->
+    error;
 
-take_pips(Color, {From, To}, Pips, Board) ->
+take_pips(Color, {From, To}, PipsList, Board) ->
     Dist = if is_integer(From), is_integer(To) -> abs(To - From);
               From == ?WHITE_BAR -> 25 - To;
               From == ?BLACK_BAR -> To;
               To == ?WHITE_OUT -> From;
               To == ?BLACK_OUT -> 25 - From
            end,
-    case find_pips(Color, Dist, To, Pips, Board) of
-        true -> {ok, lists:delete(Dist, Pips)};
-        false -> error
+    case find_pips(Color, Dist, To, PipsList, Board) of
+        {ok, Pips} -> {ok, Pips, lists:delete(Pips, PipsList)};
+        error -> error
     end.
 
 
-%% find_pips(Color, Dist, To, Pips, Board) -> boolean()
-find_pips(Color, Dist, To, Pips, Board) ->
-    case lists:member(Dist, Pips) of
-        true -> true;
+%% find_pips(Color, Dist, To, PipsList, Board) -> {ok, Pips} | error
+find_pips(Color, Dist, To, PipsList, Board) ->
+    case lists:member(Dist, PipsList) of
+        true -> {ok, Dist};
         false ->
             BearoffMode = detect_bearoff_mode(Color, Board),
             if BearoffMode ->
                    Out = out_position(Color),
-                   if To =/= Out -> false;
-                      true -> more_far_checkers_exist(Color, Dist, Board)
+                   if To == Out ->
+                          case more_far_checkers_exist(Color, Dist, Board) of
+                              true -> error;
+                              false ->
+                                  BiggestPips = lists:max(PipsList),
+                                  if BiggestPips >= Dist -> {ok, BiggestPips};
+                                     true -> error
+                                  end
+                          end;
+                      true -> error
                    end;
-               true -> false
+               true -> error
             end
     end.
 
@@ -523,5 +639,5 @@ more_far_checkers_exist(Color, Dist, Board) ->
                     _ -> false
                 end
         end,
-    not lists:any(F, lists:seq(RangeMin, RangeMax)).
+    lists:any(F, lists:seq(RangeMin, RangeMax)).
 

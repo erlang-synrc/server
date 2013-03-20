@@ -456,7 +456,9 @@ comet_update(User, TournamentId,PageProc,TourList) ->
             wf:replace(attach_button, #link{id=attach_button, class="tourlobby_yellow_button", text=?_T("TAKE MY SEAT"), postback=attach}),
             wf:replace(start_button, ""),
             ?INFO("(in comet): start game TId: ~p, User: ~p, Data: ~p", [TournamentId, User, TID]),
-            Url = lists:concat([?_U("/client"), "/", ?_U("okey"), "/id/", TID]),
+            Trn = wf:state(tournament),
+            Game = game_type_to_str(Trn#tournament.game_type),
+            Url = lists:concat([?_U("/client"), "/", ?_U(Game), "/id/", TID]),
             StartClient = webutils:new_window_js(Url),
             wf:wire(#script{script=StartClient}),
             wf:flush(),
@@ -577,10 +579,12 @@ event({start_tour, Id, NPlayers,Q,T,S,P}) ->
 event(attach) ->
     TourId = wf:state(tour_long_id),
     case TourId of 
-         [] ->  
+         [] ->
             wf:wire(#alert{text=?_T("Please wait for Tournament start or Start it Mannually.")});
          _ ->
-            URL = lists:concat([?_U("/client"),"/","okey","/id/", TourId]),
+            T = wf:state(tournament),
+            Game = game_type_to_str(T#tournament.game_type),
+            URL = lists:concat([?_U("/client"),"/",?_U(Game),"/id/", TourId]),
             StartClient = webutils:new_window_js(URL),
             wf:wire(#script{script=StartClient})
     end;
@@ -643,5 +647,13 @@ get_timer_for_now() ->
                             end
                     end
             end
+    end.
+
+game_type_to_str(GameType) ->
+    case GameType of
+        game_okey -> "okey";
+        game_tavla -> "tavla";
+        game_batak -> "batak";
+        _ -> ?_T("Unknown")
     end.
 

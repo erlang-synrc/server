@@ -12,13 +12,16 @@ get_single_tables(Setting,UId,GameFSM,_Convert, LeftList) ->
                    end end,
 
     Rounds = GetPropList(rounds, Setting),
-    GameType = GetPropList(game_mode, Setting),
+    GameMode = GetPropList(game_mode, Setting),
     Speed = GetPropList(speed, Setting),
     Game = GetPropList(game, Setting),
     PaidOnly = GetPropList(paid_only, Setting),
     Lucky = false,
 
-    MaxUsers = case GameFSM of "tavla" -> 2; "okey" -> 4 end,
+    MaxUsers = case GameFSM of
+                   "tavla" ->
+                       case GameMode of standard -> 2; paired -> 10 end;
+                   "okey" -> 4 end,
 
     Check = fun(Param,Value) -> 
                    case Param of
@@ -30,14 +33,14 @@ get_single_tables(Setting,UId,GameFSM,_Convert, LeftList) ->
                 qlc:cursor(qlc:q([V || {{_,_,_K},_,V=#game_table{creator=C,
                                                    rounds=R, game_type=G,
                                                    users=U, game_speed=S,
-                                                   game_mode=GT,
+                                                   game_mode=GM,
                                                    paid_only = PO,
                                                    feel_lucky = L}} <- gproc:table(props),
                            FilterFree(MaxUsers - length(U)),
                            FilterUser(C,Id),
                            Check(Game,G),
                            Check(Speed,S),
-                           Check(GameType,GT),
+                           Check(GameMode,GM),
                            Check(Rounds,R),
                            Check(Lucky, L),
                            Check(PaidOnly, PO)])
