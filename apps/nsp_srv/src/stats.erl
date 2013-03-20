@@ -16,10 +16,13 @@ body() ->
         #h1{text="Top Active"},
         #hr{},
         #list{numbered=true, body=[
-          #listitem{body=#panel{body=[
-            #image{image=avatar:get_avatar_by_username(string:to_lower("doxtop"), tiny), alt="doxtop"},
-            "doxtop"
-          ]}} || I <- lists:seq(1,20)
+          begin
+            Usr = nsm_auth:ima_gio(I),
+            #listitem{body=#panel{body=[
+              #image{image=avatar:get_avatar_by_username(Usr, tiny), alt=Usr},
+              Usr
+            ]}} 
+          end || I <- lists:seq(1,20)
         ]}
       ]},
 
@@ -27,10 +30,13 @@ body() ->
         #h1{text="Top Gamers"},
         #hr{},
         #list{numbered=true, body=[
-          #listitem{body=#panel{body=[
-            #image{image=avatar:get_avatar_by_username(string:to_lower("doxtop"), tiny), alt="doxtop"},
-            "doxtop"
-          ]}} || I <- lists:seq(1,20)
+          begin
+            Usr = nsm_auth:ima_gio(I),
+            #listitem{body=#panel{body=[
+              #image{image=avatar:get_avatar_by_username(Usr, tiny), alt=Usr},
+              Usr
+            ]}}
+          end || I <- lists:seq(1,20)
         ]}
       ]},
 
@@ -38,10 +44,13 @@ body() ->
         #h1{text="Top Seeded"},
         #hr{},
         #list{numbered=true, body=[
-          #listitem{body=#panel{body=[
-            #image{image=avatar:get_avatar_by_username(string:to_lower("doxtop"), tiny), alt="doxtop"},
-            "doxtop"
-          ]}} || I <- lists:seq(1,20)
+          begin
+            Usr = nsm_auth:ima_gio(I),
+            #listitem{body=#panel{body=[
+              #image{image=avatar:get_avatar_by_username(Usr, tiny), alt=Usr},
+              Usr
+            ]}}
+          end || I <- lists:seq(1,20)
         ]}
       ]}
     ]}},

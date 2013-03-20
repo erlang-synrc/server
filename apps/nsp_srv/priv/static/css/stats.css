@@ -42,6 +42,8 @@
   margin-left:21px;
   margin-right:10px;
   text-align:center;
+  white-space: nowrap;
+  font-size: 10px;
 }
 
 .top20-cell li:hover{
