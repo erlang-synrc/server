@@ -499,7 +499,7 @@ create_elimination_trn(GameType, Params, Registrants) ->
     case GameType of
         game_okey ->
             Rounds = 10,
-            {ok, SetTimeout} = nsm_db:get(config,"games/okey/trn/elim/tour_time_limit/"++integer_to_list(Tours), 20*60*1000),
+            {ok, SetTimeout} = nsm_db:get(config,"games/okey/trn/elim/tour_time_limit/"++integer_to_list(Tours), 35*60*1000),
             TableParams = [
                            {table_name, ""},
                            {tournament_type, elimination},
@@ -535,7 +535,7 @@ create_elimination_trn(GameType, Params, Registrants) ->
                         ]);
         game_tavla ->
             Rounds = 3,
-            {ok, SetTimeout} = nsm_db:get(config,"games/tavla/trn/elim/tour_time_limit/"++integer_to_list(Tours), 20*60*1000),
+            {ok, SetTimeout} = nsm_db:get(config,"games/tavla/trn/elim/tour_time_limit/"++integer_to_list(Tours), 35*60*1000),
             TableParams = [
                            {table_name, ""},
                            {tournament_type, elimination},
