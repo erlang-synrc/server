@@ -480,6 +480,16 @@ handle_parent_message(disconnect_players, StateName,
 %%    [relay_kick_player(Relay, P#player.id) || P <- players_to_list(Players)],
     {next_state, StateName, StateData#state{players = players_init()}};
 
+handle_parent_message({send_table_state, DestTableId, PlayerId}, StateName,
+                      #state{game_id = GameId, table_id = TableId, parent = Parent} = StateData) ->
+    ?INFO("TAVLA_NG_TABLE <~p,~p>  Received request to send the table state events for player "
+          "<~p> at table ~p. Processing.",
+          [GameId, TableId, PlayerId, DestTableId]),
+    GI = create_tavla_game_info(StateData),
+    PlState = create_tavla_game_player_state(PlayerId, StateName, StateData),
+    parent_table_state_to_player(Parent, TableId, DestTableId, PlayerId, GI),
+    parent_table_state_to_player(Parent, TableId, DestTableId, PlayerId, PlState),
+    {next_state, StateName, StateData};
 
 handle_parent_message(stop, _StateName,
                       #state{relay = Relay, players = Players} = StateData) ->
@@ -526,6 +536,17 @@ handle_parent_message({game_event, GameEvent}, StateName,
     ?INFO("TAVLA_NG_TABLE <~p,~p>  A game event received from the parent in state <~p>: ~p. Publish it.",
           [GameId, TableId, StateName, GameEvent]),
     relay_publish_ge(Relay, GameEvent),
+    {next_state, StateName, StateData};
+
+handle_parent_message({table_state_event, PlayerId, StateEvent}, StateName,
+                      #state{game_id = GameId, table_id = TableId, relay = Relay,
+                             players = Players} = StateData) ->
+    ?INFO("TAVLA_NG_TABLE <~p,~p>  A table state event received from the parent in state <~p>: ~p.",
+          [GameId, TableId, StateName, StateEvent]),
+    case get_player(PlayerId, Players) of
+        {ok, _} -> send_to_client_ge(Relay, PlayerId, StateEvent);
+        error -> do_nothing
+    end,
     {next_state, StateName, StateData};
 
 handle_parent_message(Message, StateName,
@@ -1163,6 +1184,9 @@ parent_send_player_connected({ParentMod, ParentPid}, TableId, PlayerId) ->
 
 parent_send_player_disconnected({ParentMod, ParentPid}, TableId, PlayerId) ->
     ParentMod:table_message(ParentPid, TableId, {player_disconnected, PlayerId}).
+
+parent_table_state_to_player({ParentMod, ParentPid}, TableId, DestTableId, PlayerId, StateEvent) ->
+    ParentMod:table_message(ParentPid, TableId, {table_state_event, DestTableId, PlayerId, StateEvent}).
 
 parent_publish_ge({ParentMod, ParentPid}, TableId, GameEvent) ->
     ParentMod:table_message(ParentPid, TableId, {game_event, GameEvent}).

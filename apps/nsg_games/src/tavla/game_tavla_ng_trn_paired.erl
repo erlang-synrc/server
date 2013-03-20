@@ -359,10 +359,13 @@ handle_client_message(Message, StateName, #state{game_id = GameId} = StateData) 
 
 handle_table_message(TableId, {player_connected, PlayerId},
                      StateName,
-                     #state{seats = Seats} = StateData) ->
+                     #state{seats = Seats, tables = Tables,
+                            table_module = TableModule} = StateData) ->
     case find_seats_by_player_id(PlayerId, Seats) of
         [#seat{seat_num = SeatNum}] ->
             NewSeats = update_seat_connect_status(TableId, SeatNum, true, Seats),
+            [send_to_table(TableModule, TPid, {send_table_state, TableId, PlayerId}) ||
+               #table{id = TId, pid = TPid} <- tables_to_list(Tables), TId =/= TableId],
             {next_state, StateName, StateData#state{seats = NewSeats}};
         [] -> %% Ignoring the message
             {next_state, StateName, StateData}
@@ -525,6 +528,16 @@ handle_table_message(TableId, {game_event, GameEvent},
                      #state{tables = Tables, table_module = TableModule} = StateData) ->
     [send_to_table(TableModule, TablePid, {game_event, GameEvent}) ||
        #table{pid = TablePid, id = TId} <- tables_to_list(Tables), TId =/= TableId],
+    {next_state, StateName, StateData};
+
+handle_table_message(_TableId, {table_state_event, DestTableId, PlayerId, StateEvent},
+                     ?STATE_TOUR_PROCESSING = StateName,
+                     #state{tables = Tables, table_module = TableModule} = StateData) ->
+    case get_table(DestTableId, Tables) of
+        {ok, #table{pid = TPid}} ->
+            send_to_table(TableModule, TPid, {table_state_event, PlayerId, StateEvent});
+        error -> do_nothing
+    end,
     {next_state, StateName, StateData};
 
 handle_table_message(TableId, Message, StateName, #state{game_id = GameId} = StateData) ->
@@ -1122,6 +1135,10 @@ store_table(#table{id = TableId, pid = Pid, mon_ref = MonRef, global_id = Global
     midict:store(TableId, Table, [{pid, Pid}, {global_id, GlobalId}, {mon_ref, MonRef}], Tables).
 
 fetch_table(TableId, Tables) -> midict:fetch(TableId, Tables).
+
+
+%% get_table(TableId, Tables) -> {ok, Table} | error
+get_table(TableId, Tables) -> midict:find(TableId, Tables).
 
 get_table_pid(TabId, Tables) ->
     #table{pid = TabPid} = midict:fetch(TabId, Tables),
