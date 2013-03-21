@@ -173,7 +173,7 @@ special_random_users(Num) ->
 
 special_random_users(0, Acc, _AllUsers, _AllUsersNum) -> Acc;
 special_random_users(N, Acc, AllUsers, AllUsersNum) ->
-    User = list_to_binary(nsm_auth:ima_gio2(crypto:rand_uniform(0, AllUsersNum), AllUsers)),
+    User = list_to_binary(nsm_auth:ima_gio2(crypto:rand_uniform(1, AllUsersNum), AllUsers)),
     case lists:member(User, Acc) of
         false -> special_random_users(N - 1, [User | Acc], AllUsers, AllUsersNum);
         true -> special_random_users(N, Acc, AllUsers, AllUsersNum)
