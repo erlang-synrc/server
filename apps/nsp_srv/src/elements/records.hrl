@@ -79,5 +79,6 @@
 
 -record(textboxlist, {?ELEMENT_BASE(element_textboxlist), delegate, postback, value=[], placeholder="Type to receive suggestions"}).
 
+-record(google_chart2, {?ELEMENT_BASE(element_google_chart2), type, tag, delegate, postback, width=500, height=400, title="", legend='left', is3D=false}).
 -record(google_pie_chart, {?ELEMENT_BASE(element_google_pie_chart), delegate, postback}).
 -record(google_candlestick, {?ELEMENT_BASE(element_google_candlestick), delegate, postback}).
