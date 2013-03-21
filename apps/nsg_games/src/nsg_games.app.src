@@ -6,7 +6,7 @@
   {applications, [
                   kernel,
                   gproc,
-                  stdlib,nsx_idgen
+                  stdlib,nsx_idgen,nsm_db
                  ]},
   {mod, { nsg_games_app, []}},
   {env, []}
