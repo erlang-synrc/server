@@ -22,5 +22,6 @@ init([]) ->
     TavlaSup = {tavla_sup, {tavla_sup, start_link, []}, Restart, Shutdown, supervisor, [tavla_sup]},
     OkeySup = {okey_sup, {okey_sup, start_link, []}, Restart, Shutdown, supervisor, [okey_sup]},
     LuckySup = {lucky_sup, {lucky_sup, start_link, []}, Restart, Shutdown, supervisor, [lucky_sup]},
-    {ok, {SupFlags, [GameManager,TavlaSup,OkeySup,LuckySup]}}.
+    CrowdSup = {crowd_sup, {crowd_sup, start_link, []}, Restart, Shutdown, supervisor, [crowd_sup]},
+    {ok, {SupFlags, [GameManager,TavlaSup,OkeySup,LuckySup,CrowdSup]}}.
 
