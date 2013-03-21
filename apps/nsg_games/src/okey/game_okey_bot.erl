@@ -145,12 +145,11 @@ robot_init_loop(State) ->
         join_game ->
             ?INFO("OKEY BOT JOINED"),
             case call_rpc(S, #join_game{game = GameId}) of
-                #'TableInfo'{game = _Atom} ->
-                    Delay = game_okey:get_timeout(robot, fast),
-                    okey_client_loop(State#state{delay = Delay});
-                _Err ->
+                {error, _Err} ->
                     ?INFO("ID: ~p failed take with msg ~p", [Id, _Err]),
-                    erlang:error(robot_cant_join_game)
+                    erlang:error(robot_cant_join_game);
+                _ ->
+                    okey_client_loop(State)
             end;
         _X ->
            ?INFO("OKEY BOT X: ~p",[_X])
@@ -192,9 +191,9 @@ okey_client_loop(State) ->
             SC = proplists:get_value(set_no, Args),
             RM = proplists:get_value(rounds, Args),
             TO = proplists:get_value(timeouts, Args),
-            Speed = TO#'OkeyTimeouts'.speed,
-            SpeedAtom = list_to_atom(binary_to_list(Speed)),
-            Delay = game_okey:get_timeout(robot, fast),
+%%            Speed = TO#'OkeyTimeouts'.speed,
+%%            SpeedAtom = list_to_atom(binary_to_list(Speed)),
+            Delay = get_delay(fast),
             ST = #'OkeySetState'{round_cur = 1, round_max = RM, set_cur = SC, set_max = SM},
             okey_client_loop(State#state{set_state = ST, delay = Delay, mode = Mode});
         #game_event{event = <<"okey_disable_okey">>, args = Args} = Msg ->
@@ -317,8 +316,7 @@ say_ready(State) ->
     GameId = State#state.gid,
     ok = call_rpc(S, #game_action{game = GameId, action = okey_ready, args = []}).
 
-do_turn(State, Hand) ->
-    Delay = get_delay(State),
+do_turn(#state{delay = Delay} = State, Hand) ->
     Hand1 = if length(Hand) == 15 ->
                    Hand;
                true ->
@@ -399,7 +397,7 @@ random_bool(Prob) ->
     Point = crypto:rand_uniform(0, 1000),
     Prob*1000 > Point.
 
-get_delay(#state{is_robot = true, delay = Delay}) ->
-    Delay;
-get_delay(_) ->
-    0.
+get_delay(fast) -> {ok, Val}   = nsm_db:get(config,"games/okey/robot_delay_fast", 6000), Val;
+get_delay(normal) -> {ok, Val} = nsm_db:get(config,"games/okey/robot_delay_normal", 9000), Val;
+get_delay(slow) -> {ok, Val}   = nsm_db:get(config,"games/okey/robot_delay_slow", 15000), Val.
+

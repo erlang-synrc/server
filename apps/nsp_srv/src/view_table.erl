@@ -35,7 +35,7 @@ main_authorized() ->
 		 0 -> wf:state(table_id, {error, table_not_found});
                  _ -> First = lists:nth(1,AllTables), 
                       ?INFO("Lucky Table: ~p",[AllTables]),
-                      MaxUser = proplists:get_value(max_users, game_requirements(First)),
+                      MaxUser = max_users(First),
                       CurrentUser = length(First#game_table.users),
                       case CurrentUser < MaxUser of
                            true ->  wf:state(table, First),
@@ -157,7 +157,7 @@ table_box() ->
             _ ->
 	    update_table_info(Table), 
             ?INFO("Session: ~p",[wf:session({wf:q(id),wf:user()})]),
-            MaxUser = proplists:get_value(max_users, game_requirements(Table)),
+            MaxUser = max_users(Table),
             CurrentUser = length(Table#game_table.users),
             case CurrentUser < MaxUser of
                  true ->  List = lists:any(fun(A) -> A =:= wf:user() end, Table#game_table.users),
@@ -182,7 +182,7 @@ table_box() ->
     end.
 
 table({error, Error}, _) ->
-    ?INFO(Error),
+    ?INFO("Error: ~p", [Error]),
      Msg = case Error of
 	       already_joined ->
 		    ?_T("You are already in this table.");
@@ -549,7 +549,7 @@ join_user(User,Table) ->
     List = lists:any(fun(A) -> A =:= User#user.username end, Users),
     ?INFO("Join Attempt User ~p to ~p ~p",[User#user.username,Table#game_table.users, 
                                          case List of true -> " was rejected"; false -> "going to be successful" end]),
-    MaxUser = proplists:get_value(max_users, game_requirements(Table)),
+    MaxUser = max_users(Table),
     CurrentUser = length(Table#game_table.users),
     case CurrentUser < MaxUser of
          true ->  
@@ -572,7 +572,7 @@ add_robot() ->
     ?INFO("add robot"),
     case get_table(Id,wf:state(table)) of
          {ok, Table} ->
-              MaxUser = proplists:get_value(max_users, game_requirements(Table)),
+              MaxUser = max_users(Table),
               CurrentUser = length(Table#game_table.users),
               case CurrentUser < MaxUser of
                    true ->
@@ -658,12 +658,14 @@ start_game() ->
     io:fwrite("Table ID: ~p~n",[Table]),
     ?INFO("start game"),
     Owner = Table#game_table.owner,
+    GameType = Table#game_table.game_type,
+    GameMode = Table#game_table.game_mode,
     CUser = wf:user(),
-    MaxUsers = proplists:get_value(max_users, game_requirements(Table)),
-    MinUsers = proplists:get_value(min_users, game_requirements(Table)),
+    MaxUsers = max_users(Table),
+    MinUsers = min_users(Table),
     CurrentUser = length(Table#game_table.users),
     ?INFO("StartGame: Owner ~p wf:User ~p (~p of ~p) ~p",[Owner,CUser,CurrentUser,MaxUsers,Table]),
-    if Table#game_table.game_type == game_okey andalso (CurrentUser =< MaxUsers);
+    if GameType == game_okey andalso (CurrentUser =< MaxUsers);
        (CurrentUser >= MinUsers) andalso (CurrentUser =< MaxUsers) ->
             case Table#game_table.creator of
                  CUser ->
@@ -671,11 +673,17 @@ start_game() ->
                     UsersIdsAsBinaries = [ binarize_name(X) || X <- Table#game_table.users ],
                     Params = table_manager:game_table_to_settings(Table),
                     io:fwrite("params: ~p~n", [Params]),
-                    GSPId = rpc:call(?GAMESRVR_NODE,
-                                        game_manager,
-                                        create_standalone_game,  %% Replace next line to use new standalone tables implementation
-%%                                        create_table,
-                                        [Table#game_table.game_type, Params, UsersIdsAsBinaries]),
+                    GSPId = if GameType == game_tavla andalso GameMode == paired ->
+                                   rpc:call(?GAMESRVR_NODE,
+                                            game_manager,
+                                            create_paired_game,
+                                            [GameType, Params, UsersIdsAsBinaries]);
+                               true ->
+                                   rpc:call(?GAMESRVR_NODE,
+                                            game_manager,
+                                            create_standalone_game,
+                                            [GameType, Params, UsersIdsAsBinaries])
+                            end,
                     ?INFO("GameManager Create Table Pid: ~p",[GSPId]),
                     case GSPId of
                         {ok, GaId, _GamePid} when is_integer(GaId) ->
@@ -713,7 +721,7 @@ update_table_info(ATable) ->
     OwnerName = Table#game_table.creator,
     GameType = Table#game_table.game_type,
     IsOwner = CUser == OwnerName,
-    MaxUser = proplists:get_value(max_users, game_requirements(Table)),
+    MaxUser = max_users(Table),
     CurrentUser = length(Table#game_table.users),
     CurrentState = io_lib:fwrite("~b/~b", [CurrentUser, MaxUser]),
     ?INFO("Max Users: ~p",[MaxUser]),
@@ -844,9 +852,6 @@ rss_container() -> [ #panel { class="silver rss", body=rss() } ].
 rss() -> [ "Feeds" ].
 
 game_type() -> list_to_existing_atom("game_"++wf:q('__submodule__')).
-game_requirements(Table) -> 
-    ?INFO("Game: ~p:~p",[Table#game_table.game_type,Table#game_table.game_mode]),
-    rpc:call(?GAMESRVR_NODE,game_manager, get_requirements, [Table#game_table.game_type,Table#game_table.game_mode]).
 binarize_name(robot) -> robot;
 binarize_name(Name) -> list_to_binary(Name).
 
@@ -862,3 +867,25 @@ close_window_after(I) ->
 		 "   printagain(); "
 		 " }; closeAfter(~b); ", [TimerTextJS, wf:to_integer(I)])),
     ok.
+
+max_users(#game_table{tournament_type = TrnType, game_type = GameType}) ->
+    case GameType of
+        game_tavla ->
+            case TrnType of
+                paired -> 10;
+                paired_lobby -> 10;
+                _ -> 2
+            end;
+        game_okey -> 4
+    end.
+
+min_users(#game_table{tournament_type = TrnType, game_type = GameType}) ->
+    case GameType of
+        game_tavla ->
+            case TrnType of
+                paired -> 4;
+                paired_lobby -> 4;
+                _ -> 2
+            end;
+        game_okey -> 4
+    end.

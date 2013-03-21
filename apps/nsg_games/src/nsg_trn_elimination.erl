@@ -15,7 +15,7 @@
 %%%          to refer to a table directly - without pointing to a tournament.
 %%%          Type: integer()
 
--module(game_okey_ng_trn_elim).
+-module(nsg_trn_elimination).
 
 -behaviour(gen_fsm).
 %% --------------------------------------------------------------------
@@ -35,19 +35,22 @@
 
 -export([table_message/3, client_message/2, client_request/2, client_request/3]).
 
--export([get_prize_fund/3, get_tours/2, get_plan_desc/3]).  % just passing info, not a gen_server part
-
 -record(state,
         {%% Static values
          game_id           :: pos_integer(),
          trn_id            :: term(),
-         params            :: proplists:proplist(),
+         table_params      :: proplists:proplist(),
          tours_plan        :: list(integer()), %% Defines how many players will be passed to a next tour
          tours             :: integer(),
-         quota_per_round   :: integer(),
+         players_per_table :: integer(),
+         quota_per_round   :: integer(), %% Using for the calculation of qouta amount which be deducted from players every tour
+         rounds_per_tour   :: integer(), %% Using for the calculation of qouta amount which be deducted from players every tour
          speed             :: fast | normal,
          awards            :: list(), %% [FirtsPrize, SecondPrize, ThirdPrize], Prize = undefined | GiftId
-         demo_mode         :: boolean(), %% If true then results of turns will be generated randomly
+         demo_mode         :: boolean(), %% If true then results of tours will be generated randomly
+         table_module      :: atom(),
+         game_type         :: atom(), %% Using only for quota transactions
+         game_mode         :: atom(), %% Using only for quota transactions
          %% Dinamic values
          players,          %% The register of tournament players
          tables,           %% The register of tournament tables
@@ -102,20 +105,18 @@
 -define(STATE_SHOW_SERIES_RESULT, state_show_series_result).
 -define(STATE_FINISHED, state_finished).
 
--define(TAB_MOD, game_okey_ng_table_trn).
-
 -define(TABLE_STATE_INITIALIZING, initializing).
 -define(TABLE_STATE_READY, ready).
 -define(TABLE_STATE_IN_PROGRESS, in_progress).
 -define(TABLE_STATE_WAITING_NEW_ROUND, waiting_new_round).
 -define(TABLE_STATE_FINISHED, finished).
 
--define(WAITING_PLAYERS_TIMEOUT, 3000) . %% Time between all table was created and starting a turn
--define(REST_TIMEOUT, 5000).             %% Time between a round finish and start of a new one
--define(SHOW_SERIES_RESULT_TIMEOUT, 15000).%% Time between a tour finish and start of a new one
+-define(WAITING_PLAYERS_TIMEOUT, 3000). %% Time between all table was created and starting a turn
+-define(REST_TIMEOUT, 5000).            %% Time between a round finish and start of a new one
+-define(SHOW_SERIES_RESULT_TIMEOUT, 15000). %% Time between a tour finish and start of a new one
 -define(SHOW_TOURNAMENT_RESULT_TIMEOUT, 15000). %% Time between last tour result showing and the tournament finish
 
--define(SEATS_NUM, 4). %% TODO: Define this by a parameter. Number of seats per table
+-define(TOURNAMENT_TYPE, elimination).
 -define(ROUNDS_PER_TOUR, 10).
 %% ====================================================================
 %% External functions
@@ -150,46 +151,58 @@ client_request(Pid, Message, Timeout) ->
 %% ====================================================================
 
 init([GameId, Params, _Manager]) ->
-    ?INFO("OKEY_NG_TRN_ELIM <~p> Init started",[GameId]),
+    ?INFO("TRN_ELIMINATION <~p> Init started",[GameId]),
     Registrants = get_param(registrants, Params),
     QuotaPerRound = get_param(quota_per_round, Params),
+    RoundsPerTour = get_param(rounds_per_tour, Params),
     Tours = get_param(tours, Params),
+    ToursPlan = get_param(plan, Params),
+    PlayersPerTable = get_param(players_per_table, Params),
     Speed = get_param(speed, Params),
-    GameType = get_param(game_mode, Params),
+    GameType = get_param(game_type, Params),
+    GameMode = get_param(game_mode, Params),
     Awards = get_param(awards, Params),
+    TableParams = get_param(table_params, Params),
+    TableModule = get_param(table_module, Params),
+
     DemoMode = get_option(demo_mode, Params, false),
     TrnId = get_option(trn_id, Params, undefined),
 
-    RegistrantsNum = length(Registrants),
-    {ok, TurnsPlan} = get_plan(QuotaPerRound, RegistrantsNum, Tours),
-    TableParams = table_parameters(?MODULE, self(), Speed, GameType, Tours),
+    [?INFO("TRN_ELIMINATION_DBG <~p> Parameter <~p> : ~p", [GameId, P, V]) ||
+     {P, V} <- Params],
 
     Players = setup_players(Registrants),
     PlayersIds = get_players_ids(Players),
     TTable = ttable_init(PlayersIds),
 
-    ?INFO("OKEY_NG_TRN_ELIM <~p> TTable: ~p", [GameId, TTable]),
-    ?INFO("OKEY_NG_TRN_ELIM <~p> started.  Pid:~p", [GameId, self()]),
+    ?INFO("TRN_ELIMINATION_DBG <~p> TTable: ~p", [GameId, TTable]),
+    ?INFO("TRN_ELIMINATION <~p> started.  Pid:~p", [GameId, self()]),
 
     gen_fsm:send_all_state_event(self(), go),
     {ok, ?STATE_INIT, #state{game_id = GameId,
                              trn_id = TrnId,
-                             params = TableParams,
+                             table_params = TableParams,
                              quota_per_round = QuotaPerRound,
-                             tours_plan = TurnsPlan,
+                             rounds_per_tour = RoundsPerTour,
+                             tours_plan = ToursPlan,
                              tours = Tours,
+                             players_per_table = PlayersPerTable,
                              speed = Speed,
                              awards  = Awards,
                              demo_mode = DemoMode,
+                             table_module = TableModule,
+                             game_type = GameType,
+                             game_mode = GameMode,
                              players = Players,
                              tournament_table = TTable,
                              table_id_counter = 1
                             }}.
 
 %%===================================================================
-handle_event(go, ?STATE_INIT, #state{game_id = GameId, trn_id = TrnId} = StateData) ->
-    ?INFO("OKEY_NG_TRN_ELIM <~p> Received a directive to starting the tournament.", [GameId]),
-    GProcVal = #game_table{game_type = game_okey,
+handle_event(go, ?STATE_INIT, #state{game_id = GameId, trn_id = TrnId,
+                                     game_type = GameType} = StateData) ->
+    ?INFO("TRN_ELIMINATION <~p> Received a directive to starting the tournament.", [GameId]),
+    GProcVal = #game_table{game_type = GameType,
                            game_process = self(),
                            game_module = ?MODULE,
                            id = GameId,
@@ -204,30 +217,30 @@ handle_event(go, ?STATE_INIT, #state{game_id = GameId, trn_id = TrnId} = StateDa
                            pointing_rules   = [],
                            pointing_rules_ex = [],
                            users = [],
-                           name = "Okey Elimination Tournament - " ++ erlang:integer_to_list(GameId) ++ " "
+                           name = "Elimination Tournament - " ++ erlang:integer_to_list(GameId) ++ " "
                           },
     gproc:reg({p,l,self()}, GProcVal),
     init_tour(1, StateData);
 
 handle_event({client_message, Message}, StateName, #state{game_id = GameId} = StateData) ->
-    ?INFO("OKEY_NG_TRN_ELIM <~p> Received the message from a client: ~p.", [GameId, Message]),
+    ?INFO("TRN_ELIMINATION <~p> Received the message from a client: ~p.", [GameId, Message]),
     handle_client_message(Message, StateName, StateData);
 
 handle_event({table_message, TableId, Message}, StateName, #state{game_id = GameId} = StateData) ->
-    ?INFO("OKEY_NG_TRN_ELIM <~p> Received the message from table <~p>: ~p.", [GameId, TableId, Message]),
+    ?INFO("TRN_ELIMINATION <~p> Received the message from table <~p>: ~p.", [GameId, TableId, Message]),
     handle_table_message(TableId, Message, StateName, StateData);
 
 handle_event(Message, StateName, #state{game_id = GameId} = StateData) ->
-    ?INFO("OKEY_NG_TRN_ELIM <~p> Unhandled message(event) received in state <~p>: ~p.",
+    ?INFO("TRN_ELIMINATION <~p> Unhandled message(event) received in state <~p>: ~p.",
           [GameId, StateName, Message]),
     {next_state, StateName, StateData}.
 
 handle_sync_event({client_request, Request}, From, StateName, #state{game_id = GameId} = StateData) ->
-    ?INFO("OKEY_NG_TRN_ELIM <~p> Received the request from a client: ~p.", [GameId, Request]),
+    ?INFO("TRN_ELIMINATION <~p> Received the request from a client: ~p.", [GameId, Request]),
     handle_client_request(Request, From, StateName, StateData);
 
 handle_sync_event(Request, From, StateName, #state{game_id = GameId} = StateData) ->
-    ?INFO("OKEY_NG_TRN_ELIM <~p> Unhandled request(event) received in state <~p> from ~p: ~p.",
+    ?INFO("TRN_ELIMINATION <~p> Unhandled request(event) received in state <~p> from ~p: ~p.",
           [GameId, StateName, From, Request]),
     {reply, {error, unknown_request}, StateName, StateData}.
 
@@ -237,7 +250,7 @@ handle_info({'DOWN', MonRef, process, _Pid, _}, StateName,
             #state{game_id = GameId, tables = Tables} = StateData) ->
     case get_table_by_mon_ref(MonRef, Tables) of
         #table{id = TableId} ->
-            ?INFO("OKEY_NG_TRN_ELIM <~p> Table <~p> is down. Stopping", [GameId, TableId]),
+            ?INFO("TRN_ELIMINATION <~p> Table <~p> is down. Stopping", [GameId, TableId]),
             %% TODO: More smart handling (failover) needed
             {stop, {one_of_tables_down, TableId}, StateData};
         not_found ->
@@ -246,16 +259,16 @@ handle_info({'DOWN', MonRef, process, _Pid, _}, StateName,
 
 
 handle_info({rest_timeout, TableId}, StateName,
-            #state{game_id = GameId, tables = Tables} = StateData) ->
-    ?INFO("OKEY_NG_TRN_ELIM <~p> Time to start new round for table <~p>.", [GameId, TableId]),
+            #state{game_id = GameId, tables = Tables, table_module = TableModule} = StateData) ->
+    ?INFO("TRN_ELIMINATION <~p> Time to start new round for table <~p>.", [GameId, TableId]),
     #table{pid = TablePid, state = TableState} = Table = fetch_table(TableId, Tables),
     if TableState == ?TABLE_STATE_WAITING_NEW_ROUND ->
            NewTable = Table#table{state = ?TABLE_STATE_IN_PROGRESS},
            NewTables = store_table(NewTable, Tables),
-           send_to_table(TablePid, start_round),
+           send_to_table(TableModule, TablePid, start_round),
            {next_state, StateName, StateData#state{tables = NewTables}};
        true ->
-           ?INFO("OKEY_NG_TRN_ELIM <~p> Don't start new round at table <~p> because it is not waiting for start.",
+           ?INFO("TRN_ELIMINATION <~p> Don't start new round at table <~p> because it is not waiting for start.",
                  [GameId, TableId]),
            {next_state, StateName, StateData}
     end;
@@ -263,7 +276,7 @@ handle_info({rest_timeout, TableId}, StateName,
 
 handle_info({timeout, Magic}, ?STATE_WAITING_FOR_PLAYERS,
             #state{timer_magic = Magic, game_id = GameId} = StateData) ->
-    ?INFO("OKEY_NG_TRN_ELIM <~p> Time to start new turn.", [GameId]),
+    ?INFO("TRN_ELIMINATION <~p> Time to start new turn.", [GameId]),
     start_turn(StateData);
 
 
@@ -271,31 +284,32 @@ handle_info({timeout, Magic}, ?STATE_SHOW_SERIES_RESULT,
             #state{timer_magic = Magic, tour = Tour, tours = Tours,
                    game_id = GameId} = StateData) ->
     if Tour == Tours ->
-           ?INFO("OKEY_NG_TRN_ELIM <~p> Time to finalize the tournament.", [GameId]),
+           ?INFO("TRN_ELIMINATION <~p> Time to finalize the tournament.", [GameId]),
            finalize_tournament(StateData);
        true ->
            NewTour = Tour + 1,
-           ?INFO("OKEY_NG_TRN_ELIM <~p> Time to initialize tour <~p>.", [GameId, NewTour]),
+           ?INFO("TRN_ELIMINATION <~p> Time to initialize tour <~p>.", [GameId, NewTour]),
            init_tour(NewTour, StateData)
     end;
 
 
 handle_info({timeout, Magic}, ?STATE_FINISHED,
-            #state{timer_magic = Magic, tables = Tables, game_id = GameId} = StateData) ->
-    ?INFO("OKEY_NG_TRN_ELIM <~p> Time to stopping the tournament.", [GameId]),
-    finalize_tables_with_disconnect(Tables),
+            #state{timer_magic = Magic, tables = Tables, game_id = GameId,
+                   table_module = TableModule} = StateData) ->
+    ?INFO("TRN_ELIMINATION <~p> Time to stopping the tournament.", [GameId]),
+    finalize_tables_with_disconnect(TableModule, Tables),
     {stop, normal, StateData#state{tables = [], seats = []}};
 
 
 handle_info(Message, StateName, #state{game_id = GameId} = StateData) ->
-    ?INFO("OKEY_NG_TRN_ELIM <~p> Unhandled message(info) received in state <~p>: ~p.",
+    ?INFO("TRN_ELIMINATION <~p> Unhandled message(info) received in state <~p>: ~p.",
           [GameId, StateName, Message]),
     {next_state, StateName, StateData}.
 
 %%===================================================================
 
 terminate(_Reason, _StateName, #state{game_id=GameId}=_StatData) ->
-    ?INFO("OKEY_NG_TRN_ELIM <~p> Shutting down at state: <~p>. Reason: ~p",
+    ?INFO("TRN_ELIMINATION <~p> Shutting down at state: <~p>. Reason: ~p",
           [GameId, _StateName, _Reason]),
     ok.
 
@@ -310,7 +324,7 @@ code_change(_OldVsn, StateName, StateData, _Extra) ->
 
 
 handle_client_message(Message, StateName, #state{game_id = GameId} = StateData) ->
-    ?INFO("OKEY_NG_TRN_ELIM <~p> Unhandled client message received in "
+    ?INFO("TRN_ELIMINATION <~p> Unhandled client message received in "
           "state <~p>: ~p.", [GameId, StateName, Message]),
     {next_state, StateName, StateData}.
 
@@ -341,9 +355,8 @@ handle_table_message(TableId, {player_disconnected, PlayerId},
 
 handle_table_message(TableId, {table_created, Relay},
                      ?STATE_WAITING_FOR_TABLES,
-                     #state{tables = Tables, seats = Seats,
-                            cr_tab_requests = TCrRequests,
-                            reg_requests = RegRequests} = StateData) ->
+                     #state{tables = Tables, seats = Seats, cr_tab_requests = TCrRequests,
+                            table_module = TableModule, reg_requests = RegRequests} = StateData) ->
     TabInitPlayers = dict:fetch(TableId, TCrRequests),
     NewTCrRequests = dict:erase(TableId, TCrRequests),
     %% Update status of players
@@ -361,7 +374,7 @@ handle_table_message(TableId, {table_created, Relay},
     F2 = fun(PlayerId, Acc) ->
                  case dict:find(PlayerId, Acc) of
                      {ok, From} ->
-                         gen_fsm:reply(From, {ok, {PlayerId, Relay, {?TAB_MOD, TablePid}}}),
+                         gen_fsm:reply(From, {ok, {PlayerId, Relay, {TableModule, TablePid}}}),
                          dict:erase(PlayerId, Acc);
                      error -> Acc
                  end
@@ -382,19 +395,20 @@ handle_table_message(TableId, {table_created, Relay},
 
 handle_table_message(TableId, {round_finished, NewScoringState, _RoundScore, _TotalScore},
                      ?STATE_TURN_PROCESSING,
-                     #state{tables = Tables} = StateData) ->
+                     #state{tables = Tables, table_module = TableModule} = StateData) ->
     #table{pid = TablePid} = Table = fetch_table(TableId, Tables),
     TRef = erlang:send_after(?REST_TIMEOUT, self(), {rest_timeout, TableId}),
     NewTable = Table#table{context = NewScoringState, state = ?TABLE_STATE_WAITING_NEW_ROUND, timer = TRef},
     NewTables = store_table(NewTable, Tables),
-    send_to_table(TablePid, show_round_result),
+    send_to_table(TableModule, TablePid, show_round_result),
     {next_state, ?STATE_TURN_PROCESSING, StateData#state{tables = NewTables}};
 
 
 handle_table_message(TableId, {game_finished, TableContext, _RoundScore, TotalScore},
                      ?STATE_TURN_PROCESSING = StateName,
                      #state{tables = Tables, tables_wl = WL, demo_mode = DemoMode,
-                            tables_results = TablesResults} = StateData) ->
+                            tables_results = TablesResults, table_module = TableModule
+                           } = StateData) ->
     TableScore = if DemoMode -> [{PlayerId, crypto:rand_uniform(1, 30)} || {PlayerId, _} <- TotalScore];
                     true -> TotalScore
                  end,
@@ -405,9 +419,9 @@ handle_table_message(TableId, {game_finished, TableContext, _RoundScore, TotalSc
     end,
     NewTable = Table#table{context = TableContext, state = ?TABLE_STATE_FINISHED, timer = undefined},
     NewTables = store_table(NewTable, Tables),
-    send_to_table(TablePid, show_round_result),
+    send_to_table(TableModule, TablePid, show_round_result),
     NewWL = lists:delete(TableId, WL),
-    [send_to_table(TPid, {playing_tables_num, length(NewWL)})
+    [send_to_table(TableModule, TPid, {playing_tables_num, length(NewWL)})
        || #table{pid = TPid, state = ?TABLE_STATE_FINISHED} <- tables_to_list(Tables)],
     if NewWL == [] ->
            process_tour_result(StateData#state{tables = NewTables,
@@ -426,20 +440,20 @@ handle_table_message(TableId, {response, RequestId, Response},
     NewTabRequests = dict:erase(RequestId, TabRequests),
     case dict:find(RequestId, TabRequests) of
         {ok, ReqContext} ->
-            ?INFO("OKEY_NG_TRN_ELIM <~p> The a response received from table <~p>. "
+            ?INFO("TRN_ELIMINATION <~p> The a response received from table <~p>. "
                   "RequestId: ~p. Request context: ~p. Response: ~p",
                   [GameId, TableId, RequestId, ReqContext, Response]),
             handle_table_response(TableId, ReqContext, Response, StateName,
                                   StateData#state{tab_requests = NewTabRequests});
         error ->
-            ?ERROR("OKEY_NG_TRN_ELIM <~p> Table <~p> sent a response for unknown request. "
+            ?ERROR("TRN_ELIMINATION <~p> Table <~p> sent a response for unknown request. "
                    "RequestId: ~p. Response", []),
             {next_state, StateName, StateData#state{tab_requests = NewTabRequests}}
     end;
 
 
 handle_table_message(TableId, Message, StateName, #state{game_id = GameId} = StateData) ->
-    ?INFO("OKEY_NG_TRN_ELIM <~p> Unhandled table message received from table <~p> in "
+    ?INFO("TRN_ELIMINATION <~p> Unhandled table message received from table <~p> in "
           "state <~p>: ~p.", [GameId, TableId, StateName, Message]),
     {next_state, StateName, StateData}.
 
@@ -482,7 +496,7 @@ handle_table_message(TableId, Message, StateName, #state{game_id = GameId} = Sta
 
 handle_table_response(TableId, RequestContext, Response, StateName,
                       #state{game_id = GameId} = StateData) ->
-    ?INFO("OKEY_NG_TRN_ELIM <~p> Unhandled 'table response' received from table <~p> "
+    ?INFO("TRN_ELIMINATION <~p> Unhandled 'table response' received from table <~p> "
           "in state <~p>. Request context: ~p. Response: ~p.",
           [GameId, TableId, StateName, RequestContext, Response]),
     {next_state, StateName, StateData}.
@@ -491,63 +505,67 @@ handle_table_response(TableId, RequestContext, Response, StateName,
 
 handle_client_request({join, User}, From, StateName,
                       #state{game_id = GameId, reg_requests = RegRequests,
-                             seats = Seats, players=Players, tables = Tables} = StateData) ->
+                             seats = Seats, players=Players, tables = Tables,
+                             table_module = TableModule} = StateData) ->
     #'PlayerInfo'{id = UserId, robot = _IsBot} = User,
-    ?INFO("OKEY_NG_TRN_ELIM <~p> The 'Join' request received from user: ~p.", [GameId, UserId]),
+    ?INFO("TRN_ELIMINATION <~p> The 'Join' request received from user: ~p.", [GameId, UserId]),
     if StateName == ?STATE_FINISHED ->
-           ?INFO("OKEY_NG_TRN_ELIM <~p> The tournament is finished. "
+           ?INFO("TRN_ELIMINATION <~p> The tournament is finished. "
                  "Reject to join user ~p.", [GameId, UserId]),
            {reply, {error, finished}, StateName, StateData};
        true ->
            case get_player_by_user_id(UserId, Players) of
                {ok, #player{status = active, id = PlayerId}} -> %% The user is an active member of the tournament.
-                   ?INFO("OKEY_NG_TRN_ELIM <~p> User ~p is an active member of the tournament. "
+                   ?INFO("TRN_ELIMINATION <~p> User ~p is an active member of the tournament. "
                          "Allow to join.", [GameId, UserId]),
                    [#seat{table = TableId, registered_by_table = RegByTable}] = find_seats_by_player_id(PlayerId, Seats),
                    case RegByTable of
                        false -> %% Store this request to the waiting pool
-                           ?INFO("OKEY_NG_TRN_ELIM <~p> User ~p not yet regirested by the table. "
+                           ?INFO("TRN_ELIMINATION <~p> User ~p not yet regirested by the table. "
                                  "Add the request to the waiting pool.", [GameId, UserId]),
                            NewRegRequests = dict:store(PlayerId, From, RegRequests),
                            {next_state, StateName, StateData#state{reg_requests = NewRegRequests}};
                        _ ->
-                           ?INFO("OKEY_NG_TRN_ELIM <~p> Return join response for player ~p immediately.",
+                           ?INFO("TRN_ELIMINATION <~p> Return join response for player ~p immediately.",
                                  [GameId, UserId]),
                            #table{relay = Relay, pid = TPid} = fetch_table(TableId, Tables),
-                           {reply, {ok, {PlayerId, Relay, {?TAB_MOD, TPid}}}, StateName, StateData}
+                           {reply, {ok, {PlayerId, Relay, {TableModule, TPid}}}, StateName, StateData}
                    end;
                {ok, #player{status = eliminated}} ->
-                   ?INFO("OKEY_NG_TRN_ELIM <~p> User ~p is member of the tournament but he was eliminated. "
+                   ?INFO("TRN_ELIMINATION <~p> User ~p is member of the tournament but he was eliminated. "
                          "Reject to join.", [GameId, UserId]),
                    {reply, {error, out}, StateName, StateData};
                error -> %% Not a member
-                   ?INFO("OKEY_NG_TRN_ELIM <~p> User ~p is not a member of the tournament. "
+                   ?INFO("TRN_ELIMINATION <~p> User ~p is not a member of the tournament. "
                          "Reject to join.", [GameId, UserId]),
                    {reply, {error, not_allowed}, StateName, StateData}
            end
     end;
 
 handle_client_request(Request, From, StateName, #state{game_id = GameId} = StateData) ->
-    ?INFO("OKEY_NG_TRN_ELIM <~p> Unhandled client request received from ~p in "
+    ?INFO("TRN_ELIMINATION <~p> Unhandled client request received from ~p in "
           "state <~p>: ~p.", [GameId, From, StateName, Request]),
    {reply, {error, unexpected_request}, StateName, StateData}.
 
 %%===================================================================
 init_tour(Tour, #state{game_id = GameId, tours_plan = Plan, tournament_table = TTable,
-                       params = TableParams, players = Players, quota_per_round = QuotaPerRound,
-                       table_id_counter = TableIdCounter, tables = OldTables, tours = Tours
-                      } = StateData) ->
-    ?INFO("OKEY_NG_TRN_ELIM <~p> Initializing tour <~p>...", [GameId, Tour]),
+                       table_params = TableParams, players = Players, quota_per_round = QuotaPerRound,
+                       table_id_counter = TableIdCounter, tables = OldTables, tours = Tours,
+                       players_per_table = PlayersPerTable, game_type = GameType,
+                       game_mode = GameMode, table_module = TableModule,
+                       rounds_per_tour = RoundsPerTour} = StateData) ->
+    ?INFO("TRN_ELIMINATION <~p> Initializing tour <~p>...", [GameId, Tour]),
     PlayersList = prepare_players_for_new_tour(Tour, TTable, Plan, Players),
     PrepTTable = prepare_ttable_for_tables(TTable, Players),
     UsersIds = [UserId || {_, #'PlayerInfo'{id = UserId}, _} <- PlayersList],
-    deduct_quota(GameId, QuotaPerRound*?ROUNDS_PER_TOUR, UsersIds),
+    deduct_quota(GameId, GameType, GameMode, QuotaPerRound * RoundsPerTour, UsersIds),
     {NewTables, Seats, NewTableIdCounter, CrRequests} =
-        setup_tables(PlayersList, PrepTTable, Tour, Tours, TableIdCounter, GameId, TableParams),
-    if Tour > 1 -> finalize_tables_with_rejoin(OldTables);
+        setup_tables(TableModule, PlayersList, PlayersPerTable, PrepTTable, Tour,
+                     Tours, TableIdCounter, GameId, TableParams),
+    if Tour > 1 -> finalize_tables_with_rejoin(TableModule, OldTables);
        true -> do_nothing
     end,
-    ?INFO("OKEY_NG_TRN_ELIM <~p> Initializing of tour <~p> is finished. "
+    ?INFO("TRN_ELIMINATION <~p> Initializing of tour <~p> is finished. "
           "Waiting creating confirmations from the tours' tables...",
           [GameId, Tour]),
     {next_state, ?STATE_WAITING_FOR_TABLES, StateData#state{tables = NewTables,
@@ -560,16 +578,17 @@ init_tour(Tour, #state{game_id = GameId, tours_plan = Plan, tournament_table = T
                                                             tables_results = []
                                                            }}.
 
-start_turn(#state{game_id = GameId, tour = Tour, tables = Tables} = StateData) ->
-    ?INFO("OKEY_NG_TRN_ELIM <~p> Starting tour <~p>...", [GameId, Tour]),
+start_turn(#state{game_id = GameId, tour = Tour, tables = Tables,
+                  table_module = TableModule} = StateData) ->
+    ?INFO("TRN_ELIMINATION <~p> Starting tour <~p>...", [GameId, Tour]),
     TablesList = tables_to_list(Tables),
-    [send_to_table(Pid, start_round) || #table{pid = Pid} <- TablesList],
+    [send_to_table(TableModule, Pid, start_round) || #table{pid = Pid} <- TablesList],
     F = fun(Table, Acc) ->
                 store_table(Table#table{state = ?TABLE_STATE_IN_PROGRESS}, Acc)
         end,
     NewTables = lists:foldl(F, Tables, TablesList),
     WL = [T#table.id || T <- TablesList],
-    ?INFO("OKEY_NG_TRN_ELIM <~p> Tour <~p> is started. Processing...",
+    ?INFO("TRN_ELIMINATION <~p> Tour <~p> is started. Processing...",
           [GameId, Tour]),
     {next_state, ?STATE_TURN_PROCESSING, StateData#state{tables = NewTables,
                                                          tables_wl = WL}}.
@@ -577,8 +596,9 @@ start_turn(#state{game_id = GameId, tour = Tour, tables = Tables} = StateData) -
 
 process_tour_result(#state{game_id = GameId, tournament_table = TTable, tours = Tours,
                            tours_plan = Plan, tour = Tour, tables_results = TablesResults,
-                           players = Players, tables = Tables, trn_id = TrnId} = StateData) ->
-    ?INFO("OKEY_NG_TRN_ELIM <~p> Tour <~p> is completed. Starting results processing...", [GameId, Tour]),
+                           players = Players, tables = Tables, trn_id = TrnId,
+                           table_module = TableModule} = StateData) ->
+    ?INFO("TRN_ELIMINATION <~p> Tour <~p> is completed. Starting results processing...", [GameId, Tour]),
     TourType = lists:nth(Tour, Plan),
     TourResult1 = case TourType of
                      ne -> tour_result_all(TablesResults);
@@ -594,16 +614,16 @@ process_tour_result(#state{game_id = GameId, tournament_table = TTable, tours = 
     TourResultWithUserId = [{get_user_id(PlayerId, Players), Position, Points, Status}
                             || {PlayerId, Position, Points, Status} <- TourResult],
     TablesResultsWithPos = set_tables_results_position(TablesResults, TourResult),
-    [send_to_table(TablePid, {tour_result, Tour, TourResultWithUserId})
+    [send_to_table(TableModule, TablePid, {tour_result, Tour, TourResultWithUserId})
        || #table{pid = TablePid} <- tables_to_list(Tables)],
-    [send_to_table(get_table_pid(TableId, Tables),
+    [send_to_table(TableModule, get_table_pid(TableId, Tables),
                    {show_series_result, subs_status(TableResultWithPos, Tour, Plan)})
        || {TableId, TableResultWithPos} <- TablesResultsWithPos],
     TourResultWithStrUserId = [{user_id_to_string(UserId), Position, Points, Status}
                                || {UserId, Position, Points, Status} <- TourResultWithUserId],
     nsx_msg:notify(["system", "tournament_tour_note"], {TrnId, Tour, Tours, TourType, TourResultWithStrUserId}),
     {TRef, Magic} = start_timer(?SHOW_SERIES_RESULT_TIMEOUT),
-    ?INFO("OKEY_NG_TRN_ELIM <~p> Results processing of tour <~p> is finished. "
+    ?INFO("TRN_ELIMINATION <~p> Results processing of tour <~p> is finished. "
           "Waiting some time (~p secs) before continue...",
           [GameId, Tour, ?SHOW_SERIES_RESULT_TIMEOUT div 1000]),
     {next_state, ?STATE_SHOW_SERIES_RESULT, StateData#state{timer = TRef, timer_magic = Magic,
@@ -612,17 +632,17 @@ process_tour_result(#state{game_id = GameId, tournament_table = TTable, tours = 
 
 finalize_tournament(#state{game_id = GameId, awards = Awards, tournament_table = TTable,
                            players = Players, trn_id = TrnId} = StateData) ->
-    ?INFO("OKEY_NG_TRN_ELIM <~p> Finalizing the tournament...", [GameId]),
+    ?INFO("TRN_ELIMINATION <~p> Finalizing the tournament...", [GameId]),
     AwardsDistrib = awards_distribution(TTable, Awards),
     AwardsDistribUserId = [{user_id_to_string(get_user_id(PlayerId, Players)), Pos, GiftId}
                            || {PlayerId, Pos, GiftId} <- AwardsDistrib],
     [nsx_msg:notify(["gifts", "user", UserId, "give_gift"], {GiftId})
        || {UserId, _Pos, GiftId} <- AwardsDistribUserId],
     %% TODO: Do we need advertise the prizes to game clients?
-    ?INFO("OKEY_NG_TRN_ELIM <~p> Awards distribution: ~p", [GameId, AwardsDistribUserId]),
+    ?INFO("TRN_ELIMINATION <~p> Awards distribution: ~p", [GameId, AwardsDistribUserId]),
     nsx_msg:notify(["system", "tournament_ends_note"], {TrnId, AwardsDistribUserId}),
     {TRef, Magic} = start_timer(?SHOW_TOURNAMENT_RESULT_TIMEOUT),
-    ?INFO("OKEY_NG_TRN_ELIM <~p> The tournament is finalized. "
+    ?INFO("TRN_ELIMINATION <~p> The tournament is finalized. "
           "Waiting some time (~p secs) before continue...",
           [GameId, ?SHOW_TOURNAMENT_RESULT_TIMEOUT div 1000]),
     {next_state, ?STATE_FINISHED, StateData#state{timer = TRef, timer_magic = Magic}}.
@@ -655,17 +675,14 @@ merge_tournament_table(TTable) ->
 tour_res_to_players_pos(TourRes) ->
     [{PlayerId, Pos} || {PlayerId, Pos, _Points, _Status} <- TourRes].
 
-deduct_quota(GameId, Amount, UsersIds) ->
-    [begin
-         TI = #ti_game_event{id = GameId,
-                             type = start_tour,
-                             tournament_type = elimination,
-                             game_name = okey,       %% FIXME: hardcoded
-                             game_mode = standard,   %% FIXME: hardcoded
-                             double_points = 1},
-         nsm_accounts:transaction(user_id_to_string(UserId), ?CURRENCY_QUOTA, -Amount, TI)
-     end
-     || UserId <- UsersIds].
+
+deduct_quota(GameId, GameType, GameMode, Amount, UsersIds) ->
+    TI = #ti_game_event{game_name = GameType, game_mode = GameMode,
+                        id = GameId, double_points = 1,
+                        type = start_tour, tournament_type = ?TOURNAMENT_TYPE},
+    [nsm_accounts:transaction(binary_to_list(UserId), ?CURRENCY_QUOTA, -Amount, TI)
+       || UserId <- UsersIds],
+    ok.
 
 
 tour_result_all(TablesResults) ->
@@ -798,19 +815,21 @@ prepare_ttable_for_tables(TTable, Players) ->
              || {PlayerId, Place, Score, Status} <- Results]}
      || {Tour, Results} <- TTable].
 
-%% setup_tables(Players, TTable, TableIdCounter, GameId, TableParams) ->
+%% setup_tables(TableModule, Players, PlayersPerTable, TTable, Tour, Tours, TableIdCounter, GameId, TableParams) ->
 %%                              {Tables, Seats, NewTableIdCounter, CrRequests}
 %% Types: Players = {PlayerId, UserInfo, Points}
 %%        TTable = [{Tour, [{UserId, CommonPos, Score, Status}]}]
-setup_tables(Players, TTable, Tour, Tours, TableIdCounter, GameId, TableParams) ->
+setup_tables(TableModule, Players, PlayersPerTable, TTable, Tour,
+             Tours, TableIdCounter, GameId, TableParams) ->
     SPlayers = shuffle(Players),
-    Groups = split_by_num(?SEATS_NUM, SPlayers),
+    Groups = split_by_num(PlayersPerTable, SPlayers),
     F = fun(Group, {TAcc, SAcc, TableId, TCrRequestsAcc}) ->
                 {TPlayers, _} = lists:mapfoldl(fun({PlayerId, UserInfo, Points}, SeatNum) ->
                                                        {{PlayerId, UserInfo, SeatNum, Points}, SeatNum+1}
                                                end, 1, Group),
-                TableParams2 = [{players, TPlayers}, {ttable, TTable}, {tour, Tour}, {tours, Tours} | TableParams],
-                {ok, TabPid} = spawn_table(GameId, TableId, TableParams2),
+                TableParams2 = [{players, TPlayers}, {ttable, TTable}, {tour, Tour},
+                                {tours, Tours}, {parent, {?MODULE, self()}} | TableParams],
+                {ok, TabPid} = spawn_table(TableModule, GameId, TableId, TableParams2),
                 MonRef = erlang:monitor(process, TabPid),
                 NewTAcc = reg_table(TableId, TabPid, MonRef, _GlTableId = 0, _Context = undefined, TAcc),
                 F2 = fun({PlId, _, SNum, _}, Acc) ->
@@ -836,21 +855,21 @@ setup_players(Registrants) ->
     Players.
 
 
-%% finalize_tables_with_rejoin(Tables) -> ok
-finalize_tables_with_rejoin(Tables) ->
+%% finalize_tables_with_rejoin(TableModule, Tables) -> ok
+finalize_tables_with_rejoin(TableModule, Tables) ->
     F = fun(#table{mon_ref = MonRef, pid = TablePid}) ->
                 erlang:demonitor(MonRef, [flush]),
-                send_to_table(TablePid, rejoin_players),
-                send_to_table(TablePid, stop)
+                send_to_table(TableModule, TablePid, rejoin_players),
+                send_to_table(TableModule, TablePid, stop)
         end,
     lists:foreach(F, tables_to_list(Tables)).
 
-%% finalize_tables_with_rejoin(Tables) -> ok
-finalize_tables_with_disconnect(Tables) ->
+%% finalize_tables_with_rejoin(TableModule, Tables) -> ok
+finalize_tables_with_disconnect(TableModule, Tables) ->
     F = fun(#table{mon_ref = MonRef, pid = TablePid}) ->
                 erlang:demonitor(MonRef, [flush]),
-                send_to_table(TablePid, disconnect_players),
-                send_to_table(TablePid, stop)
+                send_to_table(TableModule, TablePid, disconnect_players),
+                send_to_table(TableModule, TablePid, stop)
         end,
     lists:foreach(F, tables_to_list(Tables)).
 
@@ -979,47 +998,34 @@ start_timer(Timeout) ->
     TRef = erlang:send_after(Timeout, self(), {timeout, Magic}),
     {TRef, Magic}.
 
-%% spawn_bots(GameId, BotMod, BotsNum) ->
-%%     [spawn_bot(BotMod, GameId) || _ <- lists:seq(1, BotsNum)].
-%% 
-%% spawn_bot(BotMod, GameId) ->
-%%     {NPid, UserInfo} = create_robot(BotMod, GameId),
-%%     BotMod:join_game(NPid),
-%%     UserInfo.
-%% 
-%% create_robot(BotMod, GameId) ->
-%%     UserInfo = auth_server:robot_credentials(),
-%%     {ok, NPid} = BotMod:start_link(self(), UserInfo, GameId),
-%%     {NPid, UserInfo}.
+spawn_table(TableModule, GameId, TableId, Params) -> TableModule:start(GameId, TableId, Params).
 
-spawn_table(GameId, TableId, Params) -> ?TAB_MOD:start(GameId, TableId, Params).
-
-send_to_table(TabPid, Message) -> ?TAB_MOD:parent_message(TabPid, Message).
+send_to_table(TableModule, TabPid, Message) -> TableModule:parent_message(TabPid, Message).
 
 %% table_parameters(ParentMod, ParentPid, Speed) -> Proplist
-table_parameters(ParentMod, ParentPid, Speed, GameType, Tours) ->
-    [
-     {parent, {ParentMod, ParentPid}},
-     {seats_num, 4},
-%%     {players, []},
-     {table_name, ""},
-     {mult_factor, 1},
-     {slang_allowed, false},
-     {observers_allowed, false},
-     {tournament_type, elimination},
-     {turn_timeout, get_timeout(turn, Speed)},
-     {reveal_confirmation_timeout, get_timeout(reveal_confirmation, Speed)},
-     {ready_timeout, get_timeout(ready, Speed)},
-     {round_timeout, get_timeout(round, Speed)},
-     {set_timeout, get_timeout(tour, Tours)},
-     {speed, Speed},
-     {game_type, GameType},
-     {rounds, ?ROUNDS_PER_TOUR},
-     {reveal_confirmation, true},
-     {next_series_confirmation, no},
-     {pause_mode, disabled},
-     {social_actions_enabled, false}
-    ].
+%% table_parameters(ParentMod, ParentPid, Speed, GameType, Tours) ->
+%%     [
+%%      {parent, {ParentMod, ParentPid}},
+%%      {seats_num, 4},
+%% %%     {players, []},
+%%      {table_name, ""},
+%%      {mult_factor, 1},
+%%      {slang_allowed, false},
+%%      {observers_allowed, false},
+%%      {tournament_type, elimination},
+%%      {turn_timeout, get_timeout(turn, Speed)},
+%%      {reveal_confirmation_timeout, get_timeout(reveal_confirmation, Speed)},
+%%      {ready_timeout, get_timeout(ready, Speed)},
+%%      {round_timeout, get_timeout(round, Speed)},
+%%      {set_timeout, get_timeout(tour, Tours)},
+%%      {speed, Speed},
+%%      {game_type, GameType},
+%%      {rounds, ?ROUNDS_PER_TOUR},
+%%      {reveal_confirmation, true},
+%%      {next_series_confirmation, no},
+%%      {pause_mode, disabled},
+%%      {social_actions_enabled, false}
+%%     ].
 
 get_param(ParamId, Params) ->
     {_, Value} = lists:keyfind(ParamId, 1, Params),
@@ -1028,137 +1034,5 @@ get_param(ParamId, Params) ->
 get_option(OptionId, Params, DefValue) ->
     proplists:get_value(OptionId, Params, DefValue).
 
-get_plan(KakushPerRound, RegistrantsNum,Tours) ->
-    case lists:keyfind({KakushPerRound, RegistrantsNum,Tours}, 1, tournament_matrix()) of
-        false -> {error, no_such_plan};
-        {_NQ,_K, Plan, String} -> {ok, Plan}
-    end.
-
-get_prize_fund(KakushPerRound, RegistrantsNum, Tours) ->
-    case lists:keyfind({KakushPerRound, RegistrantsNum,Tours}, 1, tournament_matrix()) of
-        false -> {error, no_such_plan};
-        {_NQ, K, _Plan, String} -> {ok, K}
-    end.
 
 
-get_plan_desc(KakushPerRound, RegistrantsNum, Tours) ->
-    case lists:keyfind({KakushPerRound, RegistrantsNum,Tours}, 1, tournament_matrix()) of
-        false -> {error, no_such_plan};
-        {_NQ, K, _Plan, String} -> {ok, String}
-    end.
-get_tours(KakushPerRound, RegistrantsNum) ->
-    [T || {{Q, N, T}, _, _, String} <- tournament_matrix(), Q==KakushPerRound, N==RegistrantsNum].
-
-tournament_matrix() ->
-    [%% Kakush Pl.No         1          2         3         4         5         6         7         8
-     { {  8,   16,3}, 54,   [ne      , {ce,  4}, {te,  1}                                                  ], ["yok","1.ler","Final"]},
-     { { 10,   16,3}, 72,   [ne      , {ce,  4}, {te,  1}                                                  ], ["yok","1.ler","Final"]},
-     { {  2,   64,4}, 80,   [ne      , {ce, 16}, {te,  1}, {te,  1}                                        ], ["yok","yok","1.ler","Final"]},
-     { {  4,   64,4}, 98,   [ne      , {ce, 16}, {te,  1}, {te,  1}                                        ], ["yok","yok","1.ler","Final"]},
-     { {  6,   64,4}, 158,  [ne      , {ce, 16}, {te,  1}, {te,  1}                                        ], ["yok","yok","1.ler","Final"]},
-     { {  8,   64,4}, 223,  [ne      , {ce, 16}, {te,  1}, {te,  1}                                        ], ["yok","yok","1.ler","Final"]},
-     { { 10,   64,4}, 295,  [ne      , {ce, 16}, {te,  1}, {te,  1}                                        ], ["yok","yok","1.ler","Final"]},
-     { {  2,  128,5}, 81,   [{te,  2}, {te,  2}, {te,  2}, {te,  1}, {te,  1}                              ], ["yok","yok","1.ler","Final"]},
-     { {  4,  128,5}, 162,  [{te,  2}, {te,  2}, {te,  2}, {te,  1}, {te,  1}                              ], []},
-     { {  6,  128,5}, 260,  [{te,  2}, {te,  2}, {te,  2}, {te,  1}, {te,  1}                              ], []},
-     { {  8,  128,5}, 368,  [{te,  2}, {te,  2}, {te,  2}, {te,  1}, {te,  1}                              ], []},
-     { { 10,  128,5}, 487,  [{te,  2}, {te,  2}, {te,  2}, {te,  1}, {te,  1}                              ], []},
-     { {  2,  256,5}, 198,  [ne      , {ce, 64}, {te,  1}, {te,  1}, {te,  1}                              ], []},
-     { {  4,  256,5}, 397,  [ne      , {ce, 64}, {te,  1}, {te,  1}, {te,  1}                              ], []},
-     { {  6,  256,5}, 635,  [ne      , {ce, 64}, {te,  1}, {te,  1}, {te,  1}                              ], []},
-     { {  8,  256,5}, 899,  [ne      , {ce, 64}, {te,  1}, {te,  1}, {te,  1}                              ], []},
-     { { 10,  256,5}, 1190, [ne      , {ce, 64}, {te,  1}, {te,  1}, {te,  1}                              ], []},
-     { {  2,  256,7}, 283,  [ne      , {ce,128}, ne      , {ce, 64}, {te,  1}, {te,  1}, {te,   1}         ], []},
-     { {  4,  256,7}, 566,  [ne      , {ce,128}, ne      , {ce, 64}, {te,  1}, {te,  1}, {te,   1}         ], []},
-     { {  6,  256,7}, 907,  [ne      , {ce,128}, ne      , {ce, 64}, {te,  1}, {te,  1}, {te,   1}         ], []},
-     { {  8,  256,7}, 1285, [ne      , {ce,128}, ne      , {ce, 64}, {te,  1}, {te,  1}, {te,   1}         ], []},
-     { { 10,  256,7}, 1701, [ne      , {ce,128}, ne      , {ce, 64}, {te,  1}, {te,  1}, {te,   1}         ], []},
-     { {  2,  512,6}, 326,  [{te,  2}, {te,  2}, {te,  2}, {te,  1}, {te,  1}, {te,  1}                    ], ["ilk 2","ilk 2","ilk 2","ilk 2","1.ler","Final"]},
-     { {  4,  512,6}, 652,  [{te,  2}, {te,  2}, {te,  2}, {te,  1}, {te,  1}, {te,  1}                    ], ["ilk 2","ilk 2","ilk 2","ilk 2","1.ler","Final"]},
-     { {  6,  512,6}, 1043, [{te,  2}, {te,  2}, {te,  2}, {te,  1}, {te,  1}, {te,  1}                    ], ["ilk 2","ilk 2","ilk 2","ilk 2","1.ler","Final"]},
-     { {  8,  512,6}, 1478, [{te,  2}, {te,  2}, {te,  2}, {te,  1}, {te,  1}, {te,  1}                    ], ["ilk 2","ilk 2","ilk 2","ilk 2","1.ler","Final"]},
-     { { 10,  512,6}, 1957, [{te,  2}, {te,  2}, {te,  2}, {te,  1}, {te,  1}, {te,  1}                    ], ["ilk 2","ilk 2","ilk 2","ilk 2","1.ler","Final"]},
-     { {  2,  512,8}, 582,  [ne      , {ce,256}, ne      , {ce,128}, {te,  2}, {te,  1}, {te,  1}, {te,  1}], []},
-     { {  4,  512,8}, 1163, [ne      , {ce,256}, ne      , {ce,128}, {te,  2}, {te,  1}, {te,  1}, {te,  1}], []},
-     { {  6,  512,8}, 1861, [ne      , {ce,256}, ne      , {ce,128}, {te,  2}, {te,  1}, {te,  1}, {te,  1}], []},
-     { {  8,  512,8}, 2637, [ne      , {ce,256}, ne      , {ce,128}, {te,  2}, {te,  1}, {te,  1}, {te,  1}], []},
-     { { 10,  512,8}, 3490, [ne      , {ce,256}, ne      , {ce,128}, {te,  2}, {te,  1}, {te,  1}, {te,  1}], []},
-     { {  2, 1024,6}, 795,  [ne      , {ce,256}, {te,  1}, {te,  1}, {te,  1}, {te,  1}                    ], []},
-     { {  4, 1024,6}, 1589, [ne      , {ce,256}, {te,  1}, {te,  1}, {te,  1}, {te,  1}                    ], []},
-     { {  6, 1024,6}, 2543, [ne      , {ce,256}, {te,  1}, {te,  1}, {te,  1}, {te,  1}                    ], []},
-     { {  8, 1024,6}, 3602, [ne      , {ce,256}, {te,  1}, {te,  1}, {te,  1}, {te,  1}                    ], []},
-     { { 10, 1024,6}, 4767, [ne      , {ce,256}, {te,  1}, {te,  1}, {te,  1}, {te,  1}                    ], []},
-     { {  2, 1024,8}, 1135, [ne      , {ce,512}, ne      , {ce,256}, {te,  1}, {te,  1}, {te,  1}, {te,  1}], []},
-     { {  4, 1024,8}, 2271, [ne      , {ce,512}, ne      , {ce,256}, {te,  1}, {te,  1}, {te,  1}, {te,  1}], []},
-     { {  6, 1024,8}, 3633, [ne      , {ce,512}, ne      , {ce,256}, {te,  1}, {te,  1}, {te,  1}, {te,  1}], []},
-     { {  8, 1024,8}, 5147, [ne      , {ce,512}, ne      , {ce,256}, {te,  1}, {te,  1}, {te,  1}, {te,  1}], []},
-     { { 10, 1024,8}, 6812, [ne      , {ce,512}, ne      , {ce,256}, {te,  1}, {te,  1}, {te,  1}, {te,  1}], []},
-     { {  2, 2048,6}, 1135, [{te,  2}, {te,  1}, {te,  1}, {te,  1}, {te,  1}, {te,  1}                    ], ["ilk 2","1.ler","1.ler","1.ler","1.ler","Final"]},
-     { {  4, 2048,6}, 2271, [{te,  2}, {te,  1}, {te,  1}, {te,  1}, {te,  1}, {te,  1}                    ], ["ilk 2","1.ler","1.ler","1.ler","1.ler","Final"]},
-     { {  6, 2048,6}, 3633, [{te,  2}, {te,  1}, {te,  1}, {te,  1}, {te,  1}, {te,  1}                    ], ["ilk 2","1.ler","1.ler","1.ler","1.ler","Final"]},
-     { {  8, 2048,6}, 5147, [{te,  2}, {te,  1}, {te,  1}, {te,  1}, {te,  1}, {te,  1}                    ], ["ilk 2","1.ler","1.ler","1.ler","1.ler","Final"]},
-     { { 10, 2048,6}, 6812, [{te,  2}, {te,  1}, {te,  1}, {te,  1}, {te,  1}, {te,  1}                    ], ["ilk 2","1.ler","1.ler","1.ler","1.ler","Final"]},
-     { {  2, 2048,8}, 1987, [ne      , {ce,1024},{te,  2}, {te,  2}, {te,  1}, {te,  1}, {te,  1}, {te,  1}], []},
-     { {  4, 2048,8}, 3974, [ne      , {ce,1024},{te,  2}, {te,  2}, {te,  1}, {te,  1}, {te,  1}, {te,  1}], []},
-     { {  2, 1020,1}, 9359, [{te,1}                                                                        ], []},
-     { {  4, 1020,1}, 8359, [{te,1}                                                                        ], []},
-     { {  6, 1020,1}, 7359, [{te,1}                                                                        ], []},
-     { {  8, 1020,1}, 6359, [{te,1}                                                                        ], []},
-     { { 10, 1020,1}, 5359, [{te,1}                                                                        ], []},
-     { {  2, 1020,2}, 5959, [ne      , {te,1}                                                              ], []},
-     { {  4, 1020,2}, 5859, [ne      , {te,1}                                                              ], []},
-     { {  6, 1020,2}, 5759, [ne      , {te,1}                                                              ], []},
-     { {  8, 1020,2}, 5659, [ne      , {te,1}                                                              ], []},
-     { { 10, 1020,2}, 5559, [ne      , {te,1}                                                              ], []}, 
-     { {  2, 1020,3}, 4359, [ne      , ne       , {te,1}                                                   ], []},
-     { {  4, 1020,3}, 4359, [ne      , ne       , {te,1}                                                   ], []},
-     { {  6, 1020,3}, 4359, [ne      , ne       , {te,1}                                                   ], []},
-     { {  8, 1020,3}, 4359, [ne      , ne       , {te,1}                                                   ], []},
-     { { 10, 1020,3}, 4359, [ne      , ne       , {te,1}                                                   ], []},
-     { {  2, 1020,4}, 3359, [ne      , ne       , ne     , {te,1}                                          ], []},
-     { {  4, 1020,4}, 3359, [ne      , ne       , ne     , {te,1}                                          ], []},
-     { {  6, 1020,4}, 3359, [ne      , ne       , ne     , {te,1}                                          ], []},
-     { {  8, 1020,4}, 3359, [ne      , ne       , ne     , {te,1}                                          ], []},
-     { {  2, 1020,6}, 2359, [ne      , ne       , ne     , ne      , ne      , {te,1}                      ], []},
-     { {  4, 1020,6}, 2359, [ne      , ne       , ne     , ne      , ne      , {te,1}                      ], []},
-     { {  6, 1020,6}, 2359, [ne      , ne       , ne     , ne      , ne      , {te,1}                      ], []},
-     { {  2,  500,1}, 1359, [{te,1}                                                                        ], []},
-     { {  4,  500,2}, 5959, [ne      , {te,1}                                                              ], []},
-     { {  6,  500,3}, 4859, [ne      , ne       , {te,1}                                                   ], []},
-     { {  8,  500,4}, 3759, [ne      , ne       , ne     , {te,1}                                          ], []},
-     { { 10,  500,6}, 2359, [ne      , ne       , ne     , ne      , ne      , {te,1}                      ], []},
-     { {  2,  400,1}, 4359, [{te,1}                                                                        ], []},
-     { {  4,  400,2}, 3359, [ne      , {te,1}                                                              ], []},
-     { {  6,  400,3}, 2359, [ne      , ne       , {te,1}                                                   ], []},
-     { {  8,  400,4}, 1359, [ne      , ne       , ne     , {te,1}                                          ], []},
-     { { 10,  400,6}, 3359, [ne      , ne       , ne     , ne      , ne      , {te,1}                      ], []},
-     { {  2,  300,1}, 2359, [{te,1}                                                                        ], []},
-     { {  4,  300,2}, 1359, [ne      , {te,1}                                                              ], []},
-     { {  6,  300,3}, 0959, [ne      , ne       , {te,1}                                                   ], []},
-     { {  8,  300,4}, 0359, [ne      , ne       , ne     , {te,1}                                          ], []},
-     { { 10,  300,6}, 1959, [ne      , ne       , ne     , ne      , ne      , {te,1}                      ], []},
-     { {  2,  200,1}, 0859, [{te,1}                                                                        ], []},
-     { {  4,  200,2}, 0759, [ne      , {te,1}                                                              ], []},
-     { {  6,  200,3}, 0659, [ne      , ne       , {te,1}                                                   ], []},
-     { {  8,  200,4}, 0559, [ne      , ne       , ne     , {te,1}                                          ], []},
-     { { 10,  200,6}, 0459, [ne      , ne       , ne     , ne      , ne      , {te,1}                      ], []},
-     { { 10,   40,2}, 0459, [ne      , {te,1}                                                              ], []}
-  ].
-
-get_timeout(turn, fast) -> {ok, Val}   = nsm_db:get(config,"games/okey/tour/timeout_fast",   15*1000), Val;
-get_timeout(turn, normal) -> {ok, Val} = nsm_db:get(config,"games/okey/tour/timeout_normal", 30*1000), Val;
-get_timeout(turn, slow) -> {ok, Val}   = nsm_db:get(config,"games/okey/tour/timeout_slow",   60*1000), Val;
-
-get_timeout(reveal_confirmation, fast) ->  {ok, Val}   = nsm_db:get(config,"games/okey/challenge_timeout_fast",    5*1000), Val;
-get_timeout(reveal_confirmation, normal) ->  {ok, Val} = nsm_db:get(config,"games/okey/challenge_timeout_normal", 10*1000), Val;
-get_timeout(reveal_confirmation, slow) -> {ok, Val}    = nsm_db:get(config,"games/okey/challenge_timeout_slow",   20*1000), Val;
-
-get_timeout(ready, fast) -> {ok, Val}   = nsm_db:get(config,"games/okey/ready_timeout_fast",   15*1000), Val;
-get_timeout(ready, normal) -> {ok, Val} = nsm_db:get(config,"games/okey/ready_timeout_normal", 25*1000), Val;
-get_timeout(ready, slow) -> {ok, Val}   = nsm_db:get(config,"games/okey/ready_timeout_slow",   45*1000), Val;
-
-get_timeout(round, fast) -> {ok, Val}   = nsm_db:get(config,"games/okey/trn/elim/round_time_limit_fast",   infinity), Val;
-get_timeout(round, normal) -> {ok, Val} = nsm_db:get(config,"games/okey/trn/elim/round_time_limit_normal", infinity), Val;
-get_timeout(round, slow) -> {ok, Val}   = nsm_db:get(config,"games/okey/trn/elim/round_time_limit_slow",   infinity), Val;
-
-get_timeout(tour, Tours) -> {ok, Val}   = nsm_db:get(config,"games/okey/trn/elim/tour_time_limit/"++integer_to_list(Tours), 20*60*1000), Val.

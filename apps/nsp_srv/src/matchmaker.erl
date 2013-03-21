@@ -231,8 +231,8 @@ ui_game_type() ->
                  {?_T("Color"), color},
                  {?_T("Countdown from 10"), countdown}];
             "tavla" ->
-                [{?_T("Standard"),  standard} %,
-%                 {?_T("Pair"),      paired}
+                [{?_T("Standard"),  standard} ,
+                 {?_T("Pair"),      paired}
                 ];
             _ ->
                 [{?_T("Standard"), standard},
@@ -515,6 +515,7 @@ show_table(Tables) ->
             {ok,WholeTable} ->
               MaxUsers = case GameName of 
                 "tavla" ->
+%%                    ?INFO("tavla tournament type:~p", [WholeTable#game_table.tournament_type]),
                   case WholeTable#game_table.tournament_type of
                     paired -> 10;
                     paired_lobby -> 10;
@@ -531,7 +532,12 @@ show_table(Tables) ->
                 "okey" -> Users
               end,
               GameType = WholeTable#game_table.game_type,
+              GameMode = WholeTable#game_table.game_mode,
               FreeSeatsNum = if GameType == game_okey,
+                                GameState == started,
+                                RobotsReplacementAllowed -> MaxUsers - length([U || U <- RealUsers, U=/=robot]);
+                                GameType == game_tavla,
+                                GameMode == paired,
                                 GameState == started,
                                 RobotsReplacementAllowed -> MaxUsers - length([U || U <- RealUsers, U=/=robot]);
                               true -> MaxUsers - length(RealUsers)
