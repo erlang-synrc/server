@@ -45,8 +45,6 @@ start(_StartType, _StartArgs) ->
                          X -> io:format("Error ~p",[X]), erlang:halt(1)
     end.
 
-spawn_tables() -> timer:sleep(42000),  rpc:call(?GAMESRVR_NODE,game_manager,create_tables,[42]).
-
 mime() ->
     [
      {<<"html">>, [<<"text/html">>]},
