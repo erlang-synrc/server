@@ -226,9 +226,9 @@ get_groups(User) ->
 
 new_statistic(SubscribersCount,FriendsCount,CommentsCount,LikesCount,EntriesCount,CheckedUser) ->
     #list{class="list-5", body=[
-          #listitem{body= #link{url="/friends/t/subscribtion",
+          #listitem{body= #link{url="/connections/t/subscribtion",
                     text=integer_to_list(SubscribersCount) ++ " " ++ ?_T("subscription") }},
-          #listitem{body= #link{url="/friends/t/subscribers",
+          #listitem{body= #link{url="/connections/t/subscribers",
                     text=integer_to_list(FriendsCount) ++ " " ++ ?_T("subscribers") }},
           #listitem{body= #link{url="/wall/filter/comments/user/" ++ wf:to_list(CheckedUser),
                     text=integer_to_list(CommentsCount) ++ " " ++ ?_T("comments") }},
