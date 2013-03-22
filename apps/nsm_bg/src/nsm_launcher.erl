@@ -42,6 +42,8 @@ handle_info(start_all, State) ->
     Groups = nsm_db:all(group),
     case Node of
          1 -> RunGroups(Groups);
+         2 -> RunGroups(Groups);
+         3 -> RunGroups(Groups);
          4 -> RunGroups(Groups);
          5 -> RunGroups(Groups);
          _ -> skip end,
