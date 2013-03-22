@@ -600,11 +600,11 @@ get_members(GId) ->
 get_metalist(Id, Title, Type, EmptyMsg, Nav) ->
     Data = case nsm_queries:cached_friends([Id,Type]) of
                 {badrpc,_} -> nsm_users:retrieve_connections(Id,Type);
+                undefined -> nsm_users:retrieve_connections(Id,Type);
                 X -> X end, 
     ?INFO("metalist: ~p",[{Id,Type,Data}]),
     Friends = case Data of
                 [] -> [EmptyMsg];
-                undefined -> [EmptyMsg];
                 Full -> lists:flatten([#listitem{body=[#image{image=get_avatar(Who), 
                                           style= case Paid of true -> "border:3px solid #ffb03b; padding:0px;"; _ -> "" end},
                                #link{text=RealName, style="font-size:12pt;",url=site_utils:user_link(Who)}]}||{Who,Paid,RealName}<-Data]) end,
