@@ -39,7 +39,7 @@ handle_info(start_all, State) ->
                  X -> [R||R=#user{username=U,status=ok,email=E}<-nsm_db:all(user), CheckNode(U)==X,E/=undefined]
     end,
     ?INFO("Users Count on Node ~p: ~p",[Node,length(Users)]),
-    Groups = nsm_db:all(group),
+    Groups = [Group || Group=#group{username=G} <-nsm_db:all(group), CheckNode(G)==Node ],
     case Node of
          1 -> RunGroups(Groups);
          2 -> RunGroups(Groups);
