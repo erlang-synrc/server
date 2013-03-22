@@ -600,6 +600,7 @@ get_members(GId) ->
 get_metalist(Id, Title, Type, EmptyMsg, Nav) ->
     Data = case nsm_queries:cached_friends([Id,Type]) of
                 {badrpc,_} -> nsm_users:retrieve_connections(Id,Type);
+                undefined -> nsm_users:retrieve_connections(Id,Type);
                 X -> X end, 
     ?INFO("metalist: ~p",[{Id,Type,Data}]),
     Friends = case Data of

@@ -40,12 +40,13 @@ handle_info(start_all, State) ->
     end,
     ?INFO("Users Count on Node ~p: ~p",[Node,length(Users)]),
     Groups = [Group || Group=#group{username=G} <-nsm_db:all(group), CheckNode(G)==Node ],
+    AllGroups = nsm_db:all(group),
     case Node of
          1 -> RunGroups(Groups);
          2 -> RunGroups(Groups);
          3 -> RunGroups(Groups);
-         4 -> RunGroups(Groups);
-         5 -> RunGroups(Groups);
+         4 -> RunGroups(AllGroups);
+         5 -> RunGroups(AllGroups);
          _ -> skip end,
     [begin start_worker(user,Name,Feed,Direct) end || #user{username=Name,feed=Feed,direct=Direct} <- Users],
     case Node of

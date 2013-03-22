@@ -232,9 +232,16 @@ Deploying to MASTER {SRV1,SRV2,SRV3}
 
 Go to srv1/srv2/srv3:
 
-    $ cd /home/kakauser/release/server
+    1. cd /home/kakauser/release/server
+    2. comment in rels/*/etc/vm.args #-heart
+    3. run "./stop.sh" all 3 times to ensure all beams are down
+    4. ./clean.sh
+    5. ./rebar compile
+    6. ./release.sh all
+    7. ./releasy_sync.sh
+    8. ./cluster_configure.sh
+    9. run each release one by one rels/*/ns_node start and then rels/*/ns_node attach
 
-And perform steps described in Fast Local Start. 
 Check if everything is OK and Enjoy!
 
 ###SRV3 deployment plan 
