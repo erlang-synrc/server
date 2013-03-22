@@ -64,7 +64,7 @@ init([Module | Args]) ->
 
 handle_call(Request, _From, State) ->
     {Reply, Answer, NewState} = nsm_writer:handle_call(Request,_From,State#state.callback_state),
-    {reply, Answer, State}.
+    {reply, Answer, State#state{callback_state=NewState}}.
 
 handle_cast({delivery, Envelope}, State) ->
     %% transform mq fromat to pass to callback module

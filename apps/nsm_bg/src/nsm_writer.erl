@@ -36,10 +36,13 @@ direct_refresh(Pid,Fid,Page) -> gen_server:call(Pid,{direct_refresh,Fid,Page}).
 %groups_refresh(Pid,Fid,Page) -> gen_server:call(Pid,{groups_refresh,Fid,Page}).
 
 handle_call({cached_feed,FId,Page},From,State) ->
+    ?INFO("Old State: ~p",[State]),
     Reply = case State#state.cached_feed of
                  undefined -> nsm_db:entries_in_feed(FId,Page);
                  A -> A end,
-    {reply,Reply,State#state{cached_feed=Reply}};
+    NewState = State#state{cached_feed=Reply},
+    ?INFO("New State: ~p",[NewState]),
+    {reply,Reply,NewState};
 
 handle_call({cached_direct,FId,Page},From,State) ->
     Reply = case State#state.cached_direct of
@@ -48,10 +51,13 @@ handle_call({cached_direct,FId,Page},From,State) ->
     {reply,Reply,State#state{cached_direct=Reply}};
 
 handle_call({cached_friends,Id,Type},From,State) ->
+    ?INFO("~p Old State: ~p",[self(), State]),
     Reply = case State#state.cached_friends of
                  undefined -> nsm_users:retrieve_connections(Id,Type);
                  A -> A end,
-    {reply,Reply,State#state{cached_friends=Reply}};
+    NewState = State#state{cached_friends=Reply},
+    ?INFO("New State: ~p",[NewState]),
+    {reply,Reply,NewState};
 
 handle_call({cached_groups,User},From,State) ->
     Reply = case State#state.cached_groups of
