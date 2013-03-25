@@ -781,10 +781,13 @@ setup_players(Registrants, GameId, BotModule) ->
                                               user_info = UserInfo, is_bot = true}, Acc),
                 {NewAcc, PlayerId + 1};
            (UserId, {Acc, PlayerId}) ->
-                {ok, UserInfo} = auth_server:get_user_info_by_user_id(UserId),
-                NewAcc = store_player(#player{id = PlayerId, user_id = UserId,
-                                              user_info = UserInfo, is_bot = false}, Acc),
-                {NewAcc, PlayerId + 1}
+              case auth_server:get_user_info_by_user_id(UserId) of
+                {error, user_not_found} -> {Acc, PlayerId};
+                {ok, UserInfo} ->
+                  NewAcc = store_player(#player{id = PlayerId, user_id = UserId,
+                                                user_info = UserInfo, is_bot = false}, Acc),
+                  {NewAcc, PlayerId + 1}
+              end
         end,
     lists:foldl(F, {players_init(), 1}, Registrants).
 
