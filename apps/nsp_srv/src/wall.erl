@@ -68,7 +68,6 @@ entry_form(FId, Type, Delegate, Postback) ->
       "var $this=objs('add_entry_textbox');" ++
       "setTimeout(function(){" ++
       "var l = parseInt($this.attr('value').length);" ++
-      "console.log('lenght: ' + l);" ++
       "if(l>0){" ++
         "objs('sendentry').addClass('enabled').removeClass('disabled');" ++
       "}else{" ++
