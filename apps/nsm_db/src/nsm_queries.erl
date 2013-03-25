@@ -20,7 +20,7 @@ get_single_tables(Setting,UId,GameFSM,_Convert, LeftList) ->
 
     MaxUsers = case GameFSM of
                    "tavla" ->
-                       case GameMode of standard -> 2; paired -> 10 end;
+                       case GameMode of standard -> 2; paired -> 10; _ -> 10 end;
                    "okey" -> 4 end,
 
     Check = fun(Param,Value) -> 
