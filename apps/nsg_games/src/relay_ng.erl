@@ -1,9 +1,34 @@
 %%% -------------------------------------------------------------------
 %%% Author  : Sergei Polkovnikov <serge.polkovnikov@gmail.com>
-%%% Description :
+%%% Description : The server for retranslating events of the table.
 %%%
-%%% Created : Oct 16, 2012
+%%% Created : Feb 25, 2013
 %%% -------------------------------------------------------------------
+
+%% Table -> Relay requests:
+%% {register_player, UserId, PlayerId} -> ok
+%% {unregister_player, PlayerId, Reason} -> ok
+
+%% Table -> Relay messages:
+%% {publish, Event}
+%% {to_client, PlayerId, Event}
+%% {to_subscriber, SubscrId, Event}
+%% {allow_broadcast_for_player, PlayerId}
+%% stop
+
+%% Relay -> Table notifications:
+%% {player_disconnected, PlayerId}
+%% {player_connected, PlayerId}
+%% {subscriber_added, PlayerId, SubscriptionId} - it's a hack to retrive current game state
+
+%% Subscriber -> Relay requests:
+%% {subscribe, Pid, UserId, RegNum} -> {ok, SubscriptionId} | {error, Reason}
+%% {unsubscribe, SubscriptionId} -> ok | {error, Reason}
+
+%% Relay -> Subscribers notifications:
+%% {relay_kick, SubscrId, Reason}
+%% {relay_event, SubscrId, Event}
+
 -module(relay_ng).
 
 -behaviour(gen_server).
@@ -15,11 +40,8 @@
 
 %% --------------------------------------------------------------------
 %% External exports
--export([start/1, table_message/2, table_request/2]).
--export([stop/1, subscribe/4, unsubscribe/2, publish/2]).
-
-%% Compatebility API. Should be removed after tavla game redesign (because it uses relay.erl)
--export([do_rematch/2]).
+-export([start/1, start_link/1, table_message/2, table_request/2]).
+-export([subscribe/4, unsubscribe/2, publish/2]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
@@ -27,12 +49,14 @@
 -record(state, {subscribers,
                 players,
                 observers_allowed  :: boolean(),
-                table              :: {atom(), pid()}
+                table              :: {atom(), pid()},
+                table_mon_ref      :: reference()
                }).
 
 -record(subscriber,
-        {pid          :: pid(),
-         user_id,
+        {id           :: reference(),
+         pid          :: pid(),
+         user_id      :: binary(),
          player_id    :: integer(),
          mon_ref      :: reference(),
          broadcast_allowed :: boolean()
@@ -40,7 +64,7 @@
 
 -record(player,
         {id           :: integer(),
-         user_id,
+         user_id      :: binary(),
          status       :: online | offline
         }).
 
@@ -52,14 +76,14 @@
 start(Params) ->
     gen_server:start(?MODULE, [Params], []).
 
-stop(Relay) ->
-    table_message(Relay, stop).
+start_link(Params) ->
+    gen_server:start_link(?MODULE, [Params], []).
 
-subscribe(Relay, SessionPid, User, RegNum) ->
-    client_request(Relay, {subscribe, SessionPid, User, RegNum}).
+subscribe(Relay, Pid, UserId, RegNum) ->
+    client_request(Relay, {subscribe, Pid, UserId, RegNum}).
 
-unsubscribe(Relay, SessionPid) ->
-    client_request(Relay, {unsubscribe, SessionPid}).
+unsubscribe(Relay, SubscriptionId) ->
+    client_request(Relay, {unsubscribe, SubscriptionId}).
 
 publish(Relay, Message) ->
     client_message(Relay, {publish, Message}).
@@ -82,8 +106,6 @@ client_request(Relay, Request) ->
 client_request(Relay, Request, Timeout) ->
     gen_server:call(Relay, {client_request, Request}, Timeout).
 
-do_rematch(_,_) -> ok. %% Only for compatebility. Should be removed.
-
 %% ====================================================================
 %% Server functions
 %% ====================================================================
@@ -92,12 +114,14 @@ do_rematch(_,_) -> ok. %% Only for compatebility. Should be removed.
 init([Params]) ->
     PlayersInfo = proplists:get_value(players, Params),
     ObserversAllowed = proplists:get_value(observers_allowed, Params),
-    Table = proplists:get_value(table, Params),
+    Table = {_, TablePid} = proplists:get_value(table, Params),
     Players = init_players(PlayersInfo),
+    MonRef = erlang:monitor(process, TablePid),
     {ok, #state{subscribers = subscribers_init(),
                 players = Players,
                 observers_allowed = ObserversAllowed,
-                table = Table}}.
+                table = Table,
+                table_mon_ref = MonRef}}.
 
 %% --------------------------------------------------------------------
 handle_call({client_request, Request}, From, State) ->
@@ -123,25 +147,38 @@ handle_cast(_Msg, State) ->
     {noreply, State}.
 
 %% --------------------------------------------------------------------
-handle_info({'DOWN', _, process, Pid, Info},
+handle_info({'DOWN', TableMonRef, process, _Pid, _Info},
+            #state{subscribers = Subscribers,
+                   table_mon_ref = TableMonRef} = State) ->
+    ?INFO("RELAY_NG All The parent table is down. "
+          "Disconnecting all subscribers and sutting down.", []),
+    [begin
+         erlang:demonitor(MonRef, [flush]),
+         Pid ! {relay_kick, SubscrId, table_down}
+     end || #subscriber{id = SubscrId, pid = Pid, mon_ref = MonRef}
+                           <- subscribers_to_list(Subscribers)],
+    {stop, normal, State};
+
+handle_info({'DOWN', MonRef, process, _Pid, _Info},
             #state{subscribers = Subscribers, players = Players,
                    table = {TableMod, TablePid}} = State) ->
-    case find_subscriber(Pid, Subscribers) of
-        {ok, #subscriber{player_id = undefined}} ->
-            NewSubscribers = del_subscriber(Pid, Subscribers),
+    case find_subscribers_by_mon_ref(MonRef, Subscribers) of
+        [#subscriber{player_id = undefined, id = SubscrId}] ->
+            NewSubscribers = del_subscriber(SubscrId, Subscribers),
             {noreply, State#state{subscribers = NewSubscribers}};
-        {ok, #subscriber{player_id = PlayerId}} ->
-            NewSubscribers = del_subscriber(Pid, Subscribers),
+        [#subscriber{player_id = PlayerId, user_id = UserId, id = SubscrId}] ->
+            NewSubscribers = del_subscriber(SubscrId, Subscribers),
             case find_subscribers_by_player_id(PlayerId, NewSubscribers) of
                 [] ->
-                    ?INFO("RELAY_NG Player's (~p) session down: ~p", [PlayerId, Info]),
+                    ?INFO("RELAY_NG All sessions of player <~p> (~p) are closed. "
+                          "Sending the notification to the table.", [PlayerId, UserId]),
                     NewPlayers = update_player_status(PlayerId, offline, Players),
                     TableMod:relay_message(TablePid, {player_disconnected, PlayerId}),
                     {noreply, State#state{subscribers = NewSubscribers, players = NewPlayers}};
-                [_|_] ->
+                _ ->
                     {noreply, State#state{subscribers = NewSubscribers}}
             end;
-        error ->
+        [] ->
             {noreply, State}
     end;
 
@@ -160,31 +197,43 @@ code_change(_OldVsn, State, _Extra) ->
 %%% Internal functions
 %% --------------------------------------------------------------------
 
-handle_client_request({subscribe, Pid, #'PlayerInfo'{id = UserId}, observer}, _From,
+handle_client_request({subscribe, Pid, UserId, observer}, _From,
                       #state{observers_allowed = ObserversAllowed,
                              subscribers = Subscribers} = State) ->
     if ObserversAllowed ->
            MonRef = erlang:monitor(process, Pid),
-           NewSubscribers = store_subscriber(Pid, UserId, undefined, MonRef, true, Subscribers),
+           SubscrId = erlang:make_ref(),
+           NewSubscribers = store_subscriber(SubscrId, Pid, UserId, undefined, MonRef, true, Subscribers),
            {reply, ok, State#state{subscribers = NewSubscribers}};
        true ->
            {reply, {error, observers_not_allowed}, State}
     end;
 
 
-handle_client_request({subscribe, Pid, #'PlayerInfo'{id = UserId}, PlayerId}, _From,
+handle_client_request({subscribe, Pid, UserId, PlayerId}, _From,
                       #state{players = Players, subscribers = Subscribers,
                              table = {TableMod, TablePid}} = State) ->
-    ?INFO("RELAY_NG Subscription request from user ~p, PlayerId: ~p", [UserId, PlayerId]),
+    ?INFO("RELAY_NG Subscription request from user ~p, PlayerId: <~p>", [UserId, PlayerId]),
     case find_player(PlayerId, Players) of
-        {ok, #player{user_id = UserId}} ->
-            NewPlayers = update_player_status(PlayerId, online, Players),
+        {ok, #player{user_id = UserId, status = Status} = P} ->  %% The user id is matched
+            ?INFO("RELAY_NG User ~p is registered as player <~p>", [UserId, PlayerId]),
+            ?INFO("RELAY_NG User ~p player info: ~p", [UserId, P]),
             MonRef = erlang:monitor(process, Pid),
-            NewSubscribers = store_subscriber(Pid, UserId, PlayerId, MonRef, false, Subscribers),
-            TableMod:relay_message(TablePid, {player_connected, PlayerId}),
-            {reply, ok, State#state{players = NewPlayers, subscribers = NewSubscribers}};
+            SubscrId = erlang:make_ref(),
+            NewSubscribers = store_subscriber(SubscrId, Pid, UserId, PlayerId, MonRef,
+                                              _BroadcastAllowed = false, Subscribers),
+            NewPlayers = if Status == offline ->
+                                ?INFO("RELAY_NG Notifying the table about user ~p (<~p>).", [PlayerId, UserId]),
+                                TableMod:relay_message(TablePid, {player_connected, PlayerId}),
+                                update_player_status(PlayerId, online, Players);
+                            true ->
+                                ?INFO("RELAY_NG User ~p (<~p>) is already subscribed.", [PlayerId, UserId]),
+                                Players
+                         end,
+            TableMod:relay_message(TablePid, {subscriber_added, PlayerId, SubscrId}),
+            {reply, {ok, SubscrId}, State#state{players = NewPlayers, subscribers = NewSubscribers}};
         {ok, #player{}=P} ->
-            ?INFO("RELAY_NG Subscription for user ~p rejected. Another owner of the "
+            ?INFO("RELAY_NG Subscription for user ~p rejected. There is another owner of the "
                   "PlayerId <~p>: ~p", [UserId, PlayerId, P]),
             {reply, {error, not_player_id_owner}, State};
         error ->
@@ -192,18 +241,27 @@ handle_client_request({subscribe, Pid, #'PlayerInfo'{id = UserId}, PlayerId}, _F
     end;
 
 
-handle_client_request({unsubscribe, Pid}, _From,
-                      #state{subscribers = Subscribers} = State) ->
-    case find_subscribers_by_pid(Pid, Subscribers) of
-        [] ->
+handle_client_request({unsubscribe, SubscrId}, _From,
+                      #state{subscribers = Subscribers, players = Players,
+                             table = {TableMod, TablePid}} = State) ->
+    case get_subscriber(SubscrId, Subscribers) of
+        error ->
             {reply, {error, not_subscribed}, State};
-        List ->
-            F = fun(#subscriber{mon_ref = MonRef}, Acc) ->
-                        erlang:demonitor(MonRef, [flush]),
-                        del_subscriber(Pid, Acc)
-                end,
-            NewSubscribers = lists:foldl(F, Subscribers, List),
-            {reply, ok, State#state{subscribers = NewSubscribers}}
+        {ok, #subscriber{id = SubscrId, mon_ref = MonRef, player_id = undefined}} ->
+            erlang:demonitor(MonRef, [flush]),
+            NewSubscribers = del_subscriber(SubscrId, Subscribers),
+            {reply, ok, State#state{subscribers = NewSubscribers}};
+        {ok, #subscriber{id = SubscrId, mon_ref = MonRef, player_id = PlayerId}} ->
+            erlang:demonitor(MonRef, [flush]),
+            NewSubscribers = del_subscriber(SubscrId, Subscribers),
+            NewPlayers = case find_subscribers_by_player_id(PlayerId, Subscribers) of
+                             [] ->
+                                TableMod:relay_message(TablePid, {player_disconnected, PlayerId}),
+                                update_player_status(PlayerId, offline, Players);
+                             _ -> Players
+                         end,
+            {reply, ok, State#state{subscribers = NewSubscribers,
+                                    players = NewPlayers}}
     end;
 
 
@@ -218,43 +276,31 @@ handle_table_request({register_player, UserId, PlayerId}, _From,
     {reply, ok, State#state{players = NewPlayers}};
 
 
-handle_table_request({unregister_player, PlayerId}, _From,
+handle_table_request({unregister_player, PlayerId, Reason}, _From,
                      #state{players = Players,
                             subscribers = Subscribers} = State) ->
     NewPlayers = del_player(PlayerId, Players),
     UpdSubscribers = find_subscribers_by_player_id(PlayerId, Subscribers),
-    F = fun(S, Acc) ->
-                store_subscriber_rec(S#subscriber{player_id = undefined}, Acc)
-        end,
-    NewSubscribers = lists:foldl(F, Subscribers, UpdSubscribers),
-    {reply, ok, State#state{players = NewPlayers,
-                            subscribers = NewSubscribers}};
-
-
-handle_table_request({kick_player, PlayerId}, _From,
-                     #state{players = Players,
-                            subscribers = Subscribers} = State) ->
-    NewPlayers = del_player(PlayerId, Players),
-    UpdSubscribers = find_subscribers_by_player_id(PlayerId, Subscribers),
-    F = fun(#subscriber{pid = Pid, mon_ref = MonRef}, Acc) ->
+    F = fun(#subscriber{id = SubscrId, pid = Pid, mon_ref = MonRef}, Acc) ->
                 erlang:demonitor(MonRef, [flush]),
-                Pid ! terminate,              %% XXX
-                del_subscriber(Pid, Acc)
+                Pid ! {relay_kick, SubscrId, Reason},
+                del_subscriber(SubscrId, Acc)
         end,
     NewSubscribers = lists:foldl(F, Subscribers, UpdSubscribers),
     {reply, ok, State#state{players = NewPlayers,
                             subscribers = NewSubscribers}};
-
 
 handle_table_request(_Request, _From, State) ->
     Reply = ok,
     {reply, Reply, State}.
 
 %%===================================================================
-%% TODO: Player id should be passed with a published message. After the legacy code removing.
+%% XXX: Unsecure because of spoofing posibility (a client session can send events by the
+%% name of the table). Legacy.
 handle_client_message({publish, Msg}, #state{subscribers = Subscribers} = State) ->
     Receipients = subscribers_to_list(Subscribers),
-    [gen_server:cast(Pid, Msg) || #subscriber{pid = Pid, broadcast_allowed = true} <- Receipients], %% XXX
+    [Pid ! {relay_event, SubscrId, Msg} ||
+     #subscriber{id = SubscrId, pid = Pid, broadcast_allowed = true} <- Receipients],
     {noreply, State};
 
 handle_client_message(_Msg, State) ->
@@ -265,17 +311,29 @@ handle_client_message(_Msg, State) ->
 handle_table_message({publish, Msg}, #state{subscribers = Subscribers} = State) ->
     ?INFO("RELAY_NG The table publish message: ~p", [Msg]),
     Receipients = subscribers_to_list(Subscribers),
-    [gen_server:cast(Pid, Msg) || #subscriber{pid = Pid, broadcast_allowed = true} <- Receipients], %% XXX
+    [Pid ! {relay_event, SubscrId, Msg} ||
+     #subscriber{id = SubscrId, pid = Pid, broadcast_allowed = true} <- Receipients],
     {noreply, State};
 
 handle_table_message({to_client, PlayerId, Msg}, #state{subscribers = Subscribers} = State) ->
     Recepients = find_subscribers_by_player_id(PlayerId, Subscribers),
-    ?INFO("relay_info Send table message to player's (~p) sessions: ~p. Message: ~p", [PlayerId, Recepients, Msg]),
-    [Pid ! Msg || #subscriber{pid = Pid} <- Recepients], %% XXX
+    ?INFO("RELAY_NG Send table message to player's (~p) sessions: ~p. Message: ~p",
+          [PlayerId, Recepients, Msg]),
+    [Pid ! {relay_event, SubscrId, Msg} || #subscriber{id = SubscrId, pid = Pid} <- Recepients],
     {noreply, State};
 
-handle_table_message({allow_broadcast_for_player, PlayerId}, #state{subscribers = Subscribers} = State) ->
-    ?INFO("RELAY_NG Received directive to allow receiving published messages for player <~p>", [PlayerId]),
+handle_table_message({to_subscriber, SubscrId, Msg}, #state{subscribers = Subscribers} = State) ->
+    ?INFO("RELAY_NG Send table message to subscriber: ~p. Message: ~p", [SubscrId, Msg]),
+    case get_subscriber(SubscrId, Subscribers) of
+        {ok, #subscriber{pid = Pid}} -> Pid ! {relay_event, SubscrId, Msg};
+        _ -> do_nothing
+    end,
+    {noreply, State};
+
+handle_table_message({allow_broadcast_for_player, PlayerId},
+                     #state{subscribers = Subscribers} = State) ->
+    ?INFO("RELAY_NG Received directive to allow receiving published messages for player <~p>",
+          [PlayerId]),
     PlSubscribers = find_subscribers_by_player_id(PlayerId, Subscribers),
     F = fun(Subscriber, Acc) ->
                 store_subscriber_rec(Subscriber#subscriber{broadcast_allowed = true}, Acc)
@@ -284,16 +342,19 @@ handle_table_message({allow_broadcast_for_player, PlayerId}, #state{subscribers 
     {noreply, State#state{subscribers = NewSubscribers}};
 
 
-handle_table_message(stop, State) ->
-    {stop, normal, State};
+handle_table_message(stop, #state{subscribers = Subscribers} = State) ->
+    [begin
+         erlang:demonitor(MonRef, [flush]),
+         Pid ! {relay_kick, SubscrId, table_closed}
+     end || #subscriber{id = SubscrId, pid = Pid, mon_ref = MonRef}
+                           <- subscribers_to_list(Subscribers)],
+    {stop, normal, State#state{subscribers = subscribers_init()}};
+
 
 handle_table_message(_Msg, State) ->
     {noreply, State}.
 
-
 %%===================================================================
-
-
 
 init_players(PlayersInfo) ->
     init_players(PlayersInfo, players_init()).
@@ -301,7 +362,7 @@ init_players(PlayersInfo) ->
 init_players([], Players) ->
     Players;
 init_players([{PlayerId, UserId} | PlayersInfo], Players) ->
-    NewPlayers = store_player(PlayerId, UserId, undefined, Players),
+    NewPlayers = store_player(PlayerId, UserId, offline, Players),
     init_players(PlayersInfo, NewPlayers).
 
 %%===================================================================
@@ -331,24 +392,32 @@ update_player_status(PlayerId, Status, Players) ->
 
 subscribers_init() -> midict:new().
 
-store_subscriber(Pid, UserId, PlayerId, MonRef, BroadcastAllowed, Subscribers) ->
-    store_subscriber_rec(#subscriber{pid = Pid, user_id = UserId, player_id = PlayerId,
-                                     mon_ref = MonRef, broadcast_allowed = BroadcastAllowed}, Subscribers).
+store_subscriber(SubscrId, Pid, UserId, PlayerId, MonRef, BroadcastAllowed, Subscribers) ->
+    store_subscriber_rec(#subscriber{id = SubscrId, pid = Pid, user_id = UserId,
+                                     player_id = PlayerId, mon_ref = MonRef,
+                                     broadcast_allowed = BroadcastAllowed}, Subscribers).
 
-store_subscriber_rec(#subscriber{pid = Pid, user_id = _UserId, player_id = PlayerId} = Rec, Subscribers) ->
-    midict:store(Pid, Rec, [{player_id, PlayerId}], Subscribers).
+store_subscriber_rec(#subscriber{id = SubscrId, pid = Pid, user_id = _UserId,
+                                 player_id = PlayerId, mon_ref = MonRef} = Rec, Subscribers) ->
+    midict:store(SubscrId, Rec, [{pid, Pid}, {player_id, PlayerId}, {mon_ref, MonRef}],
+                 Subscribers).
 
-del_subscriber(Pid, Subscribers) ->
-    midict:erase(Pid, Subscribers).
+%% del_subscriber(SubscrId, Subscribers) -> NewSubscribers
+del_subscriber(SubscrId, Subscribers) ->
+    midict:erase(SubscrId, Subscribers).
 
-find_subscriber(Pid, Subscribers) ->
-    midict:find(Pid, Subscribers).
+%% get_subscriber(Id, Subscribers) -> {ok, #subscriber{}} | error
+get_subscriber(Id, Subscribers) ->
+    midict:find(Id, Subscribers).
 
+%% find_subscribers_by_player_id(PlayerId, Subscribers) -> list(#subscriber{})
 find_subscribers_by_player_id(PlayerId, Subscribers) ->
     midict:geti(PlayerId, player_id, Subscribers).
 
-find_subscribers_by_pid(Pid, Subscribers) ->
-    midict:geti(Pid, pid, Subscribers).
+%% find_subscribers_by_mon_ref(MonRef, Subscribers) -> list(#subscriber{})
+find_subscribers_by_mon_ref(MonRef, Subscribers) ->
+    midict:geti(MonRef, mon_ref, Subscribers).
 
+%% subscribers_to_list(Subscribers) -> list(#subscriber{})
 subscribers_to_list(Subscribers) ->
     midict:all_values(Subscribers).

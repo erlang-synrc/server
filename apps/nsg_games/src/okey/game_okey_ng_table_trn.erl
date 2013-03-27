@@ -275,7 +275,7 @@ handle_info(Info, StateName, #state{game_id = GameId, table_id = TableId} = Stat
 terminate(Reason, StateName, #state{game_id = GameId, table_id = TableId, relay = Relay}) ->
     ?INFO("OKEY_NG_TABLE_TRN <~p,~p> Shutting down at state: <~p>. Reason: ~p",
           [GameId, TableId, StateName, Reason]),
-    ?RELAY:stop(Relay),
+    relay_stop(Relay),
     ok.
 
 code_change(_OldVsn, StateName, StateData, _Extra) ->
@@ -363,12 +363,6 @@ handle_parent_message(start_round, StateName,
                                    timeout_magic = Magic,
                                    round_timer = RoundTRef,
                                    set_timer = NewSetTRef},
-    %% Send notifications to clients
-%%     [begin
-%%          GameStartedMsg = create_okey_game_started(N, DeskState, NewCurRound, NewStateData),
-%%          PlayerId = get_player_id_by_seat_num(N, Players),
-%%          send_to_client_ge(Relay, PlayerId, GameStartedMsg)
-%%      end || N <- lists:seq(1, ?SEATS_NUM)],
     [begin
          GameStartedMsg = create_okey_game_started(SeatNum, DeskState, NewCurRound, NewStateData),
          send_to_client_ge(Relay, PlayerId, GameStartedMsg)
@@ -430,23 +424,17 @@ handle_parent_message({playing_tables_num, Num}, StateName,
 handle_parent_message(rejoin_players, StateName,
                       #state{game_id = GameId, relay = Relay,
                              players = Players} = StateData) ->
-    [relay_unregister_player(Relay, P#player.id) || P <- players_to_list(Players)],
-    relay_publish(Relay, {rejoin, GameId}), %% XXX Looks like a hack... Should be sent personaly to players gamesessions
+    [relay_unregister_player(Relay, P#player.id, {rejoin, GameId}) || P <- players_to_list(Players)],
     {next_state, StateName, StateData#state{players = players_init()}};
 
 
 handle_parent_message(disconnect_players, StateName,
                       #state{relay = Relay, players = Players} = StateData) ->
-    [relay_unregister_player(Relay, P#player.id) || P <- players_to_list(Players)],
-    relay_publish(Relay, {disconnect, table_closed}), %% XXX Looks like a hack... Should be sent personaly to players gamesessions
-%%    [relay_kick_player(Relay, P#player.id) || P <- players_to_list(Players)],
+    [relay_unregister_player(Relay, P#player.id, game_over) || P <- players_to_list(Players)],
     {next_state, StateName, StateData#state{players = players_init()}};
 
 
-handle_parent_message(stop, _StateName,
-                      #state{relay = Relay, players = Players} = StateData) ->
-    [relay_unregister_player(Relay, P#player.id) || P <- players_to_list(Players)],
-%%    relay_publish(Relay, {disconnect, table_closed}), %% XXX Looks like a hack... Should be sent personaly to players gamesessions
+handle_parent_message(stop, _StateName, StateData) ->
     {stop, normal, StateData};
 
 handle_parent_message(Message, StateName,
@@ -461,23 +449,12 @@ handle_parent_message(Message, StateName,
 %% handle_relay_message(Msg, StateName, StateData)
 
 handle_relay_message({player_connected, PlayerId} = Msg, StateName,
-                     #state{relay = Relay, parent = Parent, game_id = GameId,
-                            table_id = TableId, tournament_table = TTable,
-                            players = Players} = StateData) ->
+                     #state{parent = Parent, game_id = GameId,
+                            table_id = TableId, players = Players} = StateData) ->
     ?INFO("OKEY_NG_TABLE_TRN <~p,~p> Received nofitication from the relay: ~p", [GameId, TableId, Msg]),
     case get_player(PlayerId, Players) of
         {ok, Player} ->
             NewPlayers = store_player_rec(Player#player{connected = true}, Players),
-            GI = create_okey_game_info(StateData),
-            PlState = create_okey_game_player_state(PlayerId, StateName, StateData),
-            send_to_client_ge(Relay, PlayerId, GI),
-            send_to_client_ge(Relay, PlayerId, PlState),
-            relay_allow_broadcast_for_player(Relay, PlayerId),
-            if TTable =/= undefined ->
-                   [send_to_client_ge(Relay, PlayerId, create_okey_tour_result(TurnNum, Results))
-                      || {TurnNum, Results} <- lists:sort(TTable)];
-               true -> do_nothing
-            end,
             parent_send_player_connected(Parent, TableId, PlayerId),
             {next_state, StateName, StateData#state{players = NewPlayers}};
         error ->
@@ -496,6 +473,34 @@ handle_relay_message({player_disconnected, PlayerId}, StateName,
             {next_state, StateName, StateData}
     end;
 
+handle_relay_message({subscriber_added, PlayerId, SubscrId} = Msg, StateName,
+                     #state{relay = Relay, game_id = GameId,
+                            table_id = TableId, tournament_table = TTable,
+                            players = Players} = StateData) ->
+    ?INFO("OKEY_NG_TABLE_TRN <~p,~p> Received nofitication from the relay: ~p", [GameId, TableId, Msg]),
+    PlayerIdIsValid = case PlayerId of
+                          observer -> true;
+                          administrator -> true;
+                          _ ->
+                              case get_player(PlayerId, Players) of
+                                  {ok, _} -> true;
+                                  error -> false
+                              end
+                      end,
+    if PlayerIdIsValid ->
+           GI = create_okey_game_info(StateData),
+           PlState = create_okey_game_player_state(PlayerId, StateName, StateData),
+           send_to_subscriber_ge(Relay, SubscrId, GI),
+           send_to_subscriber_ge(Relay, SubscrId, PlState),
+           relay_allow_broadcast_for_player(Relay, PlayerId),
+           if TTable =/= undefined ->
+                  [send_to_subscriber_ge(Relay, SubscrId, create_okey_tour_result(TurnNum, Results))
+                     || {TurnNum, Results} <- lists:sort(TTable)];
+              true -> do_nothing
+           end;
+       true -> do_nothing
+    end,
+    {next_state, StateName, StateData};
 
 handle_relay_message(Message, StateName, #state{game_id = GameId, table_id = TableId} = StateData) ->
     ?ERROR("OKEY_NG_TABLE_TRN <~p,~p> Unknown relay message received in state <~p>: ~p. State: ~p. Stopping.",
@@ -997,6 +1002,9 @@ init_players([{PlayerId, UserInfo, SeatNum, _StartPoints} | PlayersInfo], Player
     init_players(PlayersInfo, NewPlayers).
 
 %%===================================================================
+send_to_subscriber_ge(Relay, SubscrId, Msg) ->
+    Event = #game_event{event = api_utils:name(Msg), args = api_utils:members(Msg)},
+    ?RELAY:table_message(Relay, {to_subscriber, SubscrId, Event}).
 
 send_to_client_ge(Relay, PlayerId, Msg) ->
     Event = #game_event{event = api_utils:name(Msg), args = api_utils:members(Msg)},
@@ -1015,11 +1023,14 @@ relay_allow_broadcast_for_player(Relay, PlayerId) ->
 relay_register_player(Relay, UserId, PlayerId) ->
     ?RELAY:table_request(Relay, {register_player, UserId, PlayerId}).
 
-relay_unregister_player(Relay, PlayerId) ->
-    ?RELAY:table_request(Relay, {unregister_player, PlayerId}).
+relay_unregister_player(Relay, PlayerId, Reason) ->
+    ?RELAY:table_request(Relay, {unregister_player, PlayerId, Reason}).
 
 relay_kick_player(Relay, PlayerId) ->
     ?RELAY:table_request(Relay, {kick_player, PlayerId}).
+
+relay_stop(Relay) ->
+    ?RELAY:table_message(Relay, stop).
 
 parent_confirm_registration({ParentMod, ParentPid}, TableId, RequestId) ->
     ParentMod:table_message(ParentPid, TableId, {response, RequestId, ok}).
