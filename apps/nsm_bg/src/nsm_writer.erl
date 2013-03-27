@@ -803,6 +803,9 @@ handle_notice(Route, Message, #state{owner = User} = State) ->
               "Route=~p, Message=~p", [self(), User, Route, Message]),
     {noreply, State}.
 
+handle_info({feed_refresh, Fid,  Page}, State) ->
+  Reply = nsm_db:entries_in_feed(Fid,Page),
+  {noreply, State#state{cached_feed=Reply}};
 handle_info(_Info, State) ->
     {noreply, State}.
 
