@@ -117,7 +117,7 @@ menu_links() ->
   ["<nav>",
   #list{body=[
 %    #listitem{body=#link{text=?_T("Home"), url=?_U("/"), id="mainmenumainpage"}},
-    #listitem{body=#link{text=?_T("Wall"), url=?_U("/wall"),
+    #listitem{show_if=wf:user()=/=undefined, body=#link{text=?_T("Wall"), url=?_U("/wall"),
       title=?_T("You can share information with others"), id="mainmenumypage"}},
     #listitem{body=#link{text=?_T("Matchmaker"), url=?_U("/matchmaker/okey"),
       title=?_T("Set your game criteria and face your opponent"), id="mainmenumatchmaker"}},
