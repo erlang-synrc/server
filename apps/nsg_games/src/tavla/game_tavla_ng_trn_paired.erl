@@ -359,13 +359,10 @@ handle_client_message(Message, StateName, #state{game_id = GameId} = StateData) 
 
 handle_table_message(TableId, {player_connected, PlayerId},
                      StateName,
-                     #state{seats = Seats, tables = Tables,
-                            table_module = TableModule} = StateData) ->
+                     #state{seats = Seats} = StateData) ->
     case find_seats_by_player_id(PlayerId, Seats) of
         [#seat{seat_num = SeatNum}] ->
             NewSeats = update_seat_connect_status(TableId, SeatNum, true, Seats),
-            [send_to_table(TableModule, TPid, {send_table_state, TableId, PlayerId}) ||
-               #table{id = TId, pid = TPid} <- tables_to_list(Tables), TId =/= TableId],
             {next_state, StateName, StateData#state{seats = NewSeats}};
         [] -> %% Ignoring the message
             {next_state, StateName, StateData}
@@ -382,6 +379,12 @@ handle_table_message(TableId, {player_disconnected, PlayerId},
             {next_state, StateName, StateData}
     end;
 
+handle_table_message(TableId, {get_tables_states, PlayerId, Ref},
+                     StateName,
+                     #state{tables = Tables, table_module = TableModule} = StateData) ->
+    [send_to_table(TableModule, TPid, {send_table_state, TableId, PlayerId, Ref}) ||
+       #table{id = TId, pid = TPid} <- tables_to_list(Tables), TId =/= TableId],
+    {next_state, StateName, StateData};
 
 handle_table_message(TableId, {table_created, Relay},
                      ?STATE_WAITING_FOR_TABLES,
@@ -530,12 +533,12 @@ handle_table_message(TableId, {game_event, GameEvent},
        #table{pid = TablePid, id = TId} <- tables_to_list(Tables), TId =/= TableId],
     {next_state, StateName, StateData};
 
-handle_table_message(_TableId, {table_state_event, DestTableId, PlayerId, StateEvent},
-                     ?STATE_TOUR_PROCESSING = StateName,
+handle_table_message(_TableId, {table_state_event, DestTableId, PlayerId, Ref, StateEvent},
+                     StateName,
                      #state{tables = Tables, table_module = TableModule} = StateData) ->
     case get_table(DestTableId, Tables) of
         {ok, #table{pid = TPid}} ->
-            send_to_table(TableModule, TPid, {table_state_event, PlayerId, StateEvent});
+            send_to_table(TableModule, TPid, {table_state_event, PlayerId, Ref, StateEvent});
         error -> do_nothing
     end,
     {next_state, StateName, StateData};
