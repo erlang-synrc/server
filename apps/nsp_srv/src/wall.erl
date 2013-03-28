@@ -59,7 +59,15 @@ feed(Fid, Type, Info) ->
   [
     #panel{id=notification_area},
     entry_form(Fid, Type, ?MODULE, {add_entry, Fid}),
-    #panel{id=feeds_container, class="posts_container_mkh", body=show_feed(Fid, Type, Info)}
+    #panel{id=feeds_container, class="posts_container_mkh", body=
+      case nsm_acl:check_access(wf:user(), {feature, admin}) of 
+        allow -> show_feed(Fid, Type, Info);
+        _ ->
+          case nsm_db:get(hidden_feed, Fid) of
+            {error, notfound} -> show_feed(Fid, Type, Info);
+            _ -> []
+          end
+      end}
   ].
 
 entry_form(FId, Type, Delegate, Postback) ->
@@ -142,15 +150,19 @@ show_feed(Fid, Type, Info) when is_atom(Type) ->
                      _ -> nsm_queries:cached_direct([Uid, UserInfo#user.direct, ?FEED_PAGEAMOUNT]) end;
            _ -> nsm_queries:cached_feed([Uid, Fid, ?FEED_PAGEAMOUNT])
   end,
-  
+
   Entries = case Answer of {badrpc,_} -> []; X -> X end,
   Last = case Entries of
     [] -> [];
     _ -> lists:last(Entries)
   end,
+  ?INFO("Uid: -> ~p~n", [Uid]),
   Pid ! {delivery, check_more, {?MODULE, length(Entries), Last}},
   [
-    #panel{id = feed, body=[[#view_entry{entry = E} || E <- Entries]]},
+    #panel{id = feed, body=case nsm_db:is_user_blocked(wf:user(), Uid) of
+      true -> user_blocked_message(Uid);
+      false -> [#view_entry{entry = E} || E <- Entries]
+    end},
     #panel{id = more_button_holder, body=[]}
   ].
 
@@ -229,11 +241,11 @@ new_statistic(SubscribersCount,FriendsCount,CommentsCount,LikesCount,EntriesCoun
                     text=integer_to_list(SubscribersCount) ++ " " ++ ?_T("subscription") }},
           #listitem{body= #link{url="/connections/t/subscribers",
                     text=integer_to_list(FriendsCount) ++ " " ++ ?_T("subscribers") }},
-          #listitem{body= #link{url="/wall/filter/comments/user/" ++ wf:to_list(CheckedUser),
+          #listitem{body= #link{url="/wall/filter/comments/type/user/id/" ++ wf:to_list(CheckedUser),
                     text=integer_to_list(CommentsCount) ++ " " ++ ?_T("comments") }},
-          #listitem{body=#link{url="/wall/filter/like/user/" ++ wf:to_list(CheckedUser),
+          #listitem{body=#link{url="/wall/filter/likes/type/user/id/" ++ wf:to_list(CheckedUser),
                     text=integer_to_list(LikesCount) ++ " " ++ ?_T("likes") }},
-          #listitem{body=#link{url="/wall/filter/like/user/" ++ wf:to_list(CheckedUser),
+          #listitem{body=#link{url="/wall/filter/entries/type/user/id/" ++ wf:to_list(CheckedUser),
                     text=integer_to_list(EntriesCount) ++ " " ++ ?_T("entries") }} ]}.
 
 get_ribbon_menu() -> get_ribbon_menu(wf:user()).
@@ -300,53 +312,52 @@ get_ribbon_menu(User) ->
 
     ?INFO("ribbon2: ~p ~p",[CheckedUser, IsSubscribedUser]),
 
-    MenuTail = case {CheckedUser, IsSubscribedUser} of
-        {undefined, undefined} ->
-                [ #list{class="list-6", body=[
-                        #listitem{body=#link{url="/wall", 
-                                             body=[ #image{image="/images/ico-04.gif", style="width:27px;height:34px"},
-                                                           ?_T("My Feed")]}},
-                        #listitem{body=#link{url="/wall/filter/direct", 
-                                             body=[ #image{image="/images/ico-05.gif", style="width:27px;height:34px"},
-                                                           ?_T("Direct messages")]}}   ]},
-                    new_statistic(SubscribersCount,FriendsCount,CommentsCount,LikesCount,EntriesCount,CheckedUser) ];
+  MenuTail = case {CheckedUser, IsSubscribedUser} of
+    {undefined, undefined} ->
+        #list{class="list-6", body=[
+          #listitem{body=#link{url="/wall", body=[ #image{image="/images/ico-04.gif", style="width:27px;height:34px"}, ?_T("My Feed")]}},
+          #listitem{body=#link{url="/wall/filter/direct", body=[ #image{image="/images/ico-05.gif", style="width:27px;height:34px"}, ?_T("Direct messages")]}}
+        ]},
+        new_statistic(SubscribersCount,FriendsCount,CommentsCount,LikesCount,EntriesCount,CheckedUser) ;
 
-        {_, true}  -> [#link{text=?_T("Unsubscribe"), class="btn-abone btn-abone-2", postback={unsubscribe, CheckedUser}},
+    {_, true}  -> [#link{text=?_T("Unsubscribe"), class="btn-abone btn-abone-2", postback={unsubscribe, CheckedUser}},
                        BlockUnblock,
                        #list{class="list-6", body=[#listitem{body=Affiliate}]},
                        new_statistic(SubscribersCount,FriendsCount,CommentsCount,LikesCount,EntriesCount,CheckedUser) ];
-        {_, false} -> [#link{text=?_T("Subscribe"), url="#", class="btn-abone", postback={subscribe, CheckedUser}},
+    {_, false} -> [#link{text=?_T("Subscribe"), url="#", class="btn-abone", postback={subscribe, CheckedUser}},
                        BlockUnblock,
                        new_statistic(SubscribersCount,FriendsCount,CommentsCount,LikesCount,EntriesCount,CheckedUser) ];
-                 _ -> []
-    end,
-    [
-        #panel{class="top-box", body=[
-            case nsm_accounts:user_paid(element(2, User) ) of
-                true -> #panel{class="paid_user_avatar_photo", body=[#image{image=webutils:get_user_avatar(element(2, User) ,"big"), 
-                           style="height:150px; width:150px;"}], style="margin-left:19px;"};
-                _ -> #panel{class="photo", body=[#image{image=webutils:get_user_avatar(element(2, User) ,"big"), 
-                           style="height:150px; width:150px;"}], style="margin-left:19px;"}
-            end
-        ]},
-        #h3{class="title-box", text=wf:to_list(User#user.name) ++ " " ++ wf:to_list(User#user.surname)},
-        #panel{class="block", body=[
-            #panel{class="gallery-game", body=[
-                #panel{class="slider-container", body=[
-                 #panel{class="slider-content", body=[
-                  #panel{class="slider", body=[
-                    #list{body=[
-                        #listitem{body=#image{image="/images/img-013.gif", style="width:53px;height:26px"}},
-                        #listitem{body=io_lib:format("<span>~s</span><strong>~s</strong>",[?_T("Num"), SNum])},
-                        #listitem{body=io_lib:format("<span>~s</span><strong>~s</strong>",[?_T("Points"), SPoints])}
-                    ]}
-                  ]}
-                 ]}
-                ]}
-            ]},
-            MenuTail
+    _ -> []
+  end,
+  [#panel{class="top-box", body=case nsm_accounts:user_paid(element(2, User) ) of
+    true -> #panel{class="paid_user_avatar_photo", style="margin-left:19px;", body=
+      #image{image=webutils:get_user_avatar(element(2, User) ,"big"), style="height:150px; width:150px;"}};
+    _ -> #panel{class="photo", style="margin-left:19px;", body=
+      #image{image=webutils:get_user_avatar(element(2, User) ,"big"), width="150px", height="150px", style="height:150px; width:150px;"}}
+    end},
+    #h3{class="title-box", text=wf:to_list(User#user.name) ++ " " ++ wf:to_list(User#user.surname)},
+    #panel{class="block", body=[
+      #panel{class="gallery-game", body=[
+        #list{body=[
+          #listitem{body=#image{image="/images/img-013.gif", style="width:53px;height:26px"}},
+          #listitem{body=io_lib:format("<span>~s</span><strong>~s</strong>",[?_T("Num"), SNum])},
+          #listitem{body=io_lib:format("<span>~s</span><strong>~s</strong>",[?_T("Points"), SPoints])}
         ]}
-    ].
+      ]},
+      #panel{id=hidden_feed_ctl, body=hidden_feed_ctl(User#user.feed)},
+      MenuTail
+    ]}
+  ].
+
+hidden_feed_ctl(Fid)->
+  case nsm_acl:check_access(wf:user(), {feature, admin}) of
+    allow ->
+      case nsm_db:get(hidden_feed, Fid) of
+        {error,notfound} -> #link{class="btn-abone", text=?_T("Hide"), postback={hide, Fid}};
+        {ok, Feed} -> #link{class="btn-abone", text=?_T("Unhide"), postback={unhide, Feed#hidden_feed.id}}
+      end;
+    _-> []
+  end.
 
 traverse_entries(_, undefined, _) -> [];
 traverse_entries(_, _, 0) -> [];
@@ -672,6 +683,13 @@ inner_event({unblock, CheckedUser}, User) ->
     {error, notfound} -> ok;
     {ok, Usr}-> wf:update(feed, show_feed(Usr#user.feed, user, Usr))
   end;
+
+inner_event({hide, Fid}, User) ->
+  nsm_db:put(#hidden_feed{id=Fid}),
+  wf:update(hidden_feed_ctl, hidden_feed_ctl(Fid));
+inner_event({unhide, Fid}, User) ->
+  nsm_db:delete(hidden_feed, Fid),
+  wf:update(hidden_feed_ctl, hidden_feed_ctl(Fid));
 
 inner_event(notice_close, _) ->
     wf:update(notification_area, []);
@@ -1005,6 +1023,7 @@ group_info(Group) ->
           #listitem{body=[?_T("Owner")++": ",#span{id=group_info_owner, text=Group#group.owner}]},
           #listitem{body=[?_T("Members")++": ",#span{text=integer_to_list(MemberCount)}]}
         ]},
+        #panel{id=hidden_feed_ctl, body=hidden_feed_ctl(Group#group.feed)},
         Membership,
         group_edit_form(Group),
         #br{},

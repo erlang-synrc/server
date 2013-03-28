@@ -89,6 +89,7 @@ clean() ->
     riak_clean(user_counter),
     riak_clean(twitter_oauth),
     riak_clean(facebook_oauth),
+    riak_clean(hidden_feed),
     riak_clean("unsuported"),
     riak_clean("__riak_client_test__"),
     riak_clean(id_seq),
@@ -209,6 +210,7 @@ make_obj(T, active_users_top) -> riak_object:new(<<"active_users_top">>, list_to
 make_obj(T, user_count) -> riak_object:new(<<"user_count">>, <<"user_count">>, T);
 make_obj(T, twitter_oauth) -> riak_object:new(<<"twitter_oauth">>, list_to_binary(T#twitter_oauth.user_id), T);
 make_obj(T, facebook_oauth) -> riak_object:new(<<"facebook_oauth">>, list_to_binary(T#facebook_oauth.user_id), T);
+make_obj(T, hidden_feed) -> riak_object:new(<<"hidden_feed">>, list_to_binary(integer_to_list(T#hidden_feed.id)), T);
 make_obj(T, user_etries_count) -> riak_object:new(<<"user_etries_count">>, list_to_binary(T#user_etries_count.user_id), T);
 make_obj(T, invitation_tree) ->
     Key = case T#invitation_tree.user of
