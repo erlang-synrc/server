@@ -110,3 +110,4 @@ tournament_started(Args) -> map_call("game",game_manager,  get_tournament,Args,l
 store_token(Args)        -> map_call("game",auth_server,store_token,Args,long_map).
 delete_table(Args)       -> map_call("game",game_manager,destroy_game,Args,long_map).
 public_table(Args)       -> map_call("public",view_table,get_table,Args,long_map).
+start_worker(Args)       -> map_call("app",nsm_launcher,start_worker,Args,string_map). % nsm_queries:start_worker(["doxtop",Type,Feed,Direct]).
