@@ -31,7 +31,7 @@ handle_info(start_all, State) ->
     CheckNode = fun(X) -> lists:foldl(fun(A, Sum) -> A + Sum end, 0, X) rem 3 + 1 end,
     RunGroups = fun(Groups) -> [begin start_worker(Name,group,Feed,undefined) end 
                                 || #group{username=Name,feed=Feed} <- Groups] end,
-    RunSystem = fun() -> start_worker("system",syste,-1,undefined) end,
+    RunSystem = fun() -> start_worker("system",system,-1,undefined) end,
     Node = nsx_opt:get_env(nsm_bg,pool,5),
     Users = case Node of
                  4 -> [User || User<-nsm_db:all(user), User#user.email /= undefined, User#user.status == ok];
