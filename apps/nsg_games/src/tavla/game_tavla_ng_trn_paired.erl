@@ -187,8 +187,7 @@ init([GameId, Params, _Manager]) ->
     BotsReplacementMode = get_param(bots_replacement_mode, Params),
     CommonParams  = get_param(common_params, Params),
 
-    [?INFO("TRN_PAIRED_DBG <~p> Parameter <~p> : ~p", [GameId, P, V]) ||
-     {P, V} <- Params],
+    [?INFO("TRN_PAIRED_DBG <~p> Parameter <~p> : ~p", [GameId, P, V]) || {P, V} <- Params],
 
     ?INFO("TRN_PAIRED <~p> started.  Pid:~p", [GameId, self()]),
 
@@ -388,8 +387,8 @@ handle_table_message(TableId, {get_tables_states, PlayerId, Ref},
 
 handle_table_message(TableId, {table_created, Relay},
                      ?STATE_WAITING_FOR_TABLES,
-                     #state{tables = Tables, seats = Seats,
-                            cr_tab_requests = TCrRequests,
+                     #state{tables = Tables, seats = Seats, seats_per_table = SeatsPerTable,
+                            cr_tab_requests = TCrRequests, tables_num = TablesNum,
                             reg_requests = RegRequests} = StateData) ->
     TabInitPlayers = dict:fetch(TableId, TCrRequests),
     NewTCrRequests = dict:erase(TableId, TCrRequests),
@@ -417,7 +416,7 @@ handle_table_message(TableId, {table_created, Relay},
     NewTables = update_created_table(TableId, Relay, Tables),
     case dict:size(NewTCrRequests) of
         0 ->
-            case enough_players(NewSeats) of
+            case enough_players(NewSeats, TablesNum*SeatsPerTable) of
                 true ->
                     {TRef, Magic} = start_timer(?WAITING_PLAYERS_TIMEOUT),
                     {next_state, ?STATE_WAITING_FOR_PLAYERS,
@@ -874,7 +873,8 @@ reg_new_player(UserInfo, TableId, SeatNum, From, StateName,
                #state{game_id = GameId, players = Players, tables = Tables,
                       game_type = GameType, seats = Seats, player_id_counter = PlayerId,
                       tab_requests = TabRequests, reg_requests = RegRequests,
-                      table_module = TableModule, common_params = CommonParams
+                      table_module = TableModule, common_params = CommonParams,
+                      tables_num = TablesNum, seats_per_table = SeatsPerTable
                      } = StateData) ->
     {SeatNum, NewPlayers, NewSeats} =
         register_new_player(UserInfo, TableId, Players, Seats, PlayerId),
@@ -883,7 +883,7 @@ reg_new_player(UserInfo, TableId, SeatNum, From, StateName,
                                               TableId, SeatNum, TabRequests),
     NewRegRequests = dict:store(PlayerId, From, RegRequests),
     update_gproc(GameId, GameType, CommonParams, NewPlayers),
-    EnoughPlayers = enough_players(NewSeats),
+    EnoughPlayers = enough_players(NewSeats, TablesNum*SeatsPerTable),
     if StateName == ?STATE_EMPTY_SEATS_FILLING andalso EnoughPlayers ->
            ?INFO("TRN_PAIRED <~p> It's enough players registered to start the game. "
                  "Initiating the procedure.", [GameId]),
@@ -931,9 +931,9 @@ replace_by_bots(DisconnectedSeats, GameId, BotModule, Players, Seats, PlayerIdCo
     lists:foldl(F, {[], Players, Seats, PlayerIdCounter}, DisconnectedSeats).
 
 
-enough_players(Seats) ->
+enough_players(Seats, Threshold) ->
     NonEmptySeats = find_non_free_seats(Seats),
-    length(NonEmptySeats) > 0.
+    length(NonEmptySeats) >= Threshold.
 
 
 update_gproc(GameId, GameType, CommonParams, Players) ->
