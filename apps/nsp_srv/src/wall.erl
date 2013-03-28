@@ -311,7 +311,7 @@ get_ribbon_menu(User) ->
                                                            ?_T("Direct messages")]}}   ]},
                     new_statistic(SubscribersCount,FriendsCount,CommentsCount,LikesCount,EntriesCount,CheckedUser) ];
 
-        {_, true}  -> [#link{text=?_T("Unsubscribe"), url="#", class="btn-abone btn-abone-2", postback={unsubscribe, CheckedUser}},
+        {_, true}  -> [#link{text=?_T("Unsubscribe"), class="btn-abone btn-abone-2", postback={unsubscribe, CheckedUser}},
                        BlockUnblock,
                        #list{class="list-6", body=[#listitem{body=Affiliate}]},
                        new_statistic(SubscribersCount,FriendsCount,CommentsCount,LikesCount,EntriesCount,CheckedUser) ];
@@ -359,10 +359,10 @@ traverse_entries(Pid, Next, Count)->
   end.
 
 user_blocked_message(U) ->
-    #panel{style="font: 1em Arial,Helvetica,sans-serif;font-size: 14px;font-weight: bold;", body=[
-        io_lib:format("You have blocked ~s, so all of ~s's posts and comments are invisible to you. ", [U, U]),
-        #link{text="Un-block", url="javascript:void(0)", postback={unblock_load, U, get_page_number()}}
-    ]}.
+  #panel{style="font: 1em Arial,Helvetica,sans-serif;font-size: 14px;font-weight: bold;", body=[
+    io_lib:format("You have blocked ~s, so all of ~s's posts and comments are invisible to you. ", [U, U]),
+    #link{text=?_T("Unblock"), url="javascript:void(0)", postback={unblock, U}}
+  ]}.
 
 start_upload_event({entry_att, BoxId}) ->
     AttThumb = #panel{class="view_media_other_attachment", body=#panel{class=loading_spiner}},
@@ -440,12 +440,8 @@ create_media(Att) ->
 	   type = {attachment, Att#attachment.type},
 	   thumbnail_url = Att#attachment.thumb}.
 
-%% from view_user
-
-event({subscribe,_,_,_}=Event) ->
-    friends:event(Event);
-event({unsubscribe,_,_,_}=Event) ->
-    friends:event(Event);
+event({subscribe,_,_,_}=Event) -> connections:event(Event);
+event({unsubscribe,_,_,_}=Event) -> connections:event(Event);
 
 event({make_affiliate, User}) ->
     nsx_msg:notify(["affiliates", "user", User, "create_affiliate"], {}),
@@ -526,10 +522,10 @@ event({do_leave, GId}) ->
     wf:redirect(?_U("/wall"));
 
 event(Event) ->
-    case wf:user() of
-	undefined -> wf:redirect_to_login(?_U("/login"));
-        User      -> inner_event(Event, User)
-    end.
+  case wf:user() of
+    undefined -> wf:redirect_to_login(?_U("/login"));
+    User      -> inner_event(Event, User)
+  end.
 
 inner_event(account, _) ->
     wf:redirect(?_U("/login"));
@@ -651,12 +647,12 @@ inner_event({share_entry, Entry, ShareBtnId}, User) ->
     wf:wire(#alert{text=?_T("It will now appear in your feed.")});
 
 inner_event({unsubscribe, UserUid}, User) ->
-    nsx_msg:notify(["subscription", "user", User, "remove_subscribe"], {UserUid}),
-    wf:wire("location.reload(true);");
+  nsx_msg:notify(["subscription", "user", User, "remove_subscribe"], {UserUid}),
+  wf:wire("location.reload(true);");
 
 inner_event({subscribe, UserUid}, User) ->
-    nsx_msg:notify(["subscription", "user", User, "subscribe_user"], {UserUid}),
-    wf:wire("location.reload(true);");
+  nsx_msg:notify(["subscription", "user", User, "subscribe_user"], {UserUid}),
+  wf:wire("location.reload(true);");
 
 inner_event({set_user_status, Status}, User) ->
     nsx_msg:notify(["subscription", "user", User, "set_user_game_status"], {Status});
@@ -670,16 +666,12 @@ inner_event({block, CheckedUser}, User) ->
     wf:update(feed, user_blocked_message(CheckedUser));
 
 inner_event({unblock, CheckedUser}, User) ->
-    nsx_msg:notify(["subscription", "user", User, "unblock_user"], {CheckedUser}),
-    wf:update(blockunblock, #link{text=?_T("Block this user"), url="javascript:void(0)", postback={block, CheckedUser}}),
-    Fid = webutils:user_info(User, feed),
-    show_feed(Fid, user, User#user.username);
-
-inner_event({unblock_load, CheckedUser, _Offset}, User) ->
-    nsx_msg:notify(["subscription", "user", User, "unblock_user"], {CheckedUser}),
-    wf:update(blockunblock, #link{text=?_T("Block this user"), url="javascript:void(0)", postback={block, CheckedUser}}),
-    Fid = webutils:user_info(User, feed),
-    show_feed(Fid, user, User#user.username);
+  nsx_msg:notify(["subscription", "user", User, "unblock_user"], {CheckedUser}),
+  wf:update(blockunblock, #link{text=?_T("Block this user"), url="javascript:void(0)", postback={block, CheckedUser}}),
+  case nsm_db:get(user, CheckedUser) of
+    {error, notfound} -> ok;
+    {ok, Usr}-> wf:update(feed, show_feed(Usr#user.feed, user, Usr))
+  end;
 
 inner_event(notice_close, _) ->
     wf:update(notification_area, []);

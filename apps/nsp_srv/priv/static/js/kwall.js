@@ -5,3 +5,4 @@
 // @depends ../nitrogen/GrowingInput.js
 // @depends ../nitrogen/TextboxList.js
 // @depends ../nitrogen/TextboxList.Autocomplete.js
+// @depends ../nitrogen/js/jquery.prettyPhoto.js
