@@ -276,7 +276,7 @@ create_paired_game(Game, Params, Users) ->
                                       true -> enabled;
                                       false -> disabled
                                   end,
-            TablesNum = length(Users) div 2,
+            TablesNum = length(Users) div 2 + length(Users) rem 2,
             TableParams = [
                            {table_name, TableName},
                            {mult_factor, MulFactor},
