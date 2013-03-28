@@ -76,7 +76,7 @@
                     created_time,   % when
                     next            
                 }).
-
+-record(hidden_feed, {id}).
 
 % Statistics. We have to keep count of user entries and comments. 
 % Gathering it the old way will work very ineffective with more users to come.
