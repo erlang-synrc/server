@@ -22,7 +22,7 @@
     var sec = '[[[webutils:secondary_script()]]]';
     if(sec){
       var secscript = document.createElement("script");
-      secscript.src = sec+'?v=4';
+      secscript.src = sec+'?v=5';
       document.getElementsByTagName('head')[0].appendChild(secscript);
     }
   }
@@ -45,7 +45,7 @@
         var inIframe= top!=self;page.setFbIframe(inIframe);
       };
     }
-    script.src = "[[[webutils:page_script_path()]]]?v=4";
+    script.src = "[[[webutils:page_script_path()]]]?v=5";
     document.getElementsByTagName("head")[0].appendChild(script);
   };
   </script>
