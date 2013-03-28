@@ -121,7 +121,7 @@
 -define(TABLE_STATE_IN_PROGRESS, in_progress).
 -define(TABLE_STATE_FINISHED, finished).
 
--define(WAITING_PLAYERS_TIMEOUT, 3000) . %% Time between a table was created and start of first round
+-define(WAITING_PLAYERS_TIMEOUT, 1000) . %% Time between a table was created and start of first round
 -define(REST_TIMEOUT, 5000).             %% Time between a round finish and start of a new one
 -define(SHOW_SET_RESULT_TIMEOUT, 15000). %% Time between a set finish and start of a new one
 -define(SHOW_TOURNAMENT_RESULT_TIMEOUT, 15000). %% Time between last tour result showing and the tournament finish
