@@ -156,7 +156,6 @@ show_feed(Fid, Type, Info) when is_atom(Type) ->
     [] -> [];
     _ -> lists:last(Entries)
   end,
-  ?INFO("Uid: -> ~p~n", [Uid]),
   Pid ! {delivery, check_more, {?MODULE, length(Entries), Last}},
   [
     #panel{id = feed, body=case nsm_db:is_user_blocked(wf:user(), Uid) of
@@ -345,6 +344,7 @@ get_ribbon_menu(User) ->
         ]}
       ]},
       #panel{id=hidden_feed_ctl, body=hidden_feed_ctl(User#user.feed)},
+      #panel{id=user_ctl, body=user_ctl(User)},
       MenuTail
     ]}
   ].
@@ -357,6 +357,15 @@ hidden_feed_ctl(Fid)->
         {ok, Feed} -> #link{class="btn-abone", text=?_T("Unhide"), postback={unhide, Feed#hidden_feed.id}}
       end;
     _-> []
+  end.
+user_ctl(User)->
+  case nsm_acl:check_access(wf:user(), {feature, admin}) of
+    allow ->
+      if
+        User#user.status == banned -> #link{class="btn-abone", text=?_T("Remove ban"), postback={remove_ban, User}};
+        true -> #link{class="btn-abone", text=?_T("Ban"), postback={ban, User}}
+      end;
+    _ -> []
   end.
 
 traverse_entries(_, undefined, _) -> [];
@@ -684,12 +693,20 @@ inner_event({unblock, CheckedUser}, User) ->
     {ok, Usr}-> wf:update(feed, show_feed(Usr#user.feed, user, Usr))
   end;
 
-inner_event({hide, Fid}, User) ->
+inner_event({hide, Fid}, _User) ->
   nsm_db:put(#hidden_feed{id=Fid}),
   wf:update(hidden_feed_ctl, hidden_feed_ctl(Fid));
-inner_event({unhide, Fid}, User) ->
+inner_event({unhide, Fid}, _User) ->
   nsm_db:delete(hidden_feed, Fid),
   wf:update(hidden_feed_ctl, hidden_feed_ctl(Fid));
+inner_event({ban, User}, _) ->
+  NewUser = User#user{status=banned},
+  nsm_db:put(NewUser),
+  wf:update(user_ctl, user_ctl(NewUser));
+inner_event({remove_ban, User}, _) ->
+  NewUser = User#user{status=ok},
+  nsm_db:put(NewUser),
+  wf:update(user_ctl, user_ctl(NewUser));
 
 inner_event(notice_close, _) ->
     wf:update(notification_area, []);
