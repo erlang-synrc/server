@@ -33,7 +33,8 @@
 %% gen_fsm callbacks
 -export([init/1, handle_event/3, handle_sync_event/4, handle_info/3, terminate/3, code_change/4]).
 
--export([table_message/3, client_message/2, client_request/2, client_request/3]).
+-export([table_message/3, client_message/2, client_request/2, client_request/3,
+         system_request/2, system_request/3]).
 
 -record(state,
         {%% Static values
@@ -145,6 +146,11 @@ client_request(Pid, Message) ->
 client_request(Pid, Message, Timeout) ->
     gen_fsm:sync_send_all_state_event(Pid, {client_request, Message}, Timeout).
 
+system_request(Pid, Message) ->
+    system_request(Pid, Message, 5000).
+
+system_request(Pid, Message, Timeout) ->
+    gen_fsm:sync_send_all_state_event(Pid, {system_request, Message}, Timeout).
 
 %% ====================================================================
 %% Server functions
@@ -238,6 +244,10 @@ handle_event(Message, StateName, #state{game_id = GameId} = StateData) ->
 handle_sync_event({client_request, Request}, From, StateName, #state{game_id = GameId} = StateData) ->
     ?INFO("TRN_ELIMINATION <~p> Received the request from a client: ~p.", [GameId, Request]),
     handle_client_request(Request, From, StateName, StateData);
+
+handle_sync_event({system_request, Request}, From, StateName, #state{game_id = GameId} = StateData) ->
+    ?INFO("TRN_ELIMINATION <~p> Received the request from the system: ~p.", [GameId, Request]),
+    handle_system_request(Request, From, StateName, StateData);
 
 handle_sync_event(Request, From, StateName, #state{game_id = GameId} = StateData) ->
     ?INFO("TRN_ELIMINATION <~p> Unhandled request(event) received in state <~p> from ~p: ~p.",
@@ -546,6 +556,20 @@ handle_client_request(Request, From, StateName, #state{game_id = GameId} = State
     ?INFO("TRN_ELIMINATION <~p> Unhandled client request received from ~p in "
           "state <~p>: ~p.", [GameId, From, StateName, Request]),
    {reply, {error, unexpected_request}, StateName, StateData}.
+
+handle_system_request(last_tour_result, _From, StateName,
+                      #state{game_id = GameId, tournament_table = TTable,
+                             players = Players} = StateData) ->
+    ?INFO("TRN_ELIMINATION <~p> Received request for the last tour results.", [GameId]),
+    {LastTourNum, TourResultsRaw} = hd(lists:reverse(lists:keysort(1, TTable))),
+    TourResults = [{get_user_id(PlayerId, Players), CommonPos, Points, Status}
+                   || {PlayerId, CommonPos, Points, Status} <- TourResultsRaw],
+    {reply, {ok, {LastTourNum, TourResults}}, StateName, StateData};
+
+handle_system_request(Request, From, StateName, #state{game_id = GameId} = StateData) ->
+    ?INFO("TRN_ELIMINATION <~p> Unhandled system request received from ~p in "
+          "state <~p>: ~p.", [GameId, From, StateName, Request]),
+    {reply, {error, unexpected_request}, StateName, StateData}.
 
 %%===================================================================
 init_tour(Tour, #state{game_id = GameId, tours_plan = Plan, tournament_table = TTable,

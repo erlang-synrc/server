@@ -409,7 +409,7 @@ handle_parent_message({show_series_result, Results}, StateName,
 
 %% Results = [{UserId, Position, Score, Status}] Status = active | eliminated
 handle_parent_message({tour_result, TourNum, Results}, StateName,
-                      #state{relay = Relay, tournament_type = TTable} = StateData) ->
+                      #state{relay = Relay, tournament_table = TTable} = StateData) ->
     NewTTable = [{TourNum, Results} | TTable],
     Msg = create_okey_tour_result(TourNum, Results),
     relay_publish_ge(Relay, Msg),

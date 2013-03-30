@@ -19,6 +19,14 @@ create_game(GameFSM, Params) ->
     {ok, Pid} = create_game_monitor(GameId, GameFSM, Params),
     {ok, GameId, Pid}.
 
+%% rank_table(GameId) -> {ok, {LastTourNum, TourResult}} | {error, Reason}
+%% TourResult = {UserId, Pos, Points, Status}
+rank_table(GameId) ->
+    case get_relay_mod_pid(GameId) of
+        {Module, Pid} -> Module:system_request(Pid, last_tour_result);
+        undefined -> {error, not_found}
+    end.
+
 get_lucky_pid(Sup) ->
     [X]=game_manager:get_lucky_table(Sup),
     X#game_table.game_process.

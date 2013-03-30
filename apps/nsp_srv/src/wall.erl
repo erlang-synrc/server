@@ -156,7 +156,6 @@ show_feed(Fid, Type, Info) when is_atom(Type) ->
     [] -> [];
     _ -> lists:last(Entries)
   end,
-  ?INFO("Uid: -> ~p~n", [Uid]),
   Pid ! {delivery, check_more, {?MODULE, length(Entries), Last}},
   [
     #panel{id = feed, body=case nsm_db:is_user_blocked(wf:user(), Uid) of
@@ -344,19 +343,27 @@ get_ribbon_menu(User) ->
           #listitem{body=io_lib:format("<span>~s</span><strong>~s</strong>",[?_T("Points"), SPoints])}
         ]}
       ]},
-      #panel{id=hidden_feed_ctl, body=hidden_feed_ctl(User#user.feed)},
+      admin_ctl((Admin==allow) and (CheckedUser/=undefined), User),
       MenuTail
     ]}
   ].
 
+admin_ctl(false, _)-> [];
+admin_ctl(true, User)->
+  [
+    #panel{id=hidden_feed_ctl, body=hidden_feed_ctl(User#user.feed)},
+    #panel{id=user_ctl, body=user_ctl(User)}
+  ].
+
 hidden_feed_ctl(Fid)->
-  case nsm_acl:check_access(wf:user(), {feature, admin}) of
-    allow ->
-      case nsm_db:get(hidden_feed, Fid) of
-        {error,notfound} -> #link{class="btn-abone", text=?_T("Hide"), postback={hide, Fid}};
-        {ok, Feed} -> #link{class="btn-abone", text=?_T("Unhide"), postback={unhide, Feed#hidden_feed.id}}
-      end;
-    _-> []
+  case nsm_db:get(hidden_feed, Fid) of
+    {error,notfound} -> #link{class="btn-abone", text=?_T("Hide"), postback={hide, Fid}};
+    {ok, Feed} -> #link{class="btn-abone", text=?_T("Unhide"), postback={unhide, Feed#hidden_feed.id}}
+  end.
+user_ctl(User)->
+  if
+    User#user.status == banned -> #link{class="btn-abone", text=?_T("Remove ban"), postback={remove_ban, User}};
+    true -> #link{class="btn-abone", text=?_T("Ban"), postback={ban, User}}
   end.
 
 traverse_entries(_, undefined, _) -> [];
@@ -684,12 +691,23 @@ inner_event({unblock, CheckedUser}, User) ->
     {ok, Usr}-> wf:update(feed, show_feed(Usr#user.feed, user, Usr))
   end;
 
-inner_event({hide, Fid}, User) ->
+inner_event({hide, Fid}, _User) ->
   nsm_db:put(#hidden_feed{id=Fid}),
   wf:update(hidden_feed_ctl, hidden_feed_ctl(Fid));
-inner_event({unhide, Fid}, User) ->
+inner_event({unhide, Fid}, _User) ->
   nsm_db:delete(hidden_feed, Fid),
   wf:update(hidden_feed_ctl, hidden_feed_ctl(Fid));
+inner_event({ban, User}, _) ->
+  NewUser = User#user{status=banned},
+  nsm_db:put(NewUser),
+  wf:update(user_ctl, user_ctl(NewUser));
+inner_event({remove_ban, User}, _) ->
+  NewUser = User#user{status=ok},
+  nsm_db:put(NewUser),
+  wf:update(user_ctl, user_ctl(NewUser));
+inner_event({delete, Group}, _) ->
+  nsm_groups:delete_group(Group#group.username),
+  wf:redirect(?_U("/groups"));
 
 inner_event(notice_close, _) ->
     wf:update(notification_area, []);
@@ -1004,7 +1022,6 @@ group_info(Group) ->
         []-> Group#group.username;
         Name -> Name
       end,
-
       #panel{class="box user-info", body=[
         #h3{id=group_info_name, text=GroupTitle, class="section-title", style="background:#4ec3f1;"},
         Description,
@@ -1023,13 +1040,20 @@ group_info(Group) ->
           #listitem{body=[?_T("Owner")++": ",#span{id=group_info_owner, text=Group#group.owner}]},
           #listitem{body=[?_T("Members")++": ",#span{text=integer_to_list(MemberCount)}]}
         ]},
-        #panel{id=hidden_feed_ctl, body=hidden_feed_ctl(Group#group.feed)},
+        group_ctl(nsm_acl:check_access(wf:user(), {feature, admin}) == allow, Group),
         Membership,
         group_edit_form(Group),
         #br{},
         #br{}
       ]}.
 %  end.
+
+group_ctl(false, _) -> [];
+group_ctl(true, Group)->
+  [
+    #panel{id=hidden_feed_ctl, body=hidden_feed_ctl(Group#group.feed)},
+    #link{class="btn-abone", text=?_T("Delete"), postback={delete, Group}}
+  ].
 
 user_in_group() ->
     GId = wf:q(id),
