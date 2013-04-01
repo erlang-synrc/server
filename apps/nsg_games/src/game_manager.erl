@@ -112,7 +112,7 @@ get_tournament(TrnId) ->
                                             Check(TrnId, TId)]))
              end,
     Table = case qlc:next_answers(Cursor(), 1) of
-                   [T] -> X = T#game_table.id, integer_to_list(X);
+                   [T] -> X = T#game_table.trn_id, X;
                      _ -> []
             end,
 %    ?INFO("~w:get_tournament Table = ~p", [?MODULE, Table]),
