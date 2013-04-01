@@ -33,6 +33,7 @@ heartbeat_finish(Server) -> gen_server:cast(Server, heartbeat_finish).
 messages_callback(Envelope, Server) -> 	gen_server:cast(Server, {messages_callback, Envelope}).
 active_users(TID) -> Server = tid_to_atom(TID), gen_server:call(Server, active_users).
 chat_history(TID) -> Server = tid_to_atom(TID), gen_server:call(Server, chat_history).
+chat_history(XXX,TID) -> Server = tid_to_atom(TID), gen_server:call(Server, chat_history).
 joined_users(TID) -> Server = tid_to_atom(TID), gen_server:call(Server, joined_users).
   
 init([TID]) ->
