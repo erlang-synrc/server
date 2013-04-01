@@ -188,19 +188,19 @@ get_friends(User) ->
         true ->
           #panel{class="mark-cell", body=[
             #p{body=["<strong>",?_T("Make new friends on kakaranet."),"</strong>"]},
-            #link{url="/connections/group/id/kakaranet", class="btn", text=?_T("Find someone!")}
+            #link{url=?_U("/connections/group/id/kakaranet"), class="btn", text=?_T("Find someone!")}
           ]};
         false -> ?_T("User is not subscribed to anyone")
       end,
       Nav = case User#user.username == wf:user() of
         true ->
           #span_b{class="links", body=[
-            #link{style="font-size:12pt;",text=?_T("All your friends"), url="/connections", id="friendslink",
+            #link{style="font-size:12pt;",text=?_T("All your friends"), url=?_U("/connections"), id="friendslink",
             title=?_T("You can unsubscribe or write someone private message via this list")}
           ]};
         false ->
           #span_b{class="links", body=[
-            #link{style="font-size:12pt;", text=?_T("All friends of ") ++ User#user.username, url="/connections/user/id/"++User#user.username, id="friendslink",
+            #link{style="font-size:12pt;", text=?_T("All friends of ") ++ User#user.username, url=?_U("/connections/user/id/")++User#user.username, id="friendslink",
             title=?_T("You can unsubscribe or write someone private message via this list")}
           ]}
       end,
