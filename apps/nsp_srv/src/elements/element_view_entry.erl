@@ -175,12 +175,21 @@ entry_element(E, Comments, Avatar, {MediaThumb, MediaLists0}, _TargetMedia, Anch
                     case proplists:get_value(winner2, Args2, "") of
                         "" -> {never, "", ""};
                         _ ->
-                            {true, ?_T("Tour finished"),
-                            ?_TS("Our player $player$ $tourstatus$ tournament $name$$desc$ on $pos$ position with $points$ game points. Tournament goes on with $total$ finalists:
-                            <br>&nbsp;$pos1$. $winner1$ with $points1$ points;
-                            <br>&nbsp;$pos2$. $winner2$ with $points2$ points;
-                            <br>&nbsp;$pos3$. $winner3$ with $points3$ points;
-                            <br>&nbsp;$pos4$. $winner4$ with $points4$ points.", Args)}
+                          X = lists:foldr(fun({K, V}, Line) ->
+                            Klist = atom_to_list(K),
+                            {K1, K2} = lists:split(length(Klist)-1, Klist),
+                            case K1 of
+                              "pos" ->    [{list_to_integer(K2), {K1, V}} | Line];
+                              "winner" -> [{list_to_integer(K2), {K1, V}} | Line];
+                              "points" -> [{list_to_integer(K2), {K1, V}} | Line];
+                              _ -> Line
+                            end
+                          end, [], Args),
+                          S = string:join([
+                            "<br/>&nbps;$pos"++integer_to_list(I)++"$.$winner"++integer_to_list(I)++"$ with $points"++integer_to_list(I)++"$"
+                          || I <- lists:seq(1, length(X) div 3), length(proplists:get_all_values(I, X)) =:= 3], ";"),
+                          {true, ?_T("Tour finished"),
+                            ?_TS("Our player $player$ $tourstatus$ tournament $name$$desc$ on $pos$ position with $points$ game points. Tournament goes on with $total$ finalists:" ++ S, Args)}
                     end;
                 _ -> {?_T("Unsupported note type!"), E#entry.description}
             end,

@@ -39,7 +39,7 @@ add_to_group_directly_to_db(UId, GId, Type) ->
     GU = Group#group.users_count,
     nsm_db:put(Group#group{users_count = GU+1}).
 
-delete_group_directly_from_db(GId) ->
+delete_group(GId) ->
     {_, Group} = nsm_groups:get_group(GId),
     case Group of 
         notfound -> ok;

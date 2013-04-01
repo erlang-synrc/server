@@ -124,12 +124,12 @@ handle_notice(["feed", "user", FeedOwner, "entry", EntryId, "add"] = Route,
         %% direct message to worker owner
         FeedOwner == WorkerOwner ->
             feed:add_direct_message(Direct, From, [{FeedOwner, user}],
-                                    EntryId, Desc, Medias), self ! {direct_refresh,Direct,20};
+                                    EntryId, Desc, Medias), self() ! {direct_refresh,Direct,20};
 
         %% user sent direct message to friend, add copy to his direct feed
         From == WorkerOwner ->
             feed:add_direct_message(Direct, WorkerOwner, Destinations,
-                                    EntryId, Desc, Medias), self ! {direct_refresh,Direct,20};
+                                    EntryId, Desc, Medias), self() ! {direct_refresh,Direct,20};
         true ->
             ?INFO("not matched case in entry->add")
     end,
@@ -293,6 +293,7 @@ handle_notice(["feed", "group", _Group, "entry", EntryId, "delete"] = Route,
           [self(), Owner, Route, Message]),
     %% all group subscribers shold delete entry from their feeds
     feed:remove_entry(Feed, EntryId),
+    self() ! {feed_refresh,Feed,20},
     {noreply, State};
 
 handle_notice(["feed", _Type, EntryOwner, "entry", EntryId, "delete"] = Route,
@@ -313,6 +314,7 @@ handle_notice(["feed", _Type, EntryOwner, "entry", EntryId, "delete"] = Route,
         _ ->
             ok
     end,
+    self() ! {feed_refresh, State#state.feed,20},
     {noreply, State};
 
 handle_notice(["feed", _Type, _EntryOwner, "entry", EntryId, "edit"] = Route,
@@ -803,6 +805,12 @@ handle_notice(Route, Message, #state{owner = User} = State) ->
               "Route=~p, Message=~p", [self(), User, Route, Message]),
     {noreply, State}.
 
+handle_info({feed_refresh, Fid,  Page}, State) ->
+  Reply = nsm_db:entries_in_feed(Fid,Page),
+  {noreply, State#state{cached_feed=Reply}};
+handle_info({direct_refresh, Fid, Page}, State) ->
+  Reply = nsm_db:entries_in_feed(Fid,Page),
+  {noreply, State#state{cached_direct=Reply}};
 handle_info(_Info, State) ->
     {noreply, State}.
 

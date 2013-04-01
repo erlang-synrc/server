@@ -121,7 +121,7 @@
 -define(TABLE_STATE_IN_PROGRESS, in_progress).
 -define(TABLE_STATE_FINISHED, finished).
 
--define(WAITING_PLAYERS_TIMEOUT, 3000) . %% Time between a table was created and start of first round
+-define(WAITING_PLAYERS_TIMEOUT, 1000) . %% Time between a table was created and start of first round
 -define(REST_TIMEOUT, 5000).             %% Time between a round finish and start of a new one
 -define(SHOW_SET_RESULT_TIMEOUT, 15000). %% Time between a set finish and start of a new one
 -define(SHOW_TOURNAMENT_RESULT_TIMEOUT, 15000). %% Time between last tour result showing and the tournament finish
@@ -681,21 +681,17 @@ reg_new_player(UserInfo, TableId, SeatNum, From, StateName,
     gproc:set_value({p,l,self()}, DeclRec),
 
     TableIsFull = is_table_full_enought(TableId, NewSeats, SeatsPerTable),
+    NewStateData = StateData#state{reg_requests = NewRegRequests, tab_requests = NewTabRequests,
+                                   players = NewPlayers, seats = NewSeats,
+                                   player_id_counter = PlayerId + 1},
     if StateName == ?STATE_EMPTY_SEATS_FILLING andalso TableIsFull ->
-           ?INFO("TRN_STANDALONE <~p> It's enought players registered to start the game. "
-                     "Initiating the procedure.", [GameId]),
-           {TRef, Magic} = start_timer(?WAITING_PLAYERS_TIMEOUT),
-           {next_state, ?STATE_WAITING_FOR_PLAYERS,
-            StateData#state{reg_requests = NewRegRequests, tab_requests = NewTabRequests,
-                            players = NewPlayers, seats = NewSeats, timer = TRef,
-                            timer_magic = Magic, player_id_counter = PlayerId+1}};
+           ?INFO("TRN_STANDALONE <~p> It's enough players registered to start the game. "
+                 "Initiating the procedure.", [GameId]),
+           start_set(NewStateData);
        true ->
-           ?INFO("TRN_STANDALONE <~p> Not enought players registered to start the game. "
-                     "Waiting for more registrations.", [GameId]),
-           {next_state, StateName,
-            StateData#state{reg_requests = NewRegRequests, tab_requests = NewTabRequests,
-                            players = NewPlayers, seats = NewSeats,
-                            player_id_counter = PlayerId+1}}
+           ?INFO("TRN_STANDALONE <~p> Not enough players registered to start the game. "
+                 "Waiting for more registrations.", [GameId]),
+           {next_state, StateName, NewStateData}
     end.
 
 
@@ -781,13 +777,10 @@ setup_players(Registrants, GameId, BotModule) ->
                                               user_info = UserInfo, is_bot = true}, Acc),
                 {NewAcc, PlayerId + 1};
            (UserId, {Acc, PlayerId}) ->
-              case auth_server:get_user_info_by_user_id(UserId) of
-                {error, user_not_found} -> {Acc, PlayerId};
-                {ok, UserInfo} ->
-                  NewAcc = store_player(#player{id = PlayerId, user_id = UserId,
-                                                user_info = UserInfo, is_bot = false}, Acc),
-                  {NewAcc, PlayerId + 1}
-              end
+                {ok, UserInfo} = auth_server:get_user_info_by_user_id(UserId),
+                NewAcc = store_player(#player{id = PlayerId, user_id = UserId,
+                                              user_info = UserInfo, is_bot = false}, Acc),
+                {NewAcc, PlayerId + 1}
         end,
     lists:foldl(F, {players_init(), 1}, Registrants).
 

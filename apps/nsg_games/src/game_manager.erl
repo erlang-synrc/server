@@ -19,6 +19,14 @@ create_game(GameFSM, Params) ->
     {ok, Pid} = create_game_monitor(GameId, GameFSM, Params),
     {ok, GameId, Pid}.
 
+%% rank_table(GameId) -> {ok, {LastTourNum, TourResult}} | {error, Reason}
+%% TourResult = {UserId, Pos, Points, Status}
+rank_table(GameId) ->
+    case get_relay_mod_pid(GameId) of
+        {Module, Pid} -> Module:system_request(Pid, last_tour_result);
+        undefined -> {error, not_found}
+    end.
+
 get_lucky_pid(Sup) ->
     [X]=game_manager:get_lucky_table(Sup),
     X#game_table.game_process.
@@ -104,7 +112,7 @@ get_tournament(TrnId) ->
                                             Check(TrnId, TId)]))
              end,
     Table = case qlc:next_answers(Cursor(), 1) of
-                   [T] -> X = T#game_table.id, integer_to_list(X);
+                   [T] -> X = T#game_table.id, X;
                      _ -> []
             end,
 %    ?INFO("~w:get_tournament Table = ~p", [?MODULE, Table]),
@@ -276,7 +284,7 @@ create_paired_game(Game, Params, Users) ->
                                       true -> enabled;
                                       false -> disabled
                                   end,
-            TablesNum = length(Users) div 2,
+            TablesNum = length(Users) div 2 + length(Users) rem 2,
             TableParams = [
                            {table_name, TableName},
                            {mult_factor, MulFactor},
@@ -408,15 +416,21 @@ create_elimination_trn(GameType, Params, Registrants) ->
 
 
 start_tournament(TrnId,NumberOfTournaments,NumberOfPlayers,_Quota,_Tours,_Speed,GiftIds) ->
-
+    ?INFO("~p",[{TrnId,NumberOfTournaments,NumberOfPlayers,_Quota,_Tours,_Speed,GiftIds}]),
     {ok,Tournament} = nsm_db:get(tournament,TrnId),
+    RealPlayersUnsorted = nsm_tournaments:joined_users(TrnId),
+
+ if NumberOfPlayers - length(RealPlayersUnsorted) > 300 ->
+           nsm_db:put(Tournament#tournament{status=canceled}),
+           error;
+       true ->
+
     #tournament{quota = QuotaPerRound,
                 tours = Tours,
                 game_type = GameType,
                 game_mode = GameMode,
                 speed = Speed} = Tournament,
 %%    ImagioUsers = nsm_auth:imagionary_users2(),
-    RealPlayersUnsorted = nsm_tournaments:joined_users(TrnId),
     RealPlayersPR = lists:keysort(#play_record.other, RealPlayersUnsorted),
     ?INFO("Head: ~p",[hd(RealPlayersPR)]),
     RealPlayers = [list_to_binary(Who)||#play_record{who=Who}<-RealPlayersPR, Who /= undefined],
@@ -443,13 +457,15 @@ start_tournament(TrnId,NumberOfTournaments,NumberOfPlayers,_Quota,_Tours,_Speed,
                        {speed, Speed},
                        {awards, GiftIds}],
              {ok,GameId,A} = create_elimination_trn(GameType, Params, Registrants),
-             nsm_db:put(Tournament#tournament{status=activated}),
+             nsm_db:put(Tournament#tournament{status=activated,start_time=time()}),
              {ok,GameId,A}
          end || _ <-lists:seq(1,NumberOfTournaments)],
     [{ok,OP1,_}|_] = OkeyTournaments,
     [{ok,OP2,_}|_] = lists:reverse(OkeyTournaments),
     ?INFO("Okey tournaments runned: ~p~n",[{OP1,OP2}]),
-    OP1.
+    OP1
+
+   end.
 
 get_tables(Id) ->
    qlc:e(qlc:q([Val || {{_,_,_Key},_,Val=#game_table{id = _Id}} <- gproc:table(props), Id == _Id ])).
