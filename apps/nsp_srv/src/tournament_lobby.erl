@@ -64,13 +64,16 @@ body() ->
     TID = T#tournament.id,
     CurrentUser = wf:user(),
 
-    case T#tournament.status of
-         activated -> TourGameSrv = case nsm_queries:tournament_started([TID]) of 
+%    case T#tournament.status of
+%         activated ->
+                      TourGameSrv = case nsm_queries:tournament_started([TID]) of 
                          TournamentString when is_list(TournamentString) ->  wf:state(tour_long_id, TournamentString),
                                              wf:state(tournament_started, true);
                          _ -> undefined
-                      end;
-         _ -> skip end,
+                      end,
+%         _ -> skip end,
+
+    ?INFO("Tournament Started?: ~p",[wf:state(tournament_started, true)]),
 
     Title = T#tournament.name,
     Tours = T#tournament.tours,
@@ -456,8 +459,9 @@ comet_update(User, TournamentId,PageProc,TourList) ->
             wf:replace(start_button, ""),
             ?INFO("(in comet): start game TId: ~p, User: ~p, Data: ~p", [TournamentId, User, TID]),
             Trn = wf:state(tournament),
+            wf:session(Trn#tournament.id,Trn#tournament.id),
             Game = game_type_to_str(Trn#tournament.game_type),
-            Url = lists:concat([?_U("/client"), "/", ?_U(Game), "/id/", TID]),
+            Url = lists:concat([?_U("/client"), "/", ?_U(Game), "/id/", integer_to_list(Trn#tournament.id)]),
             StartClient = webutils:new_window_js(Url),
             wf:wire(#script{script=StartClient}),
             wf:flush(),
@@ -583,7 +587,7 @@ event(attach) ->
          _ ->
             T = wf:state(tournament),
             Game = game_type_to_str(T#tournament.game_type),
-            URL = lists:concat([?_U("/client"),"/",?_U(Game),"/id/", TourId]),
+            URL = lists:concat([?_U("/client"),"/",?_U(Game),"/id/", T#tournament.id]),
             StartClient = webutils:new_window_js(URL),
             wf:wire(#script{script=StartClient})
     end;
