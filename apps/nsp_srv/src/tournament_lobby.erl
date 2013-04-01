@@ -46,7 +46,7 @@ guiders_script() ->
     Guiders = [
         matchmaker:make_guider(show,?_T("JOIN TOURNAMENT"), 
             ?_T("Join, Leave or Play tournaments here.") ++
-            ?_T("Turnuva başlama saatinde otomatik olarak başlar. Sorun yaşamamak için tarayıcınızın 'pop up bloker' ına izin vermeyi unutmayınız."),
+            ?_T("Turnuva başlama saatinde otomatik olarak başlar. Sorun yaşamamak için tarayıcınızın \"pop up bloker\" ına izin vermeyi unutmayınız."),
             StdButtons,guider_20,guider_30,false,true,tournament_control,12)
     ],
     wf:wire(Guiders).
