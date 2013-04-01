@@ -67,13 +67,15 @@ body() ->
 %    case T#tournament.status of
 %         activated ->
                       TourGameSrv = case nsm_queries:tournament_started([TID]) of 
-                         TournamentString when is_list(TournamentString) ->  wf:state(tour_long_id, TournamentString),
+                         [] -> skip;
+                         TournamentString ->  wf:state(tour_long_id, TournamentString),
                                              wf:state(tournament_started, true);
+                         
                          _ -> undefined
                       end,
 %         _ -> skip end,
 
-    ?INFO("Tournament Started?: ~p",[wf:state(tournament_started, true)]),
+    ?INFO("Tournament Started?: ~p",[wf:state(tournament_started)]),
 
     Title = T#tournament.name,
     Tours = T#tournament.tours,
@@ -175,7 +177,6 @@ body() ->
 %            || I <- PlanI]
 %        }
 %    ], style="font-size:9px; color:#fff;"},
-
     [   "<br><br><section id='main'>",
         #panel{class="tourlobby_title", body=[#label{class="tourlobby_title_label", body=?_T("TOURNAMENT LOBBY")} ]},
 
@@ -199,10 +200,11 @@ body() ->
                 end,
                 #br{},
                 case T#tournament.creator == CurrentUser of
-                     true -> case wf:state(tournament_started) of
-                            undefined -> #link{id=start_button, text=?_T("MANUAL START"), 
+                     true -> [  #link{id=delete_button, text=?_T("DELETE TOURNAMENT"), postback={delete_tournament, T#tournament.id}}, #br{}, #br{}, #br{},
+                              case wf:state(tournament_started) of
+                        undefined -> #link{id=start_button, text=?_T("MANUAL START"), 
                                        postback={start_tour, T#tournament.id, NPlayers,Quota,Tours,Speed,T#tournament.awards}};
-                            _ -> "" end;
+                            _ -> "" end];
                     _ -> ""
                 end,
                 "</center>"
@@ -461,7 +463,7 @@ comet_update(User, TournamentId,PageProc,TourList) ->
             Trn = wf:state(tournament),
             wf:session(Trn#tournament.id,Trn#tournament.id),
             Game = game_type_to_str(Trn#tournament.game_type),
-            Url = lists:concat([?_U("/client"), "/", ?_U(Game), "/id/", integer_to_list(Trn#tournament.id)]),
+            Url = lists:concat([?_U("/client"), "/", ?_U(Game), "/id/", TID]),
             StartClient = webutils:new_window_js(Url),
             wf:wire(#script{script=StartClient}),
             wf:flush(),
@@ -571,6 +573,10 @@ event(leave_tournament) ->
     wf:replace(leave_button, #panel{id=leave_button, class="tourlobby_red_button_disabled", text=?_T("LEAVE TOURNAMENT")}),
     wf:flush();
 
+event({delete_tournament, Id}) ->
+    nsm_tournaments:destroy(Id),
+    user_counter:retournaments();
+
 event({start_tour, Id, NPlayers,Q,T,S,P}) ->
     wf:state(tour_start_time, time()),
     TourId = nsm_queries:start_tournament([Id, 1, NPlayers,Q,T,S,P]), 
@@ -587,7 +593,7 @@ event(attach) ->
          _ ->
             T = wf:state(tournament),
             Game = game_type_to_str(T#tournament.game_type),
-            URL = lists:concat([?_U("/client"),"/",?_U(Game),"/id/", T#tournament.id]),
+            URL = lists:concat([?_U("/client"),"/",?_U(Game),"/id/", TourId]),
             StartClient = webutils:new_window_js(URL),
             wf:wire(#script{script=StartClient})
     end;
@@ -612,6 +618,7 @@ get_timer_for_now() ->
    T =  wf:state(tournament),
     case T#tournament.status of
         canceled -> ?_T("CANCELED");
+        activated -> ?_T("NOW");
         _ ->
             TourTime = T#tournament.start_time, %wf:state(tour_start_time),
             TourDate = T#tournament.start_date, %wf:state(tour_start_date),

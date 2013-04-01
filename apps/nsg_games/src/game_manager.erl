@@ -112,7 +112,7 @@ get_tournament(TrnId) ->
                                             Check(TrnId, TId)]))
              end,
     Table = case qlc:next_answers(Cursor(), 1) of
-                   [T] -> X = T#game_table.trn_id, X;
+                   [T] -> X = T#game_table.id, X;
                      _ -> []
             end,
 %    ?INFO("~w:get_tournament Table = ~p", [?MODULE, Table]),
@@ -416,15 +416,21 @@ create_elimination_trn(GameType, Params, Registrants) ->
 
 
 start_tournament(TrnId,NumberOfTournaments,NumberOfPlayers,_Quota,_Tours,_Speed,GiftIds) ->
-
+    ?INFO("~p",[{TrnId,NumberOfTournaments,NumberOfPlayers,_Quota,_Tours,_Speed,GiftIds}]),
     {ok,Tournament} = nsm_db:get(tournament,TrnId),
+    RealPlayersUnsorted = nsm_tournaments:joined_users(TrnId),
+
+ if NumberOfPlayers - length(RealPlayersUnsorted) > 300 ->
+           nsm_db:put(Tournament#tournament{status=canceled}),
+           error;
+       true ->
+
     #tournament{quota = QuotaPerRound,
                 tours = Tours,
                 game_type = GameType,
                 game_mode = GameMode,
                 speed = Speed} = Tournament,
 %%    ImagioUsers = nsm_auth:imagionary_users2(),
-    RealPlayersUnsorted = nsm_tournaments:joined_users(TrnId),
     RealPlayersPR = lists:keysort(#play_record.other, RealPlayersUnsorted),
     ?INFO("Head: ~p",[hd(RealPlayersPR)]),
     RealPlayers = [list_to_binary(Who)||#play_record{who=Who}<-RealPlayersPR, Who /= undefined],
@@ -451,13 +457,15 @@ start_tournament(TrnId,NumberOfTournaments,NumberOfPlayers,_Quota,_Tours,_Speed,
                        {speed, Speed},
                        {awards, GiftIds}],
              {ok,GameId,A} = create_elimination_trn(GameType, Params, Registrants),
-             nsm_db:put(Tournament#tournament{status=activated}),
+             nsm_db:put(Tournament#tournament{status=activated,start_time=time()}),
              {ok,GameId,A}
          end || _ <-lists:seq(1,NumberOfTournaments)],
     [{ok,OP1,_}|_] = OkeyTournaments,
     [{ok,OP2,_}|_] = lists:reverse(OkeyTournaments),
     ?INFO("Okey tournaments runned: ~p~n",[{OP1,OP2}]),
-    OP1.
+    OP1
+
+   end.
 
 get_tables(Id) ->
    qlc:e(qlc:q([Val || {{_,_,_Key},_,Val=#game_table{id = _Id}} <- gproc:table(props), Id == _Id ])).
