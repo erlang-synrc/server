@@ -746,13 +746,16 @@ tournament_mail_form()->
       .mail_subj {width:100%; height:24px;padding: 5px; font-size: 16px; line-height: 20px;}
       .send_mail {font-size:16px;}
       .ext-webkit :focus {outline: 1px solid #ededed;}
+      .flash{color: #303030;background-color: #FAEC7F;border: #FFE800 solid 2px; padding: 5px; font-size:14px;}
+      .flash_close_button {float: right;font-size: 90%;color:red;}
      </style>",
     #h1{class=mail_head, text=?_T("Invite mail:")},
+    #flash{},
     #label{text=?_T("Subject:")},
     #textbox{id=subj, class=mail_subj, text=?_T("Turnuva Daveti"), next=body},
     #label{text=?_T("Message:")},
     #textarea{id=body, class=msg_area, html_encode=true, text="Okeysever Üyemiz $username$!\n\nSinema Keyfini kakaranet.com da çıkarın.\n7 Şubat (bugün) saat 21:30 da “Ev Sinema Sistemi” ödüllü okey turnuvasını kaçırmayın.\nBekliyoruz.\nİyi keyifler...\nKakaranet"},
-    #button{style="padding: 0 7px;font-size:16px;", text=?_T("Send"), postback=tournament_invite}
+    #button{style="padding: 0 7px;font-size:16px;cursor:pointer;", text=?_T("Send"), postback=tournament_invite}
   ]}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -764,7 +767,8 @@ api_event(Name, Tag, Args)->
 event(tournament_invite) ->
   Subj = wf:q(subj),
   BodyTemplate = wf:q(body),
-  tournaments:invite_email(Subj, BodyTemplate);
+  tournaments:invite_email(Subj, BodyTemplate),
+  wf:flash(?_T("Notification mail sent."));
 
 event(add_new_contract) ->
     UserId = wf:q(contract_new_user),
