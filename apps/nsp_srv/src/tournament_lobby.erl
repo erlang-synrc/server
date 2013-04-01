@@ -619,17 +619,18 @@ get_timer_for_now() ->
                         true -> integer_to_list(N) ++ " " ++ ?_T("days");
                         false -> 
                             DTime = case date() == TourDate of
-                                true -> %calendar:time_to_seconds(TourTime) - calendar:time_to_seconds(time());
-                                    case wf:state(tour_long_id) of 
-                                      [] -> calendar:time_to_seconds(TourTime) - calendar:time_to_seconds(time());
-                                      _ -> 0  % started tournament is always either NOW or FINISHED
-                                  end;
+                                true -> calendar:time_to_seconds(TourTime) - calendar:time_to_seconds(time());
+%                                    case wf:state(tour_long_id) of 
+%                                      [] -> calendar:time_to_seconds(TourTime) - calendar:time_to_seconds(time());
+%                                      _ -> 0  % started tournament is always either NOW or FINISHED
+%                                  end;
 
                                 false ->
                                     0
                             end,
                             case DTime =< 0 of
                                 true -> 
+                                     ?INFO("TID: ~p",[Id]),
                                     case nsm_queries:tournament_started([Id]) of 
                                         [] -> case T#tournament.status of
                                                     created -> ?_T("CREATED");

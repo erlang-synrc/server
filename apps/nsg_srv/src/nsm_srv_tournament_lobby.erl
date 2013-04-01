@@ -2,6 +2,7 @@
 -behaviour(gen_server).
 -include_lib("nsm_mq/include/nsm_mq.hrl").
 -include_lib("nsm_db/include/user.hrl").
+-include_lib("nsm_db/include/table.hrl").
 -include_lib("nsm_db/include/tournaments.hrl").
 -include_lib("nsx_config/include/log.hrl").
 -include_lib("nsx_config/include/config.hrl").
@@ -38,6 +39,7 @@ init([TID]) ->
     Tour = nsm_tournaments:get(TID),
     ?INFO("Lobby Starting: ~p",[Tour]),
     Server = self(),
+    gproc:reg({p,l,self()}, #game_table{trn_id=Tour#tournament.id}),
     timer:apply_after(?TOURNAMENT_START_QUANT, ?MODULE, check_tournament_time, [Server]),
     nsx_msg:subscribe_tournament_lobby(TID, {?MODULE, messages_callback}, Server),
     ?MODULE:heartbeat(Server),
