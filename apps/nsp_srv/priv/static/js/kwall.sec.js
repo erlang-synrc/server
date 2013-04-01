@@ -6,4 +6,3 @@
 // @depends ../nitrogen/js/form.js
 // @depends ../nitrogen/swfobject.js
 // @depends ../nitrogen/audio-player/audio-player.js
-// @depends ../nitrogen/js/jquery.prettyPhoto.js

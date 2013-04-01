@@ -107,7 +107,7 @@ handle_call({get_translation,{Lang,Translation}}, _From, State)->
 
 handle_call(user_count, _From, State)->
   {L,T} = case State#state.last_check == undefined orelse 
-               timer:now_diff(now(),State#state.last_check) div 1000000 > 30 of
+               timer:now_diff(now(),State#state.last_check) div 1000000 > 25 of
        true ->  Users = webutils:online_users(), 
                 {length(Users),now()};
        false -> {State#state.user_count,State#state.last_check}

@@ -67,15 +67,17 @@ cleancss:
 include $(JS_FILES:.js=.deps)
 include $(CSS_FILES:.css=.deps)
 
-%.min.js : %.js
-	    juicer merge ${JS_JUICER} -i --force $<
 
 %.full.js : %.js
-	    juicer merge ${JS_JUICER} -m none -i --force $< -o $@
-
-%.min.css : %.css
-	    juicer merge -b -d ${ROOT_PATH} -c none ${CSS_JUICER} -i --force $<
+	juicer merge ${JS_JUICER} -m none -i --force $< -o $@
 
 %.full.css : %.css
-	    juicer merge -b -d ${ROOT_PATH} -c none ${CSS_JUICER} -m none -i --force $< -o $@
+	juicer merge -b -d ${ROOT_PATH} -c none ${CSS_JUICER} -m none -i --force $< -o $@
 
+%.min.js : %.full.js
+	juicer merge ${JS_JUICER} -i --force $<
+	java -jar /usr/share/yui-compressor/yui-compressor.jar $< -o $@
+
+%.min.css : %.full.css
+	juicer merge -b -d ${ROOT_PATH} -c none ${CSS_JUICER} -i --force $<
+	java -jar /usr/share/yui-compressor/yui-compressor.jar $< -o $@

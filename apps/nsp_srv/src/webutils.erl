@@ -117,7 +117,7 @@ menu_links() ->
   ["<nav>",
   #list{body=[
 %    #listitem{body=#link{text=?_T("Home"), url=?_U("/"), id="mainmenumainpage"}},
-    #listitem{body=#link{text=?_T("Wall"), url=?_U("/wall"),
+    #listitem{show_if=wf:user()=/=undefined, body=#link{text=?_T("Wall"), url=?_U("/wall"),
       title=?_T("You can share information with others"), id="mainmenumypage"}},
     #listitem{body=#link{text=?_T("Matchmaker"), url=?_U("/matchmaker/okey"),
       title=?_T("Set your game criteria and face your opponent"), id="mainmenumatchmaker"}},
@@ -518,9 +518,9 @@ show_if(_, _Entry) -> false.
 node_users() ->
   {Users,B} = lists:partition(fun({_,_,{A,user,Time}}) -> 
                   {_,X}=calendar:time_difference(Time, calendar:now_to_datetime(now())),
-                  X < {0,10,0} end, qlc:e(gproc:table())),
+                  X < {0,10,0} end, [ X || X={_,_,{_,user,_}} <- qlc:e(gproc:table())]),
   [ exit(Pid,kill) || {_,Pid,{A,user,Time}} <- B],
-  Users.
+  Users ++ [{undefiend,undefined,{Username,user,time()}}||X={{p,l,Pid},P2,{_,_,Tour,Username,Color}}<-qlc:e(gproc:table())].
 
 online_users() ->
   OnlineUsers = nsm_queries:map_reduce(webutils,node_users,[]),

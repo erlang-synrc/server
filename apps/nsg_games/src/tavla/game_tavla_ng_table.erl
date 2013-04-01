@@ -298,7 +298,7 @@ handle_info(Info, StateName, #state{game_id = GameId, table_id = TableId} = Stat
 terminate(Reason, StateName, #state{game_id = GameId, table_id = TableId, relay = Relay}) ->
     ?INFO("TAVLA_NG_TABLE_DBG <~p,~p> Shutting down at state: <~p>. Reason: ~p",
           [GameId, TableId, StateName, Reason]),
-    ?RELAY:stop(Relay),
+    relay_stop(Relay),
     ok.
 
 code_change(_OldVsn, StateName, StateData, _Extra) ->
@@ -461,40 +461,35 @@ handle_parent_message({tour_result, TourNum, Results}, StateName,
 
 handle_parent_message({playing_tables_num, Num}, StateName,
                       StateData) ->
-%%XXX    Msg = create_tavla_playing_tables(Num),
+%%XXX The request for the feature was canncelled
+%%    Msg = create_tavla_playing_tables(Num),
 %%    publish_ge(Msg, StateData),
     {next_state, StateName, StateData};
 
 handle_parent_message(rejoin_players, StateName,
                       #state{game_id = GameId, relay = Relay,
                              players = Players} = StateData) ->
-    [relay_unregister_player(Relay, P#player.id) || P <- players_to_list(Players)],
-    relay_publish(Relay, {rejoin, GameId}), %% XXX Looks like a hack... Should be sent personaly to players gamesessions
+    [relay_unregister_player(Relay, P#player.id, {rejoin, GameId}) || P <- players_to_list(Players)],
     {next_state, StateName, StateData#state{players = players_init()}};
 
 
 handle_parent_message(disconnect_players, StateName,
                       #state{relay = Relay, players = Players} = StateData) ->
-    [relay_unregister_player(Relay, P#player.id) || P <- players_to_list(Players)],
-    relay_publish(Relay, {disconnect, table_closed}), %% XXX Looks like a hack... Should be sent personaly to players gamesessions
-%%    [relay_kick_player(Relay, P#player.id) || P <- players_to_list(Players)],
+    [relay_unregister_player(Relay, P#player.id, game_over) || P <- players_to_list(Players)],
     {next_state, StateName, StateData#state{players = players_init()}};
 
-handle_parent_message({send_table_state, DestTableId, PlayerId}, StateName,
+handle_parent_message({send_table_state, DestTableId, PlayerId, Ref}, StateName,
                       #state{game_id = GameId, table_id = TableId, parent = Parent} = StateData) ->
     ?INFO("TAVLA_NG_TABLE <~p,~p>  Received request to send the table state events for player "
-          "<~p> at table ~p. Processing.",
-          [GameId, TableId, PlayerId, DestTableId]),
+          "<~p> (~p) at table ~p. Processing.",
+          [GameId, TableId, PlayerId, Ref, DestTableId]),
     GI = create_tavla_game_info(StateData),
     PlState = create_tavla_game_player_state(PlayerId, StateName, StateData),
-    parent_table_state_to_player(Parent, TableId, DestTableId, PlayerId, GI),
-    parent_table_state_to_player(Parent, TableId, DestTableId, PlayerId, PlState),
+    parent_table_state_to_player(Parent, TableId, DestTableId, PlayerId, Ref, GI),
+    parent_table_state_to_player(Parent, TableId, DestTableId, PlayerId, Ref, PlState),
     {next_state, StateName, StateData};
 
-handle_parent_message(stop, _StateName,
-                      #state{relay = Relay, players = Players} = StateData) ->
-    [relay_unregister_player(Relay, P#player.id) || P <- players_to_list(Players)],
-%%    relay_publish(Relay, {disconnect, table_closed}), %% XXX Looks like a hack... Should be sent personaly to players gamesessions
+handle_parent_message(stop, _StateName, StateData) ->
     {stop, normal, StateData};
 
 
@@ -538,15 +533,11 @@ handle_parent_message({game_event, GameEvent}, StateName,
     relay_publish_ge(Relay, GameEvent),
     {next_state, StateName, StateData};
 
-handle_parent_message({table_state_event, PlayerId, StateEvent}, StateName,
-                      #state{game_id = GameId, table_id = TableId, relay = Relay,
-                             players = Players} = StateData) ->
+handle_parent_message({table_state_event, _PlayerId, SubscrId, StateEvent}, StateName,
+                      #state{game_id = GameId, table_id = TableId, relay = Relay} = StateData) ->
     ?INFO("TAVLA_NG_TABLE <~p,~p>  A table state event received from the parent in state <~p>: ~p.",
           [GameId, TableId, StateName, StateEvent]),
-    case get_player(PlayerId, Players) of
-        {ok, _} -> send_to_client_ge(Relay, PlayerId, StateEvent);
-        error -> do_nothing
-    end,
+    send_to_subscriber_ge(Relay, SubscrId, StateEvent),
     {next_state, StateName, StateData};
 
 handle_parent_message(Message, StateName,
@@ -561,23 +552,12 @@ handle_parent_message(Message, StateName,
 %% handle_relay_message(Msg, StateName, StateData)
 
 handle_relay_message({player_connected, PlayerId} = Msg, StateName,
-                     #state{relay = Relay, parent = Parent, game_id = GameId,
-                            table_id = TableId, tournament_table = TTable,
-                            players = Players} = StateData) ->
+                     #state{parent = Parent, game_id = GameId,
+                            table_id = TableId, players = Players} = StateData) ->
     ?INFO("TAVLA_NG_TABLE <~p,~p> Received nofitication from the relay: ~p", [GameId, TableId, Msg]),
     case get_player(PlayerId, Players) of
         {ok, Player} ->
             NewPlayers = store_player_rec(Player#player{connected = true}, Players),
-            GI = create_tavla_game_info(StateData),
-            PlState = create_tavla_game_player_state(PlayerId, StateName, StateData),
-            send_to_client_ge(Relay, PlayerId, GI),
-            send_to_client_ge(Relay, PlayerId, PlState),
-            relay_allow_broadcast_for_player(Relay, PlayerId),
-            if TTable =/= undefined ->
-                   [send_to_client_ge(Relay, PlayerId, create_tavla_tour_result(TurnNum, Results, StateData))
-                      || {TurnNum, Results} <- lists:sort(TTable)];
-               true -> do_nothing
-            end,
             parent_send_player_connected(Parent, TableId, PlayerId),
             {next_state, StateName, StateData#state{players = NewPlayers}};
         error ->
@@ -596,6 +576,38 @@ handle_relay_message({player_disconnected, PlayerId}, StateName,
             {next_state, StateName, StateData}
     end;
 
+handle_relay_message({subscriber_added, PlayerId, SubscrId} = Msg, StateName,
+                     #state{relay = Relay, game_id = GameId, game_mode = GameMode,
+                            table_id = TableId, tournament_table = TTable,
+                            players = Players, parent = Parent} = StateData) ->
+    ?INFO("TAVLA_NG_TABLE <~p,~p> Received nofitication from the relay: ~p", [GameId, TableId, Msg]),
+    IsValidPlayerId = case PlayerId of
+                          observer -> true;
+                          administrator -> true;
+                          _ ->
+                              case get_player(PlayerId, Players) of
+                                  {ok, _} -> true;
+                                  error -> false
+                              end
+                      end,
+    if IsValidPlayerId ->
+           GI = create_tavla_game_info(StateData),
+           PlState = create_tavla_game_player_state(PlayerId, StateName, StateData),
+           send_to_subscriber_ge(Relay, SubscrId, GI),
+           send_to_subscriber_ge(Relay, SubscrId, PlState),
+           relay_allow_broadcast_for_player(Relay, PlayerId),
+           if TTable =/= undefined ->
+                  [send_to_subscriber_ge(Relay, SubscrId, create_tavla_tour_result(TurnNum, Results, StateData))
+                     || {TurnNum, Results} <- lists:sort(TTable)];
+              true -> do_nothing
+           end,
+           if GameMode == paired ->
+                  parent_send_get_tables_states(Parent, TableId, PlayerId, SubscrId);
+              true -> do_nothing
+           end;
+       true -> do_nothing
+    end,
+    {next_state, StateName, StateData};
 
 handle_relay_message(Message, StateName, #state{game_id = GameId, table_id = TableId} = StateData) ->
     ?ERROR("TAVLA_NG_TABLE <~p,~p> Unknown relay message received in state <~p>: ~p. State: ~p. Stopping.",
@@ -1141,9 +1153,9 @@ init_players([{PlayerId, UserInfo, SeatNum, _StartPoints} | PlayersInfo], Player
 
 %%===================================================================
 
-send_to_client_ge(Relay, PlayerId, Msg) ->
+send_to_subscriber_ge(Relay, SubscrId, Msg) ->
     Event = #game_event{event = api_utils:name(Msg), args = api_utils:members(Msg)},
-    ?RELAY:table_message(Relay, {to_client, PlayerId, Event}).
+    ?RELAY:table_message(Relay, {to_subscriber, SubscrId, Event}).
 
 relay_publish_ge(Relay, Msg) ->
     Event = #game_event{event = api_utils:name(Msg), args = api_utils:members(Msg)},
@@ -1158,11 +1170,14 @@ relay_allow_broadcast_for_player(Relay, PlayerId) ->
 relay_register_player(Relay, UserId, PlayerId) ->
     ?RELAY:table_request(Relay, {register_player, UserId, PlayerId}).
 
-relay_unregister_player(Relay, PlayerId) ->
-    ?RELAY:table_request(Relay, {unregister_player, PlayerId}).
+relay_unregister_player(Relay, PlayerId, Reason) ->
+    ?RELAY:table_request(Relay, {unregister_player, PlayerId, Reason}).
 
 relay_kick_player(Relay, PlayerId) ->
     ?RELAY:table_request(Relay, {kick_player, PlayerId}).
+
+relay_stop(Relay) ->
+    ?RELAY:table_message(Relay, stop).
 
 parent_confirm_registration({ParentMod, ParentPid}, TableId, RequestId) ->
     ParentMod:table_message(ParentPid, TableId, {response, RequestId, ok}).
@@ -1185,8 +1200,11 @@ parent_send_player_connected({ParentMod, ParentPid}, TableId, PlayerId) ->
 parent_send_player_disconnected({ParentMod, ParentPid}, TableId, PlayerId) ->
     ParentMod:table_message(ParentPid, TableId, {player_disconnected, PlayerId}).
 
-parent_table_state_to_player({ParentMod, ParentPid}, TableId, DestTableId, PlayerId, StateEvent) ->
-    ParentMod:table_message(ParentPid, TableId, {table_state_event, DestTableId, PlayerId, StateEvent}).
+parent_send_get_tables_states({ParentMod, ParentPid}, TableId, PlayerId, SubscrId) ->
+    ParentMod:table_message(ParentPid, TableId, {get_tables_states, PlayerId, SubscrId}).
+
+parent_table_state_to_player({ParentMod, ParentPid}, TableId, DestTableId, PlayerId, Ref, StateEvent) ->
+    ParentMod:table_message(ParentPid, TableId, {table_state_event, DestTableId, PlayerId, Ref, StateEvent}).
 
 parent_publish_ge({ParentMod, ParentPid}, TableId, GameEvent) ->
     ParentMod:table_message(ParentPid, TableId, {game_event, GameEvent}).

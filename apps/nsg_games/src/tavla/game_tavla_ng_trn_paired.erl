@@ -187,8 +187,7 @@ init([GameId, Params, _Manager]) ->
     BotsReplacementMode = get_param(bots_replacement_mode, Params),
     CommonParams  = get_param(common_params, Params),
 
-    [?INFO("TRN_PAIRED_DBG <~p> Parameter <~p> : ~p", [GameId, P, V]) ||
-     {P, V} <- Params],
+    [?INFO("TRN_PAIRED_DBG <~p> Parameter <~p> : ~p", [GameId, P, V]) || {P, V} <- Params],
 
     ?INFO("TRN_PAIRED <~p> started.  Pid:~p", [GameId, self()]),
 
@@ -359,13 +358,10 @@ handle_client_message(Message, StateName, #state{game_id = GameId} = StateData) 
 
 handle_table_message(TableId, {player_connected, PlayerId},
                      StateName,
-                     #state{seats = Seats, tables = Tables,
-                            table_module = TableModule} = StateData) ->
+                     #state{seats = Seats} = StateData) ->
     case find_seats_by_player_id(PlayerId, Seats) of
         [#seat{seat_num = SeatNum}] ->
             NewSeats = update_seat_connect_status(TableId, SeatNum, true, Seats),
-            [send_to_table(TableModule, TPid, {send_table_state, TableId, PlayerId}) ||
-               #table{id = TId, pid = TPid} <- tables_to_list(Tables), TId =/= TableId],
             {next_state, StateName, StateData#state{seats = NewSeats}};
         [] -> %% Ignoring the message
             {next_state, StateName, StateData}
@@ -382,11 +378,17 @@ handle_table_message(TableId, {player_disconnected, PlayerId},
             {next_state, StateName, StateData}
     end;
 
+handle_table_message(TableId, {get_tables_states, PlayerId, Ref},
+                     StateName,
+                     #state{tables = Tables, table_module = TableModule} = StateData) ->
+    [send_to_table(TableModule, TPid, {send_table_state, TableId, PlayerId, Ref}) ||
+       #table{id = TId, pid = TPid} <- tables_to_list(Tables), TId =/= TableId],
+    {next_state, StateName, StateData};
 
 handle_table_message(TableId, {table_created, Relay},
                      ?STATE_WAITING_FOR_TABLES,
-                     #state{tables = Tables, seats = Seats,
-                            cr_tab_requests = TCrRequests,
+                     #state{tables = Tables, seats = Seats, seats_per_table = SeatsPerTable,
+                            cr_tab_requests = TCrRequests, tables_num = TablesNum,
                             reg_requests = RegRequests} = StateData) ->
     TabInitPlayers = dict:fetch(TableId, TCrRequests),
     NewTCrRequests = dict:erase(TableId, TCrRequests),
@@ -414,7 +416,7 @@ handle_table_message(TableId, {table_created, Relay},
     NewTables = update_created_table(TableId, Relay, Tables),
     case dict:size(NewTCrRequests) of
         0 ->
-            case enough_players(NewSeats) of
+            case enough_players(NewSeats, TablesNum*SeatsPerTable) of
                 true ->
                     {TRef, Magic} = start_timer(?WAITING_PLAYERS_TIMEOUT),
                     {next_state, ?STATE_WAITING_FOR_PLAYERS,
@@ -530,12 +532,12 @@ handle_table_message(TableId, {game_event, GameEvent},
        #table{pid = TablePid, id = TId} <- tables_to_list(Tables), TId =/= TableId],
     {next_state, StateName, StateData};
 
-handle_table_message(_TableId, {table_state_event, DestTableId, PlayerId, StateEvent},
-                     ?STATE_TOUR_PROCESSING = StateName,
+handle_table_message(_TableId, {table_state_event, DestTableId, PlayerId, Ref, StateEvent},
+                     StateName,
                      #state{tables = Tables, table_module = TableModule} = StateData) ->
     case get_table(DestTableId, Tables) of
         {ok, #table{pid = TPid}} ->
-            send_to_table(TableModule, TPid, {table_state_event, PlayerId, StateEvent});
+            send_to_table(TableModule, TPid, {table_state_event, PlayerId, Ref, StateEvent});
         error -> do_nothing
     end,
     {next_state, StateName, StateData};
@@ -871,7 +873,8 @@ reg_new_player(UserInfo, TableId, SeatNum, From, StateName,
                #state{game_id = GameId, players = Players, tables = Tables,
                       game_type = GameType, seats = Seats, player_id_counter = PlayerId,
                       tab_requests = TabRequests, reg_requests = RegRequests,
-                      table_module = TableModule, common_params = CommonParams
+                      table_module = TableModule, common_params = CommonParams,
+                      tables_num = TablesNum, seats_per_table = SeatsPerTable
                      } = StateData) ->
     {SeatNum, NewPlayers, NewSeats} =
         register_new_player(UserInfo, TableId, Players, Seats, PlayerId),
@@ -880,22 +883,18 @@ reg_new_player(UserInfo, TableId, SeatNum, From, StateName,
                                               TableId, SeatNum, TabRequests),
     NewRegRequests = dict:store(PlayerId, From, RegRequests),
     update_gproc(GameId, GameType, CommonParams, NewPlayers),
-    EnoughPlayers = enough_players(NewSeats),
+    NewStateData = StateData#state{reg_requests = NewRegRequests, tab_requests = NewTabRequests,
+                                   players = NewPlayers, seats = NewSeats,
+                                   player_id_counter = PlayerId + 1},
+    EnoughPlayers = enough_players(NewSeats, TablesNum*SeatsPerTable),
     if StateName == ?STATE_EMPTY_SEATS_FILLING andalso EnoughPlayers ->
            ?INFO("TRN_PAIRED <~p> It's enough players registered to start the game. "
                  "Initiating the procedure.", [GameId]),
-           {TRef, Magic} = start_timer(?WAITING_PLAYERS_TIMEOUT),
-           {next_state, ?STATE_WAITING_FOR_PLAYERS,
-            StateData#state{reg_requests = NewRegRequests, tab_requests = NewTabRequests,
-                            players = NewPlayers, seats = NewSeats, timer = TRef,
-                            timer_magic = Magic, player_id_counter = PlayerId+1}};
+           start_tour(NewStateData);
        true ->
            ?INFO("TRN_PAIRED <~p> Not enough players registered to start the game. "
                  "Waiting for more registrations.", [GameId]),
-           {next_state, StateName,
-            StateData#state{reg_requests = NewRegRequests, tab_requests = NewTabRequests,
-                            players = NewPlayers, seats = NewSeats,
-                            player_id_counter = PlayerId+1}}
+           {next_state, StateName, NewStateData}
     end.
 
 %% register_new_player(UserInfo, TableId, Players, Seats, PlayerId) -> {SeatNum, NewPlayers, NewSeats}
@@ -928,9 +927,9 @@ replace_by_bots(DisconnectedSeats, GameId, BotModule, Players, Seats, PlayerIdCo
     lists:foldl(F, {[], Players, Seats, PlayerIdCounter}, DisconnectedSeats).
 
 
-enough_players(Seats) ->
+enough_players(Seats, Threshold) ->
     NonEmptySeats = find_non_free_seats(Seats),
-    length(NonEmptySeats) > 0.
+    length(NonEmptySeats) >= Threshold.
 
 
 update_gproc(GameId, GameType, CommonParams, Players) ->

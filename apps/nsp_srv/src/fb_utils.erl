@@ -11,6 +11,7 @@ init()->
   wf:wire(#api{name=setFbIframe, tag=fb}),
   case wf:page_module() of
     login -> init_sdk();
+    profile -> init_sdk();
     price_table -> init_sdk();
     _ ->
       case wf:q("__submodule__") of
