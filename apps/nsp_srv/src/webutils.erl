@@ -519,8 +519,8 @@ node_users() ->
   {Users,B} = lists:partition(fun({_,_,{A,user,Time}}) -> 
                   {_,X}=calendar:time_difference(Time, calendar:now_to_datetime(now())),
                   X < {0,10,0} end, [ X || X={_,_,{_,user,_}} <- qlc:e(gproc:table())]),
-%  [ exit(Pid,kill) || {_,Pid,{A,user,Time}} <- B],
-  Users.
+  [ exit(Pid,kill) || {_,Pid,{A,user,Time}} <- B],
+  Users ++ [{undefiend,undefined,{Username,user,time()}}||X={{p,l,Pid},P2,{_,_,Tour,Username,Color}}<-qlc:e(gproc:table())].
 
 online_users() ->
   OnlineUsers = nsm_queries:map_reduce(webutils,node_users,[]),
