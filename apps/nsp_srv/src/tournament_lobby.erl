@@ -391,7 +391,6 @@ ui_paginate(T) ->
          false -> skip end.
 
 update_table_chat(Terms) ->
-    ?INFO("X"),
     wf:insert_bottom(chat_history, Terms),
     wf:wire("obj('chat_history').scrollTop = obj('chat_history').scrollHeight;"),
     wf:flush().
@@ -619,6 +618,7 @@ get_timer_for_now() ->
     case T#tournament.status of
         canceled -> ?_T("CANCELED");
         activated -> ?_T("NOW");
+        finished -> ?_T("FINISHED");
         _ ->
             TourTime = T#tournament.start_time, %wf:state(tour_start_time),
             TourDate = T#tournament.start_date, %wf:state(tour_start_date),
