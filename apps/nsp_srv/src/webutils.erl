@@ -518,8 +518,8 @@ show_if(_, _Entry) -> false.
 node_users() ->
   {Users,B} = lists:partition(fun({_,_,{A,user,Time}}) -> 
                   {_,X}=calendar:time_difference(Time, calendar:now_to_datetime(now())),
-                  X < {0,10,0} end, qlc:e(gproc:table())),
-  [ exit(Pid,kill) || {_,Pid,{A,user,Time}} <- B],
+                  X < {0,10,0} end, [ X || X={_,_,{_,user,_}} <- qlc:e(gproc:table())]),
+%  [ exit(Pid,kill) || {_,Pid,{A,user,Time}} <- B],
   Users.
 
 online_users() ->

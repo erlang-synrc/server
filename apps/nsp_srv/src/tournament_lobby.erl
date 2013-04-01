@@ -575,7 +575,7 @@ event(leave_tournament) ->
 
 event({delete_tournament, Id}) ->
     nsm_tournaments:destroy(Id),
-    user_counter:retournaments();
+    nsm_queries:map_reduce(user_counter,retournaments,[]);
 
 event({start_tour, Id, NPlayers,Q,T,S,P}) ->
     wf:state(tour_start_time, time()),
